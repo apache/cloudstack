@@ -1619,8 +1619,8 @@ test_data = {
             "url": "http://10.147.28.7/templates/4.3.0.2/systemvm64template-2014-09-30-4.3-vmware.ova",
             "hypervisor": "vmware",
             "format": "OVA",
-            "nicadapter": "vmxnet3"
-                    "kvm": {
+            "nicadapter": "vmxnet3",
+                "kvm": {
                         "url": ""
                     },
                     "vmware": {

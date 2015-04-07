@@ -6,7 +6,7 @@
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
 #
-#   http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
@@ -16,16 +16,35 @@
 # under the License.
 
 # Import Local Modules
-from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.lib.utils import *
-from marvin.lib.common import *
-from marvin.lib.base import *
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.lib.utils import cleanup_resources, validateList
+from marvin.lib.base import (Account,
+                             ServiceOffering,
+                             NetworkOffering,
+                             Network,
+                             VirtualMachine,
+                             SecurityGroup,
+                             DiskOffering,
+                             Resources,
+                             Iso,
+                             Configurations,
+                             SSHKeyPair,
+                             Volume,
+                             VmSnapshot,
+                             Zone,
+                             Template,
+                             Host)
+from marvin.lib.common import (get_zone,
+                               get_template,
+                               get_domain,
+                               find_storage_pool_type)
+from marvin.codes import PASS
 from marvin.sshClient import SshClient
 from nose.plugins.attrib import attr
+import time
 
 
 class TestListInstances(cloudstackTestCase):
-
     @classmethod
     def setUpClass(cls):
         try:
@@ -1691,8 +1710,8 @@ class TestListInstances(cloudstackTestCase):
         if service_offerings_list is not None:
             for i in range(0, len(service_offerings_list)):
                 if ((current_so.id != service_offerings_list[i].id) and (
-                        current_so.storagetype ==
-                        service_offerings_list[i].storagetype)):
+                            current_so.storagetype ==
+                            service_offerings_list[i].storagetype)):
                     so_exists = True
                     new_so = service_offerings_list[i]
                     break
@@ -2052,7 +2071,6 @@ class TestListInstances(cloudstackTestCase):
 
 
 class TestInstances(cloudstackTestCase):
-
     @classmethod
     def setUpClass(cls):
         try:
@@ -2176,7 +2194,7 @@ class TestInstances(cloudstackTestCase):
                     (exp_val, act_val))
         return return_flag
 
-    @attr(tags=["Xenserver"], required_hardware="false")
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_27_VM_restore_ES3467(self):
         """
         @Desc:Test to verify  order of root and data disk remains same on Xenserver after VM reset
@@ -2187,6 +2205,10 @@ class TestInstances(cloudstackTestCase):
         7. check disk sequence on hypervisor remains same and VM starts successfully
         """
         try:
+            if self.hypervisor.lower() in ['kvm', 'hyperv', 'lxc', 'vmware']:
+                self.skipTest(
+                    "This test not applicable on existing hypervisor. Hence,\
+                            skipping the test")
             template = Template.register(self.apiClient,
                                          self.services["Windows 7 (64-bit)"],
                                          zoneid=self.zone.id,
@@ -2219,11 +2241,8 @@ class TestInstances(cloudstackTestCase):
                 time.sleep(5)
                 timeout -= 1
             # Verify template response to check whether template added successfully
-            self.assertEqual(
-                isinstance(list_template_response, list),
-                True,
-                "Check for list template response return valid data"
-            )
+            status = validateList(list_template_response)
+            self.assertEquals(PASS, status[0], "Template download failed")
 
             self.assertNotEqual(
                 len(list_template_response),
@@ -2289,10 +2308,10 @@ class TestInstances(cloudstackTestCase):
                 True,
                 "Check list host returns a valid list")
             host = hosts[0]
-            if self.hypervisor.lower() in ('xenserver'):
+            if self.hypervisor.lower() in 'xenserver':
                 #
-                # host.user, host.passwd = get_host_credentials(self, host.ipaddress)
-                ssh = SshClient(host.ipaddress, 22, "root", "password")
+                ssh = SshClient(host.ipaddress, 22, self.services["configurableData"]["host"]["username"],
+                                self.services["configurableData"]["host"]["password"])
                 result = ssh.execute(cmd)
                 res = str(result)
                 self.assertNotEqual(res, "", "root disk should have user device=0")
@@ -2312,8 +2331,8 @@ class TestInstances(cloudstackTestCase):
             host = hosts[0]
             if self.hypervisor.lower() in 'xenserver':
                 #
-                # host.user, host.passwd = get_host_credentials(self, host.ipaddress)
-                ssh = SshClient(host.ipaddress, 22, "root", "password")
+                ssh = SshClient(host.ipaddress, 22, self.services["configurableData"]["host"]["username"],
+                                self.services["configurableData"]["host"]["password"])
                 result = ssh.execute(cmd)
                 res = str(result)
                 self.assertNotEqual(res, "", "root disk should have user device=0")
@@ -2340,7 +2359,7 @@ class TestInstances(cloudstackTestCase):
             self.fail("Exception occurred: %s" % e)
         return
 
-    @attr(tags=["Xenserver"], required_hardware="false")
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_28_VM_restore_ES3467(self):
         """
         @Desc:Test to verify  order of root and data disk remains same on Xenserver after VM reset
@@ -2443,10 +2462,11 @@ class TestInstances(cloudstackTestCase):
                 True,
                 "Check list host returns a valid list")
             host = hosts[0]
-            if self.hypervisor.lower() in ('xenserver'):
+            if self.hypervisor.lower() in 'xenserver':
                 #
                 # host.user, host.passwd = get_host_credentials(self, host.ipaddress)
-                ssh = SshClient(host.ipaddress, 22, "root", "password")
+                ssh = SshClient(host.ipaddress, 22, self.services["configurableData"]["host"]["username"],
+                                self.services["configurableData"]["host"]["password"])
                 result = ssh.execute(cmd)
                 res = str(result)
                 self.assertNotEqual(res, "", "root disk should have user device=0")
@@ -2480,12 +2500,11 @@ class TestInstances(cloudstackTestCase):
             )
             # Start VM
             virtual_machine.start(self.apiClient)
-            # Sleep to ensure that VM is in ready state
-            time.sleep(self.services["sleep"])
             if self.hypervisor.lower() in 'xenserver':
                 #
                 # host.user, host.passwd = get_host_credentials(self, host.ipaddress)
-                ssh = SshClient(host.ipaddress, 22, "root", "password")
+                ssh = SshClient(host.ipaddress, 22, self.services["configurableData"]["host"]["username"],
+                                self.services["configurableData"]["host"]["password"])
                 result = ssh.execute(cmd)
                 res = str(result)
                 self.assertNotEqual(res, "", "root disk should have user device=0")
@@ -2499,7 +2518,6 @@ class TestInstances(cloudstackTestCase):
                 True,
                 "Check list VM response for valid list"
             )
-
             # Verify VM response to check whether VM deployment was successful
             self.assertNotEqual(
                 len(vm_response),
@@ -2934,7 +2952,7 @@ class TestInstances(cloudstackTestCase):
         # and that snapshot is the latest snapshot created (snapshot2)
         current_count = 0
         for i in range(0, len(list_snapshots_after)):
-            if(list_snapshots_after[i].current is True):
+            if (list_snapshots_after[i].current is True):
                 current_count = current_count + 1
                 current_snapshot = list_snapshots_after[i]
 
@@ -2975,7 +2993,7 @@ class TestInstances(cloudstackTestCase):
         # and that snapshot is snapshot1
         current_count = 0
         for i in range(0, len(list_snapshots_after)):
-            if(list_snapshots_after[i].current is True):
+            if (list_snapshots_after[i].current is True):
                 current_count = current_count + 1
                 current_snapshot = list_snapshots_after[i]
         self.assertEquals(
@@ -3251,8 +3269,8 @@ class TestInstances(cloudstackTestCase):
         )
         # Checking if dynamic scaling is allowed in Zone and Template
         if not (
-            (list_config[0].value is True) and (
-                self.template.isdynamicallyscalable)):
+                    (list_config[0].value is True) and (
+                        self.template.isdynamicallyscalable)):
             self.debug(
                 "Scale up of Running VM is not possible as Zone/Template\
                         does not support")
@@ -3317,18 +3335,18 @@ class TestInstances(cloudstackTestCase):
             if service_offerings_list is not None:
                 for i in range(0, len(service_offerings_list)):
                     if not ((current_so.cpunumber >
-                             service_offerings_list[i].cpunumber or
-                             current_so.cpuspeed >
-                             service_offerings_list[i].cpuspeed or
-                             current_so.memory >
-                             service_offerings_list[i].memory) or
-                            (current_so.cpunumber ==
-                                service_offerings_list[i].cpunumber and
-                             current_so.cpuspeed ==
-                                service_offerings_list[i].cpuspeed and
-                             current_so.memory ==
-                                service_offerings_list[i].memory)):
-                        if(current_so.storagetype ==
+                                 service_offerings_list[i].cpunumber or
+                                     current_so.cpuspeed >
+                                     service_offerings_list[i].cpuspeed or
+                                     current_so.memory >
+                                     service_offerings_list[i].memory) or
+                                (current_so.cpunumber ==
+                                     service_offerings_list[i].cpunumber and
+                                         current_so.cpuspeed ==
+                                         service_offerings_list[i].cpuspeed and
+                                         current_so.memory ==
+                                         service_offerings_list[i].memory)):
+                        if (current_so.storagetype ==
                                 service_offerings_list[i].storagetype):
                             so_exists = True
                             new_so = service_offerings_list[i]
@@ -3452,8 +3470,8 @@ class TestInstances(cloudstackTestCase):
         if service_offerings_list is not None:
             for i in range(0, len(service_offerings_list)):
                 if ((current_so.id != service_offerings_list[i].id) and (
-                        current_so.storagetype ==
-                        service_offerings_list[i].storagetype)):
+                            current_so.storagetype ==
+                            service_offerings_list[i].storagetype)):
                     so_exists = True
                     new_so = service_offerings_list[i]
                     break
@@ -3879,7 +3897,7 @@ class TestInstances(cloudstackTestCase):
         )
         # populating network id's
         networkids = networks_list_after[
-            0].id + "," + networks_list_after[1].id
+                         0].id + "," + networks_list_after[1].id
         # Listing all the VM's for a User
         list_vms_before = VirtualMachine.list(
             self.userapiclient,
