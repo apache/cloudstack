@@ -947,6 +947,12 @@ namespace HypervResource
 
             EthernetSwitchPortVlanSettingData vlanSettings = GetVlanSettings(ethernetConnections[index]);
 
+            if (vlanid.Equals("untagged", StringComparison.CurrentCultureIgnoreCase))
+            {
+                // recevied vlan is untagged, don't parse for the vlan in the isolation uri
+                vlanid = null;
+            }
+
             if (vlanSettings == null)
             {
                 // when modifying  nic to not connected dont create vlan
@@ -1104,6 +1110,12 @@ namespace HypervResource
             // check when nic is disabled, removing vlan is required or not.
             EthernetPortAllocationSettingData[] vmEthernetConnections = GetEthernetConnections(vm);
             EthernetSwitchPortVlanSettingData vlanSettings = GetVlanSettings(vmEthernetConnections[pos]);
+
+            if (vlanid.Equals("untagged", StringComparison.CurrentCultureIgnoreCase))
+            {
+                // recevied vlan is untagged, don't parse for the vlan in the isolation uri
+                vlanid = null;
+            }
 
             if (vlanSettings == null)
             {
