@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.agent;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.Answer;
@@ -143,7 +144,7 @@ public interface AgentManager {
 
     public void pullAgentOutMaintenance(long hostId);
 
-    boolean reconnect(long hostId);
+    void reconnect(long hostId) throws CloudRuntimeException, AgentUnavailableException;
 
     void rescan();
 
