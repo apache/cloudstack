@@ -2613,8 +2613,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         TemplateOrVolumePostUploadCommand cmd = getTemplateOrVolumePostUploadCmd(metadata);
         UploadEntity uploadEntity = null;
         if(cmd == null ){
-            updateStateMapWithError(uuid,"unable decode and deserialize metadata.");
-            throw new InvalidParameterValueException("unable to decode and deserialize metadata");
+            String errorMessage = "unable decode and deserialize metadata.";
+            updateStateMapWithError(uuid, errorMessage);
+            throw new InvalidParameterValueException(errorMessage);
         } else {
             uuid = cmd.getEntityUUID();
             if (isOneTimePostUrlUsed(cmd)) {
@@ -2628,8 +2629,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             int maxSizeInGB = Integer.valueOf(cmd.getMaxUploadSize());
             int contentLengthInGB = getSizeInGB(contentLength);
             if (contentLengthInGB > maxSizeInGB) {
-                throw new InvalidParameterValueException("Maximum file upload size exceeded. Content Length received: " + contentLengthInGB + "GB. Maximum allowed size: " +
-                                                             maxSizeInGB + "GB.");
+                String errorMessage = "Maximum file upload size exceeded. Content Length received: " + contentLengthInGB + "GB. Maximum allowed size: " + maxSizeInGB + "GB.";
+                updateStateMapWithError(uuid, errorMessage);
+                throw new InvalidParameterValueException(errorMessage);
             }
             try {
                 String absolutePath = cmd.getAbsolutePath();
