@@ -114,7 +114,14 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             cls.testdata["configurableData"]["browser_upload_volume"]["browser_resized_disk_offering"],
             custom=True
         )
+        cls.project = Project.create(
+                                 cls.apiclient,
+                                 cls.testdata["project"],
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
+                                 )
         cls._cleanup = [
+            cls.project,
             cls.account,
             cls.service_offering,
             cls.disk_offering
@@ -152,7 +159,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         config2 = Configurations.list(
                                      self.apiclient,
-                                     name='upload.monitornsving.interval'
+                                     name='upload.monitoring.interval'
                                      )
 
         uploadtimeout = int(config1[0].value)
@@ -173,6 +180,92 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                     volumestate,
                     "Check volume state in ListVolumes"
                 )
+        return
+
+
+    def browse_upload_volume_with_projectid(self,projectid):
+
+        cmd = getUploadParamsForVolume.getUploadParamsForVolumeCmd()
+        cmd.zoneid = self.zone.id
+        cmd.format = self.uploadvolumeformat
+        cmd.name=self.volname+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.projectid=projectid
+        getuploadparamsresponce=self.apiclient.getUploadParamsForVolume(cmd)
+
+        signt=getuploadparamsresponce.signature
+        posturl=getuploadparamsresponce.postURL
+        metadata=getuploadparamsresponce.metadata
+        expiredata=getuploadparamsresponce.expires
+
+        url=self.uploadurl
+
+        uploadfile = url.split('/')[-1]
+        r = requests.get(url, stream=True)
+        with open(uploadfile, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=1024): 
+                if chunk: # filter out keep-alive new chunks
+                    f.write(chunk)
+                    f.flush()
+
+        files={'file':(uploadfile,open(uploadfile,'rb'),'application/octet-stream')}
+
+        headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+
+        results = requests.post(posturl,files=files,headers=headers,verify=False)
+
+        print results.status_code
+        if results.status_code !=200: 
+            self.fail("Upload is not fine")
+
+        self.validate_uploaded_volume(getuploadparamsresponce.id,'Uploaded')
+
+        list_volume_response = Volume.list(
+                    self.apiclient,
+                    projectid=projectid
+                )
+        if list_volume_response[0].id==getuploadparamsresponce.id:
+            return(getuploadparamsresponce)
+        else:
+            self.fail("Volume is not listed with projectid")
+
+
+    def browse_upload_volume_with_out_zoneid(self):
+
+
+        cmd = getUploadParamsForVolume.getUploadParamsForVolumeCmd()
+        cmd.format = self.uploadvolumeformat
+        cmd.name=self.volname+self.account.name+(random.choice(string.ascii_uppercase))
+        success= False
+        try:
+            getuploadparamsresponce=self.apiclient.getUploadParamsForVolume(cmd)
+        except Exception as ex:
+            if "Invalid Parameter" in str(ex):
+                success = True
+        self.assertEqual(
+                success,
+                True,
+                "Upload Volume - verify upload volume API request is handled without mandatory params - zoneid ")
+
+        return
+
+
+    def browse_upload_volume_with_out_format(self):
+
+
+        cmd = getUploadParamsForVolume.getUploadParamsForVolumeCmd()
+        cmd.zoneid = self.zone.id
+        cmd.name=self.volname+self.account.name+(random.choice(string.ascii_uppercase))
+        success= False
+        try:
+            getuploadparamsresponce=self.apiclient.getUploadParamsForVolume(cmd)
+        except Exception as ex:
+            if "Invalid Parameter" in str(ex):
+                success = True
+        self.assertEqual(
+                success,
+                True,
+                "Upload Volume - verify upload volume API request is handled without mandatory params - format")
+
         return
 
     def browse_upload_volume(self):
@@ -710,34 +803,14 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         return
 
-    def deletevolume(self,volumeid):
+    def delete_volume(self,volumeid):
         """Delete a Volume attached to a VM
         """
 
         cmd = deleteVolume.deleteVolumeCmd()
-        cmd.id = volumeid
+        cmd.id =volumeid
 
         self.apiclient.deleteVolume(cmd)
-
-        list_volume_response = Volume.list(
-                                            self.apiclient,
-                                            id=volumeid,
-                                            type='DATADISK'
-                                            )
-        self.debug(list_volume_response)
-
-        self.assertEqual(
-                            isinstance(list_volume_response, list),
-                            True,
-                            "Check VOLUME is deleted from list Volumes"
-                        )
-        self.assertEqual(
-                            list_volume_response,
-                            None,
-                            "Check VOLUME is deleted from list Volumes"
-                        )
-
-        return
 
     def download_volume(self,volumeid):
 
@@ -785,11 +858,11 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         """Test resize a volume"""
 
-        self.testdata["browser_upload_volume"]["browser_resized_disk_offering"]["disksize"] = 20
+        self.testdata["configurableData"]["browser_upload_volume"]["browser_resized_disk_offering"]["disksize"] = 20
 
         disk_offering_20_GB = DiskOffering.create(
                                     self.apiclient,
-                                    self.testdata["browser_upload_volume"]["browser_resized_disk_offering"]
+                                    self.testdata["configurableData"]["browser_upload_volume"]["browser_resized_disk_offering"]
                                     )
         self.cleanup.append(disk_offering_20_GB)
 
@@ -1803,7 +1876,9 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         self.detach_volume(vm1details,browseup_vol.id)
 
-        self.deletevolume(browseup_vol.id)
+        cmd=deleteVolume.deleteVolumeCmd()
+        cmd.id=browseup_vol.id
+        self.apiclient.deleteVolume(cmd)
 
         return(2)
 
@@ -1860,7 +1935,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cmd = deleteVolume.deleteVolumeCmd()
         cmd.id = getuploadparamsresponce.id
 
-        self.apiclient.deleteVolume(cmd)
+        self.apiclient.delete_volume(cmd)
 
         success = False
 
@@ -1884,6 +1959,69 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         if results.status_code ==200: 
             return("FAIL")
         return("PASS")
+
+    def volume_migration(self,browseup_vol,vm1details):
+        
+        pools = StoragePool.list(
+            self.apiclient,
+            zoneid=self.zone.id
+        )
+        if not pools:
+            self.skipTest(
+                "No suitable storage pools found for volume migration.\
+                        Skipping")
+        self.assertEqual(
+            validateList(pools)[0],
+            PASS,
+            "invalid pool response from findStoragePoolsForMigration")
+        pool = pools[0]
+
+        try:
+            if vm1details is None:
+                Volume.migrate(
+                               self.apiclient,
+                               volumeid=browseup_vol.id,
+                               storageid=pool.id,
+                               livemigrate='false'
+                               )
+            else:
+                Volume.migrate(
+                               self.apiclient,
+                               volumeid=browseup_vol.id,
+                               storageid=pool.id,
+                               livemigrate='true'
+            )
+
+        except Exception as e:
+            self.fail("Volume migration failed with error %s" % e)
+
+        return
+
+
+    def getvolumelimts(self):
+
+        totalresoucelist=Account.list(
+                                      self.apiclient,
+                                      id=self.account.id
+                                      )
+        totalvolumes=totalresoucelist[0].volumetotal
+
+        return(totalvolumes)
+
+
+    def getstoragelimts(self,rtype):
+
+        cmd=updateResourceCount.updateResourceCountCmd()
+        cmd.account=self.account.name
+        cmd.domainid=self.domain.id
+        cmd.resourcetype=rtype
+
+        responce=self.apiclient.updateResourceCount(cmd)
+
+        totalstorage=responce[0].resourcecount
+
+        return(totalstorage)
+
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
     def test_01_Browser_volume_Life_cycle_tpath(self):
@@ -1936,7 +2074,9 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.vmoperations(vm2details)
             self.detach_volume(vm2details,browseup_vol.id)
 
-            self.deletevolume(browseup_vol.id)
+            cmd=deleteVolume.deleteVolumeCmd()
+            cmd.id=browseup_vol.id
+            self.apiclient.deleteVolume(cmd)
 
             self.debug("========================= Test 8: Try resizing uploaded state volume and validate the error scenario========================= ")
 
@@ -1958,7 +2098,11 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
             self.detach_volume(vm2details,browseup_vol2.id)
 
-            self.deletevolume(browseup_vol2.id)
+
+            cmd=deleteVolume.deleteVolumeCmd()
+            cmd.id=browseup_vol2.id
+            self.apiclient.deleteVolume(cmd)
+
 
             self.debug("========================= Test 11:  Detach and download uploaded volume========================= ")
 
@@ -1969,7 +2113,9 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.debug("========================= Test 12:  Delete detached uploaded volume========================= ")
 
 
-            self.deletevolume(browseup_vol3.id)
+            cmd=deleteVolume.deleteVolumeCmd()
+            cmd.id=browseup_vol3.id
+            self.apiclient.deleteVolume(cmd)
 
             self.debug("========================= Deletion of UnUsed VM's after test is complete========================= ")
 
@@ -1979,7 +2125,10 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
             browseup_vol4=self.browse_upload_volume()
 
-            self.deletevolume(browseup_vol4.id)
+
+            cmd=deleteVolume.deleteVolumeCmd()
+            cmd.id=browseup_vol4.id
+            self.apiclient.deleteVolume(cmd)
 
             self.debug("========================= Test 14:  Destroy VM which has Uploaded volumes attached========================= ")
 
@@ -1996,7 +2145,10 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.recover_destroyed_vm(vm4details)
             self.expunge_vm(vm4details)
 
-            self.deletevolume(newvolumetodestoy_VM.id)
+
+            cmd=deleteVolume.deleteVolumeCmd()
+            cmd.id=newvolumetodestoy_VM.id
+            self.apiclient.deleteVolume(cmd)
 
             self.debug("========================= Test 16:  Delete attached Uploaded volume which is in ready state and it should not be allowed to delete========================= ")
 
@@ -2022,7 +2174,12 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.volume_snapshot_template(snapshotdetails)
 
             self.detach_volume(vm6details,browseup_vol6.id)
-            self.deletevolume(browseup_vol6.id)
+
+
+            cmd=deleteVolume.deleteVolumeCmd()
+            cmd.id=browseup_vol6.id
+            self.apiclient.deleteVolume(cmd)
+
             self.expunge_vm(vm6details)
 
             self.debug("========================= Test 20: Upload Browser based volume with checksum and validate ========================= ")
@@ -2037,7 +2194,13 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.debug("========================= Test 22: Detach Uploaded volume with checksum and validation of VM operations after detach========================= ")
 
             self.detach_volume(vm7details,browseup_vol_withchecksum.id)
-            self.deletevolume(browseup_vol_withchecksum.id)
+
+
+            cmd=deleteVolume.deleteVolumeCmd()
+            cmd.id=browseup_vol_withchecksum.id
+
+            self.apiclient.deleteVolume(cmd)
+
 
             self.vmoperations(vm7details)
 
@@ -2069,7 +2232,11 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
             self.detach_volume(ssvm1vm1details,ssvm1browseup_vol.id)
 
-            self.deletevolume(ssvm1browseup_vol.id)
+
+            cmd=deleteVolume.deleteVolumeCmd()
+            cmd.id=ssvm1browseup_vol.id
+            self.apiclient.deleteVolume(cmd)
+
             self.expunge_vm(ssvm1vm1details)
 
             self.debug("========================= Test 24: Reboot SSVM and Perform Browser based volume validations ========================= ")
@@ -2085,7 +2252,11 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
             self.detach_volume(ssvm2vm1details,ssvm2browseup_vol.id)
 
-            self.deletevolume(ssvm2browseup_vol.id)
+
+            cmd=deleteVolume.deleteVolumeCmd()
+            cmd.id=ssvm2browseup_vol.id
+            self.apiclient.deleteVolume(cmd)
+
 
             self.expunge_vm(ssvm2vm1details)
 
@@ -2102,7 +2273,11 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
             self.detach_volume(ssvm3vm1details,ssvm3browseup_vol.id)
 
-            self.deletevolume(ssvm3browseup_vol.id)
+
+            cmd=deleteVolume.deleteVolumeCmd()
+            cmd.id=ssvm3browseup_vol.id
+            self.apiclient.deleteVolume(cmd)
+
 
             self.expunge_vm(ssvm3vm1details)
 
@@ -2136,21 +2311,38 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.debug("========================= Test 27 Reuse the POST URL after expiry time========================= ")
             reuse_browse_up_vol=self.browse_upload_volume()
             self.reuse_url()
-            self.deletevolume(reuse_browse_up_vol.id)
+
+            cmd=deleteVolume.deleteVolumeCmd()
+            cmd.id=reuse_browse_up_vol.id
+            self.apiclient.deleteVolume(cmd)
+
 
             self.debug("========================= Test 28 Reboot SSVM before upload is completed=========================")
             browse_up_vol=self.onlyupload()
             self.uploadvol(browse_up_vol)
-            self.deletevolume(browse_up_vol.id)
+
+            cmd=deleteVolume.deleteVolumeCmd()
+            cmd.id=browse_up_vol.id
+            self.apiclient.deleteVolume(cmd)
+
 
             self.debug("========================= Test 29 Reboot SSVM after getting the upload volume params and before initiating the upload=========================")
             browse_up_vol=self.onlyupload()
             self.uploadvolwithssvmreboot(browse_up_vol)
-            self.deletevolume(browse_up_vol.id)
+
+            cmd=deleteVolume.deleteVolumeCmd()
+            cmd.id=reuse_browse_up_vol.id
+            self.apiclient.deleteVolume(cmd)
 
             self.debug("========================= Test 30 Attach Deleted Volume=========================")
             deleted_browse_up_vol=self.browse_upload_volume()
-            self.deletevolume(deleted_browse_up_vol.id)
+
+
+            cmd=deleteVolume.deleteVolumeCmd()
+            cmd.id=deleted_browse_up_vol.id
+            self.apiclient.deleteVolume(cmd)
+
+
             deletedvm1details=self.deploy_vm()
             self.attach_deleted_volume(deletedvm1details, deleted_browse_up_vol)
 
@@ -2249,15 +2441,6 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         except Exception as e:
             self.fail("Exception occurred  : %s" % e)
         return
-    @classmethod
-    def tearDownClass(self):
-        try:
-            self.apiclient = super(TestBrowseUploadVolume,self).getClsTestClient().getApiClient()
-            cleanup_resources(self.apiclient, self._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
-
 
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
@@ -2284,6 +2467,212 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         self.uploadwithimagestoreid()
 
         return
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_11_migrate_upload_volume(self):
+        """
+        Test Browser_Upload_Volume_migrate_upload_volume
+        """
+        self.debug("========================= Test 40 Test Browser_Upload_Volume_Migration=========================")
+
+        browseup_vol=self.browse_upload_volume()
+        vm1details=self.deploy_vm()
+        self.attach_volume(vm1details,browseup_vol.id)
+        self.volume_migration(browseup_vol, vm1details)
+        self.debug("========================= Test 41 Test VM Operations after Browser_Upload_Volume_Migration=========================")
+        self.vmoperations(vm1details)
+
+        self.debug("========================= Test 42 Detach Browser_Upload_Volume after Migration and attach to a new VM=========================")
+        self.detach_volume(vm1details,browseup_vol.id)
+        vm2details=self.deploy_vm()
+        self.attach_volume(vm2details,browseup_vol.id)
+        self.vmoperations(vm2details)
+
+        self.debug("========================= Test 43 Detach Browser_Upload_Volume and Migrate to another storage=========================")
+
+        self.detach_volume(vm2details,browseup_vol.id)
+        self.volume_migration(browseup_vol, "None")
+
+        self.debug("========================= Test 44 Attach detached Browser_Upload_Volume after Migration =========================")
+
+        self.attach_volume(vm2details,browseup_vol.id)
+        self.vmoperations(vm2details)
+
+        self.debug("========================= Test 45 Detach  ,Resize,Attach  Browser_Upload_Volume after Migration =========================")
+
+        self.detach_volume(vm2details,browseup_vol.id)
+        self.resize_volume(browseup_vol.id)
+        self.attach_volume(vm2details,browseup_vol.id)
+        self.vmoperations(vm2details)
+
+        self.detach_volume(vm2details,browseup_vol.id)
+
+        self.cleanup.append(browseup_vol)
+        self.cleanup.append(vm2details)
+        self.cleanup.append(vm1details)
+        return
+
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_12_Browser_Upload_Volume_with_all_API_parameters(self):
+        """
+        Test Browser_Upload_Volumewith all API parameters
+        """
+        try:
+
+            self.debug("========================= Test 46 & 47 Upload volume with account name and domainid========================")
+
+            browseup_vol1=self.browse_upload_volume()
+
+            self.debug("========================= Test 48 Upload volume with projectid========================")
+            browseup_vol2=self.browse_upload_volume_with_projectid(self.project.id)
+
+            self.debug("========================= Test 49 Upload volume with out mandatory param zone id ========================")
+
+            browseup_vol2=self.browse_upload_volume_with_out_zoneid()
+
+
+            self.debug("========================= Test 50 Upload volume with out mandatory param format ========================")
+
+            browseup_vol3=self.browse_upload_volume_with_out_format()
+
+        except Exception as e:
+            self.fail("Exception occurred  : %s" % e)
+        return
+
+
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_13_Browser_Upload_Volume_volume_resource_limits(self):
+        """
+        Test Browser_Upload_Volume Volume Resource limits
+        """
+        try:
+
+            self.debug("========================= Test 51 Upload volume and verify volume limits========================")
+            initialvolumelimit=self.getvolumelimts()
+            browseup_vol1=self.browse_upload_volume()
+            afteruploadvolumelimit=self.getvolumelimts()
+
+            if int(afteruploadvolumelimit)!=(int(initialvolumelimit)+1):
+                self.fail("Volume Resouce Count is not updated")
+
+
+            cmd=deleteVolume.deleteVolumeCmd()
+            cmd.id=deleted_browse_up_vol1.id
+            self.apiclient.deleteVolume(cmd)
+
+
+        except Exception as e:
+            self.fail("Exception occurred  : %s" % e)
+        return
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_14_Browser_Upload_Volume_secondary_storage_resource_limits(self):
+        """
+        Test Browser_Upload_Volume Secondary Storage Resource limits
+        """
+        try:
+
+            self.debug("========================= Test 52 Upload volume and verify secondary storage limits========================")
+
+            initialsecondarystoragelimit=self.getstoragelimts(11)
+            browseup_vol1=self.browse_upload_volume()
+            volumedetails=Volume.list(
+                                      self.apiclient,
+                                      id=browseup_vol1.id)
+            afteruploadsecondarystoragelimit=self.getstoragelimts(11)
+
+            if afteruploadsecondarystoragelimit!=(initialsecondarystoragelimit+volumedetails[0].size):
+                self.fail("Secondary Storage Resouce Count is not updated")
+
+
+            cmd=deleteVolume.deleteVolumeCmd()
+            cmd.id=deleted_browse_up_vol1.id
+            self.apiclient.deleteVolume(cmd)
+
+
+        except Exception as e:
+            self.fail("Exception occurred  : %s" % e)
+        return
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_15_Browser_Upload_Volume_primary_storage_resource_limits(self):
+        """
+        Test Browser_Upload_Volume Primary Storage Resource limits
+        """
+        try:
+
+            self.debug("========================= Test 53 Attach Upload volume and verify primary storage limits========================")
+
+            initialprimarystoragelimit=self.getstoragelimts(10)
+            browseup_vol1=self.browse_upload_volume()
+            volumedetails=Volume.list(
+                                      self.apiclient,
+                                      id=browseup_vol1.id)
+            afteruploadprimarystoragelimit=self.getstoragelimts(10)
+
+            if afteruploadprimarystoragelimit!=(initialprimarystoragelimit+volumedetails[0].size):
+                self.fail("Primary Storage Resource Count is not updated")
+
+        except Exception as e:
+            self.fail("Exception occurred  : %s" % e)
+        return
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_16_Browser_Upload_volume_resource_limits_after_deletion(self):
+        """
+        Test Browser_Upload_Volume resource_limits_after_deletion
+        """
+        try:
+            self.debug("========================= Test 54 Delete Upload volume and verify volume limits========================")
+            browseup_vol1=self.browse_upload_volume()
+            initialvolumelimit=self.getvolumelimts()
+
+            cmd=deleteVolume.deleteVolumeCmd()
+            cmd.id=browseup_vol1.id
+            self.apiclient.deleteVolume(cmd)
+
+            aftervolumelimit=self.getvolumelimts()
+
+            if aftervolumelimit!=(initialvolumelimit-1):
+                self.fail("Volume Resource Count is not updated after deletion")
+
+        except Exception as e:
+            self.fail("Exception occurred  : %s" % e)
+        return
+
+
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_17_Browser_Upload_Volume_secondary_storage_resource_limits_after_deletion(self):
+        """
+        Test Browser_Upload_Volume secondary_storage_resource_limits_after_deletion
+        """
+        try:
+            self.debug("========================= Test 55 Delete Upload volume and secondary storage limits========================")
+
+            browseup_vol1=self.browse_upload_volume()
+
+            volumedetails=Volume.list(
+                                      self.apiclient,
+                                      id=browseup_vol1.id)
+
+            initialuploadsecondarystoragelimit=self.getstoragelimts(11)
+
+            cmd=deleteVolume.deleteVolumeCmd()
+            cmd.id=browseup_vol1.id
+            self.apiclient.deleteVolume(cmd)
+
+            afteruploadsecondarystoragelimit=self.getstoragelimts(11)
+
+            if afteruploadsecondarystoragelimit!=(initialuploadsecondarystoragelimit-volumedetails[0].size):
+                self.fail("Secondary Storage Resouce Count is not updated after deletion")
+
+        except Exception as e:
+            self.fail("Exception occurred  : %s" % e)
+        return
+
 
     @classmethod
     def tearDownClass(self):
