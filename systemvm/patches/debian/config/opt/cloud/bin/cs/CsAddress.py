@@ -129,10 +129,11 @@ class CsInterface:
         if self.config.is_vpc():
             return self.get_attr("gateway")
         else:
-            if self.config.cmdline().is_redundant():
-                return self.config.cmdline().get_guest_gw()
-            else:
-                return self.get_ip()
+            return self.config.cmdline().get_guest_gw()
+#             if self.config.cmdline().is_redundant():
+#                 return self.config.cmdline().get_guest_gw()
+#             else:
+#                 return self.get_ip()
 
     def ip_in_subnet(self, ip):
         ipo = IPAddress(ip)

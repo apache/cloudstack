@@ -414,7 +414,7 @@ class CsSite2SiteVpn(CsDataBag):
             self.deletevpn(ip)
 
     def deletevpn(self, ip):
-        logging.info("Removinf VPN configuration for %s", ip)
+        logging.info("Removing VPN configuration for %s", ip)
         CsHelper.execute("ipsec auto --down vpn-%s" % ip)
         CsHelper.execute("ipsec auto --delete vpn-%s" % ip)
         vpnconffile = "%s/ipsec.vpn-%s.conf" % (self.VPNCONFDIR, ip)
@@ -586,15 +586,36 @@ class CsForwardingRules(CsDataBag):
         self.fw.append(["nat", "", fw6])
 
     def forward_vpc(self, rule):
-        fwrule = "-A PREROUTING -d %s/32" % rule["public_ip"]
+        fw_prerout_rule = "-A PREROUTING -d %s/32 -i %s" % (rule["public_ip"], self.getDeviceByIp(rule['public_ip']))
         if not rule["protocol"] == "any":
-            fwrule += " -m %s -p %s" % (rule["protocol"], rule["protocol"])
+            fw_prerout_rule += " -m %s -p %s" % (rule["protocol"], rule["protocol"])
         if not rule["public_ports"] == "any":
-            fwrule += " --dport %s" % self.portsToString(rule["public_ports"], ":")
-        fwrule += " -j DNAT --to-destination %s" % rule["internal_ip"]
+            fw_prerout_rule += " --dport %s" % self.portsToString(rule["public_ports"], ":")
+        fw_prerout_rule += " -j DNAT --to-destination %s" % rule["internal_ip"]
         if not rule["internal_ports"] == "any":
-            fwrule += ":" + self.portsToString(rule["internal_ports"], "-")
-        self.fw.append(["nat", "", fwrule])
+            fw_prerout_rule += ":" + self.portsToString(rule["internal_ports"], "-")
+        
+        fw_postrout_rule = "-A POSTROUTING -d %s/32 " % rule["public_ip"]
+        if not rule["protocol"] == "any":
+            fw_postrout_rule += " -m %s -p %s" % (rule["protocol"], rule["protocol"])
+        if not rule["public_ports"] == "any":
+            fw_postrout_rule += " --dport %s" % self.portsToString(rule["public_ports"], ":")
+        fw_postrout_rule += " -j SNAT --to-source %s" % rule["internal_ip"]
+        if not rule["internal_ports"] == "any":
+            fw_postrout_rule += ":" + self.portsToString(rule["internal_ports"], "-")
+        
+        fw_output_rule = "-A OUTPUT -d %s/32" % rule["public_ip"]
+        if not rule["protocol"] == "any":
+            fw_output_rule += " -m %s -p %s" % (rule["protocol"], rule["protocol"])
+        if not rule["public_ports"] == "any":
+            fw_output_rule += " --dport %s" % self.portsToString(rule["public_ports"], ":")
+        fw_output_rule += " -j DNAT --to-destination %s" % rule["internal_ip"]
+        if not rule["internal_ports"] == "any":
+            fw_output_rule += ":" + self.portsToString(rule["internal_ports"], "-")
+        
+        self.fw.append(["nat", "", fw_prerout_rule])
+        self.fw.append(["nat", "", fw_postrout_rule])
+        self.fw.append(["nat", "", fw_output_rule])
 
     def processStaticNatRule(self, rule):
         # FIXME this needs ordering with the VPN no nat rule
@@ -605,6 +626,8 @@ class CsForwardingRules(CsDataBag):
                         "-A PREROUTING -d %s/32 -j DNAT --to-destination %s" % (rule["public_ip"], rule["internal_ip"])])
         self.fw.append(["nat", "front",
                         "-A POSTROUTING -o %s -s %s/32 -j SNAT --to-source %s" % (device, rule["internal_ip"], rule["public_ip"])])
+        self.fw.append(["nat", "front",
+                        "-A OUTPUT -d %s/32 -j DNAT --to-destination %s" % (rule["public_ip"], rule["internal_ip"])])
 
 
 def main(argv):
