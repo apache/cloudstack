@@ -113,12 +113,18 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             cls.testdata["configurableData"]["browser_upload_volume"]["browser_resized_disk_offering"],
             custom=True
         )
+        cls.project = Project.create(
+                                 cls.apiclient,
+                                 cls.testdata["project"],
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
+                                 )
         cls._cleanup = [
+            cls.project,
             cls.account,
             cls.service_offering,
             cls.disk_offering
         ]
-
 
 
     def __verify_values(self, expected_vals, actual_vals):
@@ -171,6 +177,33 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                 )
         return
 
+
+
+    def gettemplatelimts(self):
+
+        totalresoucelist=Account.list(
+                                      self.apiclient,
+                                      id=self.account.id
+                                      )
+        totaltemplates=totalresoucelist[0].templatetotal
+
+        return(totaltemplates)
+
+
+    def getstoragelimts(self,rtype):
+
+        cmd=updateResourceCount.updateResourceCountCmd()
+        cmd.account=self.account.name
+        cmd.domainid=self.domain.id
+        cmd.resourcetype=rtype
+
+        responce=self.apiclient.updateResourceCount(cmd)
+
+        totalstorage=responce[0].resourcecount
+
+        return(totalstorage)
+
+
     def browse_upload_template(self):
         cmd = getUploadParamsForTemplate.getUploadParamsForTemplateCmd()
         cmd.zoneid = self.zone.id
@@ -220,6 +253,101 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         return(getuploadparamsresponce)
 
+
+    def browse_upload_template_with_out_zoneid(self):
+
+        cmd = getUploadParamsForTemplate.getUploadParamsForTemplateCmd()
+        cmd.format = self.uploadtemplateformat
+        cmd.name=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.account=self.account.name
+        cmd.domainid=self.domain.id
+        cmd.displaytext=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.hypervisor=self.templatehypervisor
+        cmd.ostypeid=self.templateostypeid
+
+        success= False
+        try:
+            getuploadparamsresponce=self.apiclient.getUploadParamsForTemplate(cmd)
+        except Exception as ex:
+            if "Invalid Parameter" in str(ex):
+                success = True
+        self.assertEqual(
+                success,
+                True,
+                "Upload Template - verify upload Template API request is handled without mandatory params - zoneid ")
+
+        return
+
+
+    def browse_upload_template_with_out_ostypeid(self):
+
+
+        cmd = getUploadParamsForTemplate.getUploadParamsForTemplateCmd()
+        cmd.zoneid = self.zone.id
+        cmd.format = self.uploadtemplateformat
+        cmd.name=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.account=self.account.name
+        cmd.domainid=self.domain.id
+        cmd.displaytext=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.hypervisor=self.templatehypervisor
+
+        success= False
+        try:
+            getuploadparamsresponce=self.apiclient.getUploadParamsForTemplate(cmd)
+        except Exception as ex:
+            if "Invalid Parameter" in str(ex):
+                success = True
+        self.assertEqual(
+                success,
+                True,
+                "Upload Template - verify upload template API request is handled without mandatory params - ostypeid")
+
+        return
+
+
+    def browse_upload_template_with_projectid(self,projectid):
+        cmd = getUploadParamsForTemplate.getUploadParamsForTemplateCmd()
+        cmd.zoneid = self.zone.id
+        cmd.format = self.uploadtemplateformat
+        cmd.name=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.account=self.account.name
+        cmd.domainid=self.domain.id
+        cmd.displaytext=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.hypervisor=self.templatehypervisor
+        cmd.ostypeid=self.templateostypeid
+        cmd.projectid=projectid
+        #cmd.isdynamicallyscalable="false"
+        #cmd.type="template"
+        getuploadparamsresponce=self.apiclient.getUploadParamsForTemplate(cmd)
+
+        signt=getuploadparamsresponce.signature
+        posturl=getuploadparamsresponce.postURL
+        metadata=getuploadparamsresponce.metadata
+        expiredata=getuploadparamsresponce.expires
+        #url = 'http://10.147.28.7/templates/rajani-thin-volume.vhd'
+        url=self.uploadurl
+
+        uploadfile = url.split('/')[-1]
+        r = requests.get(url, stream=True)
+        with open(uploadfile, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=1024): 
+                if chunk: # filter out keep-alive new chunks
+                    f.write(chunk)
+                    f.flush()
+
+        files={'file':(uploadfile,open(uploadfile,'rb'),'application/octet-stream')}
+
+        headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+
+        results = requests.post(posturl,files=files,headers=headers,verify=False)
+
+        print results.status_code
+        if results.status_code !=200: 
+            self.fail("Upload is not fine")
+
+        self.validate_uploaded_template(getuploadparamsresponce.id,'Download Complete',self.zone.id)
+
+        return(getuploadparamsresponce)
 
     def browse_upload_template_multiplezones(self,lzones):
 
@@ -1414,6 +1542,137 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         except Exception as e:
             self.fail("Exception occurred  : %s" % e)
         return
+
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_05_Browser_Upload_Template_with_all_API_parameters(self):
+        """
+        Test Browser_Upload_Template with all API parameters
+        """
+        try:
+
+            self.debug("========================= Test 16 & 17 Upload template with account name and domainid========================")
+
+            browseup_template1=self.browse_upload_template()
+
+            self.debug("========================= Test 18 Upload template with project id========================")
+            browseup_template2=self.browse_upload_template_with_projectid(self.project.id)
+
+            self.debug("========================= Test 19 Upload template with out mandatory param zone id ========================")
+
+            browseup_vol2=self.browse_upload_template_with_out_zoneid()
+
+            self.debug("========================= Test 20 Upload template with out mandatory param ostypeid ========================")
+
+            browseup_vol3=self.browse_upload_template_with_out_ostypeid()
+
+        except Exception as e:
+            self.fail("Exception occurred  : %s" % e)
+        return
+
+
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_06_Browser_Upload_template_resource_limits(self):
+        """
+        Test Browser Upload Template Resource limits
+        """
+        try:
+
+            self.debug("========================= Test 21 Upload Template and verify Template limits========================")
+            initialtemplatelimit=self.gettemplatelimts()
+            browseup_template1=self.browse_upload_template()
+            afteruploadtemplatelimit=self.gettemplatelimts()
+
+            if int(afteruploadtemplatelimit)!=(int(initialtemplatelimit)+1):
+                self.fail("Volume Resouce Count is not updated")
+
+            self.delete_template(browseup_template1.id)
+
+        except Exception as e:
+            self.fail("Exception occurred  : %s" % e)
+        return
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_07_Browser_Upload_template_secondary_storage_resource_limits(self):
+        """
+        Test Browser_Upload_Template Secondary Storage Resource limits
+        """
+        try:
+
+            self.debug("========================= Test 22 Upload template and verify secondary storage limits========================")
+
+            initialsecondarystoragelimit=self.getstoragelimts(11)
+            browseup_template1=self.browse_upload_template()
+
+            tmpldetails=Template.list(
+                                      self.apiclient,
+                                      id=browseup_template1.id,
+                                     templatefilter="all",
+                                     zoneid=self.zone.id)
+
+
+            afteruploadsecondarystoragelimit=self.getstoragelimts(11)
+
+            if afteruploadsecondarystoragelimit!=(initialsecondarystoragelimit+tmpldetails[0].size):
+                self.fail("Secondary Storage Resouce Count is not updated")
+
+            self.delete_template(browseup_template1.id)
+
+        except Exception as e:
+            self.fail("Exception occurred  : %s" % e)
+        return
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_08_Browser_Upload_template_resource_limits_after_deletion(self):
+        """
+        Test Browser_Upload_Template Resource limits after template deletion
+        """
+        try:
+            self.debug("========================= Test 23 Delete Upload template and verify template limits========================")
+            browseup_template1=self.browse_upload_template()
+            initialtemplatelimit=self.gettemplatelimts()
+
+            self.delete_template(browseup_template1)
+            aftertemplatelimit=self.gettemplatelimts()
+
+            if afteruploadtemplatlimit!=(initialtemplatelimit-1):
+                self.fail("Template Resource Count is not updated after deletion")
+
+        except Exception as e:
+            self.fail("Exceptione occurred  : %s" % e)
+        return
+
+
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_09_Browser_Upload_Volume_secondary_storage_resource_limits_after_deletion(self):
+        """
+        Test Browser_Upload_Template Secondary Storage Resource limits after template deletion
+        """
+        try:
+            self.debug("========================= Test 24 Delete Upload template and verify secondary storage limits========================")
+
+            browseup_template1=self.browse_upload_template()
+
+            tmpldetails=Template.list(
+                                      self.apiclient,
+                                      id=browseup_template1.id,
+                                     templatefilter="all",
+                                     zoneid=self.zone.id)
+
+            initialuploadprimarystoragelimit=self.getstoragelimts(11)
+            self.delete_template(browseup_template1)
+
+            afteruploadprimarystoragelimit=self.getstoragelimts(11)
+
+            if afteruploadprimarystoragelimit!=(initialprimarystoragelimit-tempdetails[0].size):
+                self.fail("Secondary Storage Resource Count is not updated after deletion")
+
+        except Exception as e:
+            self.fail("Exception occurred  : %s" % e)
+        return
+
 
     @classmethod
     def tearDownClass(self):
