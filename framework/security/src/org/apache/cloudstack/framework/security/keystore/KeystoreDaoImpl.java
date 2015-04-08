@@ -25,6 +25,7 @@ import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -104,10 +105,10 @@ public class KeystoreDaoImpl extends GenericDaoBase<KeystoreVO, Long> implements
             PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql);
             pstmt.setString(1, name);
             pstmt.setString(2, certificate);
-            pstmt.setString(3, key);
+            pstmt.setString(3, DBEncryptionUtil.encrypt(key));
             pstmt.setString(4, domainSuffix);
             pstmt.setString(5, certificate);
-            pstmt.setString(6, key);
+            pstmt.setString(6, DBEncryptionUtil.encrypt(key));
             pstmt.setString(7, domainSuffix);
 
             pstmt.executeUpdate();
