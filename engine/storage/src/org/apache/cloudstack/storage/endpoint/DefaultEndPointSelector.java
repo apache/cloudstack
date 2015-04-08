@@ -332,7 +332,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
             }
         } else if (action == StorageAction.MIGRATEVOLUME) {
             VolumeInfo volume = (VolumeInfo)object;
-            if (volume.getHypervisorType() == Hypervisor.HypervisorType.Hyperv) {
+            if (volume.getHypervisorType() == Hypervisor.HypervisorType.Hyperv || volume.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
                 VirtualMachine vm = volume.getAttachedVM();
                 if ((vm != null) && (vm.getState() == VirtualMachine.State.Running)) {
                     Long hostId = vm.getHostId();
