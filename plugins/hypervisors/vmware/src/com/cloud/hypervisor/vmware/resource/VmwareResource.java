@@ -3081,7 +3081,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 morDsAtTarget = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(tgtHyperHost, filerTo.getUuid());
                 morDsAtSource = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(srcHyperHost, filerTo.getUuid());
                 if (morDsAtTarget == null) {
-                    String msg = "Unable to find the mounted datastore with uuid " + morDsAtTarget + " to execute MigrateWithStorageCommand";
+                    String msg = "Unable to find the target datastore: " + filerTo.getUuid() + " on target host: " + tgtHyperHost.getHyperHostName() + " to execute MigrateWithStorageCommand";
                     s_logger.error(msg);
                     throw new Exception(msg);
                 }
@@ -3283,7 +3283,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             vmName = vmMo.getName();
             morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(srcHyperHost, tgtDsName);
             if (morDs == null) {
-                String msg = "Unable to find the mounted datastore with name " + tgtDsName + " to execute MigrateVolumeCommand";
+                String msg = "Unable to find the mounted datastore with name: " + tgtDsName + " on source host: " + srcHyperHost.getHyperHostName() +" to execute MigrateVolumeCommand";
                 s_logger.error(msg);
                 throw new Exception(msg);
             }
