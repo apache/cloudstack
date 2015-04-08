@@ -19,7 +19,7 @@
 # Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources, validateList
 from marvin.lib.base import (Tag,
                              Account,
                              VirtualMachine,
@@ -40,8 +40,9 @@ from marvin.lib.base import (Tag,
 from marvin.lib.common import (get_zone,
                                get_domain,
                                get_template,
-                               find_storage_pool_type)
-from marvin.codes import FAILED
+                               find_storage_pool_type,
+                               list_clusters)
+from marvin.codes import FAILED, PASS
 import time
 
 
@@ -2303,4 +2304,98 @@ class TestResourceTags(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to delete the tag - %s" % e)
 
+        return
+
+    @attr(tags=["advanced", "basic"], required_hardware="false")
+    def test_23_list_untagged_host_for_vm_migration(self):
+        """
+        @Hosts without tag are not listed while listing the hosts for migration for instance with tag
+        Steps:
+        1.Add tag say "tag1" to host1 in a cluster with min of two hosts
+        2.Create compute offering with host tag "tag1"
+        3.Deploy vm with the above offering
+        4.list hosts for migration for the above deployed vm
+        5.All untagged hosts in the cluster must be listed as available hosts for vm migration
+        """
+        tag = "tag1"
+        clusters = list_clusters(self.apiclient, zoneid=self.zone.id)
+        self.assertEqual(
+            validateList(clusters)[0],
+            PASS,
+            "list clusters returned invalid response"
+        )
+        hosts = Host.list(
+            self.apiclient,
+            clusterid=clusters[0].id)
+        self.assertEqual(
+            validateList(hosts)[0],
+            PASS,
+            "list hosts returned invalid response"
+        )
+        if len(hosts) < 2:
+            self.skipTest("Need min of two hosts to run this test")
+        try:
+            Host.update(
+                self.apiclient,
+                id=hosts[0].id,
+                hosttags=tag
+            )
+        except Exception as e:
+            self.fail("Updating host with tags failed with error : {}".format(e))
+        host_res = Host.list(
+            self.apiclient,
+            id=hosts[0].id
+        )
+        self.assertEqual(validateList(host_res)[0], PASS, "Invalid list host response")
+        self.assertEqual(
+            host_res[0].hosttags,
+            tag,
+            "host is updated with wrong tag"
+        )
+        self.so_with_tag = ServiceOffering.create(
+            self.apiclient,
+            self.services["service_offering"],
+            hosttags=tag
+        )
+        self.so_res = ServiceOffering.list(
+            self.apiclient,
+            id=self.so_with_tag.id
+        )
+        self.assertEqual(validateList(self.so_res)[0], PASS, "Invalid service offering response")
+        self.assertEqual(
+            self.so_res[0].hosttags,
+            tag,
+            "Service offering has not been created with host tags"
+        )
+        self.vm = VirtualMachine.create(
+            self.api_client,
+            self.services["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.so_with_tag.id
+        )
+        self.cleanup.append(self.vm)
+        self.cleanup.append(self.so_with_tag)
+        self.assertEqual(
+            self.vm.hostid,
+            hosts[0].id,
+            "vm deployed on wrong host"
+        )
+        hosts_for_migration = Host.listForMigration(
+            self.apiclient,
+            virtualmachineid=self.vm.id
+        )
+        self.assertEqual(
+            validateList(hosts_for_migration)[0],
+            PASS,
+            "Untagged hosts are not returned as suitable hosts for vm migration\
+             if it is deployed on a tagged host"
+        )
+        host_ids_for_migration = [host.id for host in hosts_for_migration]
+        #Remove host on which vm was deployed (tagged host) from the hosts list
+        hosts.pop(0)
+        host_ids = [host.id for host in hosts]
+        for id in host_ids:
+            if not id in host_ids_for_migration:
+                self.fail("Not all hosts are available for vm migration")
         return
