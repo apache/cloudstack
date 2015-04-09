@@ -1357,7 +1357,9 @@
                                     });
                                 },
                                 notification: {
-                                    poll: pollAsyncJobResult
+                                    poll: function(args) {
+                                        args.complete();
+                                    }
                                 }
                             },
 
