@@ -713,8 +713,8 @@
                                 value: 'STT'
                             }).html('STT'),
                             $('<option>').attr({
-                                value: 'VNS'
-                            }).html('VNS'),
+                                value: 'BCF_SEGMENT'
+                            }).html('BCF_SEGMENT'),
                             $('<option>').attr({
                                 value: 'SSP'
                             }).html('SSP'),

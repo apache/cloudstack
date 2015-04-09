@@ -22,6 +22,7 @@ public class StaticNatImpl implements StaticNat {
     long networkId;
     long sourceIpAddressId;
     String destIpAddress;
+    String sourceMacAddress;
     boolean forRevoke;
 
     public StaticNatImpl(long accountId, long domainId, long networkId, long sourceIpAddressId, String destIpAddress, boolean forRevoke) {
@@ -31,6 +32,18 @@ public class StaticNatImpl implements StaticNat {
         this.networkId = networkId;
         this.sourceIpAddressId = sourceIpAddressId;
         this.destIpAddress = destIpAddress;
+        this.sourceMacAddress = null;
+        this.forRevoke = forRevoke;
+    }
+
+    public StaticNatImpl(long accountId, long domainId, long networkId, long sourceIpAddressId, String destIpAddress, String sourceMacAddress, boolean forRevoke) {
+        super();
+        this.accountId = accountId;
+        this.domainId = domainId;
+        this.networkId = networkId;
+        this.sourceIpAddressId = sourceIpAddressId;
+        this.destIpAddress = destIpAddress;
+        this.sourceMacAddress = sourceMacAddress;
         this.forRevoke = forRevoke;
     }
 
@@ -57,6 +70,11 @@ public class StaticNatImpl implements StaticNat {
     @Override
     public String getDestIpAddress() {
         return destIpAddress;
+    }
+
+    @Override
+    public String getSourceMacAddress() {
+        return sourceMacAddress;
     }
 
     @Override
