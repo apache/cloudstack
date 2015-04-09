@@ -791,6 +791,8 @@ test_data = {
         "displaytext": "xs",
         "name": "xs",
         "passwordenabled": False,
+        "ostype": "CentOS 5.6 (64-bit)"
+
     },
     "template_2": {
         "displaytext": "Public Template",
