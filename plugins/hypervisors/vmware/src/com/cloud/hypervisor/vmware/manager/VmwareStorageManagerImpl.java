@@ -618,7 +618,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
         VirtualMachineMO clonedVm = null;
         try {
-            Pair<VirtualDisk, String> volumeDeviceInfo = vmMo.getDiskDevice(volumePath, false);
+            Pair<VirtualDisk, String> volumeDeviceInfo = vmMo.getDiskDevice(volumePath);
             if (volumeDeviceInfo == null) {
                 String msg = "Unable to find related disk device for volume. volume path: " + volumePath;
                 s_logger.error(msg);
@@ -941,7 +941,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         VirtualMachineMO clonedVm = null;
         try {
 
-            Pair<VirtualDisk, String> volumeDeviceInfo = vmMo.getDiskDevice(volumePath, false);
+            Pair<VirtualDisk, String> volumeDeviceInfo = vmMo.getDiskDevice(volumePath);
             if (volumeDeviceInfo == null) {
                 String msg = "Unable to find related disk device for volume. volume path: " + volumePath;
                 s_logger.error(msg);
