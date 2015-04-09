@@ -876,6 +876,10 @@ class Volume:
         cmd.snapshotid = snapshot_id
         cmd.zoneid = services["zoneid"]
         cmd.size = services["size"]
+        if services["ispublic"]:
+            cmd.ispublic = services["ispublic"]
+        else:
+            cmd.ispublic = False
         if account:
             cmd.account = account
         else:
