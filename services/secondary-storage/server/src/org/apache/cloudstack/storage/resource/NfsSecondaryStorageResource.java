@@ -1689,10 +1689,15 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 answer.setVirtualSize(uploadEntity.getVirtualSize());
                 answer.setInstallPath(uploadEntity.getTmpltPath());
                 answer.setPhysicalSize(uploadEntity.getPhysicalSize());
+                answer.setDownloadPercent(100);
                 uploadEntityStateMap.remove(entityUuid);
                 return answer;
             } else if (uploadEntity.getUploadState() == UploadEntity.Status.IN_PROGRESS) {
-                return new UploadStatusAnswer(cmd, UploadStatus.IN_PROGRESS);
+                UploadStatusAnswer answer =  new UploadStatusAnswer(cmd, UploadStatus.IN_PROGRESS);
+                long downloadedSize = FileUtils.sizeOfDirectory(new File(uploadEntity.getInstallPathPrefix()));
+                int downloadPercent = (int) (100 * downloadedSize / uploadEntity.getContentLength());
+                answer.setDownloadPercent(Math.min(downloadPercent, 100));
+                return answer;
             }
         }
         return new UploadStatusAnswer(cmd, UploadStatus.UNKNOWN);
@@ -2637,6 +2642,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 uploadEntity.setChksum(cmd.getChecksum());
                 uploadEntity.setMaxSizeInGB(maxSizeInGB);
                 uploadEntity.setDescription(cmd.getDescription());
+                uploadEntity.setContentLength(contentLength);
                 // create a install dir
                 if (!_storage.exists(installPathPrefix)) {
                     _storage.mkdir(installPathPrefix);

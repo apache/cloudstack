@@ -30,6 +30,7 @@ public class UploadStatusAnswer extends Answer {
     private long virtualSize = 0;
     private long physicalSize = 0;
     private String installPath = null;
+    private int downloadPercent = 0;
 
     protected UploadStatusAnswer() {
     }
@@ -75,5 +76,13 @@ public class UploadStatusAnswer extends Answer {
 
     public void setInstallPath(String installPath) {
         this.installPath = installPath;
+    }
+
+    public int getDownloadPercent() {
+        return downloadPercent;
+    }
+
+    public void setDownloadPercent(int downloadPercent) {
+        this.downloadPercent = downloadPercent;
     }
 }

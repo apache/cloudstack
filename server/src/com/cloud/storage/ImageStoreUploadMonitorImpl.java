@@ -293,6 +293,7 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                         case IN_PROGRESS:
                             if (tmpVolume.getState() == Volume.State.NotUploaded) {
                                 tmpVolumeDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS);
+                                tmpVolumeDataStore.setDownloadPercent(answer.getDownloadPercent());
                                 stateMachine.transitTo(tmpVolume, Event.UploadRequested, null, _volumeDao);
                             } else if (tmpVolume.getState() == Volume.State.UploadInProgress) { // check for timeout
                                 if (System.currentTimeMillis() - tmpVolumeDataStore.getCreated().getTime() > _uploadOperationTimeout) {
@@ -301,6 +302,8 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                                     if (s_logger.isDebugEnabled()) {
                                         s_logger.debug("Volume " + tmpVolume.getUuid() + " failed to upload due to operation timed out");
                                     }
+                                } else {
+                                    tmpVolumeDataStore.setDownloadPercent(answer.getDownloadPercent());
                                 }
                             }
                             break;
@@ -364,6 +367,7 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                             if (tmpTemplate.getState() == VirtualMachineTemplate.State.NotUploaded) {
                                 tmpTemplateDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS);
                                 stateMachine.transitTo(tmpTemplate, VirtualMachineTemplate.Event.UploadRequested, null, _templateDao);
+                                tmpTemplateDataStore.setDownloadPercent(answer.getDownloadPercent());
                             } else if (tmpTemplate.getState() == VirtualMachineTemplate.State.UploadInProgress) { // check for timeout
                                 if (System.currentTimeMillis() - tmpTemplateDataStore.getCreated().getTime() > _uploadOperationTimeout) {
                                     tmpTemplateDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
@@ -371,6 +375,8 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                                     if (s_logger.isDebugEnabled()) {
                                         s_logger.debug("Template " + tmpTemplate.getUuid() + " failed to upload due to operation timed out");
                                     }
+                                } else {
+                                    tmpTemplateDataStore.setDownloadPercent(answer.getDownloadPercent());
                                 }
                             }
                             break;

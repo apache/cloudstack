@@ -33,6 +33,7 @@ public class UploadEntity {
     private long physicalSize;
     private int maxSizeInGB;
     private String description;
+    private long contentLength;
 
     public static enum ResourceType {
         VOLUME, TEMPLATE
@@ -188,5 +189,13 @@ public class UploadEntity {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public long getContentLength() {
+        return contentLength;
+    }
+
+    public void setContentLength(long contentLength) {
+        this.contentLength = contentLength;
     }
 }
