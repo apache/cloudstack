@@ -19,7 +19,7 @@ set -x
 
 ROOTPW=password
 HOSTNAME=systemvm
-CLOUDSTACK_RELEASE=4.5.0
+CLOUDSTACK_RELEASE=4.5.1
 
 add_backports () {
     sed -i '/backports/d' /etc/apt/sources.list
