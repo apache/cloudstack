@@ -75,30 +75,23 @@ install_packages() {
   echo "iptables-persistent iptables-persistent/autosave_v4 boolean true" | debconf-set-selections
   echo "iptables-persistent iptables-persistent/autosave_v6 boolean true" | debconf-set-selections
   apt-get --no-install-recommends -q -y --force-yes install iptables-persistent
-  
+
   # Hyperv  kvp daemon - 64bit only
-  # Download the hv kvp daemon 
+  # Download the hv kvp daemon
   wget http://people.apache.org/~rajeshbattala/hv-kvp-daemon_3.1_amd64.deb
   dpkg -i hv-kvp-daemon_3.1_amd64.deb
+  rm -f hv-kvp-daemon_3.1_amd64.deb
 
-  #libraries required for rdp client (Hyper-V) 
+  # Libraries required for rdp client (Hyper-V)
   apt-get --no-install-recommends -q -y --force-yes install libtcnative-1 libssl-dev libapr1-dev
 
   # vmware tools
-  apt-get --no-install-recommends -q -y --force-yes install open-vm-tools
-  # commented installaion of vmware-tools  as we are using the opensource open-vm-tools:
-  # apt-get --no-install-recommends -q -y --force-yes install build-essential linux-headers-`uname -r`
-  # df -h
-  # PREVDIR=$PWD
-  # cd /opt
-  # wget http://people.apache.org/~bhaisaab/cloudstack/VMwareTools-9.2.1-818201.tar.gz
-  # tar xzf VMwareTools-9.2.1-818201.tar.gz
-  # rm VMwareTools-*.tar.gz
-  # cd vmware-tools-distrib
-  # ./vmware-install.pl -d
-  # cd $PREV
-  # rm -fr /opt/vmware-tools-distrib
-  # apt-get -q -y --force-yes purge build-essential
+  apt-get --no-install-recommends -q -y --force-yes -t wheezy-backports install open-vm-tools
+
+  # xs tools
+  wget https://raw.githubusercontent.com/bhaisaab/cloudstack-nonoss/master/xe-guest-utilities_6.5.0_amd64.deb
+  dpkg -i xe-guest-utilities_6.5.0_amd64.deb
+  rm -f xe-guest-utilities_6.5.0_amd64.deb
 
   apt-get --no-install-recommends -q -y --force-yes install haproxy
 
