@@ -843,6 +843,7 @@
               <exclude>tools/ngui/static/js/lib/*</exclude>
               <exclude>**/.checkstyle</exclude>
               <exclude>scripts/installer/windows/acs_license.rtf</exclude>
+	      <exclude>**/*.md</exclude>
             </excludes>
           </configuration>
         </plugin>
