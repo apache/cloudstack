@@ -127,3 +127,8 @@ PUBLIC_TRAFFIC = "public"
 GUEST_TRAFFIC = "guest"
 MANAGEMENT_TRAFFIC = "management"
 STORAGE_TRAFFIC = "storage"
+
+'''
+Switch Type
+'''
+VMWAREDVS = "vmwaredvs"
