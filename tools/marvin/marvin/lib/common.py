@@ -1688,8 +1688,11 @@ def verifyVCenterPortGroups(
                 api_client,
                 zoneid=zoneid
             )
-        assert validateList(physicalNetworks)[0] == PASS,\
-                "listPhysicalNetworks returned invalid object in response."
+
+        # If there are no physical networks in zone, return as PASS
+        # as there are no validations to make
+        if validateList(physicalNetworks)[0] != PASS:
+            return [PASS, None]
 
         for physicalNetwork in physicalNetworks:
             trafficTypes = TrafficType.list(
