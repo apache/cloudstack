@@ -23,20 +23,19 @@ import java.util.List;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
+
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.Network;
+import com.xensource.xenapi.PIF;
+import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.VLAN;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.Network;
-import com.xensource.xenapi.PIF;
-import com.xensource.xenapi.Types.IpConfigurationMode;
-import com.xensource.xenapi.Types.XenAPIException;
-import com.xensource.xenapi.VLAN;
 
 @Local(value = ServerResource.class)
 public class XenServer56Resource extends CitrixResourceBase {
@@ -140,37 +139,6 @@ public class XenServer56Resource extends CitrixResourceBase {
         } finally {
             sshConnection.close();
         }
-    }
-
-    @Override
-    public boolean transferManagementNetwork(final Connection conn, final Host host, final PIF src, final PIF.Record spr, final PIF dest) throws XmlRpcException, XenAPIException {
-        dest.reconfigureIp(conn, spr.ipConfigurationMode, spr.IP, spr.netmask, spr.gateway, spr.DNS);
-        Host.managementReconfigure(conn, dest);
-        String hostUuid = null;
-        final int count = 0;
-        while (count < 10) {
-            try {
-                Thread.sleep(10000);
-                hostUuid = host.getUuid(conn);
-                if (hostUuid != null) {
-                    break;
-                }
-            } catch (final XmlRpcException e) {
-                s_logger.debug("Waiting for host to come back: " + e.getMessage());
-            } catch (final XenAPIException e) {
-                s_logger.debug("Waiting for host to come back: " + e.getMessage());
-            } catch (final InterruptedException e) {
-                s_logger.debug("Gotta run");
-                return false;
-            }
-        }
-        if (hostUuid == null) {
-            s_logger.warn("Unable to transfer the management network from " + spr.uuid);
-            return false;
-        }
-
-        src.reconfigureIp(conn, IpConfigurationMode.NONE, null, null, null, null);
-        return true;
     }
 
     @Override
