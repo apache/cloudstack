@@ -528,11 +528,13 @@ public class BigSwitchBcfUtils {
         }
     }
 
+    // returns null: should throw something^%*%#&
+    // Integer -> int
     public Integer getSubnetMaskLength(String maskString){
         if(!IPAddress.isValidIPv4(maskString)){
             return null;
         }
-        String[] octets = maskString.split(".");
+        String[] octets = maskString.split("\\.");
         Integer bits = 0;
         for (String o: octets){
             switch(o){
