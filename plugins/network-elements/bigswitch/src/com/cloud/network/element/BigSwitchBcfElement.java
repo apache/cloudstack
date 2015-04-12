@@ -684,7 +684,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
             }
             cidrList = r.getSourceCidrList();
             if(cidrList != null){
-                if(cidrList.size()>1 || r.getSourcePortEnd()!=r.getSourcePortStart()){
+                if (cidrList.size() > 1 || !r.getSourcePortEnd().equals(r.getSourcePortStart())) {
                     throw new ResourceUnavailableException("One CIDR and one port only please.",
                             Network.class, network.getId());
                 } else {
@@ -718,7 +718,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
             }
             cidrList = r.getSourceCidrList();
             if(cidrList != null){
-                if(cidrList.size()>1 || r.getSourcePortEnd()!=r.getSourcePortStart()){
+                if (cidrList.size() > 1 || !r.getSourcePortEnd().equals(r.getSourcePortStart())) {
                     throw new ResourceUnavailableException("One CIDR and one port only please.",
                             Network.class, network.getId());
                 } else {
