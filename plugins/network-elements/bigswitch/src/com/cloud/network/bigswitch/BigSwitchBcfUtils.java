@@ -177,7 +177,7 @@ public class BigSwitchBcfUtils {
 
         // handle external network first, only if NAT service is enabled
         if(networks != null) {
-            if(!(networks.isEmpty()) && isNatEnabled()!=null && isNatEnabled()){
+            if (!(networks.isEmpty()) && isNatEnabled()) {
                 // get public net info - needed to set up source nat gateway
                 NetworkVO pubNet = getPublicNetwork(physicalNetworkId);
 
@@ -440,7 +440,7 @@ public class BigSwitchBcfUtils {
 
     public String syncTopologyToBcfHost(HostVO bigswitchBcfHost){
         SyncBcfTopologyCommand syncCmd;
-        if(isNatEnabled()!=null && isNatEnabled()){
+        if (isNatEnabled()) {
             syncCmd = new SyncBcfTopologyCommand(true, true);
         } else {
             syncCmd = new SyncBcfTopologyCommand(true, false);
@@ -519,12 +519,12 @@ public class BigSwitchBcfUtils {
         });
     }
 
-    public Boolean isNatEnabled(){
+    public boolean isNatEnabled() {
         List<BigSwitchBcfDeviceVO> devices = _bigswitchBcfDao.listAll();
         if(devices != null && !devices.isEmpty()){
             return devices.get(0).getNat();
         } else {
-            return null;
+            return false;
         }
     }
 
