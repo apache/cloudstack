@@ -380,7 +380,7 @@ public class BigSwitchBcfUtils {
             Integer port = rule.getSourcePortStart();
             fwCidrList = _fwCidrsDao.listByFirewallRuleId(rule.getId());
             if(fwCidrList != null){
-                if(fwCidrList.size()>1 || rule.getSourcePortEnd()!=port){
+                if (fwCidrList.size() > 1 || !rule.getSourcePortEnd().equals(port)) {
                     continue;
                 } else {
                     cidr = fwCidrList.get(0).getCidr();
@@ -414,7 +414,7 @@ public class BigSwitchBcfUtils {
                 Integer port = item.getSourcePortStart(); // currently BCF supports single port policy
                 aclCidrList = _aclItemCidrsDao.listByNetworkACLItemId(item.getId());
                 if(aclCidrList != null){
-                    if(aclCidrList.size()>1 || item.getSourcePortEnd()!=port){
+                    if (aclCidrList.size() > 1 || !item.getSourcePortEnd().equals(port)) {
                         continue;
                     } else {
                         cidr = aclCidrList.get(0).getCidr();
