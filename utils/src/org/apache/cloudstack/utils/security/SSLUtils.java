@@ -32,7 +32,7 @@ public class SSLUtils {
     public static final Logger s_logger = Logger.getLogger(SSLUtils.class);
 
     public static String[] getSupportedProtocols(String[] protocols) {
-        Set set = new HashSet();
+        Set<String> set = new HashSet<String>();
         for (String s : protocols) {
             if (s.equals("SSLv3") || s.equals("SSLv2Hello")) {
                 continue;
