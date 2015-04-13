@@ -478,9 +478,12 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 dsMo.deleteFile(srcFile, dcMo.getMor(), true);
             }
             // restoreVM - move the new ROOT disk into corresponding VM folder
-            String vmInternalCSName = volume.getVmName();
-            if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmInternalCSName)) {
-                VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmInternalCSName, dsMo, vmdkFileBaseName);
+            VirtualMachineMO restoreVmMo = dcMo.findVm(volume.getVmName());
+            if (restoreVmMo != null) {
+                String vmNameInVcenter = restoreVmMo.getName(); // VM folder name in datastore will be VM's name in vCenter.
+                if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmNameInVcenter)) {
+                    VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmNameInVcenter, dsMo, vmdkFileBaseName);
+                }
             }
 
             VolumeObjectTO newVol = new VolumeObjectTO();
@@ -598,7 +601,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
 
             vmMo = hyperHost.findVmOnHyperHost(vmName);
-            if (vmMo == null) {
+            if (vmMo == null || VmwareResource.getVmState(vmMo) == PowerState.PowerOff) {
                 // create a dummy worker vm for attaching the volume
                 DatastoreMO dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
                 workerVm = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, workerVmName);
