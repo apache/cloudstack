@@ -458,6 +458,7 @@ public class VirtualMachineMO extends BaseMO {
 
     public boolean createSnapshot(String snapshotName, String snapshotDescription, boolean dumpMemory, boolean quiesce) throws Exception {
 
+        long apiTimeout = _context.getVimClient().getVcenterSessionTimeout();
         ManagedObjectReference morTask = _context.getService().createSnapshotTask(_mor, snapshotName, snapshotDescription, dumpMemory, quiesce);
 
         boolean result = _context.getVimClient().waitForTask(morTask);
@@ -467,7 +468,7 @@ public class VirtualMachineMO extends BaseMO {
             ManagedObjectReference morSnapshot = null;
             // We still need to wait until the object appear in vCenter
             long startTick = System.currentTimeMillis();
-            while (System.currentTimeMillis() - startTick < 10000) {
+            while (System.currentTimeMillis() - startTick < apiTimeout) {
                 morSnapshot = getSnapshotMor(snapshotName);
                 if (morSnapshot != null) {
                     break;
@@ -479,9 +480,11 @@ public class VirtualMachineMO extends BaseMO {
                 }
             }
 
-            if (morSnapshot == null)
-                s_logger.error("We've been waiting for over 10 seconds for snapshot MOR to be appearing in vCenter after CreateSnapshot task is done, but it is still not there?!");
-
+            if (morSnapshot == null) {
+                s_logger.error("We've been waiting for over " + apiTimeout + " milli seconds for snapshot MOR to be appearing in vCenter after CreateSnapshot task is done, but it is still not there?!");
+                return false;
+            }
+            s_logger.debug("Waited for " + (System.currentTimeMillis() - startTick) + " seconds for snapshot object [" + snapshotName + "] to appear in vCenter.");
             return true;
         } else {
             s_logger.error("VMware createSnapshot_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
@@ -1751,8 +1754,15 @@ public class VirtualMachineMO extends BaseMO {
         }
     }
 
+  public String getGuestId() throws Exception {
+    return (String)_context.getVimClient().getDynamicProperty(_mor, "config.guestId");
+  }
+
     public GuestOsDescriptor getGuestOsDescriptor(String guestOsId) throws Exception {
         GuestOsDescriptor guestOsDescriptor = null;
+        if (guestOsId == null) {
+            guestOsId = getGuestId();
+        }
         ManagedObjectReference vmEnvironmentBrowser = _context.getVimClient().getMoRefProp(_mor, "environmentBrowser");
         VirtualMachineConfigOption vmConfigOption = _context.getService().queryConfigOption(vmEnvironmentBrowser, null, null);
         List<GuestOsDescriptor> guestDescriptors = vmConfigOption.getGuestOSDescriptor();
