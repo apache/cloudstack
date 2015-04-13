@@ -37,6 +37,7 @@ ALTER TABLE `cloud`.`volumes` ADD COLUMN `provisioning_type` VARCHAR(32) NOT NUL
 ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `provisioning_type` VARCHAR(32) NOT NULL DEFAULT 'thin' COMMENT 'pre allocation setting of the volume';
 
 -- Have primary keys of following table AUTO_INCREMENT
+SET foreign_key_checks = 0;
 ALTER TABLE `cloud`.`region` MODIFY `id` int unsigned AUTO_INCREMENT UNIQUE NOT NULL;
 ALTER TABLE `cloud`.`vm_instance` MODIFY `id` bigint unsigned AUTO_INCREMENT UNIQUE NOT NULL;
 ALTER TABLE `cloud`.`user_vm` MODIFY `id` bigint unsigned AUTO_INCREMENT UNIQUE NOT NULL;
@@ -44,6 +45,7 @@ ALTER TABLE `cloud`.`domain_router` MODIFY `id` bigint unsigned AUTO_INCREMENT U
 ALTER TABLE `cloud`.`service_offering` MODIFY `id` bigint unsigned AUTO_INCREMENT NOT NULL;
 ALTER TABLE `cloud`.`load_balancing_rules` MODIFY `id` bigint unsigned AUTO_INCREMENT NOT NULL;
 ALTER TABLE `cloud`.`port_forwarding_rules` MODIFY `id` bigint unsigned AUTO_INCREMENT NOT NULL;
+SET foreign_key_checks = 1;
 
 DROP VIEW IF EXISTS `cloud`.`disk_offering_view`;
 CREATE VIEW `cloud`.`disk_offering_view` AS
