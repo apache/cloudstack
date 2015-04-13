@@ -22,11 +22,14 @@ package com.cloud.agent.api;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.vm.VirtualMachine;
 
+import java.util.Map;
+
 public class PlugNicCommand extends Command {
 
     NicTO nic;
     String instanceName;
     VirtualMachine.Type vmType;
+    Map<String, String> details;
 
     public NicTO getNic() {
         return nic;
@@ -46,11 +49,22 @@ public class PlugNicCommand extends Command {
         this.vmType = vmtype;
     }
 
+    public PlugNicCommand(NicTO nic, String instanceName, VirtualMachine.Type vmtype, Map<String, String> details) {
+        this.nic = nic;
+        this.instanceName = instanceName;
+        this.vmType = vmtype;
+        this.details = details;
+    }
+
     public String getVmName() {
         return instanceName;
     }
 
     public VirtualMachine.Type getVMType() {
         return vmType;
+    }
+
+    public Map<String, String> getDetails() {
+        return this.details;
     }
 }

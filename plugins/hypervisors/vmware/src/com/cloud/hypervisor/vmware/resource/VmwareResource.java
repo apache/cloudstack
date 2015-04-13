@@ -916,8 +916,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 return new PlugNicAnswer(cmd, false, "Unable to execute PlugNicCommand due to " + errMsg);
             }
              */
-            // TODO need a way to specify the control of NIC device type
+            // Fallback to E1000 if no specific nicAdapter is passed
             VirtualEthernetCardType nicDeviceType = VirtualEthernetCardType.E1000;
+            Map details = cmd.getDetails();
+            if (details != null) {
+                nicDeviceType = VirtualEthernetCardType.valueOf((String) details.get("nicAdapter"));
+            }
 
             // find a usable device number in VMware environment
             VirtualDevice[] nicDevices = vmMo.getNicDevices();
