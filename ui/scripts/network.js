@@ -656,6 +656,9 @@
                                                                 description: this.path
                                                             });
                                                         });
+                                                        items.sort(function(a, b) {
+                                                            return a.description.localeCompare(b.description);
+                                                        });
                                                         args.response.success({
                                                             data: items
                                                         });
@@ -830,6 +833,9 @@
                                                     });
                                                 }
                                             }
+                                            array1.sort(function(a, b) {
+                                                return a.description.localeCompare(b.description);
+                                            });
                                             args.response.success({
                                                 data: array1
                                             });
@@ -5196,6 +5202,9 @@
                                                     });
                                                 }
                                             }
+                                            array1.sort(function(a, b) {
+                                                return a.description.localeCompare(b.description);
+                                            });
                                             args.response.success({
                                                 data: array1
                                             });

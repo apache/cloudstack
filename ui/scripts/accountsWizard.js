@@ -92,6 +92,9 @@
                                 if (this.level === 0)
                                     rootDomainId = this.id;
                             });
+                            items.sort(function(a, b) {
+                                return a.description.localeCompare(b.description);
+                            });
                             args.response.success({
                                 data: items
                             });
