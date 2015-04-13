@@ -22,7 +22,6 @@ import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Map;
 
-import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.AbstractGetUploadParamsCmd;
 import org.apache.cloudstack.api.ApiConstants;
@@ -33,6 +32,8 @@ import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
+
+import com.cloud.exception.ResourceAllocationException;
 
 @APICommand(name = "getUploadParamsForTemplate", description = "upload an existing template into the CloudStack cloud. ", responseObject = GetUploadParamsResponse.class, since =
     "4.6.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -149,6 +150,7 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
 
     @Override
     public void execute() throws ServerApiException {
+        validateRequest();
         try {
             GetUploadParamsResponse response = _templateService.registerTemplateForPostUpload(this);
             response.setResponseName(getCommandName());
@@ -156,6 +158,12 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
         } catch (ResourceAllocationException | MalformedURLException e) {
             s_logger.error("exception while registering template", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "exception while registering template: " + e.getMessage());
+        }
+    }
+
+    private void validateRequest() {
+        if (getZoneId() <= 0) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "invalid zoneid");
         }
     }
 
