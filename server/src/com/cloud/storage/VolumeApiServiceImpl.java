@@ -1636,12 +1636,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         HostVO host = null;
-        StoragePoolVO volumePool = _storagePoolDao.findById(volume.getPoolId());
+        StoragePoolVO volumePool = _storagePoolDao.findByIdIncludingRemoved(volume.getPoolId());
 
         if (hostId != null) {
             host = _hostDao.findById(hostId);
 
-            if (host != null && host.getHypervisorType() == HypervisorType.XenServer && volumePool.isManaged()) {
+            if (host != null && host.getHypervisorType() == HypervisorType.XenServer && volumePool != null && volumePool.isManaged()) {
                 sendCommand = true;
             }
         }
