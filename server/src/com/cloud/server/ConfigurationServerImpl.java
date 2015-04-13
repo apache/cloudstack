@@ -470,7 +470,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                     PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
                     stmt.executeUpdate();
                 } catch (SQLException ex) {
-                    s_logger.debug("Caught exception when inserting system account: " + ex.getMessage());
+                    s_logger.debug("Looks like system account already exists");
                 }
                 // insert system user
                 insertSql = "INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname, lastname, created, user.default)"
@@ -480,7 +480,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                     PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
                     stmt.executeUpdate();
                 } catch (SQLException ex) {
-                    s_logger.debug("Caught SQLException when inserting system user: " + ex.getMessage());
+                    s_logger.debug("Looks like system user already exists");
                 }
 
                 // insert admin user, but leave the account disabled until we set a
@@ -497,7 +497,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                     PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
                     stmt.executeUpdate();
                 } catch (SQLException ex) {
-                    s_logger.debug("Caught SQLException when creating admin account: " + ex.getMessage());
+                    s_logger.debug("Looks like admin account already exists");
                 }
 
                 // now insert the user
@@ -508,7 +508,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                     PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
                     stmt.executeUpdate();
                 } catch (SQLException ex) {
-                    s_logger.debug("Caught SQLException when inserting admin user: " + ex.getMessage());
+                    s_logger.debug("Looks like admin user already exists");
                 }
 
                 try {
@@ -519,8 +519,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                         stmt.executeQuery();
                         tableName = "network_group";
                     } catch (Exception ex) {
-                        // if network_groups table exists, create the default security group there
-                        s_logger.debug("Caught (SQL?)Exception: no network_group  " + ex.getLocalizedMessage());
+                        // Ignore in case of exception, table must not exist
                     }
 
                     insertSql = "SELECT * FROM " + tableName + " where account_id=2 and name='default'";
