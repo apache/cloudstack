@@ -1,5 +1,6 @@
 /var/log/conntrackd-stats.log {
     daily
+    size 10M
     rotate 2
     missingok
     compress

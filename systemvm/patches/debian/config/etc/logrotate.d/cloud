@@ -17,6 +17,7 @@
 /var/log/cloud.log {
         rotate 4
         daily
+        size 10M
         missingok
         notifempty
         compress
