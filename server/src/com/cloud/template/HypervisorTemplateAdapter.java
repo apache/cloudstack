@@ -60,6 +60,7 @@ import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.org.Grouping;
+import com.cloud.server.StatsCollector;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
@@ -83,8 +84,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     DownloadMonitor _downloadMonitor;
     @Inject
     AgentManager _agentMgr;
-
-    @Inject TemplateDataStoreDao templateDataStoreDao;
+    @Inject
+    StatsCollector _statsCollector;
+    @Inject
+    TemplateDataStoreDao templateDataStoreDao;
     @Inject
     DataStoreManager storeMgr;
     @Inject
@@ -164,13 +167,17 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                     continue;
                 }
 
+                // Check if image store has enough capacity for template
+                if (!_statsCollector.imageStoreHasEnoughCapacity(imageStore)) {
+                    s_logger.info("Image store doesn't has enough capacity, so skip downloading template to this image store " + imageStore.getId());
+                    continue;
+                }
                 // We want to download private template to one of the image store in a zone
                 if(isPrivateTemplate(template) && zoneSet.contains(zoneId)){
                     continue;
                 }else {
                     zoneSet.add(zoneId);
                 }
-
             }
 
             TemplateInfo tmpl = imageFactory.getTemplate(template.getId(), imageStore);

@@ -18,7 +18,6 @@
  */
 package org.apache.cloudstack.storage.datastore;
 
-import java.util.Collections;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -79,8 +78,7 @@ public class DataStoreManagerImpl implements DataStoreManager {
         if (stores == null || stores.size() == 0) {
             return null;
         }
-        Collections.shuffle(stores);
-        return stores.get(0);
+        return imageDataStoreMgr.getImageStore(stores);
     }
 
     @Override
@@ -112,8 +110,7 @@ public class DataStoreManagerImpl implements DataStoreManager {
         if (stores == null || stores.size() == 0) {
             return null;
         }
-        Collections.shuffle(stores);
-        return stores.get(0);
+        return imageDataStoreMgr.getImageStore(stores);
     }
 
     @Override

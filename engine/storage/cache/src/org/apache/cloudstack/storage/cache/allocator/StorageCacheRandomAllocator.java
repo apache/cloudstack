@@ -18,7 +18,6 @@
  */
 package org.apache.cloudstack.storage.cache.allocator;
 
-import java.util.Collections;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -33,7 +32,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
+import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
 
+import com.cloud.server.StatsCollector;
 import com.cloud.storage.ScopeType;
 
 @Component
@@ -43,6 +44,10 @@ public class StorageCacheRandomAllocator implements StorageCacheAllocator {
     DataStoreManager dataStoreMgr;
     @Inject
     ObjectInDataStoreManager objectInStoreMgr;
+    @Inject
+    ImageStoreProviderManager imageStoreMgr;
+    @Inject
+    StatsCollector statsCollector;
 
     @Override
     public DataStore getCacheStore(Scope scope) {
@@ -57,8 +62,7 @@ public class StorageCacheRandomAllocator implements StorageCacheAllocator {
             return null;
         }
 
-        Collections.shuffle(cacheStores);
-        return cacheStores.get(0);
+        return imageStoreMgr.getImageStore(cacheStores);
     }
 
     @Override
@@ -78,18 +82,12 @@ public class StorageCacheRandomAllocator implements StorageCacheAllocator {
         if (cacheStores.size() > 1) {
             for (DataStore store : cacheStores) {
                 DataObjectInStore obj = objectInStoreMgr.findObject(data, store);
-                if (obj != null && obj.getState() == ObjectInDataStoreStateMachine.State.Ready) {
+                if (obj != null && obj.getState() == ObjectInDataStoreStateMachine.State.Ready && statsCollector.imageStoreHasEnoughCapacity(store)) {
                     s_logger.debug("pick the cache store " + store.getId() + " where data is already there");
                     return store;
                 }
             }
-
-            // otherwise, just random pick one
-            Collections.shuffle(cacheStores);
         }
-        return cacheStores.get(0);
-
+        return imageStoreMgr.getImageStore(cacheStores);
     }
-
-
 }

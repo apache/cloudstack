@@ -212,6 +212,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     long autoScaleStatsInterval = -1L;
     int vmDiskStatsInterval = 0;
     List<Long> hostIds = null;
+    private double _imageStoreCapacityThreshold = 0.90;
 
     String externalStatsPrefix = "";
     String externalStatsHost = null;
@@ -1043,6 +1044,14 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
             return counter.getSource().toString();
         }
+    }
+
+    public boolean imageStoreHasEnoughCapacity(DataStore imageStore) {
+        StorageStats imageStoreStats = _storageStats.get(imageStore.getId());
+        if (imageStoreStats != null && (imageStoreStats.getByteUsed()/(imageStoreStats.getCapacityBytes()*1.0)) <= _imageStoreCapacityThreshold) {
+            return true;
+        }
+        return false;
     }
 
     public StorageStats getStorageStats(long id) {

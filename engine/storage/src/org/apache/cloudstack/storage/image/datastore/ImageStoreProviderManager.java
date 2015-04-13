@@ -41,4 +41,6 @@ public interface ImageStoreProviderManager {
     List<DataStore> listImageCacheStores(Scope scope);
 
     boolean registerDriver(String uuid, ImageStoreDriver driver);
+
+    DataStore getImageStore(List<DataStore> imageStores);
 }
