@@ -148,6 +148,7 @@ import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.offering.ServiceOffering;
@@ -609,6 +610,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         } catch (InsufficientCapacityException e) {
             throw new CloudRuntimeException("Unable to start a VM due to insufficient capacity", e).add(VirtualMachine.class, vmUuid);
         } catch (ResourceUnavailableException e) {
+            if (e.getScope() != null && e.getScope().equals(VirtualRouter.class)) {
+                throw new CloudRuntimeException("Network is not available. Please contact admin.", e).add(VirtualMachine.class, vmUuid);
+            }
             throw new CloudRuntimeException("Unable to start a VM due to concurrent operation", e).add(VirtualMachine.class, vmUuid);
         }
     }
@@ -3399,7 +3403,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         VMInstanceVO router = _vmDao.findById(vm.getId());
         if (router.getState() == State.Running) {
             try {
-                PlugNicCommand plugNicCmd = new PlugNicCommand(nic, vm.getName(), vm.getType());
+                PlugNicCommand plugNicCmd = new PlugNicCommand(nic, vm.getName(), vm.getType(), vm.getDetails());
 
                 Commands cmds = new Commands(Command.OnError.Stop);
                 cmds.addCommand("plugnic", plugNicCmd);
