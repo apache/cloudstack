@@ -1822,7 +1822,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     int getReservedCpuMHZ(VirtualMachineTO vmSpec) {
          if (vmSpec.getDetails().get(VMwareGuru.VmwareReserveCpu.key()).equalsIgnoreCase("true")) {
-             return vmSpec.getMinSpeed();
+             return vmSpec.getMinSpeed() * vmSpec.getCpus();
          }
          return 0;
     }
@@ -2472,7 +2472,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     private Pair<ManagedObjectReference, String> prepareNetworkFromNicInfo(HostMO hostMo, NicTO nicTo, boolean configureVServiceInNexus, VirtualMachine.Type vmType) throws Exception {
 
         Ternary<String, String, String> switchDetails = getTargetSwitch(nicTo);
-        nicTo.getType();
         VirtualSwitchType switchType = VirtualSwitchType.getType(switchDetails.second());
         String switchName = switchDetails.first();
         String vlanToken = switchDetails.third();
