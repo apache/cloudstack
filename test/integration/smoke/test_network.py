@@ -17,7 +17,8 @@
 """ BVT tests for Network Life Cycle
 """
 # Import Local Modules
-from marvin.codes import FAILED, STATIC_NAT_RULE, LB_RULE, NAT_RULE
+from marvin.codes import (FAILED, STATIC_NAT_RULE, LB_RULE,
+                          NAT_RULE, PASS)
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackException import CloudstackAPIException
 from marvin.cloudstackAPI import rebootRouter
@@ -43,7 +44,8 @@ from marvin.lib.common import (get_domain,
                                list_routers,
                                list_virtual_machines,
                                list_lb_rules,
-                               list_configurations)
+                               list_configurations,
+                               verifyGuestTrafficPortGroups)
 from nose.plugins.attrib import attr
 from ddt import ddt, data
 # Import System modules
@@ -247,6 +249,7 @@ class TestPortForwarding(cloudstackTestCase):
         testClient = super(TestPortForwarding, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
+        cls.hypervisor = testClient.getHypervisorInfo()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
@@ -550,6 +553,17 @@ class TestPortForwarding(cloudstackTestCase):
                 delay=0
             )
         return
+
+    @attr(tags=["advanced", "dvs"], required_hardware="true")
+    def test_guest_traffic_port_groups_isolated_network(self):
+        """ Verify port groups are created for guest traffic
+        used by isolated network """
+
+        if self.hypervisor.lower() == "vmware":
+            response = verifyGuestTrafficPortGroups(self.apiclient,
+                                                    self.config,
+                                                    self.zone)
+            assert response[0] == PASS, response[1]
 
 
 class TestRebootRouter(cloudstackTestCase):
