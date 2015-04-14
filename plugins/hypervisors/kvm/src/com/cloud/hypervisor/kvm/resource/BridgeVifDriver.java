@@ -279,7 +279,7 @@ public class BridgeVifDriver extends VifDriverBase {
             }
         }
         if (!foundLinkLocalBr) {
-            Script.runSimpleBashScript("ifconfig " + linkLocalBr + " 169.254.0.1;" + "ip route add " + NetUtils.getLinkLocalCIDR() + " dev " + linkLocalBr + " src " +
+            Script.runSimpleBashScript("ip address add 169.254.0.1/16 dev " + linkLocalBr + ";" + "ip route add " + NetUtils.getLinkLocalCIDR() + " dev " + linkLocalBr + " src " +
                 NetUtils.getLinkLocalGateway());
         }
     }
@@ -287,7 +287,7 @@ public class BridgeVifDriver extends VifDriverBase {
     private void createControlNetwork(String privBrName) {
         deleteExitingLinkLocalRouteTable(privBrName);
         if (!isBridgeExists(privBrName)) {
-            Script.runSimpleBashScript("brctl addbr " + privBrName + "; ifconfig " + privBrName + " up; ifconfig " + privBrName + " 169.254.0.1", _timeout);
+            Script.runSimpleBashScript("brctl addbr " + privBrName + "; ip link set " + privBrName + " up; ip address add 169.254.0.1/16 dev " + privBrName, _timeout);
         }
 
     }
