@@ -676,6 +676,10 @@ def main(argv):
 
     mon = CsMonitor("monitorservice", config)
     mon.process()
-
+    
+    #Save iptables configuration - will be loaded on reboot by the iptables-restore that is configured on /etc/rc.local
+    CsHelper.save_iptables("iptables-save", "/etc/iptables/router_rules.v4")
+    CsHelper.save_iptables("ip6tables-save", "/etc/iptables/router_rules.v6")
+    
 if __name__ == "__main__":
     main(sys.argv)
