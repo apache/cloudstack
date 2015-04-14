@@ -1169,11 +1169,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         VolumeVO volume = _volsDao.findById(volumeId);
         if (volume == null) {
-            throw new InvalidParameterValueException("Unable to aquire volume with ID: " + volumeId);
+            throw new InvalidParameterValueException("Unable to find volume with ID: " + volumeId);
         }
 
         if (!_snapshotMgr.canOperateOnVolume(volume)) {
-            throw new InvalidParameterValueException("There are snapshot creating on it, Unable to delete the volume");
+            throw new InvalidParameterValueException("There are snapshot operations in progress on the volume, unable to delete it");
         }
 
         _accountMgr.checkAccess(caller, null, true, volume);
@@ -1187,6 +1187,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (volumeStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS) {
                 throw new InvalidParameterValueException("Please specify a volume that is not uploading");
             }
+        }
+
+        if (volume.getState() == Volume.State.NotUploaded || volume.getState() == Volume.State.UploadInProgress) {
+            throw new InvalidParameterValueException("The volume is either getting uploaded or it may be initiated shortly, please wait for it to be completed");
         }
 
         try {
