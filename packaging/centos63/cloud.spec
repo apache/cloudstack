@@ -128,6 +128,7 @@ Requires: ipset
 Requires: jsvc
 Requires: jakarta-commons-daemon
 Requires: jakarta-commons-daemon-jsvc
+Requires: net-tools
 Requires: perl
 Requires: libvirt-python
 Requires: qemu-img
