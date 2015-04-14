@@ -15,10 +15,15 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import marvin
-import unittest
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackAPI import listSystemVms, listZones, listTemplates
+from marvin.lib.vcenter import Vcenter
+from marvin.lib.common import verifyVCenterPortGroups
+from marvin.codes import (PUBLIC_TRAFFIC,
+                          MANAGEMENT_TRAFFIC,
+                          STORAGE_TRAFFIC,
+                          PASS,
+                          VMWAREDVS)
 from time import sleep as delay
 
 
@@ -33,10 +38,11 @@ class TestSetupSuccess(cloudstackTestCase):
     def setUpClass(cls):
         testClient = super(TestSetupSuccess, cls).getClsTestClient()
         cls.apiClient = testClient.getApiClient()
+        cls.hypervisor = testClient.getHypervisorInfo()
 
         zones = listZones.listZonesCmd()
         cls.zones_list = cls.apiClient.listZones(zones)
-        cls.retry = 2
+        cls.retry = 50
 
     def test_systemVmReady(self):
         """
@@ -89,10 +95,32 @@ class TestSetupSuccess(cloudstackTestCase):
                                 "builtIn templates not ready in zone %s" %
                                 z.name)
 
-    def test_deployVmWithBuiltIn(self):
-        """
-        Deploys a VM with the built-in CentOS template
-        """
+    def test_VCenterPorts(self):
+        """  Test if correct VCenter ports are created for all traffic types """
+
+        if self.hypervisor.lower() != "vmware":
+            self.skipTest("This test is intended only for vmware")
+
+        zoneDict = {}
+        for zone in self.config.zones:
+            zoneDict[zone.name] = zone.vmwaredc
+
+        for zone in self.zones_list:
+            vmwaredc = zoneDict[zone.name]
+            vcenterObj = Vcenter(
+                vmwaredc.vcenter,
+                vmwaredc.username,
+                vmwaredc.password)
+            response = verifyVCenterPortGroups(
+                self.apiClient,
+                vcenterObj,
+                traffic_types_to_validate=[
+                    PUBLIC_TRAFFIC,
+                    MANAGEMENT_TRAFFIC,
+                    STORAGE_TRAFFIC],
+                zoneid=zone.id,
+                switchTypes=[VMWAREDVS])
+            self.assertEqual(response[0], PASS, response[1])
 
     @classmethod
     def tearDownClass(cls):
