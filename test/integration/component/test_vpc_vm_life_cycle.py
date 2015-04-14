@@ -43,7 +43,8 @@ from marvin.lib.common import (get_domain,
                                            wait_for_cleanup,
                                            list_virtual_machines,
                                            list_hosts,
-                                           findSuitableHostForMigration)
+                                           findSuitableHostForMigration,
+                                           verifyGuestTrafficPortGroups)
 
 from marvin.codes import PASS, ERROR_NO_HOST_FOR_MIGRATION
 
@@ -1734,6 +1735,7 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
         cls.api_client = cls.testClient.getApiClient()
 
         cls.services = Services().services
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -2059,6 +2061,17 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
                          "VM state should be running after deployment"
                          )
         return
+
+    @attr(tags=["advanced", "dvs"], required_hardware="true")
+    def test_guest_traffic_port_groups_vpc_network(self):
+        """ Verify port groups are created for guest traffic
+        used by vpc network """
+
+        if self.hypervisor.lower() == "vmware":
+            response = verifyGuestTrafficPortGroups(self.apiclient,
+                                                    self.config,
+                                                    self.zone)
+            assert response[0] == PASS, response[1]
 
 class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
 
