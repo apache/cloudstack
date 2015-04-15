@@ -20,13 +20,6 @@
   </parent>
   <repositories>
     <repository>
-      <id>libvirt-org</id>
-      <url>http://libvirt.org/maven2</url>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-    <repository>
       <id>ceph-com</id>
       <url>http://ceph.com/maven</url>
       <snapshots>
@@ -45,7 +38,7 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.libvirt</groupId>
+      <groupId>com.github.K0zka</groupId>
       <artifactId>libvirt</artifactId>
       <version>${cs.libvirt-java.version}</version>
     </dependency>
