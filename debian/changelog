@@ -1,3 +1,9 @@
+cloudstack (4.4.3) unstable; urgency=low
+
+  * Update the version to 4.4.3
+
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Wed, 15 Apr 2015 17:00:23 -0500
+
 cloudstack (4.4.2) unstable; urgency=low
 
   * Update the version to 4.4.2
