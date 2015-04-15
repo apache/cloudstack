@@ -498,7 +498,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 } catch (UnknownHostException e) {
                     throw new CloudRuntimeException("Unable to resolve " + ip);
                 }
-                SocketChannel ch1;
+                SocketChannel ch1 = null;
                 try {
                     ch1 = SocketChannel.open(new InetSocketAddress(addr, Port.value()));
                     ch1.configureBlocking(true); // make sure we are working at blocking mode
