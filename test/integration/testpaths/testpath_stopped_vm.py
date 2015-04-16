@@ -236,7 +236,7 @@ class TestAdvancedZoneStoppedVM(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="False")
+    @attr(tags=["advanced", "basic"], required_hardware="True")
     def test_01_pt_deploy_vm_without_startvm(self):
         """ Positive test for stopped VM test path - T1
 
@@ -304,7 +304,7 @@ class TestAdvancedZoneStoppedVM(cloudstackTestCase):
             self.assertTrue(response[0], response[1])
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="False")
+    @attr(tags=["advanced", "basic"], required_hardware="True")
     def test_02_pt_deploy_vm_with_startvm_true(self):
         """ Positive test for stopped VM test path - T1 variant
 
@@ -652,7 +652,7 @@ class TestAdvancedZoneStoppedVM(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="False")
+    @attr(tags=["advanced", "basic"], required_hardware="True")
     def test_06_pt_startvm_false_attach_iso(self):
         """ Positive test for stopped VM test path - T5
 
@@ -712,7 +712,7 @@ class TestAdvancedZoneStoppedVM(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="False")
+    @attr(tags=["advanced", "basic"], required_hardware="True")
     def test_07_pt_startvm_false_attach_iso_running_vm(self):
         """ Positive test for stopped VM test path - T5 variant
 
@@ -780,7 +780,7 @@ class TestAdvancedZoneStoppedVM(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="False")
+    @attr(tags=["advanced", "basic"], required_hardware="True")
     def test_08_pt_startvm_false_password_enabled_template(self):
         """ Positive test for stopped VM test path - T10
 

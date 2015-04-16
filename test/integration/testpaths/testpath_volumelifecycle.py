@@ -235,7 +235,7 @@ class TestPathVolume(cloudstackTestCase):
             "advancedsg",
             "basic",
         ],
-        required_hardware="false")
+        required_hardware="True")
     def test_01_positive_path(self):
         """
         positive test for volume life cycle
@@ -819,7 +819,7 @@ class TestPathVolume(cloudstackTestCase):
             "advancedsg",
             "basic",
         ],
-        required_hardware="false")
+        required_hardware="True")
     def test_02_negative_path(self):
         """
         negative test for volume life cycle
