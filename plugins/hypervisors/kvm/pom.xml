@@ -22,10 +22,16 @@
     <repository>
       <id>libvirt-org</id>
       <url>http://libvirt.org/maven2</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
     </repository>
     <repository>
       <id>ceph-com</id>
       <url>http://ceph.com/maven</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
     </repository>
   </repositories>
   <dependencies>
