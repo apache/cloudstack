@@ -378,11 +378,21 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         //NOTE: the hostid can be a hypervisor host, or a ssvm agent. For copycommand, if it's for volume upload, the hypervisor
         //type is empty, so we need to check the format of volume at first.
         if (cmd instanceof CopyCommand) {
-            CopyCommand cpyCommand = (CopyCommand)cmd;
+            CopyCommand cpyCommand = (CopyCommand) cmd;
             DataTO srcData = cpyCommand.getSrcTO();
             DataStoreTO srcStoreTO = srcData.getDataStore();
             DataTO destData = cpyCommand.getDestTO();
             DataStoreTO destStoreTO = destData.getDataStore();
+
+            boolean inSeq = true;
+            if ((srcData.getObjectType() == DataObjectType.SNAPSHOT) || (destData.getObjectType() == DataObjectType.SNAPSHOT)) {
+                inSeq = false;
+            } else if ((destStoreTO.getRole() == DataStoreRole.Image) || (destStoreTO.getRole() == DataStoreRole.ImageCache)) {
+                inSeq = false;
+            } else if (!VmwareFullClone.value()) {
+                inSeq = false;
+            }
+            cpyCommand.setExecuteInSequence(inSeq);
 
             if (srcData.getObjectType() == DataObjectType.VOLUME) {
                 VolumeObjectTO volumeObjectTO = (VolumeObjectTO)srcData;

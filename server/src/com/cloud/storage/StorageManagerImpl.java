@@ -41,6 +41,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.hypervisor.Hypervisor;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -542,7 +543,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
         DataStore store;
         try {
-            StoragePoolVO pool = _storagePoolDao.findPoolByHostPath(host.getDataCenterId(), host.getPodId(), pInfo.getHost(), pInfo.getHostPath(), pInfo.getUuid());
+            String hostAddress = pInfo.getHost();
+            if (host.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
+                hostAddress = "VMFS datastore: " + pInfo.getHostPath();
+            }
+            StoragePoolVO pool = _storagePoolDao.findPoolByHostPath(host.getDataCenterId(), host.getPodId(), hostAddress, pInfo.getHostPath(), pInfo.getUuid());
             if (pool == null && host.getHypervisorType() == HypervisorType.VMware) {
                 // perform run-time upgrade. In versions prior to 2.2.12, there
                 // is a bug that we don't save local datastore info (host path
@@ -551,12 +556,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 // available on the host, to support smooth migration, we
                 // need to perform runtime upgrade here
                 if (pInfo.getHostPath().length() > 0) {
-                    pool = _storagePoolDao.findPoolByHostPath(host.getDataCenterId(), host.getPodId(), pInfo.getHost(), "", pInfo.getUuid());
+                    pool = _storagePoolDao.findPoolByHostPath(host.getDataCenterId(), host.getPodId(), hostAddress, "", pInfo.getUuid());
                 }
             }
             if (pool == null) {
                 //the path can be different, but if they have the same uuid, assume they are the same storage
-                pool = _storagePoolDao.findPoolByHostPath(host.getDataCenterId(), host.getPodId(), pInfo.getHost(), null,
+                pool = _storagePoolDao.findPoolByHostPath(host.getDataCenterId(), host.getPodId(), hostAddress, null,
                         pInfo.getUuid());
                 if (pool != null) {
                     s_logger.debug("Found a storage pool: " + pInfo.getUuid() + ", but with different hostpath " + pInfo.getHostPath() + ", still treat it as the same pool");
