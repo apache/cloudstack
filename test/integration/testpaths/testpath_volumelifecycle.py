@@ -37,7 +37,8 @@ from marvin.lib.utils import cleanup_resources, validateList
 from marvin.lib.common import (get_zone,
                                get_domain,
                                get_template,
-                               list_virtual_machines)
+                               list_virtual_machines,
+                               find_storage_pool_type)
 from nose.plugins.attrib import attr
 import os
 import urllib

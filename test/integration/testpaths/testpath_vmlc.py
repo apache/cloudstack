@@ -170,6 +170,7 @@ class TestPathVMLC(cloudstackTestCase):
         testClient = super(TestPathVMLC, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.testdata = testClient.getParsedTestDataConfig()
+        cls.hypervisor = testClient.getHypervisorInfo()
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
@@ -336,6 +337,8 @@ class TestPathVMLC(cloudstackTestCase):
         # 13. Find suitable host for VM to migrate and migrate the VM
         # 14. Verify VM accessibility on new host
         """
+        if self.hypervisor.lower() == 'hyperv' and value == VPC_NETWORK:
+            self.skipTest("cann't be run for {} hypervisor".format(self.hypervisor))
 
         # List created service offering in setUpClass by name
         listServiceOfferings = ServiceOffering.list(
@@ -733,6 +736,8 @@ class TestPathVMLC(cloudstackTestCase):
         # 4. Try to stop the VM in destroyed state, operation should fail
         # 5. Try to reboot the VM in destroyed state, operation should fail
         """
+        if self.hypervisor.lower() == 'hyperv' and value == VPC_NETWORK:
+            self.skipTest("cann't be run for {} hypervisor".format(self.hypervisor))
         network = CreateNetwork(self, value)
         networkid = network.id
 
@@ -827,6 +832,9 @@ class TestPathVMLC(cloudstackTestCase):
         # 6. Try to destroy the VM in expunging state, operation should fail
         # 7. Try to recover the VM in expunging state, operation should fail
         """
+
+        if self.hypervisor.lower() == 'hyperv' and value == VPC_NETWORK:
+            self.skipTest("cann't be run for {} hypervisor".format(self.hypervisor))
         network = CreateNetwork(self, value)
         networkid = network.id
 
