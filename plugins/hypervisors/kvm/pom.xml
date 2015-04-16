@@ -25,7 +25,7 @@
     </repository>
     <repository>
       <id>ceph-com</id>
-      <url>http://ceph.com/maven</url>
+      <url>http://eu.ceph.com/maven</url>
     </repository>
   </repositories>
   <dependencies>
