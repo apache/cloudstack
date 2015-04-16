@@ -22,6 +22,7 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import org.apache.log4j.Logger;
+import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -75,6 +76,7 @@ public class Upgrade450to451 implements DbUpgrade {
         encryptIpSecPresharedKeysOfRemoteAccessVpn(conn);
         encryptStoragePoolUserInfo(conn);
         updateUserVmDetailsWithNicAdapterType(conn);
+        upgradeVMWareLocalStorage(conn);
     }
 
     private void encryptKeyInKeyStore(Connection conn) {
@@ -85,9 +87,11 @@ public class Upgrade450to451 implements DbUpgrade {
             selectStatement = conn.prepareStatement("SELECT ks.id, ks.key FROM cloud.keystore ks WHERE ks.key IS NOT null");
             selectResultSet = selectStatement.executeQuery();
             while (selectResultSet.next()) {
+                Long keyId = selectResultSet.getLong(1);
+                String preSharedKey = selectResultSet.getString(2);
                 updateStatement = conn.prepareStatement("UPDATE cloud.keystore ks SET ks.key = ? WHERE ks.id = ?");
-                updateStatement.setString(1, DBEncryptionUtil.encrypt(selectResultSet.getString(2)));
-                updateStatement.setLong(2, selectResultSet.getLong(1));
+                updateStatement.setString(1, DBEncryptionUtil.encrypt(preSharedKey));
+                updateStatement.setLong(2, keyId);
                 updateStatement.executeUpdate();
                 updateStatement.close();
             }
@@ -121,10 +125,16 @@ public class Upgrade450to451 implements DbUpgrade {
             selectStatement = conn.prepareStatement("SELECT id, ipsec_psk FROM `cloud`.`remote_access_vpn`");
             resultSet = selectStatement.executeQuery();
             while (resultSet.next()) {
+                Long rowId = resultSet.getLong(1);
                 String preSharedKey = resultSet.getString(2);
+                try {
+                    preSharedKey = DBEncryptionUtil.decrypt(preSharedKey);
+                } catch (EncryptionOperationNotPossibleException ignored) {
+                    s_logger.debug("The ipsec_psk preshared key id=" + rowId + "in remote_access_vpn is not encrypted, encrypting it.");
+                }
                 updateStatement = conn.prepareStatement("UPDATE `cloud`.`remote_access_vpn` SET ipsec_psk=? WHERE id=?");
                 updateStatement.setString(1, DBEncryptionUtil.encrypt(preSharedKey));
-                updateStatement.setLong(2, resultSet.getLong(1));
+                updateStatement.setLong(2, rowId);
                 updateStatement.executeUpdate();
                 updateStatement.close();
             }
@@ -192,5 +202,22 @@ public class Upgrade450to451 implements DbUpgrade {
             }
         }
         s_logger.debug("Done. Updated user_vm_details table with nicAdapter entries by copying from vm_template_detail table. This affects only VM/templates with hypervisor_type as VMware.");
+    }
+
+    private void upgradeVMWareLocalStorage(Connection conn) {
+        PreparedStatement updatePstmt = null;
+        try {
+            updatePstmt = conn.prepareStatement("UPDATE storage_pool SET pool_type='VMFS',host_address=@newaddress WHERE (@newaddress:=concat('VMFS datastore: ', path)) IS NOT NULL AND scope = 'HOST' AND pool_type = 'LVM' AND id IN (SELECT * FROM (SELECT storage_pool.id FROM storage_pool,cluster WHERE storage_pool.cluster_id = cluster.id AND cluster.hypervisor_type='VMware') AS t);");
+            updatePstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to upgrade VMWare local storage pool type", e);
+        } finally {
+            try {
+                if (updatePstmt != null)
+                    updatePstmt.close();
+            } catch (SQLException e) {
+            }
+            s_logger.debug("Done, upgraded VMWare local storage pool type to VMFS and host_address to the VMFS format");
+        }
     }
 }
