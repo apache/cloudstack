@@ -198,9 +198,12 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             featured = Boolean.FALSE;
         }
 
-        ImageFormat imgfmt = ImageFormat.valueOf(format.toUpperCase());
-        if (imgfmt == null) {
-            throw new IllegalArgumentException("Image format is incorrect " + format + ". Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
+        ImageFormat imgfmt;
+        try {
+            imgfmt = ImageFormat.valueOf(format.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            s_logger.debug("ImageFormat IllegalArgumentException: " + e.getMessage());
+            throw new IllegalArgumentException("Image format: " + format + " is incorrect. Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
         }
 
         // Check that the resource limit for templates/ISOs won't be exceeded
