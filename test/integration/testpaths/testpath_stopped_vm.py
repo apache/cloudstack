@@ -373,7 +373,7 @@ class TestAdvancedZoneStoppedVM(cloudstackTestCase):
             self.assertTrue(response[0], response[1])
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="False")
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_03_pt_deploy_vm_with_startvm_false(self):
         """ Positive test for stopped VM test path - T2
 
@@ -415,7 +415,7 @@ class TestAdvancedZoneStoppedVM(cloudstackTestCase):
             self.assertTrue(response[0], response[1])
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="False")
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_04_pt_startvm_false_attach_disk(self):
         """ Positive test for stopped VM test path - T3 and variant, T9
 
@@ -554,7 +554,7 @@ class TestAdvancedZoneStoppedVM(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="False")
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_05_pt_startvm_false_attach_disk_change_SO(self):
         """ Positive test for stopped VM test path - T4
 
@@ -888,7 +888,7 @@ class TestAdvancedZoneStoppedVM(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="False")
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_09_pt_destroy_stopped_vm(self):
         """ Positive test for stopped VM test path - T11
 
@@ -939,7 +939,7 @@ class TestAdvancedZoneStoppedVM(cloudstackTestCase):
         self.assertEqual(response[0], PASS, response[1])
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="False")
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_10_max_account_limit(self):
         """ Positive test for stopped VM test path - T12
 

@@ -316,7 +316,7 @@ class TestPathVMLC(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced"], required_hardware="False")
+    @attr(tags=["advanced"], required_hardware="false")
     @data(ISOLATED_NETWORK, VPC_NETWORK)
     def test_01_positive_tests_vm_operations_advanced_zone(self, value):
         """ Positive tests for VMLC test path - Advanced Zone
@@ -508,7 +508,7 @@ class TestPathVMLC(cloudstackTestCase):
             self.fail("Exception while SSHing to VM: %s" % e)
         return
 
-    @attr(tags=["advanced"], required_hardware="False")
+    @attr(tags=["advanced"], required_hardware="false")
     def test_01_positive_tests_vm_deploy_shared_nw(self):
         """ Positive tests for VMLC test path - Advanced Zone in Shared Network
 
@@ -560,7 +560,7 @@ class TestPathVMLC(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["basic"], required_hardware="False")
+    @attr(tags=["basic"], required_hardware="false")
     def test_01_positive_tests_vm_operations_basic_zone(self):
         """ Positive tests for VMLC test path - Basic Zone
 
@@ -722,7 +722,7 @@ class TestPathVMLC(cloudstackTestCase):
             self.fail("Exception while SSHing to VM: %s" % e)
         return
 
-    @attr(tags=["advanced"], required_hardware="False")
+    @attr(tags=["advanced"], required_hardware="false")
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
     def test_02_negative_tests_destroy_VM_operations_advanced_zone(
             self,
@@ -774,7 +774,7 @@ class TestPathVMLC(cloudstackTestCase):
 
         return
 
-    @attr(tags=["basic"], required_hardware="False")
+    @attr(tags=["basic"], required_hardware="false")
     def test_02_negative_tests_destroy_VM_operations_basic_zone(self):
         """ Negative tests for VMLC test path - destroy VM
 
@@ -817,7 +817,7 @@ class TestPathVMLC(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced"], required_hardware="False")
+    @attr(tags=["advanced"], required_hardware="false")
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
     def test_03_negative_tests_expunge_VM_operations_advanced_zone(
             self,
@@ -875,7 +875,7 @@ class TestPathVMLC(cloudstackTestCase):
 
         return
 
-    @attr(tags=["basic"], required_hardware="False")
+    @attr(tags=["basic"], required_hardware="false")
     def test_03_negative_tests_expunge_VM_operations_basic_zone(self):
         """ Negative tests for VMLC test path - expunge VM
 
