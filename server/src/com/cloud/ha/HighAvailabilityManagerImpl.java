@@ -634,6 +634,9 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             _haDao.update(work.getId(), work);
 
             VMInstanceVO vm = _instanceDao.findById(vmId);
+            if (vm == null) {
+                return null;
+            }
             // First try starting the vm with its original planner, if it doesn't succeed send HAPlanner as its an emergency.
             _itMgr.migrateAway(vm.getUuid(), srcHostId);
             return null;
@@ -753,7 +756,10 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         List<HaWorkVO> works = _haDao.findTakenWorkItems(WorkType.Migration);
         List<VMInstanceVO> vms = new ArrayList<VMInstanceVO>(works.size());
         for (HaWorkVO work : works) {
-            vms.add(_instanceDao.findById(work.getInstanceId()));
+            VMInstanceVO vm = _instanceDao.findById(work.getInstanceId());
+            if (vm != null) {
+                vms.add(vm);
+            }
         }
         return vms;
     }
@@ -913,6 +919,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                     } else {
                         s_logger.info("Rescheduling " + work + " to try again at " + new Date(nextTime << 10));
                         work.setTimeToTry(nextTime);
+                        work.setTimesTried(work.getTimesTried() + 1);
                         work.setServerId(null);
                         work.setDateTaken(null);
                     }
@@ -923,6 +930,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
 
                     s_logger.info("Rescheduling " + work + " to try again at " + new Date(nextTime << 10));
                     work.setTimeToTry(nextTime);
+                    work.setTimesTried(work.getTimesTried() + 1);
                     work.setServerId(null);
                     work.setDateTaken(null);
 
@@ -931,6 +939,10 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                     VMInstanceVO vm = _instanceDao.findById(work.getInstanceId());
                     work.setUpdateTime(vm.getUpdated());
                     work.setPreviousState(vm.getState());
+                    if (!Step.Done.equals(work.getStep()) && work.getTimesTried() >= _maxRetries) {
+                        s_logger.warn("Giving up, retries max times for work: " + work);
+                        work.setStep(Step.Done);
+                    }
                 }
                 _haDao.update(work.getId(), work);
             } catch (final Throwable th) {
