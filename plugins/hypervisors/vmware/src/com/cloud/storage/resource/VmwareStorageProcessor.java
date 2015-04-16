@@ -1368,7 +1368,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 if (isManaged) {
                     handleDatastoreAndVmdkDetachManaged(diskUuid, iScsiName, storageHost, storagePort);
                 } else {
-                    VmwareStorageLayoutHelper.syncVolumeToRootFolder(dsMo.getOwnerDatacenter().first(), dsMo, volumeTO.getPath());
+                    VmwareStorageLayoutHelper.syncVolumeToRootFolder(dsMo.getOwnerDatacenter().first(), dsMo, volumeTO.getPath(), vmName);
                 }
             }
 
