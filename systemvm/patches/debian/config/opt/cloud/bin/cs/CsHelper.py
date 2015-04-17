@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 """ General helper functions
-for use in the configuation process
+for use in the configuration process
 
 """
 import subprocess
