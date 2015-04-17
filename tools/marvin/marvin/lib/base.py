@@ -1003,13 +1003,6 @@ class Snapshot:
             cmd.projectid = projectid
         return Snapshot(apiclient.createSnapshot(cmd).__dict__)
 
-    @classmethod
-    def deletesnap(cls, apiclient, snapid):
-        """Delete Snapshot"""
-        cmd = deleteSnapshot.deleteSnapshotCmd()
-        cmd.id = snapid
-        return apiclient.deleteSnapshot(cmd)
-
     def delete(self, apiclient):
         """Delete Snapshot"""
         cmd = deleteSnapshot.deleteSnapshotCmd()
@@ -2512,6 +2505,35 @@ class Host:
         return(apiclient.updateHost(cmd))
 
     @classmethod
+    def getState(cls, apiclient, hostid, state, resourcestate, timeout=600):
+        """List Host and check if its resource state is as expected
+        @returnValue - List[Result, Reason]
+                       1) Result - FAIL if there is any exception
+                       in the operation or Host state does not change
+                       to expected state in given time else PASS
+                       2) Reason - Reason for failure"""
+
+        returnValue = [FAIL, "VM state not trasited to %s,\
+                        operation timed out" % state]
+
+        while timeout > 0:
+            try:
+                hosts = Host.list(apiclient, 
+                          id=hostid, listall=True)
+                validationresult = validateList(hosts)
+                if validationresult[0] == FAIL:
+                    raise Exception("Host list validation failed: %s" % validationresult[2])
+                elif str(hosts[0].state).lower().decode("string_escape") == str(state).lower() and str(hosts[0].resourcestate).lower().decode("string_escape") == str(resourcestate).lower():
+                    returnValue = [PASS, None]
+                    break
+            except Exception as e:
+                returnValue = [FAIL, e]
+                break
+            time.sleep(60)
+            timeout -= 60
+        return returnValue
+
+    @classmethod
     def reconnect(cls, apiclient, **kwargs):
         """Reconnect the Host"""
         
@@ -2628,6 +2650,35 @@ class StoragePool:
         cmd=updateStoragePool.updateStoragePoolCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return apiclient.updateStoragePool(cmd)
+
+    @classmethod
+    def getState(cls, apiclient, poolid, state, timeout=600):
+        """List StoragePools and check if its  state is as expected
+        @returnValue - List[Result, Reason]
+                       1) Result - FAIL if there is any exception
+                       in the operation or pool state does not change
+                       to expected state in given time else PASS
+                       2) Reason - Reason for failure"""
+
+        returnValue = [FAIL, "VM state not trasited to %s,\
+                        operation timed out" % state]
+
+        while timeout > 0:
+            try:
+                pools = StoragePool.list(apiclient, 
+                          id=poolid, listAll=True)
+                validationresult = validateList(pools)
+                if validationresult[0] == FAIL:
+                    raise Exception("Host list validation failed: %s" % validationresult[2])
+                elif str(pools[0].state).lower().decode("string_escape") == str(state).lower():
+                    returnValue = [PASS, None]
+                    break
+            except Exception as e:
+                returnValue = [FAIL, e]
+                break
+            time.sleep(60)
+            timeout -= 60
+        return returnValue
 
 class Network:
     """Manage Network pools"""
