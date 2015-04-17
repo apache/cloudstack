@@ -3203,7 +3203,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.debug("Successfully consolidated disks of VM " + vmName + ".");
             }
 
-            // Update and return volume path for every disk because that could have changed after migration
+            // Update and return volume path and chain info for every disk because that could have changed after migration
+            VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
             for (Pair<VolumeTO, StorageFilerTO> entry : volToFiler) {
                 volume = entry.first();
                 long volumeId = volume.getId();
@@ -3211,8 +3212,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 for (VirtualDisk disk : disks) {
                     if (volumeDeviceKey.get(volumeId) == disk.getKey()) {
                         VolumeObjectTO newVol = new VolumeObjectTO();
+                        String newPath = vmMo.getVmdkFileBaseName(disk);
+                        String poolName = entry.second().getUuid().replace("-", "");
+                        VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(newPath, poolName);
                         newVol.setId(volumeId);
-                        newVol.setPath(vmMo.getVmdkFileBaseName(disk));
+                        newVol.setPath(newPath);
+                        newVol.setChainInfo(_gson.toJson(diskInfo));
                         volumeToList.add(newVol);
                         break;
                     }
@@ -3329,7 +3334,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.debug("Successfully consolidated disks of VM " + vmName + ".");
             }
 
-            // Update and return volume path because that could have changed after migration
+            // Update and return volume path and chain info because that could have changed after migration
             if (!targetDsMo.fileExists(fullVolumePath)) {
                 VirtualDisk[] disks = vmMo.getAllDiskDevice();
                 for (VirtualDisk disk : disks)
@@ -3337,8 +3342,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         volumePath = vmMo.getVmdkFileBaseName(disk);
                     }
             }
-
-            return new MigrateVolumeAnswer(cmd, true, null, volumePath);
+            VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
+            String chainInfo = _gson.toJson(diskInfoBuilder.getDiskInfoByBackingFileBaseName(volumePath, poolTo.getUuid().replace("-", "")));
+            MigrateVolumeAnswer answer = new MigrateVolumeAnswer(cmd, true, null, volumePath);
+            answer.setVolumeChainInfo(chainInfo);
+            return answer;
         } catch (Exception e) {
             String msg = "Catch Exception " + e.getClass().getName() + " due to " + e.toString();
             s_logger.error(msg, e);
