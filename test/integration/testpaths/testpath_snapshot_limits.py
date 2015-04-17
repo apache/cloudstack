@@ -34,7 +34,8 @@ from marvin.lib.common import (get_domain,
                                get_template
                                )
 
-from marvin.codes import (BACKEDUP, PASS)
+from marvin.codes import (BACKEDUP, PASS, FAIL)
+
 
 class TestStorageSnapshotsLimits(cloudstackTestCase):
 
@@ -121,7 +122,7 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
         return
 
     @attr(tags=["basic", "advanced"], required_hardware="true")
-    def test_01_storage_snapshots_limits(self):
+    def test_05_storage_snapshots_limits(self):
         """ Storage and Snapshot Limit
             1.   Create Snapshot of ROOT disk.
             2.   Verify the Secondary Storage value\
@@ -142,20 +143,11 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
         root_volumes_list = Volume.list(
             self.userapiclient,
             virtualmachineid=self.vm.id,
-            type='ROOT',
-            listall=True
+            type='ROOT'
         )
 
-        self.assertEqual(
-            isinstance(
-                root_volumes_list,
-                list),
-            True,
-            "Check listVolumes for ROOT Disk returns a valid list")
-
-        self.assertNotEqual(len(root_volumes_list),
-                            0,
-                            "Check listVolumes response for ROOT Disk")
+        status = validateList(root_volumes_list)
+        self.assertEqual(status[0], PASS, "ROOT Volume List Validation Failed")
 
         root_volume = root_volumes_list[0]
 
@@ -167,6 +159,8 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
             domainid=self.account.domainid,
             diskofferingid=self.disk_offering.id
         )
+
+        self.cleanup.append(data_volume_created)
 
         self.vm.attach_volume(
             self.userapiclient,
@@ -180,16 +174,16 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
 
         data_volume = data_volumes_list[0]
 
-        
         # Get Secondary Storage Value from Database
         qryresult_before_snapshot = self.dbclient.execute(
             " select id, account_name, secondaryStorageTotal\
                     from account_view where account_name = '%s';" %
             self.account.name)
 
-        self.assertNotEqual(
-            len(qryresult_before_snapshot),
-            0,
+        status = validateList(qryresult_before_snapshot)
+        self.assertEqual(
+            status[0],
+            PASS,
             "Check sql query to return SecondaryStorageTotal of account")
 
         secStorageBeforeSnapshot = qryresult_before_snapshot[0][2]
@@ -203,7 +197,7 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
                                        id=snapshot.id)
 
         status = validateList(snapshots_list)
-        self.assertEqual(status[0],PASS,"Snapshots List Validation Failed")
+        self.assertEqual(status[0], PASS, "Snapshots List Validation Failed")
 
         # Verify Snapshot state
         self.assertEqual(
@@ -221,9 +215,10 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
                         from account_view where account_name = '%s';" %
             self.account.name)
 
-        self.assertNotEqual(
-            len(qryresult_after_snapshot),
-            0,
+        status = validateList(qryresult_after_snapshot)
+        self.assertEqual(
+            status[0],
+            PASS,
             "Check sql query to return SecondaryStorageTotal of account")
 
         secStorageAfterSnapshotCreated = qryresult_after_snapshot[0][2]
@@ -244,11 +239,8 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
         snapshots_list = Snapshot.list(self.userapiclient,
                                        id=snapshot.id)
 
-        self.assertEqual(
-            snapshots_list,
-            None,
-            "Snapshot not deleted."
-        )
+        status = validateList(snapshots_list)
+        self.assertEqual(status[0], FAIL, "Snapshots Not Deleted.")
 
         # Step 4
         qryresult_after_snapshot_deleted = self.dbclient.execute(
@@ -256,9 +248,10 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
                         from account_view where account_name = '%s';" %
             self.account.name)
 
-        self.assertNotEqual(
-            len(qryresult_after_snapshot_deleted),
-            0,
+        status = validateList(qryresult_after_snapshot_deleted)
+        self.assertEqual(
+            status[0],
+            PASS,
             "Check sql query to return SecondaryStorageTotal of account")
 
         secStorageAfterSnapshotDeleted = qryresult_after_snapshot_deleted[0][2]
@@ -287,7 +280,7 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
                                        id=snapshot.id)
 
         status = validateList(snapshots_list)
-        self.assertEqual(status[0],PASS,"Snapshots List Validation Failed")
+        self.assertEqual(status[0], PASS, "Snapshots List Validation Failed")
 
         # Verify Snapshot state
         self.assertEqual(
@@ -311,11 +304,8 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
         snapshots_list = Snapshot.list(self.userapiclient,
                                        id=snapshot.id)
 
-        self.assertEqual(
-            snapshots_list,
-            None,
-            "Snapshot not deleted."
-        )
+        status = validateList(snapshots_list)
+        self.assertEqual(status[0], FAIL, "Snapshots Not Deleted.")
 
         # Step 9
         snapshot = Snapshot.create(
@@ -326,7 +316,7 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
                                        id=snapshot.id)
 
         status = validateList(snapshots_list)
-        self.assertEqual(status[0],PASS,"Snapshots List Validation Failed")
+        self.assertEqual(status[0], PASS, "Snapshots List Validation Failed")
 
         # Verify Snapshot state
         self.assertEqual(
@@ -336,6 +326,11 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
             True,
             "Snapshot state is not as expected. It is %s" %
             snapshots_list[0].state
+        )
+
+        self.vm.detach_volume(
+            self.userapiclient,
+            data_volumes_list[0]
         )
 
         return
