@@ -19,7 +19,6 @@ package com.cloud.servlet;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -159,33 +158,4 @@ public class ConsoleProxyPasswordBasedEncryptor {
         }
     }
 
-    public static void main(String[] args) {
-        SecureRandom random;
-        try {
-            random = SecureRandom.getInstance("SHA1PRNG");
-            byte[] keyBytes = new byte[16];
-            random.nextBytes(keyBytes);
-
-            byte[] ivBytes = new byte[16];
-            random.nextBytes(ivBytes);
-
-            KeyIVPair keyIvPair = new KeyIVPair("8x/xUBgX0Up+3UEo39dSeG277JhVj31+ElHkN5+EC0Q=", "Y2SUiIN6JXTdKNK/ZMDyVtLB7gAM9MCCiyrP1xd3bSQ=");
-            //keyIvPair.setKeyBytes(keyBytes);
-            //keyIvPair.setIvBytes(ivBytes);
-
-            Gson gson = new GsonBuilder().create();
-            ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(gson.toJson(keyIvPair));
-
-            String encrypted = encryptor.encryptText("Hello, world");
-
-            System.out.println("Encrypted result: " + encrypted);
-
-            String decrypted = encryptor.decryptText(encrypted);
-
-            System.out.println("Decrypted result: " + decrypted);
-
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-    }
 }
