@@ -2617,9 +2617,13 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             throw new InvalidParameterValueException("unable to decode and deserialize metadata");
         } else {
             uuid = cmd.getEntityUUID();
-            if (uploadEntityStateMap.containsKey(uuid)) {
+            if (isOneTimePostUrlUsed(cmd)) {
                 uploadEntity = uploadEntityStateMap.get(uuid);
-                throw new InvalidParameterValueException("The one time post url is already used and the upload is in " + uploadEntity.getUploadState() + " state.");
+                StringBuilder errorMessage = new StringBuilder("The one time post url is already used");
+                if (uploadEntity != null) {
+                    errorMessage.append(" and the upload is in ").append(uploadEntity.getUploadState()).append(" state.");
+                }
+                throw new InvalidParameterValueException(errorMessage.toString());
             }
             int maxSizeInGB = Integer.valueOf(cmd.getMaxUploadSize());
             int contentLengthInGB = getSizeInGB(contentLength);
@@ -2655,6 +2659,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             }
         }
         return uploadEntity;
+    }
+
+    private boolean isOneTimePostUrlUsed(TemplateOrVolumePostUploadCommand cmd) {
+        String uuid = cmd.getEntityUUID();
+        String uploadPath = this.getRootDir(cmd.getDataTo()) + File.separator + cmd.getAbsolutePath();
+        return uploadEntityStateMap.containsKey(uuid) || new File(uploadPath).exists();
     }
 
     private int getSizeInGB(long sizeInBytes) {

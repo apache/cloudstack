@@ -77,7 +77,7 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
 
     private String uuid;
 
-    private boolean fileReceived = false;
+    private boolean requestProcessed = false;
 
     private static final String HEADER_SIGNATURE = "X-signature";
 
@@ -96,12 +96,12 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
         if (decoder != null) {
             decoder.cleanFiles();
         }
-        fileReceived = false;
+        requestProcessed = false;
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        if (!fileReceived) {
+        if (!requestProcessed) {
             String message = "file receive failed or connection closed prematurely.";
             logger.error(message);
             storageResource.updateStateMapWithError(uuid, message);
@@ -163,12 +163,14 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                     logger.error("post request validation failed", ex);
                     responseContent.append(ex.getMessage());
                     writeResponse(ctx.channel(), HttpResponseStatus.BAD_REQUEST);
+                    requestProcessed = true;
                     return;
                 }
                 if (uploadEntity == null) {
                     logger.error("Unable to create upload entity. An exception occurred.");
                     responseContent.append("Internal Server Error");
                     writeResponse(ctx.channel(), HttpResponseStatus.INTERNAL_SERVER_ERROR);
+                    requestProcessed = true;
                     return;
                 }
                 //set the base directory to download the file
@@ -181,12 +183,14 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                     logger.error("exception while initialising the decoder", e);
                     responseContent.append(e.getMessage());
                     writeResponse(ctx.channel(), HttpResponseStatus.INTERNAL_SERVER_ERROR);
+                    requestProcessed = true;
                     return;
                 }
             } else {
                 logger.warn("received a get request");
                 responseContent.append("only post requests are allowed");
                 writeResponse(ctx.channel(), HttpResponseStatus.BAD_REQUEST);
+                requestProcessed = true;
                 return;
             }
 
@@ -202,6 +206,7 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                     logger.error("data decoding exception", e);
                     responseContent.append(e.getMessage());
                     writeResponse(ctx.channel(), HttpResponseStatus.INTERNAL_SERVER_ERROR);
+                    requestProcessed = true;
                     return;
                 }
                 if (chunk instanceof LastHttpContent) {
@@ -229,7 +234,7 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                     if (data.getHttpDataType() == HttpDataType.FileUpload) {
                         FileUpload fileUpload = (FileUpload) data;
                         if (fileUpload.isCompleted()) {
-                            fileReceived = true;
+                            requestProcessed = true;
                             String format = ImageStoreUtil.checkTemplateFormat(fileUpload.getFile().getAbsolutePath(), fileUpload.getFilename());
                             if(StringUtils.isNotBlank(format)) {
                                 String errorString = "File type mismatch between the sent file and the actual content. Received: " + format;
