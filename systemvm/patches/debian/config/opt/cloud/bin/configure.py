@@ -630,6 +630,24 @@ class CsForwardingRules(CsDataBag):
                         "-A OUTPUT -d %s/32 -j DNAT --to-destination %s" % (rule["public_ip"], rule["internal_ip"])])
 
 
+class CsIptables():
+
+    def process(self):
+        self.save_iptables()
+        self.create_lock_file()
+
+    def save_iptables(self):
+        """ Save iptables """
+        logging.debug("Saving iptables")
+        result = CsHelper.execute("service iptables-persistent save")
+
+    def create_lock_file(self):
+        """ Create lockfile, so iptables won't be overwritten in cloud-early-config """
+        lockfile = "/etc/iptables/cloud-early-config-iptables.lock"
+        if CsHelper.addifmissing(lockfile, "if this file exists, iptables won't be overwritten on boot."):
+            logging.debug("Creating iptables lockfile %s" % lockfile)
+
+
 def main(argv):
     config = CsConfig()
     logging.basicConfig(filename=config.get_logger(),
@@ -676,10 +694,9 @@ def main(argv):
 
     mon = CsMonitor("monitorservice", config)
     mon.process()
-    
-    #Save iptables configuration - will be loaded on reboot by the iptables-restore that is configured on /etc/rc.local
-    CsHelper.save_iptables("iptables-save", "/etc/iptables/router_rules.v4")
-    CsHelper.save_iptables("ip6tables-save", "/etc/iptables/router_rules.v6")
-    
+
+    iptables = CsIptables()
+    iptables.process()
+
 if __name__ == "__main__":
     main(sys.argv)
