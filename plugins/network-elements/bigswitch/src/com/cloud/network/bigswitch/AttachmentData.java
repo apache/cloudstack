@@ -20,6 +20,7 @@
 package com.cloud.network.bigswitch;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -28,7 +29,7 @@ import com.google.gson.annotations.SerializedName;
  * in CreateBcfAttachmentCommand
  */
 public class AttachmentData {
-    @SerializedName("port") private Attachment attachment;
+    @SerializedName("port") final private Attachment attachment;
 
     public Attachment getAttachment() {
         return this.attachment;
@@ -42,9 +43,9 @@ public class AttachmentData {
         @SerializedName("id") private String id;
         @SerializedName("tenant_name") private String tenantName;
         @SerializedName("vlan") private Integer vlan;
-        @SerializedName("fixed_ips") private ArrayList<IpAddress> fixedIps;
+        @SerializedName("fixed_ips") final private List<IpAddress> fixedIps;
         @SerializedName("mac_address") private String macAddress;
-        @SerializedName("bound_segment") private BoundSegment boundSegment;
+        @SerializedName("bound_segment") final private BoundSegment boundSegment;
         @SerializedName("binding:host_id") private String hostId;
 
         public Attachment(){
@@ -65,14 +66,14 @@ public class AttachmentData {
         }
 
         public class IpAddress {
-            @SerializedName("ip_address") private String ipAddress;
+            @SerializedName("ip_address") private String address;
 
-            public IpAddress(String ipAddr) {
-                this.ipAddress = ipAddr;
+            public IpAddress(final String ipAddr) {
+                this.address = ipAddr;
             }
 
             public String getIpAddress(){
-                return ipAddress;
+                return address;
             }
         }
 
@@ -82,7 +83,7 @@ public class AttachmentData {
             return tenantName;
         }
 
-        public void setTenantName(String tenantName) {
+        public void setTenantName(final String tenantName) {
             this.tenantName = tenantName;
         }
 
@@ -90,7 +91,7 @@ public class AttachmentData {
             return id;
         }
 
-        public void setId(String id) {
+        public void setId(final String id) {
             this.id = id;
         }
 
@@ -98,7 +99,7 @@ public class AttachmentData {
             return hostId;
         }
 
-        public void setHostId(String hostId) {
+        public void setHostId(final String hostId) {
             this.hostId = hostId;
         }
 
@@ -106,16 +107,16 @@ public class AttachmentData {
             return vlan;
         }
 
-        public void setVlan(Integer vlan) {
+        public void setVlan(final Integer vlan) {
             this.vlan = vlan;
             this.boundSegment.setSegmentationId(vlan);
         }
 
-        public ArrayList<IpAddress> getIpv4List() {
+        public List<IpAddress> getIpv4List() {
             return fixedIps;
         }
 
-        public void addIpv4(String ipv4) {
+        public void addIpv4(final String ipv4) {
             this.fixedIps.add(new IpAddress(ipv4));
         }
 
@@ -123,7 +124,7 @@ public class AttachmentData {
             return macAddress;
         }
 
-        public void setMac(String mac) {
+        public void setMac(final String mac) {
             this.macAddress = mac;
         }
 
@@ -135,7 +136,7 @@ public class AttachmentData {
             return state;
         }
 
-        public void setState(String state) {
+        public void setState(final String state) {
             this.state = state;
         }
     }

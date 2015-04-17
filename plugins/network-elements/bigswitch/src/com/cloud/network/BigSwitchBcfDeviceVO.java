@@ -73,8 +73,10 @@ public class BigSwitchBcfDeviceVO implements InternalIdentity {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public BigSwitchBcfDeviceVO(long hostId, long physicalNetworkId, String providerName, String deviceName,
-            String hostName, String username, String password, Boolean nat, String hash) {
+    public BigSwitchBcfDeviceVO(final long hostId, final long physicalNetworkId,
+            final String providerName, final String deviceName,final String hostName,
+            final String username, final String password, final Boolean nat,
+            final String hash) {
         super();
         this.hostId = hostId;
         this.physicalNetworkId = physicalNetworkId;
@@ -97,7 +99,7 @@ public class BigSwitchBcfDeviceVO implements InternalIdentity {
         return uuid;
     }
 
-    public void setUuid(String uuid) {
+    public void setUuid(final String uuid) {
         this.uuid = uuid;
     }
 
@@ -121,7 +123,7 @@ public class BigSwitchBcfDeviceVO implements InternalIdentity {
         return hash;
     }
 
-    public void setHash(String h) {
+    public void setHash(final String h) {
         hash = h;
     }
 

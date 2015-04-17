@@ -177,7 +177,7 @@ public class BigSwitchBcfUtils {
 
         // handle external network first, only if NAT service is enabled
         if(networks != null) {
-            if(!(networks.isEmpty()) && isNatEnabled()!=null && isNatEnabled()){
+            if(!(networks.isEmpty()) && isNatEnabled()){
                 // get public net info - needed to set up source nat gateway
                 NetworkVO pubNet = getPublicNetwork(physicalNetworkId);
 
@@ -380,7 +380,7 @@ public class BigSwitchBcfUtils {
             Integer port = rule.getSourcePortStart();
             fwCidrList = _fwCidrsDao.listByFirewallRuleId(rule.getId());
             if(fwCidrList != null){
-                if(fwCidrList.size()>1 || rule.getSourcePortEnd()!=port){
+                if(fwCidrList.size()>1 || !rule.getSourcePortEnd().equals(port)){
                     continue;
                 } else {
                     cidr = fwCidrList.get(0).getCidr();
@@ -414,7 +414,7 @@ public class BigSwitchBcfUtils {
                 Integer port = item.getSourcePortStart(); // currently BCF supports single port policy
                 aclCidrList = _aclItemCidrsDao.listByNetworkACLItemId(item.getId());
                 if(aclCidrList != null){
-                    if(aclCidrList.size()>1 || item.getSourcePortEnd()!=port){
+                    if(aclCidrList.size()>1 || !item.getSourcePortEnd().equals(port)){
                         continue;
                     } else {
                         cidr = aclCidrList.get(0).getCidr();
@@ -440,7 +440,7 @@ public class BigSwitchBcfUtils {
 
     public String syncTopologyToBcfHost(HostVO bigswitchBcfHost){
         SyncBcfTopologyCommand syncCmd;
-        if(isNatEnabled()!=null && isNatEnabled()){
+        if(isNatEnabled()){
             syncCmd = new SyncBcfTopologyCommand(true, true);
         } else {
             syncCmd = new SyncBcfTopologyCommand(true, false);
@@ -486,7 +486,7 @@ public class BigSwitchBcfUtils {
         }
 
         String newHash = answer.getHash();
-        if (cmd.is_topologySyncRequested()) {
+        if (cmd.isTopologySyncRequested()) {
             newHash = syncTopologyToBcfHost(cluster.getMaster());
         }
         if(newHash != null){
@@ -524,7 +524,7 @@ public class BigSwitchBcfUtils {
         if(devices != null && !devices.isEmpty()){
             return devices.get(0).getNat();
         } else {
-            return null;
+            return false;
         }
     }
 
@@ -532,7 +532,7 @@ public class BigSwitchBcfUtils {
         if(!IPAddress.isValidIPv4(maskString)){
             return null;
         }
-        String[] octets = maskString.split(".");
+        String[] octets = maskString.split("\\.");
         Integer bits = 0;
         for (String o: octets){
             switch(o){

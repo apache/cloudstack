@@ -4,6 +4,6 @@
        rotate 3
        compress
        dateext
-       size=+10M
+       size 10M
        notifempty
 }

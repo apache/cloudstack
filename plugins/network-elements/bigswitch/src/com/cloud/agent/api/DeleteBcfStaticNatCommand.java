@@ -24,21 +24,21 @@ public class DeleteBcfStaticNatCommand extends BcfCommand {
     private final String _publicIp;
     private final String _floatingIpId;
 
-    public DeleteBcfStaticNatCommand(String tenantId, String publicIp){
+    public DeleteBcfStaticNatCommand(final String tenantId, final String publicIp){
         this._tenantId = tenantId;
         this._publicIp = publicIp;
         this._floatingIpId = publicIp.replace(".", "-");
     }
 
-    public String get_tenantId() {
+    public String getTenantId() {
         return _tenantId;
     }
 
-    public String get_publicIp() {
+    public String getPublicIp() {
         return _publicIp;
     }
 
-    public String get_floatingIpId() {
+    public String getFloatingIpId() {
         return _floatingIpId;
     }
 }

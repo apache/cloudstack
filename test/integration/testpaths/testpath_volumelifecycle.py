@@ -37,7 +37,8 @@ from marvin.lib.utils import cleanup_resources, validateList
 from marvin.lib.common import (get_zone,
                                get_domain,
                                get_template,
-                               list_virtual_machines)
+                               list_virtual_machines,
+                               find_storage_pool_type)
 from nose.plugins.attrib import attr
 import os
 import urllib
@@ -235,7 +236,7 @@ class TestPathVolume(cloudstackTestCase):
             "advancedsg",
             "basic",
         ],
-        required_hardware="false")
+        required_hardware="True")
     def test_01_positive_path(self):
         """
         positive test for volume life cycle
@@ -819,7 +820,7 @@ class TestPathVolume(cloudstackTestCase):
             "advancedsg",
             "basic",
         ],
-        required_hardware="false")
+        required_hardware="True")
     def test_02_negative_path(self):
         """
         negative test for volume life cycle

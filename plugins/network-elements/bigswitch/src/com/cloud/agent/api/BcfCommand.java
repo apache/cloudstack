@@ -22,8 +22,8 @@ package com.cloud.agent.api;
 import com.cloud.network.bigswitch.TopologyData;
 
 public class BcfCommand extends Command {
-    private TopologyData topology = null;
-    private boolean _topologySyncRequested = false;
+    private TopologyData topology;
+    private boolean topologySyncRequested;
 
     @Override
     public boolean executeInSequence() {
@@ -34,15 +34,15 @@ public class BcfCommand extends Command {
         return topology;
     }
 
-    public void setTopology(TopologyData topology) {
+    public void setTopology(final TopologyData topology) {
         this.topology = topology;
     }
 
-    public boolean is_topologySyncRequested() {
-        return _topologySyncRequested;
+    public boolean isTopologySyncRequested() {
+        return topologySyncRequested;
     }
 
-    public void set_topologySyncRequested(boolean requested) {
-        this._topologySyncRequested = requested;
+    public void setTopologySyncRequested(final boolean requested) {
+        this.topologySyncRequested = requested;
     }
 }

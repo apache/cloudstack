@@ -28,13 +28,13 @@ public class GetControllerHostsAnswer {
     public HostVO getMaster() {
         return master;
     }
-    public void setMaster(HostVO master) {
+    public void setMaster(final HostVO master) {
         this.master = master;
     }
     public HostVO getSlave() {
         return slave;
     }
-    public void setSlave(HostVO slave) {
+    public void setSlave(final HostVO slave) {
         this.slave = slave;
     }
 }

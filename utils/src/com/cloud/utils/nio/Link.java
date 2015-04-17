@@ -466,7 +466,7 @@ public class Link {
         ByteBuffer out_pkgBuf = ByteBuffer.allocate(sslSession.getPacketBufferSize() + 40);
         ByteBuffer out_appBuf = ByteBuffer.allocate(sslSession.getApplicationBufferSize() + 40);
         int count;
-        ch.socket().setSoTimeout(30 * 1000);
+        ch.socket().setSoTimeout(60 * 1000);
         InputStream inStream = ch.socket().getInputStream();
         // Use readCh to make sure the timeout on reading is working
         ReadableByteChannel readCh = Channels.newChannel(inStream);

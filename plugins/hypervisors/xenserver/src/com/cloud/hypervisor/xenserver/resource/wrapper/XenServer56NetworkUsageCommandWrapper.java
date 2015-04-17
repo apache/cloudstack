@@ -21,13 +21,14 @@ package com.cloud.hypervisor.xenserver.resource.wrapper;
 
 import org.apache.log4j.Logger;
 
+import com.xensource.xenapi.Connection;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.hypervisor.xenserver.resource.XenServer56Resource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.utils.ExecutionResult;
-import com.xensource.xenapi.Connection;
 
 public final class XenServer56NetworkUsageCommandWrapper extends CommandWrapper<NetworkUsageCommand, Answer, XenServer56Resource> {
 
@@ -87,8 +88,8 @@ public final class XenServer56NetworkUsageCommandWrapper extends CommandWrapper<
                     final String[] splitResult = detail.split(":");
                     int i = 0;
                     while (i < splitResult.length - 1) {
-                        stats[0] += new Long(splitResult[i++]).longValue();
-                        stats[1] += new Long(splitResult[i++]).longValue();
+                        stats[0] += Long.parseLong(splitResult[i++]);
+                        stats[1] += Long.parseLong(splitResult[i++]);
                     }
                     return new NetworkUsageAnswer(command, "success", stats[0], stats[1]);
                 }

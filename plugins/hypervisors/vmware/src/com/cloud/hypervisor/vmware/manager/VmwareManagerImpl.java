@@ -765,7 +765,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
         // Change permissions for the mountpoint
         script = new Script(true, "chmod", _timeout, s_logger);
-        script.add("777", mountPoint);
+        script.add("1777", mountPoint);
         result = script.execute();
         if (result != null) {
             s_logger.warn("Unable to set permissions for " + mountPoint + " due to " + result);

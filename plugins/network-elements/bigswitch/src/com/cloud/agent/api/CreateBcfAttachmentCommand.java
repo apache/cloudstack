@@ -20,18 +20,18 @@
 package com.cloud.agent.api;
 
 public class CreateBcfAttachmentCommand extends BcfCommand {
-    private String _tenantId;
-    private String _tenantName;
-    private String _networkId;
-    private String _portId;
-    private String _nicId;
-    private Integer _vlan;
-    private String _ipv4;
-    private String _mac;
+    private final String _tenantId;
+    private final String _tenantName;
+    private final String _networkId;
+    private final String _portId;
+    private final String _nicId;
+    private final Integer _vlan;
+    private final String _ipv4;
+    private final String _mac;
 
-    public CreateBcfAttachmentCommand(String tenantId, String tenantName,
-            String networkId, String portId, String nicId,
-            Integer vlan, String ipv4, String mac) {
+    public CreateBcfAttachmentCommand(final String tenantId, final String tenantName,
+            final String networkId, final String portId, final String nicId,
+            final Integer vlan, final String ipv4, final String mac) {
         this._tenantId = tenantId;
         this._tenantName = tenantName;
         this._networkId = networkId;

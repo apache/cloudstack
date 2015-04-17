@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
+import org.apache.commons.lang.StringEscapeUtils;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -1168,7 +1170,7 @@ public class LibvirtVMDef {
             _port = port;
             _autoPort = autoPort;
             _listenAddr = listenAddr;
-            _passwd = passwd;
+            _passwd = StringEscapeUtils.escapeXml(passwd);
             _keyMap = keyMap;
         }
 

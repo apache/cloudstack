@@ -70,38 +70,28 @@ function install_packages() {
     openjdk-7-jre-headless \
     iptables-persistent \
     libtcnative-1 libssl-dev libapr1-dev \
-    open-vm-tools \
     python-flask \
     haproxy \
     radvd \
     sharutils
 
-  ${apt_get} -t wheezy-backports install irqbalance
+  ${apt_get} -t wheezy-backports install irqbalance open-vm-tools
 
   # hold on installed openswan version, upgrade rest of the packages (if any)
   apt-mark hold openswan
   apt-get update
   apt-get -y --force-yes upgrade
 
-  # commented out installation of vmware-tools as we are using the open source open-vm-tools:
-  # ${apt_get} install build-essential linux-headers-`uname -r`
-  # df -h
-  # PREVDIR=$PWD
-  # cd /opt
-  # wget http://people.apache.org/~bhaisaab/cloudstack/VMwareTools-9.2.1-818201.tar.gz
-  # tar xzf VMwareTools-9.2.1-818201.tar.gz
-  # rm VMwareTools-*.tar.gz
-  # cd vmware-tools-distrib
-  # ./vmware-install.pl -d
-  # cd $PREV
-  # rm -fr /opt/vmware-tools-distrib
-  # apt-get -q -y --force-yes purge build-essential
-
-  # Hyperv  kvp daemon - 64bit only
   if [ "${arch}" == "amd64" ]; then
+    # Hyperv  kvp daemon - 64bit only
     # Download the hv kvp daemon
     wget http://people.apache.org/~rajeshbattala/hv-kvp-daemon_3.1_amd64.deb
     dpkg -i hv-kvp-daemon_3.1_amd64.deb
+    rm -f hv-kvp-daemon_3.1_amd64.deb
+    # XS tools
+    wget https://raw.githubusercontent.com/bhaisaab/cloudstack-nonoss/master/xe-guest-utilities_6.5.0_amd64.deb
+    dpkg -i xe-guest-utilities_6.5.0_amd64.deb
+    rm -f xe-guest-utilities_6.5.0_amd64.deb
   fi
 }
 

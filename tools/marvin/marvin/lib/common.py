@@ -62,8 +62,11 @@ from marvin.codes import (PASS, FAILED, ISOLATED_NETWORK, VPC_NETWORK,
                           BASIC_ZONE, FAIL, NAT_RULE, STATIC_NAT_RULE,
                           RESOURCE_PRIMARY_STORAGE, RESOURCE_SECONDARY_STORAGE,
                           RESOURCE_CPU, RESOURCE_MEMORY, PUBLIC_TRAFFIC,
-                          GUEST_TRAFFIC, MANAGEMENT_TRAFFIC, STORAGE_TRAFFIC)
-from marvin.lib.utils import (validateList, xsplit, get_process_status)
+                          GUEST_TRAFFIC, MANAGEMENT_TRAFFIC, STORAGE_TRAFFIC,
+                          VMWAREDVS)
+from marvin.lib.utils import (validateList,
+                              xsplit,
+                              get_process_status)
 from marvin.lib.base import (PhysicalNetwork,
                              PublicIPAddress,
                              NetworkOffering,
@@ -85,6 +88,8 @@ from marvin.lib.base import (PhysicalNetwork,
                              PublicIpRange,
                              StorageNetworkIpRange,
                              TrafficType)
+from marvin.lib.vcenter import Vcenter
+from netaddr import IPAddress
 import random
 import re
 import itertools
@@ -1422,7 +1427,61 @@ def verifyRouterState(apiclient, routerid, state, listall=True):
         return [exceptionOccured, isRouterInDesiredState, exceptionMessage]
     return [exceptionOccured, isRouterInDesiredState, exceptionMessage]
 
-def analyzeTrafficType(trafficTypes, trafficTypeToFilter):
+def isIpRangeInUse(api_client, publicIpRange):
+    ''' Check that if any Ip in the IP Range is in use
+        currently
+    '''
+
+    vmList = VirtualMachine.list(api_client,
+                                 zoneid=publicIpRange.zoneid,
+                                 listall=True)
+    if not vmList:
+        return False
+
+    for vm in vmList:
+        for nic in vm.nic:
+            publicIpAddresses = PublicIPAddress.list(api_client,
+                                                 associatednetworkid=nic.networkid,
+                                                 listall=True)
+            if validateList(publicIpAddresses)[0] == PASS:
+                for ipaddress in publicIpAddresses:
+                    if IPAddress(publicIpRange.startip) <=\
+                        IPAddress(ipaddress.ipaddress) <=\
+                        IPAddress(publicIpRange.endip):
+                        return True
+    return False
+
+def verifyGuestTrafficPortGroups(api_client, config, setup_zone):
+
+    """ This function matches the given zone with
+    the zone in config file used to deploy the setup and
+    retrieves the corresponding vcenter details and forms
+    the vcenter connection object. It makes call to
+    verify the guest traffic for given zone """
+
+    try:
+        zoneDetailsInConfig = [zone for zone in config.zones
+                if zone.name == setup_zone.name][0]
+        vcenterusername = zoneDetailsInConfig.vmwaredc.username
+        vcenterpassword = zoneDetailsInConfig.vmwaredc.password
+        vcenterip = zoneDetailsInConfig.vmwaredc.vcenter
+        vcenterObj = Vcenter(
+                vcenterip,
+                vcenterusername,
+                vcenterpassword)
+        response = verifyVCenterPortGroups(
+                api_client,
+                vcenterObj,
+                traffic_types_to_validate=[
+                    GUEST_TRAFFIC],
+                zoneid=setup_zone.id,
+                switchTypes=[VMWAREDVS])
+        assert response[0] == PASS, response[1]
+    except Exception as e:
+        return [FAIL, e]
+    return [PASS, None]
+
+def analyzeTrafficType(trafficTypes, trafficTypeToFilter, switchTypes=None):
     """ Analyze traffic types for given type and return
         switch name and vlan Id from the
         vmwarenetworklabel string of trafficTypeToFilter
@@ -1442,6 +1501,10 @@ def analyzeTrafficType(trafficTypes, trafficTypeToFilter):
             filteredList[0].vmwarenetworklabel).split(",")
         switchName = splitString[0]
         vlanSpecified = splitString[1]
+        availableSwitchType = splitString[2]
+
+        if switchTypes and availableSwitchType.lower() not in switchTypes:
+            return [PASS, None, None, None]
 
         return [PASS, filteredList, switchName, vlanSpecified]
     except Exception as e:
@@ -1493,18 +1556,21 @@ def getExpectedPortGroupNames(
                     vlanInIpRange = re.findall(
                         '\d+',
                         str(publicIpRange.vlan))
+                    vlanId = "untagged"
                     if len(vlanInIpRange) > 0:
                         vlanId = vlanInIpRange[0]
+                    ipRangeInUse = isIpRangeInUse(api_client, publicIpRange)
+                    if ipRangeInUse:
                         expectedDVPortGroupName = "cloud" + "." + \
-                            PUBLIC_TRAFFIC + "." + vlanId + "." + \
-                            network_rate + "." + "1" + "-" + \
-                            switch_name
+                                    PUBLIC_TRAFFIC + "." + vlanId + "." + \
+                                    network_rate + "." + "1" + "-" + \
+                                    switch_name
                         expectedDVPortGroupNames.append(
-                            expectedDVPortGroupName)
+                                    expectedDVPortGroupName)
 
-            expectedDVPortGroupName = "cloud" + "." + PUBLIC_TRAFFIC + "." + \
-                vlanId + "." + "0" + "." + "1" + "-" + switch_name
-            expectedDVPortGroupNames.append(expectedDVPortGroupName)
+                    expectedDVPortGroupName = "cloud" + "." + PUBLIC_TRAFFIC + "." + \
+                            vlanId + "." + "0" + "." + "1" + "-" + switch_name
+                    expectedDVPortGroupNames.append(expectedDVPortGroupName)
 
         if traffic_type == GUEST_TRAFFIC:
 
@@ -1588,8 +1654,9 @@ def getExpectedPortGroupNames(
 def verifyVCenterPortGroups(
         api_client,
         vcenter_conn,
-        zone_list,
-        traffic_types_to_validate):
+        zoneid,
+        traffic_types_to_validate,
+        switchTypes):
 
     """ Generate expected port groups for given traffic types and
         verify they are present in the vcenter
@@ -1598,9 +1665,12 @@ def verifyVCenterPortGroups(
         @api_client:    API client of root admin account
         @vcenter_conn:  connection object for vcenter used to fetch data
                         using vcenterAPI
-        @zone_list:     List of zones for which port groups are to be verified
-        traffic_types:  Traffic types (public, guest, management, storage) for
+        @zone_id:       Zone for which port groups are to be verified
+        @traffic_types_to_validate:
+                        Traffic types (public, guest, management, storage) for
                         which verification is to be done
+        @switchTypes:   The switch types for which port groups
+                        are to be verified e.g vmwaredvs
 
         Return value:
         [PASS/FAIL, exception message if FAIL else None]
@@ -1614,38 +1684,38 @@ def verifyVCenterPortGroups(
         )
         networkRate = config[0].value
         switchDict = {}
-        for zone in zone_list:
-            # Verify that there should be at least one physical
-            # network present in zone.
-            physicalNetworks = PhysicalNetwork.list(
+        physicalNetworks = PhysicalNetwork.list(
                 api_client,
-                zoneid=zone.id
+                zoneid=zoneid
             )
-            assert validateList(physicalNetworks)[0] == PASS,\
-                "listPhysicalNetworks returned invalid object in response."
 
-            for physicalNetwork in physicalNetworks:
-                trafficTypes = TrafficType.list(
+        # If there are no physical networks in zone, return as PASS
+        # as there are no validations to make
+        if validateList(physicalNetworks)[0] != PASS:
+            return [PASS, None]
+
+        for physicalNetwork in physicalNetworks:
+            trafficTypes = TrafficType.list(
                     api_client,
                     physicalnetworkid=physicalNetwork.id)
 
-                for trafficType in traffic_types_to_validate:
-                    response = analyzeTrafficType(
-                        trafficTypes, trafficType)
-                    assert response[0] == PASS, response[1]
-                    filteredList, switchName, vlanSpecified =\
+            for trafficType in traffic_types_to_validate:
+                response = analyzeTrafficType(
+                        trafficTypes, trafficType, switchTypes)
+                assert response[0] == PASS, response[1]
+                filteredList, switchName, vlanSpecified=\
                         response[1], response[2], response[3]
 
-                    if not filteredList:
-                        continue
+                if not filteredList:
+                    continue
 
-                    if switchName not in switchDict:
-                        dvswitches = vcenter_conn.get_dvswitches(
+                if switchName not in switchDict:
+                    dvswitches = vcenter_conn.get_dvswitches(
                             name=switchName)
-                        switchDict[switchName] = dvswitches[0][
+                    switchDict[switchName] = dvswitches[0][
                             'dvswitch']['portgroupNameList']
 
-                    response = getExpectedPortGroupNames(
+                response = getExpectedPortGroupNames(
                         api_client,
                         physicalNetwork,
                         networkRate,
@@ -1655,9 +1725,9 @@ def verifyVCenterPortGroups(
                         vcenter_conn,
                         vlanSpecified,
                         trafficType)
-                    assert response[0] == PASS, response[1]
-                    dvPortGroups = response[1]
-                    expectedDVPortGroupNames.extend(dvPortGroups)
+                assert response[0] == PASS, response[1]
+                dvPortGroups = response[1]
+                expectedDVPortGroupNames.extend(dvPortGroups)
 
         vcenterPortGroups = list(itertools.chain(*(switchDict.values())))
 

@@ -40,7 +40,8 @@ from marvin.lib.common import (get_domain,
                                get_template,
                                get_free_vlan,
                                wait_for_cleanup,
-                               verifyRouterState)
+                               verifyRouterState,
+                               verifyGuestTrafficPortGroups)
 from marvin.sshClient import SshClient
 from marvin.codes import PASS
 from ddt import ddt, data
@@ -61,6 +62,7 @@ class TestSharedNetworks(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
@@ -3671,4 +3673,79 @@ class TestSharedNetworks(cloudstackTestCase):
             None,
             "Check if disassociated IP Address is no longer available"
         )
+        return
+
+    @attr(tags=["advanced", "dvs"], required_hardware="true")
+    def test_guest_traffic_port_groups_shared_network(self):
+        """ Verify vcenter port groups are created for shared network
+
+        # Steps,
+        #  1. Create a shared network
+        #  2. Deploy a VM in shared network so that router is
+        #     created
+        #  3. Verify that corresponding port groups are created
+              for guest traffic
+        """
+
+        if self.hypervisor.lower() != "vmware":
+            self.skipTest("This test is intended for only vmware")
+
+        physical_network, shared_vlan = get_free_vlan(
+            self.api_client, self.zone.id)
+        if shared_vlan is None:
+            self.fail("Failed to get free vlan id for shared network")
+
+        self.testdata["shared_network_offering"]["specifyVlan"] = "True"
+        self.testdata["shared_network_offering"]["specifyIpRanges"] = "True"
+
+        # Create Network Offering
+        self.shared_network_offering = NetworkOffering.create(
+            self.api_client,
+            self.testdata["shared_network_offering"],
+            conservemode=False
+        )
+
+        # Update network offering state from disabled to enabled.
+        NetworkOffering.update(
+            self.shared_network_offering,
+            self.api_client,
+            id=self.shared_network_offering.id,
+            state="enabled"
+        )
+
+        # create network using the shared network offering created
+        self.testdata["shared_network"]["acltype"] = "Domain"
+        self.testdata["shared_network"][
+            "networkofferingid"] = self.shared_network_offering.id
+        self.testdata["shared_network"][
+            "physicalnetworkid"] = physical_network.id
+        self.testdata["shared_network"]["vlan"] = shared_vlan
+
+        self.network = Network.create(
+            self.api_client,
+            self.testdata["shared_network"],
+            networkofferingid=self.shared_network_offering.id,
+            zoneid=self.zone.id,
+        )
+        self.cleanup_networks.append(self.network)
+
+        vm = VirtualMachine.create(
+            self.api_client,
+            self.testdata["virtual_machine"],
+            networkids=self.network.id,
+            serviceofferingid=self.service_offering.id
+        )
+        self.cleanup_vms.append(vm)
+
+        routers = Router.list(self.api_client,
+                    networkid=self.network.id,
+                    listall=True)
+
+        self.assertEqual(validateList(routers)[0], PASS,
+                "No Router associated with the network found")
+
+        response = verifyGuestTrafficPortGroups(self.api_client,
+                                                self.config,
+                                                self.zone)
+        self.assertEqual(response[0], PASS, response[1])
         return

@@ -208,7 +208,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
             return false;
         }
 
-        if (!_ntwkSrvcDao.canProviderSupportServiceInNetwork(network.getId(), service, BcfConstants.BigSwitchBcf)) {
+        if (!_ntwkSrvcDao.canProviderSupportServiceInNetwork(network.getId(), service, BcfConstants.BIG_SWITCH_BCF)) {
             s_logger.debug("BigSwitchBcfElement can't provide the " + service.getName() + " service on network " + network.getDisplayText());
             return false;
         }
@@ -410,7 +410,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
 
         ServerResource resource = new BigSwitchBcfResource();
 
-        final String deviceName = BcfConstants.BigSwitchBcf.getName();
+        final String deviceName = BcfConstants.BIG_SWITCH_BCF.getName();
         NetworkDevice networkDevice = NetworkDevice.getNetworkDevice(deviceName);
         final Long physicalNetworkId = cmd.getPhysicalNetworkId();
         final String hostname = cmd.getHost();
@@ -452,7 +452,6 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         }
 
         Boolean natNow =  _bcfUtils.isNatEnabled();
-        if( natNow != null)
         if (!nat && natNow){
             throw new CloudRuntimeException("NAT is enabled in existing controller. Enable NAT for new controller or remove existing controller first.");
         } else if (nat && !natNow){
@@ -684,7 +683,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
             }
             cidrList = r.getSourceCidrList();
             if(cidrList != null){
-                if(cidrList.size()>1 || r.getSourcePortEnd()!=r.getSourcePortStart()){
+                if(cidrList.size()>1 || !r.getSourcePortEnd().equals(r.getSourcePortStart())){
                     throw new ResourceUnavailableException("One CIDR and one port only please.",
                             Network.class, network.getId());
                 } else {
@@ -718,7 +717,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
             }
             cidrList = r.getSourceCidrList();
             if(cidrList != null){
-                if(cidrList.size()>1 || r.getSourcePortEnd()!=r.getSourcePortStart()){
+                if(cidrList.size()>1 || !r.getSourcePortEnd().equals(r.getSourcePortStart())){
                     throw new ResourceUnavailableException("One CIDR and one port only please.",
                             Network.class, network.getId());
                 } else {

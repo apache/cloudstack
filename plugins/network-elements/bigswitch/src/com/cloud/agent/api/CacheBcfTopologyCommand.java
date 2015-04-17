@@ -22,10 +22,10 @@ package com.cloud.agent.api;
 import com.cloud.network.bigswitch.TopologyData;
 
 public class CacheBcfTopologyCommand extends Command{
-    private final TopologyData topology;
+    private final TopologyData _topology;
 
-    public CacheBcfTopologyCommand(TopologyData topology){
-        this.topology = topology;
+    public CacheBcfTopologyCommand(final TopologyData topology){
+        this._topology = topology;
     }
 
     @Override
@@ -34,6 +34,6 @@ public class CacheBcfTopologyCommand extends Command{
     }
 
     public TopologyData getTopology() {
-        return topology;
+        return _topology;
     }
 }

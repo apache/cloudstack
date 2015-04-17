@@ -28,7 +28,7 @@
     </repository>
     <repository>
       <id>ceph-com</id>
-      <url>http://ceph.com/maven</url>
+      <url>http://eu.ceph.com/maven</url>
       <snapshots>
         <enabled>false</enabled>
       </snapshots>

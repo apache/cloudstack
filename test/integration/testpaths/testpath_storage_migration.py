@@ -2791,7 +2791,8 @@ class TestLiveStorageMigration(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic"],
+        required_hardware="True")
     def test_01_migrate_live(self):
         """ Test migrate Volume (root and data disk)
 

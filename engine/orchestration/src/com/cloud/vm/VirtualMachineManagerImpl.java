@@ -3422,8 +3422,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final VMInstanceVO router = _vmDao.findById(vm.getId());
         if (router.getState() == State.Running) {
             try {
-                final PlugNicCommand plugNicCmd = new PlugNicCommand(nic, vm.getName(), vm.getType());
-
+                final PlugNicCommand plugNicCmd = new PlugNicCommand(nic, vm.getName(), vm.getType(), vm.getDetails());
                 final Commands cmds = new Commands(Command.OnError.Stop);
                 cmds.addCommand("plugnic", plugNicCmd);
                 _agentMgr.send(dest.getHost().getId(), cmds);

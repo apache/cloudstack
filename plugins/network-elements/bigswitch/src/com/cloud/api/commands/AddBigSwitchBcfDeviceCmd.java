@@ -43,9 +43,9 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @APICommand(name = "addBigSwitchBcfDevice", responseObject = BigSwitchBcfDeviceResponse.class, description = "Adds a BigSwitch BCF Controller device", since = "4.6.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddBigSwitchBcfDeviceCmd extends BaseAsyncCmd {
-    private static final String s_name = "addbigswitchbcfdeviceresponse";
+    private static final String S_NAME = "addbigswitchbcfdeviceresponse";
     @Inject
-    BigSwitchBcfElementService _bigswitchBcfElementService;
+    private BigSwitchBcfElementService bcfElementService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -105,25 +105,24 @@ public class AddBigSwitchBcfDeviceCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException {
         try {
-            BigSwitchBcfDeviceVO bigswitchBcfDeviceVO = _bigswitchBcfElementService.addBigSwitchBcfDevice(this);
-            if (bigswitchBcfDeviceVO != null) {
-                BigSwitchBcfDeviceResponse response = _bigswitchBcfElementService.createBigSwitchBcfDeviceResponse(bigswitchBcfDeviceVO);
-                response.setObjectName("bigswitchbcfdevice");
-                response.setResponseName(getCommandName());
-                this.setResponseObject(response);
-            } else {
+            final BigSwitchBcfDeviceVO bigswitchBcfDeviceVO = bcfElementService.addBigSwitchBcfDevice(this);
+            if (bigswitchBcfDeviceVO == null) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add BigSwitch BCF Controller device due to internal error.");
             }
+            final BigSwitchBcfDeviceResponse response = bcfElementService.createBigSwitchBcfDeviceResponse(bigswitchBcfDeviceVO);
+            response.setObjectName("bigswitchbcfdevice");
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
         } catch (InvalidParameterValueException invalidParamExcp) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage(), invalidParamExcp);
         } catch (CloudRuntimeException runtimeExcp) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage(), runtimeExcp);
         }
     }
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return S_NAME;
     }
 
     @Override
@@ -133,7 +132,7 @@ public class AddBigSwitchBcfDeviceCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return BcfConstants.EVENT_EXTERNAL_BCF_CONTROLLER_ADD;
+        return BcfConstants.EVENT_BCF_CONTROLLER_ADD;
     }
 
     @Override

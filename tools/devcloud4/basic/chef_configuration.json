@@ -1,0 +1,22 @@
+
+{
+  "run_list": [
+    "recipe[development-installation]",
+    "recipe[nat-router]"
+  ],
+  "set_fqdn": "*.localdomain",
+  "selinux": {
+      "state": "permissive"
+  },
+  "cloudstack": {
+      "secondary": {
+        "path": "/exports/secondary"
+      },
+      "primary": {
+        "path": "/exports/primary"
+      },
+      "hypervisor_tpl": {
+        "xenserver": "http://jenkins.buildacloud.org/job/build-systemvm64-master/lastSuccessfulBuild/artifact/tools/appliance/dist/systemvm64template-master-4.6.0-xen.vhd.bz2"
+      }
+  }
+}

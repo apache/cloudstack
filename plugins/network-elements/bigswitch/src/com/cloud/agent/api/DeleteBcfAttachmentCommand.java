@@ -20,12 +20,12 @@
 package com.cloud.agent.api;
 
 public class DeleteBcfAttachmentCommand extends BcfCommand {
-    private String _tenantId;
-    private String _networkId;
-    private String _attachmentId;
+    private final String _tenantId;
+    private final String _networkId;
+    private final String _attachmentId;
 
-    public DeleteBcfAttachmentCommand(String tenantId,
-            String networkId, String attachmentId) {
+    public DeleteBcfAttachmentCommand(final String tenantId,
+            final String networkId, final String attachmentId) {
         this._tenantId = tenantId;
         this._networkId = networkId;
         this._attachmentId = attachmentId;

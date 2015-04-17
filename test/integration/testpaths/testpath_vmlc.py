@@ -170,6 +170,7 @@ class TestPathVMLC(cloudstackTestCase):
         testClient = super(TestPathVMLC, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.testdata = testClient.getParsedTestDataConfig()
+        cls.hypervisor = testClient.getHypervisorInfo()
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
@@ -315,7 +316,7 @@ class TestPathVMLC(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced"], required_hardware="False")
+    @attr(tags=["advanced"], required_hardware="false")
     @data(ISOLATED_NETWORK, VPC_NETWORK)
     def test_01_positive_tests_vm_operations_advanced_zone(self, value):
         """ Positive tests for VMLC test path - Advanced Zone
@@ -336,6 +337,8 @@ class TestPathVMLC(cloudstackTestCase):
         # 13. Find suitable host for VM to migrate and migrate the VM
         # 14. Verify VM accessibility on new host
         """
+        if self.hypervisor.lower() == 'hyperv' and value == VPC_NETWORK:
+            self.skipTest("cann't be run for {} hypervisor".format(self.hypervisor))
 
         # List created service offering in setUpClass by name
         listServiceOfferings = ServiceOffering.list(
@@ -505,7 +508,7 @@ class TestPathVMLC(cloudstackTestCase):
             self.fail("Exception while SSHing to VM: %s" % e)
         return
 
-    @attr(tags=["advanced"], required_hardware="False")
+    @attr(tags=["advanced"], required_hardware="false")
     def test_01_positive_tests_vm_deploy_shared_nw(self):
         """ Positive tests for VMLC test path - Advanced Zone in Shared Network
 
@@ -557,7 +560,7 @@ class TestPathVMLC(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["basic"], required_hardware="False")
+    @attr(tags=["basic"], required_hardware="false")
     def test_01_positive_tests_vm_operations_basic_zone(self):
         """ Positive tests for VMLC test path - Basic Zone
 
@@ -719,7 +722,7 @@ class TestPathVMLC(cloudstackTestCase):
             self.fail("Exception while SSHing to VM: %s" % e)
         return
 
-    @attr(tags=["advanced"], required_hardware="False")
+    @attr(tags=["advanced"], required_hardware="false")
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
     def test_02_negative_tests_destroy_VM_operations_advanced_zone(
             self,
@@ -733,6 +736,8 @@ class TestPathVMLC(cloudstackTestCase):
         # 4. Try to stop the VM in destroyed state, operation should fail
         # 5. Try to reboot the VM in destroyed state, operation should fail
         """
+        if self.hypervisor.lower() == 'hyperv' and value == VPC_NETWORK:
+            self.skipTest("cann't be run for {} hypervisor".format(self.hypervisor))
         network = CreateNetwork(self, value)
         networkid = network.id
 
@@ -769,7 +774,7 @@ class TestPathVMLC(cloudstackTestCase):
 
         return
 
-    @attr(tags=["basic"], required_hardware="False")
+    @attr(tags=["basic"], required_hardware="false")
     def test_02_negative_tests_destroy_VM_operations_basic_zone(self):
         """ Negative tests for VMLC test path - destroy VM
 
@@ -812,7 +817,7 @@ class TestPathVMLC(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced"], required_hardware="False")
+    @attr(tags=["advanced"], required_hardware="false")
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
     def test_03_negative_tests_expunge_VM_operations_advanced_zone(
             self,
@@ -827,6 +832,9 @@ class TestPathVMLC(cloudstackTestCase):
         # 6. Try to destroy the VM in expunging state, operation should fail
         # 7. Try to recover the VM in expunging state, operation should fail
         """
+
+        if self.hypervisor.lower() == 'hyperv' and value == VPC_NETWORK:
+            self.skipTest("cann't be run for {} hypervisor".format(self.hypervisor))
         network = CreateNetwork(self, value)
         networkid = network.id
 
@@ -867,7 +875,7 @@ class TestPathVMLC(cloudstackTestCase):
 
         return
 
-    @attr(tags=["basic"], required_hardware="False")
+    @attr(tags=["basic"], required_hardware="false")
     def test_03_negative_tests_expunge_VM_operations_basic_zone(self):
         """ Negative tests for VMLC test path - expunge VM
 

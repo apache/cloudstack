@@ -916,8 +916,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 return new PlugNicAnswer(cmd, false, "Unable to execute PlugNicCommand due to " + errMsg);
             }
              */
-            // TODO need a way to specify the control of NIC device type
+            // Fallback to E1000 if no specific nicAdapter is passed
             VirtualEthernetCardType nicDeviceType = VirtualEthernetCardType.E1000;
+            Map details = cmd.getDetails();
+            if (details != null) {
+                nicDeviceType = VirtualEthernetCardType.valueOf((String) details.get("nicAdapter"));
+            }
 
             // find a usable device number in VMware environment
             VirtualDevice[] nicDevices = vmMo.getNicDevices();
@@ -1818,7 +1822,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     int getReservedCpuMHZ(VirtualMachineTO vmSpec) {
          if (vmSpec.getDetails().get(VMwareGuru.VmwareReserveCpu.key()).equalsIgnoreCase("true")) {
-             return vmSpec.getMinSpeed();
+             return vmSpec.getMinSpeed() * vmSpec.getCpus();
          }
          return 0;
     }
@@ -2468,7 +2472,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     private Pair<ManagedObjectReference, String> prepareNetworkFromNicInfo(HostMO hostMo, NicTO nicTo, boolean configureVServiceInNexus, VirtualMachine.Type vmType) throws Exception {
 
         Ternary<String, String, String> switchDetails = getTargetSwitch(nicTo);
-        nicTo.getType();
         VirtualSwitchType switchType = VirtualSwitchType.getType(switchDetails.second());
         String switchName = switchDetails.first();
         String vlanToken = switchDetails.third();
@@ -4242,7 +4245,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     DatastoreSummary dsSummary = dsMo.getSummary();
                     String address = hostMo.getHostName();
                     StoragePoolInfo pInfo =
-                            new StoragePoolInfo(poolUuid, address, dsMo.getMor().getValue(), "", StoragePoolType.LVM, dsSummary.getCapacity(), dsSummary.getFreeSpace());
+                            new StoragePoolInfo(poolUuid, address, dsMo.getMor().getValue(), "", StoragePoolType.VMFS, dsSummary.getCapacity(), dsSummary.getFreeSpace());
                     StartupStorageCommand cmd = new StartupStorageCommand();
                     cmd.setName(poolUuid);
                     cmd.setPoolInfo(pInfo);

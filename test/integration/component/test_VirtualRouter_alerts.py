@@ -187,23 +187,24 @@ class TestVRServiceFailureAlerting(cloudstackTestCase):
         self.debug("apache process status: %s" % res)
 
         configs = Configurations.list(
-                self.apiclient,
-                name='router.alerts.check.interval'
-            )
+            self.apiclient,
+            name='router.alerts.check.interval'
+        )
 
         # Set the value for one more minute than
         # actual range to be on safer side
         waitingPeriod = (
-                int(configs[0].value) + 600)  # in seconds
+            int(configs[0].value) + 60)  # in seconds
 
         time.sleep(waitingPeriod)
-        # wait for (router.alerts.check.interval + 10) minutes meanwhile monitor service on
-        # VR starts the apache service (
+        # wait for (router.alerts.check.interval + 10) minutes meanwhile
+        # monitor service on VR starts the apache service (
         # router.alerts.check.interval default value is
         # 30minutes)
 
         qresultset = self.dbclient.execute(
-            "select id from alert where subject = '%s' ORDER BY id DESC LIMIT 1;" %
+            "select id from alert where subject \
+                    = '%s' ORDER BY id DESC LIMIT 1;" %
             str(alertSubject))
         self.assertNotEqual(
             len(qresultset),

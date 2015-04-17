@@ -46,9 +46,6 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 import org.w3c.dom.Document;
@@ -56,6 +53,35 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+
+import com.trilead.ssh2.SCPClient;
+import com.xensource.xenapi.Bond;
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Console;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.HostCpu;
+import com.xensource.xenapi.HostMetrics;
+import com.xensource.xenapi.Network;
+import com.xensource.xenapi.PBD;
+import com.xensource.xenapi.PIF;
+import com.xensource.xenapi.Pool;
+import com.xensource.xenapi.SR;
+import com.xensource.xenapi.Session;
+import com.xensource.xenapi.Task;
+import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.BadServerResponse;
+import com.xensource.xenapi.Types.VmPowerState;
+import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.VBD;
+import com.xensource.xenapi.VDI;
+import com.xensource.xenapi.VIF;
+import com.xensource.xenapi.VLAN;
+import com.xensource.xenapi.VM;
+import com.xensource.xenapi.XenAPIObject;
+
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -123,30 +149,6 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VirtualMachine.PowerState;
-import com.trilead.ssh2.SCPClient;
-import com.xensource.xenapi.Bond;
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Console;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.HostCpu;
-import com.xensource.xenapi.HostMetrics;
-import com.xensource.xenapi.Network;
-import com.xensource.xenapi.PBD;
-import com.xensource.xenapi.PIF;
-import com.xensource.xenapi.Pool;
-import com.xensource.xenapi.SR;
-import com.xensource.xenapi.Session;
-import com.xensource.xenapi.Task;
-import com.xensource.xenapi.Types;
-import com.xensource.xenapi.Types.BadServerResponse;
-import com.xensource.xenapi.Types.VmPowerState;
-import com.xensource.xenapi.Types.XenAPIException;
-import com.xensource.xenapi.VBD;
-import com.xensource.xenapi.VDI;
-import com.xensource.xenapi.VIF;
-import com.xensource.xenapi.VLAN;
-import com.xensource.xenapi.VM;
-import com.xensource.xenapi.XenAPIObject;
 
 /**
  * CitrixResourceBase encapsulates the calls to the XenServer Xapi process to
@@ -4862,7 +4864,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         dest.reconfigureIp(conn, spr.ipConfigurationMode, spr.IP, spr.netmask, spr.gateway, spr.DNS);
         Host.managementReconfigure(conn, dest);
         String hostUuid = null;
-        final int count = 0;
+        int count = 0;
         while (count < 10) {
             try {
                 Thread.sleep(10000);
@@ -4870,6 +4872,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 if (hostUuid != null) {
                     break;
                 }
+                ++count;
             } catch (final XmlRpcException e) {
                 s_logger.debug("Waiting for host to come back: " + e.getMessage());
             } catch (final XenAPIException e) {

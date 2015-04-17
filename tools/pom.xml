@@ -37,6 +37,7 @@
         <module>apidoc</module>
         <module>marvin</module>
         <module>devcloud</module>
-        <module>devcloud-kvm</module>
+        <module>devcloud4</module>
+	<module>devcloud-kvm</module>
     </modules>
 </project>

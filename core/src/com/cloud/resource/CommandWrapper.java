@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.Charset;
 
 import org.apache.log4j.Logger;
 
@@ -70,7 +71,7 @@ public abstract class CommandWrapper<T extends Command, A extends Answer, R exte
             conn.setReadTimeout(5000);
 
             final InputStream is = conn.getInputStream();
-            final BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+            final BufferedReader reader = new BufferedReader(new InputStreamReader(is, Charset.defaultCharset()));
             final StringBuilder sb2 = new StringBuilder();
             String line = null;
             try {

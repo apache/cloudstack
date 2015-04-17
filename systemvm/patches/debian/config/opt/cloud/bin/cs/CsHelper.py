@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 """ General helper functions
-for use in the configuation process
+for use in the configuration process
 
 """
 import subprocess
@@ -26,7 +26,6 @@ import re
 import shutil
 from netaddr import *
 from pprint import pprint
-
 
 def is_mounted(name):
     for i in execute("mount"):
@@ -161,6 +160,19 @@ def execute(command):
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     result = p.communicate()[0]
     return result.splitlines()
+
+
+def save_iptables(command, iptables_file):
+    """ Execute command """
+    logging.debug("Saving iptables for %s" % command)
+    
+    result = execute(command)
+    fIptables = open(iptables_file, "w+")
+    
+    for line in result:
+        fIptables.write(line)
+        fIptables.write("\n")
+    fIptables.close()
 
 
 def execute2(command):

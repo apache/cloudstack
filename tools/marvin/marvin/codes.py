@@ -127,3 +127,16 @@ PUBLIC_TRAFFIC = "public"
 GUEST_TRAFFIC = "guest"
 MANAGEMENT_TRAFFIC = "management"
 STORAGE_TRAFFIC = "storage"
+
+'''
+Switch Type
+'''
+VMWAREDVS = "vmwaredvs"
+
+'''
+Storage Pool Tags
+'''
+CLUSTERTAG1 = "cwps1"
+CLUSTERTAG2 = "cwps2"
+ZONETAG1 = "zwps1"
+ZONETAG2 = "zwps2"
