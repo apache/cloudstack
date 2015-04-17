@@ -29,6 +29,7 @@ import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.agent.manager.Commands;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.exception.ConnectionException;
+import com.cloud.exception.StorageConflictException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -99,7 +100,7 @@ public interface StorageManager extends StorageService {
 
     boolean registerHostListener(String providerUuid, HypervisorHostListener listener);
 
-    void connectHostToSharedPool(long hostId, long poolId) throws StorageUnavailableException;
+    void connectHostToSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
 
     void createCapacityEntry(long poolId);
 

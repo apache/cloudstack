@@ -3413,6 +3413,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             long available = summary.getFreeSpace();
             Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
             ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(cmd, capacity, available, tInfo);
+            if (cmd.getAdd() && pool.getType() == StoragePoolType.VMFS) {
+                answer.setLocalDatastoreName(morDatastore.getValue());
+            }
             return answer;
         } catch (Throwable e) {
             if (e instanceof RemoteException) {

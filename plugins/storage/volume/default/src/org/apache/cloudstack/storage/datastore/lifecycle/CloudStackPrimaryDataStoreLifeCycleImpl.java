@@ -49,6 +49,7 @@ import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.alert.AlertManager;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.StorageConflictException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -410,6 +411,9 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             try {
                 storageMgr.connectHostToSharedPool(h.getId(), primarystore.getId());
                 poolHosts.add(h);
+            } catch (StorageConflictException se) {
+                primaryDataStoreDao.expunge(primarystore.getId());
+                throw new CloudRuntimeException("Storage has already been added as local storage");
             } catch (Exception e) {
                 s_logger.warn("Unable to establish a connection between " + h + " and " + primarystore, e);
             }
@@ -434,6 +438,9 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             try {
                 storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
                 poolHosts.add(host);
+            } catch (StorageConflictException se) {
+                    primaryDataStoreDao.expunge(dataStore.getId());
+                    throw new CloudRuntimeException("Storage has already been added as local storage to host: " + host.getName());
             } catch (Exception e) {
                 s_logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
             }

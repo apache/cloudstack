@@ -26,6 +26,7 @@ import com.cloud.storage.template.TemplateProp;
 public class ModifyStoragePoolAnswer extends Answer {
     StoragePoolInfo poolInfo;
     Map<String, TemplateProp> templateInfo;
+    String localDatastoreName = null;
 
     protected ModifyStoragePoolAnswer() {
     }
@@ -53,6 +54,14 @@ public class ModifyStoragePoolAnswer extends Answer {
 
     public void setTemplateInfo(Map<String, TemplateProp> templateInfo) {
         this.templateInfo = templateInfo;
+    }
+
+    public String getLocalDatastoreName() {
+        return localDatastoreName;
+    }
+
+    public void setLocalDatastoreName(String localDatastoreName) {
+        this.localDatastoreName = localDatastoreName;
     }
 
 }
