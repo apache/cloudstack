@@ -20,13 +20,6 @@
   </parent>
   <repositories>
     <repository>
-      <id>libvirt-org</id>
-      <url>http://libvirt.org/maven2</url>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-    <repository>
       <id>ceph-com</id>
       <url>http://eu.ceph.com/maven</url>
       <snapshots>
