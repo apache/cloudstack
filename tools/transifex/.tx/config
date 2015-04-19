@@ -51,3 +51,7 @@ trans.ru_RU = work-dir/messages_ru_RU.properties
 trans.zh_CN = work-dir/messages_zh_CN.properties
 type = UNICODEPROPERTIES
 
+[CloudStack_UI.46xmessagesproperties]
+source_file = work-dir/messages.properties
+source_lang = en
+
