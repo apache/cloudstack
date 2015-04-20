@@ -1071,6 +1071,16 @@ test_data = {
             "ispublic": "true",
             "hypervisor": "XenServer"
         },
+        "RHEL 7 (64-bit)": {
+                              "displaytext": "RHEL7 (64-bit)",
+                              "name": "RHEL 7 Insta1",
+                              "passwordenabled": False,
+                              "url": "http://10.147.28.7/templates/Rhel/RHEL764bit.vhd",
+                              "format": "VHD" ,
+                              "ostype": "RHEL 7 (64-bit)",
+                              "ispublic": "true",
+                              "hypervisor": "XenServer"
+                              },
         "clusters": {
             "clustername": "Xen Cluster Vgpu",
             "clustertype": "CloudManaged",
@@ -1533,6 +1543,88 @@ test_data = {
             }
         ]
     },
+
+"interop":
+    {
+     "VHD":
+     {
+                              "displaytext": "Windows 8 (64-bit)",
+                              "name": "win8withpvxen",
+                              "passwordenabled": False,
+                              "url": "http://10.147.28.7/templates/sailajaxd/XS65pvtemplates/win8/79211594-1d4a-4dee-ae6c-c5c315ded2be.vhd",
+                              "format": "VHD" ,
+                              "ostype": "Windows 8 (64-bit)",
+                              "ispublic": "true",
+                              "hypervisor": "XenServer"
+
+     },
+     "OVA":
+     {
+                              "displaytext": "Windows 8 (64-bit)",
+                              "name": "win8withpvvmware",
+                              "passwordenabled": False,
+                              "url": "http://pleaseupdateURL/",
+                              "format": "OVA" ,
+                              "ostype": "Windows 8 (64-bit)",
+                              "ispublic": "true",
+                              "hypervisor": "VMware"
+                              },
+    "template": {
+        "displaytext": "windowsxdtemplate",
+        "name": "windowsxdtemplate",
+        "passwordenabled": False,
+        "ostype": "Windows 8 (64-bit)"
+    },
+},
+
+    "browser_upload_volume":{
+          "VHD": {
+        "diskname": "XenUploadVol",
+        "url": "http://10.147.28.7/templates/rajani-thin-volume.vhd",
+        "checksum": "09b08b6abb1b903fca7711d3ac8d6598",
+                },
+          "OVA": {
+        "diskname": "VMwareUploadVol",
+        "url": "http://10.147.28.7/templates/Autoscale_Template/CentOS5.5(64bit)-vmware-autoscale.ova",
+        "checksum": "da997b697feaa2f1f6e0d4785b0cece2",
+                },
+          "QCOW2": {
+        "diskname": "KVMUploadVol",
+        "url": "http://10.147.28.7/templates/rajani-thin-volume.qcow2",
+        "checksum": "02de0576dd3a61ab59c03fd795fc86ac",
+                },
+    'browser_resized_disk_offering': {
+        "displaytext": "Resizeddisk",
+        "name": "Resizeddisk",
+        "disksize": 3,
+    }
+},
+    "browser_upload_template": {
+          "VHD": {
+        "templatename": "XenUploadtemplate",
+        "displaytext": "XenUploadtemplate",
+        "url": "http://10.147.28.7/templates/builtin/centos56-x86_64.vhd.bz2",
+        "hypervisor":"XenServer",
+        "checksum": "09b08b6abb1b903fca7711d3ac8d6598",
+        "ostypeid":"74affaea-c658-11e4-ad38-a6d1374244b4"
+                },
+          "OVA": {
+        "templatename": "VMwareUploadtemplate",
+        "displaytext": "VMwareUploadtemplate",
+        "url": "http://nfs1.lab.vmops.com/templates/vmware/CentOS5.3-x86_64.ova",
+        "checksum": "02de0576dd3a61ab59c03fd795fc86ac",
+        "hypervisor":"VMware",
+        "ostypeid":"74affaea-c658-11e4-ad38-a6d1374244b4"
+                },
+          "QCOW2": {
+        "templatename": "KVMUploadtemplate",
+        "displaytext": "VMwareUploadtemplate",
+        "url": "http://10.147.28.7/templates/builtin/eec2209b-9875-3c8d-92be-c001bd8a0faf.qcow2.bz2",
+        "checksum": "da997b697feaa2f1f6e0d4785b0cece2",
+        "hypervisor":"KVM",
+        "ostypeid":"2e02e376-cdf3-11e4-beb3-8aa6272b57ef"
+                },
+                              },
     "configurableData":
         {
             "portableIpRange": {

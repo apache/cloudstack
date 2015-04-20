@@ -807,7 +807,7 @@ class Volume:
 
     @classmethod
     def create(cls, apiclient, services, zoneid=None, account=None,
-               domainid=None, diskofferingid=None, projectid=None):
+               domainid=None, diskofferingid=None, projectid=None ,size=None):
         """Create Volume"""
         cmd = createVolume.createVolumeCmd()
         cmd.name = "-".join([services["diskname"], random_gen()])
@@ -834,6 +834,10 @@ class Volume:
 
         if projectid:
             cmd.projectid = projectid
+
+        if size:
+            cmd.size = size
+
         return Volume(apiclient.createVolume(cmd).__dict__)
 
     @classmethod
