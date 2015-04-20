@@ -133,6 +133,13 @@ test_data = {
             "cpuspeed": 100,
             "memory": 512,
         },
+       "large": {
+            "name": "LargeInstance",
+            "displaytext": "LargeInstance",
+            "cpunumber": 1,
+            "cpuspeed": 500,
+            "memory": 2048,
+        },
         "hasmall": {
             "name": "HA Small Instance",
             "displaytext": "HA Small Instance",
