@@ -4983,6 +4983,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     throw new InvalidParameterValueException("There is no volume present with the given id " + entry.getKey());
                 } else if (pool == null) {
                     throw new InvalidParameterValueException("There is no storage pool present with the given id " + entry.getValue());
+                } else if (pool.isInMaintenance()) {
+                    throw new InvalidParameterValueException("Cannot migrate volume " + volume + "to the destination storage pool " + pool.getName() +
+                            " as the storage pool is in maintenance mode.");
                 } else {
                     // Verify the volume given belongs to the vm.
                     if (!vmVolumes.contains(volume)) {
