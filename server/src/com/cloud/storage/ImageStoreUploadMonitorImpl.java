@@ -26,6 +26,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.configuration.Resource;
+import com.cloud.user.ResourceLimitService;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -92,6 +94,8 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
     private EndPointSelector _epSelector;
     @Inject
     private DataStoreManager storeMgr;
+    @Inject
+    ResourceLimitService _resourceLimitMgr;
 
     private long _nodeId;
     private ScheduledExecutorService _executor = null;
@@ -285,6 +289,7 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                             volumeUpdate.setSize(answer.getVirtualSize());
                             _volumeDao.update(tmpVolume.getId(), volumeUpdate);
                             stateMachine.transitTo(tmpVolume, Event.OperationSucceeded, null, _volumeDao);
+                            _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), Resource.ResourceType.secondary_storage, answer.getVirtualSize());
 
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Volume " + tmpVolume.getUuid() + " uploaded successfully");
@@ -358,6 +363,7 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                             templateUpdate.setSize(answer.getVirtualSize());
                             _templateDao.update(tmpTemplate.getId(), templateUpdate);
                             stateMachine.transitTo(tmpTemplate, VirtualMachineTemplate.Event.OperationSucceeded, null, _templateDao);
+                            _resourceLimitMgr.incrementResourceCount(template.getAccountId(), Resource.ResourceType.secondary_storage, answer.getVirtualSize());
 
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Template " + tmpTemplate.getUuid() + " uploaded successfully");
