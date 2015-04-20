@@ -18,4 +18,6 @@ package com.cloud.hypervisor.vmware.manager;
 
 public interface VmwareStorageMount {
     String getMountPoint(String storageUrl);
+
+    void setSystemVmTmpltPermission(String mountPoint);
 }
