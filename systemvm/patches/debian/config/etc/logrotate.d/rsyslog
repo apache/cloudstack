@@ -32,6 +32,6 @@
 	delaycompress
 	sharedscripts
 	postrotate
-		/usr/sbin/nvoke-rc.d rsyslog reload > /dev/null
+		/usr/sbin/invoke-rc.d rsyslog reload > /dev/null
 	endscript
 }
