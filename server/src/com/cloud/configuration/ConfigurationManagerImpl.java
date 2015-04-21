@@ -954,7 +954,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
             String selectSql = "SELECT * FROM `" + dbName + "`.`" + tableName + "` WHERE " + column + " = ?";
 
-            if (tableName.equals("host") || tableName.equals("cluster") || tableName.equals("volumes") || tableName.equals("vm_instance")) {
+            if(tableName.equals("vm_instance")) {
+                selectSql += " AND state != '" + VirtualMachine.State.Expunging.toString() + "' AND removed IS NULL";
+            }
+
+            if (tableName.equals("host") || tableName.equals("cluster") || tableName.equals("volumes")) {
                 selectSql += " and removed IS NULL";
             }
 
@@ -1426,7 +1430,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
 
             if (tableName.equals("vm_instance")) {
-                selectSql += " AND state != '" + VirtualMachine.State.Expunging.toString() + "'";
+                selectSql += " AND state != '" + VirtualMachine.State.Expunging.toString() + "' AND removed IS NULL";
             }
 
             TransactionLegacy txn = TransactionLegacy.currentTxn();
