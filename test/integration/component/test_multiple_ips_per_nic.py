@@ -361,9 +361,8 @@ class TestBasicOperations(cloudstackTestCase):
                 (virtual_machine.id, e))
         return
 
-    #@data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @data(SHARED_NETWORK)
-    @attr(tags=["advanced", "sanj"])
+    @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
+    @attr(tags=["advanced"])
     def test_remove_ip_from_nic(self, value):
         """ Remove secondary IP from NIC of a VM"""
 
