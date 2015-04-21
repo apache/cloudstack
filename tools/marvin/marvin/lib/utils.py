@@ -41,18 +41,18 @@ from marvin.codes import (
                           EMPTY_LIST,
                           FAILED)
 
-def restart_mgmt_server(hostip, port, username, password):
+def restart_mgmt_server(server):
     """Restarts the management server"""
 
     try:
         # Get the SSH client
         ssh = is_server_ssh_ready(
-            hostip,
-            port,
-            username,
-            password,
+            server["ipaddress"],
+            server["port"],
+            server["username"],
+            server["password"],
         )
-        result = ssh.execute("/etc/init.d/cloudstack-management restart")
+        result = ssh.execute("/etc/init.d/cloud-management restart")
         res = str(result)
         # Server Stop - OK
         # Server Start - OK
@@ -60,8 +60,7 @@ def restart_mgmt_server(hostip, port, username, password):
             raise ("ErrorInReboot!")
     except Exception as e:
         raise e
-    return 
-
+    return
 
 def fetch_latest_mail(services, from_mail):
     """Fetch mail"""
