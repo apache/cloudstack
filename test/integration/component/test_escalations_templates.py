@@ -96,25 +96,25 @@ class TestTemplates(cloudstackTestCase):
             raise Exception("Warning: Exception in setup : %s" % e)
         return
 
-    @classmethod
-    def RestartServers(cls):
+
+    def RestartServers(self):
         """ Restart management server and usage server """
 
         sshClient = SshClient(
-            cls.mgtSvrDetails["mgtSvrIp"],
+            self.mgtSvrDetails["mgtSvrIp"],
             22,
-            cls.mgtSvrDetails["user"],
-            cls.mgtSvrDetails["passwd"]
+            self.mgtSvrDetails["user"],
+            self.mgtSvrDetails["passwd"]
         )
         command = "service cloudstack-management restart"
         sshClient.execute(command)
         return
-    @classmethod
-    def updateConfigurAndRestart(cls,name, value):
-        Configurations.update(cls.api_client,
+
+    def updateConfigurAndRestart(self,name, value):
+        Configurations.update(self.api_client,
                               name,value )
-        cls.RestartServers()
-        time.sleep(cls.services["sleep"])
+        self.RestartServers()
+        time.sleep(self.services["sleep"])
 
 
     def setUp(self):
