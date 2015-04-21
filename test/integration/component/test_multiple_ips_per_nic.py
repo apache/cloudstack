@@ -361,8 +361,9 @@ class TestBasicOperations(cloudstackTestCase):
                 (virtual_machine.id, e))
         return
 
-    @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["advanced"])
+    #@data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
+    @data(SHARED_NETWORK)
+    @attr(tags=["advanced", "sanj"])
     def test_remove_ip_from_nic(self, value):
         """ Remove secondary IP from NIC of a VM"""
 
@@ -402,6 +403,27 @@ class TestBasicOperations(cloudstackTestCase):
             id=virtual_machine.nic[0].id)
 
         NIC.removeIp(self.apiclient, ipaddressid=ipaddress_1.id)
+        #Following block is to verify
+        #1.Removing nic in shared network should mark allocated state to NULL in DB
+        #2.To make sure that re-add the same ip address to the same nic
+        #3.Remove the IP from the NIC
+        #All the above steps should succeed
+        if value == SHARED_NETWORK:
+            qresultset = self.dbclient.execute(
+                "select allocated from user_ip_address where public_ip_address = '%s';"
+                % str(ipaddress_1.ipaddress)
+            )
+            self.assertEqual(
+                qresultset[0][0],
+                None,
+                "Removing IP from nic didn't release the ip address from user_ip_address table"
+            )
+            ipaddress_2 = NIC.addIp(
+                self.apiclient,
+                id=virtual_machine.nic[0].id,
+                ipaddress=ipaddress_1.ipaddress
+            )
+            NIC.removeIp(self.apiclient, ipaddressid=ipaddress_2.id)
         try:
             NIC.removeIp(
                 self.apiclient,
@@ -908,7 +930,7 @@ class TestNetworkRules(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["advanced, "dvs"])
+    @attr(tags=["advanced", "dvs"])
     def test_disassociate_ip_mapped_to_secondary_ip_through_PF_rule(
             self,
             value):
