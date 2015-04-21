@@ -21,11 +21,15 @@ package org.apache.cloudstack.spring.module.model;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.Resource;
 
+import java.util.Map;
+
 public interface ModuleDefinitionSet {
 
     ModuleDefinition getModuleDefinition(String name);
 
     ApplicationContext getApplicationContext(String name);
+
+    Map<String, ApplicationContext> getContextMap();
 
     Resource[] getConfigResources(String name);
 

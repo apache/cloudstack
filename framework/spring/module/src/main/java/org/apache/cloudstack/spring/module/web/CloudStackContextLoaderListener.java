@@ -50,6 +50,7 @@ public class CloudStackContextLoaderListener extends ContextLoaderListener {
     public void contextInitialized(ServletContextEvent event) {
         try {
             cloudStackContext = new CloudStackSpringContext();
+            cloudStackContext.registerShutdownHook();
             event.getServletContext().setAttribute(CloudStackSpringContext.CLOUDSTACK_CONTEXT_SERVLET_KEY, cloudStackContext);
         } catch (IOException e) {
             log.error("Failed to start CloudStack", e);

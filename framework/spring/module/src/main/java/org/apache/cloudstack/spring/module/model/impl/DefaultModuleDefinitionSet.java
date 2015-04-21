@@ -279,6 +279,11 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
     }
 
     @Override
+    public Map<String, ApplicationContext> getContextMap() {
+        return contexts;
+    }
+
+    @Override
     public Resource[] getConfigResources(String name) {
         Set<Resource> resources = new LinkedHashSet<Resource>();
 

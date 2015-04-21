@@ -44,7 +44,7 @@ fi
 
 NAME="$(basename $0)"
 stop() {
-	SHUTDOWN_WAIT="30"
+	SHUTDOWN_WAIT="40"
 	count="0"
 	if [ -f /var/run/cloud-management.pid ]; then
 		pid=`cat /var/run/cloud-management.pid`
