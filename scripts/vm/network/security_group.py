@@ -234,16 +234,14 @@ def destroy_ebtables_rules(vm_name, vif):
     delcmd = "ebtables -t nat -L PREROUTING | grep " + vm_name
     delcmds = []
     try:
-        delcmds = execute(delcmd).split('\n')
-        delcmds.pop()
+        delcmds = filter(None, execute(delcmd).split('\n'))
         delcmds = ["-D PREROUTING " + x for x in delcmds ]
     except:
         pass
     postcmds = []
     try:
         postcmd = "ebtables -t nat -L POSTROUTING | grep " + vm_name
-        postcmds = execute(postcmd).split('\n')
-        postcmds.pop()
+        postcmds = filter(None, execute(postcmd).split('\n'))
         postcmds = ["-D POSTROUTING " + x for x in postcmds]
     except:
         pass
@@ -544,13 +542,12 @@ def post_default_network_rules(vm_name, vm_id, vm_ip, vm_mac, vif, brname, dhcpS
 def delete_rules_for_vm_in_bridge_firewall_chain(vmName):
     vm_name = vmName
     if vm_name.startswith('i-') or vm_name.startswith('r-'):
-	vm_name = '-'.join(vm_name.split('-')[:-1]) + "-def"
+        vm_name = '-'.join(vm_name.split('-')[:-1]) + "-def"
 
     vmchain = vm_name
 
     delcmd = """iptables-save | awk '/BF(.*)physdev-is-bridged(.*)%s/ { sub(/-A/, "-D", $1) ; print }'""" % vmchain
-    delcmds = execute(delcmd).split('\n')
-    delcmds.pop()
+    delcmds = filter(None, execute(delcmd).split('\n'))
     for cmd in delcmds:
         try:
             execute("iptables " + cmd)
@@ -647,8 +644,7 @@ def network_rules_for_rebooted_vm(vmName):
         ipts = []
         for cmd in [delcmd, inscmd]:
             logging.debug(cmd)
-            cmds = execute(cmd).split('\n')
-            cmds.pop()
+            cmds = filter(None, execute(cmd).split('\n'))
             for c in cmds:
                     ipt = "iptables " + c
                     ipts.append(ipt)
