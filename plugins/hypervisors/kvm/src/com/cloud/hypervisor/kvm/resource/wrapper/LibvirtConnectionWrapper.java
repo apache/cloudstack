@@ -22,12 +22,16 @@ import org.libvirt.LibvirtException;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 
 /**
- * This class is used to wrapp the calls to LibvirtConnection and ease the burden of the unit tests.
+ * This class is used to wrap the calls to LibvirtConnection and ease the burden of the unit tests.
  * Please do not instantiate this class directly, but inject it using the {@code @Inject} annotation.
  */
 public class LibvirtConnectionWrapper {
 
     public Connect getConnectionByName(final String vmName) throws LibvirtException {
         return LibvirtConnection.getConnectionByVmName(vmName);
+    }
+
+    public Connect getConnection() throws LibvirtException {
+        return LibvirtConnection.getConnection();
     }
 }

@@ -61,6 +61,7 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.VmStatsEntry;
@@ -487,6 +488,42 @@ public class LibvirtComputingResourceTest {
         verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
         try {
             verify(libvirtConnectionWrapper, times(1)).getConnectionByName(vmName);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testGetVmDiskStatsCommand() {
+        // We cannot do much here due to the Native libraries and Static methods used by the LibvirtConnection we need
+        // a better way to mock stuff!
+
+        final Connect conn = Mockito.mock(Connect.class);
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+
+        final String vmName = "Test";
+        final String uuid = "e8d6b4d0-bc6d-4613-b8bb-cb9e0600f3c6";
+        final List<String> vms = new ArrayList<String>();
+        vms.add(vmName);
+
+        final GetVmDiskStatsCommand stopCommand = new GetVmDiskStatsCommand(vms, uuid, "hostname");
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        try {
+            when(libvirtConnectionWrapper.getConnection()).thenReturn(conn);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(stopCommand, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnection();
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }

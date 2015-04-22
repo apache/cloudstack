@@ -117,10 +117,6 @@ import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
-import com.cloud.agent.api.GetVmDiskStatsAnswer;
-import com.cloud.agent.api.GetVmDiskStatsCommand;
-import com.cloud.agent.api.GetVmStatsAnswer;
-import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.HostStatsEntry;
@@ -169,8 +165,6 @@ import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
-import com.cloud.agent.api.StopAnswer;
-import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
@@ -1304,11 +1298,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         try {
-            if (cmd instanceof GetVmStatsCommand) {
-                return execute((GetVmStatsCommand)cmd);
-            } else if (cmd instanceof GetVmDiskStatsCommand) {
-                return execute((GetVmDiskStatsCommand)cmd);
-            } else if (cmd instanceof RebootRouterCommand) {
+            if (cmd instanceof RebootRouterCommand) {
                 return execute((RebootRouterCommand)cmd);
             } else if (cmd instanceof RebootCommand) {
                 return execute((RebootCommand)cmd);
@@ -3460,88 +3450,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    protected GetVmDiskStatsAnswer execute(final GetVmDiskStatsCommand cmd) {
-        final List<String> vmNames = cmd.getVmNames();
-        try {
-            final HashMap<String, List<VmDiskStatsEntry>> vmDiskStatsNameMap = new HashMap<String, List<VmDiskStatsEntry>>();
-            final Connect conn = LibvirtConnection.getConnection();
-            for (final String vmName : vmNames) {
-                final List<VmDiskStatsEntry> statEntry = getVmDiskStat(conn, vmName);
-                if (statEntry == null) {
-                    continue;
-                }
-
-                vmDiskStatsNameMap.put(vmName, statEntry);
-            }
-            return new GetVmDiskStatsAnswer(cmd, "", cmd.getHostName(), vmDiskStatsNameMap);
-        } catch (final LibvirtException e) {
-            s_logger.debug("Can't get vm disk stats: " + e.toString());
-            return new GetVmDiskStatsAnswer(cmd, null, null, null);
-        }
-    }
-
-    protected GetVmStatsAnswer execute(final GetVmStatsCommand cmd) {
-        final List<String> vmNames = cmd.getVmNames();
-        try {
-            final HashMap<String, VmStatsEntry> vmStatsNameMap = new HashMap<String, VmStatsEntry>();
-            for (final String vmName : vmNames) {
-                final Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
-                final VmStatsEntry statEntry = getVmStat(conn, vmName);
-                if (statEntry == null) {
-                    continue;
-                }
-
-                vmStatsNameMap.put(vmName, statEntry);
-            }
-            return new GetVmStatsAnswer(cmd, vmStatsNameMap);
-        } catch (final LibvirtException e) {
-            s_logger.debug("Can't get vm stats: " + e.toString());
-            return new GetVmStatsAnswer(cmd, null);
-        }
-    }
-
-    protected Answer execute(final StopCommand cmd) {
-        final String vmName = cmd.getVmName();
-
-        if (cmd.checkBeforeCleanup()) {
-            try {
-                final Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
-                final Domain vm = conn.domainLookupByName(cmd.getVmName());
-                if (vm != null && vm.getInfo().state == DomainState.VIR_DOMAIN_RUNNING) {
-                    return new StopAnswer(cmd, "vm is still running on host", false);
-                }
-            } catch (final Exception e) {
-                s_logger.debug("Failed to get vm status in case of checkboforecleanup is true", e);
-            }
-        }
-
-        try {
-            final Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
-
-            final List<DiskDef> disks = getDisks(conn, vmName);
-            final List<InterfaceDef> ifaces = getInterfaces(conn, vmName);
-
-            destroyNetworkRulesForVM(conn, vmName);
-            final String result = stopVM(conn, vmName);
-            if (result == null) {
-                for (final DiskDef disk : disks) {
-                    cleanupDisk(disk);
-                }
-                for (final InterfaceDef iface : ifaces) {
-                    // We don't know which "traffic type" is associated with
-                    // each interface at this point, so inform all vif drivers
-                    for (final VifDriver vifDriver : getAllVifDrivers()) {
-                        vifDriver.unplug(iface);
-                    }
-                }
-            }
-
-            return new StopAnswer(cmd, result, true);
-        } catch (final LibvirtException e) {
-            return new StopAnswer(cmd, e.getMessage(), false);
-        }
-    }
-
     protected Answer execute(final ModifySshKeysCommand cmd) {
         final File sshKeysDir = new File(SSHKEYSPATH);
         String result = null;
@@ -4881,7 +4789,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return command.execute();
     }
 
-    private List<VmDiskStatsEntry> getVmDiskStat(final Connect conn, final String vmName) throws LibvirtException {
+    public List<VmDiskStatsEntry> getVmDiskStat(final Connect conn, final String vmName) throws LibvirtException {
         Domain dm = null;
         try {
             dm = getDomain(conn, vmName);
