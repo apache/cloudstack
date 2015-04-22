@@ -38,6 +38,7 @@ import org.apache.commons.lang.SystemUtils;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainBlockStats;
@@ -46,21 +47,28 @@ import org.libvirt.DomainInterfaceStats;
 import org.libvirt.LibvirtException;
 import org.libvirt.NodeInfo;
 import org.mockito.Matchers;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
+import org.powermock.modules.junit4.PowerMockRunner;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
+import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtRequestWrapper;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 
+@RunWith(PowerMockRunner.class)
 public class LibvirtComputingResourceTest {
+
+    @Mock
+    private LibvirtComputingResource libvirtComputingResource;
 
     String _hyperVisorType = "kvm";
     Random _random = new Random();
@@ -71,28 +79,28 @@ public class LibvirtComputingResourceTest {
 
         The overcommit feature has not been merged in there and thus
         only 'speed' is set.
-    */
+     */
     @Test
     public void testCreateVMFromSpecLegacy() {
-        int id = _random.nextInt(65534);
-        String name = "test-instance-1";
+        final int id = _random.nextInt(65534);
+        final String name = "test-instance-1";
 
-        int cpus = _random.nextInt(2) + 1;
-        int speed = 1024;
-        int minRam = 256 * 1024;
-        int maxRam = 512 * 1024;
+        final int cpus = _random.nextInt(2) + 1;
+        final int speed = 1024;
+        final int minRam = 256 * 1024;
+        final int maxRam = 512 * 1024;
 
-        String os = "Ubuntu";
+        final String os = "Ubuntu";
 
-        String vncAddr = "";
-        String vncPassword = "mySuperSecretPassword";
+        final String vncAddr = "";
+        final String vncPassword = "mySuperSecretPassword";
 
-        LibvirtComputingResource lcr = new LibvirtComputingResource();
-        VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, speed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
+        final LibvirtComputingResource lcr = new LibvirtComputingResource();
+        final VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, speed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
 
-        LibvirtVMDef vm = lcr.createVMFromSpec(to);
+        final LibvirtVMDef vm = lcr.createVMFromSpec(to);
         vm.setHvsType(_hyperVisorType);
 
         verifyVm(to, vm);
@@ -100,29 +108,29 @@ public class LibvirtComputingResourceTest {
 
     /**
         This test verifies that CPU topology is properly set for hex-core
-    */
+     */
     @Test
     public void testCreateVMFromSpecWithTopology6() {
-        int id = _random.nextInt(65534);
-        String name = "test-instance-1";
+        final int id = _random.nextInt(65534);
+        final String name = "test-instance-1";
 
-        int cpus = 12;
-        int minSpeed = 1024;
-        int maxSpeed = 2048;
-        int minRam = 256 * 1024;
-        int maxRam = 512 * 1024;
+        final int cpus = 12;
+        final int minSpeed = 1024;
+        final int maxSpeed = 2048;
+        final int minRam = 256 * 1024;
+        final int maxRam = 512 * 1024;
 
-        String os = "Ubuntu";
+        final String os = "Ubuntu";
 
-        String vncAddr = "";
-        String vncPassword = "mySuperSecretPassword";
+        final String vncAddr = "";
+        final String vncPassword = "mySuperSecretPassword";
 
-        LibvirtComputingResource lcr = new LibvirtComputingResource();
-        VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
+        final LibvirtComputingResource lcr = new LibvirtComputingResource();
+        final VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
 
-        LibvirtVMDef vm = lcr.createVMFromSpec(to);
+        final LibvirtVMDef vm = lcr.createVMFromSpec(to);
         vm.setHvsType(_hyperVisorType);
 
         verifyVm(to, vm);
@@ -130,29 +138,29 @@ public class LibvirtComputingResourceTest {
 
     /**
         This test verifies that CPU topology is properly set for quad-core
-    */
+     */
     @Test
     public void testCreateVMFromSpecWithTopology4() {
-        int id = _random.nextInt(65534);
-        String name = "test-instance-1";
+        final int id = _random.nextInt(65534);
+        final String name = "test-instance-1";
 
-        int cpus = 8;
-        int minSpeed = 1024;
-        int maxSpeed = 2048;
-        int minRam = 256 * 1024;
-        int maxRam = 512 * 1024;
+        final int cpus = 8;
+        final int minSpeed = 1024;
+        final int maxSpeed = 2048;
+        final int minRam = 256 * 1024;
+        final int maxRam = 512 * 1024;
 
-        String os = "Ubuntu";
+        final String os = "Ubuntu";
 
-        String vncAddr = "";
-        String vncPassword = "mySuperSecretPassword";
+        final String vncAddr = "";
+        final String vncPassword = "mySuperSecretPassword";
 
-        LibvirtComputingResource lcr = new LibvirtComputingResource();
-        VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
+        final LibvirtComputingResource lcr = new LibvirtComputingResource();
+        final VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
 
-        LibvirtVMDef vm = lcr.createVMFromSpec(to);
+        final LibvirtVMDef vm = lcr.createVMFromSpec(to);
         vm.setHvsType(_hyperVisorType);
 
         verifyVm(to, vm);
@@ -164,37 +172,37 @@ public class LibvirtComputingResourceTest {
 
         It tests if the Agent can handle a vmSpec with overcommit
         data like minSpeed and maxSpeed in there
-    */
+     */
     @Test
     public void testCreateVMFromSpec() {
-        int id = _random.nextInt(65534);
-        String name = "test-instance-1";
+        final int id = _random.nextInt(65534);
+        final String name = "test-instance-1";
 
-        int cpus = _random.nextInt(2) + 1;
-        int minSpeed = 1024;
-        int maxSpeed = 2048;
-        int minRam = 256 * 1024;
-        int maxRam = 512 * 1024;
+        final int cpus = _random.nextInt(2) + 1;
+        final int minSpeed = 1024;
+        final int maxSpeed = 2048;
+        final int minRam = 256 * 1024;
+        final int maxRam = 512 * 1024;
 
-        String os = "Ubuntu";
+        final String os = "Ubuntu";
 
-        String vncAddr = "";
-        String vncPassword = "mySuperSecretPassword";
+        final String vncAddr = "";
+        final String vncPassword = "mySuperSecretPassword";
 
-        LibvirtComputingResource lcr = new LibvirtComputingResource();
-        VirtualMachineTO to =
-            new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
+        final LibvirtComputingResource lcr = new LibvirtComputingResource();
+        final VirtualMachineTO to =
+                new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
 
-        LibvirtVMDef vm = lcr.createVMFromSpec(to);
+        final LibvirtVMDef vm = lcr.createVMFromSpec(to);
         vm.setHvsType(_hyperVisorType);
 
         verifyVm(to, vm);
     }
 
-    private void verifyVm(VirtualMachineTO to, LibvirtVMDef vm) {
-        Document domainDoc = parse(vm.toString());
+    private void verifyVm(final VirtualMachineTO to, final LibvirtVMDef vm) {
+        final Document domainDoc = parse(vm.toString());
         assertXpath(domainDoc, "/domain/@type", vm.getHvsType());
         assertXpath(domainDoc, "/domain/name/text()", to.getName());
         assertXpath(domainDoc, "/domain/uuid/text()", to.getUuid());
@@ -246,7 +254,7 @@ public class LibvirtComputingResourceTest {
         try {
             Assert.assertNotNull(XPathFactory.newInstance().newXPath()
                     .evaluate(xPathExpr, doc, XPathConstants.NODE));
-        } catch (XPathExpressionException e) {
+        } catch (final XPathExpressionException e) {
             Assert.fail(e.getMessage());
         }
     }
@@ -256,7 +264,7 @@ public class LibvirtComputingResourceTest {
         try {
             Assert.assertEquals(expected, XPathFactory.newInstance().newXPath()
                     .evaluate(xPathExpr, doc));
-        } catch (XPathExpressionException e) {
+        } catch (final XPathExpressionException e) {
             Assert.fail("Could not evaluate xpath" + xPathExpr + ":"
                     + e.getMessage());
         }
@@ -267,18 +275,18 @@ public class LibvirtComputingResourceTest {
         //this test is only working on linux because of the loopback interface name
         //also the tested code seems to work only on linux
         Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
-        Pair<Double, Double> stats = LibvirtComputingResource.getNicStats("lo");
+        final Pair<Double, Double> stats = LibvirtComputingResource.getNicStats("lo");
         assertNotNull(stats);
     }
 
     @Test
     public void testUUID() {
         String uuid = "1";
-        LibvirtComputingResource lcr = new LibvirtComputingResource();
+        final LibvirtComputingResource lcr = new LibvirtComputingResource();
         uuid = lcr.getUuid(uuid);
         Assert.assertTrue(!uuid.equals("1"));
 
-        String oldUuid = UUID.randomUUID().toString();
+        final String oldUuid = UUID.randomUUID().toString();
         uuid = oldUuid;
         uuid = lcr.getUuid(uuid);
         Assert.assertTrue(uuid.equals(oldUuid));
@@ -288,12 +296,12 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testGetVmStat() throws LibvirtException {
-        Connect connect = Mockito.mock(Connect.class);
-        Domain domain = Mockito.mock(Domain.class);
-        DomainInfo domainInfo = new DomainInfo();
+        final Connect connect = Mockito.mock(Connect.class);
+        final Domain domain = Mockito.mock(Domain.class);
+        final DomainInfo domainInfo = new DomainInfo();
         Mockito.when(domain.getInfo()).thenReturn(domainInfo);
         Mockito.when(connect.domainLookupByName(VMNAME)).thenReturn(domain);
-        NodeInfo nodeInfo = new NodeInfo();
+        final NodeInfo nodeInfo = new NodeInfo();
         nodeInfo.cpus = 8;
         nodeInfo.memory = 8 * 1024 * 1024;
         nodeInfo.sockets = 2;
@@ -301,24 +309,24 @@ public class LibvirtComputingResourceTest {
         nodeInfo.model = "Foo processor";
         Mockito.when(connect.nodeInfo()).thenReturn(nodeInfo);
         // this is testing the interface stats, returns an increasing number of sent and received bytes
-        Mockito.when(domain.interfaceStats(Matchers.anyString())).thenAnswer(new Answer<DomainInterfaceStats>() {
+        Mockito.when(domain.interfaceStats(Matchers.anyString())).thenAnswer(new org.mockito.stubbing.Answer<DomainInterfaceStats>() {
             // increment with less than a KB, so this should be less than 1 KB
             final static int increment = 1000;
             int rxBytes = 1000;
             int txBytes = 1000;
 
             @Override
-            public DomainInterfaceStats answer(InvocationOnMock invocation) throws Throwable {
-                DomainInterfaceStats domainInterfaceStats = new DomainInterfaceStats();
-                domainInterfaceStats.rx_bytes = (rxBytes += increment);
-                domainInterfaceStats.tx_bytes = (txBytes += increment);
+            public DomainInterfaceStats answer(final InvocationOnMock invocation) throws Throwable {
+                final DomainInterfaceStats domainInterfaceStats = new DomainInterfaceStats();
+                domainInterfaceStats.rx_bytes = rxBytes += increment;
+                domainInterfaceStats.tx_bytes = txBytes += increment;
                 return domainInterfaceStats;
 
             }
 
         });
 
-        Mockito.when(domain.blockStats(Matchers.anyString())).thenAnswer(new Answer<DomainBlockStats>() {
+        Mockito.when(domain.blockStats(Matchers.anyString())).thenAnswer(new org.mockito.stubbing.Answer<DomainBlockStats>() {
             // a little less than a KB
             final static int increment = 1000;
 
@@ -326,32 +334,32 @@ public class LibvirtComputingResourceTest {
             int wrBytes = 1024;
 
             @Override
-            public DomainBlockStats answer(InvocationOnMock invocation) throws Throwable {
-                DomainBlockStats domainBlockStats = new DomainBlockStats();
+            public DomainBlockStats answer(final InvocationOnMock invocation) throws Throwable {
+                final DomainBlockStats domainBlockStats = new DomainBlockStats();
 
-                domainBlockStats.rd_bytes = (rdBytes += increment);
-                domainBlockStats.wr_bytes = (wrBytes += increment);
+                domainBlockStats.rd_bytes = rdBytes += increment;
+                domainBlockStats.wr_bytes = wrBytes += increment;
                 return domainBlockStats;
             }
 
         });
 
-        LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource() {
+        final LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource() {
             @Override
-            protected List<InterfaceDef> getInterfaces(Connect conn, String vmName) {
-                InterfaceDef interfaceDef = new InterfaceDef();
+            public List<InterfaceDef> getInterfaces(final Connect conn, final String vmName) {
+                final InterfaceDef interfaceDef = new InterfaceDef();
                 return Arrays.asList(interfaceDef);
             }
 
             @Override
-            public List<DiskDef> getDisks(Connect conn, String vmName) {
-                DiskDef diskDef = new DiskDef();
+            public List<DiskDef> getDisks(final Connect conn, final String vmName) {
+                final DiskDef diskDef = new DiskDef();
                 return Arrays.asList(diskDef);
             }
 
         };
         libvirtComputingResource.getVmStat(connect, VMNAME);
-        VmStatsEntry vmStat = libvirtComputingResource.getVmStat(connect, VMNAME);
+        final VmStatsEntry vmStat = libvirtComputingResource.getVmStat(connect, VMNAME);
         // network traffic as generated by the logic above, must be greater than zero
         Assert.assertTrue(vmStat.getNetworkReadKBs() > 0);
         Assert.assertTrue(vmStat.getNetworkWriteKBs() > 0);
@@ -363,7 +371,24 @@ public class LibvirtComputingResourceTest {
     @Test
     public void getCpuSpeed() {
         Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
-        NodeInfo nodeInfo = Mockito.mock(NodeInfo.class);
+        final NodeInfo nodeInfo = Mockito.mock(NodeInfo.class);
         LibvirtComputingResource.getCpuSpeed(nodeInfo);
+    }
+
+    /*
+     * New Tests
+     */
+
+    @Test(expected = UnsatisfiedLinkError.class)
+    public void testStopCommand() {
+        // We cannot do much here due to the Native libraries and Static methods used by the LibvirtConnection we need
+        // a better way to mock stuff!
+        final String vmName = "Test";
+        final StopCommand stopCommand = new StopCommand(vmName, false, false);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        wrapper.execute(stopCommand, libvirtComputingResource);
     }
 }
