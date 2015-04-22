@@ -303,6 +303,7 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                             } else if (tmpVolume.getState() == Volume.State.UploadInProgress) { // check for timeout
                                 if (System.currentTimeMillis() - tmpVolumeDataStore.getCreated().getTime() > _uploadOperationTimeout) {
                                     tmpVolumeDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
+                                    tmpVolumeDataStore.setState(State.Failed);
                                     stateMachine.transitTo(tmpVolume, Event.OperationFailed, null, _volumeDao);
                                     if (s_logger.isDebugEnabled()) {
                                         s_logger.debug("Volume " + tmpVolume.getUuid() + " failed to upload due to operation timed out");
@@ -377,6 +378,7 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                             } else if (tmpTemplate.getState() == VirtualMachineTemplate.State.UploadInProgress) { // check for timeout
                                 if (System.currentTimeMillis() - tmpTemplateDataStore.getCreated().getTime() > _uploadOperationTimeout) {
                                     tmpTemplateDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
+                                    tmpTemplateDataStore.setState(State.Failed);
                                     stateMachine.transitTo(tmpTemplate, VirtualMachineTemplate.Event.OperationFailed, null, _templateDao);
                                     if (s_logger.isDebugEnabled()) {
                                         s_logger.debug("Template " + tmpTemplate.getUuid() + " failed to upload due to operation timed out");
