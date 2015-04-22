@@ -31,7 +31,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
-import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.VifDriver;
@@ -42,12 +41,14 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
     private static final Logger s_logger = Logger.getLogger(LibvirtStopCommandWrapper.class);
 
     @Override
-    public Answer execute(final StopCommand command, final LibvirtComputingResource citrixResourceBase) {
+    public Answer execute(final StopCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final String vmName = command.getVmName();
+
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = libvirtComputingResource.getLibvirtConnectionWrapper();
 
         if (command.checkBeforeCleanup()) {
             try {
-                final Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
+                final Connect conn = libvirtConnectionWrapper.getConnectionByName(vmName);
                 final Domain vm = conn.domainLookupByName(command.getVmName());
                 if (vm != null && vm.getInfo().state == DomainState.VIR_DOMAIN_RUNNING) {
                     return new StopAnswer(command, "vm is still running on host", false);
@@ -58,21 +59,21 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
         }
 
         try {
-            final Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
+            final Connect conn = libvirtConnectionWrapper.getConnectionByName(vmName);
 
-            final List<DiskDef> disks = citrixResourceBase.getDisks(conn, vmName);
-            final List<InterfaceDef> ifaces = citrixResourceBase.getInterfaces(conn, vmName);
+            final List<DiskDef> disks = libvirtComputingResource.getDisks(conn, vmName);
+            final List<InterfaceDef> ifaces = libvirtComputingResource.getInterfaces(conn, vmName);
 
-            citrixResourceBase.destroyNetworkRulesForVM(conn, vmName);
-            final String result = citrixResourceBase.stopVM(conn, vmName);
+            libvirtComputingResource.destroyNetworkRulesForVM(conn, vmName);
+            final String result = libvirtComputingResource.stopVM(conn, vmName);
             if (result == null) {
                 for (final DiskDef disk : disks) {
-                    citrixResourceBase.cleanupDisk(disk);
+                    libvirtComputingResource.cleanupDisk(disk);
                 }
                 for (final InterfaceDef iface : ifaces) {
                     // We don't know which "traffic type" is associated with
                     // each interface at this point, so inform all vif drivers
-                    for (final VifDriver vifDriver : citrixResourceBase.getAllVifDrivers()) {
+                    for (final VifDriver vifDriver : libvirtComputingResource.getAllVifDrivers()) {
                         vifDriver.unplug(iface);
                     }
                 }

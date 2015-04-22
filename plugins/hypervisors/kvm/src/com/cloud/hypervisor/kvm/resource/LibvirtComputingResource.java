@@ -59,6 +59,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
@@ -230,6 +231,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SerialDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.TermPolicy;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VideoDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VirtioSerialDef;
+import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtConnectionWrapper;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtRequestWrapper;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
@@ -332,6 +334,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected static final String DEFAULT_OVS_VIF_DRIVER_CLASS_NAME = "com.cloud.hypervisor.kvm.resource.OvsVifDriver";
     protected static final String DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME = "com.cloud.hypervisor.kvm.resource.BridgeVifDriver";
 
+    @Inject
+    private LibvirtConnectionWrapper libvirtConnectionWrapper;
+
     @Override
     public ExecutionResult executeInVR(final String routerIp, final String script, final String args) {
         return executeInVR(routerIp, script, args, _timeout / 1000);
@@ -391,6 +396,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return cleanupNetworkElementCommand((IpAssocCommand)cmd);
         }
         return new ExecutionResult(true, null);
+    }
+
+    public LibvirtConnectionWrapper getLibvirtConnectionWrapper() {
+        return libvirtConnectionWrapper;
     }
 
     private static final class KeyValueInterpreter extends OutputInterpreter {
@@ -915,7 +924,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
         s_logger.debug("Found pif: " + _pifs.get("private") + " on " + _privBridgeName + ", pif: " + _pifs.get("public") + " on " + _publicBridgeName);
 
-        _canBridgeFirewall = can_bridge_firewall(_pifs.get("public"));
+        _canBridgeFirewall = canBridgeFirewall(_pifs.get("public"));
 
         _localGateway = Script.runSimpleBashScript("ip route |grep default|awk '{print $3}'");
         if (_localGateway == null) {
@@ -4917,7 +4926,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         Calendar _timestamp;
     }
 
-    VmStatsEntry getVmStat(final Connect conn, final String vmName) throws LibvirtException {
+    public VmStatsEntry getVmStat(final Connect conn, final String vmName) throws LibvirtException {
         Domain dm = null;
         try {
             dm = getDomain(conn, vmName);
@@ -5020,7 +5029,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    private boolean can_bridge_firewall(final String prvNic) {
+    private boolean canBridgeFirewall(final String prvNic) {
         final Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
         cmd.add("can_bridge_firewall");
         cmd.add(prvNic);

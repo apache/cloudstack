@@ -20,9 +20,15 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -54,11 +60,14 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
+import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtConnectionWrapper;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtRequestWrapper;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.Pair;
@@ -379,16 +388,107 @@ public class LibvirtComputingResourceTest {
      * New Tests
      */
 
-    @Test(expected = UnsatisfiedLinkError.class)
-    public void testStopCommand() {
+    @Test
+    public void testStopCommandNoCheck() {
         // We cannot do much here due to the Native libraries and Static methods used by the LibvirtConnection we need
         // a better way to mock stuff!
+
+        final Connect conn = Mockito.mock(Connect.class);
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+
         final String vmName = "Test";
         final StopCommand stopCommand = new StopCommand(vmName, false, false);
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        try {
+            when(libvirtConnectionWrapper.getConnectionByName(vmName)).thenReturn(conn);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
 
-        wrapper.execute(stopCommand, libvirtComputingResource);
+        final Answer answer = wrapper.execute(stopCommand, libvirtComputingResource);
+
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByName(vmName);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testStopCommandCheck() {
+        // We cannot do much here due to the Native libraries and Static methods used by the LibvirtConnection we need
+        // a better way to mock stuff!
+
+        final Connect conn = Mockito.mock(Connect.class);
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+        final Domain domain = Mockito.mock(Domain.class);
+
+        final String vmName = "Test";
+        final StopCommand stopCommand = new StopCommand(vmName, false, true);
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        try {
+            when(libvirtConnectionWrapper.getConnectionByName(vmName)).thenReturn(conn);
+            when(conn.domainLookupByName(stopCommand.getVmName())).thenReturn(domain);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(stopCommand, libvirtComputingResource);
+
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        try {
+            verify(libvirtConnectionWrapper, times(2)).getConnectionByName(vmName);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testGetVmStatsCommand() {
+        // We cannot do much here due to the Native libraries and Static methods used by the LibvirtConnection we need
+        // a better way to mock stuff!
+
+        final Connect conn = Mockito.mock(Connect.class);
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+
+        final String vmName = "Test";
+        final String uuid = "e8d6b4d0-bc6d-4613-b8bb-cb9e0600f3c6";
+        final List<String> vms = new ArrayList<String>();
+        vms.add(vmName);
+
+        final GetVmStatsCommand stopCommand = new GetVmStatsCommand(vms, uuid, "hostname");
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        try {
+            when(libvirtConnectionWrapper.getConnectionByName(vmName)).thenReturn(conn);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(stopCommand, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByName(vmName);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
     }
 }
