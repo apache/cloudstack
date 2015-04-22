@@ -154,9 +154,6 @@ import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
-import com.cloud.agent.api.RebootAnswer;
-import com.cloud.agent.api.RebootCommand;
-import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.SecurityGroupRuleAnswer;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
@@ -394,6 +391,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public LibvirtConnectionWrapper getLibvirtConnectionWrapper() {
         return libvirtConnectionWrapper;
+    }
+
+    public VirtualRoutingResource getVirtRouterResource() {
+        return _virtRouterResource;
     }
 
     private static final class KeyValueInterpreter extends OutputInterpreter {
@@ -1298,11 +1299,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         try {
-            if (cmd instanceof RebootRouterCommand) {
-                return execute((RebootRouterCommand)cmd);
-            } else if (cmd instanceof RebootCommand) {
-                return execute((RebootCommand)cmd);
-            } else if (cmd instanceof GetHostStatsCommand) {
+            if (cmd instanceof GetHostStatsCommand) {
                 return execute((GetHostStatsCommand)cmd);
             } else if (cmd instanceof CheckStateCommand) {
                 return executeRequest(cmd);
@@ -3310,7 +3307,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return new GetHostStatsAnswer(cmd, hostStats);
     }
 
-    protected String networkUsage(final String privateIpAddress, final String option, final String vif) {
+    public String networkUsage(final String privateIpAddress, final String option, final String vif) {
         final Script getUsage = new Script(_routerProxyPath, s_logger);
         getUsage.add("netusage.sh");
         getUsage.add(privateIpAddress);
@@ -3415,38 +3412,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             final long[] stats = getNetworkStats(cmd.getPrivateIP());
             final NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, "", stats[0], stats[1]);
             return answer;
-        }
-    }
-
-    private Answer execute(final RebootCommand cmd) {
-
-        try {
-            final Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
-            final String result = rebootVM(conn, cmd.getVmName());
-            if (result == null) {
-                Integer vncPort = null;
-                try {
-                    vncPort = getVncPort(conn, cmd.getVmName());
-                } catch (final LibvirtException e) {
-                    s_logger.trace("Ignoring libvirt error.", e);
-                }
-                get_rule_logs_for_vms();
-                return new RebootAnswer(cmd, null, vncPort);
-            } else {
-                return new RebootAnswer(cmd, result, false);
-            }
-        } catch (final LibvirtException e) {
-            return new RebootAnswer(cmd, e.getMessage(), false);
-        }
-    }
-
-    protected Answer execute(final RebootRouterCommand cmd) {
-        final RebootAnswer answer = (RebootAnswer)execute((RebootCommand)cmd);
-        if (_virtRouterResource.connect(cmd.getPrivateIpAddress())) {
-            networkUsage(cmd.getPrivateIpAddress(), "create", null);
-            return answer;
-        } else {
-            return new Answer(cmd, false, "Failed to connect to virtual router " + cmd.getVmName());
         }
     }
 
@@ -4466,7 +4431,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    protected String rebootVM(final Connect conn, final String vmName) {
+    public String rebootVM(final Connect conn, final String vmName) {
         Domain dm = null;
         String msg = null;
         try {
@@ -4625,7 +4590,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return null;
     }
 
-    protected Integer getVncPort(final Connect conn, final String vmName) throws LibvirtException {
+    public Integer getVncPort(final Connect conn, final String vmName) throws LibvirtException {
         final LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
         Domain dm = null;
         try {
@@ -5114,7 +5079,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
-    private String get_rule_logs_for_vms() {
+    public String getRuleLogsForVms() {
         final Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
         cmd.add("get_rule_logs_for_vms");
         final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
@@ -5128,7 +5093,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private HashMap<String, Pair<Long, Long>> syncNetworkGroups(final long id) {
         final HashMap<String, Pair<Long, Long>> states = new HashMap<String, Pair<Long, Long>>();
 
-        final String result = get_rule_logs_for_vms();
+        final String result = getRuleLogsForVms();
         s_logger.trace("syncNetworkGroups: id=" + id + " got: " + result);
         final String[] rulelogs = result != null ? result.split(";") : new String[0];
         for (final String rulesforvm : rulelogs) {

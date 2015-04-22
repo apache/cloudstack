@@ -46,7 +46,7 @@ public final class LibvirtGetVmStatsCommandWrapper extends CommandWrapper<GetVmS
 
                 final LibvirtConnectionWrapper libvirtConnectionWrapper = libvirtComputingResource.getLibvirtConnectionWrapper();
 
-                final Connect conn = libvirtConnectionWrapper.getConnectionByName(vmName);
+                final Connect conn = libvirtConnectionWrapper.getConnectionByVmName(vmName);
                 final VmStatsEntry statEntry = libvirtComputingResource.getVmStat(conn, vmName);
                 if (statEntry == null) {
                     continue;

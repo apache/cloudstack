@@ -24,6 +24,8 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
+import com.cloud.agent.api.RebootCommand;
+import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
@@ -50,6 +52,8 @@ public class LibvirtRequestWrapper extends RequestWrapper {
         linbvirtCommands.put(StopCommand.class, new LibvirtStopCommandWrapper());
         linbvirtCommands.put(GetVmStatsCommand.class, new LibvirtGetVmStatsCommandWrapper());
         linbvirtCommands.put(GetVmDiskStatsCommand.class, new LibvirtGetVmDiskStatsCommandWrapper());
+        linbvirtCommands.put(RebootRouterCommand.class, new LibvirtRebootRouterCommandWrapper());
+        linbvirtCommands.put(RebootCommand.class, new LibvirtRebootCommandWrapper());
         resources.put(LibvirtComputingResource.class, linbvirtCommands);
     }
 

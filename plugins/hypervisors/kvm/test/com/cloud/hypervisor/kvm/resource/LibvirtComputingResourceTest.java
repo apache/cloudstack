@@ -19,6 +19,7 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -63,9 +64,12 @@ import org.xml.sax.SAXException;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
+import com.cloud.agent.api.RebootCommand;
+import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtConnectionWrapper;
@@ -398,11 +402,11 @@ public class LibvirtComputingResourceTest {
         final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
 
         final String vmName = "Test";
-        final StopCommand stopCommand = new StopCommand(vmName, false, false);
+        final StopCommand command = new StopCommand(vmName, false, false);
 
         when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
         try {
-            when(libvirtConnectionWrapper.getConnectionByName(vmName)).thenReturn(conn);
+            when(libvirtConnectionWrapper.getConnectionByVmName(vmName)).thenReturn(conn);
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
@@ -410,13 +414,13 @@ public class LibvirtComputingResourceTest {
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
 
-        final Answer answer = wrapper.execute(stopCommand, libvirtComputingResource);
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
 
         assertTrue(answer.getResult());
 
         verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
         try {
-            verify(libvirtConnectionWrapper, times(1)).getConnectionByName(vmName);
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(vmName);
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
@@ -432,12 +436,12 @@ public class LibvirtComputingResourceTest {
         final Domain domain = Mockito.mock(Domain.class);
 
         final String vmName = "Test";
-        final StopCommand stopCommand = new StopCommand(vmName, false, true);
+        final StopCommand command = new StopCommand(vmName, false, true);
 
         when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
         try {
-            when(libvirtConnectionWrapper.getConnectionByName(vmName)).thenReturn(conn);
-            when(conn.domainLookupByName(stopCommand.getVmName())).thenReturn(domain);
+            when(libvirtConnectionWrapper.getConnectionByVmName(vmName)).thenReturn(conn);
+            when(conn.domainLookupByName(command.getVmName())).thenReturn(domain);
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
@@ -445,13 +449,13 @@ public class LibvirtComputingResourceTest {
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
 
-        final Answer answer = wrapper.execute(stopCommand, libvirtComputingResource);
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
 
         assertTrue(answer.getResult());
 
         verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
         try {
-            verify(libvirtConnectionWrapper, times(2)).getConnectionByName(vmName);
+            verify(libvirtConnectionWrapper, times(2)).getConnectionByVmName(vmName);
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
@@ -470,11 +474,11 @@ public class LibvirtComputingResourceTest {
         final List<String> vms = new ArrayList<String>();
         vms.add(vmName);
 
-        final GetVmStatsCommand stopCommand = new GetVmStatsCommand(vms, uuid, "hostname");
+        final GetVmStatsCommand command = new GetVmStatsCommand(vms, uuid, "hostname");
 
         when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
         try {
-            when(libvirtConnectionWrapper.getConnectionByName(vmName)).thenReturn(conn);
+            when(libvirtConnectionWrapper.getConnectionByVmName(vmName)).thenReturn(conn);
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
@@ -482,12 +486,12 @@ public class LibvirtComputingResourceTest {
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
 
-        final Answer answer = wrapper.execute(stopCommand, libvirtComputingResource);
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
         assertTrue(answer.getResult());
 
         verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
         try {
-            verify(libvirtConnectionWrapper, times(1)).getConnectionByName(vmName);
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(vmName);
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
@@ -506,7 +510,7 @@ public class LibvirtComputingResourceTest {
         final List<String> vms = new ArrayList<String>();
         vms.add(vmName);
 
-        final GetVmDiskStatsCommand stopCommand = new GetVmDiskStatsCommand(vms, uuid, "hostname");
+        final GetVmDiskStatsCommand command = new GetVmDiskStatsCommand(vms, uuid, "hostname");
 
         when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
         try {
@@ -518,12 +522,80 @@ public class LibvirtComputingResourceTest {
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
 
-        final Answer answer = wrapper.execute(stopCommand, libvirtComputingResource);
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
         assertTrue(answer.getResult());
 
         verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
         try {
             verify(libvirtConnectionWrapper, times(1)).getConnection();
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testRebootCommand() {
+        // We cannot do much here due to the Native libraries and Static methods used by the LibvirtConnection we need
+        // a better way to mock stuff!
+
+        final Connect conn = Mockito.mock(Connect.class);
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+
+        final String vmName = "Test";
+        final RebootCommand command = new RebootCommand(vmName);
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        try {
+            when(libvirtConnectionWrapper.getConnectionByVmName(vmName)).thenReturn(conn);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(vmName);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testRebootRouterCommand() {
+        // We cannot do much here due to the Native libraries and Static methods used by the LibvirtConnection we need
+        // a better way to mock stuff!
+
+        final VirtualRoutingResource routingResource = Mockito.mock(VirtualRoutingResource.class);
+        final Connect conn = Mockito.mock(Connect.class);
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+
+        final String vmName = "Test";
+        final RebootRouterCommand command = new RebootRouterCommand(vmName, "192.168.0.10");
+
+        when(libvirtComputingResource.getVirtRouterResource()).thenReturn(routingResource);
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        try {
+            when(libvirtConnectionWrapper.getConnectionByVmName(vmName)).thenReturn(conn);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getVirtRouterResource();
+
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(vmName);
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }

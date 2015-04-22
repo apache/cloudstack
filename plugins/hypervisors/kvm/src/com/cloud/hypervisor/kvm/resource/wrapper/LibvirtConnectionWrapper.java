@@ -27,7 +27,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
  */
 public class LibvirtConnectionWrapper {
 
-    public Connect getConnectionByName(final String vmName) throws LibvirtException {
+    public Connect getConnectionByVmName(final String vmName) throws LibvirtException {
         return LibvirtConnection.getConnectionByVmName(vmName);
     }
 
