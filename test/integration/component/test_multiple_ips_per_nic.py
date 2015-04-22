@@ -417,12 +417,18 @@ class TestBasicOperations(cloudstackTestCase):
                 None,
                 "Removing IP from nic didn't release the ip address from user_ip_address table"
             )
-            ipaddress_2 = NIC.addIp(
-                self.apiclient,
-                id=virtual_machine.nic[0].id,
-                ipaddress=ipaddress_1.ipaddress
-            )
-            NIC.removeIp(self.apiclient, ipaddressid=ipaddress_2.id)
+        else:
+            qresultset = self.dbclient.execute(
+                "select id from nic_secondary_ips where ip4_address = '%s';"
+                % str(ipaddress_1.ipaddress))
+            if len(qresultset):
+                self.fail("Failed to release the secondary ip from the nic")
+        ipaddress_2 = NIC.addIp(
+            self.apiclient,
+            id=virtual_machine.nic[0].id,
+            ipaddress=ipaddress_1.ipaddress
+        )
+        NIC.removeIp(self.apiclient, ipaddressid=ipaddress_2.id)
         try:
             NIC.removeIp(
                 self.apiclient,
