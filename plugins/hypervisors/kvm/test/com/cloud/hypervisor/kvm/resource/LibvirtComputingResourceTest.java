@@ -62,19 +62,26 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
+import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtConnectionWrapper;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtRequestWrapper;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
@@ -587,6 +594,9 @@ public class LibvirtComputingResourceTest {
 
     @Test(expected = NumberFormatException.class)
     public void testGetHostStatsCommand() {
+        // A bit difficult top test due to the logger being passed and the parser itself relying on the connection.
+        // Have to spend some more time afterwards in order to refactor the wrapper itself.
+
         final String uuid = "e8d6b4d0-bc6d-4613-b8bb-cb9e0600f3c6";
         final GetHostStatsCommand command = new GetHostStatsCommand(uuid, "summer", 1l);
 
@@ -595,5 +605,67 @@ public class LibvirtComputingResourceTest {
 
         final Answer answer = wrapper.execute(command, libvirtComputingResource);
         assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testCheckHealthCommand() {
+        // A bit difficult top test due to the logger being passed and the parser itself relying on the connection.
+        // Have to spend some more time afterwards in order to refactor the wrapper itself.
+
+        final CheckHealthCommand command = new CheckHealthCommand();
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testPrepareForMigrationCommand() {
+        final Connect conn = Mockito.mock(Connect.class);
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+
+        final VirtualMachineTO vm = Mockito.mock(VirtualMachineTO.class);
+        final KVMStoragePoolManager storagePoolManager = Mockito.mock(KVMStoragePoolManager.class);
+        final NicTO nicTO = Mockito.mock(NicTO.class);
+        final DiskTO diskTO = Mockito.mock(DiskTO.class);
+        final VifDriver vifDriver = Mockito.mock(VifDriver.class);
+
+        final PrepareForMigrationCommand command = new PrepareForMigrationCommand(vm);
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        try {
+            when(libvirtConnectionWrapper.getConnectionByVmName(vm.getName())).thenReturn(conn);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        when(vm.getNics()).thenReturn(new NicTO[]{nicTO});
+        when(vm.getDisks()).thenReturn(new DiskTO[]{diskTO});
+
+        when(nicTO.getType()).thenReturn(TrafficType.Guest);
+        when(diskTO.getType()).thenReturn(Volume.Type.ISO);
+
+        when(libvirtComputingResource.getVifDriver(nicTO.getType())).thenReturn(vifDriver);
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolManager);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(vm.getName());
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(vm, times(1)).getNics();
+        verify(vm, times(1)).getDisks();
+        verify(diskTO, times(1)).getType();
     }
 }

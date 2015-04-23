@@ -95,8 +95,6 @@ import com.cloud.agent.api.AttachVolumeAnswer;
 import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.BackupSnapshotAnswer;
 import com.cloud.agent.api.BackupSnapshotCommand;
-import com.cloud.agent.api.CheckHealthAnswer;
-import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkAnswer;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckOnHostCommand;
@@ -145,8 +143,6 @@ import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
-import com.cloud.agent.api.PrepareForMigrationAnswer;
-import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
@@ -395,6 +391,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public String getPublicBridgeName() {
         return _publicBridgeName;
+    }
+
+    public KVMStoragePoolManager getStoragePoolMgr() {
+        return _storagePoolMgr;
     }
 
     private static final class KeyValueInterpreter extends OutputInterpreter {
@@ -1044,7 +1044,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return vifDriver;
     }
 
-    protected VifDriver getVifDriver(final TrafficType trafficType) {
+    public VifDriver getVifDriver(final TrafficType trafficType) {
         VifDriver vifDriver = _trafficTypeVifDrivers.get(trafficType);
 
         if (vifDriver == null) {
@@ -1299,11 +1299,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         try {
-            if (cmd instanceof CheckHealthCommand) {
-                return execute((CheckHealthCommand)cmd);
-            } else if (cmd instanceof PrepareForMigrationCommand) {
-                return execute((PrepareForMigrationCommand)cmd);
-            } else if (cmd instanceof MigrateCommand) {
+            if (cmd instanceof MigrateCommand) {
                 return execute((MigrateCommand)cmd);
             } else if (cmd instanceof PingTestCommand) {
                 return execute((PingTestCommand)cmd);
@@ -3211,56 +3207,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    private synchronized Answer execute(final PrepareForMigrationCommand cmd) {
-
-        final VirtualMachineTO vm = cmd.getVirtualMachine();
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Preparing host for migrating " + vm);
-        }
-
-        final NicTO[] nics = vm.getNics();
-
-        boolean skipDisconnect = false;
-
-        try {
-            final Connect conn = LibvirtConnection.getConnectionByVmName(vm.getName());
-            for (final NicTO nic : nics) {
-                getVifDriver(nic.getType()).plug(nic, null, "");
-            }
-
-            /* setup disks, e.g for iso */
-            final DiskTO[] volumes = vm.getDisks();
-            for (final DiskTO volume : volumes) {
-                if (volume.getType() == Volume.Type.ISO) {
-                    getVolumePath(conn, volume);
-                }
-            }
-
-            if (!_storagePoolMgr.connectPhysicalDisksViaVmSpec(vm)) {
-                skipDisconnect = true;
-                return new PrepareForMigrationAnswer(cmd, "failed to connect physical disks to host");
-            }
-
-            skipDisconnect = true;
-
-            return new PrepareForMigrationAnswer(cmd);
-        } catch (final LibvirtException e) {
-            return new PrepareForMigrationAnswer(cmd, e.toString());
-        } catch (final InternalErrorException e) {
-            return new PrepareForMigrationAnswer(cmd, e.toString());
-        } catch (final URISyntaxException e) {
-            return new PrepareForMigrationAnswer(cmd, e.toString());
-        } finally {
-            if (!skipDisconnect) {
-                _storagePoolMgr.disconnectPhysicalDisksViaVmSpec(vm);
-            }
-        }
-    }
-
-    private Answer execute(final CheckHealthCommand cmd) {
-        return new CheckHealthAnswer(cmd, true);
-    }
-
     public String networkUsage(final String privateIpAddress, final String option, final String vif) {
         final Script getUsage = new Script(_routerProxyPath, s_logger);
         getUsage.add("netusage.sh");
@@ -3740,7 +3686,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    private String getVolumePath(final Connect conn, final DiskTO volume) throws LibvirtException, URISyntaxException {
+    public String getVolumePath(final Connect conn, final DiskTO volume) throws LibvirtException, URISyntaxException {
         final DataTO data = volume.getData();
         final DataStoreTO store = data.getDataStore();
 
