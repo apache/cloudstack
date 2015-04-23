@@ -135,7 +135,6 @@ import com.cloud.agent.api.OvsVpcRoutingPolicyConfigCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
-import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
@@ -403,6 +402,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public int getMigrateSpeed() {
         return _migrateSpeed;
+    }
+
+    public String getPingTestPath() {
+        return _pingTestPath;
     }
 
     private static final class KeyValueInterpreter extends OutputInterpreter {
@@ -1311,9 +1314,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         try {
-            if (cmd instanceof PingTestCommand) {
-                return execute((PingTestCommand)cmd);
-            } else if (cmd instanceof CheckVirtualMachineCommand) {
+            if (cmd instanceof CheckVirtualMachineCommand) {
                 return execute((CheckVirtualMachineCommand)cmd);
             } else if (cmd instanceof ReadyCommand) {
                 return execute((ReadyCommand)cmd);
@@ -3027,41 +3028,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } catch (final LibvirtException e) {
             return new CheckVirtualMachineAnswer(cmd, e.getMessage());
         }
-    }
-
-    private Answer execute(final PingTestCommand cmd) {
-        String result = null;
-        final String computingHostIp = cmd.getComputingHostIp(); // TODO, split
-        // the
-        // command
-        // into 2
-        // types
-
-        if (computingHostIp != null) {
-            result = doPingTest(computingHostIp);
-        } else if (cmd.getRouterIp() != null && cmd.getPrivateIp() != null) {
-            result = doPingTest(cmd.getRouterIp(), cmd.getPrivateIp());
-        } else {
-            return new Answer(cmd, false, "routerip and private ip is null");
-        }
-
-        if (result != null) {
-            return new Answer(cmd, false, result);
-        }
-        return new Answer(cmd);
-    }
-
-    private String doPingTest(final String computingHostIp) {
-        final Script command = new Script(_pingTestPath, 10000, s_logger);
-        command.add("-h", computingHostIp);
-        return command.execute();
-    }
-
-    private String doPingTest(final String domRIp, final String vmIp) {
-        final Script command = new Script(_pingTestPath, 10000, s_logger);
-        command.add("-i", domRIp);
-        command.add("-p", vmIp);
-        return command.execute();
     }
 
     public String networkUsage(final String privateIpAddress, final String option, final String vif) {

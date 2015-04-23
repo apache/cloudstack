@@ -68,6 +68,7 @@ import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
@@ -596,7 +597,7 @@ public class LibvirtComputingResourceTest {
 
     @Test(expected = NumberFormatException.class)
     public void testGetHostStatsCommand() {
-        // A bit difficult top test due to the logger being passed and the parser itself relying on the connection.
+        // A bit difficult to test due to the logger being passed and the parser itself relying on the connection.
         // Have to spend some more time afterwards in order to refactor the wrapper itself.
 
         final String uuid = "e8d6b4d0-bc6d-4613-b8bb-cb9e0600f3c6";
@@ -611,9 +612,6 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testCheckHealthCommand() {
-        // A bit difficult top test due to the logger being passed and the parser itself relying on the connection.
-        // Have to spend some more time afterwards in order to refactor the wrapper itself.
-
         final CheckHealthCommand command = new CheckHealthCommand();
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
@@ -742,5 +740,38 @@ public class LibvirtComputingResourceTest {
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
+    }
+
+    @Test
+    public void testPingTestHostIpCommand() {
+        final PingTestCommand command = new PingTestCommand("172.1.10.10");
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testPingTestPvtIpCommand() {
+        final PingTestCommand command = new PingTestCommand("169.17.1.10", "192.168.10.10");
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testPingOnlyOneIpCommand() {
+        final PingTestCommand command = new PingTestCommand("169.17.1.10", null);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
     }
 }
