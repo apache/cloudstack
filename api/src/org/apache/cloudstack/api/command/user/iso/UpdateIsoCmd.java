@@ -39,6 +39,11 @@ public class UpdateIsoCmd extends BaseUpdateTemplateOrIsoCmd {
     /////////////////////////////////////////////////////
 
     @Override
+    public Boolean getRequiresHvm() {
+        return null;
+    }
+
+    @Override
     public Boolean isPasswordEnabled() {
         return null;
     }
