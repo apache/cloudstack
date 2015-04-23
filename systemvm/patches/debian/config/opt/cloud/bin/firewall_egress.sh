@@ -34,9 +34,10 @@ usage() {
 }
 
 fw_egress_remove_backup() {
-  sudo iptables -D FW_OUTBOUND -j _FW_EGRESS_RULES 
-  sudo iptables -F _FW_EGRESS_RULES 
-  sudo iptables -X _FW_EGRESS_RULES 
+  # remove backup rules, ignore errors as they could not be present
+  sudo iptables -D FW_OUTBOUND -j _FW_EGRESS_RULES >/dev/null 2>&1
+  sudo iptables -F _FW_EGRESS_RULES >/dev/null 2>&1
+  sudo iptables -X _FW_EGRESS_RULES >/dev/null 2>&1
 }
 
 fw_egress_save() {
