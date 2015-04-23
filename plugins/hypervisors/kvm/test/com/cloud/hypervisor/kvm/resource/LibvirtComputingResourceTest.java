@@ -1055,7 +1055,7 @@ public class LibvirtComputingResourceTest {
         assertNotNull(wrapper);
 
         final Answer answer = wrapper.execute(command, libvirtComputingResource);
-        assertTrue(answer.getResult());
+        assertFalse(answer.getResult());
 
         verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
         try {
@@ -1100,7 +1100,7 @@ public class LibvirtComputingResourceTest {
         assertNotNull(wrapper);
 
         final Answer answer = wrapper.execute(command, libvirtComputingResource);
-        assertTrue(answer.getResult());
+        assertFalse(answer.getResult());
 
         verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
         try {
