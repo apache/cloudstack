@@ -1,0 +1,45 @@
+What this tool is capable to do is
+
+1.	Compare all the tables schema between upgraded setup and fresh install setup  and find if there is any schema difference between any tables
+2.	Compare global configuration between upgraded and fresh install setup and find out if there is any difference between the two on following fields
+	a.	Value
+	b.	Scope
+	c.	Description
+	d.	Component
+	e.	Category
+
+3.	It will also find out if there is some global configuration present only in fresh setup and missing in upgraded environment and vice versa
+4.	It will also find out global configuration value difference between before upgraded and after upgrade setup
+
+
+
+The usage is as follows
+1.	First run fresh_install_data_collection.sh file to generate data from fresh install setup .
+	This will be used for comparing between fresh install and upgrade setup. 
+	This is a onetime activity and need to be repeated only when there is some DB changes for that release .
+	Output of this script will come in a base_data folder 
+
+2.	Just before upgrade you need to run before_upgrade_data_collection.sh  file to collect required data needed to compare before upgrade and after upgrade setup data
+	The output of this script will come in folder data_before_upgrade
+
+3.	After upgrade  run cloud_schema_comparision.sh to compare cloud database all tables schema between fresh and upgraded setup. 
+	NOTE: this script requires step 1 output in current working directory
+
+4.	After upgrade  run usage_schema_comparision.sh to compare cloud usage all tables schema between fresh and upgraded setup
+	NOTE: this script requires step 1 output in current working directory
+
+5.      Run test_config_between_fresh_and_upgraded_setup.sh  to comapre table global configuration values between fresh and upgraded setup 
+	NOTE: this script requires step 1 output in current working directory
+
+
+6.      Run test_config_before_and_after_upgrade.sh  to comapre table global configuration values between before upgraded and after upgraded setup
+	NOTE: this script requires step 2  output in current working directory
+
+
+7.	In order to run any *.sh file  you need to provide 3 command line argument
+	•	Database host ip/localhost
+	•	Database user
+	•	Database user password
+
+8.	Result will be shown in the form of files . 
+
