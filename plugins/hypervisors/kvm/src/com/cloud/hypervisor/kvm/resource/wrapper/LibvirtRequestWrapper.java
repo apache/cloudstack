@@ -22,6 +22,7 @@ import java.util.Hashtable;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
+import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
@@ -70,6 +71,7 @@ public class LibvirtRequestWrapper extends RequestWrapper {
         linbvirtCommands.put(CheckVirtualMachineCommand.class, new LibvirtCheckVirtualMachineCommandWrapper());
         linbvirtCommands.put(ReadyCommand.class, new LibvirtReadyCommandWrapper());
         linbvirtCommands.put(AttachIsoCommand.class, new LibvirtAttachIsoCommandWrapper());
+        linbvirtCommands.put(AttachVolumeCommand.class, new LibvirtAttachVolumeCommandWrapper());
 
         resources.put(LibvirtComputingResource.class, linbvirtCommands);
     }

@@ -87,8 +87,6 @@ import com.ceph.rbd.Rbd;
 import com.ceph.rbd.RbdException;
 import com.ceph.rbd.RbdImage;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.AttachVolumeAnswer;
-import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.BackupSnapshotAnswer;
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.CheckNetworkAnswer;
@@ -1309,9 +1307,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         try {
-            if (cmd instanceof AttachVolumeCommand) {
-                return execute((AttachVolumeCommand)cmd);
-            } else if (cmd instanceof CheckConsoleProxyLoadCommand) {
+            if (cmd instanceof CheckConsoleProxyLoadCommand) {
                 return execute((CheckConsoleProxyLoadCommand)cmd);
             } else if (cmd instanceof WatchConsoleProxyLoadCommand) {
                 return execute((WatchConsoleProxyLoadCommand)cmd);
@@ -2940,23 +2936,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return new ConsoleProxyLoadAnswer(cmd, proxyVmId, proxyVmName, success, result);
     }
 
-    private AttachVolumeAnswer execute(final AttachVolumeCommand cmd) {
-        try {
-            final Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
-            final KVMStoragePool primary = _storagePoolMgr.getStoragePool(cmd.getPooltype(), cmd.getPoolUuid());
-            final KVMPhysicalDisk disk = primary.getPhysicalDisk(cmd.getVolumePath());
-            attachOrDetachDisk(conn, cmd.getAttach(), cmd.getVmName(), disk,
-                    cmd.getDeviceId().intValue(), cmd.getBytesReadRate(), cmd.getBytesWriteRate(), cmd.getIopsReadRate(), cmd.getIopsWriteRate(),
-                    cmd.getCacheMode());
-        } catch (final LibvirtException e) {
-            return new AttachVolumeAnswer(cmd, e.toString());
-        } catch (final InternalErrorException e) {
-            return new AttachVolumeAnswer(cmd, e.toString());
-        }
-
-        return new AttachVolumeAnswer(cmd, cmd.getDeviceId(), cmd.getVolumePath());
-    }
-
     protected PowerState convertToPowerState(final DomainState ps) {
         final PowerState state = s_powerStatesTable.get(ps);
         return state == null ? PowerState.PowerUnknown : state;
@@ -3707,7 +3686,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return result;
     }
 
-    protected synchronized String attachOrDetachDisk(final Connect conn,
+    public synchronized String attachOrDetachDisk(final Connect conn,
             final boolean attach, final String vmName, final KVMPhysicalDisk attachingDisk,
             final int devId, final Long bytesReadRate, final Long bytesWriteRate, final Long iopsReadRate, final Long iopsWriteRate, final String cacheMode) throws LibvirtException, InternalErrorException {
         List<DiskDef> disks = null;
