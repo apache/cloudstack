@@ -100,7 +100,6 @@ import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkAnswer;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckOnHostCommand;
-import com.cloud.agent.api.CheckStateCommand;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
@@ -1300,9 +1299,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         try {
-            if (cmd instanceof CheckStateCommand) {
-                return executeRequest(cmd);
-            } else if (cmd instanceof CheckHealthCommand) {
+            if (cmd instanceof CheckHealthCommand) {
                 return execute((CheckHealthCommand)cmd);
             } else if (cmd instanceof PrepareForMigrationCommand) {
                 return execute((PrepareForMigrationCommand)cmd);
