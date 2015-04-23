@@ -32,8 +32,11 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.BOOTABLE, type = CommandType.BOOLEAN, description = "true if image is bootable, false otherwise")
+    @Parameter(name = ApiConstants.BOOTABLE, type = CommandType.BOOLEAN, description = "true if image is bootable, false otherwise; available only for updateIso API")
     private Boolean bootable;
+
+    @Parameter(name = ApiConstants.REQUIRES_HVM, type = CommandType.BOOLEAN, description = "true if the template requres HVM, false otherwise; available only for updateTemplate API")
+    private Boolean requiresHvm;
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the image", length = 4096)
     private String displayText;
@@ -76,6 +79,10 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
 
     public Boolean isBootable() {
         return bootable;
+    }
+
+    public Boolean getRequiresHvm() {
+        return requiresHvm;
     }
 
     public String getDisplayText() {
