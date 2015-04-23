@@ -226,12 +226,12 @@ done
 
 if [ "$dev" == "" ]
 then
-    $dev="eth2"
+    dev="eth2"
 fi
 
 if [ "$cidr" == "" ]
 then
-    $cidr=$(get_intf_ip "eth0")
+    cidr=$(get_intf_ip "eth0")
 fi
 
 [ "$create$destroy" == "11" ] || [ "$create$destroy$useradd$userdel" == "" ] && usage && exit 2
