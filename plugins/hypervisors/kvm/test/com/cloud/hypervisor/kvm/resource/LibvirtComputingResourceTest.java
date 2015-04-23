@@ -23,6 +23,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -66,6 +67,7 @@ import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
+import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
@@ -667,5 +669,78 @@ public class LibvirtComputingResourceTest {
         verify(vm, times(1)).getNics();
         verify(vm, times(1)).getDisks();
         verify(diskTO, times(1)).getType();
+    }
+
+    @Test(expected = UnsatisfiedLinkError.class)
+    public void testMigrateCommand() {
+        // The Connect constructor used inside the LibvirtMigrateCommandWrapper has a call to native methods, which
+        // makes difficult to test it now.
+        // Will keep it expecting the UnsatisfiedLinkError and fix later.
+
+        final Connect conn = Mockito.mock(Connect.class);
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+
+        final String vmName = "Test";
+        final String destIp = "10.1.1.100";
+        final boolean isWindows = false;
+        final VirtualMachineTO vmTO = Mockito.mock(VirtualMachineTO.class);
+        final boolean executeInSequence = false;
+
+        final MigrateCommand command = new MigrateCommand(vmName, destIp, isWindows, vmTO, executeInSequence );
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        try {
+            when(libvirtConnectionWrapper.getConnectionByVmName(vmName)).thenReturn(conn);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final InterfaceDef interfaceDef = Mockito.mock(InterfaceDef.class);
+        final List<InterfaceDef> ifaces = new ArrayList<InterfaceDef>();
+        ifaces.add(interfaceDef);
+
+        when(libvirtComputingResource.getInterfaces(conn, vmName)).thenReturn(ifaces);
+
+        final DiskDef diskDef = Mockito.mock(DiskDef.class);
+        final List<DiskDef> disks = new ArrayList<DiskDef>();
+        disks.add(diskDef);
+
+        when(libvirtComputingResource.getDisks(conn, vmName)).thenReturn(disks);
+        final Domain dm = Mockito.mock(Domain.class);
+        try {
+            when(conn.domainLookupByName(vmName)).thenReturn(dm);
+
+            when(libvirtComputingResource.getPrivateIp()).thenReturn("192.168.1.10");
+            when(dm.getXMLDesc(0)).thenReturn("host_domain");
+            when(dm.isPersistent()).thenReturn(1);
+            doNothing().when(dm).undefine();
+
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        } catch (final Exception e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(vmName);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        verify(libvirtComputingResource, times(1)).getInterfaces(conn, vmName);
+        verify(libvirtComputingResource, times(1)).getDisks(conn, vmName);
+        try {
+            verify(conn, times(1)).domainLookupByName(vmName);
+            verify(dm, times(1)).getXMLDesc(0);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
     }
 }

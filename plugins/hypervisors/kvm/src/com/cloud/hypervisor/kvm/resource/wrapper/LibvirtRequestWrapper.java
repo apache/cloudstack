@@ -26,6 +26,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
+import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
@@ -60,6 +61,7 @@ public class LibvirtRequestWrapper extends RequestWrapper {
         linbvirtCommands.put(GetHostStatsCommand.class, new LibvirtGetHostStatsCommandWrapper());
         linbvirtCommands.put(CheckHealthCommand.class, new LibvirtCheckHealthCommandWrapper());
         linbvirtCommands.put(PrepareForMigrationCommand.class, new LibvirtPrepareForMigrationCommandWrapper());
+        linbvirtCommands.put(MigrateCommand.class, new LibvirtMigrateCommandWrapper());
 
         resources.put(LibvirtComputingResource.class, linbvirtCommands);
     }
