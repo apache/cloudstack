@@ -270,6 +270,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                             templateOnStore.getDataStore().getRole().toString());
                     //using the existing max template size configuration
                     payload.setMaxUploadSize(_configDao.getValue(Config.MaxTemplateAndIsoSize.key()));
+                    payload.setDefaultMaxAccountSecondaryStorage(_configDao.getValue(Config.DefaultMaxAccountSecondaryStorage.key()));
+                    payload.setAccountId(template.getAccountId());
                     payload.setRemoteEndPoint(ep.getPublicAddr());
                     payload.setRequiresHvm(template.requiresHvm());
                     payload.setDescription(template.getDisplayText());

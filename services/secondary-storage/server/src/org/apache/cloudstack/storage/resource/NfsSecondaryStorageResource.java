@@ -48,6 +48,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.Storage;
+import com.cloud.storage.template.TemplateConstants;
 import com.cloud.utils.EncryptionUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -2633,6 +2634,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 updateStateMapWithError(uuid, errorMessage);
                 throw new InvalidParameterValueException(errorMessage);
             }
+            checkSecondaryStorageResourceLimit(cmd, contentLengthInGB);
             try {
                 String absolutePath = cmd.getAbsolutePath();
                 uploadEntity = new UploadEntity(uuid, cmd.getEntityId(), UploadEntity.Status.IN_PROGRESS, cmd.getName(), absolutePath);
@@ -2661,6 +2663,52 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             }
         }
         return uploadEntity;
+    }
+
+    private synchronized void checkSecondaryStorageResourceLimit(TemplateOrVolumePostUploadCommand cmd, int contentLengthInGB) {
+        String rootDir = this.getRootDir(cmd.getDataTo()) + File.separator;
+        long accountId = cmd.getAccountId();
+
+        long accountTemplateDirSize = 0;
+        File accountTemplateDir = new File(rootDir + getTemplatePathForAccount(accountId));
+        if(accountTemplateDir.exists()) {
+            FileUtils.sizeOfDirectory(accountTemplateDir);
+        }
+        long accountVolumeDirSize = 0;
+        File accountVolumeDir = new File(rootDir + getVolumePathForAccount(accountId));
+        if(accountVolumeDir.exists()) {
+            accountVolumeDirSize = FileUtils.sizeOfDirectory(accountVolumeDir);
+        }
+        long accountSnapshotDirSize = 0;
+        File accountSnapshotDir = new File(rootDir + getSnapshotPathForAccount(accountId));
+        if(accountSnapshotDir.exists()) {
+            accountSnapshotDirSize = FileUtils.sizeOfDirectory(accountSnapshotDir);
+        }
+        s_logger.debug("accountTemplateDirSize: " + accountTemplateDirSize + " accountSnapshotDirSize: " +accountSnapshotDirSize + " accountVolumeDirSize: " +
+                           accountVolumeDirSize);
+
+        int accountDirSizeInGB = getSizeInGB(accountTemplateDirSize + accountSnapshotDirSize + accountVolumeDirSize);
+        int defaultMaxAccountSecondaryStorageInGB = Integer.parseInt(cmd.getDefaultMaxAccountSecondaryStorage());
+
+        if ((accountDirSizeInGB + contentLengthInGB) > defaultMaxAccountSecondaryStorageInGB) {
+            s_logger.error("accountDirSizeInGb: " + accountDirSizeInGB + " defaultMaxAccountSecondaryStorageInGB: " + defaultMaxAccountSecondaryStorageInGB + " contentLengthInGB:"
+                    + contentLengthInGB);
+            String errorMessage = "Maximum number of resources of type secondary_storage for account has exceeded";
+            updateStateMapWithError(cmd.getEntityUUID(), errorMessage);
+            throw new InvalidParameterValueException(errorMessage);
+        }
+    }
+
+    private String getVolumePathForAccount(long accountId) {
+        return TemplateConstants.DEFAULT_VOLUME_ROOT_DIR + "/" + accountId;
+    }
+
+    private String getTemplatePathForAccount(long accountId) {
+        return TemplateConstants.DEFAULT_TMPLT_ROOT_DIR + "/" + TemplateConstants.DEFAULT_TMPLT_FIRST_LEVEL_DIR + accountId;
+    }
+
+    private String getSnapshotPathForAccount(long accountId) {
+        return TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR + "/" + accountId;
     }
 
     private boolean isOneTimePostUrlUsed(TemplateOrVolumePostUploadCommand cmd) {

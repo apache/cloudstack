@@ -339,6 +339,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 command.setLocalPath(volumeStore.getLocalDownloadPath());
                 //using the existing max upload size configuration
                 command.setMaxUploadSize(_configDao.getValue(Config.MaxUploadVolumeSize.key()));
+                command.setDefaultMaxAccountSecondaryStorage(_configDao.getValue(Config.DefaultMaxAccountSecondaryStorage.key()));
+                command.setAccountId(vol.getAccountId());
                 Gson gson = new GsonBuilder().create();
                 String metadata = EncryptionUtil.encodeData(gson.toJson(command), key);
                 response.setMetadata(metadata);

@@ -49,6 +49,10 @@ public class TemplateOrVolumePostUploadCommand {
 
     String description;
 
+    private String defaultMaxAccountSecondaryStorage;
+
+    private long accountId;
+
     public TemplateOrVolumePostUploadCommand(long entityId, String entityUUID, String absolutePath, String checksum, String type, String name, String imageFormat, String dataTo,
             String dataToRole) {
         this.entityId = entityId;
@@ -175,5 +179,21 @@ public class TemplateOrVolumePostUploadCommand {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public void setDefaultMaxAccountSecondaryStorage(String defaultMaxAccountSecondaryStorage) {
+        this.defaultMaxAccountSecondaryStorage = defaultMaxAccountSecondaryStorage;
+    }
+
+    public String getDefaultMaxAccountSecondaryStorage() {
+        return defaultMaxAccountSecondaryStorage;
+    }
+
+    public void setAccountId(long accountId) {
+        this.accountId = accountId;
+    }
+
+    public long getAccountId() {
+        return accountId;
     }
 }
