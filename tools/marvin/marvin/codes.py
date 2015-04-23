@@ -132,4 +132,3 @@ STORAGE_TRAFFIC = "storage"
 Switch Type
 '''
 VMWAREDVS = "vmwaredvs"
-
