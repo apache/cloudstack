@@ -87,7 +87,6 @@ import com.ceph.rbd.Rbd;
 import com.ceph.rbd.RbdException;
 import com.ceph.rbd.RbdImage;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeAnswer;
 import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.BackupSnapshotAnswer;
@@ -95,8 +94,6 @@ import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.CheckNetworkAnswer;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckOnHostCommand;
-import com.cloud.agent.api.CheckVirtualMachineAnswer;
-import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
@@ -138,8 +135,6 @@ import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
-import com.cloud.agent.api.ReadyAnswer;
-import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.SecurityGroupRuleAnswer;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
@@ -1314,13 +1309,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         try {
-            if (cmd instanceof CheckVirtualMachineCommand) {
-                return execute((CheckVirtualMachineCommand)cmd);
-            } else if (cmd instanceof ReadyCommand) {
-                return execute((ReadyCommand)cmd);
-            } else if (cmd instanceof AttachIsoCommand) {
-                return execute((AttachIsoCommand)cmd);
-            } else if (cmd instanceof AttachVolumeCommand) {
+            if (cmd instanceof AttachVolumeCommand) {
                 return execute((AttachVolumeCommand)cmd);
             } else if (cmd instanceof CheckConsoleProxyLoadCommand) {
                 return execute((CheckConsoleProxyLoadCommand)cmd);
@@ -2951,21 +2940,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return new ConsoleProxyLoadAnswer(cmd, proxyVmId, proxyVmName, success, result);
     }
 
-    private Answer execute(final AttachIsoCommand cmd) {
-        try {
-            final Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
-            attachOrDetachISO(conn, cmd.getVmName(), cmd.getIsoPath(), cmd.isAttach());
-        } catch (final LibvirtException e) {
-            return new Answer(cmd, false, e.toString());
-        } catch (final URISyntaxException e) {
-            return new Answer(cmd, false, e.toString());
-        } catch (final InternalErrorException e) {
-            return new Answer(cmd, false, e.toString());
-        }
-
-        return new Answer(cmd);
-    }
-
     private AttachVolumeAnswer execute(final AttachVolumeCommand cmd) {
         try {
             final Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
@@ -2983,16 +2957,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return new AttachVolumeAnswer(cmd, cmd.getDeviceId(), cmd.getVolumePath());
     }
 
-    private Answer execute(final ReadyCommand cmd) {
-        return new ReadyAnswer(cmd);
-    }
-
     protected PowerState convertToPowerState(final DomainState ps) {
         final PowerState state = s_powerStatesTable.get(ps);
         return state == null ? PowerState.PowerUnknown : state;
     }
 
-    protected PowerState getVmState(final Connect conn, final String vmName) {
+    public PowerState getVmState(final Connect conn, final String vmName) {
         int retry = 3;
         Domain vms = null;
         while (retry-- > 0) {
@@ -3013,21 +2983,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
         return PowerState.PowerOff;
-    }
-
-    private Answer execute(final CheckVirtualMachineCommand cmd) {
-        try {
-            final Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
-            final PowerState state = getVmState(conn, cmd.getVmName());
-            Integer vncPort = null;
-            if (state == PowerState.PowerOn) {
-                vncPort = getVncPort(conn, cmd.getVmName());
-            }
-
-            return new CheckVirtualMachineAnswer(cmd, state, vncPort);
-        } catch (final LibvirtException e) {
-            return new CheckVirtualMachineAnswer(cmd, e.getMessage());
-        }
     }
 
     public String networkUsage(final String privateIpAddress, final String option, final String vif) {
@@ -3719,7 +3674,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return _storagePoolMgr;
     }
 
-    protected synchronized String attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach) throws LibvirtException, URISyntaxException,
+    public synchronized String attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach) throws LibvirtException, URISyntaxException,
     InternalErrorException {
         String isoXml = null;
         if (isoPath != null && isAttach) {

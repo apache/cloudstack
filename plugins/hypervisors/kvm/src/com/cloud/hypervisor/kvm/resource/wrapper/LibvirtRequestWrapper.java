@@ -21,7 +21,9 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import java.util.Hashtable;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.CheckHealthCommand;
+import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
@@ -29,6 +31,7 @@ import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.StopCommand;
@@ -64,6 +67,9 @@ public class LibvirtRequestWrapper extends RequestWrapper {
         linbvirtCommands.put(PrepareForMigrationCommand.class, new LibvirtPrepareForMigrationCommandWrapper());
         linbvirtCommands.put(MigrateCommand.class, new LibvirtMigrateCommandWrapper());
         linbvirtCommands.put(PingTestCommand.class, new LibvirtPingTestCommandWrapper());
+        linbvirtCommands.put(CheckVirtualMachineCommand.class, new LibvirtCheckVirtualMachineCommandWrapper());
+        linbvirtCommands.put(ReadyCommand.class, new LibvirtReadyCommandWrapper());
+        linbvirtCommands.put(AttachIsoCommand.class, new LibvirtAttachIsoCommandWrapper());
 
         resources.put(LibvirtComputingResource.class, linbvirtCommands);
     }
