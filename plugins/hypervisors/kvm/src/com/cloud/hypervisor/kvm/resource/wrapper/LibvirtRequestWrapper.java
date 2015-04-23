@@ -22,6 +22,7 @@ import java.util.Hashtable;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.RebootCommand;
@@ -54,6 +55,8 @@ public class LibvirtRequestWrapper extends RequestWrapper {
         linbvirtCommands.put(GetVmDiskStatsCommand.class, new LibvirtGetVmDiskStatsCommandWrapper());
         linbvirtCommands.put(RebootRouterCommand.class, new LibvirtRebootRouterCommandWrapper());
         linbvirtCommands.put(RebootCommand.class, new LibvirtRebootCommandWrapper());
+        linbvirtCommands.put(GetHostStatsCommand.class, new LibvirtGetHostStatsCommandWrapper());
+
         resources.put(LibvirtComputingResource.class, linbvirtCommands);
     }
 

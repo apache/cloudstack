@@ -113,13 +113,10 @@ import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.FenceAnswer;
 import com.cloud.agent.api.FenceCommand;
-import com.cloud.agent.api.GetHostStatsAnswer;
-import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
-import com.cloud.agent.api.HostStatsEntry;
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.MaintainCommand;
@@ -395,6 +392,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public VirtualRoutingResource getVirtRouterResource() {
         return _virtRouterResource;
+    }
+
+    public String getPublicBridgeName() {
+        return _publicBridgeName;
     }
 
     private static final class KeyValueInterpreter extends OutputInterpreter {
@@ -1299,9 +1300,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         try {
-            if (cmd instanceof GetHostStatsCommand) {
-                return execute((GetHostStatsCommand)cmd);
-            } else if (cmd instanceof CheckStateCommand) {
+            if (cmd instanceof CheckStateCommand) {
                 return executeRequest(cmd);
             } else if (cmd instanceof CheckHealthCommand) {
                 return execute((CheckHealthCommand)cmd);
@@ -3265,48 +3264,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return new CheckHealthAnswer(cmd, true);
     }
 
-    private Answer execute(final GetHostStatsCommand cmd) {
-        final Script cpuScript = new Script("/bin/bash", s_logger);
-        cpuScript.add("-c");
-        cpuScript.add("idle=$(top -b -n 1| awk -F, '/^[%]*[Cc]pu/{$0=$4; gsub(/[^0-9.,]+/,\"\"); print }'); echo $idle");
-
-        final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
-        String result = cpuScript.execute(parser);
-        if (result != null) {
-            s_logger.debug("Unable to get the host CPU state: " + result);
-            return new Answer(cmd, false, result);
-        }
-        final double cpuUtil = 100.0D - Double.parseDouble(parser.getLine());
-
-        long freeMem = 0;
-        final Script memScript = new Script("/bin/bash", s_logger);
-        memScript.add("-c");
-        memScript.add("freeMem=$(free|grep cache:|awk '{print $4}');echo $freeMem");
-        final OutputInterpreter.OneLineParser Memparser = new OutputInterpreter.OneLineParser();
-        result = memScript.execute(Memparser);
-        if (result != null) {
-            s_logger.debug("Unable to get the host Mem state: " + result);
-            return new Answer(cmd, false, result);
-        }
-        freeMem = Long.parseLong(Memparser.getLine());
-
-        final Script totalMem = new Script("/bin/bash", s_logger);
-        totalMem.add("-c");
-        totalMem.add("free|grep Mem:|awk '{print $2}'");
-        final OutputInterpreter.OneLineParser totMemparser = new OutputInterpreter.OneLineParser();
-        result = totalMem.execute(totMemparser);
-        if (result != null) {
-            s_logger.debug("Unable to get the host Mem state: " + result);
-            return new Answer(cmd, false, result);
-        }
-        final long totMem = Long.parseLong(totMemparser.getLine());
-
-        final Pair<Double, Double> nicStats = getNicStats(_publicBridgeName);
-
-        final HostStatsEntry hostStats = new HostStatsEntry(cmd.getHostId(), cpuUtil, nicStats.first() / 1024, nicStats.second() / 1024, "host", totMem, freeMem, 0, 0);
-        return new GetHostStatsAnswer(cmd, hostStats);
-    }
-
     public String networkUsage(final String privateIpAddress, final String option, final String vif) {
         final Script getUsage = new Script(_routerProxyPath, s_logger);
         getUsage.add("netusage.sh");
@@ -5120,7 +5077,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    static Pair<Double, Double> getNicStats(final String nicName) {
+    public Pair<Double, Double> getNicStats(final String nicName) {
         return new Pair<Double, Double>(readDouble(nicName, "rx_bytes"), readDouble(nicName, "tx_bytes"));
     }
 

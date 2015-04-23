@@ -62,6 +62,7 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.RebootCommand;
@@ -289,7 +290,8 @@ public class LibvirtComputingResourceTest {
         //this test is only working on linux because of the loopback interface name
         //also the tested code seems to work only on linux
         Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
-        final Pair<Double, Double> stats = LibvirtComputingResource.getNicStats("lo");
+        final LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
+        final Pair<Double, Double> stats = libvirtComputingResource.getNicStats("lo");
         assertNotNull(stats);
     }
 
@@ -395,9 +397,6 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testStopCommandNoCheck() {
-        // We cannot do much here due to the Native libraries and Static methods used by the LibvirtConnection we need
-        // a better way to mock stuff!
-
         final Connect conn = Mockito.mock(Connect.class);
         final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
 
@@ -428,9 +427,6 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testStopCommandCheck() {
-        // We cannot do much here due to the Native libraries and Static methods used by the LibvirtConnection we need
-        // a better way to mock stuff!
-
         final Connect conn = Mockito.mock(Connect.class);
         final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
         final Domain domain = Mockito.mock(Domain.class);
@@ -463,9 +459,6 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testGetVmStatsCommand() {
-        // We cannot do much here due to the Native libraries and Static methods used by the LibvirtConnection we need
-        // a better way to mock stuff!
-
         final Connect conn = Mockito.mock(Connect.class);
         final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
 
@@ -499,9 +492,6 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testGetVmDiskStatsCommand() {
-        // We cannot do much here due to the Native libraries and Static methods used by the LibvirtConnection we need
-        // a better way to mock stuff!
-
         final Connect conn = Mockito.mock(Connect.class);
         final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
 
@@ -535,9 +525,6 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testRebootCommand() {
-        // We cannot do much here due to the Native libraries and Static methods used by the LibvirtConnection we need
-        // a better way to mock stuff!
-
         final Connect conn = Mockito.mock(Connect.class);
         final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
 
@@ -567,9 +554,6 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testRebootRouterCommand() {
-        // We cannot do much here due to the Native libraries and Static methods used by the LibvirtConnection we need
-        // a better way to mock stuff!
-
         final VirtualRoutingResource routingResource = Mockito.mock(VirtualRoutingResource.class);
         final Connect conn = Mockito.mock(Connect.class);
         final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
@@ -599,5 +583,17 @@ public class LibvirtComputingResourceTest {
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
+    }
+
+    @Test(expected = NumberFormatException.class)
+    public void testGetHostStatsCommand() {
+        final String uuid = "e8d6b4d0-bc6d-4613-b8bb-cb9e0600f3c6";
+        final GetHostStatsCommand command = new GetHostStatsCommand(uuid, "summer", 1l);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
     }
 }
