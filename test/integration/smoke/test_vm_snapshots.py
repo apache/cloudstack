@@ -40,9 +40,9 @@ class TestVmSnapshot(cloudstackTestCase):
 
         hypervisor = testClient.getHypervisorInfo()
         if hypervisor.lower() in (KVM.lower(), "hyperv", "lxc"):
-            unittest.SkipTest(
-                "VM snapshot feature is not supported on KVM, Hyper-V or LXC"
-            )
+            raise unittest.SkipTest(
+                "VM snapshot feature is not supported on KVM, Hyper-V or LXC")
+
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
