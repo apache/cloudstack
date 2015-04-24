@@ -50,6 +50,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.resource.ArchiveAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.DeleteAlertsCmd;
+import org.apache.cloudstack.api.command.admin.usage.GetUsageRecordsCmd;
 import org.apache.cloudstack.api.command.user.event.ArchiveEventsCmd;
 import org.apache.cloudstack.api.command.user.event.DeleteEventsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
@@ -254,9 +255,8 @@ public class ParamProcessWorker implements DispatchWorker {
             case DATE:
                 // This piece of code is for maintaining backward compatibility
                 // and support both the date formats(Bug 9724)
-                // Do the date messaging for ListEventsCmd only
                 if (cmdObj instanceof ListEventsCmd || cmdObj instanceof DeleteEventsCmd || cmdObj instanceof ArchiveEventsCmd ||
-                        cmdObj instanceof ArchiveAlertsCmd || cmdObj instanceof DeleteAlertsCmd) {
+                        cmdObj instanceof ArchiveAlertsCmd || cmdObj instanceof DeleteAlertsCmd || cmdObj instanceof GetUsageRecordsCmd) {
                     final boolean isObjInNewDateFormat = isObjInNewDateFormat(paramObj.toString());
                     if (isObjInNewDateFormat) {
                         final DateFormat newFormat = BaseCmd.NEW_INPUT_FORMAT;
