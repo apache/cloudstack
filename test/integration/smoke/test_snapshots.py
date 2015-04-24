@@ -17,11 +17,19 @@
 
 from marvin.codes import FAILED
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.lib.utils import (cleanup_resources,
+                              is_snapshot_on_nfs)
+from marvin.lib.base import (VirtualMachine,
+                             Account,
+                             ServiceOffering,
+                             Snapshot)
+from marvin.lib.common import (get_domain,
+                               get_template,
+                               get_zone,
+                               list_volumes,
+                               list_snapshots)
+from marvin.lib.decoratorGenerators import skipTestIf
 
 class TestSnapshotRootDisk(cloudstackTestCase):
 
@@ -36,34 +44,39 @@ class TestSnapshotRootDisk(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
+        cls.hypervisorNotSupported = False
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         if cls.hypervisor.lower() in ['hyperv', 'lxc']:
-            raise unittest.SkipTest("Snapshots not supported on Hyper-V or LXC")
+            cls.hypervisorNotSupported = True
 
-        template = get_template(
+        cls._cleanup = []
+        if not cls.hypervisorNotSupported:
+            template = get_template(
                             cls.apiclient,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
-        if template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            if template == FAILED:
+                assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
 
-        cls.services["domainid"] = cls.domain.id
-        cls.services["server_without_disk"]["zoneid"] = cls.zone.id
-        cls.services["templates"]["ostypeid"] = template.ostypeid
-        cls.services["zoneid"] = cls.zone.id
+            cls.services["domainid"] = cls.domain.id
+            cls.services["server_without_disk"]["zoneid"] = cls.zone.id
+            cls.services["templates"]["ostypeid"] = template.ostypeid
+            cls.services["zoneid"] = cls.zone.id
 
-        # Create VMs, NAT Rules etc
-        cls.account = Account.create(
+            # Create VMs, NAT Rules etc
+            cls.account = Account.create(
                             cls.apiclient,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-        cls.service_offering = ServiceOffering.create(
+            cls._cleanup.append(cls.account)
+            cls.service_offering = ServiceOffering.create(
                                             cls.apiclient,
                                             cls.services["service_offerings"]
                                             )
-        cls.virtual_machine = cls.virtual_machine_with_disk = \
+            cls._cleanup.append(cls.service_offering)
+            cls.virtual_machine = cls.virtual_machine_with_disk = \
                     VirtualMachine.create(
                                 cls.apiclient,
                                 cls.services["server_without_disk"],
@@ -73,10 +86,6 @@ class TestSnapshotRootDisk(cloudstackTestCase):
                                 serviceofferingid=cls.service_offering.id,
                                 mode=cls.services["mode"]
                                 )
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.account,
-                        ]
         return
 
     @classmethod
@@ -102,6 +111,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @skipTestIf("hypervisorNotSupported")
     @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_01_snapshot_root_disk(self):
         """Test Snapshot Root Disk
@@ -166,8 +176,6 @@ class TestSnapshotRootDisk(cloudstackTestCase):
         qresult = qresultset[0]
 
         snapshot_uuid = qresult[0]      # backup_snap_id = snapshot UUID
-        account_id = qresult[1]
-        volume_id = qresult[2]
 
         self.assertNotEqual(
                             str(snapshot_uuid),
