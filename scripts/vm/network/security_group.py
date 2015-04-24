@@ -701,22 +701,23 @@ def cleanup_rules():
                     logging.debug("vm " + vm_name + " is not running or paused, cleaning up iptable rules")
                     cleanup.append(vm_name)
 
-        chainscmd = """ebtables-save | awk '/:i/ { gsub(/(^:|-(in|out|ips))/, "") ; print $1}'"""
-        chains = execute(chainscmd).split('\n')
-        for chain in chains:
-            if 1 in [ chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-'] ]:
-                vm_name = chain
+        bridge_tables = execute("""grep -E '^ebtable_' /proc/modules | cut -f1 -d' ' | sed s/ebtable_//""").split('\n')
+        for table in filter(None, bridge_tables):
+            chainscmd = """ebtables -t %s -L | awk '/chain:/ { gsub(/(^.*chain: |-(in|out|ips).*)/, ""); print $1}' | sort | uniq""" % table
+            chains = execute(chainscmd).split('\n')
+            for chain in filter(None, chains):
+                if 1 in [ chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-'] ]:
+                    vm_name = chain
+                    result = virshdomstate(vm_name)
+                    if result == None or len(result) == 0:
+                        logging.debug("chain " + chain + " does not correspond to a vm, cleaning up ebtable rules")
+                        cleanup.append(vm_name)
+                        continue
+                    if not (result == "running" or result == "paused"):
+                        logging.debug("vm " + vm_name + " is not running or paused, cleaning up ebtable rules")
+                        cleanup.append(vm_name)
 
-                result = virshdomstate(vm_name)
-
-                if result == None or len(result) == 0:
-                    logging.debug("chain " + chain + " does not correspond to a vm, cleaning up ebtable rules")
-                    cleanup.append(vm_name)
-                    continue
-                if not (result == "running" or result == "paused"):
-                    logging.debug("vm " + vm_name + " is not running or paused, cleaning up ebtable rules")
-                    cleanup.append(vm_name)
-
+        cleanup = list(set(cleanup))  # remove duplicates
         for vmname in cleanup:
             destroy_network_rules_for_vm(vmname)
 
