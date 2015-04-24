@@ -3561,12 +3561,9 @@ def check_files(self, vm, destinationHost):
             pool_path = spool[0].id.replace("-","")
         sshclient = SshClient(
                               host = destinationHost.ipaddress, 
-                              #port = self.testdata['configurableData']['host']["publicport"],
-                              port=22,
-                              #user = self.testdata['configurableData']['host']["username"],
-                              user = "root",
-                              #passwd = self.testdata['configurableData']['host']["password"],
-                              passwd="freebsd@123"
+                              port = self.testdata['configurableData']['host']["publicport"],
+                              user = self.testdata['configurableData']['host']["username"],
+                              passwd = self.testdata['configurableData']['host']["password"],
                               )
         pool_data_vmdk = sshclient.execute("ls /vmfs/volumes/" + pool_path + "/" + vm.instancename +  "| grep vmdk")
         pool_data_vmx = sshclient.execute("ls /vmfs/volumes/" + pool_path + "/" + vm.instancename +  "| grep vmx")
@@ -3673,12 +3670,16 @@ def check_host_capacity(self, hostid, vm):
     else:
         return FAILED
 
-def check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1):
+def check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype=None):
     """
     This function allocated a public ip, and creates a nat rule for the VM
     Then tries to ssh into the VM using that public IP
     This function again is to check VM accessibility post migration
     """
+    if ostype == "windows":
+        self.debug("SSH check on the VM can't be done as it is a windows VM")
+        return
+
     src_nat_ip_addrs = list_publicIP(
             self.apiclient,
             account=self.account.name,
@@ -3857,11 +3858,14 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
             cls.apiclient,
             cls.testdata["disk_offering"]
         )
+        cls._cleanup.append(cls.disk_offering)
         # Create disk offering for resize
         cls.resized_disk_offering = DiskOffering.create(
             cls.apiclient,
             cls.testdata["resized_disk_offering"]
         )
+        cls._cleanup.append(cls.resized_disk_offering)
+
         if cls.zone.localstorageenabled:
             cls.testdata["disk_offering"]["storagetype"] = 'local'
             cls.disk_offering_local1 = DiskOffering.create(
@@ -3915,14 +3919,9 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
                 if template_response.isready:
                     break
                 if timeout == 0:
-                    raise unittest.SkipTest(
-                        "Failed to download template(ID: %s). " %
-                        template_response.id)
+                    cls.debug("Failed to download windows template, we will be skipping windows related tests below")
 
                 timeout = timeout - 1
-
-        cls._cleanup.append(cls.disk_offering)
-        cls._cleanup.append(cls.resized_disk_offering)
 
         return
 
@@ -3968,7 +3967,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    def get_vm_state(self, apiclient, vmid, state, timeout=600):
+    def get_ssvm_state(self, apiclient, vmid, state, timeout=600):
         """List VM and check if its state is as expected
         @returnValue - List[Result, Reason]
                        1) Result - FAIL if there is any exception
@@ -3984,7 +3983,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
                 projectid = None
                 if hasattr(self, "projectid"):
                     projectid = self.projectid
-                vms = VirtualMachine.list(apiclient, projectid=projectid,
+                vms = list_ssvms(self.apiclient, projectid=projectid,
                           id=vmid, listAll=True)
                 validationresult = validateList(vms)
                 if validationresult[0] == FAIL:
@@ -4168,7 +4167,9 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         storage_scope = second_value
         ostype = third_value
 
-        if ostype == 'windows':
+        if ostype == 'windows' and not self.windows_template:
+            unittest.SkipTest("Windows template is not present, so skipping this test")
+        elif ostype == 'windows':
             template_id = self.windows_template.id
         else:
             template_id = self.template.id
@@ -4211,10 +4212,10 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
             vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
             VmSnapshotToCheckDataIntegrity(self,vm)
             check_files(self, vm,destinationHost)
-            check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+            check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
         else :
             vm = MigrateVm(self, virtual_machine_1, destinationHost)
-            check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+            check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("---------------This is the test no 2--------------")
         """
@@ -4231,7 +4232,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
             MigrateDataVolume(self, root_vol, destinationPool, islive)
             VmSnapshotToCheckDataIntegrity(self,vm)
             check_files(self, vm ,destinationHost)
-            check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+            check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("---------------This is the test no 3--------------")
         """
@@ -4243,7 +4244,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("---------------This is the test no 4--------------")
         """
@@ -4270,7 +4271,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("---------------This is the test no 5--------------")
         """
@@ -4297,7 +4298,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         VmSnapshotToCheckDataIntegrity(self,vm)
         self.debug("........................checking for files before taking snapshot ..................................")
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
         
         self.debug("---------------This is the test no 6--------------")
         """
@@ -4322,7 +4323,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         VmSnapshotToCheckDataIntegrity(self,vm)
         self.debug("........................checking for files after taking snapshot and migrating VMs........................")
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("---------------This is the test no 7--------------")
         """
@@ -4337,7 +4338,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("---------------This is the test no 8--------------")
         """
@@ -4353,7 +4354,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("---------------This is the test no 9--------------")
         """
@@ -4376,7 +4377,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         vm = MigrateVmWithVolume(self, virtual_machine_2, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_2)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_2, ostype)
 
         self.debug("---------------This is the test no 10--------------")
         """
@@ -4396,7 +4397,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         vm = MigrateVmWithVolume(self, virtual_machine_2, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_2)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_2, ostype)
 
         self.debug("---------------This is the test no 11--------------")
         """
@@ -4419,7 +4420,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         vm = MigrateVmWithVolume(self, virtual_machine_2, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_2)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_2, ostype)
 
     @data(('within_cluster', 'linux'), ('within_cluster', 'windows'), ('across_cluster', 'linux'), ('across_cluster', 'windows'))
     @unpack
@@ -4448,7 +4449,9 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
             raise unittest.SkipTest("The setup doesn't have local storage enabled")
         scope = first_value
         ostype = second_value
-        if ostype == 'windows':
+        if ostype == 'windows' and not self.windows_template:
+            unittest.SkipTest("Windows template is not present, so skipping this test")
+        elif ostype == 'windows':
             template_id = self.windows_template.id
         else:
             template_id = self.template.id
@@ -4490,7 +4493,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         destinationPools = []
         vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("---------------This is the test no 2--------------")
         """
@@ -4516,7 +4519,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         destinationHost = self.GetDestinationHostLocal(vm.hostid, vm, scope)
         vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("---------------This is the test no 3--------------")
         """
@@ -4541,7 +4544,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         destinationHost = self.GetDestinationHostLocal(vm.hostid, vm, scope)
         vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("---------------This is the test no 6--------------")
         """
@@ -4563,7 +4566,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         destinationHost = self.GetDestinationHostLocal(vm.hostid, vm, scope)
         vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("---------------This is the test no 7--------------")
         """
@@ -4577,7 +4580,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         destinationHost = self.GetDestinationHostLocal(virtual_machine_1.hostid, vm, scope)
         vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
 
         self.debug("---------------This is the test no 8--------------")
@@ -4593,7 +4596,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         destinationHost = self.GetDestinationHostLocal(vm.hostid, vm, scope)
         vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("---------------This is the test no 9--------------")
         """
@@ -4615,7 +4618,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         destinationHost = self.GetDestinationHostLocal(vm.hostid, vm, scope)
         vm = MigrateVmWithVolume(self, virtual_machine_2, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_2)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_2, ostype)
 
         self.debug("---------------This is the test no 10--------------")
         """
@@ -4634,7 +4637,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         destinationHost = self.GetDestinationHostLocal(vm.hostid, vm, scope)
         vm = MigrateVmWithVolume(self, virtual_machine_2, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_2)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_2, ostype)
 
         self.debug("---------------This is the test no 11--------------")
         """
@@ -4656,7 +4659,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         destinationHost = self.GetDestinationHostLocal(vm.hostid, vm, scope)
         vm = MigrateVmWithVolume(self, virtual_machine_2, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_2)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_2, ostype)
 
     @data(('VMFS', 'within_cluster', 'windows'), ('VMFS', 'within_cluster', 'linux'), ('VMFS', 'across_cluster', 'linux'), ('VMFS', 'across_cluster', 'windows'), 
           ('NetworkFilesystem', 'within_cluster', 'linux'), ('NetworkFilesystem', 'within_cluster', 'windows'), ('NetworkFilesystem', 'across_cluster', 'linux'), 
@@ -4687,8 +4690,10 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         storage_type = first_value
         storage_scope = second_value
         ostype = third_value
-        self.debug("------------------------------------- third value is also there..................%s..................." %ostype)
-        if ostype == 'windows':
+
+        if ostype == 'windows' and not self.windows_template:
+            unittest.SkipTest("Windows template is not present, so skipping this test")
+        elif ostype == 'windows':
             template_id = self.windows_template.id
         else:
             template_id = self.template.id
@@ -4740,10 +4745,10 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
             vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
             VmSnapshotToCheckDataIntegrity(self,vm)
             check_files(self, vm,destinationHost)
-            check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+            check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
         else :
             vm = MigrateVm(self, virtual_machine_1, destinationHost)
-            check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+            check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("---------------This is the test no 2--------------")
         """
@@ -4760,7 +4765,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
             MigrateDataVolume(self, root_vol, destinationPool, islive)
             VmSnapshotToCheckDataIntegrity(self,vm)
             check_files(self, vm ,destinationHost)
-            check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+            check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("---------------This is the test no 3--------------")
         """
@@ -4779,7 +4784,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("---------------This is the test no 4--------------")
         """
@@ -4821,7 +4826,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("---------------This is the test no 5--------------")
         """
@@ -4872,7 +4877,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("........................checking for files before taking snapshot ..................................")
         check_files(self, vm,destinationHost)
@@ -4923,7 +4928,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("........................checking for files after taking snapshot and migrating VMs........................")
         check_files(self, vm,destinationHost)
@@ -4965,7 +4970,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("---------------This is the test no 8--------------")
         """
@@ -5005,7 +5010,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("---------------This is the test no 9--------------")
         """
@@ -5046,7 +5051,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         vm = MigrateVmWithVolume(self, virtual_machine_2, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_2)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_2, ostype)
 
         self.debug("---------------This is the test no 10--------------")
         """
@@ -5090,7 +5095,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         vm = MigrateVmWithVolume(self, virtual_machine_2, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_2)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_2, ostype)
 
         self.debug("---------------This is the test no 11--------------")
         """
@@ -5136,7 +5141,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         vm = MigrateVmWithVolume(self, virtual_machine_2, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_2)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_2, ostype)
 
     @data(('within_cluster', 'linux'), ('within_cluster', 'windows'), ('across_cluster', 'linux'), ('across_cluster', 'windows'))
     @unpack
@@ -5169,7 +5174,9 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         ostype = second_value
         scope = "ZONE"
 
-        if ostype == 'windows':
+        if ostype == 'windows' and not self.windows_template:
+            unittest.SkipTest("Windows template is not present, so skipping this test")
+        elif ostype == 'windows':
             template_id = self.windows_template.id
         else:
             template_id = self.template.id
@@ -5232,10 +5239,10 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
             vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
             VmSnapshotToCheckDataIntegrity(self,vm)
             check_files(self, vm,destinationHost)
-            check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+            check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
         else :
             vm = MigrateVm(self, virtual_machine_1, destinationHost)
-            check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+            check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("---------------This is the test no 2--------------")
         """
@@ -5252,7 +5259,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
             MigrateDataVolume(self, root_vol, destinationPool, islive)
             VmSnapshotToCheckDataIntegrity(self,vm)
             check_files(self, vm ,destinationHost)
-            check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+            check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("---------------This is the test no 3--------------")
         """
@@ -5271,7 +5278,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("---------------This is the test no 4--------------")
         """
@@ -5315,7 +5322,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("---------------This is the test no 5--------------")
         """
@@ -5366,7 +5373,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("........................checking for files before taking snapshot ..................................")
         check_files(self, vm,destinationHost)
@@ -5417,7 +5424,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("........................checking for files after taking snapshot and migrating VMs........................")
         check_files(self, vm,destinationHost)
@@ -5459,7 +5466,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("---------------This is the test no 8--------------")
         """
@@ -5499,7 +5506,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_1, ostype)
 
         self.debug("---------------This is the test no 9--------------")
         """
@@ -5540,7 +5547,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         vm = MigrateVmWithVolume(self, virtual_machine_2, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_2)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_2, ostype)
 
         self.debug("---------------This is the test no 10--------------")
         """
@@ -5584,7 +5591,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         vm = MigrateVmWithVolume(self, virtual_machine_2, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_2)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_2, ostype)
 
         self.debug("---------------This is the test no 11--------------")
         """
@@ -5631,7 +5638,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         vm = MigrateVmWithVolume(self, virtual_machine_2, destinationHost, vol_list, destinationPools)
         VmSnapshotToCheckDataIntegrity(self,vm)
         check_files(self, vm,destinationHost)
-        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_2)
+        check_for_vm_access_by_ssh_using_nat(self,virtual_machine_2, ostype)
 
     @attr(tags=["advanced", "basic", "vmware", "vmfs", "negative"], required_hardware="true")
     def test_05_vm_and_volumes_live_migration_for_vmware_negative_scenarios(self):
@@ -5741,7 +5748,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         """
 
         vm = "virtual_machine3"
-        virtual_machine_2 = self.deploy_virtual_machine(self.service_offering.id, vm, self.windows_template.id)
+        virtual_machine_2 = self.deploy_virtual_machine(self.service_offering.id, vm, self.template.id)
         # list host for the VM
         vm_host = list_hosts(self.apiclient, id=virtual_machine_2.hostid, listall=True)[0]
         # list cluster for that host
@@ -5751,7 +5758,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         Configurations.update(
                               self.apiclient,
                               "vmware.vcenter.session.timeout",
-                              "60"
+                              "30"
                               )
         # Restart management server
         restart_mgmt_server(
@@ -5921,7 +5928,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         # list systemvms and check for their status
         ssvm_list = list_ssvms(self.apiclient, listall=True)
         for ssvm in ssvm_list:
-            self.get_vm_state(
+            self.get_ssvm_state(
                          self.apiclient,
                          ssvm.id,
                          "Running"
@@ -6123,7 +6130,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
                 # list systemvms and check for their status
         ssvm_list = list_ssvms(self.apiclient, listall=True)
         for ssvm in ssvm_list:
-            self.get_vm_state(
+            self.get_ssvm_state(
                          self.apiclient,
                          ssvm.id,
                          "Running"
