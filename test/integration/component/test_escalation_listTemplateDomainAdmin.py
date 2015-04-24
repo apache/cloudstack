@@ -20,9 +20,10 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (Account,
                              Domain, Template
                              )
-from marvin.lib.utils import (cleanup_resources)
+from marvin.lib.utils import (cleanup_resources, validateList)
 from marvin.lib.common import (get_zone, get_builtin_template_info)
 from nose.plugins.attrib import attr
+from marvin.codes import PASS
 import time
 
 
@@ -114,30 +115,11 @@ class TestlistTemplatesDomainAdmin(cloudstackTestCase):
                 account=self.account1.name,
                 domainid=self.domain1.id
             )
-            if isinstance(listTemplateResponse, list):
-                break
-            elif timeout == 0:
-                raise Exception("list template failed")
-
-            time.sleep(10)
-            timeout = timeout - 1
-
-            self.assertEqual(
-                isinstance(listTemplateResponse, list),
-                True,
-                "Check for list template response return valid data")
-
-            self.assertNotEqual(
-                len(listTemplateResponse),
-                0,
-                "Check template available in List Templates")
-
-            template_response = listTemplateResponse[0]
-            self.assertEqual(
-                template_response.isready,
-                True,
-                "Template state is not ready, it is %s" % template_response.isready
-            )
+            status = validateList(listTemplateResponse)
+            self.assertEquals(
+                PASS,
+                status[0],
+                "Template creation failed")
 
         listtemplate = Template.list(
             self.apiclient,
