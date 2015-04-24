@@ -1538,6 +1538,10 @@ namespace HypervResource
                     string destFile = null;
                     if (destTemplateObjectTO != null)
                     {
+                        if (destTemplateObjectTO.path == null)
+                        {
+                            destTemplateObjectTO.path = System.Guid.NewGuid().ToString();
+                        }
                         if (destTemplateObjectTO.primaryDataStore != null)
                         {
                             destFile = destTemplateObjectTO.FullFileName;
@@ -1548,241 +1552,221 @@ namespace HypervResource
                         }
                     }
 
-                    // Template already downloaded?
-                    if (destFile != null && File.Exists(destFile) &&
-                        !String.IsNullOrEmpty(destTemplateObjectTO.checksum))
+                    // Create local copy of a template?
+                    if (srcTemplateObjectTO != null && destTemplateObjectTO != null)
                     {
-                        // TODO: checksum fails us, because it is of the compressed image.
-                        // ASK: should we store the compressed or uncompressed version or is the checksum not calculated correctly?
-                        logger.Debug(CloudStackTypes.CopyCommand + " calling VerifyChecksum to see if we already have the file at " + destFile);
-                        result = VerifyChecksum(destFile, destTemplateObjectTO.checksum);
-                        if (!result)
+                        // S3 download to primary storage?
+                        // NFS provider download to primary storage?
+                        if ((srcTemplateObjectTO.s3DataStoreTO != null || srcTemplateObjectTO.nfsDataStoreTO != null) && destTemplateObjectTO.primaryDataStore != null)
                         {
-                            result = true;
-                            logger.Debug(CloudStackTypes.CopyCommand + " existing file has different checksum " + destFile);
-                        }
-                    }
-
-                    // Do we have to create a new one?
-                    if (!result)
-                    {
-                        // Create local copy of a template?
-                        if (srcTemplateObjectTO != null && destTemplateObjectTO != null)
-                        {
-                            // S3 download to primary storage?
-                            // NFS provider download to primary storage?
-                            if ((srcTemplateObjectTO.s3DataStoreTO != null || srcTemplateObjectTO.nfsDataStoreTO != null) && destTemplateObjectTO.primaryDataStore != null)
+                            if (File.Exists(destFile))
                             {
-                                if (File.Exists(destFile))
-                                {
-                                    logger.Info("Deleting existing file " + destFile);
-                                    File.Delete(destFile);
-                                }
+                                logger.Info("Deleting existing file " + destFile);
+                                File.Delete(destFile);
+                            }
 
-                                if (srcTemplateObjectTO.s3DataStoreTO != null)
-                                {
-                                    // Download from S3 to destination data storage
-                                    DownloadS3ObjectToFile(srcTemplateObjectTO.path, srcTemplateObjectTO.s3DataStoreTO, destFile);
-                                }
-                                else if (srcTemplateObjectTO.nfsDataStoreTO != null)
-                                {
-                                    // Download from S3 to destination data storage
-                                    Utils.DownloadCifsFileToLocalFile(srcTemplateObjectTO.path, srcTemplateObjectTO.nfsDataStoreTO, destFile);
-                                }
+                            if (srcTemplateObjectTO.s3DataStoreTO != null)
+                            {
+                                // Download from S3 to destination data storage
+                                DownloadS3ObjectToFile(srcTemplateObjectTO.path, srcTemplateObjectTO.s3DataStoreTO, destFile);
+                            }
+                            else if (srcTemplateObjectTO.nfsDataStoreTO != null)
+                            {
+                                // Download from S3 to destination data storage
+                                Utils.DownloadCifsFileToLocalFile(srcTemplateObjectTO.path, srcTemplateObjectTO.nfsDataStoreTO, destFile);
+                            }
 
-                                // Uncompress, as required
-                                if (srcTemplateObjectTO.path.EndsWith(".bz2"))
+                            // Uncompress, as required
+                            if (srcTemplateObjectTO.path.EndsWith(".bz2"))
+                            {
+                                String uncompressedFile = destFile + ".tmp";
+                                String compressedFile = destFile;
+                                using (var uncompressedOutStrm = new FileStream(uncompressedFile, FileMode.CreateNew, FileAccess.Write))
                                 {
-                                    String uncompressedFile = destFile + ".tmp";
-                                    String compressedFile = destFile;
-                                    using (var uncompressedOutStrm = new FileStream(uncompressedFile, FileMode.CreateNew, FileAccess.Write))
+                                    using (var compressedInStrm = new FileStream(destFile, FileMode.Open, FileAccess.Read))
                                     {
-                                        using (var compressedInStrm = new FileStream(destFile, FileMode.Open, FileAccess.Read))
+                                        using (var bz2UncompressorStrm = new Ionic.BZip2.BZip2InputStream(compressedInStrm, true) /* outer 'using' statement will close FileStream*/ )
                                         {
-                                            using (var bz2UncompressorStrm = new Ionic.BZip2.BZip2InputStream(compressedInStrm, true) /* outer 'using' statement will close FileStream*/ )
-                                            {
-                                                int count = 0;
-                                                int bufsize = 1024 * 1024;
-                                                byte[] buf = new byte[bufsize];
+                                            int count = 0;
+                                            int bufsize = 1024 * 1024;
+                                            byte[] buf = new byte[bufsize];
 
-                                                // EOF returns -1, see http://dotnetzip.codeplex.com/workitem/16069 
-                                                while (0 < (count = bz2UncompressorStrm.Read(buf, 0, bufsize)))
-                                                {
-                                                    uncompressedOutStrm.Write(buf, 0, count);
-                                                }
+                                            // EOF returns -1, see http://dotnetzip.codeplex.com/workitem/16069
+                                            while (0 < (count = bz2UncompressorStrm.Read(buf, 0, bufsize)))
+                                            {
+                                                uncompressedOutStrm.Write(buf, 0, count);
                                             }
                                         }
                                     }
-                                    File.Delete(compressedFile);
-                                    File.Move(uncompressedFile, compressedFile);
-                                    if (File.Exists(uncompressedFile))
-                                    {
-                                        String errMsg = "Extra file left around called " + uncompressedFile + " when creating " + destFile;
-                                        logger.Error(errMsg);
-                                        throw new IOException(errMsg);
-                                    }
                                 }
-
-                                // assert
-                                if (!File.Exists(destFile))
+                                File.Delete(compressedFile);
+                                File.Move(uncompressedFile, compressedFile);
+                                if (File.Exists(uncompressedFile))
                                 {
-                                    String errMsg = "Failed to create " + destFile + " , because the file is missing";
+                                    String errMsg = "Extra file left around called " + uncompressedFile + " when creating " + destFile;
                                     logger.Error(errMsg);
                                     throw new IOException(errMsg);
                                 }
-
-                                FileInfo destFileInfo = new FileInfo(destFile);
-                                destTemplateObjectTO.size = destFileInfo.Length.ToString();
-                                destTemplateObjectTO.path = destTemplateObjectTO.uuid;
-                                JObject ansObj = Utils.CreateCloudStackObject(CloudStackTypes.TemplateObjectTO, destTemplateObjectTO);
-                                newData = ansObj;
-                                result = true;
-                            }
-                            else
-                            {
-                                details = "Data store combination not supported";
-                            }
-                        }
-                        // Create volume from a template?
-                        else if (srcTemplateObjectTO != null && destVolumeObjectTO != null)
-                        {
-                            // VolumeObjectTO guesses file extension based on existing files
-                            // this can be wrong if the previous file had a different file type
-                            var guessedDestFile = destVolumeObjectTO.FullFileName;
-                            if (File.Exists(guessedDestFile))
-                            {
-                                logger.Info("Deleting existing file " + guessedDestFile);
-                                File.Delete(guessedDestFile);
                             }
 
-                            destVolumeObjectTO.format = srcTemplateObjectTO.format;
-                            destFile = destVolumeObjectTO.FullFileName;
-                            if (File.Exists(destFile))
+                            // assert
+                            if (!File.Exists(destFile))
                             {
-                                logger.Info("Deleting existing file " + destFile);
-                                File.Delete(destFile);
+                                String errMsg = "Failed to create " + destFile + " , because the file is missing";
+                                logger.Error(errMsg);
+                                throw new IOException(errMsg);
                             }
 
-                            string srcFile = srcTemplateObjectTO.FullFileName;
-                            if (!File.Exists(srcFile))
-                            {
-                                details = "Local template file missing from " + srcFile;
-                            }
-                            else
-                            {
-                                // TODO: thin provision instead of copying the full file.
-                                File.Copy(srcFile, destFile);
-                                destVolumeObjectTO.path = destVolumeObjectTO.uuid;
-                                JObject ansObj = Utils.CreateCloudStackObject(CloudStackTypes.VolumeObjectTO, destVolumeObjectTO);
-                                newData = ansObj;
-                                result = true;
-                            }
-                        }
-                        else if (srcVolumeObjectTO != null && destVolumeObjectTO != null)
-                        {
-                            var guessedDestFile = destVolumeObjectTO.FullFileName;
-                            if (File.Exists(guessedDestFile))
-                            {
-                                logger.Info("Deleting existing file " + guessedDestFile);
-                                File.Delete(guessedDestFile);
-                            }
-
-                            destVolumeObjectTO.format = srcVolumeObjectTO.format;
-                            destFile = destVolumeObjectTO.FullFileName;
-                            if (File.Exists(destFile))
-                            {
-                                logger.Info("Deleting existing file " + destFile);
-                                File.Delete(destFile);
-                            }
-
-                            string srcFile = srcVolumeObjectTO.FullFileName;
-                            if (!File.Exists(srcFile))
-                            {
-                                details = "Local template file missing from " + srcFile;
-                            }
-                            else
-                            {
-                                // Create the directory before copying the files. CreateDirectory
-                                // doesn't do anything if the directory is already present.
-                                Directory.CreateDirectory(Path.GetDirectoryName(destFile));
-                                File.Copy(srcFile, destFile);
-
-                                if (srcVolumeObjectTO.nfsDataStore != null && srcVolumeObjectTO.primaryDataStore == null)
-                                {
-                                    logger.Info("Copied volume from secondary data store to primary. Path: " + destVolumeObjectTO.path);
-                                }
-                                else if (srcVolumeObjectTO.primaryDataStore != null && srcVolumeObjectTO.nfsDataStore == null)
-                                {
-                                    destVolumeObjectTO.path = destVolumeObjectTO.path + "/" + destVolumeObjectTO.uuid;
-                                    if (destVolumeObjectTO.format != null)
-                                    {
-                                        destVolumeObjectTO.path += "." + destVolumeObjectTO.format.ToLower();
-                                    }
-                                }
-                                else
-                                {
-                                    logger.Error("Destination volume path wasn't set. Unsupported source volume data store.");
-                                }
-
-                                // Create volumeto object deserialize and send it
-                                JObject ansObj = Utils.CreateCloudStackObject(CloudStackTypes.VolumeObjectTO, destVolumeObjectTO);
-                                newData = ansObj;
-                                result = true;
-                            }
-                        }
-                        else if (srcVolumeObjectTO != null && destTemplateObjectTO != null)
-                        {
-                            var guessedDestFile = destTemplateObjectTO.FullFileName;
-                            if (File.Exists(guessedDestFile))
-                            {
-                                logger.Info("Deleting existing file " + guessedDestFile);
-                                File.Delete(guessedDestFile);
-                            }
-
-                            destTemplateObjectTO.format = srcVolumeObjectTO.format;
-                            destFile = destTemplateObjectTO.FullFileName;
-                            if (File.Exists(destFile))
-                            {
-                                logger.Info("Deleting existing file " + destFile);
-                                File.Delete(destFile);
-                            }
-
-                            string srcFile = srcVolumeObjectTO.FullFileName;
-                            if (!File.Exists(srcFile))
-                            {
-                                details = "Local template file missing from " + srcFile;
-                            }
-                            else
-                            {
-                                // Create the directory before copying the files. CreateDirectory
-                                // doesn't do anything if the directory is already present.
-                                Directory.CreateDirectory(Path.GetDirectoryName(destFile));
-                                File.Copy(srcFile, destFile);
-
-                                FileInfo destFileInfo = new FileInfo(destFile);
-                                // Write the template.properties file
-                                PostCreateTemplate(Path.GetDirectoryName(destFile), destTemplateObjectTO.id, destTemplateObjectTO.name,
-                                    destFileInfo.Length.ToString(), srcVolumeObjectTO.size.ToString(), destTemplateObjectTO.format);
-
-                                TemplateObjectTO destTemplateObject = new TemplateObjectTO();
-                                destTemplateObject.size = srcVolumeObjectTO.size.ToString();
-                                destTemplateObject.format = srcVolumeObjectTO.format;
-                                destTemplateObject.path = destTemplateObjectTO.path + "/" + destTemplateObjectTO.uuid;
-                                if (destTemplateObject.format != null)
-                                {
-                                    destTemplateObject.path += "." + destTemplateObject.format.ToLower();
-                                }
-                                destTemplateObject.nfsDataStoreTO = destTemplateObjectTO.nfsDataStoreTO;
-                                destTemplateObject.checksum = destTemplateObjectTO.checksum;
-                                JObject ansObj = Utils.CreateCloudStackObject(CloudStackTypes.TemplateObjectTO, destTemplateObject);
-                                newData = ansObj;
-                                result = true;
-                            }
+                            FileInfo destFileInfo = new FileInfo(destFile);
+                            destTemplateObjectTO.size = destFileInfo.Length.ToString();
+                            JObject ansObj = Utils.CreateCloudStackObject(CloudStackTypes.TemplateObjectTO, destTemplateObjectTO);
+                            newData = ansObj;
+                            result = true;
                         }
                         else
                         {
                             details = "Data store combination not supported";
                         }
+                    }
+                    // Create volume from a template?
+                    else if (srcTemplateObjectTO != null && destVolumeObjectTO != null)
+                    {
+                        // VolumeObjectTO guesses file extension based on existing files
+                        // this can be wrong if the previous file had a different file type
+                        var guessedDestFile = destVolumeObjectTO.FullFileName;
+                        if (File.Exists(guessedDestFile))
+                        {
+                            logger.Info("Deleting existing file " + guessedDestFile);
+                            File.Delete(guessedDestFile);
+                        }
+
+                        destVolumeObjectTO.format = srcTemplateObjectTO.format;
+                        destFile = destVolumeObjectTO.FullFileName;
+                        if (File.Exists(destFile))
+                        {
+                            logger.Info("Deleting existing file " + destFile);
+                            File.Delete(destFile);
+                        }
+
+                        string srcFile = srcTemplateObjectTO.FullFileName;
+                        if (!File.Exists(srcFile))
+                        {
+                            details = "Local template file missing from " + srcFile;
+                        }
+                        else
+                        {
+                            // TODO: thin provision instead of copying the full file.
+                            File.Copy(srcFile, destFile);
+                            destVolumeObjectTO.path = destVolumeObjectTO.uuid;
+                            JObject ansObj = Utils.CreateCloudStackObject(CloudStackTypes.VolumeObjectTO, destVolumeObjectTO);
+                            newData = ansObj;
+                            result = true;
+                        }
+                    }
+                    else if (srcVolumeObjectTO != null && destVolumeObjectTO != null)
+                    {
+                        var guessedDestFile = destVolumeObjectTO.FullFileName;
+                        if (File.Exists(guessedDestFile))
+                        {
+                            logger.Info("Deleting existing file " + guessedDestFile);
+                            File.Delete(guessedDestFile);
+                        }
+
+                        destVolumeObjectTO.format = srcVolumeObjectTO.format;
+                        destFile = destVolumeObjectTO.FullFileName;
+                        if (File.Exists(destFile))
+                        {
+                            logger.Info("Deleting existing file " + destFile);
+                            File.Delete(destFile);
+                        }
+
+                        string srcFile = srcVolumeObjectTO.FullFileName;
+                        if (!File.Exists(srcFile))
+                        {
+                            details = "Local template file missing from " + srcFile;
+                        }
+                        else
+                        {
+                            // Create the directory before copying the files. CreateDirectory
+                            // doesn't do anything if the directory is already present.
+                            Directory.CreateDirectory(Path.GetDirectoryName(destFile));
+                            File.Copy(srcFile, destFile);
+
+                            if (srcVolumeObjectTO.nfsDataStore != null && srcVolumeObjectTO.primaryDataStore == null)
+                            {
+                                logger.Info("Copied volume from secondary data store to primary. Path: " + destVolumeObjectTO.path);
+                            }
+                            else if (srcVolumeObjectTO.primaryDataStore != null && srcVolumeObjectTO.nfsDataStore == null)
+                            {
+                                destVolumeObjectTO.path = destVolumeObjectTO.path + "/" + destVolumeObjectTO.uuid;
+                                if (destVolumeObjectTO.format != null)
+                                {
+                                    destVolumeObjectTO.path += "." + destVolumeObjectTO.format.ToLower();
+                                }
+                            }
+                            else
+                            {
+                                logger.Error("Destination volume path wasn't set. Unsupported source volume data store.");
+                            }
+
+                            // Create volumeto object deserialize and send it
+                            JObject ansObj = Utils.CreateCloudStackObject(CloudStackTypes.VolumeObjectTO, destVolumeObjectTO);
+                            newData = ansObj;
+                            result = true;
+                        }
+                    }
+                    else if (srcVolumeObjectTO != null && destTemplateObjectTO != null)
+                    {
+                        var guessedDestFile = destTemplateObjectTO.FullFileName;
+                        if (File.Exists(guessedDestFile))
+                        {
+                            logger.Info("Deleting existing file " + guessedDestFile);
+                            File.Delete(guessedDestFile);
+                        }
+
+                        destTemplateObjectTO.format = srcVolumeObjectTO.format;
+                        destFile = destTemplateObjectTO.FullFileName;
+                        if (File.Exists(destFile))
+                        {
+                            logger.Info("Deleting existing file " + destFile);
+                            File.Delete(destFile);
+                        }
+
+                        string srcFile = srcVolumeObjectTO.FullFileName;
+                        if (!File.Exists(srcFile))
+                        {
+                            details = "Local template file missing from " + srcFile;
+                        }
+                        else
+                        {
+                            // Create the directory before copying the files. CreateDirectory
+                            // doesn't do anything if the directory is already present.
+                            Directory.CreateDirectory(Path.GetDirectoryName(destFile));
+                            File.Copy(srcFile, destFile);
+
+                            FileInfo destFileInfo = new FileInfo(destFile);
+                            // Write the template.properties file
+                            PostCreateTemplate(Path.GetDirectoryName(destFile), destTemplateObjectTO.id, destTemplateObjectTO.name,
+                                destFileInfo.Length.ToString(), srcVolumeObjectTO.size.ToString(), destTemplateObjectTO.format);
+
+                            TemplateObjectTO destTemplateObject = new TemplateObjectTO();
+                            destTemplateObject.size = srcVolumeObjectTO.size.ToString();
+                            destTemplateObject.format = srcVolumeObjectTO.format;
+                            destTemplateObject.path = destTemplateObjectTO.path + "/" + destTemplateObjectTO.uuid;
+                            if (destTemplateObject.format != null)
+                            {
+                                destTemplateObject.path += "." + destTemplateObject.format.ToLower();
+                            }
+                            destTemplateObject.nfsDataStoreTO = destTemplateObjectTO.nfsDataStoreTO;
+                            destTemplateObject.checksum = destTemplateObjectTO.checksum;
+                            JObject ansObj = Utils.CreateCloudStackObject(CloudStackTypes.TemplateObjectTO, destTemplateObject);
+                            newData = ansObj;
+                            result = true;
+                        }
+                    }
+                    else
+                    {
+                        details = "Data store combination not supported";
                     }
                 }
                 catch (Exception ex)
