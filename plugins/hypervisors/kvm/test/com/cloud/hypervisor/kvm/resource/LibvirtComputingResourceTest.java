@@ -71,6 +71,7 @@ import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
+import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
@@ -1143,5 +1144,61 @@ public class LibvirtComputingResourceTest {
 
         final Answer answer = wrapper.execute(command, libvirtComputingResource);
         assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testGetVncPortCommand() {
+        final Connect conn = Mockito.mock(Connect.class);
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+
+        final GetVncPortCommand command = new GetVncPortCommand(1l, "host");
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        try {
+            when(libvirtConnectionWrapper.getConnectionByVmName(command.getName())).thenReturn(conn);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(command.getName());
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testGetVncPortCommandLibvirtException() {
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+
+        final GetVncPortCommand command = new GetVncPortCommand(1l, "host");
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        try {
+            when(libvirtConnectionWrapper.getConnectionByVmName(command.getName())).thenThrow(LibvirtException.class);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(command.getName());
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
     }
 }

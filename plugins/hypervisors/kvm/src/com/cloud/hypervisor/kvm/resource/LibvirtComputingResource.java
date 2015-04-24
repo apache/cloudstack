@@ -100,8 +100,6 @@ import com.cloud.agent.api.FenceAnswer;
 import com.cloud.agent.api.FenceCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
-import com.cloud.agent.api.GetVncPortAnswer;
-import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.MaintainCommand;
@@ -1300,9 +1298,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         try {
-            if (cmd instanceof GetVncPortCommand) {
-                return execute((GetVncPortCommand)cmd);
-            } else if (cmd instanceof ModifySshKeysCommand) {
+            if (cmd instanceof ModifySshKeysCommand) {
                 return execute((ModifySshKeysCommand)cmd);
             } else if (cmd instanceof MaintainCommand) {
                 return execute((MaintainCommand)cmd);
@@ -2863,16 +2859,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private Answer execute(final CleanupNetworkRulesCmd cmd) {
         final boolean result = cleanup_rules();
         return new Answer(cmd, result, "");
-    }
-
-    protected GetVncPortAnswer execute(final GetVncPortCommand cmd) {
-        try {
-            final Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getName());
-            final Integer vncPort = getVncPort(conn, cmd.getName());
-            return new GetVncPortAnswer(cmd, _privateIp, 5900 + vncPort);
-        } catch (final LibvirtException e) {
-            return new GetVncPortAnswer(cmd, e.toString());
-        }
     }
 
     protected MaintainAnswer execute(final MaintainCommand cmd) {
