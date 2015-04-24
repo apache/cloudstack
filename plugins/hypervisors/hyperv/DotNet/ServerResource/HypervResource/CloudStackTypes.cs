@@ -290,11 +290,11 @@ namespace HypervResource
                     PrimaryDataStoreTO store = this.primaryDataStore;
                     if (store.isLocal)
                     {
-                        fileName = Path.Combine(store.Path, this.uuid);
+                        fileName = Path.Combine(store.Path, this.path);
                     }
                     else
                     {
-                        fileName = @"\\" + store.uri.Host + store.uri.LocalPath + @"\" + this.uuid;
+                        fileName = @"\\" + store.uri.Host + store.uri.LocalPath + @"\" + this.path;
                     }
                     fileName = fileName + '.' + this.format.ToLowerInvariant();
                 }
