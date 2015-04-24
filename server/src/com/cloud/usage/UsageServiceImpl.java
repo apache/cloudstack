@@ -224,11 +224,11 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             throw new InvalidParameterValueException("Incorrect Date Range. Start date: " + startDate + " is after end date:" + endDate);
         }
         TimeZone usageTZ = getUsageTimezone();
-        Date adjustedStartDate = computeAdjustedTime(startDate, usageTZ, true);
-        Date adjustedEndDate = computeAdjustedTime(endDate, usageTZ, false);
+        Date adjustedStartDate = computeAdjustedTime(startDate, usageTZ);
+        Date adjustedEndDate = computeAdjustedTime(endDate, usageTZ);
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("getting usage records for account: " + accountId + ", domainId: " + domainId + ", between " + startDate + " and " + endDate +
+            s_logger.debug("getting usage records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate +
                 ", using pageSize: " + cmd.getPageSizeVal() + " and startIndex: " + cmd.getStartIndex());
         }
 
@@ -375,7 +375,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         return _usageTimezone;
     }
 
-    private Date computeAdjustedTime(Date initialDate, TimeZone targetTZ, boolean adjustToDayStart) {
+    private Date computeAdjustedTime(Date initialDate, TimeZone targetTZ) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(initialDate);
         TimeZone localTZ = cal.getTimeZone();
@@ -395,17 +395,6 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         }
 
         calTS.add(Calendar.MILLISECOND, -1 * timezoneOffset);
-        if (adjustToDayStart) {
-            calTS.set(Calendar.HOUR_OF_DAY, 0);
-            calTS.set(Calendar.MINUTE, 0);
-            calTS.set(Calendar.SECOND, 0);
-            calTS.set(Calendar.MILLISECOND, 0);
-        } else {
-            calTS.set(Calendar.HOUR_OF_DAY, 23);
-            calTS.set(Calendar.MINUTE, 59);
-            calTS.set(Calendar.SECOND, 59);
-            calTS.set(Calendar.MILLISECOND, 999);
-        }
 
         return calTS.getTime();
     }

@@ -55,13 +55,13 @@ public class GetUsageRecordsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.END_DATE,
                type = CommandType.DATE,
                required = true,
-               description = "End date range for usage record query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-03.")
+               description = "End date range for usage record query (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-dd HH:mm:ss\", e.g. startDate=2015-01-01 or startdate=2015-01-01 10:30:00).")
     private Date endDate;
 
     @Parameter(name = ApiConstants.START_DATE,
                type = CommandType.DATE,
                required = true,
-               description = "Start date range for usage record query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-01.")
+               description = "Start date range for usage record query (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-dd HH:mm:ss\", e.g. startDate=2015-01-01 or startdate=2015-01-01 11:00:00).")
     private Date startDate;
 
     @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "List usage records for the specified account")
