@@ -20,18 +20,21 @@
 package com.cloud.hypervisor.xenserver.resource.wrapper;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
-import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ServerResource;
 
-public final class CitrixWatchConsoleProxyLoadCommandWrapper extends CommandWrapper<WatchConsoleProxyLoadCommand, Answer, CitrixResourceBase> {
+public final class CitrixWatchConsoleProxyLoadCommandWrapper extends CitrixConsoleProxyLoadCommandWrapper<WatchConsoleProxyLoadCommand, Answer, CitrixResourceBase> {
 
     @Override
-    public Answer execute(final WatchConsoleProxyLoadCommand command, final CitrixResourceBase citrixResourceBase) {
-        final long proxyVmId = command.getProxyVmId();
-        final String proxyVmName = command.getProxyVmName();
-        final String proxyManagementIp = command.getProxyManagementIp();
-        final int cmdPort = command.getProxyCmdPort();
+    public Answer execute(final Command command, final ServerResource serverResource) {
+        final WatchConsoleProxyLoadCommand cmd = (WatchConsoleProxyLoadCommand) command;
+
+        final long proxyVmId = cmd.getProxyVmId();
+        final String proxyVmName = cmd.getProxyVmName();
+        final String proxyManagementIp = cmd.getProxyManagementIp();
+        final int cmdPort = cmd.getProxyCmdPort();
 
         return executeProxyLoadScan(command, proxyVmId, proxyVmName, proxyManagementIp, cmdPort);
     }

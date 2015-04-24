@@ -36,6 +36,8 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
+import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.RequestWrapper;
@@ -72,6 +74,8 @@ public class LibvirtRequestWrapper extends RequestWrapper {
         linbvirtCommands.put(ReadyCommand.class, new LibvirtReadyCommandWrapper());
         linbvirtCommands.put(AttachIsoCommand.class, new LibvirtAttachIsoCommandWrapper());
         linbvirtCommands.put(AttachVolumeCommand.class, new LibvirtAttachVolumeCommandWrapper());
+        linbvirtCommands.put(WatchConsoleProxyLoadCommand.class, new LibvirtWatchConsoleProxyLoadCommandWrapper());
+        linbvirtCommands.put(CheckConsoleProxyLoadCommand.class, new LibvirtCheckConsoleProxyLoadCommandWrapper());
 
         resources.put(LibvirtComputingResource.class, linbvirtCommands);
     }

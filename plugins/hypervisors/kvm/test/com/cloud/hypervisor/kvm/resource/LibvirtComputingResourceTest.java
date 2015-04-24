@@ -79,6 +79,8 @@ import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
+import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -1108,5 +1110,38 @@ public class LibvirtComputingResourceTest {
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
+    }
+
+    @Test
+    public void testWatchConsoleProxyLoadCommand() {
+        final int interval = 0;
+        final long proxyVmId = 0l;
+        final String proxyVmName = "host";
+        final String proxyManagementIp = "169.172.15.16";
+        final int proxyCmdPort = 0;
+
+        final WatchConsoleProxyLoadCommand command = new WatchConsoleProxyLoadCommand(interval, proxyVmId, proxyVmName, proxyManagementIp, proxyCmdPort);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testCheckConsoleProxyLoadCommand() {
+        final long proxyVmId = 0l;
+        final String proxyVmName = "host";
+        final String proxyManagementIp = "169.172.15.16";
+        final int proxyCmdPort = 0;
+
+        final CheckConsoleProxyLoadCommand command = new CheckConsoleProxyLoadCommand(proxyVmId, proxyVmName, proxyManagementIp, proxyCmdPort);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
     }
 }

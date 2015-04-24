@@ -23,14 +23,10 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
 import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
@@ -148,9 +144,6 @@ import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
-import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
-import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
-import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
@@ -1307,11 +1300,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         try {
-            if (cmd instanceof CheckConsoleProxyLoadCommand) {
-                return execute((CheckConsoleProxyLoadCommand)cmd);
-            } else if (cmd instanceof WatchConsoleProxyLoadCommand) {
-                return execute((WatchConsoleProxyLoadCommand)cmd);
-            } else if (cmd instanceof GetVncPortCommand) {
+            if (cmd instanceof GetVncPortCommand) {
                 return execute((GetVncPortCommand)cmd);
             } else if (cmd instanceof ModifySshKeysCommand) {
                 return execute((ModifySshKeysCommand)cmd);
@@ -2886,54 +2875,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    protected Answer execute(final CheckConsoleProxyLoadCommand cmd) {
-        return executeProxyLoadScan(cmd, cmd.getProxyVmId(), cmd.getProxyVmName(), cmd.getProxyManagementIp(), cmd.getProxyCmdPort());
-    }
-
-    protected Answer execute(final WatchConsoleProxyLoadCommand cmd) {
-        return executeProxyLoadScan(cmd, cmd.getProxyVmId(), cmd.getProxyVmName(), cmd.getProxyManagementIp(), cmd.getProxyCmdPort());
-    }
-
     protected MaintainAnswer execute(final MaintainCommand cmd) {
         return new MaintainAnswer(cmd);
-    }
-
-    private Answer executeProxyLoadScan(final Command cmd, final long proxyVmId, final String proxyVmName, final String proxyManagementIp, final int cmdPort) {
-        String result = null;
-
-        final StringBuffer sb = new StringBuffer();
-        sb.append("http://").append(proxyManagementIp).append(":" + cmdPort).append("/cmd/getstatus");
-
-        boolean success = true;
-        try {
-            final URL url = new URL(sb.toString());
-            final URLConnection conn = url.openConnection();
-
-            final InputStream is = conn.getInputStream();
-            final BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-            final StringBuilder sb2 = new StringBuilder();
-            String line = null;
-            try {
-                while ((line = reader.readLine()) != null) {
-                    sb2.append(line + "\n");
-                }
-                result = sb2.toString();
-            } catch (final IOException e) {
-                success = false;
-            } finally {
-                try {
-                    is.close();
-                } catch (final IOException e) {
-                    s_logger.warn("Exception when closing , console proxy address : " + proxyManagementIp);
-                    success = false;
-                }
-            }
-        } catch (final IOException e) {
-            s_logger.warn("Unable to open console proxy command port url, console proxy address : " + proxyManagementIp);
-            success = false;
-        }
-
-        return new ConsoleProxyLoadAnswer(cmd, proxyVmId, proxyVmName, success, result);
     }
 
     protected PowerState convertToPowerState(final DomainState ps) {

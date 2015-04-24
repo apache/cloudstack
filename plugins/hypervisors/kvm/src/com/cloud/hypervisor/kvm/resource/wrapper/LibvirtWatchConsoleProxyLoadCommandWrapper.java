@@ -17,25 +17,25 @@
 // under the License.
 //
 
-package com.cloud.hypervisor.xenserver.resource.wrapper;
+package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
-import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
+import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
+import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.ServerResource;
 
-public final class CitrixCheckConsoleProxyLoadCommandWrapper extends CitrixConsoleProxyLoadCommandWrapper<CheckConsoleProxyLoadCommand, Answer, CitrixResourceBase> {
+public class LibvirtWatchConsoleProxyLoadCommandWrapper extends LibvirtConsoleProxyLoadCommandWrapper<WatchConsoleProxyLoadCommand, Answer, LibvirtComputingResource> {
 
     @Override
     public Answer execute(final Command command, final ServerResource serverResource) {
-        final CheckConsoleProxyLoadCommand cmd = (CheckConsoleProxyLoadCommand) command;
+        final WatchConsoleProxyLoadCommand cmd = (WatchConsoleProxyLoadCommand) command;
 
         final long proxyVmId = cmd.getProxyVmId();
         final String proxyVmName = cmd.getProxyVmName();
         final String proxyManagementIp = cmd.getProxyManagementIp();
-        final int cmdPort = cmd.getProxyCmdPort();
+        final int proxyCmdPort = cmd.getProxyCmdPort();
 
-        return executeProxyLoadScan(command, proxyVmId, proxyVmName, proxyManagementIp, cmdPort);
+        return executeProxyLoadScan(cmd, proxyVmId, proxyVmName, proxyManagementIp, proxyCmdPort);
     }
 }
