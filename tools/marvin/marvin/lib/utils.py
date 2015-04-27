@@ -62,7 +62,6 @@ def restart_mgmt_server(server):
         raise e
     return
 
-
 def fetch_latest_mail(services, from_mail):
     """Fetch mail"""
 

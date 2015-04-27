@@ -2513,6 +2513,35 @@ class Host:
         return(apiclient.updateHost(cmd))
 
     @classmethod
+    def getState(cls, apiclient, hostid, state, resourcestate, timeout=600):
+        """List Host and check if its resource state is as expected
+        @returnValue - List[Result, Reason]
+                       1) Result - FAIL if there is any exception
+                       in the operation or Host state does not change
+                       to expected state in given time else PASS
+                       2) Reason - Reason for failure"""
+
+        returnValue = [FAIL, "VM state not trasited to %s,\
+                        operation timed out" % state]
+
+        while timeout > 0:
+            try:
+                hosts = Host.list(apiclient, 
+                          id=hostid, listall=True)
+                validationresult = validateList(hosts)
+                if validationresult[0] == FAIL:
+                    raise Exception("Host list validation failed: %s" % validationresult[2])
+                elif str(hosts[0].state).lower().decode("string_escape") == str(state).lower() and str(hosts[0].resourcestate).lower().decode("string_escape") == str(resourcestate).lower():
+                    returnValue = [PASS, None]
+                    break
+            except Exception as e:
+                returnValue = [FAIL, e]
+                break
+            time.sleep(60)
+            timeout -= 60
+        return returnValue
+
+    @classmethod
     def reconnect(cls, apiclient, **kwargs):
         """Reconnect the Host"""
         
@@ -2629,6 +2658,35 @@ class StoragePool:
         cmd=updateStoragePool.updateStoragePoolCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return apiclient.updateStoragePool(cmd)
+
+    @classmethod
+    def getState(cls, apiclient, poolid, state, timeout=600):
+        """List StoragePools and check if its  state is as expected
+        @returnValue - List[Result, Reason]
+                       1) Result - FAIL if there is any exception
+                       in the operation or pool state does not change
+                       to expected state in given time else PASS
+                       2) Reason - Reason for failure"""
+
+        returnValue = [FAIL, "VM state not trasited to %s,\
+                        operation timed out" % state]
+
+        while timeout > 0:
+            try:
+                pools = StoragePool.list(apiclient, 
+                          id=poolid, listAll=True)
+                validationresult = validateList(pools)
+                if validationresult[0] == FAIL:
+                    raise Exception("Host list validation failed: %s" % validationresult[2])
+                elif str(pools[0].state).lower().decode("string_escape") == str(state).lower():
+                    returnValue = [PASS, None]
+                    break
+            except Exception as e:
+                returnValue = [FAIL, e]
+                break
+            time.sleep(60)
+            timeout -= 60
+        return returnValue
 
 class Network:
     """Manage Network pools"""
@@ -4802,33 +4860,5 @@ class Usage:
         cmd = generateUsageRecords.generateUsageRecordsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.generateUsageRecords(cmd))
-
-class TrafficType:
-    """Manage different traffic types in the setup"""
-
-    def __init__(self, items):
-        self.__dict__.update(items)
-
-    @classmethod
-    def list(cls, apiclient, **kwargs):
-        """Lists traffic types"""
-
-        cmd = listTrafficTypes.listTrafficTypesCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
-        return(apiclient.listTrafficTypes(cmd))
-
-class StorageNetworkIpRange:
-    """Manage Storage Network Ip Range"""
-
-    def __init__(self, items):
-        self.__dict__.update(items)
-
-    @classmethod
-    def list(cls, apiclient, **kwargs):
-        """Lists Storage Network IP Ranges"""
-
-        cmd = listStorageNetworkIpRange.listStorageNetworkIpRangeCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
-        return(apiclient.listStorageNetworkIpRange(cmd))
 
 
