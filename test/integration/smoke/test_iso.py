@@ -85,7 +85,7 @@ class TestCreateIso(cloudstackTestCase):
             "eip",
             "sg",
             "advancedns"],
-        required_hardware="false")
+        required_hardware="true")
     def test_01_create_iso(self):
         """Test create public & private ISO
         """
@@ -258,7 +258,7 @@ class TestISO(cloudstackTestCase):
             "sg",
             "advancedns",
             "smoke"],
-        required_hardware="false")
+        required_hardware="true")
     def test_02_edit_iso(self):
         """Test Edit ISO
         """
@@ -325,7 +325,7 @@ class TestISO(cloudstackTestCase):
             "eip",
             "sg",
             "advancedns"],
-        required_hardware="false")
+        required_hardware="true")
     def test_03_delete_iso(self):
         """Test delete ISO
         """
