@@ -384,7 +384,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
             return response;
         } else {
-            return null;
+            throw new CloudRuntimeException("Unable to register template.");
         }
     }
 
