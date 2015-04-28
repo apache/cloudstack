@@ -18,7 +18,7 @@
 # Import Local Modules
 from marvin.codes import FAILED, KVM, PASS
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import random_gen, cleanup_resources, validateList
 from marvin.lib.base import (Account,
                              ServiceOffering,
@@ -37,13 +37,14 @@ class TestVmSnapshot(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         testClient = super(TestVmSnapshot, cls).getClsTestClient()
-
-        hypervisor = testClient.getHypervisorInfo()
-        if hypervisor.lower() in (KVM.lower(), "hyperv", "lxc"):
-            raise unittest.SkipTest(
-                "VM snapshot feature is not supported on KVM, Hyper-V or LXC")
-
         cls.apiclient = testClient.getApiClient()
+        cls._cleanup = []
+        cls.unsupportedHypervisor = False
+        cls.hypervisor = testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() in (KVM.lower(), "hyperv", "lxc"):
+            cls.unsupportedHypervisor = True
+            return
+
         cls.services = testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
@@ -69,11 +70,13 @@ class TestVmSnapshot(cloudstackTestCase):
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
 
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]
         )
+        cls._cleanup.append(cls.service_offering)
         cls.virtual_machine = VirtualMachine.create(
             cls.apiclient,
             cls.services["server"],
@@ -86,10 +89,6 @@ class TestVmSnapshot(cloudstackTestCase):
         cls.random_data_0 = random_gen(size=100)
         cls.test_dir = "/tmp"
         cls.random_data = "random.data"
-        cls._cleanup = [
-            cls.service_offering,
-            cls.account,
-        ]
         return
 
     @classmethod
@@ -105,6 +104,10 @@ class TestVmSnapshot(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
+
+        if self.unsupportedHypervisor:
+            self.skipTest("Skipping test because unsupported hypervisor\
+                    %s" % self.hypervisor)
         return
 
     def tearDown(self):
@@ -285,10 +288,11 @@ class TestSnapshots(cloudstackTestCase):
             cls.testClient = super(TestSnapshots, cls).getClsTestClient()
             cls.api_client = cls.testClient.getApiClient()
             cls.services = cls.testClient.getParsedTestDataConfig()
+            cls.unsupportedHypervisor = False
             cls.hypervisor = cls.testClient.getHypervisorInfo()
             if cls.hypervisor.lower() in (KVM.lower(), "hyperv", "lxc"):
-                raise unittest.SkipTest(
-                    "VM snapshot feature is not supported on KVM, Hyper-V or LXC")
+                cls.unsupportedHypervisor = True
+                return
             # Get Domain, Zone, Template
             cls.domain = get_domain(cls.api_client)
             cls.zone = get_zone(
@@ -334,6 +338,10 @@ class TestSnapshots(cloudstackTestCase):
 
         self.apiclient = self.testClient.getApiClient()
         self.cleanup = []
+
+        if self.unsupportedHypervisor:
+            self.skipTest("Skipping test because unsupported\
+                    hypervisor %s" % self.hypervisor)
 
     def tearDown(self):
         # Clean up, terminate the created resources

@@ -44,6 +44,10 @@ class TestCreateTemplate(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
+
+        if self.unsupportedHypervisor:
+            self.skipTest("Skipping test because unsupported hypervisor\
+                    %s" % self.hypervisor)
         return
 
     def tearDown(self):
@@ -59,17 +63,19 @@ class TestCreateTemplate(cloudstackTestCase):
     def setUpClass(cls):
         testClient = super(TestCreateTemplate, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
+        cls._cleanup = []
         cls.services = testClient.getParsedTestDataConfig()
+        cls.unsupportedHypervisor = False
         cls.hypervisor = testClient.getHypervisorInfo()
         if cls.hypervisor.lower() in ['lxc']:
-            raise unittest.SkipTest("Template creation from root volume is not supported in LXC")
+            # Template creation from root volume is not supported in LXC
+            cls.unsupportedHypervisor = True
+            return
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
-
-        cls._cleanup = []
         try:
             cls.disk_offering = DiskOffering.create(
                                     cls.apiclient,
@@ -210,10 +216,14 @@ class TestTemplates(cloudstackTestCase):
 
         testClient = super(TestTemplates, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
+        cls._cleanup = []
         cls.services = testClient.getParsedTestDataConfig()
+        cls.unsupportedHypervisor = False
         cls.hypervisor = testClient.getHypervisorInfo()
         if cls.hypervisor.lower() in ['lxc']:
-            raise unittest.SkipTest("Template creation from root volume is not supported in LXC")
+            # Template creation from root volume is not supported in LXC
+            cls.unsupportedHypervisor = True
+            return
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
@@ -325,6 +335,10 @@ class TestTemplates(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
+
+        if self.unsupportedHypervisor:
+            self.skipTest("Skipping test because unsupported hypervisor\
+                    %s" % self.hypervisor)
         return
 
     def tearDown(self):

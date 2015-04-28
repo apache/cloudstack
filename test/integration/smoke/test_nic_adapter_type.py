@@ -125,7 +125,7 @@ class TestAdapterTypeForNic(cloudstackTestCase):
         """
 
         if self.hypervisor.lower() not in ["vmware"]:
-            raise unittest.SkipTest("This test case is written specifically\
+            self.skipTest("This test case is written specifically\
                     for Vmware hypervisor")
 
         # Register a private template in the account with nic adapter vmxnet3
