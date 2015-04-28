@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 """ NIC tests for VM """
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (Account,
                              ServiceOffering,
                              Network,
@@ -47,7 +47,7 @@ class TestNic(cloudstackTestCase):
 
         self.hypervisor = self.testClient.getHypervisorInfo()
         if self.hypervisor.lower() == "hyperv":
-            raise unittest.SkipTest("Not supported on Hyper-V")
+            self.skipTest("Not supported on Hyper-V")
 
         try:
             self.apiclient = self.testClient.getApiClient()

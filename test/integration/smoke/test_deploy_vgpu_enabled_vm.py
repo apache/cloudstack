@@ -18,7 +18,7 @@
 # Test from the Marvin - Testing in Python wiki
 
 # All tests inherit from cloudstackTestCase
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
 
 # Import Integration Libraries
 
@@ -49,6 +49,9 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
         testClient = super(TestDeployvGPUenabledVM, self).getClsTestClient()
         self.apiclient = testClient.getApiClient()
         self.testdata = self.testClient.getParsedTestDataConfig()
+        self._cleanup = []
+        self.unsupportedHypervisor = False
+        self.noSuitableHost = False
         # Need to add check whether zone containing the xen hypervisor or not
         # as well
         hosts = list_hosts(
@@ -56,8 +59,9 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
             hypervisor="XenServer"
         )
         if hosts is None:
-            raise unittest.SkipTest(
-                "There are no XenServers available. GPU feature is supported only on XenServer.Check listhosts response")
+             # GPU feature is supported only on XenServer.Check listhosts response
+             self.unsupportedHypervisor = True
+             return
         else:
             gpuhosts = 0
             for ghost in hosts:
@@ -79,8 +83,9 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
                     else:
                         continue
         if gpuhosts == 0:
-            raise unittest.SkipTest(
-                "No XenServer available with GPU Drivers installed")
+            # No XenServer available with GPU Drivers installed
+            self.noSuitableHost = True
+            return
 
         self.domain = get_domain(self.apiclient)
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
@@ -90,13 +95,14 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
             self.testdata["account"],
             domainid=self.domain.id
         )
-        self._cleanup = [
-            self.account
-        ]
+        self._cleanup.append(self.account)
 
     def setUp(self):
         self.testdata = self.testClient.getParsedTestDataConfig()["vgpu"]
         self.apiclient = self.testClient.getApiClient()
+        if self.noSuitableHost or self.unsupportedHypervisor:
+            self.skipTest("Skipping test because suitable hypervisor/host not\
+                    present")
 
         # Get Zone, Domain and Default Built-in template
         self.domain = get_domain(self.apiclient)

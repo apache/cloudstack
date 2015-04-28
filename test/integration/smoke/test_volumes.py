@@ -17,7 +17,7 @@
 """ BVT tests for Volumes
 """
 #Import Local Modules
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
 #from marvin.cloudstackException import *
 from marvin.cloudstackAPI import (deleteVolume,
                                   extractVolume,
@@ -57,12 +57,16 @@ class TestCreateVolume(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+        cls._cleanup = []
         cls.hypervisor = testClient.getHypervisorInfo()
         cls.services['mode'] = cls.zone.networktype
+        cls.invalidStoragePoolType = False
         #for LXC if the storage pool of type 'rbd' ex: ceph is not available, skip the test
         if cls.hypervisor.lower() == 'lxc':
             if not find_storage_pool_type(cls.apiclient, storagetype='rbd'):
-                raise unittest.SkipTest("RBD storage type is required for data volumes for LXC")
+                # RBD storage type is required for data volumes for LXC
+                cls.invalidStoragePoolType = True
+                return
         cls.disk_offering = DiskOffering.create(
                                     cls.apiclient,
                                     cls.services["disk_offering"]
@@ -119,6 +123,10 @@ class TestCreateVolume(cloudstackTestCase):
         self.apiClient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
+
+        if self.invalidStoragePoolType:
+            self.skipTest("Skipping test because of valid storage\
+                    pool not available")
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
     def test_01_create_volume(self):
@@ -264,16 +272,19 @@ class TestVolumes(cloudstackTestCase):
         testClient = super(TestVolumes, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
-
+        cls._cleanup = []
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.hypervisor = testClient.getHypervisorInfo()
+        cls.invalidStoragePoolType = False
         #for LXC if the storage pool of type 'rbd' ex: ceph is not available, skip the test
         if cls.hypervisor.lower() == 'lxc':
             if not find_storage_pool_type(cls.apiclient, storagetype='rbd'):
-                raise unittest.SkipTest("RBD storage type is required for data volumes for LXC")
+                # RBD storage type is required for data volumes for LXC
+                cls.invalidStoragePoolType = True
+                return
         cls.disk_offering = DiskOffering.create(
                                     cls.apiclient,
                                     cls.services["disk_offering"]
@@ -321,16 +332,7 @@ class TestVolumes(cloudstackTestCase):
                                     serviceofferingid=cls.service_offering.id,
                                     mode=cls.services["mode"]
                                 )
-        pools = StoragePool.list(cls.apiclient)
-        # cls.assertEqual(
-        #         validateList(pools)[0],
-        #         PASS,
-        #         "storage pool list validation failed")
 
-
-
-        if cls.hypervisor.lower() == 'lxc' and cls.storage_pools.type.lower() != 'rbd':
-            raise unittest.SkipTest("Snapshots not supported on Hyper-V or LXC")
         cls.volume = Volume.create(
                                    cls.apiclient,
                                    cls.services,
@@ -358,6 +360,10 @@ class TestVolumes(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.attached = False
         self.cleanup = []
+
+        if self.invalidStoragePoolType:
+            self.skipTest("Skipping test because valid storage pool not\
+                    available")
 
     def tearDown(self):
         #Clean up, terminate the created volumes
@@ -454,7 +460,7 @@ class TestVolumes(cloudstackTestCase):
         #with self.assertRaises(Exception):
         with self.assertRaises(Exception):
             self.apiClient.deleteVolume(cmd)
-        
+
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
     def test_05_detach_volume(self):
         """Detach a Volume attached to a VM
@@ -590,7 +596,6 @@ class TestVolumes(cloudstackTestCase):
         cmd.id             = self.volume.id
         cmd.diskofferingid = self.services['diskofferingid']
         cmd.size           = 4
-        currentSize        = self.volume.size
 
         self.debug(
                 "Attaching volume (ID: %s) to VM (ID: %s)" % (
@@ -619,7 +624,7 @@ class TestVolumes(cloudstackTestCase):
         if hosts[0].hypervisor == "XenServer":
             self.virtual_machine.start(self.apiClient)
             time.sleep(30)
-        return 
+        return
 
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")

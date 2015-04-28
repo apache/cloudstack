@@ -18,7 +18,7 @@
 """
 # Import Local Modules
 from marvin.codes import FAILED
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import scaleVirtualMachine
 from marvin.lib.utils import cleanup_resources
 from marvin.lib.base import (Account,
@@ -39,11 +39,12 @@ class TestScaleVm(cloudstackTestCase):
         testClient = super(TestScaleVm, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
+        cls._cleanup = []
+        cls.unsupportedHypervisor = False
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         if cls.hypervisor.lower() in ('kvm', 'hyperv', 'lxc'):
-            raise unittest.SkipTest(
-                "ScaleVM is not supported on KVM, Hyper-V or LXC.\
-                        Hence, skipping the test")
+            cls.unsupportedHypervisor = True
+            return
 
         # Get Zone, Domain and templates
         domain = get_domain(cls.apiclient)
@@ -106,6 +107,10 @@ class TestScaleVm(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
+
+        if self.unsupportedHypervisor:
+            self.skipTest("Skipping test because unsupported hypervisor\
+                    %s" % self.hypervisor)
 
     def tearDown(self):
         # Clean up, terminate the created ISOs
