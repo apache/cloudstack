@@ -784,7 +784,7 @@ public class LibvirtVMDef {
         }
 
         enum nicModel {
-            E1000("e1000"), VIRTIO("virtio"), RTL8139("rtl8139"), NE2KPCI("ne2k_pci");
+            E1000("e1000"), VIRTIO("virtio"), RTL8139("rtl8139"), NE2KPCI("ne2k_pci"), VMXNET3("vmxnet3");
             String _model;
 
             nicModel(String model) {
