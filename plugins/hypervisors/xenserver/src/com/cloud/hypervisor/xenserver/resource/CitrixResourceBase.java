@@ -717,6 +717,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     if (record.isControlDomain || record.isASnapshot || record.isATemplate) {
                         continue; // Skip DOM0
                     }
+                    String platform = StringUtils.mapToString(record.platform);
+                    if (platform.isEmpty()) {
+                        continue; //Skip if platform is null
+                    }
                     vmMetaDatum.put(record.nameLabel, StringUtils.mapToString(record.platform));
                 }
             }

@@ -2558,40 +2558,58 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (vmMetadatum == null || vmMetadatum.isEmpty()) {
             return;
         }
+        List<Pair<Pair<String, VirtualMachine.Type>, Pair<Long, String>>> vmDetails = _userVmDao.getVmsDetailByNames(vmMetadatum.keySet(), "platform");
         for (final Map.Entry<String, String> entry : vmMetadatum.entrySet()) {
             final String name = entry.getKey();
             final String platform = entry.getValue();
             if (platform == null || platform.isEmpty()) {
                 continue;
             }
-            final VMInstanceVO vm = _vmDao.findVMByInstanceName(name);
-            if (vm != null && vm.getType() == VirtualMachine.Type.User) {
-                boolean changed = false;
-                final UserVmVO userVm = _userVmDao.findById(vm.getId());
-                _userVmDao.loadDetails(userVm);
-                if ( userVm.details.containsKey("timeoffset")) {
-                    userVm.details.remove("timeoffset");
-                    changed = true;
+
+            boolean found = false;
+            for(Pair<Pair<String, VirtualMachine.Type>, Pair<Long, String>> vmDetail : vmDetails ) {
+                Pair<String, VirtualMachine.Type> vmNameTypePair = vmDetail.first();
+                if(vmNameTypePair.first().equals(name)) {
+                    found = true;
+                    if(vmNameTypePair.second() == VirtualMachine.Type.User) {
+                        Pair<Long, String> detailPair = vmDetail.second();
+                        String platformDetail = detailPair.second();
+
+                        if (platformDetail != null && platformDetail.equals(platform)) {
+                            break;
+                        }
+                        updateVmMetaData(detailPair.first(), platform);
+                    }
+                    break;
                 }
-                if (!userVm.details.containsKey("platform") || !userVm.details.get("platform").equals(platform)) {
-                    userVm.setDetail("platform",  platform);
-                    changed = true;
-                }
-                String pvdriver = "xenserver56";
-                if ( platform.contains("device_id")) {
-                    pvdriver = "xenserver61";
-                }
-                if (!userVm.details.containsKey("hypervisortoolsversion") || !userVm.details.get("hypervisortoolsversion").equals(pvdriver)) {
-                    userVm.setDetail("hypervisortoolsversion", pvdriver);
-                    changed = true;
-                }
-                if ( changed ) {
-                    _userVmDao.saveDetails(userVm);
+            }
+
+            if(!found) {
+                VMInstanceVO vm = _vmDao.findVMByInstanceName(name);
+                if(vm.getType() == VirtualMachine.Type.User) {
+                    updateVmMetaData(vm.getId(), platform);
                 }
             }
         }
     }
 
+    // this is XenServer specific
+    private void updateVmMetaData(Long vmId, String platform) {
+        UserVmVO userVm = _userVmDao.findById(vmId);
+        _userVmDao.loadDetails(userVm);
+        if ( userVm.details.containsKey("timeoffset")) {
+            userVm.details.remove("timeoffset");
+        }
+        userVm.setDetail("platform",  platform);
+        String pvdriver = "xenserver56";
+        if ( platform.contains("device_id")) {
+            pvdriver = "xenserver61";
+        }
+        if (!userVm.details.containsKey("hypervisortoolsversion") || !userVm.details.get("hypervisortoolsversion").equals(pvdriver)) {
+            userVm.setDetail("hypervisortoolsversion", pvdriver);
+        }
+        _userVmDao.saveDetails(userVm);
+    }
 
     private void ensureVmRunningContext(final long hostId, VMInstanceVO vm, final Event cause) throws OperationTimedoutException, ResourceUnavailableException,
     NoTransitionException, InsufficientAddressCapacityException {
