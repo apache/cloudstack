@@ -19,7 +19,8 @@ from pyVmomi import vim, vmodl
 from pyVim import connect
 import atexit
 import ssl
-ssl._create_default_https_context = ssl._create_unverified_context
+if hasattr(ssl, '_create_unverified_context'):
+    ssl._create_default_https_context = ssl._create_unverified_context
 
 
 class Vcenter():
