@@ -451,6 +451,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected boolean _noMemBalloon = false;
     protected String _guestCpuMode;
     protected String _guestCpuModel;
+    protected List<String> _cpuFeatures;
     protected boolean _noKvmClock;
     protected String _videoHw;
     protected int _videoRam;
@@ -860,6 +861,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
             params.put("guest.cpu.mode", _guestCpuMode);
             params.put("guest.cpu.model", _guestCpuModel);
+        }
+
+        String cpuFeatures = (String)params.get("guest.cpu.features");
+        if (cpuFeatures != null) {
+            _cpuFeatures = new ArrayList<String>();
+            for (String feature: cpuFeatures.split(" ")) {
+                if (feature != null || !feature.isEmpty()) {
+                    _cpuFeatures.add(feature);
+                }
+            }
         }
 
         String[] info = NetUtils.getNetworkParams(_privateNic);
@@ -3675,6 +3686,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         CpuModeDef cmd = new CpuModeDef();
         cmd.setMode(_guestCpuMode);
         cmd.setModel(_guestCpuModel);
+        cmd.setFeatures(_cpuFeatures);
         // multi cores per socket, for larger core configs
         if (vcpus % 6 == 0) {
             int sockets = vcpus / 6;

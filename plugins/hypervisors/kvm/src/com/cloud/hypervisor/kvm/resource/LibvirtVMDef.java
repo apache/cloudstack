@@ -1043,11 +1043,18 @@ public class LibvirtVMDef {
     public static class CpuModeDef {
         private String _mode;
         private String _model;
+        private List<String> _features;
         private int _coresPerSocket = -1;
         private int _sockets = -1;
 
         public void setMode(String mode) {
             _mode = mode;
+        }
+
+        public void setFeatures(List<String> features) {
+            if (features != null) {
+                _features = features;
+            }
         }
 
         public void setModel(String model) {
@@ -1072,6 +1079,12 @@ public class LibvirtVMDef {
                 modeBuilder.append("<cpu mode='host-passthrough'>");
             } else {
                 modeBuilder.append("<cpu>");
+            }
+
+            if (_features != null) {
+                for (String feature : _features) {
+                    modeBuilder.append("<feature policy='require' name='" + feature + "'/>");
+                }
             }
 
             // add topology
