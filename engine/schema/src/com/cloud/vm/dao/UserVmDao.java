@@ -19,9 +19,12 @@ package com.cloud.vm.dao;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Set;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 
 public interface UserVmDao extends GenericDao<UserVmVO, Long> {
@@ -80,4 +83,5 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long> {
 
     List<UserVmVO> listByIsoId(Long isoId);
 
+    List<Pair<Pair<String, VirtualMachine.Type>, Pair<Long, String>>> getVmsDetailByNames(Set<String> vmNames, String detail);
 }

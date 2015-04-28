@@ -24,11 +24,13 @@ import java.util.Date;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.utils.Pair;
 import org.apache.log4j.Logger;
 
 import com.cloud.server.ResourceTag.ResourceObjectType;
@@ -101,6 +103,11 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             + "left join storage_pool on volumes.pool_id=storage_pool.id " + "left join security_group_vm_map on vm_instance.id=security_group_vm_map.instance_id "
             + "left join security_group on security_group_vm_map.security_group_id=security_group.id " + "left join nics on vm_instance.id=nics.instance_id "
             + "left join networks on nics.network_id=networks.id " + "left join user_ip_address on user_ip_address.vm_id=vm_instance.id " + "where vm_instance.id in (";
+
+    private static final String VMS_DETAIL_BY_NAME = "select vm_instance.instance_name, vm_instance.vm_type, vm_instance.id , user_vm_details.value, user_vm_details.name from vm_instance "
+            + "left join user_vm_details on vm_instance.id = user_vm_details.vm_id where (user_vm_details.name is null or user_vm_details.name = '";
+
+    private static final String VMS_DETAIL_BY_NAME2 = "') and vm_instance.instance_name in (";
 
     private static final int VM_DETAILS_BATCH_SIZE = 100;
 
@@ -631,4 +638,39 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         return result;
     }
 
+    @Override
+    public List<Pair<Pair<String, VirtualMachine.Type>, Pair<Long, String>>> getVmsDetailByNames(Set<String> vmNames, String detail) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        List<Pair<Pair<String, VirtualMachine.Type>, Pair<Long, String>>> vmsDetailByNames = new ArrayList<Pair<Pair<String, VirtualMachine.Type>, Pair<Long, String>>>();
+
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = txn.prepareStatement(VMS_DETAIL_BY_NAME + detail + VMS_DETAIL_BY_NAME2 + getQueryBatchAppender(vmNames.size()));
+            int i = 1;
+            for(String name : vmNames) {
+                pstmt.setString(i, name);
+                i++;
+            }
+            try {
+                ResultSet rs = pstmt.executeQuery();
+                while (rs.next()) {
+                    vmsDetailByNames.add(new Pair<Pair<String, VirtualMachine.Type>, Pair<Long, String>>(new Pair<String, VirtualMachine.Type>(
+                            rs.getString("vm_instance.instance_name"), VirtualMachine.Type.valueOf(rs.getString("vm_type"))),
+                            new Pair<Long, String>(rs.getLong("vm_instance.id"), rs.getString("user_vm_details.value"))));
+                }
+                rs.close();
+            } catch (Exception e) {
+                s_logger.error("GetVmsDetailsByNames: Exception: " + e.getMessage());
+                throw new CloudRuntimeException("GetVmsDetailsByNames: Exception: " + e.getMessage());
+            }
+            if(pstmt != null) {
+                pstmt.close();
+            }
+        } catch (Exception e) {
+            s_logger.error("GetVmsDetailsByNames: Exception in sql: " + e.getMessage());
+            throw new CloudRuntimeException("GetVmsDetailsByNames: Exception: " + e.getMessage());
+        }
+
+        return vmsDetailByNames;
+    }
 }
