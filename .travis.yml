@@ -32,6 +32,8 @@ env:
 - TESTS="smoke/test_volumes smoke/test_vpc_vpn smoke/misc/test_deploy_vm smoke/test_vm_life_cycle"
 - TESTS="component/test_acl_isolatednetwork_delete component/test_acl_isolatednetwork component/test_acl_isolatednetwork component/test_acl_listsnapshot"
 - TESTS="component/test_acl_listvm component/test_acl_listvolume component/test_acl_sharednetwork_deployVM-impersonation component/test_acl_sharednetwork"
+- TESTS="component/test_regions_accounts component/test_resource_limits component/test_snapshots component/test_usage component/test_volumes component/test_vpc"
+- TESTS="component/test_vpc_network component/test_vpc_network_lbrules component/test_vpc_offerings component/test_vpc_routers component/test_vpc_vms_deployment"
 before_install: travis_wait 30 ./tools/travis/before_install.sh
 install: ./tools/travis/install.sh
 before_script: travis_wait 30 ./tools/travis/before_script.sh
