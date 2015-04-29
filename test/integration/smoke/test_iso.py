@@ -19,7 +19,7 @@
 # Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.cloudstackAPI import listZones, updateIso, extractIso, updateIsoPermissions, copyIso, deleteIso
-from marvin.lib.utils import cleanup_resources, random_gen
+from marvin.lib.utils import cleanup_resources, random_gen, get_hypervisor_type
 from marvin.lib.base import Account, Iso
 from marvin.lib.common import (get_domain,
                                get_zone,
@@ -147,6 +147,12 @@ class TestISO(cloudstackTestCase):
         testClient = super(TestISO, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
+        cls._cleanup = []
+        cls.unsupportedHypervisor = False
+        cls.hypervisor = get_hypervisor_type(cls.apiclient)
+        if cls.hypervisor == "simulator":
+            cls.unsupportedHypervisor = True
+            return
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
@@ -168,6 +174,7 @@ class TestISO(cloudstackTestCase):
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
         # Finding the OsTypeId from Ostype
         ostypes = list_os_types(
             cls.apiclient,
@@ -203,8 +210,6 @@ class TestISO(cloudstackTestCase):
         except Exception as e:
             raise Exception("Exception while downloading ISO %s: %s"
                             % (cls.iso_2.id, e))
-
-        cls._cleanup = [cls.account]
         return
 
     @classmethod
@@ -225,6 +230,10 @@ class TestISO(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
+
+        if self.unsupportedHypervisor:
+            self.skipTest("Skipping test because unsupported hypervisor\
+                    %s" % self.hypervisor)
 
     def tearDown(self):
         try:
