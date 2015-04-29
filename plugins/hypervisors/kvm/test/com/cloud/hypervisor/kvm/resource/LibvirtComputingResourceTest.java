@@ -72,6 +72,7 @@ import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.PingTestCommand;
@@ -83,8 +84,10 @@ import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
+import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
+import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.exception.InternalErrorException;
@@ -100,6 +103,7 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.Pair;
+import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 
@@ -1216,5 +1220,103 @@ public class LibvirtComputingResourceTest {
         assertFalse(answer.getResult());
 
         verify(libvirtComputingResource, times(1)).getTimeout();
+    }
+
+    @Test
+    public void testMaintainCommand() {
+        final MaintainCommand command = new MaintainCommand();
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testCreateCommandNoTemplate() {
+        final DiskProfile diskCharacteristics = Mockito.mock(DiskProfile.class);
+        final StorageFilerTO pool = Mockito.mock(StorageFilerTO.class);
+        final boolean executeInSequence = false;
+
+        final CreateCommand command = new CreateCommand(diskCharacteristics, pool, executeInSequence );
+
+        final KVMStoragePoolManager poolManager = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool primary = Mockito.mock(KVMStoragePool.class);
+        final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(poolManager);
+        when(poolManager.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(primary);
+
+        when(primary.createPhysicalDisk(diskCharacteristics.getPath(), diskCharacteristics.getProvisioningType(), diskCharacteristics.getSize())).thenReturn(vol);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(poolManager, times(1)).getStoragePool(pool.getType(), pool.getUuid());
+    }
+
+    @Test
+    public void testCreateCommand() {
+        final DiskProfile diskCharacteristics = Mockito.mock(DiskProfile.class);
+        final StorageFilerTO pool = Mockito.mock(StorageFilerTO.class);
+        final String templateUrl = "http://template";
+        final boolean executeInSequence = false;
+
+        final CreateCommand command = new CreateCommand(diskCharacteristics, templateUrl, pool, executeInSequence );
+
+        final KVMStoragePoolManager poolManager = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool primary = Mockito.mock(KVMStoragePool.class);
+        final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(poolManager);
+        when(poolManager.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(primary);
+
+        when(primary.getType()).thenReturn(StoragePoolType.CLVM);
+        when(libvirtComputingResource.templateToPrimaryDownload(command.getTemplateUrl(), primary, diskCharacteristics.getPath())).thenReturn(vol);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(poolManager, times(1)).getStoragePool(pool.getType(), pool.getUuid());
+    }
+
+    @Test
+    public void testCreateCommandCLVM() {
+        final DiskProfile diskCharacteristics = Mockito.mock(DiskProfile.class);
+        final StorageFilerTO pool = Mockito.mock(StorageFilerTO.class);
+        final String templateUrl = "http://template";
+        final boolean executeInSequence = false;
+
+        final CreateCommand command = new CreateCommand(diskCharacteristics, templateUrl, pool, executeInSequence );
+
+        final KVMStoragePoolManager poolManager = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool primary = Mockito.mock(KVMStoragePool.class);
+        final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
+        final KVMPhysicalDisk baseVol = Mockito.mock(KVMPhysicalDisk.class);
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(poolManager);
+        when(poolManager.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(primary);
+
+        when(primary.getPhysicalDisk(command.getTemplateUrl())).thenReturn(baseVol);
+        when(poolManager.createDiskFromTemplate(baseVol,
+                diskCharacteristics.getPath(), diskCharacteristics.getProvisioningType(), primary, 0)).thenReturn(vol);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(poolManager, times(1)).getStoragePool(pool.getType(), pool.getUuid());
     }
 }

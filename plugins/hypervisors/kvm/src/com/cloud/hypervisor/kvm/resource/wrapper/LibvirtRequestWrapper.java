@@ -30,6 +30,7 @@ import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.PingTestCommand;
@@ -40,6 +41,7 @@ import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
+import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.RequestWrapper;
@@ -80,6 +82,8 @@ public class LibvirtRequestWrapper extends RequestWrapper {
         linbvirtCommands.put(CheckConsoleProxyLoadCommand.class, new LibvirtCheckConsoleProxyLoadCommandWrapper());
         linbvirtCommands.put(GetVncPortCommand.class, new LibvirtGetVncPortCommandWrapper());
         linbvirtCommands.put(ModifySshKeysCommand.class, new LibvirtModifySshKeysCommandWrapper());
+        linbvirtCommands.put(MaintainCommand.class, new LibvirtMaintainCommandWrapper());
+        linbvirtCommands.put(CreateCommand.class, new LibvirtCreateCommandWrapper());
 
         resources.put(LibvirtComputingResource.class, linbvirtCommands);
     }

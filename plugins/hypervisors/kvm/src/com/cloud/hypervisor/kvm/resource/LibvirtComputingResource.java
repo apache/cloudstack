@@ -101,8 +101,6 @@ import com.cloud.agent.api.FenceCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.HostVmStateReportEntry;
-import com.cloud.agent.api.MaintainAnswer;
-import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
@@ -1305,9 +1303,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         try {
-            if (cmd instanceof MaintainCommand) {
-                return execute((MaintainCommand)cmd);
-            } else if (cmd instanceof CreateCommand) {
+            if (cmd instanceof CreateCommand) {
                 return execute((CreateCommand)cmd);
             } else if (cmd instanceof DestroyCommand) {
                 return execute((DestroyCommand)cmd);
@@ -1769,7 +1765,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     // this is much like PrimaryStorageDownloadCommand, but keeping it separate
-    protected KVMPhysicalDisk templateToPrimaryDownload(final String templateUrl, final KVMStoragePool primaryPool, final String volUuid) {
+    public KVMPhysicalDisk templateToPrimaryDownload(final String templateUrl, final KVMStoragePool primaryPool, final String volUuid) {
         final int index = templateUrl.lastIndexOf("/");
         final String mountpoint = templateUrl.substring(0, index);
         String templateName = null;
@@ -2864,10 +2860,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private Answer execute(final CleanupNetworkRulesCmd cmd) {
         final boolean result = cleanup_rules();
         return new Answer(cmd, result, "");
-    }
-
-    protected MaintainAnswer execute(final MaintainCommand cmd) {
-        return new MaintainAnswer(cmd);
     }
 
     protected PowerState convertToPowerState(final DomainState ps) {
