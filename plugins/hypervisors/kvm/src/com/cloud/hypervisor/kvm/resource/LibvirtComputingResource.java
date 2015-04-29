@@ -3686,7 +3686,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         CpuModeDef cmd = new CpuModeDef();
         cmd.setMode(_guestCpuMode);
         cmd.setModel(_guestCpuModel);
-        cmd.setFeatures(_cpuFeatures);
+        if (vmTO.getType() == VirtualMachine.Type.User) {
+            cmd.setFeatures(_cpuFeatures);
+        }
         // multi cores per socket, for larger core configs
         if (vcpus % 6 == 0) {
             int sockets = vcpus / 6;
