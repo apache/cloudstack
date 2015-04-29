@@ -68,7 +68,7 @@
                     actions: {
                         // Add volume
                         add: {
-                            label: 'label.add.volume',
+                            label: 'Add',
 
                             preFilter: function(args) {
                                 return !args.context.instances;
@@ -256,18 +256,25 @@
 
                         uploadVolume: {
                             isHeader: true,
-                            label: 'label.upload.volume',
+                            label: 'Upload',
                             preFilter: function(args) {
                                 return !args.context.instances;
                             },
                             messages: {
                                 notification: function() {
-                                    return 'label.upload.volume';
+                                    return 'Upload Volume from URL';
                                 }
                             },
                             createForm: {
-                                title: 'label.upload.volume',
+                                title: 'Upload Volume from URL',
                                 fields: {
+                                	url: {
+                                        label: 'label.url',
+                                        docID: 'helpUploadVolumeURL',
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
                                     name: {
                                         label: 'label.name',
                                         validation: {
@@ -323,14 +330,37 @@
                                             });
                                         }
 
-                                    },
-                                    url: {
-                                        label: 'label.url',
-                                        docID: 'helpUploadVolumeURL',
-                                        validation: {
-                                            required: true
+                                    },                                      
+                                    diskOffering: {
+                                        label: 'Custom Disk Offering',
+                                        docID: 'helpVolumeDiskOffering',
+                                        select: function(args) {
+                                        	var diskofferingObjs;
+                                        	$.ajax({
+                                                url: createURL("listDiskOfferings"),
+                                                dataType: "json",
+                                                async: false,
+                                                success: function(json) {
+                                                    diskofferingObjs = json.listdiskofferingsresponse.diskoffering;
+                                                    var items = [{
+                                                    	id: '',
+                                                        description: ''
+                                                    }];
+                                                    $(diskofferingObjs).each(function() {
+                                                    	if (this.iscustomized == true) {                                                    	
+	                                                        items.push({
+	                                                            id: this.id,
+	                                                            description: this.displaytext
+	                                                        });
+                                                    	}
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            });
                                         }
-                                    },                                                                         
+                                    },                                    
                                     diskOffering: {
                                         label: 'Custom Disk Offering',
                                         docID: 'helpVolumeDiskOffering',
@@ -414,7 +444,147 @@
                             notification: {
                                 poll: pollAsyncJobResult
                             }
-                        }
+                        },
+                                                
+                        uploadVolumefromLocal: {
+                            isHeader: true,
+                            label: 'Upload from Local',
+                            preFilter: function(args) {
+                                return !args.context.instances;
+                            },
+                            messages: {
+                                notification: function() {
+                                    return 'Upload Volume from Local';
+                                }
+                            },
+                            createForm: {
+                                title: 'Upload Volume from Local',
+                                fileUpload: {
+                                    getURL: function(args) {
+                                        args.data = args.formData;
+                                        
+                                        var data = {
+                                            name: args.data.name,
+                                            zoneId: args.data.availabilityZone,
+                                            format: args.data.format,
+                                            url: args.data.url
+                                        };
+
+                                        if (args.data.checksum != null && args.data.checksum.length > 0) {
+                                            $.extend(data, {
+                                                checksum: args.data.checksum
+                                            });
+                                        }
+                                        
+                                        $.ajax({
+                                            url: createURL('getUploadParamsForVolume'),
+                                            data: data,
+                                            async: false,
+                                            success: function(json) {
+                                                var uploadparams = json.postuploadvolumeresponse.getuploadparams; //son.postuploadvolumeresponse.getuploadparams is an object, not an array of object.
+                                                var volumeId = uploadparams.id;
+
+                                                args.response.success({
+                                                    url: uploadparams.postURL,
+                                                    ajaxPost: true,
+                                                    data: {
+                                                        'X-signature': uploadparams.signature,
+                                                        'X-expires': uploadparams.expires,
+                                                        'X-metadata': uploadparams.metadata
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    },
+                                    postUpload: function(args) {
+                                        if(args.error) {
+                                            args.response.error(args.errorMsg);
+                                        } else {
+                                            cloudStack.dialog.notice({
+                                                message: "This volume file has been uploaded. Please check its status at Stroage menu > Volumes > " + args.data.name + " > Status field."
+                                            });
+                                            args.response.success();
+                                        }
+                                    }
+                                },                                
+                                fields: {
+                                    volumeFileUpload: {
+                                        label: 'local file',
+                                        isFileUpload: true,
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
+                                    name: {
+                                        label: 'label.name',
+                                        validation: {
+                                            required: true
+                                        },
+                                        docID: 'helpUploadVolumeName'
+                                    },
+                                    availabilityZone: {
+                                        label: 'label.availability.zone',
+                                        docID: 'helpUploadVolumeZone',
+                                        select: function(args) {
+                                            $.ajax({
+                                                url: createURL("listZones&available=true"),
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    var zoneObjs = json.listzonesresponse.zone;
+                                                    args.response.success({
+                                                        descriptionField: 'name',
+                                                        data: zoneObjs
+                                                    });
+                                                }
+                                            });
+                                        }
+                                    },
+                                    format: {
+                                        label: 'label.format',
+                                        docID: 'helpUploadVolumeFormat',
+                                        select: function(args) {
+                                            var items = [];
+                                            items.push({
+                                                id: 'RAW',
+                                                description: 'RAW'
+                                            });
+                                            items.push({
+                                                id: 'VHD',
+                                                description: 'VHD'
+                                            });
+                                            items.push({
+                                                id: 'VHDX',
+                                                description: 'VHDX'
+                                            });
+                                            items.push({
+                                                id: 'OVA',
+                                                description: 'OVA'
+                                            });
+                                            items.push({
+                                                id: 'QCOW2',
+                                                description: 'QCOW2'
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        }
+                                    },
+                                    checksum: {
+                                        docID: 'helpUploadVolumeChecksum',
+                                        label: 'label.md5.checksum'
+                                    }
+                                }
+                            },
+
+                            action: function(args) {
+                                return; //createForm.fileUpload.getURL() has executed the whole action. Therefore, nothing needs to be done here.
+                            },
+
+                            notification: {
+                                poll: pollAsyncJobResult
+                            }
+                        }                        
                     },
 
                     advSearchFields: {

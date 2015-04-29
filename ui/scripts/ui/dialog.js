@@ -474,6 +474,16 @@
                     if (field.defaultValue) {
                         $input.val(strOrFunc(field.defaultValue));
                     }
+                } else if (field.isFileUpload) {
+                    $input = $('<input>').attr({
+                        type: 'file',
+                        name: 'files[]'
+                    }).appendTo($value);
+
+                    // Add events
+                    $input.change(function(event) {
+                        $form.data('files', event.target.files);
+                    });
                 } else if (field.isTokenInput) { // jquery.tokeninput.js
                     isAsync = true;
 
@@ -673,12 +683,131 @@
                     }
                 }
 
-                args.after({
-                    data: data,
-                    ref: args.ref, // For backwards compatibility; use context
-                    context: args.context,
-                    $form: $form
-                });
+                var uploadFiles = function() {
+                    $form.prepend($('<div>').addClass('loading-overlay'));
+                    args.form.fileUpload.getURL({
+                        $form: $form,
+                        formData: data,
+                        context: args.context,
+                        response: {
+                            success: function(successArgs) {
+                                var $file = $form.find('input[type=file]');
+                                var postUploadArgs = {
+                                    $form: $form,
+                                    data: data,
+                                    context: args.context,
+                                    response: {
+                                        success: function() {
+                                            args.after({
+                                                data: data,
+                                                ref: args.ref, // For backwards compatibility; use context
+                                                context: args.context,
+                                                $form: $form
+                                            });
+
+                                            $('div.overlay').remove();
+                                            $form.find('.loading-overlay').remove();
+                                            $('div.loading-overlay').remove();
+
+                                            $('.tooltip-box').remove();
+                                            $formContainer.remove();
+                                            $(this).dialog('destroy');
+
+                                            $('.hovered-elem').hide();
+                                        },
+                                        error: function(msg) {
+                                            $('div.overlay').remove();
+                                            $form.find('.loading-overlay').remove();
+                                            $('div.loading-overlay').remove();
+
+                                            cloudStack.dialog.error({ message: msg });
+                                        }
+                                    }
+                                };
+                                var postUploadArgsWithStatus = $.extend(true, {}, postUploadArgs);
+
+                                if(successArgs.ajaxPost) {
+                                    var request = new FormData();
+                                    request.append('file', $file.prop("files")[0]);
+                                    $.ajax({
+                                            type: 'POST',
+                                            url: successArgs.url,
+                                            data: request,
+                                            dataType : 'html',
+                                            processData: false,
+                                            contentType: false,
+                                            headers: successArgs.data,
+                                            success: function(r) {
+                                                postUploadArgsWithStatus.error = false;
+                                                args.form.fileUpload.postUpload(postUploadArgsWithStatus);
+                                            },
+                                            error: function(r) {
+                                                postUploadArgsWithStatus.error = true;
+                                                postUploadArgsWithStatus.errorMsg = r.responseText;
+                                                args.form.fileUpload.postUpload(postUploadArgsWithStatus);
+                                            }
+                                        });
+                                } else {
+                                    //
+                                    // Move file field into iframe; keep visible for consistency
+                                    //
+                                    var $uploadFrame = $('<iframe>');
+                                    var $frameForm = $('<form>').attr({
+                                        method: 'POST',
+                                        action: successArgs.url,
+                                        enctype: 'multipart/form-data'
+                                    });
+                                    var $field = $file.closest('.form-item .value');
+
+                                    // Add additional passed data
+                                    $.map(successArgs.data, function(v, k) {
+                                        var $hidden = $('<input>').attr({
+                                            type: 'hidden',
+                                            name: k,
+                                            value: v
+                                        });
+
+                                        $hidden.appendTo($frameForm);
+
+                                    });
+
+                                    console.log("The following object is a hidden HTML form that will submit local file with hidden field signature/expires/metadata:");
+                                    console.log($frameForm);
+
+                                    $uploadFrame.css({ width: $field.outerWidth(), height: $field.height() }).show();
+                                    $frameForm.append($file);
+                                    $field.append($uploadFrame);
+                                    $uploadFrame.contents().find('html body').append($frameForm);
+                                    $frameForm.submit(function() {
+                                        console.log("callback() in $frameForm.submit(callback(){}) is triggered");
+                                        $uploadFrame.load(function() {
+                                            console.log("callback() in $uploadFrame.load(callback(){}) is triggered");
+                                            args.form.fileUpload.postUpload(postUploadArgs);
+                                        });
+                                        return true;
+                                    });
+                                    $frameForm.submit();
+                                }
+                            },
+                            error: function(msg) {
+                                cloudStack.dialog.error({ message: msg });
+                            }
+                        }
+                    });
+                };
+
+                if ($form.data('files')) {
+                    uploadFiles();
+
+                    return false;
+                } else {
+                    args.after({
+                        data: data,
+                        ref: args.ref, // For backwards compatibility; use context
+                        context: args.context,
+                        $form: $form
+                    });
+                }
 
                 return true;
             };

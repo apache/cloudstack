@@ -779,3 +779,7 @@ listOpenDaylightControllers=1
 
 ### GloboDNS commands
 addGloboDnsHost=1
+
+### volume/template post upload
+getUploadParamsForVolume=15
+getUploadParamsForTemplate=15

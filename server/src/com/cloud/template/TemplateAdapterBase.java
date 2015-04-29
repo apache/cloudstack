@@ -22,6 +22,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -182,7 +183,8 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             throw new InvalidParameterValueException("Please specify a valid zone Id. Only admins can create templates in all zones.");
         }
 
-        if (url.toLowerCase().contains("file://")) {
+        // check for the url format only when url is not null. url can be null incase of form based upload
+        if (url != null && url.toLowerCase().contains("file://")) {
             throw new InvalidParameterValueException("File:// type urls are currently unsupported");
         }
 
@@ -196,9 +198,12 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             featured = Boolean.FALSE;
         }
 
-        ImageFormat imgfmt = ImageFormat.valueOf(format.toUpperCase());
-        if (imgfmt == null) {
-            throw new IllegalArgumentException("Image format is incorrect " + format + ". Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
+        ImageFormat imgfmt;
+        try {
+            imgfmt = ImageFormat.valueOf(format.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            s_logger.debug("ImageFormat IllegalArgumentException: " + e.getMessage());
+            throw new IllegalArgumentException("Image format: " + format + " is incorrect. Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
         }
 
         // Check that the resource limit for templates/ISOs won't be exceeded
@@ -273,6 +278,29 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
     }
 
     @Override
+    public TemplateProfile prepare(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException {
+        //check if the caller can operate with the template owner
+        Account caller = CallContext.current().getCallingAccount();
+        Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
+        _accountMgr.checkAccess(caller, null, true, owner);
+
+        boolean isRouting = (cmd.isRoutingType() == null) ? false : cmd.isRoutingType();
+
+        Long zoneId = cmd.getZoneId();
+        // ignore passed zoneId if we are using region wide image store
+        List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
+        if (stores != null && stores.size() > 0) {
+            zoneId = -1L;
+        }
+
+        return prepare(false, CallContext.current().getCallingUserId(), cmd.getName(), cmd.getDisplayText(), cmd.getBits(), cmd.isPasswordEnabled(),
+                       cmd.getRequiresHvm(), null, cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), zoneId,
+                       HypervisorType.getType(cmd.getHypervisor()), cmd.getChecksum(), true, cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled(), null,
+                       cmd.isDynamicallyScalable(), isRouting ? TemplateType.ROUTING : TemplateType.USER);
+
+    }
+
+    @Override
     public TemplateProfile prepare(RegisterIsoCmd cmd) throws ResourceAllocationException {
         //check if the caller can operate with the template owner
         Account caller = CallContext.current().getCallingAccount();
@@ -291,13 +319,14 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             owner, null, false, cmd.getImageStoreUuid(), cmd.isDynamicallyScalable(), TemplateType.USER);
     }
 
-    protected VMTemplateVO persistTemplate(TemplateProfile profile) {
+    protected VMTemplateVO persistTemplate(TemplateProfile profile, VirtualMachineTemplate.State initialState) {
         Long zoneId = profile.getZoneId();
         VMTemplateVO template =
             new VMTemplateVO(profile.getTemplateId(), profile.getName(), profile.getFormat(), profile.getIsPublic(), profile.getFeatured(), profile.getIsExtractable(),
                 profile.getTemplateType(), profile.getUrl(), profile.getRequiresHVM(), profile.getBits(), profile.getAccountId(), profile.getCheckSum(),
                 profile.getDisplayText(), profile.getPasswordEnabled(), profile.getGuestOsId(), profile.getBootable(), profile.getHypervisorType(),
                 profile.getTemplateTag(), profile.getDetails(), profile.getSshKeyEnabled(), profile.IsDynamicallyScalable());
+        template.setState(initialState);
 
         if (zoneId == null || zoneId.longValue() == -1) {
             List<DataCenterVO> dcs = _dcDao.listAll();

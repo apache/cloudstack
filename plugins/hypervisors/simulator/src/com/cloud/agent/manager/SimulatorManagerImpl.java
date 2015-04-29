@@ -31,6 +31,7 @@ import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.command.UploadStatusCommand;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -370,6 +371,8 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                     answer = _mockStorageMgr.ComputeChecksum((ComputeChecksumCommand)cmd);
                 } else if (cmd instanceof CreatePrivateTemplateFromVolumeCommand) {
                     answer = _mockStorageMgr.CreatePrivateTemplateFromVolume((CreatePrivateTemplateFromVolumeCommand)cmd);
+                } else if (cmd instanceof UploadStatusCommand) {
+                    answer = _mockStorageMgr.getUploadStatus((UploadStatusCommand)cmd);
                 } else if (cmd instanceof MaintainCommand) {
                     answer = _mockAgentMgr.maintain((MaintainCommand)cmd);
                 } else if (cmd instanceof GetVmStatsCommand) {

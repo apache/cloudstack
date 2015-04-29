@@ -39,6 +39,7 @@
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
+      <version>${cs.commons-io.version}</version>
     </dependency>
     <dependency>
         <groupId>commons-daemon</groupId>

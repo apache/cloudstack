@@ -28,7 +28,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -45,7 +44,9 @@ import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -65,7 +66,9 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     private SearchBuilder<TemplateDataStoreVO> storeTemplateStateSearch;
     private SearchBuilder<TemplateDataStoreVO> storeTemplateDownloadStatusSearch;
     private SearchBuilder<TemplateDataStoreVO> downloadTemplateSearch;
-    private static final String EXPIRE_DOWNLOAD_URLS_FOR_ZONE = "update template_store_ref set download_url_created=? where store_id in (select id from image_store where data_center_id=?)";
+    private SearchBuilder<TemplateDataStoreVO> uploadTemplateStateSearch;
+    private SearchBuilder<VMTemplateVO> templateOnlySearch;
+    private static final String EXPIRE_DOWNLOAD_URLS_FOR_ZONE = "update template_store_ref set download_url_created=? where download_url_created is not null and store_id in (select id from image_store where data_center_id=?)";
 
     @Inject
     private DataStoreManager _storeMgr;
@@ -136,8 +139,16 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
 
         downloadTemplateSearch = createSearchBuilder();
         downloadTemplateSearch.and("download_url", downloadTemplateSearch.entity().getExtractUrl(), Op.NNULL);
+        downloadTemplateSearch.and("download_url_created", downloadTemplateSearch.entity().getExtractUrlCreated(), Op.NNULL);
         downloadTemplateSearch.and("destroyed", downloadTemplateSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
         downloadTemplateSearch.done();
+
+        templateOnlySearch = _tmpltDao.createSearchBuilder();
+        templateOnlySearch.and("states", templateOnlySearch.entity().getState(), SearchCriteria.Op.IN);
+        uploadTemplateStateSearch = createSearchBuilder();
+        uploadTemplateStateSearch.join("templateOnlySearch", templateOnlySearch, templateOnlySearch.entity().getId(), uploadTemplateStateSearch.entity().getTemplateId(), JoinType.LEFT);
+        uploadTemplateStateSearch.and("destroyed", uploadTemplateStateSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        uploadTemplateStateSearch.done();
 
         return true;
     }
@@ -531,4 +542,11 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
 
     }
 
+    @Override
+    public List<TemplateDataStoreVO> listByTemplateState(VirtualMachineTemplate.State... states) {
+        SearchCriteria<TemplateDataStoreVO> sc = uploadTemplateStateSearch.create();
+        sc.setJoinParameters("templateOnlySearch", "states", (Object[])states);
+        sc.setParameters("destroyed", false);
+        return listIncludingRemovedBy(sc);
+    }
 }

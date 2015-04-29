@@ -33,10 +33,12 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
+import org.apache.cloudstack.storage.command.UploadStatusAnswer;
+import org.apache.cloudstack.storage.command.UploadStatusAnswer.UploadStatus;
+import org.apache.cloudstack.storage.command.UploadStatusCommand;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -1254,5 +1256,10 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             }
             return new CopyVolumeAnswer(cmd, true, null, primaryStorage.getMountPoint(), vol.getPath());
         }
+    }
+
+    @Override
+    public UploadStatusAnswer getUploadStatus(UploadStatusCommand cmd) {
+        return new UploadStatusAnswer(cmd, UploadStatus.COMPLETED);
     }
 }

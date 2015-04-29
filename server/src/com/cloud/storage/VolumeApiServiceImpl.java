@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.storage;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -26,8 +28,18 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import com.cloud.utils.EncryptionUtil;
+import com.cloud.utils.db.TransactionCallbackWithException;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
+import org.apache.cloudstack.api.command.user.volume.GetUploadParamsForVolumeCmd;
+import org.apache.cloudstack.api.response.GetUploadParamsResponse;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
+import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
+import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
@@ -154,6 +166,9 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+
 public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiService, VmWorkJobHandler {
     private final static Logger s_logger = Logger.getLogger(VolumeApiServiceImpl.class);
     public static final String VM_WORK_JOB_HANDLER = VolumeApiServiceImpl.class.getSimpleName();
@@ -259,7 +274,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         validateVolume(caller, ownerId, zoneId, volumeName, url, format, diskOfferingId);
 
-        VolumeVO volume = persistVolume(owner, zoneId, volumeName, url, cmd.getFormat(), diskOfferingId);
+        VolumeVO volume = persistVolume(owner, zoneId, volumeName, url, cmd.getFormat(), diskOfferingId, Volume.State.Allocated);
 
         VolumeInfo vol = volFactory.getVolume(volume.getId());
 
@@ -268,6 +283,84 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         volService.registerVolume(vol, store);
         return volume;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_UPLOAD, eventDescription = "uploading volume for post upload", async = true)
+    public GetUploadParamsResponse uploadVolume(final GetUploadParamsForVolumeCmd cmd) throws ResourceAllocationException, MalformedURLException {
+        Account caller = CallContext.current().getCallingAccount();
+        long ownerId = cmd.getEntityOwnerId();
+        final Account owner = _entityMgr.findById(Account.class, ownerId);
+        final Long zoneId = cmd.getZoneId();
+        final String volumeName = cmd.getName();
+        String format = cmd.getFormat();
+        final Long diskOfferingId = cmd.getDiskOfferingId();
+        String imageStoreUuid = cmd.getImageStoreUuid();
+        final DataStore store = _tmpltMgr.getImageStore(imageStoreUuid, zoneId);
+
+        validateVolume(caller, ownerId, zoneId, volumeName, null, format, diskOfferingId);
+
+        return Transaction.execute(new TransactionCallbackWithException<GetUploadParamsResponse, MalformedURLException>() {
+            @Override
+            public GetUploadParamsResponse doInTransaction(TransactionStatus status) throws MalformedURLException {
+
+                VolumeVO volume = persistVolume(owner, zoneId, volumeName, null, cmd.getFormat(), diskOfferingId, Volume.State.NotUploaded);
+
+                VolumeInfo vol = volFactory.getVolume(volume.getId());
+
+                RegisterVolumePayload payload = new RegisterVolumePayload(null, cmd.getChecksum(), cmd.getFormat());
+                vol.addPayload(payload);
+
+                Pair<EndPoint, DataObject> pair = volService.registerVolumeForPostUpload(vol, store);
+                EndPoint ep = pair.first();
+                DataObject dataObject = pair.second();
+
+
+                GetUploadParamsResponse response = new GetUploadParamsResponse();
+
+                String ssvmUrlDomain = _configDao.getValue(Config.SecStorageSecureCopyCert.key());
+
+                String url = ImageStoreUtil.generatePostUploadUrl(ssvmUrlDomain, ep.getPublicAddr(), vol.getUuid());
+                response.setPostURL(new URL(url));
+
+                // set the post url, this is used in the monitoring thread to determine the SSVM
+                VolumeDataStoreVO volumeStore = _volumeStoreDao.findByVolume(vol.getId());
+                if (volumeStore != null) {
+                    volumeStore.setExtractUrl(url);
+                    _volumeStoreDao.persist(volumeStore);
+                }
+
+                response.setId(UUID.fromString(vol.getUuid()));
+
+                int timeout = ImageStoreUploadMonitorImpl.getUploadOperationTimeout();
+                DateTime currentDateTime = new DateTime(DateTimeZone.UTC);
+                String expires = currentDateTime.plusMinutes(timeout).toString();
+                response.setTimeout(expires);
+
+                String key = _configDao.getValue(Config.SSVMPSK.key());
+                 /*
+                  * encoded metadata using the post upload config key
+                  */
+                TemplateOrVolumePostUploadCommand command =
+                    new TemplateOrVolumePostUploadCommand(vol.getId(), vol.getUuid(), volumeStore.getInstallPath(), cmd.getChecksum(), vol.getType().toString(),
+                                                          vol.getName(), vol.getFormat().toString(), dataObject.getDataStore().getUri(),
+                                                          dataObject.getDataStore().getRole().toString());
+                command.setLocalPath(volumeStore.getLocalDownloadPath());
+                //using the existing max upload size configuration
+                command.setMaxUploadSize(_configDao.getValue(Config.MaxUploadVolumeSize.key()));
+                command.setDefaultMaxAccountSecondaryStorage(_configDao.getValue(Config.DefaultMaxAccountSecondaryStorage.key()));
+                command.setAccountId(vol.getAccountId());
+                Gson gson = new GsonBuilder().create();
+                String metadata = EncryptionUtil.encodeData(gson.toJson(command), key);
+                response.setMetadata(metadata);
+
+                /*
+                 * signature calculated on the url, expiry, metadata.
+                 */
+                response.setSignature(EncryptionUtil.generateSignature(metadata + url + expires, key));
+                return response;
+            }
+        });
     }
 
     private boolean validateVolume(Account caller, long ownerId, Long zoneId, String volumeName, String url,
@@ -291,22 +384,26 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
         }
 
-        if (url.toLowerCase().contains("file://")) {
-            throw new InvalidParameterValueException("File:// type urls are currently unsupported");
-        }
-
-        ImageFormat imgfmt = ImageFormat.valueOf(format.toUpperCase());
-        if (imgfmt == null) {
-            throw new IllegalArgumentException("Image format is incorrect " + format + ". Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
-        }
-
-        UriUtils.validateUrl(format, url);
-
+        //validating the url only when url is not null. url can be null incase of form based post upload
+        if (url != null ) {
+            if( url.toLowerCase().contains("file://")) {
+                throw new InvalidParameterValueException("File:// type urls are currently unsupported");
+            }
+            UriUtils.validateUrl(format, url);
         // check URL existence
         UriUtils.checkUrlExistence(url);
+            // Check that the resource limit for secondary storage won't be exceeded
+            _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
+        } else {
+            _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.secondary_storage);
+        }
 
-        // Check that the resource limit for secondary storage won't be exceeded
-        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
+        try {
+            ImageFormat.valueOf(format.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            s_logger.debug("ImageFormat IllegalArgumentException: " + e.getMessage());
+            throw new IllegalArgumentException("Image format: " + format + " is incorrect. Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
+        }
 
         // Check that the the disk offering specified is valid
         if (diskOfferingId != null) {
@@ -335,7 +432,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @DB
     protected VolumeVO persistVolume(final Account owner, final Long zoneId, final String volumeName, final String url,
-            final String format, final Long diskOfferingId) {
+            final String format, final Long diskOfferingId, final Volume.State state) {
         return Transaction.execute(new TransactionCallback<VolumeVO>() {
             @Override
             public VolumeVO doInTransaction(TransactionStatus status) {
@@ -343,7 +440,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 volume.setPoolId(null);
                 volume.setDataCenterId(zoneId);
                 volume.setPodId(null);
-                // to prevent a nullpointer deref I put the system account id here when no owner is given.
+                volume.setState(state); // initialize the state
+                // to prevent a null pointer deref I put the system account id here when no owner is given.
                 // TODO Decide if this is valid or whether  throwing a CloudRuntimeException is more appropriate
                 volume.setAccountId((owner == null) ? Account.ACCOUNT_ID_SYSTEM : owner.getAccountId());
                 volume.setDomainId((owner == null) ? Domain.ROOT_DOMAIN : owner.getDomainId());
@@ -368,7 +466,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 // Increment resource count during allocation; if actual creation fails,
                 // decrement it
                 _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume);
-                _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
+                //url can be null incase of postupload
+                if(url!=null) {
+                    _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
+                }
 
                 return volume;
             }
@@ -1087,11 +1188,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         VolumeVO volume = _volsDao.findById(volumeId);
         if (volume == null) {
-            throw new InvalidParameterValueException("Unable to aquire volume with ID: " + volumeId);
+            throw new InvalidParameterValueException("Unable to find volume with ID: " + volumeId);
         }
 
         if (!_snapshotMgr.canOperateOnVolume(volume)) {
-            throw new InvalidParameterValueException("There are snapshot creating on it, Unable to delete the volume");
+            throw new InvalidParameterValueException("There are snapshot operations in progress on the volume, unable to delete it");
         }
 
         _accountMgr.checkAccess(caller, null, true, volume);
@@ -1105,6 +1206,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (volumeStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS) {
                 throw new InvalidParameterValueException("Please specify a volume that is not uploading");
             }
+        }
+
+        if (volume.getState() == Volume.State.NotUploaded || volume.getState() == Volume.State.UploadInProgress) {
+            throw new InvalidParameterValueException("The volume is either getting uploaded or it may be initiated shortly, please wait for it to be completed");
         }
 
         try {
