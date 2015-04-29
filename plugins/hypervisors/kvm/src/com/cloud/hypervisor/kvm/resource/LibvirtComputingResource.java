@@ -145,10 +145,7 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.storage.CreateAnswer;
-import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
-import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
@@ -161,7 +158,6 @@ import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.dc.Vlan;
@@ -225,7 +221,6 @@ import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.OutputInterpreter.AllLinesParser;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
-import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 
@@ -1303,11 +1298,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         try {
-            if (cmd instanceof CreateCommand) {
-                return execute((CreateCommand)cmd);
-            } else if (cmd instanceof DestroyCommand) {
-                return execute((DestroyCommand)cmd);
-            } else if (cmd instanceof PrimaryStorageDownloadCommand) {
+            if (cmd instanceof PrimaryStorageDownloadCommand) {
                 return execute((PrimaryStorageDownloadCommand)cmd);
             } else if (cmd instanceof CreatePrivateTemplateFromVolumeCommand) {
                 return execute((CreatePrivateTemplateFromVolumeCommand)cmd);
@@ -1725,45 +1716,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return Storage.StorageResourceType.STORAGE_POOL;
     }
 
-    protected Answer execute(final CreateCommand cmd) {
-        final StorageFilerTO pool = cmd.getPool();
-        final DiskProfile dskch = cmd.getDiskCharacteristics();
-        KVMPhysicalDisk BaseVol = null;
-        KVMStoragePool primaryPool = null;
-        KVMPhysicalDisk vol = null;
-        long disksize;
-        try {
-            primaryPool = _storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid());
-            disksize = dskch.getSize();
-
-            if (cmd.getTemplateUrl() != null) {
-                if (primaryPool.getType() == StoragePoolType.CLVM) {
-                    vol = templateToPrimaryDownload(cmd.getTemplateUrl(), primaryPool, dskch.getPath());
-                } else {
-                    BaseVol = primaryPool.getPhysicalDisk(cmd.getTemplateUrl());
-                    vol = _storagePoolMgr.createDiskFromTemplate(BaseVol,
-                            dskch.getPath(), dskch.getProvisioningType(), primaryPool, 0);
-                }
-                if (vol == null) {
-                    return new Answer(cmd, false, " Can't create storage volume on storage pool");
-                }
-            } else {
-                vol = primaryPool.createPhysicalDisk(dskch.getPath(), dskch.getProvisioningType(), dskch.getSize());
-            }
-            final VolumeTO volume =
-                    new VolumeTO(cmd.getVolumeId(), dskch.getType(), pool.getType(), pool.getUuid(), pool.getPath(), vol.getName(), vol.getName(), disksize, null);
-            volume.setBytesReadRate(dskch.getBytesReadRate());
-            volume.setBytesWriteRate(dskch.getBytesWriteRate());
-            volume.setIopsReadRate(dskch.getIopsReadRate());
-            volume.setIopsWriteRate(dskch.getIopsWriteRate());
-            volume.setCacheMode(dskch.getCacheMode());
-            return new CreateAnswer(cmd, volume);
-        } catch (final CloudRuntimeException e) {
-            s_logger.debug("Failed to create volume: " + e.toString());
-            return new CreateAnswer(cmd, e);
-        }
-    }
-
     // this is much like PrimaryStorageDownloadCommand, but keeping it separate
     public KVMPhysicalDisk templateToPrimaryDownload(final String templateUrl, final KVMStoragePool primaryPool, final String volUuid) {
         final int index = templateUrl.lastIndexOf("/");
@@ -1913,18 +1865,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return new ResizeVolumeAnswer(cmd, false, error);
         }
 
-    }
-
-    public Answer execute(final DestroyCommand cmd) {
-        final VolumeTO vol = cmd.getVolume();
-        try {
-            final KVMStoragePool pool = _storagePoolMgr.getStoragePool(vol.getPoolType(), vol.getPoolUuid());
-            pool.deletePhysicalDisk(vol.getPath(), null);
-            return new Answer(cmd, true, "Success");
-        } catch (final CloudRuntimeException e) {
-            s_logger.debug("Failed to delete volume: " + e.toString());
-            return new Answer(cmd, false, e.toString());
-        }
     }
 
     private String getBroadcastUriFromBridge(final String brName) {

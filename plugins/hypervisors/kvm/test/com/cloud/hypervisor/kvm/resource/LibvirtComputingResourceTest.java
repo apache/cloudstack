@@ -85,10 +85,12 @@ import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.storage.CreateCommand;
+import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
@@ -100,9 +102,11 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
@@ -1318,5 +1322,60 @@ public class LibvirtComputingResourceTest {
 
         verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
         verify(poolManager, times(1)).getStoragePool(pool.getType(), pool.getUuid());
+    }
+
+    @Test
+    public void testDestroyCommand() {
+        final StoragePool pool = Mockito.mock(StoragePool.class);
+        final Volume volume = Mockito.mock(Volume.class);
+        final String vmName = "Test";
+
+        final DestroyCommand command = new DestroyCommand(pool, volume, vmName);
+
+        final KVMStoragePoolManager poolManager = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool primary = Mockito.mock(KVMStoragePool.class);
+
+        final VolumeTO vol = command.getVolume();
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(poolManager);
+        when(poolManager.getStoragePool(vol.getPoolType(), vol.getPoolUuid())).thenReturn(primary);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(poolManager, times(1)).getStoragePool(vol.getPoolType(), vol.getPoolUuid());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testDestroyCommandError() {
+        final StoragePool pool = Mockito.mock(StoragePool.class);
+        final Volume volume = Mockito.mock(Volume.class);
+        final String vmName = "Test";
+
+        final DestroyCommand command = new DestroyCommand(pool, volume, vmName);
+
+        final KVMStoragePoolManager poolManager = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool primary = Mockito.mock(KVMStoragePool.class);
+
+        final VolumeTO vol = command.getVolume();
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(poolManager);
+        when(poolManager.getStoragePool(vol.getPoolType(), vol.getPoolUuid())).thenReturn(primary);
+
+        when(primary.deletePhysicalDisk(vol.getPath(), null)).thenThrow(CloudRuntimeException.class);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(poolManager, times(1)).getStoragePool(vol.getPoolType(), vol.getPoolUuid());
     }
 }
