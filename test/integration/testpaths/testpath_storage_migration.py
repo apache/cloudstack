@@ -37,9 +37,11 @@ from marvin.lib.common import (get_domain,
                                list_virtual_machines,
                                list_storage_pools,
                                list_clusters,
-                               list_hosts
+                               list_hosts,
+                               validateList
                                )
-from marvin.codes import (ZONETAG1,
+from marvin.codes import (PASS,
+                          ZONETAG1,
                           CLUSTERTAG1)
 
 from marvin.cloudstackAPI import (deleteVolume)
@@ -412,20 +414,21 @@ class TestStorageMigration(cloudstackTestCase):
             cls.testdata["ostype"])
 
         cls._cleanup = []
+        cls.unsupportedHypervisor = False
+        cls.insuffPools = False
 
         if cls.hypervisor.lower() not in [
                 "vmware",
                 "kvm",
                 "xenserver",
                 "hyper-v"]:
-            raise unittest.SkipTest(
-                "Storage migration not supported on %s" %
-                cls.hypervisor)
-
+            cls.unsupportedHypervisor = True
+            return
         try:
             cls.pools = StoragePool.list(cls.apiclient, zoneid=cls.zone.id)
         except Exception as e:
-            raise unittest.SkipTest(e)
+            cls.insuffPools = True
+            return
         try:
 
             # Create an account
@@ -507,6 +510,9 @@ class TestStorageMigration(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
+        if self.unsupportedHypervisor or self.insuffPools:
+            self.skipTest("Skipping test because unsupported hypervisor\
+                    %s" % self.hypervisor)
         self.cleanup = []
 
     def tearDown(self):
@@ -518,7 +524,7 @@ class TestStorageMigration(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic"], required_hardware="True")
     def test_01_migrate_root_and_data_disk_nonlive(self):
         """ Test migrate Volume (root and data disk)
 
@@ -1205,7 +1211,7 @@ class TestStorageMigration(cloudstackTestCase):
                 ), None, "VM list should be empty")
         return
 
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic"], required_hardware="True")
     def test_02_migration_nonlive_xenserver_supported(self):
         """ Test migrate Volume (root and data disk) for Hypervisor Xenserver
 
@@ -1650,7 +1656,7 @@ class TestStorageMigration(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic"], required_hardware="True")
     def test_03_migrate_root_and_data_disk_nonlive_cwps_vmware(self):
         """ Test migrate Volume (root and data disk)
 
@@ -2088,7 +2094,7 @@ class TestStorageMigration(cloudstackTestCase):
                 ), None, "VM list should be empty")
         return
 
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic"], required_hardware="True")
     def test_04_migrate_root_and_data_disk_nonlive_zwps_vmware(self):
         """ Test migrate Volume (root and data disk)
 
@@ -2279,15 +2285,15 @@ class NegativeTestStorageMigration(cloudstackTestCase):
             cls.testdata["ostype"])
 
         cls._cleanup = []
-
+        cls.unsupportedHypervisor = False
+        cls.insuffPools = False
         if cls.hypervisor.lower() not in [
                 "vmware",
                 "kvm",
                 "xenserver",
                 "hyper-v"]:
-            raise unittest.SkipTest(
-                "Storage migration not supported on %s" %
-                cls.hypervisor)
+            cls.unsupportedHypervisor = True
+            return
 
         try:
             cls.pools = StoragePool.list(cls.apiclient, zoneid=cls.zone.id)
@@ -2300,7 +2306,8 @@ class NegativeTestStorageMigration(cloudstackTestCase):
                 "There must be at least two cluster wide\
                 storage pools available in the setup"
         except Exception as e:
-            raise unittest.SkipTest(e)
+            cls.insuffPools = True
+            return
         try:
 
             # Create an account
@@ -2382,6 +2389,9 @@ class NegativeTestStorageMigration(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
+        if self.unsupportedHypervisor or self.insuffPools:
+            self.skipTest("Skipping test because unsupported hypervisor\
+                    %s" % self.hypervisor)
         self.cleanup = []
 
     def tearDown(self):
@@ -2434,7 +2444,7 @@ class NegativeTestStorageMigration(cloudstackTestCase):
         except Exception as e:
             self.exceptionList.append(e)
 
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic"], required_hardware="True")
     def test_01_migrate_data_disk_negative_test(self):
         """ Negative test cases
 
@@ -2689,16 +2699,17 @@ class TestLiveStorageMigration(cloudstackTestCase):
             cls.testdata["ostype"])
 
         cls._cleanup = []
-
+        cls.unsupportedHypervisor = False
+        cls.insuffPools = False
         if cls.hypervisor.lower() in ["kvm", "lxc"]:
-            raise unittest.SkipTest(
-                "Live Storage migration not supported on %s" %
-                cls.hypervisor)
+            cls.unsupportedHypervisor = True
+            return
 
         try:
             cls.pools = StoragePool.list(cls.apiclient, zoneid=cls.zone.id)
         except Exception as e:
-            raise unittest.SkipTest(e)
+            cls.insuffPools = True
+            return
         try:
 
             # Create an account
@@ -2780,6 +2791,9 @@ class TestLiveStorageMigration(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
+        if self.unsupportedHypervisor or self.insuffPools:
+            self.skipTest("Skipping test because unsupported hypervisor\
+                    %s" % self.hypervisor)
         self.cleanup = []
 
     def tearDown(self):
@@ -2979,7 +2993,7 @@ class TestLiveStorageMigration(cloudstackTestCase):
     @unittest.skip(
         "Requires setup with 2 pods - Each pod having 2 clusters. \
             Yet to be tested")
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic"], required_hardware="True")
     def test_02_migration_live_different_pods(self):
         """ Test migrate Volume (root and data disk)
 
@@ -3573,35 +3587,37 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
             cls.testdata["ostype"])
 
         cls._cleanup = []
-
+        cls.hypervisorNotSupported = False
+        cls.NoResource = False
         if cls.hypervisor.lower() not in [
-                "vmware",
-                "kvm",
-                "xenserver",
-                "hyper-v"]:
-            raise unittest.SkipTest(
-                "Storage migration not supported on %s" %
-                cls.hypervisor)
+                "vmware"]:
+            cls.hypervisorNotSupported = True
         # Get Hosts in the cluster and iscsi/vmfs storages for that cluster
         iscsi_pools = []
         try :
             list_vmware_clusters = list_clusters(cls.apiclient, hypervisor="vmware")
         except Exception as e:
-            raise unittest.SkipTest(e)
-        
+            cls.NoResource = True
+            return
+        assert validateList(list_vmware_clusters)[0] == PASS
         if len(list_vmware_clusters) < 1 :
-            raise unittest.SkipTest("There is no cluster available in the setup")
+            cls.NoResource = True
+            return
         else :
             for cluster in list_vmware_clusters :
                 try:
                     list_esx_hosts = list_hosts(cls.apiclient, clusterid = cluster.id)
                 except Exception as e:
-                    raise unittest.SkipTest(e)
+                    cls.NoResource = True
+                    return
+                assert validateList(list_esx_hosts)[0] == PASS
                 if len(list_esx_hosts) > 1 :
                     try:
                         list_storage = list_storage_pools(cls.apiclient, clusterid = cluster.id)
                     except Exception as e:
-                        raise unittest.SkipTest(e)
+                        cls.NoResource = True
+                        return
+                    assert validateList(list_storage)[0] == PASS
                     for storage in list_storage :
                         if storage.type == "VMFS" :
                             iscsi_pools.append(storage)
@@ -3611,7 +3627,8 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
                     else :
                         iscsi_pools = []
         if len(iscsi_pools) < 2 :
-            raise unittest.SkipTest("Not enough resources available in the setup")
+            cls.NoResource = True
+            return
         cls.hosts = list_esx_hosts
         cls.pools = list_storage
 
@@ -3656,6 +3673,9 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
+        if self.unsupportedHypervisor or self.NoResource:
+            self.skipTest("Skipping test because unsupported hypervisor\
+                    %s" % self.hypervisor)
         self.cleanup = []
 
     def tearDown(self):
@@ -3700,7 +3720,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         return destinationHost
         
 
-    @attr(tags=["advanced", "basic", "vmware", "vmfs"])
+    @attr(tags=["advanced", "basic", "vmware", "vmfs"], required_hardware="True")
     def test_01_migrate_root_and_data_disk_live(self):
         """
         Migrate VMs/Volumes on VMware with VMFS storage

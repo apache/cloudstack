@@ -84,8 +84,10 @@ class TestUsage(cloudstackTestCase):
         cls.mgtSvrDetails = cls.config.__dict__["mgtSvr"][0].__dict__
 
         isUsageJobRunning = cls.IsUsageJobRunning()
+        cls.usageJobNotRunning = False
         if not isUsageJobRunning:
-            raise unittest.SkipTest("Skipping, usage job is not running")
+            cls.usageJobNotRunning = True
+            return
 
         if cls.testdata["configurableData"][
                 "setUsageConfigurationThroughTestCase"]:
@@ -188,6 +190,8 @@ class TestUsage(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
+        if self.usageJobNotRunning:
+            self.skipTest("Skipping test because usage job not running")
         # Create an account
         self.account = Account.create(
             self.apiclient,
@@ -424,7 +428,7 @@ class TestUsage(cloudstackTestCase):
             )
         return result
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced"], required_hardware="True")
     def test_01_positive_tests_usage(self):
         """ Positive test for usage test path
 
@@ -2963,8 +2967,9 @@ class TestUsageDirectMeteringBasicZone(cloudstackTestCase):
         cls.mgtSvrDetails = cls.config.__dict__["mgtSvr"][0].__dict__
 
         isUsageJobRunning = cls.IsUsageJobRunning()
+        cls.usageJobNotRunning = False
         if not isUsageJobRunning:
-            raise unittest.SkipTest("Skipping, usage job is not running")
+            cls.usageJobNotRunning = True
 
         if cls.testdata["configurableData"][
                 "setUsageConfigurationThroughTestCase"]:
@@ -3025,6 +3030,8 @@ class TestUsageDirectMeteringBasicZone(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
+        if self.usageJobNotRunning:
+            self.skipTest("Skipping test because usage job not running")
         # Create an account
         self.account = Account.create(
             self.apiclient,
