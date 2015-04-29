@@ -31,6 +31,7 @@ import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ReadyCommand;
@@ -78,6 +79,7 @@ public class LibvirtRequestWrapper extends RequestWrapper {
         linbvirtCommands.put(WatchConsoleProxyLoadCommand.class, new LibvirtWatchConsoleProxyLoadCommandWrapper());
         linbvirtCommands.put(CheckConsoleProxyLoadCommand.class, new LibvirtCheckConsoleProxyLoadCommandWrapper());
         linbvirtCommands.put(GetVncPortCommand.class, new LibvirtGetVncPortCommandWrapper());
+        linbvirtCommands.put(ModifySshKeysCommand.class, new LibvirtModifySshKeysCommandWrapper());
 
         resources.put(LibvirtComputingResource.class, linbvirtCommands);
     }

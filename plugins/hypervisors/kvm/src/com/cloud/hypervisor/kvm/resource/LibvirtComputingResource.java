@@ -105,7 +105,6 @@ import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
-import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
@@ -279,18 +278,81 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private long _hvVersion;
     private long _kernelVersion;
+    private int _timeout;
+
     private KVMHAMonitor _monitor;
-    private static final String SSHKEYSPATH = "/root/.ssh";
-    private static final String SSHPRVKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.cloud";
-    private static final String SSHPUBKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.pub.cloud";
+    public static final String SSHKEYSPATH = "/root/.ssh";
+    public static final String SSHPRVKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.cloud";
+    public static final String SSHPUBKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.pub.cloud";
+
     private String _mountPoint = "/mnt";
     StorageLayer _storage;
     private KVMStoragePoolManager _storagePoolMgr;
 
     private VifDriver _defaultVifDriver;
     private Map<TrafficType, VifDriver> _trafficTypeVifDrivers;
+
     protected static final String DEFAULT_OVS_VIF_DRIVER_CLASS_NAME = "com.cloud.hypervisor.kvm.resource.OvsVifDriver";
     protected static final String DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME = "com.cloud.hypervisor.kvm.resource.BridgeVifDriver";
+
+    protected HypervisorType _hypervisorType;
+    protected String _hypervisorURI;
+    protected long _hypervisorLibvirtVersion;
+    protected long _hypervisorQemuVersion;
+    protected String _hypervisorPath;
+    protected String _networkDirectSourceMode;
+    protected String _networkDirectDevice;
+    protected String _sysvmISOPath;
+    protected String _privNwName;
+    protected String _privBridgeName;
+    protected String _linkLocalBridgeName;
+    protected String _publicBridgeName;
+    protected String _guestBridgeName;
+    protected String _privateIp;
+    protected String _pool;
+    protected String _localGateway;
+    private boolean _canBridgeFirewall;
+    protected String _localStoragePath;
+    protected String _localStorageUUID;
+    protected boolean _noMemBalloon = false;
+    protected String _guestCpuMode;
+    protected String _guestCpuModel;
+    protected boolean _noKvmClock;
+    protected String _videoHw;
+    protected int _videoRam;
+    protected Pair<Integer,Integer> hostOsVersion;
+    protected int _migrateSpeed;
+    protected int _migrateDowntime;
+    protected int _migratePauseAfter;
+
+    private final Map <String, String> _pifs = new HashMap<String, String>();
+    private final Map<String, VmStats> _vmStats = new ConcurrentHashMap<String, VmStats>();
+
+    protected static final MessageFormat SnapshotXML = new MessageFormat("   <domainsnapshot>" + "       <name>{0}</name>" + "          <domain>"
+            + "            <uuid>{1}</uuid>" + "        </domain>" + "    </domainsnapshot>");
+
+    protected static final HashMap<DomainState, PowerState> s_powerStatesTable;
+    static {
+        s_powerStatesTable = new HashMap<DomainState, PowerState>();
+        s_powerStatesTable.put(DomainState.VIR_DOMAIN_SHUTOFF, PowerState.PowerOff);
+        s_powerStatesTable.put(DomainState.VIR_DOMAIN_PAUSED, PowerState.PowerOn);
+        s_powerStatesTable.put(DomainState.VIR_DOMAIN_RUNNING, PowerState.PowerOn);
+        s_powerStatesTable.put(DomainState.VIR_DOMAIN_BLOCKED, PowerState.PowerOn);
+        s_powerStatesTable.put(DomainState.VIR_DOMAIN_NOSTATE, PowerState.PowerUnknown);
+        s_powerStatesTable.put(DomainState.VIR_DOMAIN_SHUTDOWN, PowerState.PowerOff);
+    }
+
+    protected List<String> _vmsKilled = new ArrayList<String>();
+
+    private VirtualRoutingResource _virtRouterResource;
+
+    private String _pingTestPath;
+
+    private int _dom0MinMem;
+
+    protected boolean _disconnected = true;
+    protected int _cmdsTimeout;
+    protected int _stopTimeout;
 
     @Inject
     private LibvirtConnectionWrapper libvirtConnectionWrapper;
@@ -392,6 +454,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return _pingTestPath;
     }
 
+    public int getTimeout() {
+        return _timeout;
+    }
+
     private static final class KeyValueInterpreter extends OutputInterpreter {
         private final Map<String, String> map = new HashMap<String, String>();
 
@@ -424,66 +490,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return null;
     }
 
-    protected static final MessageFormat SnapshotXML = new MessageFormat("   <domainsnapshot>" + "       <name>{0}</name>" + "          <domain>"
-            + "            <uuid>{1}</uuid>" + "        </domain>" + "    </domainsnapshot>");
-
-    protected HypervisorType _hypervisorType;
-    protected String _hypervisorURI;
-    protected long _hypervisorLibvirtVersion;
-    protected long _hypervisorQemuVersion;
-    protected String _hypervisorPath;
-    protected String _networkDirectSourceMode;
-    protected String _networkDirectDevice;
-    protected String _sysvmISOPath;
-    protected String _privNwName;
-    protected String _privBridgeName;
-    protected String _linkLocalBridgeName;
-    protected String _publicBridgeName;
-    protected String _guestBridgeName;
-    protected String _privateIp;
-    protected String _pool;
-    protected String _localGateway;
-    private boolean _canBridgeFirewall;
-    protected String _localStoragePath;
-    protected String _localStorageUUID;
-    protected boolean _noMemBalloon = false;
-    protected String _guestCpuMode;
-    protected String _guestCpuModel;
     protected List<String> _cpuFeatures;
-    protected boolean _noKvmClock;
-    protected String _videoHw;
-    protected int _videoRam;
-    protected Pair<Integer,Integer> hostOsVersion;
-    protected int _migrateSpeed;
-    protected int _migrateDowntime;
-    protected int _migratePauseAfter;
-
-    private final Map <String, String> _pifs = new HashMap<String, String>();
-    private final Map<String, VmStats> _vmStats = new ConcurrentHashMap<String, VmStats>();
-
-    protected boolean _disconnected = true;
-    protected int _timeout;
-    protected int _cmdsTimeout;
-    protected int _stopTimeout;
-
-    protected static final HashMap<DomainState, PowerState> s_powerStatesTable;
-    static {
-        s_powerStatesTable = new HashMap<DomainState, PowerState>();
-        s_powerStatesTable.put(DomainState.VIR_DOMAIN_SHUTOFF, PowerState.PowerOff);
-        s_powerStatesTable.put(DomainState.VIR_DOMAIN_PAUSED, PowerState.PowerOn);
-        s_powerStatesTable.put(DomainState.VIR_DOMAIN_RUNNING, PowerState.PowerOn);
-        s_powerStatesTable.put(DomainState.VIR_DOMAIN_BLOCKED, PowerState.PowerOn);
-        s_powerStatesTable.put(DomainState.VIR_DOMAIN_NOSTATE, PowerState.PowerUnknown);
-        s_powerStatesTable.put(DomainState.VIR_DOMAIN_SHUTDOWN, PowerState.PowerOff);
-    }
-
-    protected List<String> _vmsKilled = new ArrayList<String>();
-
-    private VirtualRoutingResource _virtRouterResource;
-
-    private String _pingTestPath;
-
-    private int _dom0MinMem;
 
     protected enum BridgeType {
         NATIVE, OPENVSWITCH
@@ -1298,9 +1305,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         try {
-            if (cmd instanceof ModifySshKeysCommand) {
-                return execute((ModifySshKeysCommand)cmd);
-            } else if (cmd instanceof MaintainCommand) {
+            if (cmd instanceof MaintainCommand) {
                 return execute((MaintainCommand)cmd);
             } else if (cmd instanceof CreateCommand) {
                 return execute((CreateCommand)cmd);
@@ -2998,79 +3003,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             final long[] stats = getNetworkStats(cmd.getPrivateIP());
             final NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, "", stats[0], stats[1]);
             return answer;
-        }
-    }
-
-    protected Answer execute(final ModifySshKeysCommand cmd) {
-        final File sshKeysDir = new File(SSHKEYSPATH);
-        String result = null;
-        if (!sshKeysDir.exists()) {
-            // Change permissions for the 700
-            final Script script = new Script("mkdir", _timeout, s_logger);
-            script.add("-m", "700");
-            script.add(SSHKEYSPATH);
-            script.execute();
-
-            if (!sshKeysDir.exists()) {
-                s_logger.debug("failed to create directory " + SSHKEYSPATH);
-            }
-        }
-
-        final File pubKeyFile = new File(SSHPUBKEYPATH);
-        if (!pubKeyFile.exists()) {
-            try {
-                pubKeyFile.createNewFile();
-            } catch (final IOException e) {
-                result = "Failed to create file: " + e.toString();
-                s_logger.debug(result);
-            }
-        }
-
-        if (pubKeyFile.exists()) {
-            try (FileOutputStream pubkStream = new FileOutputStream(pubKeyFile)) {
-                pubkStream.write(cmd.getPubKey().getBytes());
-            } catch (final FileNotFoundException e) {
-                result = "File" + SSHPUBKEYPATH + "is not found:"
-                        + e.toString();
-                s_logger.debug(result);
-            } catch (final IOException e) {
-                result = "Write file " + SSHPUBKEYPATH + ":" + e.toString();
-                s_logger.debug(result);
-            }
-        }
-
-        final File prvKeyFile = new File(SSHPRVKEYPATH);
-        if (!prvKeyFile.exists()) {
-            try {
-                prvKeyFile.createNewFile();
-            } catch (final IOException e) {
-                result = "Failed to create file: " + e.toString();
-                s_logger.debug(result);
-            }
-        }
-
-        if (prvKeyFile.exists()) {
-            final String prvKey = cmd.getPrvKey();
-            try (FileOutputStream prvKStream = new FileOutputStream(prvKeyFile);){
-                if ( prvKStream != null) {
-                    prvKStream.write(prvKey.getBytes());
-                }
-            } catch (final FileNotFoundException e) {
-                result = "File" + SSHPRVKEYPATH + "is not found:" + e.toString();
-                s_logger.debug(result);
-            } catch (final IOException e) {
-                result = "Write file " + SSHPRVKEYPATH + ":" + e.toString();
-                s_logger.debug(result);
-            }
-            final Script script = new Script("chmod", _timeout, s_logger);
-            script.add("600", SSHPRVKEYPATH);
-            script.execute();
-        }
-
-        if (result != null) {
-            return new Answer(cmd, false, result);
-        } else {
-            return new Answer(cmd, true, null);
         }
     }
 

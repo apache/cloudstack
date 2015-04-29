@@ -73,6 +73,7 @@ import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ReadyCommand;
@@ -1200,5 +1201,20 @@ public class LibvirtComputingResourceTest {
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
+    }
+
+    @Test
+    public void testModifySshKeysCommand() {
+        final ModifySshKeysCommand command = new ModifySshKeysCommand("", "");
+
+        when(libvirtComputingResource.getTimeout()).thenReturn(0);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getTimeout();
     }
 }
