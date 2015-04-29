@@ -160,7 +160,7 @@ public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManage
                                 itemVO.setLastProcessTime(dt);
                                 _syncQueueItemDao.update(item.getId(), itemVO);
 
-                                resultList.add(item);
+                                resultList.add(itemVO);
                             }
                         }
                     }

@@ -554,7 +554,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         if (job.getSyncSource() != null) {
                             // here check queue item one more time to double make sure that queue item is removed in case of any uncaught exception
                             _queueMgr.purgeItem(job.getSyncSource().getId());
-                            checkQueue(job.getSyncSource().getQueueId());
                         }
 
                         try {
