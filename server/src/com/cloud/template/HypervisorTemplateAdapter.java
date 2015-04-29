@@ -18,6 +18,7 @@ package com.cloud.template;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -25,8 +26,15 @@ import java.util.concurrent.ExecutionException;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.configuration.Config;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionStatus;
+import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
@@ -70,6 +78,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.download.DownloadMonitor;
+import com.cloud.template.VirtualMachineTemplate.State;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
@@ -135,9 +144,18 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     }
 
     @Override
+    public TemplateProfile prepare(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException {
+        TemplateProfile profile = super.prepare(cmd);
+
+        // Check that the resource limit for secondary storage won't be exceeded
+        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()), ResourceType.secondary_storage);
+        return profile;
+    }
+
+    @Override
     public VMTemplateVO create(TemplateProfile profile) {
         // persist entry in vm_template, vm_template_details and template_zone_ref tables, not that entry at template_store_ref is not created here, and created in createTemplateAsync.
-        VMTemplateVO template = persistTemplate(profile);
+        VMTemplateVO template = persistTemplate(profile, State.Active);
 
         if (template == null) {
             throw new CloudRuntimeException("Unable to persist the template " + profile.getTemplate());
@@ -190,6 +208,86 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
 
         return template;
+    }
+
+    @Override
+    public List<TemplateOrVolumePostUploadCommand> createTemplateForPostUpload(final TemplateProfile profile) {
+        // persist entry in vm_template, vm_template_details and template_zone_ref tables, not that entry at template_store_ref is not created here, and created in createTemplateAsync.
+        return Transaction.execute(new TransactionCallback<List<TemplateOrVolumePostUploadCommand>>() {
+
+            @Override
+            public List<TemplateOrVolumePostUploadCommand> doInTransaction(TransactionStatus status) {
+
+                VMTemplateVO template = persistTemplate(profile, State.NotUploaded);
+
+                if (template == null) {
+                    throw new CloudRuntimeException("Unable to persist the template " + profile.getTemplate());
+                }
+
+                // find all eligible image stores for this zone scope
+                List<DataStore> imageStores = storeMgr.getImageStoresByScope(new ZoneScope(profile.getZoneId()));
+                if (imageStores == null || imageStores.size() == 0) {
+                    throw new CloudRuntimeException("Unable to find image store to download template " + profile.getTemplate());
+                }
+
+                List<TemplateOrVolumePostUploadCommand> payloads = new LinkedList<>();
+                Set<Long> zoneSet = new HashSet<Long>();
+                Collections.shuffle(imageStores); // For private templates choose a random store. TODO - Have a better algorithm based on size, no. of objects, load etc.
+                for (DataStore imageStore : imageStores) {
+                    // skip data stores for a disabled zone
+                    Long zoneId = imageStore.getScope().getScopeId();
+                    if (zoneId != null) {
+                        DataCenterVO zone = _dcDao.findById(zoneId);
+                        if (zone == null) {
+                            s_logger.warn("Unable to find zone by id " + zoneId + ", so skip downloading template to its image store " + imageStore.getId());
+                            continue;
+                        }
+
+                        // Check if zone is disabled
+                        if (Grouping.AllocationState.Disabled == zone.getAllocationState()) {
+                            s_logger.info("Zone " + zoneId + " is disabled, so skip downloading template to its image store " + imageStore.getId());
+                            continue;
+                        }
+
+                        // We want to download private template to one of the image store in a zone
+                        if (isPrivateTemplate(template) && zoneSet.contains(zoneId)) {
+                            continue;
+                        } else {
+                            zoneSet.add(zoneId);
+                        }
+
+                    }
+
+                    TemplateInfo tmpl = imageFactory.getTemplate(template.getId(), imageStore);
+                    //imageService.createTemplateAsync(tmpl, imageStore, caller);
+
+                    // persist template_store_ref entry
+                    DataObject templateOnStore = imageStore.create(tmpl);
+                    // update template_store_ref and template state
+
+                    EndPoint ep = _epSelector.select(templateOnStore);
+                    if (ep == null) {
+                        String errMsg = "There is no secondary storage VM for downloading template to image store " + imageStore.getName();
+                        s_logger.warn(errMsg);
+                        throw new CloudRuntimeException(errMsg);
+                    }
+
+                    TemplateOrVolumePostUploadCommand payload = new TemplateOrVolumePostUploadCommand(template.getId(), template.getUuid(), tmpl.getInstallPath(), tmpl
+                            .getChecksum(), tmpl.getType().toString(), template.getUniqueName(), template.getFormat().toString(), templateOnStore.getDataStore().getUri(),
+                            templateOnStore.getDataStore().getRole().toString());
+                    //using the existing max template size configuration
+                    payload.setMaxUploadSize(_configDao.getValue(Config.MaxTemplateAndIsoSize.key()));
+                    payload.setDefaultMaxAccountSecondaryStorage(_configDao.getValue(Config.DefaultMaxAccountSecondaryStorage.key()));
+                    payload.setAccountId(template.getAccountId());
+                    payload.setRemoteEndPoint(ep.getPublicAddr());
+                    payload.setRequiresHvm(template.requiresHvm());
+                    payload.setDescription(template.getDisplayText());
+                    payloads.add(payload);
+                }
+                _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
+                return payloads;
+            }
+        });
     }
 
     private boolean isPrivateTemplate(VMTemplateVO template){

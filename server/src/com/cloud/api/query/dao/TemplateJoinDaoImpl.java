@@ -74,7 +74,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
     protected TemplateJoinDaoImpl() {
 
         tmpltIdPairSearch = createSearchBuilder();
-        tmpltIdPairSearch.and("templateState", tmpltIdPairSearch.entity().getTemplateState(), SearchCriteria.Op.EQ);
+        tmpltIdPairSearch.and("templateState", tmpltIdPairSearch.entity().getTemplateState(), SearchCriteria.Op.IN);
         tmpltIdPairSearch.and("tempZonePairIN", tmpltIdPairSearch.entity().getTempZonePair(), SearchCriteria.Op.IN);
         tmpltIdPairSearch.done();
 
@@ -412,7 +412,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
             }
             SearchCriteria<TemplateJoinVO> sc = tmpltIdPairSearch.create();
             if (!showRemoved) {
-                sc.setParameters("templateState", VirtualMachineTemplate.State.Active);
+                sc.setParameters("templateState", VirtualMachineTemplate.State.Active, VirtualMachineTemplate.State.NotUploaded, VirtualMachineTemplate.State.UploadInProgress);
             }
             sc.setParameters("tempZonePairIN", labels);
             List<TemplateJoinVO> vms = searchIncludingRemoved(sc, searchFilter, null, false);

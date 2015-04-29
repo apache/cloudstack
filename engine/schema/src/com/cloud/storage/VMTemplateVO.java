@@ -582,10 +582,12 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         return size;
     }
 
+    @Override
     public long getUpdatedCount() {
         return updatedCount;
     }
 
+    @Override
     public void incrUpdatedCount() {
         updatedCount++;
     }
@@ -594,6 +596,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         updatedCount--;
     }
 
+    @Override
     public Date getUpdated() {
         return updated;
     }

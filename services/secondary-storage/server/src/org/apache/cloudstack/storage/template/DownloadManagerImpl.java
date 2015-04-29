@@ -88,7 +88,7 @@ import com.cloud.utils.script.Script;
 public class DownloadManagerImpl extends ManagerBase implements DownloadManager {
     private String _name;
     StorageLayer _storage;
-    Map<String, Processor> _processors;
+    public Map<String, Processor> _processors;
 
     public class Completion implements DownloadCompleteCallback {
         private final String jobId;
@@ -101,6 +101,11 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         public void downloadComplete(Status status) {
             setDownloadStatus(jobId, status);
         }
+    }
+
+    @Override
+    public Map<String, Processor> getProcessors() {
+        return _processors;
     }
 
     private static class DownloadJob {

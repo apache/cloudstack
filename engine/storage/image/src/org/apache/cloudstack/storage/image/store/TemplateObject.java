@@ -28,7 +28,6 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
@@ -166,7 +165,7 @@ public class TemplateObject implements TemplateInfo {
     }
 
     @Override
-    public void processEvent(Event event) {
+    public void processEvent(ObjectInDataStoreStateMachine.Event event) {
         try {
             objectInStoreMgr.update(this, event);
         } catch (NoTransitionException e) {
@@ -461,5 +460,22 @@ public class TemplateObject implements TemplateInfo {
     @Override
     public Class<?> getEntityType() {
         return VirtualMachineTemplate.class;
+    }
+
+    @Override
+    public long getUpdatedCount() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public void incrUpdatedCount() {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public Date getUpdated() {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

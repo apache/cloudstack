@@ -19,6 +19,8 @@ package com.cloud.agent.manager;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
+import org.apache.cloudstack.storage.command.UploadStatusAnswer;
+import org.apache.cloudstack.storage.command.UploadStatusCommand;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -106,4 +108,7 @@ public interface MockStorageManager extends Manager {
     StoragePoolInfo getLocalStorage(String hostGuid, Long storageSize);
 
     CopyVolumeAnswer CopyVolume(CopyVolumeCommand cmd);
+
+    public UploadStatusAnswer getUploadStatus(UploadStatusCommand cmd);
+
 }

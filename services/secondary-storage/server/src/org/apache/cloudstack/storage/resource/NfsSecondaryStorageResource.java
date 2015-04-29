@@ -46,7 +46,31 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.storage.Storage;
+import com.cloud.storage.template.TemplateConstants;
+import com.cloud.utils.EncryptionUtil;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.http.HttpContentCompressor;
+import io.netty.handler.codec.http.HttpRequestDecoder;
+import io.netty.handler.codec.http.HttpResponseEncoder;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
+import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
+import org.apache.cloudstack.storage.template.UploadEntity;
+import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -65,6 +89,9 @@ import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
+import org.apache.cloudstack.storage.command.UploadStatusAnswer;
+import org.apache.cloudstack.storage.command.UploadStatusAnswer.UploadStatus;
+import org.apache.cloudstack.storage.command.UploadStatusCommand;
 import org.apache.cloudstack.storage.template.DownloadManager;
 import org.apache.cloudstack.storage.template.DownloadManagerImpl;
 import org.apache.cloudstack.storage.template.DownloadManagerImpl.ZfsPathParser;
@@ -135,6 +162,8 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.SecondaryStorageVm;
+import org.joda.time.DateTime;
+import org.joda.time.format.ISODateTimeFormat;
 
 public class NfsSecondaryStorageResource extends ServerResourceBase implements SecondaryStorageResource {
 
@@ -142,6 +171,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     private static final String TEMPLATE_ROOT_DIR = "template/tmpl";
     private static final String VOLUME_ROOT_DIR = "volumes";
+    private static final String POST_UPLOAD_KEY_LOCATION = "/etc/cloudstack/agent/ms-psk";
 
     int _timeout;
 
@@ -180,6 +210,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     protected String _parent = "/mnt/SecStorage";
     final private String _tmpltpp = "template.properties";
     protected String createTemplateFromSnapshotXenScript;
+    private HashMap<String,UploadEntity> uploadEntityStateMap = new HashMap<String,UploadEntity>();
+    private String _ssvmPSK = null;
 
     public void setParentPath(String path) {
         _parent = path;
@@ -233,6 +265,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return execute((CopyCommand)cmd);
         } else if (cmd instanceof DeleteCommand) {
             return execute((DeleteCommand)cmd);
+        } else if (cmd instanceof UploadStatusCommand) {
+            return execute((UploadStatusCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -1264,6 +1298,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (!_inSystemVM) {
             return new Answer(cmd, true, null);
         }
+        Answer answer = null;
         DataStoreTO dStore = cmd.getDataStore();
         if (dStore instanceof NfsTO) {
             String secUrl = cmd.getSecUrl();
@@ -1277,17 +1312,69 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 configCerts(cmd.getCerts());
 
                 nfsIps.add(nfsHostIp);
-                return new SecStorageSetupAnswer(dir);
+                answer = new SecStorageSetupAnswer(dir);
             } catch (Exception e) {
                 String msg = "GetRootDir for " + secUrl + " failed due to " + e.toString();
                 s_logger.error(msg);
-                return new Answer(cmd, false, msg);
+                answer = new Answer(cmd, false, msg);
 
             }
         } else {
             // TODO: what do we need to setup for S3/Swift, maybe need to mount
             // to some cache storage
-            return new Answer(cmd, true, null);
+            answer = new Answer(cmd, true, null);
+        }
+
+        savePostUploadPSK(cmd.getPostUploadKey());
+        startPostUploadServer();
+        return answer;
+    }
+
+    private void startPostUploadServer() {
+        final int PORT = 8210;
+        final int NO_OF_WORKERS = 15;
+        final EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+        final EventLoopGroup workerGroup = new NioEventLoopGroup(NO_OF_WORKERS);
+        final ServerBootstrap b = new ServerBootstrap();
+        final NfsSecondaryStorageResource storageResource = this;
+        b.group(bossGroup, workerGroup);
+        b.channel(NioServerSocketChannel.class);
+        b.handler(new LoggingHandler(LogLevel.INFO));
+        b.childHandler(new ChannelInitializer<SocketChannel>() {
+            @Override
+            protected void initChannel(SocketChannel ch) throws Exception {
+                ChannelPipeline pipeline = ch.pipeline();
+                pipeline.addLast(new HttpRequestDecoder());
+                pipeline.addLast(new HttpResponseEncoder());
+                pipeline.addLast(new HttpContentCompressor());
+                pipeline.addLast(new HttpUploadServerHandler(storageResource));
+            }
+        });
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    Channel ch = b.bind(PORT).sync().channel();
+                    s_logger.info(String.format("Started post upload server on port %d with %d workers",PORT,NO_OF_WORKERS));
+                    ch.closeFuture().sync();
+                } catch (InterruptedException e) {
+                    s_logger.info("Failed to start post upload server");
+                    s_logger.debug("Exception while starting post upload server", e);
+                } finally {
+                    bossGroup.shutdownGracefully();
+                    workerGroup.shutdownGracefully();
+                    s_logger.info("shutting down post upload server");
+                }
+            }
+        }.start();
+        s_logger.info("created a thread to start post upload server");
+    }
+
+    private void savePostUploadPSK(String psk) {
+        try {
+            FileUtils.writeStringToFile(new File(POST_UPLOAD_KEY_LOCATION),psk, "utf-8");
+        } catch (IOException ex) {
+            s_logger.debug("Failed to copy PSK to the file.", ex);
         }
     }
 
@@ -1589,6 +1676,32 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
 
         return new Answer(cmd, success, result);
+    }
+
+    private UploadStatusAnswer execute(UploadStatusCommand cmd) {
+        String entityUuid = cmd.getEntityUuid();
+        if (uploadEntityStateMap.containsKey(entityUuid)) {
+            UploadEntity uploadEntity = uploadEntityStateMap.get(entityUuid);
+            if (uploadEntity.getUploadState() == UploadEntity.Status.ERROR) {
+                uploadEntityStateMap.remove(entityUuid);
+                return new UploadStatusAnswer(cmd, UploadStatus.ERROR, uploadEntity.getErrorMessage());
+            } else if (uploadEntity.getUploadState() == UploadEntity.Status.COMPLETED) {
+                UploadStatusAnswer answer =  new UploadStatusAnswer(cmd, UploadStatus.COMPLETED);
+                answer.setVirtualSize(uploadEntity.getVirtualSize());
+                answer.setInstallPath(uploadEntity.getTmpltPath());
+                answer.setPhysicalSize(uploadEntity.getPhysicalSize());
+                answer.setDownloadPercent(100);
+                uploadEntityStateMap.remove(entityUuid);
+                return answer;
+            } else if (uploadEntity.getUploadState() == UploadEntity.Status.IN_PROGRESS) {
+                UploadStatusAnswer answer =  new UploadStatusAnswer(cmd, UploadStatus.IN_PROGRESS);
+                long downloadedSize = FileUtils.sizeOfDirectory(new File(uploadEntity.getInstallPathPrefix()));
+                int downloadPercent = (int) (100 * downloadedSize / uploadEntity.getContentLength());
+                answer.setDownloadPercent(Math.min(downloadPercent, 100));
+                return answer;
+            }
+        }
+        return new UploadStatusAnswer(cmd, UploadStatus.UNKNOWN);
     }
 
     protected GetStorageStatsAnswer execute(final GetStorageStatsCommand cmd) {
@@ -2478,5 +2591,319 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         } else {
             super.fillNetworkInformation(cmd);
         }
+    }
+
+    private String getScriptLocation(UploadEntity.ResourceType resourceType) {
+
+        String scriptsDir = (String) _params.get("template.scripts.dir");
+        if (scriptsDir == null) {
+            scriptsDir = "scripts/storage/secondary";
+        }
+        String scriptname = null;
+        if (resourceType == UploadEntity.ResourceType.VOLUME) {
+            scriptname = "createvolume.sh";
+        } else if (resourceType == UploadEntity.ResourceType.TEMPLATE) {
+            scriptname = "createtmplt.sh";
+        } else {
+            throw new InvalidParameterValueException("cannot find script for resource type: " + resourceType);
+        }
+        return Script.findScript(scriptsDir, scriptname);
+    }
+
+    public UploadEntity createUploadEntity(String uuid, String metadata, long contentLength) {
+        TemplateOrVolumePostUploadCommand cmd = getTemplateOrVolumePostUploadCmd(metadata);
+        UploadEntity uploadEntity = null;
+        if(cmd == null ){
+            String errorMessage = "unable decode and deserialize metadata.";
+            updateStateMapWithError(uuid, errorMessage);
+            throw new InvalidParameterValueException(errorMessage);
+        } else {
+            uuid = cmd.getEntityUUID();
+            if (isOneTimePostUrlUsed(cmd)) {
+                uploadEntity = uploadEntityStateMap.get(uuid);
+                StringBuilder errorMessage = new StringBuilder("The one time post url is already used");
+                if (uploadEntity != null) {
+                    errorMessage.append(" and the upload is in ").append(uploadEntity.getUploadState()).append(" state.");
+                }
+                throw new InvalidParameterValueException(errorMessage.toString());
+            }
+            int maxSizeInGB = Integer.valueOf(cmd.getMaxUploadSize());
+            int contentLengthInGB = getSizeInGB(contentLength);
+            if (contentLengthInGB > maxSizeInGB) {
+                String errorMessage = "Maximum file upload size exceeded. Content Length received: " + contentLengthInGB + "GB. Maximum allowed size: " + maxSizeInGB + "GB.";
+                updateStateMapWithError(uuid, errorMessage);
+                throw new InvalidParameterValueException(errorMessage);
+            }
+            checkSecondaryStorageResourceLimit(cmd, contentLengthInGB);
+            try {
+                String absolutePath = cmd.getAbsolutePath();
+                uploadEntity = new UploadEntity(uuid, cmd.getEntityId(), UploadEntity.Status.IN_PROGRESS, cmd.getName(), absolutePath);
+                uploadEntity.setMetaDataPopulated(true);
+                uploadEntity.setResourceType(UploadEntity.ResourceType.valueOf(cmd.getType()));
+                uploadEntity.setFormat(Storage.ImageFormat.valueOf(cmd.getImageFormat()));
+                //relative path with out ssvm mount info.
+                uploadEntity.setTemplatePath(absolutePath);
+                String dataStoreUrl = cmd.getDataTo();
+                String installPathPrefix = this.getRootDir(dataStoreUrl) + File.separator + absolutePath;
+                uploadEntity.setInstallPathPrefix(installPathPrefix);
+                uploadEntity.setHvm(cmd.getRequiresHvm());
+                uploadEntity.setChksum(cmd.getChecksum());
+                uploadEntity.setMaxSizeInGB(maxSizeInGB);
+                uploadEntity.setDescription(cmd.getDescription());
+                uploadEntity.setContentLength(contentLength);
+                // create a install dir
+                if (!_storage.exists(installPathPrefix)) {
+                    _storage.mkdir(installPathPrefix);
+                }
+                uploadEntityStateMap.put(uuid, uploadEntity);
+            } catch (Exception e) {
+                //upload entity will be null incase an exception occurs and the handler will not proceed.
+                s_logger.error("exception occurred while creating upload entity ", e);
+                updateStateMapWithError(uuid, e.getMessage());
+            }
+        }
+        return uploadEntity;
+    }
+
+    private synchronized void checkSecondaryStorageResourceLimit(TemplateOrVolumePostUploadCommand cmd, int contentLengthInGB) {
+        String rootDir = this.getRootDir(cmd.getDataTo()) + File.separator;
+        long accountId = cmd.getAccountId();
+
+        long accountTemplateDirSize = 0;
+        File accountTemplateDir = new File(rootDir + getTemplatePathForAccount(accountId));
+        if(accountTemplateDir.exists()) {
+            FileUtils.sizeOfDirectory(accountTemplateDir);
+        }
+        long accountVolumeDirSize = 0;
+        File accountVolumeDir = new File(rootDir + getVolumePathForAccount(accountId));
+        if(accountVolumeDir.exists()) {
+            accountVolumeDirSize = FileUtils.sizeOfDirectory(accountVolumeDir);
+        }
+        long accountSnapshotDirSize = 0;
+        File accountSnapshotDir = new File(rootDir + getSnapshotPathForAccount(accountId));
+        if(accountSnapshotDir.exists()) {
+            accountSnapshotDirSize = FileUtils.sizeOfDirectory(accountSnapshotDir);
+        }
+        s_logger.debug("accountTemplateDirSize: " + accountTemplateDirSize + " accountSnapshotDirSize: " +accountSnapshotDirSize + " accountVolumeDirSize: " +
+                           accountVolumeDirSize);
+
+        int accountDirSizeInGB = getSizeInGB(accountTemplateDirSize + accountSnapshotDirSize + accountVolumeDirSize);
+        int defaultMaxAccountSecondaryStorageInGB = Integer.parseInt(cmd.getDefaultMaxAccountSecondaryStorage());
+
+        if ((accountDirSizeInGB + contentLengthInGB) > defaultMaxAccountSecondaryStorageInGB) {
+            s_logger.error("accountDirSizeInGb: " + accountDirSizeInGB + " defaultMaxAccountSecondaryStorageInGB: " + defaultMaxAccountSecondaryStorageInGB + " contentLengthInGB:"
+                    + contentLengthInGB);
+            String errorMessage = "Maximum number of resources of type secondary_storage for account has exceeded";
+            updateStateMapWithError(cmd.getEntityUUID(), errorMessage);
+            throw new InvalidParameterValueException(errorMessage);
+        }
+    }
+
+    private String getVolumePathForAccount(long accountId) {
+        return TemplateConstants.DEFAULT_VOLUME_ROOT_DIR + "/" + accountId;
+    }
+
+    private String getTemplatePathForAccount(long accountId) {
+        return TemplateConstants.DEFAULT_TMPLT_ROOT_DIR + "/" + TemplateConstants.DEFAULT_TMPLT_FIRST_LEVEL_DIR + accountId;
+    }
+
+    private String getSnapshotPathForAccount(long accountId) {
+        return TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR + "/" + accountId;
+    }
+
+    private boolean isOneTimePostUrlUsed(TemplateOrVolumePostUploadCommand cmd) {
+        String uuid = cmd.getEntityUUID();
+        String uploadPath = this.getRootDir(cmd.getDataTo()) + File.separator + cmd.getAbsolutePath();
+        return uploadEntityStateMap.containsKey(uuid) || new File(uploadPath).exists();
+    }
+
+    private int getSizeInGB(long sizeInBytes) {
+        return (int)Math.ceil(sizeInBytes * 1.0d / (1024 * 1024 * 1024));
+    }
+
+    public String postUpload(String uuid, String filename) {
+        UploadEntity uploadEntity = uploadEntityStateMap.get(uuid);
+        int installTimeoutPerGig = 180 * 60 * 1000;
+
+        String resourcePath = uploadEntity.getInstallPathPrefix();
+        String finalResourcePath = uploadEntity.getTmpltPath(); // template download
+        UploadEntity.ResourceType resourceType = uploadEntity.getResourceType();
+
+        String fileSavedTempLocation = uploadEntity.getInstallPathPrefix() + "/" + filename;
+
+        String uploadedFileExtension = FilenameUtils.getExtension(filename);
+        String userSelectedFormat= uploadEntity.getFormat().toString();
+        if(uploadedFileExtension.equals("zip") || uploadedFileExtension.equals("bz2") || uploadedFileExtension.equals("gz")) {
+            userSelectedFormat += "." + uploadedFileExtension;
+        }
+        String formatError = ImageStoreUtil.checkTemplateFormat(fileSavedTempLocation, userSelectedFormat);
+        if(StringUtils.isNotBlank(formatError)) {
+            String errorString = "File type mismatch between uploaded file and selected format. Selected file format: " + userSelectedFormat + ". Received: " + formatError;
+            s_logger.error(errorString);
+            return errorString;
+        }
+
+        int imgSizeGigs = getSizeInGB(_storage.getSize(fileSavedTempLocation));
+        int maxSize = uploadEntity.getMaxSizeInGB();
+        if(imgSizeGigs > maxSize) {
+            String errorMessage = "Maximum file upload size exceeded. Physical file size: " + imgSizeGigs + "GB. Maximum allowed size: " + maxSize + "GB.";
+            s_logger.error(errorMessage);
+            return errorMessage;
+        }
+        imgSizeGigs++; // add one just in case
+        long timeout = (long)imgSizeGigs * installTimeoutPerGig;
+        Script scr = new Script(getScriptLocation(resourceType), timeout, s_logger);
+        scr.add("-s", Integer.toString(imgSizeGigs));
+        scr.add("-S", Long.toString(UploadEntity.s_maxTemplateSize));
+        if (uploadEntity.getDescription() != null && uploadEntity.getDescription().length() > 1) {
+            scr.add("-d", uploadEntity.getDescription());
+        }
+        if (uploadEntity.isHvm()) {
+            scr.add("-h");
+        }
+        String checkSum = uploadEntity.getChksum();
+        if (StringUtils.isNotBlank(checkSum)) {
+            scr.add("-c", checkSum);
+        }
+
+        // add options common to ISO and template
+        String extension = uploadEntity.getFormat().getFileExtension();
+        String templateName = "";
+        if (extension.equals("iso")) {
+            templateName = uploadEntity.getUuid().trim().replace(" ", "_");
+        } else {
+            templateName = java.util.UUID.nameUUIDFromBytes((uploadEntity.getFilename() + System.currentTimeMillis()).getBytes()).toString();
+        }
+
+        // run script to mv the temporary template file to the final template
+        // file
+        String templateFilename = templateName + "." + extension;
+        uploadEntity.setTemplatePath(finalResourcePath + "/" + templateFilename);
+        scr.add("-n", templateFilename);
+
+        scr.add("-t", resourcePath);
+        scr.add("-f", fileSavedTempLocation); // this is the temporary
+        // template file downloaded
+        if (uploadEntity.getChksum() != null && uploadEntity.getChksum().length() > 1) {
+            scr.add("-c", uploadEntity.getChksum());
+        }
+        scr.add("-u"); // cleanup
+        String result;
+        result = scr.execute();
+
+        if (result != null) {
+            return result;
+        }
+
+        // Set permissions for the downloaded template
+        File downloadedTemplate = new File(resourcePath + "/" + templateFilename);
+        _storage.setWorldReadableAndWriteable(downloadedTemplate);
+
+        // Set permissions for template/volume.properties
+        String propertiesFile = resourcePath;
+        if (resourceType == UploadEntity.ResourceType.TEMPLATE) {
+            propertiesFile += "/template.properties";
+        } else {
+            propertiesFile += "/volume.properties";
+        }
+        File templateProperties = new File(propertiesFile);
+        _storage.setWorldReadableAndWriteable(templateProperties);
+
+        TemplateLocation loc = new TemplateLocation(_storage, resourcePath);
+        try {
+            loc.create(uploadEntity.getEntityId(), true, uploadEntity.getFilename());
+        } catch (IOException e) {
+            s_logger.warn("Something is wrong with template location " + resourcePath, e);
+            loc.purge();
+            return "Unable to upload due to " + e.getMessage();
+        }
+
+        Map<String, Processor> processors = _dlMgr.getProcessors();
+        for (Processor processor :  processors.values()) {
+            FormatInfo info = null;
+            try {
+                info = processor.process(resourcePath, null, templateName);
+            } catch (InternalErrorException e) {
+                s_logger.error("Template process exception ", e);
+                return e.toString();
+            }
+            if (info != null) {
+                loc.addFormat(info);
+                uploadEntity.setVirtualSize(info.virtualSize);
+                uploadEntity.setPhysicalSize(info.size);
+                break;
+            }
+        }
+
+        if (!loc.save()) {
+            s_logger.warn("Cleaning up because we're unable to save the formats");
+            loc.purge();
+        }
+        uploadEntity.setStatus(UploadEntity.Status.COMPLETED);
+        uploadEntityStateMap.put(uploadEntity.getUuid(), uploadEntity);
+        return null;
+    }
+
+    private String getPostUploadPSK() {
+        if(_ssvmPSK == null ) {
+            try {
+                _ssvmPSK = FileUtils.readFileToString(new File(POST_UPLOAD_KEY_LOCATION), "utf-8");
+            } catch (IOException e) {
+                s_logger.debug("Error while reading SSVM PSK from location " + POST_UPLOAD_KEY_LOCATION, e);
+            }
+        }
+        return _ssvmPSK;
+    }
+
+    public void updateStateMapWithError(String uuid,String errorMessage) {
+        UploadEntity uploadEntity=null;
+        if (uploadEntityStateMap.get(uuid)!=null) {
+            uploadEntity=uploadEntityStateMap.get(uuid);
+        }else {
+            uploadEntity= new UploadEntity();
+        }
+        uploadEntity.setStatus(UploadEntity.Status.ERROR);
+        uploadEntity.setErrorMessage(errorMessage);
+        uploadEntityStateMap.put(uuid, uploadEntity);
+    }
+
+    public void validatePostUploadRequest(String signature, String metadata, String timeout, String hostname,long contentLength, String uuid) throws InvalidParameterValueException{
+        // check none of the params are empty
+        if(StringUtils.isEmpty(signature) || StringUtils.isEmpty(metadata) || StringUtils.isEmpty(timeout)) {
+            updateStateMapWithError(uuid,"signature, metadata and expires are compulsory fields.");
+            throw new InvalidParameterValueException("signature, metadata and expires are compulsory fields.");
+        }
+
+        //check that contentLength exists and is greater than zero
+        if (contentLength <= 0) {
+            throw new InvalidParameterValueException("content length is not set in the request or has invalid value.");
+        }
+
+        //validate signature
+        String fullUrl = "https://" + hostname + "/upload/" + uuid;
+        String computedSignature = EncryptionUtil.generateSignature(metadata + fullUrl + timeout, getPostUploadPSK());
+        boolean isSignatureValid = computedSignature.equals(signature);
+        if(!isSignatureValid) {
+            updateStateMapWithError(uuid,"signature validation failed.");
+            throw new InvalidParameterValueException("signature validation failed.");
+        }
+
+        //validate timeout
+        DateTime timeoutDateTime = DateTime.parse(timeout, ISODateTimeFormat.dateTime());
+        if(timeoutDateTime.isBeforeNow()) {
+            updateStateMapWithError(uuid,"request not valid anymore.");
+            throw new InvalidParameterValueException("request not valid anymore.");
+        }
+    }
+
+    private TemplateOrVolumePostUploadCommand getTemplateOrVolumePostUploadCmd(String metadata) {
+        TemplateOrVolumePostUploadCommand cmd = null;
+        try {
+            Gson gson = new GsonBuilder().create();
+            cmd = gson.fromJson(EncryptionUtil.decodeData(metadata, getPostUploadPSK()), TemplateOrVolumePostUploadCommand.class);
+        } catch(Exception ex) {
+            s_logger.error("exception while decoding and deserialising metadata", ex);
+        }
+        return cmd;
     }
 }

@@ -25,6 +25,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 
@@ -80,4 +81,6 @@ public interface TemplateDataStoreDao extends GenericDao<TemplateDataStoreVO, Lo
     void removeByTemplateStore(long templateId, long imageStoreId);
 
     void expireDnldUrlsForZone(Long dcId);
+
+    List<TemplateDataStoreVO> listByTemplateState(VirtualMachineTemplate.State... states);
 }

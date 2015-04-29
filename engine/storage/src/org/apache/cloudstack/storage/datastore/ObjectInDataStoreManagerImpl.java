@@ -89,6 +89,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         stateMachines = new StateMachine2<State, Event, DataObjectInStore>();
         stateMachines.addTransition(State.Allocated, Event.CreateOnlyRequested, State.Creating);
         stateMachines.addTransition(State.Allocated, Event.DestroyRequested, State.Destroying);
+        stateMachines.addTransition(State.Allocated, Event.OperationFailed, State.Failed);
         stateMachines.addTransition(State.Creating, Event.OperationFailed, State.Allocated);
         stateMachines.addTransition(State.Creating, Event.OperationSuccessed, State.Ready);
         stateMachines.addTransition(State.Ready, Event.CopyingRequested, State.Copying);
@@ -98,6 +99,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         stateMachines.addTransition(State.Destroying, Event.DestroyRequested, State.Destroying);
         stateMachines.addTransition(State.Destroying, Event.OperationSuccessed, State.Destroyed);
         stateMachines.addTransition(State.Destroying, Event.OperationFailed, State.Destroying);
+        stateMachines.addTransition(State.Failed, Event.DestroyRequested, State.Destroying);
         // TODO: further investigate why an extra event is sent when it is
         // alreay Ready for DownloadListener
         stateMachines.addTransition(State.Ready, Event.OperationSuccessed, State.Ready);

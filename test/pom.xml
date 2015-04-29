@@ -64,11 +64,6 @@
             <artifactId>selenium-java-client-driver</artifactId>
             <version>1.0.1</version>
         </dependency>
-        <dependency>
-            <groupId>commons-httpclient</groupId>
-            <artifactId>commons-httpclient</artifactId>
-            <version>${cs.commons-httpclient.version}</version>
-        </dependency>
     </dependencies>
     <build>
         <defaultGoal>compile</defaultGoal>

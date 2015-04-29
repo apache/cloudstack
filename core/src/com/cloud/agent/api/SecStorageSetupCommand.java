@@ -27,6 +27,7 @@ public class SecStorageSetupCommand extends Command {
     private DataStoreTO store;
     private String secUrl;
     private KeystoreManager.Certificates certs;
+    private String postUploadKey;
 
 
     public SecStorageSetupCommand() {
@@ -66,4 +67,11 @@ public class SecStorageSetupCommand extends Command {
         this.store = store;
     }
 
+    public String getPostUploadKey() {
+        return postUploadKey;
+    }
+
+    public void setPostUploadKey(String postUploadKey) {
+        this.postUploadKey = postUploadKey;
+    }
 }

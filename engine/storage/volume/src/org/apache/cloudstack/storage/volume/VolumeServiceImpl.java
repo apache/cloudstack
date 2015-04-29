@@ -28,6 +28,7 @@ import javax.inject.Inject;
 
 import com.cloud.offering.DiskOffering;
 import com.cloud.storage.RegisterVolumePayload;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -1226,6 +1227,19 @@ public class VolumeServiceImpl implements VolumeService {
         return future;
     }
 
+    @Override
+    public Pair<EndPoint,DataObject> registerVolumeForPostUpload(VolumeInfo volume, DataStore store) {
+
+        EndPoint ep = _epSelector.select(store);
+        if (ep == null) {
+            String errorMessage = "There is no secondary storage VM for image store " + store.getName();
+            s_logger.warn(errorMessage);
+            throw new CloudRuntimeException(errorMessage);
+        }
+        DataObject volumeOnStore = store.create(volume);
+        return new Pair<>(ep,volumeOnStore);
+    }
+
     protected Void registerVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> callback, CreateVolumeContext<VolumeApiResult> context) {
         CreateCmdResult result = callback.getResult();
         VolumeObject vo = (VolumeObject)context.volume;
@@ -1391,7 +1405,7 @@ public class VolumeServiceImpl implements VolumeService {
                     for (VolumeDataStoreVO volumeStore : dbVolumes) {
                         VolumeVO volume = volDao.findById(volumeStore.getVolumeId());
                         if (volume == null) {
-                            s_logger.warn("Volume_store_ref shows that volume " + volumeStore.getVolumeId() + " is on image store " + storeId +
+                            s_logger.warn("Volume_store_ref table shows that volume " + volumeStore.getVolumeId() + " is on image store " + storeId +
                                     ", but the volume is not found in volumes table, potentially some bugs in deleteVolume, so we just treat this volume to be deleted and mark it as destroyed");
                             volumeStore.setDestroyed(true);
                             _volumeStoreDao.update(volumeStore.getId(), volumeStore);
@@ -1407,20 +1421,23 @@ public class VolumeServiceImpl implements VolumeService {
                             }
                             if (volInfo.isCorrupted()) {
                                 volumeStore.setDownloadState(Status.DOWNLOAD_ERROR);
-                                String msg = "Volume " + volume.getUuid() + " is corrupted on image store ";
+                                String msg = "Volume " + volume.getUuid() + " is corrupted on image store";
                                 volumeStore.setErrorString(msg);
                                 s_logger.info(msg);
-                                if (volumeStore.getDownloadUrl() == null) {
-                                    msg =
-                                            "Volume (" + volume.getUuid() + ") with install path " + volInfo.getInstallPath() +
-                                            "is corrupted, please check in image store: " + volumeStore.getDataStoreId();
+                                if (volume.getState() == State.NotUploaded || volume.getState() == State.UploadInProgress) {
+                                    s_logger.info("Volume Sync found " + volume.getUuid() + " uploaded using SSVM on image store " + storeId + " as corrupted, marking it as failed");
+                                    _volumeStoreDao.update(volumeStore.getId(), volumeStore);
+                                    // mark volume as failed, so that storage GC will clean it up
+                                    VolumeObject volObj = (VolumeObject)volFactory.getVolume(volume.getId());
+                                    volObj.processEvent(Event.OperationFailed);
+                                } else if (volumeStore.getDownloadUrl() == null) {
+                                    msg = "Volume (" + volume.getUuid() + ") with install path " + volInfo.getInstallPath() + " is corrupted, please check in image store: " + volumeStore.getDataStoreId();
                                     s_logger.warn(msg);
                                 } else {
                                     s_logger.info("Removing volume_store_ref entry for corrupted volume " + volume.getName());
                                     _volumeStoreDao.remove(volumeStore.getId());
                                     toBeDownloaded.add(volumeStore);
                                 }
-
                             } else { // Put them in right status
                                 volumeStore.setDownloadPercent(100);
                                 volumeStore.setDownloadState(Status.DOWNLOADED);
@@ -1437,15 +1454,18 @@ public class VolumeServiceImpl implements VolumeService {
                                     volDao.update(volumeStore.getVolumeId(), volume);
                                 }
 
+                                if (volume.getState() == State.NotUploaded || volume.getState() == State.UploadInProgress) {
+                                    VolumeObject volObj = (VolumeObject)volFactory.getVolume(volume.getId());
+                                    volObj.processEvent(Event.OperationSuccessed);
+                                }
+
                                 if (volInfo.getSize() > 0) {
                                     try {
                                         _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(volume.getAccountId()),
                                                 com.cloud.configuration.Resource.ResourceType.secondary_storage, volInfo.getSize() - volInfo.getPhysicalSize());
                                     } catch (ResourceAllocationException e) {
                                         s_logger.warn(e.getMessage());
-                                        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED, volume.getDataCenterId(), volume.getPodId(),
-                                                e.getMessage(),
-                                                e.getMessage());
+                                        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED, volume.getDataCenterId(), volume.getPodId(), e.getMessage(), e.getMessage());
                                     } finally {
                                         _resourceLimitMgr.recalculateResourceCount(volume.getAccountId(), volume.getDomainId(),
                                                 com.cloud.configuration.Resource.ResourceType.secondary_storage.getOrdinal());
@@ -1453,18 +1473,28 @@ public class VolumeServiceImpl implements VolumeService {
                                 }
                             }
                             continue;
+                        } else if (volume.getState() == State.NotUploaded || volume.getState() == State.UploadInProgress) { // failed uploads through SSVM
+                            s_logger.info("Volume Sync did not find " + volume.getUuid() + " uploaded using SSVM on image store " + storeId + ", marking it as failed");
+                            toBeDownloaded.remove(volumeStore);
+                            volumeStore.setDownloadState(Status.DOWNLOAD_ERROR);
+                            String msg = "Volume " + volume.getUuid() + " is corrupted on image store";
+                            volumeStore.setErrorString(msg);
+                            _volumeStoreDao.update(volumeStore.getId(), volumeStore);
+                            // mark volume as failed, so that storage GC will clean it up
+                            VolumeObject volObj = (VolumeObject)volFactory.getVolume(volume.getId());
+                            volObj.processEvent(Event.OperationFailed);
+                            continue;
                         }
                         // Volume is not on secondary but we should download.
                         if (volumeStore.getDownloadState() != Status.DOWNLOADED) {
-                            s_logger.info("Volume Sync did not find " + volume.getName() + " ready on image store " + storeId +
-                                    ", will request download to start/resume shortly");
+                            s_logger.info("Volume Sync did not find " + volume.getName() + " ready on image store " + storeId + ", will request download to start/resume shortly");
                         }
                     }
 
                     // Download volumes which haven't been downloaded yet.
                     if (toBeDownloaded.size() > 0) {
                         for (VolumeDataStoreVO volumeHost : toBeDownloaded) {
-                            if (volumeHost.getDownloadUrl() == null) { // If url is null we
+                            if (volumeHost.getDownloadUrl() == null) { // If url is null, skip downloading
                                 s_logger.info("Skip downloading volume " + volumeHost.getVolumeId() + " since no download url is specified.");
                                 continue;
                             }
@@ -1472,8 +1502,7 @@ public class VolumeServiceImpl implements VolumeService {
                             // if this is a region store, and there is already an DOWNLOADED entry there without install_path information, which
                             // means that this is a duplicate entry from migration of previous NFS to staging.
                             if (store.getScope().getScopeType() == ScopeType.REGION) {
-                                if (volumeHost.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED
-                                        && volumeHost.getInstallPath() == null) {
+                                if (volumeHost.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED && volumeHost.getInstallPath() == null) {
                                     s_logger.info("Skip sync volume for migration of previous NFS to object store");
                                     continue;
                                 }
@@ -1498,9 +1527,7 @@ public class VolumeServiceImpl implements VolumeService {
                         Long uniqueName = entry.getKey();
                         TemplateProp tInfo = entry.getValue();
 
-                        //we cannot directly call expungeVolumeAsync here to
-                        // reuse delete logic since in this case, our db does not have
-                        // this template at all.
+                        // we cannot directly call expungeVolumeAsync here to reuse delete logic since in this case db does not have this volume at all.
                         VolumeObjectTO tmplTO = new VolumeObjectTO();
                         tmplTO.setDataStore(store.getTO());
                         tmplTO.setPath(tInfo.getInstallPath());

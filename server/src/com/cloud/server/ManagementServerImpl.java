@@ -41,6 +41,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.usage.RemoveRawUsageRecordsCmd;
 import org.apache.cloudstack.api.command.user.snapshot.UpdateSnapshotPolicyCmd;
+import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
+import org.apache.cloudstack.api.command.user.volume.GetUploadParamsForVolumeCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -3014,7 +3016,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpdateVPCCmdByAdmin.class);
         cmdList.add(UpdateLBStickinessPolicyCmd.class);
         cmdList.add(UpdateLBHealthCheckPolicyCmd.class);
-
+        cmdList.add(GetUploadParamsForTemplateCmd.class);
+        cmdList.add(GetUploadParamsForVolumeCmd.class);
         return cmdList;
     }
 
