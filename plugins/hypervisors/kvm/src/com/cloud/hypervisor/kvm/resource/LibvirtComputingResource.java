@@ -867,7 +867,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (cpuFeatures != null) {
             _cpuFeatures = new ArrayList<String>();
             for (String feature: cpuFeatures.split(" ")) {
-                if (feature != null || !feature.isEmpty()) {
+                if (!feature.isEmpty()) {
                     _cpuFeatures.add(feature);
                 }
             }
