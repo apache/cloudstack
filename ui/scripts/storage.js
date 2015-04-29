@@ -68,7 +68,7 @@
                     actions: {
                         // Add volume
                         add: {
-                            label: 'Add',
+                            label: 'label.add',
 
                             preFilter: function(args) {
                                 return !args.context.instances;

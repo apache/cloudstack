@@ -107,7 +107,7 @@
                                 }
                             },
                             createForm: {
-                                title: 'Register Template from URL',
+                                title: 'label.action.register.template',
                                 docID: 'helpNetworkOfferingName',
                                 preFilter: cloudStack.preFilter.createTemplate,
                                 fields: {
