@@ -1166,7 +1166,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         ResourceState currentState = host.getResourceState();
         ResourceState nextState = currentState.getNextState(event);
         if (nextState == null) {
-            throw new NoTransitionException("No next resource state found for current state =" + currentState + " event =" + event);
+            throw new NoTransitionException("No next resource state found for current state = " + currentState + " event = " + event);
         }
 
         // TO DO - Make it more granular and have better conversion into capacity type
