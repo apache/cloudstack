@@ -92,7 +92,7 @@ public abstract class AbstractInvestigatorImpl extends AdapterBase implements In
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("host (" + testHostIp + ") returns null answer");
                 }
-                return null;
+                return Status.Alert;
             }
 
             if (pingTestAnswer.getResult()) {
@@ -103,14 +103,20 @@ public abstract class AbstractInvestigatorImpl extends AdapterBase implements In
                 return Status.Up;
             } else {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("host (" + testHostIp + ") cannot be pinged, returning null ('I don't know')");
+                    s_logger.debug("host (" + testHostIp + ") cannot be pinged, returning Alert state");
                 }
-                return null;
+                return Status.Alert;
             }
         } catch (AgentUnavailableException e) {
-            return null;
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("host (" + testHostIp + "): " + e.getLocalizedMessage() + ", returning Disconnected state");
+            }
+            return Status.Disconnected;
         } catch (OperationTimedoutException e) {
-            return null;
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("host (" + testHostIp + "): " + e.getLocalizedMessage() + ", returning Alert state");
+            }
+            return Status.Alert;
         }
     }
 }
