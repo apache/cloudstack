@@ -16,7 +16,7 @@
 # under the License.
 
 %define _pythonparamiko %{nil}
-%define _javaversion java => 1.7.0
+%define _javaversion java-1.7.0-openjdk
 %define _tomcatversion tomcat => 7.0
 %define _vlanconfigtool iproute
 %define _tomcatpathname tomcat
