@@ -435,6 +435,7 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
     ScheduledExecutorService _checkExecutor;
     ScheduledExecutorService _networkStatsUpdateExecutor;
     ExecutorService _rvrStatusUpdateExecutor;
+    ExecutorService _rebootRouterExecutor;
 
     Account _systemAcct;
 
@@ -688,6 +689,7 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RouterMonitor"));
         _checkExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RouterStatusMonitor"));
         _networkStatsUpdateExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("NetworkStatsUpdater"));
+        _rebootRouterExecutor = Executors.newCachedThreadPool(new NamedThreadFactory("RebootRouterTask"));
 
         VirtualMachine.State.getStateMachine().registerListener(this);
 
@@ -4494,7 +4496,7 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
                         // 2. If VM is in running state in CS and there is a 'PowerOn' report from new host
                         if (hostId == null || (hostId.longValue() != powerHostId.longValue())) {
                             s_logger.info("Schedule a router reboot task as router " + vo.getId() + " is powered-on out-of-band, need to reboot to refresh network rules");
-                            _executor.schedule(new RebootTask(vo.getId()), 1000, TimeUnit.MICROSECONDS);
+                            _rebootRouterExecutor.execute(new RebootTask(vo.getId()));
                         }
                     }
                 }
