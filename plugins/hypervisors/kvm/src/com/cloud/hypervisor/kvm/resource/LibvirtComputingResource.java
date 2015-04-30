@@ -95,11 +95,8 @@ import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
-import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.FenceAnswer;
 import com.cloud.agent.api.FenceCommand;
-import com.cloud.agent.api.GetStorageStatsAnswer;
-import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
@@ -134,7 +131,6 @@ import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
-import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.check.CheckSshAnswer;
@@ -1298,8 +1294,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
             if (cmd instanceof CreatePrivateTemplateFromVolumeCommand) {
                 return execute((CreatePrivateTemplateFromVolumeCommand)cmd);
-            } else if (cmd instanceof GetStorageStatsCommand) {
-                return execute((GetStorageStatsCommand)cmd);
             } else if (cmd instanceof ManageSnapshotCommand) {
                 return execute((ManageSnapshotCommand)cmd);
             } else if (cmd instanceof BackupSnapshotCommand) {
@@ -1308,16 +1302,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((CreateVolumeFromSnapshotCommand)cmd);
             } else if (cmd instanceof CreatePrivateTemplateFromSnapshotCommand) {
                 return execute((CreatePrivateTemplateFromSnapshotCommand)cmd);
-            } else if (cmd instanceof UpgradeSnapshotCommand) {
-                return execute((UpgradeSnapshotCommand)cmd);
             } else if (cmd instanceof CreateStoragePoolCommand) {
                 return execute((CreateStoragePoolCommand)cmd);
             } else if (cmd instanceof ModifyStoragePoolCommand) {
                 return execute((ModifyStoragePoolCommand)cmd);
             } else if (cmd instanceof SecurityGroupRulesCmd) {
                 return execute((SecurityGroupRulesCmd)cmd);
-            } else if (cmd instanceof DeleteStoragePoolCommand) {
-                return execute((DeleteStoragePoolCommand)cmd);
             } else if (cmd instanceof FenceCommand) {
                 return execute((FenceCommand)cmd);
             } else if (cmd instanceof StartCommand) {
@@ -1654,15 +1644,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (secondaryStoragePool != null) {
                 _storagePoolMgr.deleteStoragePool(secondaryStoragePool.getType(), secondaryStoragePool.getUuid());
             }
-        }
-    }
-
-    protected Answer execute(final DeleteStoragePoolCommand cmd) {
-        try {
-            _storagePoolMgr.deleteStoragePool(cmd.getPool().getType(), cmd.getPool().getUuid());
-            return new Answer(cmd);
-        } catch (final CloudRuntimeException e) {
-            return new Answer(cmd, false, e.toString());
         }
     }
 
@@ -2520,11 +2501,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    protected Answer execute(final UpgradeSnapshotCommand cmd) {
-
-        return new Answer(cmd, true, "success");
-    }
-
     protected CreatePrivateTemplateAnswer execute(final CreatePrivateTemplateFromSnapshotCommand cmd) {
         final String templateFolder = cmd.getAccountId() + File.separator + cmd.getNewTemplateId();
         final String templateInstallFolder = "template/tmpl/" + templateFolder;
@@ -2579,15 +2555,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (snapshotPool != null) {
                 _storagePoolMgr.deleteStoragePool(snapshotPool.getType(), snapshotPool.getUuid());
             }
-        }
-    }
-
-    protected GetStorageStatsAnswer execute(final GetStorageStatsCommand cmd) {
-        try {
-            final KVMStoragePool sp = _storagePoolMgr.getStoragePool(cmd.getPooltype(), cmd.getStorageId(), true);
-            return new GetStorageStatsAnswer(cmd, sp.getCapacity(), sp.getUsed());
-        } catch (final CloudRuntimeException e) {
-            return new GetStorageStatsAnswer(cmd, e.toString());
         }
     }
 

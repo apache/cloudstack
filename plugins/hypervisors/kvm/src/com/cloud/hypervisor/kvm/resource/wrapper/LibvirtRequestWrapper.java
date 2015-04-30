@@ -26,7 +26,9 @@ import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.GetHostStatsCommand;
+import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortCommand;
@@ -39,6 +41,7 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.storage.CreateCommand;
@@ -88,6 +91,9 @@ public class LibvirtRequestWrapper extends RequestWrapper {
         linbvirtCommands.put(CreateCommand.class, new LibvirtCreateCommandWrapper());
         linbvirtCommands.put(DestroyCommand.class, new LibvirtDestroyCommandWrapper());
         linbvirtCommands.put(PrimaryStorageDownloadCommand.class, new LibvirtPrimaryStorageDownloadCommandWrapper());
+        linbvirtCommands.put(GetStorageStatsCommand.class, new LibvirtGetStorageStatsCommandWrapper());
+        linbvirtCommands.put(UpgradeSnapshotCommand.class, new LibvirtUpgradeSnapshotCommandWrapper());
+        linbvirtCommands.put(DeleteStoragePoolCommand.class, new LibvirtDeleteStoragePoolCommandWrapper());
 
         resources.put(LibvirtComputingResource.class, linbvirtCommands);
     }

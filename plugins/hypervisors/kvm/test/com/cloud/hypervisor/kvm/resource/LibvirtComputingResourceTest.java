@@ -68,7 +68,9 @@ import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
+import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.GetHostStatsCommand;
+import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortCommand;
@@ -81,12 +83,14 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
@@ -557,6 +561,40 @@ public class LibvirtComputingResourceTest {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testGetVmDiskStatsCommandException() {
+        final Connect conn = Mockito.mock(Connect.class);
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+
+        final String vmName = "Test";
+        final String uuid = "e8d6b4d0-bc6d-4613-b8bb-cb9e0600f3c6";
+        final List<String> vms = new ArrayList<String>();
+        vms.add(vmName);
+
+        final GetVmDiskStatsCommand command = new GetVmDiskStatsCommand(vms, uuid, "hostname");
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        try {
+            when(libvirtConnectionWrapper.getConnection()).thenThrow(LibvirtException.class);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnection();
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
     @Test
     public void testRebootCommand() {
         final Connect conn = Mockito.mock(Connect.class);
@@ -611,6 +649,39 @@ public class LibvirtComputingResourceTest {
 
         verify(libvirtComputingResource, times(1)).getVirtRouterResource();
 
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(vmName);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testRebootRouterCommandConnect() {
+        final VirtualRoutingResource routingResource = Mockito.mock(VirtualRoutingResource.class);
+        final Connect conn = Mockito.mock(Connect.class);
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+
+        final String vmName = "Test";
+        final RebootRouterCommand command = new RebootRouterCommand(vmName, "192.168.0.10");
+
+        when(libvirtComputingResource.getVirtRouterResource()).thenReturn(routingResource);
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        when(routingResource.connect(command.getPrivateIpAddress())).thenReturn(true);
+        try {
+            when(libvirtConnectionWrapper.getConnectionByVmName(vmName)).thenReturn(conn);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getVirtRouterResource();
         verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
         try {
             verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(vmName);
@@ -1532,5 +1603,109 @@ public class LibvirtComputingResourceTest {
 
         verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
         verify(storagePoolMgr, times(1)).getStoragePool(command.getPool().getType(), command.getPoolUuid());
+    }
+
+    @Test
+    public void testGetStorageStatsCommand() {
+        final DataStoreTO store = Mockito.mock(DataStoreTO.class);
+        final GetStorageStatsCommand command = new GetStorageStatsCommand(store );
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool secondaryPool = Mockito.mock(KVMStoragePool.class);
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.getStoragePool(command.getPooltype(), command.getStorageId(), true)).thenReturn(secondaryPool);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(storagePoolMgr, times(1)).getStoragePool(command.getPooltype(), command.getStorageId(), true);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testGetStorageStatsCommandException() {
+        final DataStoreTO store = Mockito.mock(DataStoreTO.class);
+        final GetStorageStatsCommand command = new GetStorageStatsCommand(store );
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenThrow(CloudRuntimeException.class);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+    }
+
+    @Test
+    public void testUpgradeSnapshotCommand() {
+        final StoragePool pool = null;
+        final String secondaryStoragePoolURL = null;
+        final Long dcId = null;
+        final Long accountId = null;
+        final Long volumeId = null;
+        final Long templateId = null;
+        final Long tmpltAccountId = null;
+        final String volumePath = null;
+        final String snapshotUuid = null;
+        final String snapshotName = null;
+        final String version = null;
+
+        final UpgradeSnapshotCommand command = new UpgradeSnapshotCommand(pool, secondaryStoragePoolURL, dcId, accountId, volumeId, templateId, tmpltAccountId, volumePath, snapshotUuid, snapshotName, version);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testDeleteStoragePoolCommand() {
+        final StoragePool storagePool = Mockito.mock(StoragePool.class);
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+
+        final DeleteStoragePoolCommand command = new DeleteStoragePoolCommand(storagePool);
+
+        final StorageFilerTO pool = command.getPool();
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.deleteStoragePool(pool.getType(), pool.getUuid())).thenReturn(true);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(storagePoolMgr, times(1)).deleteStoragePool(pool.getType(), pool.getUuid());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testDeleteStoragePoolCommandException() {
+        final StoragePool storagePool = Mockito.mock(StoragePool.class);
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+
+        final DeleteStoragePoolCommand command = new DeleteStoragePoolCommand(storagePool);
+
+        final StorageFilerTO pool = command.getPool();
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.deleteStoragePool(pool.getType(), pool.getUuid())).thenThrow(CloudRuntimeException.class);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(storagePoolMgr, times(1)).deleteStoragePool(pool.getType(), pool.getUuid());
     }
 }
