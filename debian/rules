@@ -8,7 +8,6 @@ PACKAGE = $(shell dh_listpackages|head -n 1|cut -d '-' -f 1)
 SYSCONFDIR = "/etc"
 DESTDIR = "debian/tmp"
 
-
 %:
 	dh $@ --with python2
 
@@ -19,6 +18,7 @@ override_dh_auto_configure:
 override_dh_auto_build:
 	mvn -T C1.5 clean package -Pawsapi -DskipTests -Dsystemvm \
 	    -Dcs.replace.properties=replace.properties.tmp \
+	    -Dmaven.repo.local=$(HOME)/.m2/repository
 	     ${ACS_BUILD_OPTS}
 
 override_dh_auto_clean:
