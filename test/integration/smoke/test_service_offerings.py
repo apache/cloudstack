@@ -326,6 +326,8 @@ class TestServiceOfferings(cloudstackTestCase):
         # 2. Using  listVM command verify that this Vm
         #    has Small service offering Id.
 
+        if self.hypervisor.lower() == "lxc":
+            self.skipTest("Skipping this test for {} due to bug CS-38153".format(self.hypervisor))
         try:
             self.medium_virtual_machine.stop(self.apiclient)
         except Exception as e:
