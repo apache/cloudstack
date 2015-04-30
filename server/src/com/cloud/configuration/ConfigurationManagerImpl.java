@@ -3923,6 +3923,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Map<Provider, Set<Service>> providerCombinationToVerify = new HashMap<Provider, Set<Service>>();
         Map<String, List<String>> svcPrv = cmd.getServiceProviders();
         Provider firewallProvider = null;
+        Provider dhcpProvider = null;
+        Boolean IsVrUserdataProvider = false;
         if (svcPrv != null) {
             for (String serviceStr : svcPrv.keySet()) {
                 Network.Service service = Network.Service.getService(serviceStr);
@@ -3952,6 +3954,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                             firewallProvider = Provider.VirtualRouter;
                         }
 
+                        if (service == Service.Dhcp) {
+                            dhcpProvider = provider;
+                        }
+
+                        if (service == Service.UserData && provider == Provider.VirtualRouter) {
+                            IsVrUserdataProvider = true;
+                        }
+
                         providers.add(provider);
 
                         Set<Service> serviceSet = null;
@@ -3969,6 +3979,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     throw new InvalidParameterValueException("Service " + serviceStr + " is not enabled for the network " + "offering, can't add a provider to it");
                 }
             }
+        }
+
+        // dhcp provider and userdata provider should be same because vm will be contacting dhcp server for user data.
+        if (dhcpProvider == null && IsVrUserdataProvider) {
+            s_logger.debug("User data provider VR can't be selected without VR as dhcp provider. In this case VM fails to contact the DHCP server for userdata");
+            throw new InvalidParameterValueException("Without VR as dhcp provider, User data can't selected for VR. Please select VR as DHCP provider ");
         }
 
         // validate providers combination here
