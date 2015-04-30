@@ -76,7 +76,7 @@ class TestUsage(cloudstackTestCase):
         cls.hypervisor = testClient.getHypervisorInfo()
         cls.apiclient = testClient.getApiClient()
         cls.testdata = testClient.getParsedTestDataConfig()
-
+        cls._cleanup = []
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
@@ -104,7 +104,7 @@ class TestUsage(cloudstackTestCase):
             cls.apiclient,
             cls.zone.id,
             cls.testdata["ostype"])
-        cls._cleanup = []
+
 
         try:
             # If local storage is enabled, alter the offerings to use
@@ -2959,7 +2959,7 @@ class TestUsageDirectMeteringBasicZone(cloudstackTestCase):
             cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.testdata = testClient.getParsedTestDataConfig()
-
+        cls._cleanup = []
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
@@ -2970,6 +2970,7 @@ class TestUsageDirectMeteringBasicZone(cloudstackTestCase):
         cls.usageJobNotRunning = False
         if not isUsageJobRunning:
             cls.usageJobNotRunning = True
+            return
 
         if cls.testdata["configurableData"][
                 "setUsageConfigurationThroughTestCase"]:
@@ -2984,7 +2985,7 @@ class TestUsageDirectMeteringBasicZone(cloudstackTestCase):
             cls.apiclient,
             cls.zone.id,
             cls.testdata["ostype"])
-        cls._cleanup = []
+
 
         try:
             # If local storage is enabled, alter the offerings to use

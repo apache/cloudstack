@@ -127,11 +127,15 @@ class TestPathVolume(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient)
         cls.testdata["mode"] = cls.zone.networktype
         cls.hypervisor = testClient.getHypervisorInfo()
+        cls._cleanup = []
         cls.insuffStorage = False
+        cls.unsupportedHypervisor = False
+
         #for LXC if the storage pool of type 'rbd' ex: ceph is not available, skip the test
         if cls.hypervisor.lower() == 'lxc':
             if not find_storage_pool_type(cls.apiclient, storagetype='rbd'):
-                cls.insuffStorage = True
+                cls.insuffStorage   = True
+                return
 
         cls.template = get_template(
             cls.apiclient,
@@ -143,7 +147,7 @@ class TestPathVolume(cloudstackTestCase):
                 "get_template() failed to return template with description \
                 %s" %
                 cls.testdata["ostype"])
-        cls._cleanup = []
+
         try:
             cls.account = Account.create(cls.apiclient,
                                          cls.testdata["account"],

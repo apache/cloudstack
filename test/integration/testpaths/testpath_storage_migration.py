@@ -3587,11 +3587,12 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
             cls.testdata["ostype"])
 
         cls._cleanup = []
-        cls.hypervisorNotSupported = False
+        cls.unsupportedHypervisor = False
         cls.NoResource = False
         if cls.hypervisor.lower() not in [
                 "vmware"]:
-            cls.hypervisorNotSupported = True
+            cls.unsupportedHypervisor = True
+            return
         # Get Hosts in the cluster and iscsi/vmfs storages for that cluster
         iscsi_pools = []
         try :
