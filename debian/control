@@ -36,11 +36,6 @@ Description: CloudStack usage monitor
  The CloudStack usage monitor provides usage accounting across the entire cloud for
  cloud operators to charge based on usage parameters.
 
-Package: cloudstack-awsapi
-Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, cloudstack-common (= ${source:Version}),  cloudstack-management (= ${source:Version})
-Description: CloudStack Amazon EC2 API
-
 Package: cloudstack-cli
 Architecture: all
 Depends: ${misc:Depends}, cloudstack-common (= ${source:Version})

@@ -80,12 +80,6 @@
                 <copy todir="${basedir}/target/db" filtering="true">
                   <fileset dir="${basedir}/../setup/db/"/>
                 </copy>
-                <copy todir="${basedir}/target/db" filtering="true">
-                  <fileset
-                      dir="${basedir}/../awsapi-setup/db/mysql/">
-                    <include name="**/*.sql"/>
-                  </fileset>
-                </copy>
               </target>
             </configuration>
           </execution>
@@ -151,7 +145,7 @@
                 <argument>${basedir}/developer-prefill.sql.override</argument>
                 <!-- Do database upgrade-->
                 <argument>com.cloud.upgrade.DatabaseUpgradeChecker</argument>
-                <argument>--database=cloud,usage,awsapi</argument>
+                <argument>--database=cloud,usage</argument>
                 <argument>--rootpassword=${db.root.password}</argument>
                 <!-- Print help using -h or dash-dash-help -->
                 <!-- Do dry run using -d or dash-dash-dry -->
