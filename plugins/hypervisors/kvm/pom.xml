@@ -18,15 +18,6 @@
     <version>4.6.0-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
-  <repositories>
-    <repository>
-      <id>ceph-com</id>
-      <url>http://eu.ceph.com/maven</url>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
   <dependencies>
     <dependency>
       <groupId>commons-io</groupId>
