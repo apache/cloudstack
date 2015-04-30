@@ -46,6 +46,7 @@ import com.cloud.hypervisor.vmware.mo.VmwareHostType;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostNetworkSummary;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.hypervisor.vmware.util.VmwareContextPool;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -209,20 +210,32 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
             _resource.ensureOutgoingRuleForAddress(vCenterAddress);
 
             VmwareContext context = currentContext.get();
-            if (context != null && !context.validate()) {
-                invalidateServiceContext(context);
-                context = null;
-            }
-            if (context == null) {
-                s_logger.info("Open new VmwareContext. vCenter: " + vCenterAddress + ", user: " + username + ", password: " + StringUtils.getMaskedPasswordForDisplay(password));
-                VmwareSecondaryStorageContextFactory.setVcenterSessionTimeout(vCenterSessionTimeout);
-                context = VmwareSecondaryStorageContextFactory.getContext(vCenterAddress, username, password);
-            }
+
             if (context != null) {
-                context.registerStockObject("serviceconsole", cmd.getContextParam("serviceconsole"));
-                context.registerStockObject("manageportgroup", cmd.getContextParam("manageportgroup"));
-                context.registerStockObject("noderuninfo", cmd.getContextParam("noderuninfo"));
+                String poolKey = VmwareContextPool.composePoolKey(vCenterAddress, username, vCenterSessionTimeout);
+                // Before re-using the thread local context, ensure it corresponds to the right vCenter API session with the expected timeout and that it is valid to make calls.
+                if(context.getPoolKey().equals(poolKey)) {
+                    if (context.validate()) {
+                        if (s_logger.isTraceEnabled()) {
+                            s_logger.trace("ThreadLocal context is still valid, just reuse");
+                        }
+                    } else {
+                        s_logger.info("Validation of the context failed, dispose and use a new one");
+                        invalidateServiceContext(context);
+                        context = null;
+                    }
+                } else {
+                    s_logger.warn("ThreadLocal VMware context: " + poolKey + ". Expected VMware context: " + context.getPoolKey());
+                    context = null;
+                }
             }
+
+            if (context == null) {
+                context = VmwareSecondaryStorageContextFactory.getContext(vCenterAddress, username, password, vCenterSessionTimeout);
+            }
+            context.registerStockObject("serviceconsole", cmd.getContextParam("serviceconsole"));
+            context.registerStockObject("manageportgroup", cmd.getContextParam("manageportgroup"));
+            context.registerStockObject("noderuninfo", cmd.getContextParam("noderuninfo"));
             currentContext.set(context);
             return context;
         } catch (Exception e) {

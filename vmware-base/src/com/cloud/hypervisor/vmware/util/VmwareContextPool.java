@@ -72,8 +72,8 @@ public class VmwareContextPool {
         }
     }
 
-    public VmwareContext getContext(String vCenterAddress, String vCenterUserName) {
-        String poolKey = composePoolKey(vCenterAddress, vCenterUserName);
+    public VmwareContext getContext(String vCenterAddress, String vCenterUserName, int vCenterSessionTimeout) {
+        String poolKey = composePoolKey(vCenterAddress, vCenterUserName, vCenterSessionTimeout);
         synchronized (this) {
             List<VmwareContext> l = _pool.get(poolKey);
             if (l == null)
@@ -162,9 +162,10 @@ public class VmwareContextPool {
         }
     }
 
-    public static String composePoolKey(String vCenterAddress, String vCenterUserName) {
+    public static String composePoolKey(String vCenterAddress, String vCenterUserName, int vCenterSessionTimeout) {
         assert (vCenterUserName != null);
         assert (vCenterAddress != null);
-        return vCenterUserName + "@" + vCenterAddress;
+        int sessionTimeoutInSeconds = vCenterSessionTimeout/1000;
+        return vCenterUserName + "@" + vCenterAddress + ";" + String.valueOf(sessionTimeoutInSeconds);
     }
 }

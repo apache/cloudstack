@@ -36,34 +36,34 @@ public class VmwareSecondaryStorageContextFactory {
         s_pool = new VmwareContextPool();
     }
 
-    public static VmwareContext create(String vCenterAddress, String vCenterUserName, String vCenterPassword) throws Exception {
+    public static VmwareContext create(String vCenterAddress, String vCenterUserName, String vCenterPassword, int sessionTimeout) throws Exception {
         assert (vCenterAddress != null);
         assert (vCenterUserName != null);
         assert (vCenterPassword != null);
 
         String serviceUrl = "https://" + vCenterAddress + "/sdk/vimService";
         VmwareClient vimClient = new VmwareClient(vCenterAddress + "-" + s_seq++);
-        vimClient.setVcenterSessionTimeout(s_vCenterSessionTimeout);
+        vimClient.setVcenterSessionTimeout(sessionTimeout);
         vimClient.connect(serviceUrl, vCenterUserName, vCenterPassword);
         VmwareContext context = new VmwareContext(vimClient, vCenterAddress);
         assert (context != null);
 
-        context.setPoolInfo(s_pool, VmwareContextPool.composePoolKey(vCenterAddress, vCenterUserName));
+        context.setPoolInfo(s_pool, VmwareContextPool.composePoolKey(vCenterAddress, vCenterUserName, sessionTimeout));
         s_pool.registerOutstandingContext(context);
 
         return context;
     }
 
-    public static VmwareContext getContext(String vCenterAddress, String vCenterUserName, String vCenterPassword) throws Exception {
-        VmwareContext context = s_pool.getContext(vCenterAddress, vCenterUserName);
+    public static VmwareContext getContext(String vCenterAddress, String vCenterUserName, String vCenterPassword, int sessionTimeout) throws Exception {
+        VmwareContext context = s_pool.getContext(vCenterAddress, vCenterUserName, sessionTimeout);
         if (context == null) {
-            context = create(vCenterAddress, vCenterUserName, vCenterPassword);
+            context = create(vCenterAddress, vCenterUserName, vCenterPassword, sessionTimeout);
         } else {
-            // Validate current context and verify if vCenter session timeout value of the context matches the timeout value set by Admin
-            if (!context.validate() || (context.getVimClient().getVcenterSessionTimeout() != s_vCenterSessionTimeout)) {
+            // Validate current context
+            if (!context.validate()) {
                 s_logger.info("Validation of the context faild. dispose and create a new one");
                 context.close();
-                context = create(vCenterAddress, vCenterUserName, vCenterPassword);
+                context = create(vCenterAddress, vCenterUserName, vCenterPassword, sessionTimeout);
             }
         }
 

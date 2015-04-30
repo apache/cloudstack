@@ -79,4 +79,7 @@ public interface VmwareManager {
     boolean isLegacyZone(long dcId);
 
     boolean hasNexusVSM(Long clusterId);
+
+    public int getSnapshotBackupSessionTimeout();
+
 }
