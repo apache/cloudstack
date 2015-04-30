@@ -197,6 +197,9 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "iops_write_rate")
     Long iopsWriteRate;
 
+    @Column(name = "cache_mode")
+    String cacheMode;
+
     @Column(name = "pool_id")
     private long poolId;
 
@@ -482,6 +485,10 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public Long getIopsWriteRate() {
         return iopsWriteRate;
+    }
+
+    public String getCacheMode() {
+        return cacheMode;
     }
 
     public long getPoolId() {
