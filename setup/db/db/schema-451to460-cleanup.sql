@@ -18,3 +18,5 @@
 --
 -- Schema cleanup from 4.5.1 to 4.6.0
 --
+
+DROP DATABASE IF EXISTS `cloudbridge`;
