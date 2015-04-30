@@ -43,6 +43,7 @@ import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
+import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.RequestWrapper;
@@ -86,6 +87,7 @@ public class LibvirtRequestWrapper extends RequestWrapper {
         linbvirtCommands.put(MaintainCommand.class, new LibvirtMaintainCommandWrapper());
         linbvirtCommands.put(CreateCommand.class, new LibvirtCreateCommandWrapper());
         linbvirtCommands.put(DestroyCommand.class, new LibvirtDestroyCommandWrapper());
+        linbvirtCommands.put(PrimaryStorageDownloadCommand.class, new LibvirtPrimaryStorageDownloadCommandWrapper());
 
         resources.put(LibvirtComputingResource.class, linbvirtCommands);
     }

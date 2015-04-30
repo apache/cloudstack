@@ -86,6 +86,7 @@ import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
+import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
@@ -101,6 +102,7 @@ import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
@@ -1377,5 +1379,158 @@ public class LibvirtComputingResourceTest {
 
         verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
         verify(poolManager, times(1)).getStoragePool(vol.getPoolType(), vol.getPoolUuid());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testPrimaryStorageDownloadCommandNOTemplateDisk() {
+        final StoragePool pool = Mockito.mock(StoragePool.class);
+
+        final List<KVMPhysicalDisk> disks = new ArrayList<KVMPhysicalDisk>();
+
+        final String name = "Test";
+        final String url = "http://template/";
+        final ImageFormat format = ImageFormat.QCOW2;
+        final long accountId = 1l;
+        final int wait = 0;
+        final PrimaryStorageDownloadCommand command = new PrimaryStorageDownloadCommand(name, url, format, accountId, pool, wait);
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool primaryPool = Mockito.mock(KVMStoragePool.class);
+        final KVMStoragePool secondaryPool = Mockito.mock(KVMStoragePool.class);
+        final KVMPhysicalDisk tmplVol = Mockito.mock(KVMPhysicalDisk.class);
+        final KVMPhysicalDisk primaryVol = Mockito.mock(KVMPhysicalDisk.class);
+
+        final KVMPhysicalDisk disk = new KVMPhysicalDisk("/path", "disk.qcow2", primaryPool);
+        disks.add(disk);
+
+        final int index = url.lastIndexOf("/");
+        final String mountpoint = url.substring(0, index);
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.getStoragePoolByURI(mountpoint)).thenReturn(secondaryPool);
+        when(secondaryPool.listPhysicalDisks()).thenReturn(disks);
+        when(storagePoolMgr.getStoragePool(command.getPool().getType(), command.getPoolUuid())).thenReturn(primaryPool);
+        when(storagePoolMgr.copyPhysicalDisk(tmplVol, UUID.randomUUID().toString(), primaryPool, 0)).thenReturn(primaryVol);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+    }
+
+    @Test
+    public void testPrimaryStorageDownloadCommandNOTemplateNODisk() {
+        final StoragePool pool = Mockito.mock(StoragePool.class);
+
+        final List<KVMPhysicalDisk> disks = new ArrayList<KVMPhysicalDisk>();
+
+        final String name = "Test";
+        final String url = "http://template/";
+        final ImageFormat format = ImageFormat.QCOW2;
+        final long accountId = 1l;
+        final int wait = 0;
+        final PrimaryStorageDownloadCommand command = new PrimaryStorageDownloadCommand(name, url, format, accountId, pool, wait);
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool primaryPool = Mockito.mock(KVMStoragePool.class);
+        final KVMStoragePool secondaryPool = Mockito.mock(KVMStoragePool.class);
+        final KVMPhysicalDisk tmplVol = Mockito.mock(KVMPhysicalDisk.class);
+        final KVMPhysicalDisk primaryVol = Mockito.mock(KVMPhysicalDisk.class);
+
+        final int index = url.lastIndexOf("/");
+        final String mountpoint = url.substring(0, index);
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.getStoragePoolByURI(mountpoint)).thenReturn(secondaryPool);
+        when(secondaryPool.listPhysicalDisks()).thenReturn(disks);
+        when(storagePoolMgr.getStoragePool(command.getPool().getType(), command.getPoolUuid())).thenReturn(primaryPool);
+        when(storagePoolMgr.copyPhysicalDisk(tmplVol, UUID.randomUUID().toString(), primaryPool, 0)).thenReturn(primaryVol);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+    }
+
+    @Test
+    public void testPrimaryStorageDownloadCommandNOTemplateNOQcow2() {
+        final StoragePool pool = Mockito.mock(StoragePool.class);
+
+        final List<KVMPhysicalDisk> disks = new ArrayList<KVMPhysicalDisk>();
+        final List<KVMPhysicalDisk> spiedDisks = Mockito.spy(disks);
+
+        final String name = "Test";
+        final String url = "http://template/";
+        final ImageFormat format = ImageFormat.QCOW2;
+        final long accountId = 1l;
+        final int wait = 0;
+        final PrimaryStorageDownloadCommand command = new PrimaryStorageDownloadCommand(name, url, format, accountId, pool, wait);
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool primaryPool = Mockito.mock(KVMStoragePool.class);
+        final KVMStoragePool secondaryPool = Mockito.mock(KVMStoragePool.class);
+        final KVMPhysicalDisk tmplVol = Mockito.mock(KVMPhysicalDisk.class);
+        final KVMPhysicalDisk primaryVol = Mockito.mock(KVMPhysicalDisk.class);
+
+        final int index = url.lastIndexOf("/");
+        final String mountpoint = url.substring(0, index);
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.getStoragePoolByURI(mountpoint)).thenReturn(secondaryPool);
+        when(secondaryPool.listPhysicalDisks()).thenReturn(spiedDisks);
+        when(spiedDisks.isEmpty()).thenReturn(false);
+
+        when(storagePoolMgr.getStoragePool(command.getPool().getType(), command.getPoolUuid())).thenReturn(primaryPool);
+        when(storagePoolMgr.copyPhysicalDisk(tmplVol, UUID.randomUUID().toString(), primaryPool, 0)).thenReturn(primaryVol);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testPrimaryStorageDownloadCommandTemplateNoDisk() {
+        final StoragePool pool = Mockito.mock(StoragePool.class);
+
+        final String name = "Test";
+        final String url = "http://template/template.qcow2";
+        final ImageFormat format = ImageFormat.VHD;
+        final long accountId = 1l;
+        final int wait = 0;
+        final PrimaryStorageDownloadCommand command = new PrimaryStorageDownloadCommand(name, url, format, accountId, pool, wait);
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool primaryPool = Mockito.mock(KVMStoragePool.class);
+        final KVMStoragePool secondaryPool = Mockito.mock(KVMStoragePool.class);
+        final KVMPhysicalDisk tmplVol = Mockito.mock(KVMPhysicalDisk.class);
+        final KVMPhysicalDisk primaryVol = Mockito.mock(KVMPhysicalDisk.class);
+
+        final int index = url.lastIndexOf("/");
+        final String mountpoint = url.substring(0, index);
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.getStoragePoolByURI(mountpoint)).thenReturn(secondaryPool);
+        when(secondaryPool.getPhysicalDisk("template.qcow2")).thenReturn(tmplVol);
+        when(storagePoolMgr.getStoragePool(command.getPool().getType(), command.getPoolUuid())).thenReturn(primaryPool);
+        when(storagePoolMgr.copyPhysicalDisk(tmplVol, UUID.randomUUID().toString(), primaryPool, 0)).thenReturn(primaryVol);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(storagePoolMgr, times(1)).getStoragePool(command.getPool().getType(), command.getPoolUuid());
     }
 }

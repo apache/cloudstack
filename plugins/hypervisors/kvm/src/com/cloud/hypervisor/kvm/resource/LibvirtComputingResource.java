@@ -146,8 +146,6 @@ import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -1298,9 +1296,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         try {
-            if (cmd instanceof PrimaryStorageDownloadCommand) {
-                return execute((PrimaryStorageDownloadCommand)cmd);
-            } else if (cmd instanceof CreatePrivateTemplateFromVolumeCommand) {
+            if (cmd instanceof CreatePrivateTemplateFromVolumeCommand) {
                 return execute((CreatePrivateTemplateFromVolumeCommand)cmd);
             } else if (cmd instanceof GetStorageStatsCommand) {
                 return execute((GetStorageStatsCommand)cmd);
@@ -2700,55 +2696,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } finally {
             if (secondaryStorage != null) {
                 _storagePoolMgr.deleteStoragePool(secondaryStorage.getType(), secondaryStorage.getUuid());
-            }
-        }
-    }
-
-    protected PrimaryStorageDownloadAnswer execute(final PrimaryStorageDownloadCommand cmd) {
-        final String tmplturl = cmd.getUrl();
-        final int index = tmplturl.lastIndexOf("/");
-        final String mountpoint = tmplturl.substring(0, index);
-        String tmpltname = null;
-        if (index < tmplturl.length() - 1) {
-            tmpltname = tmplturl.substring(index + 1);
-        }
-
-        KVMPhysicalDisk tmplVol = null;
-        KVMStoragePool secondaryPool = null;
-        try {
-            secondaryPool = _storagePoolMgr.getStoragePoolByURI(mountpoint);
-
-            /* Get template vol */
-            if (tmpltname == null) {
-                secondaryPool.refresh();
-                final List<KVMPhysicalDisk> disks = secondaryPool.listPhysicalDisks();
-                if (disks == null || disks.isEmpty()) {
-                    return new PrimaryStorageDownloadAnswer("Failed to get volumes from pool: " + secondaryPool.getUuid());
-                }
-                for (final KVMPhysicalDisk disk : disks) {
-                    if (disk.getName().endsWith("qcow2")) {
-                        tmplVol = disk;
-                        break;
-                    }
-                }
-                if (tmplVol == null) {
-                    return new PrimaryStorageDownloadAnswer("Failed to get template from pool: " + secondaryPool.getUuid());
-                }
-            } else {
-                tmplVol = secondaryPool.getPhysicalDisk(tmpltname);
-            }
-
-            /* Copy volume to primary storage */
-            final KVMStoragePool primaryPool = _storagePoolMgr.getStoragePool(cmd.getPool().getType(), cmd.getPoolUuid());
-
-            final KVMPhysicalDisk primaryVol = _storagePoolMgr.copyPhysicalDisk(tmplVol, UUID.randomUUID().toString(), primaryPool, 0);
-
-            return new PrimaryStorageDownloadAnswer(primaryVol.getName(), primaryVol.getSize());
-        } catch (final CloudRuntimeException e) {
-            return new PrimaryStorageDownloadAnswer(e.toString());
-        } finally {
-            if (secondaryPool != null) {
-                _storagePoolMgr.deleteStoragePool(secondaryPool.getType(), secondaryPool.getUuid());
             }
         }
     }
