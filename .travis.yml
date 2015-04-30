@@ -41,7 +41,7 @@ script:
 - mkdir -p integration-test-results/smoke/misc
 - mkdir -p integration-test-results/component
 - travis_wait 30 sleep 30
-- for suite in $TESTS; do travis_wait 30 nosetests --with-xunit --xunit-file=integration-test-results/$suite.xml --with-marvin --marvin-config=setup/dev/advanced.cfg test/integration/smoke/$suite.py -s -a tags=advanced,required_hardware=false --zone=Sandbox-simulator --hypervisor=simulator || true ; done
+- for suite in $TESTS; do travis_wait 30 nosetests --with-xunit --xunit-file=integration-test-results/$suite.xml --with-marvin --marvin-config=setup/dev/advanced.cfg test/integration/$suite.py -s -a tags=advanced,required_hardware=false --zone=Sandbox-simulator --hypervisor=simulator || true ; done
 - python ./tools/travis/xunit-reader.py integration-test-results/
 after_success: ./tools/travis/after_success.sh
 after_failure: ./tools/travis/after_failure.sh
