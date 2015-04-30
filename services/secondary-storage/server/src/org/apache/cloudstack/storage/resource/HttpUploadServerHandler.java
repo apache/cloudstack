@@ -139,7 +139,7 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                             hostname = entry.getValue();
                             break;
                         case HttpHeaders.Names.CONTENT_LENGTH:
-                            contentLength = Long.valueOf(entry.getValue());
+                            contentLength = Long.parseLong(entry.getValue());
                             break;
                     }
                 }

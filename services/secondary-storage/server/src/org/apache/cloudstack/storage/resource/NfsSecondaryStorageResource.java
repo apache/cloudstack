@@ -32,6 +32,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.URI;
@@ -2627,7 +2628,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 }
                 throw new InvalidParameterValueException(errorMessage.toString());
             }
-            int maxSizeInGB = Integer.valueOf(cmd.getMaxUploadSize());
+            int maxSizeInGB = Integer.parseInt(cmd.getMaxUploadSize());
             int contentLengthInGB = getSizeInGB(contentLength);
             if (contentLengthInGB > maxSizeInGB) {
                 String errorMessage = "Maximum file upload size exceeded. Content Length received: " + contentLengthInGB + "GB. Maximum allowed size: " + maxSizeInGB + "GB.";
@@ -2772,7 +2773,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (extension.equals("iso")) {
             templateName = uploadEntity.getUuid().trim().replace(" ", "_");
         } else {
-            templateName = java.util.UUID.nameUUIDFromBytes((uploadEntity.getFilename() + System.currentTimeMillis()).getBytes()).toString();
+            try {
+                templateName = UUID.nameUUIDFromBytes((uploadEntity.getFilename() + System.currentTimeMillis()).getBytes("UTF-8")).toString();
+            } catch (UnsupportedEncodingException e) {
+                templateName = uploadEntity.getUuid().trim().replace(" ", "_");
+            }
         }
 
         // run script to mv the temporary template file to the final template
