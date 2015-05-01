@@ -686,14 +686,6 @@ public enum Config {
             "The mount point on the Management Server for Secondary Storage.",
             null),
 //    UpgradeURL("Advanced", ManagementServer.class, String.class, "upgrade.url", "http://example.com:8080/client/agent/update.zip", "The upgrade URL is the URL of the management server that agents will connect to in order to automatically upgrade.", null),
-    SystemVMUseLocalStorage(
-            "Advanced",
-            ManagementServer.class,
-            Boolean.class,
-            "system.vm.use.local.storage",
-            "false",
-            "Indicates whether to use local storage pools or shared storage pools for system VMs.",
-            null, ConfigKey.Scope.Zone.toString()),
     SystemVMAutoReserveCapacity(
             "Advanced",
             ManagementServer.class,
@@ -2025,16 +2017,6 @@ public enum Config {
     VMSnapshotCreateWait("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.create.wait", "1800", "In second, timeout for create vm snapshot", null),
 
     CloudDnsName("Advanced", ManagementServer.class, String.class, "cloud.dns.name", null, "DNS name of the cloud for the GSLB service", null),
-
-    BlacklistedRoutes(
-            "Advanced",
-            VpcManager.class,
-            String.class,
-            "blacklisted.routes",
-            null,
-            "Routes that are blacklisted, can not be used for Static Routes creation for the VPC Private Gateway",
-            "routes",
-            ConfigKey.Scope.Zone.toString()),
     InternalLbVmServiceOfferingId(
             "Advanced",
             ManagementServer.class,
