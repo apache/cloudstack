@@ -85,8 +85,6 @@ import com.ceph.rbd.RbdImage;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BackupSnapshotAnswer;
 import com.cloud.agent.api.BackupSnapshotCommand;
-import com.cloud.agent.api.CheckNetworkAnswer;
-import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
@@ -98,12 +96,10 @@ import com.cloud.agent.api.FenceCommand;
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
-import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.OvsCreateTunnelAnswer;
 import com.cloud.agent.api.OvsCreateTunnelCommand;
-import com.cloud.agent.api.OvsDestroyTunnelCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
@@ -122,8 +118,6 @@ import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
-import com.cloud.agent.api.check.CheckSshAnswer;
-import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
@@ -178,7 +172,6 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.PhysicalNetworkSetupInfo;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.JavaStorageLayer;
@@ -1161,7 +1154,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return "";
     }
 
-    private boolean checkNetwork(final String networkName) {
+    public boolean checkNetwork(final String networkName) {
         if (networkName == null) {
             return true;
         }
@@ -1306,18 +1299,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((UnPlugNicCommand)cmd);
             } else if (cmd instanceof NetworkElementCommand) {
                 return _virtRouterResource.executeRequest((NetworkElementCommand)cmd);
-            } else if (cmd instanceof CheckSshCommand) {
-                return execute((CheckSshCommand)cmd);
             } else if (cmd instanceof NetworkUsageCommand) {
                 return execute((NetworkUsageCommand)cmd);
-            } else if (cmd instanceof NetworkRulesSystemVmCommand) {
-                return execute((NetworkRulesSystemVmCommand)cmd);
             } else if (cmd instanceof CopyVolumeCommand) {
                 return execute((CopyVolumeCommand)cmd);
             } else if (cmd instanceof ResizeVolumeCommand) {
                 return execute((ResizeVolumeCommand)cmd);
-            } else if (cmd instanceof CheckNetworkCommand) {
-                return execute((CheckNetworkCommand)cmd);
             } else if (cmd instanceof StorageSubSystemCommand) {
                 return storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
             } else if (cmd instanceof PvlanSetupCommand) {
@@ -1326,8 +1313,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((CheckOnHostCommand)cmd);
             } else if (cmd instanceof OvsCreateTunnelCommand) {
                 return execute((OvsCreateTunnelCommand)cmd);
-            } else if (cmd instanceof OvsDestroyTunnelCommand) {
-                return execute((OvsDestroyTunnelCommand)cmd);
             } else {
                 s_logger.warn("Unsupported command ");
                 return Answer.createUnsupportedCommandAnswer(cmd);
@@ -1367,6 +1352,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             s_logger.debug("### KVM network for tunnels created:" + nwName);
         } catch (final Exception e) {
             s_logger.warn("createTunnelNetwork failed", e);
+            return false;
         }
         return true;
     }
@@ -1374,7 +1360,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public synchronized boolean configureTunnelNetwork(final long networkId,
             final long hostId, final String nwName) {
         try {
-            findOrCreateTunnelNetwork(nwName);
+            final boolean findResult = findOrCreateTunnelNetwork(nwName);
+            if (!findResult) {
+                s_logger.warn("LibvirtComputingResource.findOrCreateTunnelNetwork() failed! Cannot proceed creating the tunnel.");
+                return false;
+            }
             final String configuredHosts = Script
                     .runSimpleBashScript("ovs-vsctl get bridge " + nwName
                             + " other_config:ovs-host-setup");
@@ -1438,53 +1428,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             s_logger.debug("Error during tunnel setup");
             s_logger.warn("Caught execption when creating ovs tunnel", e);
             return new OvsCreateTunnelAnswer(cmd, false, e.getMessage(), bridge);
-        }
-    }
-
-    private Answer execute(final OvsDestroyTunnelCommand cmd) {
-        try {
-            if (!findOrCreateTunnelNetwork(cmd.getBridgeName())) {
-                s_logger.warn("Unable to find tunnel network for GRE key:"
-                        + cmd.getBridgeName());
-                return new Answer(cmd, false, "No network found");
-            }
-
-            final Script command = new Script(_ovsTunnelPath, _timeout, s_logger);
-            command.add("destroy_tunnel");
-            command.add("--bridge", cmd.getBridgeName());
-            command.add("--iface_name", cmd.getInPortName());
-            final String result = command.execute();
-            if (result == null) {
-                return new Answer(cmd, true, result);
-            } else {
-                return new Answer(cmd, false, result);
-            }
-        } catch (final Exception e) {
-            s_logger.warn("caught execption when destroy ovs tunnel", e);
-            return new Answer(cmd, false, e.getMessage());
-        }
-    }
-
-    private CheckNetworkAnswer execute(final CheckNetworkCommand cmd) {
-        final List<PhysicalNetworkSetupInfo> phyNics = cmd.getPhysicalNetworkInfoList();
-        String errMsg = null;
-        for (final PhysicalNetworkSetupInfo nic : phyNics) {
-            if (!checkNetwork(nic.getGuestNetworkName())) {
-                errMsg = "Can not find network: " + nic.getGuestNetworkName();
-                break;
-            } else if (!checkNetwork(nic.getPrivateNetworkName())) {
-                errMsg = "Can not find network: " + nic.getPrivateNetworkName();
-                break;
-            } else if (!checkNetwork(nic.getPublicNetworkName())) {
-                errMsg = "Can not find network: " + nic.getPublicNetworkName();
-                break;
-            }
-        }
-
-        if (errMsg != null) {
-            return new CheckNetworkAnswer(cmd, false, errMsg);
-        } else {
-            return new CheckNetworkAnswer(cmd, true, null);
         }
     }
 
@@ -2957,7 +2900,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             for (final NicTO nic : nics) {
                 if (nic.isSecurityGroupEnabled() || nic.getIsolationUri() != null && nic.getIsolationUri().getScheme().equalsIgnoreCase(IsolationType.Ec2.toString())) {
                     if (vmSpec.getType() != VirtualMachine.Type.User) {
-                        default_network_rules_for_systemvm(conn, vmName);
+                        configureDefaultNetworkRulesForSystemVm(conn, vmName);
                         break;
                     } else {
                         final List<String> nicSecIps = nic.getNicSecIps();
@@ -3191,26 +3134,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private void createVif(final LibvirtVMDef vm, final NicTO nic, final String nicAdapter) throws InternalErrorException, LibvirtException {
         vm.getDevices().addDevice(getVifDriver(nic.getType()).plug(nic, vm.getPlatformEmulator().toString(), nicAdapter).toString());
-    }
-
-    protected CheckSshAnswer execute(final CheckSshCommand cmd) {
-        final String vmName = cmd.getName();
-        final String privateIp = cmd.getIp();
-        final int cmdPort = cmd.getPort();
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Ping command port, " + privateIp + ":" + cmdPort);
-        }
-
-        if (!_virtRouterResource.connect(privateIp, cmdPort)) {
-            return new CheckSshAnswer(cmd, "Can not ping System vm " + vmName + " because of a connection failure");
-        }
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Ping command port succeeded for vm " + vmName);
-        }
-
-        return new CheckSshAnswer(cmd);
     }
 
     public boolean cleanupDisk(final DiskDef disk) {
@@ -4240,7 +4163,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
-    protected boolean default_network_rules_for_systemvm(final Connect conn, final String vmName) {
+    public boolean configureDefaultNetworkRulesForSystemVm(final Connect conn, final String vmName) {
         if (!_canBridgeFirewall) {
             return false;
         }
@@ -4369,19 +4292,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             s_logger.warn("Failed to read the " + fileName + " for " + nicName + " from " + path, ioe);
             return 0.0;
         }
-    }
-
-    private Answer execute(final NetworkRulesSystemVmCommand cmd) {
-        boolean success = false;
-        Connect conn;
-        try {
-            conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
-            success = default_network_rules_for_systemvm(conn, cmd.getVmName());
-        } catch (final LibvirtException e) {
-            s_logger.trace("Ignoring libvirt error.", e);
-        }
-
-        return new Answer(cmd, success, "");
     }
 
     private String prettyVersion(final long version) {

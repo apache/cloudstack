@@ -24,6 +24,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.CheckHealthCommand;
+import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.Command;
@@ -38,8 +39,10 @@ import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
+import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.NetworkRulesVmSecondaryIpCommand;
 import com.cloud.agent.api.OvsDestroyBridgeCommand;
+import com.cloud.agent.api.OvsDestroyTunnelCommand;
 import com.cloud.agent.api.OvsFetchInterfaceCommand;
 import com.cloud.agent.api.OvsSetupBridgeCommand;
 import com.cloud.agent.api.OvsVpcPhysicalTopologyConfigCommand;
@@ -51,6 +54,7 @@ import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
+import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.storage.CreateCommand;
@@ -112,6 +116,10 @@ public class LibvirtRequestWrapper extends RequestWrapper {
         linbvirtCommands.put(ModifyStoragePoolCommand.class, new LibvirtModifyStoragePoolCommandWrapper());
         linbvirtCommands.put(CleanupNetworkRulesCmd.class, new LibvirtCleanupNetworkRulesCommandWrapper());
         linbvirtCommands.put(NetworkRulesVmSecondaryIpCommand.class, new LibvirtNetworkRulesVmSecondaryIpCommandWrapper());
+        linbvirtCommands.put(NetworkRulesSystemVmCommand.class, new LibvirtNetworkRulesSystemVmCommandWrapper());
+        linbvirtCommands.put(CheckSshCommand.class, new LibvirtCheckSshCommandWrapper());
+        linbvirtCommands.put(CheckNetworkCommand.class, new LibvirtCheckNetworkCommandWrapper());
+        linbvirtCommands.put(OvsDestroyTunnelCommand.class, new LibvirtOvsDestroyTunnelCommandWrapper());
 
         resources.put(LibvirtComputingResource.class, linbvirtCommands);
     }

@@ -67,6 +67,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.CheckHealthCommand;
+import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.CreateStoragePoolCommand;
@@ -80,8 +81,10 @@ import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
+import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.NetworkRulesVmSecondaryIpCommand;
 import com.cloud.agent.api.OvsDestroyBridgeCommand;
+import com.cloud.agent.api.OvsDestroyTunnelCommand;
 import com.cloud.agent.api.OvsFetchInterfaceCommand;
 import com.cloud.agent.api.OvsSetupBridgeCommand;
 import com.cloud.agent.api.OvsVpcPhysicalTopologyConfigCommand;
@@ -98,6 +101,7 @@ import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.storage.CreateCommand;
@@ -119,6 +123,7 @@ import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetworkSetupInfo;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
@@ -129,6 +134,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
+import com.cloud.vm.VirtualMachine.Type;
 
 @RunWith(PowerMockRunner.class)
 public class LibvirtComputingResourceTest {
@@ -1944,7 +1950,7 @@ public class LibvirtComputingResourceTest {
     }
 
     @Test
-    public void testOvsSetupBridgeCommandFailure() {
+    public void testOvsSetupBridgeCommandFailure1() {
         final String name = "Test";
         final Long hostId = 1l;
         final Long networkId = 1l;
@@ -1954,6 +1960,30 @@ public class LibvirtComputingResourceTest {
         when(libvirtComputingResource.findOrCreateTunnelNetwork(command.getBridgeName())).thenReturn(true);
         when(libvirtComputingResource.configureTunnelNetwork(command.getNetworkId(), command.getHostId(),
                 command.getBridgeName())).thenReturn(false);
+
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).findOrCreateTunnelNetwork(command.getBridgeName());
+        verify(libvirtComputingResource, times(1)).configureTunnelNetwork(command.getNetworkId(), command.getHostId(),
+                command.getBridgeName());
+    }
+
+    @Test
+    public void testOvsSetupBridgeCommandFailure2() {
+        final String name = "Test";
+        final Long hostId = 1l;
+        final Long networkId = 1l;
+
+        final OvsSetupBridgeCommand command = new OvsSetupBridgeCommand(name, hostId, networkId);
+
+        when(libvirtComputingResource.findOrCreateTunnelNetwork(command.getBridgeName())).thenReturn(false);
+        when(libvirtComputingResource.configureTunnelNetwork(command.getNetworkId(), command.getHostId(),
+                command.getBridgeName())).thenReturn(true);
 
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
@@ -2043,6 +2073,27 @@ public class LibvirtComputingResourceTest {
         verify(libvirtComputingResource, times(1)).getTimeout();
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testOvsVpcPhysicalTopologyConfigCommandFailure() {
+        final Host[] hosts = null;
+        final Tier[] tiers = null;
+        final Vm[] vms = null;
+        final String cidr = null;
+
+        final OvsVpcPhysicalTopologyConfigCommand command = new OvsVpcPhysicalTopologyConfigCommand(hosts, tiers, vms, cidr);
+
+        when(libvirtComputingResource.getOvsTunnelPath()).thenThrow(Exception.class);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getOvsTunnelPath();
+    }
+
     @Test
     public void testOvsVpcRoutingPolicyConfigCommand() {
         final String id = null;
@@ -2064,6 +2115,27 @@ public class LibvirtComputingResourceTest {
 
         verify(libvirtComputingResource, times(1)).getOvsTunnelPath();
         verify(libvirtComputingResource, times(1)).getTimeout();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testOvsVpcRoutingPolicyConfigCommandFailure() {
+        final String id = null;
+        final String cidr = null;
+        final Acl[] acls = null;
+        final com.cloud.agent.api.OvsVpcRoutingPolicyConfigCommand.Tier[] tiers = null;
+
+        final OvsVpcRoutingPolicyConfigCommand command = new OvsVpcRoutingPolicyConfigCommand(id, cidr, acls, tiers);
+
+        when(libvirtComputingResource.getOvsTunnelPath()).thenThrow(Exception.class);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getOvsTunnelPath();
     }
 
     @Test
@@ -2206,5 +2278,268 @@ public class LibvirtComputingResourceTest {
             fail(e.getMessage());
         }
         verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+    }
+
+    @Test
+    public void testNetworkRulesSystemVmCommand() {
+        final String vmName = "Test";
+        final Type type = Type.SecondaryStorageVm;
+
+        final NetworkRulesSystemVmCommand command = new NetworkRulesSystemVmCommand(vmName, type);
+
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+        final Connect conn = Mockito.mock(Connect.class);
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        try {
+            when(libvirtConnectionWrapper.getConnectionByVmName(command.getVmName())).thenReturn(conn);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+        when(libvirtComputingResource.configureDefaultNetworkRulesForSystemVm(conn, command.getVmName())).thenReturn(true);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(command.getVmName());
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        verify(libvirtComputingResource, times(1)).configureDefaultNetworkRulesForSystemVm(conn, command.getVmName());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testNetworkRulesSystemVmCommandFailure() {
+        final String vmName = "Test";
+        final Type type = Type.SecondaryStorageVm;
+
+        final NetworkRulesSystemVmCommand command = new NetworkRulesSystemVmCommand(vmName, type);
+
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        try {
+            when(libvirtConnectionWrapper.getConnectionByVmName(command.getVmName())).thenThrow(LibvirtException.class);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(command.getVmName());
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+    }
+
+    @Test
+    public void testCheckSshCommand() {
+        final String instanceName = "Test";
+        final String ip = "172.16.16.16";
+        final int port = 22;
+
+        final CheckSshCommand command = new CheckSshCommand(instanceName, ip, port);
+
+        final VirtualRoutingResource virtRouterResource = Mockito.mock(VirtualRoutingResource.class);
+
+        final String privateIp = command.getIp();
+        final int cmdPort = command.getPort();
+
+        when(libvirtComputingResource.getVirtRouterResource()).thenReturn(virtRouterResource);
+        when(virtRouterResource.connect(privateIp, cmdPort)).thenReturn(true);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getVirtRouterResource();
+        verify(virtRouterResource, times(1)).connect(privateIp, cmdPort);
+    }
+
+    @Test
+    public void testCheckSshCommandFailure() {
+        final String instanceName = "Test";
+        final String ip = "172.16.16.16";
+        final int port = 22;
+
+        final CheckSshCommand command = new CheckSshCommand(instanceName, ip, port);
+
+        final VirtualRoutingResource virtRouterResource = Mockito.mock(VirtualRoutingResource.class);
+
+        final String privateIp = command.getIp();
+        final int cmdPort = command.getPort();
+
+        when(libvirtComputingResource.getVirtRouterResource()).thenReturn(virtRouterResource);
+        when(virtRouterResource.connect(privateIp, cmdPort)).thenReturn(false);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getVirtRouterResource();
+        verify(virtRouterResource, times(1)).connect(privateIp, cmdPort);
+    }
+
+    @Test
+    public void testCheckNetworkCommand() {
+        final List<PhysicalNetworkSetupInfo> networkInfoList = new ArrayList<PhysicalNetworkSetupInfo>();
+
+        final PhysicalNetworkSetupInfo nic = Mockito.mock(PhysicalNetworkSetupInfo.class);
+        networkInfoList.add(nic);
+
+        final CheckNetworkCommand command = new CheckNetworkCommand(networkInfoList);
+
+        when(libvirtComputingResource.checkNetwork(nic.getGuestNetworkName())).thenReturn(true);
+        when(libvirtComputingResource.checkNetwork(nic.getPrivateNetworkName())).thenReturn(true);
+        when(libvirtComputingResource.checkNetwork(nic.getPublicNetworkName())).thenReturn(true);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(3)).checkNetwork(nic.getGuestNetworkName());
+        verify(libvirtComputingResource, times(3)).checkNetwork(nic.getPrivateNetworkName());
+        verify(libvirtComputingResource, times(3)).checkNetwork(nic.getPublicNetworkName());
+    }
+
+    @Test
+    public void testCheckNetworkCommandFail1() {
+        final List<PhysicalNetworkSetupInfo> networkInfoList = new ArrayList<PhysicalNetworkSetupInfo>();
+
+        final PhysicalNetworkSetupInfo networkSetupInfo = Mockito.mock(PhysicalNetworkSetupInfo.class);
+        networkInfoList.add(networkSetupInfo);
+
+        final CheckNetworkCommand command = new CheckNetworkCommand(networkInfoList);
+
+        when(libvirtComputingResource.checkNetwork(networkSetupInfo.getGuestNetworkName())).thenReturn(false);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).checkNetwork(networkSetupInfo.getGuestNetworkName());
+    }
+
+    @Test
+    public void testCheckNetworkCommandFail2() {
+        final List<PhysicalNetworkSetupInfo> networkInfoList = new ArrayList<PhysicalNetworkSetupInfo>();
+
+        final PhysicalNetworkSetupInfo networkSetupInfo = Mockito.mock(PhysicalNetworkSetupInfo.class);
+        networkInfoList.add(networkSetupInfo);
+
+        final CheckNetworkCommand command = new CheckNetworkCommand(networkInfoList);
+
+        when(libvirtComputingResource.checkNetwork(networkSetupInfo.getGuestNetworkName())).thenReturn(true);
+        when(libvirtComputingResource.checkNetwork(networkSetupInfo.getPrivateNetworkName())).thenReturn(false);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).checkNetwork(networkSetupInfo.getGuestNetworkName());
+        verify(libvirtComputingResource, times(1)).checkNetwork(networkSetupInfo.getPrivateNetworkName());
+    }
+
+    @Test
+    public void testCheckNetworkCommandFail3() {
+        final List<PhysicalNetworkSetupInfo> networkInfoList = new ArrayList<PhysicalNetworkSetupInfo>();
+
+        final PhysicalNetworkSetupInfo networkSetupInfo = Mockito.mock(PhysicalNetworkSetupInfo.class);
+        networkInfoList.add(networkSetupInfo);
+
+        final CheckNetworkCommand command = new CheckNetworkCommand(networkInfoList);
+
+        when(libvirtComputingResource.checkNetwork(networkSetupInfo.getGuestNetworkName())).thenReturn(true);
+        when(libvirtComputingResource.checkNetwork(networkSetupInfo.getPrivateNetworkName())).thenReturn(true);
+        when(libvirtComputingResource.checkNetwork(networkSetupInfo.getPublicNetworkName())).thenReturn(false);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).checkNetwork(networkSetupInfo.getGuestNetworkName());
+        verify(libvirtComputingResource, times(1)).checkNetwork(networkSetupInfo.getPrivateNetworkName());
+    }
+
+    @Test
+    public void testOvsDestroyTunnelCommand() {
+        final String networkName = "Test";
+        final Long networkId = 1l;
+        final String inPortName = "eth";
+
+        final OvsDestroyTunnelCommand command = new OvsDestroyTunnelCommand(networkId, networkName, inPortName);
+
+        when(libvirtComputingResource.findOrCreateTunnelNetwork(command.getBridgeName())).thenReturn(true);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).findOrCreateTunnelNetwork(command.getBridgeName());
+    }
+
+    @Test
+    public void testOvsDestroyTunnelCommandFailure1() {
+        final String networkName = "Test";
+        final Long networkId = 1l;
+        final String inPortName = "eth";
+
+        final OvsDestroyTunnelCommand command = new OvsDestroyTunnelCommand(networkId, networkName, inPortName);
+
+        when(libvirtComputingResource.findOrCreateTunnelNetwork(command.getBridgeName())).thenReturn(false);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).findOrCreateTunnelNetwork(command.getBridgeName());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testOvsDestroyTunnelCommandFailure2() {
+        final String networkName = "Test";
+        final Long networkId = 1l;
+        final String inPortName = "eth";
+
+        final OvsDestroyTunnelCommand command = new OvsDestroyTunnelCommand(networkId, networkName, inPortName);
+
+        when(libvirtComputingResource.findOrCreateTunnelNetwork(command.getBridgeName())).thenThrow(Exception.class);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).findOrCreateTunnelNetwork(command.getBridgeName());
     }
 }
