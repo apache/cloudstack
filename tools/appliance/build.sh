@@ -98,8 +98,8 @@ echo "$appliance exported for KVM: dist/$appliance-$branch-$build_date-kvm.qcow2
 
 # Export both ova and vmdk for VMWare
 vboxmanage clonehd $hdd_uuid $appliance-$branch-$build_date-vmware.vmdk --format VMDK
-bzip2 $appliance-$branch-$build_date-vmware.vmdk
-echo "$appliance exported for VMWare: dist/$appliance-$branch-$build_date-vmware.vmdk.bz2"
+#bzip2 $appliance-$branch-$build_date-vmware.vmdk
+#echo "$appliance exported for VMWare: dist/$appliance-$branch-$build_date-vmware.vmdk.bz2"
 vboxmanage export $machine_uuid --output $appliance-$branch-$build_date-vmware.ovf
 mv $appliance-$branch-$build_date-vmware.ovf $appliance-$branch-$build_date-vmware.ovf-orig
 java -cp convert Convert convert_ovf_vbox_to_esx.xslt $appliance-$branch-$build_date-vmware.ovf-orig $appliance-$branch-$build_date-vmware.ovf
