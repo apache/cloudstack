@@ -85,6 +85,7 @@ public abstract class AbstractInvestigatorImpl extends AdapterBase implements In
         return hostIds;
     }
 
+    // Method only returns Status.Up, Status.Down and Status.Unknown
     protected Status testIpAddress(Long hostId, String testHostIp) {
         try {
             Answer pingTestAnswer = _agentMgr.send(hostId, new PingTestCommand(testHostIp));
