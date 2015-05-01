@@ -1052,7 +1052,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
     @Override
     public boolean checkIfHostReachMaxGuestLimit(Host host) {
-        Long vmCount = _vmDao.countRunningByHostId(host.getId());
+        Long vmCount = _vmDao.countActiveByHostId(host.getId());
         HypervisorType hypervisorType = host.getHypervisorType();
         String hypervisorVersion = host.getHypervisorVersion();
         Long maxGuestLimit = _hypervisorCapabilitiesDao.getMaxGuestsLimit(hypervisorType, hypervisorVersion);

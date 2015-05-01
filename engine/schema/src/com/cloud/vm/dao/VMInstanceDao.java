@@ -104,7 +104,7 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
 
     List<VMInstanceVO> listVmsMigratingFromHost(Long hostId);
 
-    public Long countRunningByHostId(long hostId);
+    public Long countActiveByHostId(long hostId);
 
     Pair<List<Long>, Map<Long, Double>> listClusterIdsInZoneByVmCount(long zoneId, long accountId);
 

@@ -87,7 +87,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> HostNameSearch;
     protected SearchBuilder<VMInstanceVO> HostNameAndZoneSearch;
     protected GenericSearchBuilder<VMInstanceVO, Long> FindIdsOfVirtualRoutersByAccount;
-    protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByHost;
+    protected GenericSearchBuilder<VMInstanceVO, Long> CountActiveByHost;
     protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByAccount;
     protected SearchBuilder<VMInstanceVO> NetworkTypeSearch;
     protected GenericSearchBuilder<VMInstanceVO, String> DistinctHostNameSearch;
@@ -231,11 +231,11 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         FindIdsOfVirtualRoutersByAccount.and("state", FindIdsOfVirtualRoutersByAccount.entity().getState(), SearchCriteria.Op.NIN);
         FindIdsOfVirtualRoutersByAccount.done();
 
-        CountRunningByHost = createSearchBuilder(Long.class);
-        CountRunningByHost.select(null, Func.COUNT, null);
-        CountRunningByHost.and("host", CountRunningByHost.entity().getHostId(), SearchCriteria.Op.EQ);
-        CountRunningByHost.and("state", CountRunningByHost.entity().getState(), SearchCriteria.Op.EQ);
-        CountRunningByHost.done();
+        CountActiveByHost = createSearchBuilder(Long.class);
+        CountActiveByHost.select(null, Func.COUNT, null);
+        CountActiveByHost.and("host", CountActiveByHost.entity().getHostId(), SearchCriteria.Op.EQ);
+        CountActiveByHost.and("state", CountActiveByHost.entity().getState(), SearchCriteria.Op.IN);
+        CountActiveByHost.done();
 
         CountRunningByAccount = createSearchBuilder(Long.class);
         CountRunningByAccount.select(null, Func.COUNT, null);
@@ -530,10 +530,10 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
-    public Long countRunningByHostId(long hostId) {
-        SearchCriteria<Long> sc = CountRunningByHost.create();
+    public Long countActiveByHostId(long hostId) {
+        SearchCriteria<Long> sc = CountActiveByHost.create();
         sc.setParameters("host", hostId);
-        sc.setParameters("state", State.Running);
+        sc.setParameters("state", State.Running, State.Starting, State.Stopping, State.Migrating);
         return customSearch(sc, null).get(0);
     }
 
