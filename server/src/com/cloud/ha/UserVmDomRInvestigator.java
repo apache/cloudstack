@@ -121,7 +121,7 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
                 s_logger.debug("sending ping from (" + hostId + ") to agent's host ip address (" + agent.getPrivateIpAddress() + ")");
             }
             Status hostState = testIpAddress(hostId, agent.getPrivateIpAddress());
-            if (hostState == null) {
+            if (hostState == null || hostState == Status.Unknown) {
                 continue;
             }
             if (hostState == Status.Up) {

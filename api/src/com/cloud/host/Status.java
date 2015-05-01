@@ -31,7 +31,8 @@ public enum Status {
     Alert(true, true, true),
     Removed(true, false, true),
     Error(true, false, true),
-    Rebalancing(true, false, true);
+    Rebalancing(true, false, true),
+    Unknown(false, false, false); // null
 
     private final boolean updateManagementServer;
     private final boolean checkManagementServer;

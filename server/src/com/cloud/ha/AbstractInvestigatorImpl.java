@@ -90,9 +90,9 @@ public abstract class AbstractInvestigatorImpl extends AdapterBase implements In
             Answer pingTestAnswer = _agentMgr.send(hostId, new PingTestCommand(testHostIp));
             if (pingTestAnswer == null) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("host (" + testHostIp + ") returns null answer");
+                    s_logger.debug("host (" + testHostIp + ") returns Unknown (null) answer");
                 }
-                return Status.Alert;
+                return Status.Unknown;
             }
 
             if (pingTestAnswer.getResult()) {
@@ -103,20 +103,20 @@ public abstract class AbstractInvestigatorImpl extends AdapterBase implements In
                 return Status.Up;
             } else {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("host (" + testHostIp + ") cannot be pinged, returning Alert state");
+                    s_logger.debug("host (" + testHostIp + ") cannot be pinged, returning Unknown (I don't know) state");
                 }
-                return Status.Alert;
+                return Status.Unknown;
             }
         } catch (AgentUnavailableException e) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("host (" + testHostIp + "): " + e.getLocalizedMessage() + ", returning Disconnected state");
+                s_logger.debug("host (" + testHostIp + "): " + e.getLocalizedMessage() + ", trapped AgentUnavailableException returning Unknown state");
             }
-            return Status.Disconnected;
+            return Status.Unknown;
         } catch (OperationTimedoutException e) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("host (" + testHostIp + "): " + e.getLocalizedMessage() + ", returning Alert state");
+                s_logger.debug("host (" + testHostIp + "): " + e.getLocalizedMessage() + ", trapped OperationTimedoutException returning Unknown state");
             }
-            return Status.Alert;
+            return Status.Unknown;
         }
     }
 }
