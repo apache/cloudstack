@@ -35,6 +35,8 @@ import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
+import com.cloud.agent.api.OvsDestroyBridgeCommand;
+import com.cloud.agent.api.OvsSetupBridgeCommand;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ReadyCommand;
@@ -94,6 +96,8 @@ public class LibvirtRequestWrapper extends RequestWrapper {
         linbvirtCommands.put(GetStorageStatsCommand.class, new LibvirtGetStorageStatsCommandWrapper());
         linbvirtCommands.put(UpgradeSnapshotCommand.class, new LibvirtUpgradeSnapshotCommandWrapper());
         linbvirtCommands.put(DeleteStoragePoolCommand.class, new LibvirtDeleteStoragePoolCommandWrapper());
+        linbvirtCommands.put(OvsSetupBridgeCommand.class, new LibvirtOvsSetupBridgeCommandWrapper());
+        linbvirtCommands.put(OvsDestroyBridgeCommand.class, new LibvirtOvsDestroyBridgeCommandWrapper());
 
         resources.put(LibvirtComputingResource.class, linbvirtCommands);
     }

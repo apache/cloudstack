@@ -77,6 +77,8 @@ import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
+import com.cloud.agent.api.OvsDestroyBridgeCommand;
+import com.cloud.agent.api.OvsSetupBridgeCommand;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ReadyCommand;
@@ -762,6 +764,203 @@ public class LibvirtComputingResourceTest {
         verify(vm, times(1)).getNics();
         verify(vm, times(1)).getDisks();
         verify(diskTO, times(1)).getType();
+    }
+
+    @Test
+    public void testPrepareForMigrationCommandMigration() {
+        final Connect conn = Mockito.mock(Connect.class);
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+
+        final VirtualMachineTO vm = Mockito.mock(VirtualMachineTO.class);
+        final KVMStoragePoolManager storagePoolManager = Mockito.mock(KVMStoragePoolManager.class);
+        final NicTO nicTO = Mockito.mock(NicTO.class);
+        final DiskTO diskTO = Mockito.mock(DiskTO.class);
+        final VifDriver vifDriver = Mockito.mock(VifDriver.class);
+
+        final PrepareForMigrationCommand command = new PrepareForMigrationCommand(vm);
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        try {
+            when(libvirtConnectionWrapper.getConnectionByVmName(vm.getName())).thenReturn(conn);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        when(vm.getNics()).thenReturn(new NicTO[]{nicTO});
+        when(vm.getDisks()).thenReturn(new DiskTO[]{diskTO});
+
+        when(nicTO.getType()).thenReturn(TrafficType.Guest);
+        when(diskTO.getType()).thenReturn(Volume.Type.ISO);
+
+        when(libvirtComputingResource.getVifDriver(nicTO.getType())).thenReturn(vifDriver);
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolManager);
+        when(storagePoolManager.connectPhysicalDisksViaVmSpec(vm)).thenReturn(true);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(vm.getName());
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(vm, times(1)).getNics();
+        verify(vm, times(1)).getDisks();
+        verify(diskTO, times(1)).getType();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testPrepareForMigrationCommandLibvirtException() {
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+
+        final VirtualMachineTO vm = Mockito.mock(VirtualMachineTO.class);
+        final KVMStoragePoolManager storagePoolManager = Mockito.mock(KVMStoragePoolManager.class);
+        final NicTO nicTO = Mockito.mock(NicTO.class);
+        final VifDriver vifDriver = Mockito.mock(VifDriver.class);
+
+        final PrepareForMigrationCommand command = new PrepareForMigrationCommand(vm);
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        try {
+            when(libvirtConnectionWrapper.getConnectionByVmName(vm.getName())).thenThrow(LibvirtException.class);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        when(vm.getNics()).thenReturn(new NicTO[]{nicTO});
+        when(nicTO.getType()).thenReturn(TrafficType.Guest);
+
+        when(libvirtComputingResource.getVifDriver(nicTO.getType())).thenReturn(vifDriver);
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolManager);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(vm.getName());
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(vm, times(1)).getNics();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testPrepareForMigrationCommandURISyntaxException() {
+        final Connect conn = Mockito.mock(Connect.class);
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+
+        final VirtualMachineTO vm = Mockito.mock(VirtualMachineTO.class);
+        final KVMStoragePoolManager storagePoolManager = Mockito.mock(KVMStoragePoolManager.class);
+        final NicTO nicTO = Mockito.mock(NicTO.class);
+        final DiskTO volume = Mockito.mock(DiskTO.class);
+        final VifDriver vifDriver = Mockito.mock(VifDriver.class);
+
+        final PrepareForMigrationCommand command = new PrepareForMigrationCommand(vm);
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        try {
+            when(libvirtConnectionWrapper.getConnectionByVmName(vm.getName())).thenReturn(conn);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        when(vm.getNics()).thenReturn(new NicTO[]{nicTO});
+        when(vm.getDisks()).thenReturn(new DiskTO[]{volume});
+
+        when(nicTO.getType()).thenReturn(TrafficType.Guest);
+        when(volume.getType()).thenReturn(Volume.Type.ISO);
+
+        when(libvirtComputingResource.getVifDriver(nicTO.getType())).thenReturn(vifDriver);
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolManager);
+        try {
+            when(libvirtComputingResource.getVolumePath(conn, volume)).thenThrow(URISyntaxException.class);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        } catch (final URISyntaxException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(vm.getName());
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(vm, times(1)).getNics();
+        verify(vm, times(1)).getDisks();
+        verify(volume, times(1)).getType();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testPrepareForMigrationCommandInternalErrorException() {
+        final Connect conn = Mockito.mock(Connect.class);
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+
+        final VirtualMachineTO vm = Mockito.mock(VirtualMachineTO.class);
+        final KVMStoragePoolManager storagePoolManager = Mockito.mock(KVMStoragePoolManager.class);
+        final NicTO nicTO = Mockito.mock(NicTO.class);
+        final DiskTO volume = Mockito.mock(DiskTO.class);
+
+        final PrepareForMigrationCommand command = new PrepareForMigrationCommand(vm);
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        try {
+            when(libvirtConnectionWrapper.getConnectionByVmName(vm.getName())).thenReturn(conn);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        when(vm.getNics()).thenReturn(new NicTO[]{nicTO});
+        when(nicTO.getType()).thenReturn(TrafficType.Guest);
+
+        when(libvirtComputingResource.getVifDriver(nicTO.getType())).thenThrow(InternalErrorException.class);
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolManager);
+        try {
+            when(libvirtComputingResource.getVolumePath(conn, volume)).thenReturn("/path");
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        } catch (final URISyntaxException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(vm.getName());
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(vm, times(1)).getNics();
     }
 
     @Test(expected = UnsatisfiedLinkError.class)
@@ -1707,5 +1906,93 @@ public class LibvirtComputingResourceTest {
 
         verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
         verify(storagePoolMgr, times(1)).deleteStoragePool(pool.getType(), pool.getUuid());
+    }
+
+    @Test
+    public void testOvsSetupBridgeCommand() {
+        final String name = "Test";
+        final Long hostId = 1l;
+        final Long networkId = 1l;
+
+        final OvsSetupBridgeCommand command = new OvsSetupBridgeCommand(name, hostId, networkId);
+
+        when(libvirtComputingResource.findOrCreateTunnelNetwork(command.getBridgeName())).thenReturn(true);
+        when(libvirtComputingResource.configureTunnelNetwork(command.getNetworkId(), command.getHostId(),
+                command.getBridgeName())).thenReturn(true);
+
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).findOrCreateTunnelNetwork(command.getBridgeName());
+        verify(libvirtComputingResource, times(1)).configureTunnelNetwork(command.getNetworkId(), command.getHostId(),
+                command.getBridgeName());
+    }
+
+    @Test
+    public void testOvsSetupBridgeCommandFailure() {
+        final String name = "Test";
+        final Long hostId = 1l;
+        final Long networkId = 1l;
+
+        final OvsSetupBridgeCommand command = new OvsSetupBridgeCommand(name, hostId, networkId);
+
+        when(libvirtComputingResource.findOrCreateTunnelNetwork(command.getBridgeName())).thenReturn(true);
+        when(libvirtComputingResource.configureTunnelNetwork(command.getNetworkId(), command.getHostId(),
+                command.getBridgeName())).thenReturn(false);
+
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).findOrCreateTunnelNetwork(command.getBridgeName());
+        verify(libvirtComputingResource, times(1)).configureTunnelNetwork(command.getNetworkId(), command.getHostId(),
+                command.getBridgeName());
+    }
+
+    @Test
+    public void testOvsDestroyBridgeCommand() {
+        final String name = "Test";
+        final Long hostId = 1l;
+        final Long networkId = 1l;
+
+        final OvsDestroyBridgeCommand command = new OvsDestroyBridgeCommand(networkId, name, hostId);
+
+        when(libvirtComputingResource.destroyTunnelNetwork(command.getBridgeName())).thenReturn(true);
+
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).destroyTunnelNetwork(command.getBridgeName());
+    }
+
+    @Test
+    public void testOvsDestroyBridgeCommandFailure() {
+        final String name = "Test";
+        final Long hostId = 1l;
+        final Long networkId = 1l;
+
+        final OvsDestroyBridgeCommand command = new OvsDestroyBridgeCommand(networkId, name, hostId);
+
+        when(libvirtComputingResource.destroyTunnelNetwork(command.getBridgeName())).thenReturn(false);
+
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).destroyTunnelNetwork(command.getBridgeName());
     }
 }

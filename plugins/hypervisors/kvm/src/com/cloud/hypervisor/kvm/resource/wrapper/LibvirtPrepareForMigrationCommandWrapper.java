@@ -33,6 +33,7 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.storage.Volume;
 
@@ -51,6 +52,7 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
 
         boolean skipDisconnect = false;
 
+        final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
         try {
             final LibvirtConnectionWrapper libvirtConnectionWrapper = libvirtComputingResource.getLibvirtConnectionWrapper();
 
@@ -69,7 +71,7 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
 
             skipDisconnect = true;
 
-            if (!libvirtComputingResource.getStoragePoolMgr().connectPhysicalDisksViaVmSpec(vm)) {
+            if (!storagePoolMgr.connectPhysicalDisksViaVmSpec(vm)) {
                 return new PrepareForMigrationAnswer(command, "failed to connect physical disks to host");
             }
 
@@ -82,7 +84,7 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
             return new PrepareForMigrationAnswer(command, e.toString());
         } finally {
             if (!skipDisconnect) {
-                libvirtComputingResource.getStoragePoolMgr().disconnectPhysicalDisksViaVmSpec(vm);
+                storagePoolMgr.disconnectPhysicalDisksViaVmSpec(vm);
             }
         }
     }

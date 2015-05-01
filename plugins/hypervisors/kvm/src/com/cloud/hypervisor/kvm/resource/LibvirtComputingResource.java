@@ -108,11 +108,9 @@ import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.OvsCreateTunnelAnswer;
 import com.cloud.agent.api.OvsCreateTunnelCommand;
-import com.cloud.agent.api.OvsDestroyBridgeCommand;
 import com.cloud.agent.api.OvsDestroyTunnelCommand;
 import com.cloud.agent.api.OvsFetchInterfaceAnswer;
 import com.cloud.agent.api.OvsFetchInterfaceCommand;
-import com.cloud.agent.api.OvsSetupBridgeCommand;
 import com.cloud.agent.api.OvsVpcPhysicalTopologyConfigCommand;
 import com.cloud.agent.api.OvsVpcRoutingPolicyConfigCommand;
 import com.cloud.agent.api.PingCommand;
@@ -1342,10 +1340,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((CheckOnHostCommand)cmd);
             } else if (cmd instanceof OvsFetchInterfaceCommand) {
                 return execute((OvsFetchInterfaceCommand)cmd);
-            } else if (cmd instanceof OvsSetupBridgeCommand) {
-                return execute((OvsSetupBridgeCommand)cmd);
-            } else if (cmd instanceof OvsDestroyBridgeCommand) {
-                return execute((OvsDestroyBridgeCommand)cmd);
             } else if (cmd instanceof OvsCreateTunnelCommand) {
                 return execute((OvsCreateTunnelCommand)cmd);
             } else if (cmd instanceof OvsDestroyTunnelCommand) {
@@ -1379,20 +1373,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     + e.getMessage());
         }
 
-    }
-
-    private Answer execute(final OvsSetupBridgeCommand cmd) {
-        findOrCreateTunnelNetwork(cmd.getBridgeName());
-        configureTunnelNetwork(cmd.getNetworkId(), cmd.getHostId(),
-                cmd.getBridgeName());
-        s_logger.debug("OVS Bridge configured");
-        return new Answer(cmd, true, null);
-    }
-
-    private Answer execute(final OvsDestroyBridgeCommand cmd) {
-        destroyTunnelNetwork(cmd.getBridgeName());
-        s_logger.debug("OVS Bridge destroyed");
-        return new Answer(cmd, true, null);
     }
 
     public Answer execute(final OvsVpcPhysicalTopologyConfigCommand cmd) {
@@ -1436,28 +1416,23 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    private synchronized void destroyTunnelNetwork(final String bridge) {
-        try {
-            findOrCreateTunnelNetwork(bridge);
-            final Script cmd = new Script(_ovsTunnelPath, _timeout, s_logger);
-            cmd.add("destroy_ovs_bridge");
-            cmd.add("--bridge", bridge);
-            final String result = cmd.execute();
-            if (result != null) {
-                // TODO: Should make this error not fatal?
-                // Can Concurrent VM shutdown/migration/reboot events can cause
-                // this method
-                // to be executed on a bridge which has already been removed?
-                throw new CloudRuntimeException("Unable to remove OVS bridge " + bridge);
-            }
-            return;
-        } catch (final Exception e) {
-            s_logger.warn("destroyTunnelNetwork failed:", e);
-            return;
+    public synchronized boolean destroyTunnelNetwork(final String bridge) {
+        findOrCreateTunnelNetwork(bridge);
+
+        final Script cmd = new Script(_ovsTunnelPath, _timeout, s_logger);
+        cmd.add("destroy_ovs_bridge");
+        cmd.add("--bridge", bridge);
+
+        final String result = cmd.execute();
+
+        if (result != null) {
+            s_logger.debug("OVS Bridge could not be destroyed due to error ==> " + result);
+            return false;
         }
+        return true;
     }
 
-    private synchronized boolean findOrCreateTunnelNetwork(final String nwName) {
+    public synchronized boolean findOrCreateTunnelNetwork(final String nwName) {
         try {
             if (checkNetwork(nwName)) {
                 return true;
@@ -1475,7 +1450,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
-    private synchronized boolean configureTunnelNetwork(final long networkId,
+    public synchronized boolean configureTunnelNetwork(final long networkId,
             final long hostId, final String nwName) {
         try {
             findOrCreateTunnelNetwork(nwName);
