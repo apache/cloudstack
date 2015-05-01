@@ -88,11 +88,9 @@ import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.CheckNetworkAnswer;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckOnHostCommand;
-import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
-import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.FenceAnswer;
@@ -100,19 +98,12 @@ import com.cloud.agent.api.FenceCommand;
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
-import com.cloud.agent.api.ModifyStoragePoolAnswer;
-import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
-import com.cloud.agent.api.NetworkRulesVmSecondaryIpCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.OvsCreateTunnelAnswer;
 import com.cloud.agent.api.OvsCreateTunnelCommand;
 import com.cloud.agent.api.OvsDestroyTunnelCommand;
-import com.cloud.agent.api.OvsFetchInterfaceAnswer;
-import com.cloud.agent.api.OvsFetchInterfaceCommand;
-import com.cloud.agent.api.OvsVpcPhysicalTopologyConfigCommand;
-import com.cloud.agent.api.OvsVpcRoutingPolicyConfigCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
@@ -202,7 +193,6 @@ import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.QCOW2Processor;
 import com.cloud.storage.template.TemplateLocation;
-import com.cloud.storage.template.TemplateProp;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -441,6 +431,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public int getTimeout() {
         return _timeout;
+    }
+
+    public String getOvsTunnelPath() {
+        return _ovsTunnelPath;
     }
 
     private static final class KeyValueInterpreter extends OutputInterpreter {
@@ -1300,10 +1294,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((CreateVolumeFromSnapshotCommand)cmd);
             } else if (cmd instanceof CreatePrivateTemplateFromSnapshotCommand) {
                 return execute((CreatePrivateTemplateFromSnapshotCommand)cmd);
-            } else if (cmd instanceof CreateStoragePoolCommand) {
-                return execute((CreateStoragePoolCommand)cmd);
-            } else if (cmd instanceof ModifyStoragePoolCommand) {
-                return execute((ModifyStoragePoolCommand)cmd);
             } else if (cmd instanceof SecurityGroupRulesCmd) {
                 return execute((SecurityGroupRulesCmd)cmd);
             } else if (cmd instanceof FenceCommand) {
@@ -1322,96 +1312,27 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((NetworkUsageCommand)cmd);
             } else if (cmd instanceof NetworkRulesSystemVmCommand) {
                 return execute((NetworkRulesSystemVmCommand)cmd);
-            } else if (cmd instanceof CleanupNetworkRulesCmd) {
-                return execute((CleanupNetworkRulesCmd)cmd);
             } else if (cmd instanceof CopyVolumeCommand) {
                 return execute((CopyVolumeCommand)cmd);
             } else if (cmd instanceof ResizeVolumeCommand) {
                 return execute((ResizeVolumeCommand)cmd);
             } else if (cmd instanceof CheckNetworkCommand) {
                 return execute((CheckNetworkCommand)cmd);
-            } else if (cmd instanceof NetworkRulesVmSecondaryIpCommand) {
-                return execute((NetworkRulesVmSecondaryIpCommand)cmd);
             } else if (cmd instanceof StorageSubSystemCommand) {
                 return storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
             } else if (cmd instanceof PvlanSetupCommand) {
                 return execute((PvlanSetupCommand)cmd);
             } else if (cmd instanceof CheckOnHostCommand) {
                 return execute((CheckOnHostCommand)cmd);
-            } else if (cmd instanceof OvsFetchInterfaceCommand) {
-                return execute((OvsFetchInterfaceCommand)cmd);
             } else if (cmd instanceof OvsCreateTunnelCommand) {
                 return execute((OvsCreateTunnelCommand)cmd);
             } else if (cmd instanceof OvsDestroyTunnelCommand) {
                 return execute((OvsDestroyTunnelCommand)cmd);
-            } else if (cmd instanceof OvsVpcPhysicalTopologyConfigCommand) {
-                return execute((OvsVpcPhysicalTopologyConfigCommand) cmd);
-            } else if (cmd instanceof OvsVpcRoutingPolicyConfigCommand) {
-                return execute((OvsVpcRoutingPolicyConfigCommand) cmd);
             } else {
                 s_logger.warn("Unsupported command ");
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }
         } catch (final IllegalArgumentException e) {
-            return new Answer(cmd, false, e.getMessage());
-        }
-    }
-
-    private OvsFetchInterfaceAnswer execute(final OvsFetchInterfaceCommand cmd) {
-        final String label = cmd.getLabel();
-        s_logger.debug("Will look for network with name-label:" + label);
-        try {
-            final String ipadd = Script.runSimpleBashScript("ifconfig " + label + " | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'");
-            final String mask = Script.runSimpleBashScript("ifconfig " + label + " | grep 'inet addr:' | cut -d: -f4");
-            final String mac = Script.runSimpleBashScript("ifconfig " + label + " | grep HWaddr | awk -F \" \" '{print $5}'");
-            return new OvsFetchInterfaceAnswer(cmd, true, "Interface " + label
-                    + " retrieved successfully", ipadd, mask, mac);
-
-        } catch (final Exception e) {
-            s_logger.warn("Caught execption when fetching interface", e);
-            return new OvsFetchInterfaceAnswer(cmd, false, "EXCEPTION:"
-                    + e.getMessage());
-        }
-
-    }
-
-    public Answer execute(final OvsVpcPhysicalTopologyConfigCommand cmd) {
-
-        final String bridge = cmd.getBridgeName();
-        try {
-            final Script command = new Script(_ovsTunnelPath, _timeout, s_logger);
-            command.add("configure_ovs_bridge_for_network_topology");
-            command.add("--bridge", bridge);
-            command.add("--config", cmd.getVpcConfigInJson());
-
-            final String result = command.execute();
-            if (result.equalsIgnoreCase("SUCCESS")) {
-                return new Answer(cmd, true, result);
-            } else {
-                return new Answer(cmd, false, result);
-            }
-        } catch  (final Exception e) {
-            s_logger.warn("caught exception while updating host with latest routing polcies", e);
-            return new Answer(cmd, false, e.getMessage());
-        }
-    }
-
-    public Answer execute(final OvsVpcRoutingPolicyConfigCommand cmd) {
-
-        try {
-            final Script command = new Script(_ovsTunnelPath, _timeout, s_logger);
-            command.add("configure_ovs_bridge_for_routing_policies");
-            command.add("--bridge", cmd.getBridgeName());
-            command.add("--config", cmd.getVpcConfigInJson());
-
-            final String result = command.execute();
-            if (result.equalsIgnoreCase("SUCCESS")) {
-                return new Answer(cmd, true, result);
-            } else {
-                return new Answer(cmd, false, result);
-            }
-        } catch  (final Exception e) {
-            s_logger.warn("caught exception while updating host with latest VPC topology", e);
             return new Answer(cmd, false, e.getMessage());
         }
     }
@@ -2642,24 +2563,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    protected Answer execute(final CreateStoragePoolCommand cmd) {
-        return new Answer(cmd, true, "success");
-    }
-
-    protected Answer execute(final ModifyStoragePoolCommand cmd) {
-        final KVMStoragePool storagepool =
-                _storagePoolMgr.createStoragePool(cmd.getPool().getUuid(), cmd.getPool().getHost(), cmd.getPool().getPort(), cmd.getPool().getPath(), cmd.getPool()
-                        .getUserInfo(), cmd.getPool().getType());
-        if (storagepool == null) {
-            return new Answer(cmd, false, " Failed to create storage pool");
-        }
-
-        final Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
-        final ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(cmd, storagepool.getCapacity(), storagepool.getAvailable(), tInfo);
-
-        return answer;
-    }
-
     private Answer execute(final SecurityGroupRulesCmd cmd) {
         String vif = null;
         String brname = null;
@@ -2684,11 +2587,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     ",egress numrules=" + cmd.getEgressRuleSet().length);
             return new SecurityGroupRuleAnswer(cmd);
         }
-    }
-
-    private Answer execute(final CleanupNetworkRulesCmd cmd) {
-        final boolean result = cleanup_rules();
-        return new Answer(cmd, result, "");
     }
 
     protected PowerState convertToPowerState(final DomainState ps) {
@@ -4386,7 +4284,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
-    private boolean network_rules_vmSecondaryIp(final Connect conn, final String vmName, final String secIp, final String action) {
+    public boolean configureNetworkRulesVMSecondaryIP(final Connect conn, final String vmName, final String secIp, final String action) {
 
         if (!_canBridgeFirewall) {
             return false;
@@ -4405,7 +4303,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
-    private boolean cleanup_rules() {
+    public boolean cleanupRules() {
         if (!_canBridgeFirewall) {
             return false;
         }
@@ -4481,20 +4379,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             success = default_network_rules_for_systemvm(conn, cmd.getVmName());
         } catch (final LibvirtException e) {
             s_logger.trace("Ignoring libvirt error.", e);
-        }
-
-        return new Answer(cmd, success, "");
-    }
-
-    private Answer execute(final NetworkRulesVmSecondaryIpCommand cmd) {
-        boolean success = false;
-        Connect conn;
-        try {
-            conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
-            success = network_rules_vmSecondaryIp(conn, cmd.getVmName(), cmd.getVmSecIp(), cmd.getAction());
-        } catch (final LibvirtException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         }
 
         return new Answer(cmd, success, "");

@@ -25,7 +25,9 @@ import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
+import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetStorageStatsCommand;
@@ -35,8 +37,13 @@ import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
+import com.cloud.agent.api.ModifyStoragePoolCommand;
+import com.cloud.agent.api.NetworkRulesVmSecondaryIpCommand;
 import com.cloud.agent.api.OvsDestroyBridgeCommand;
+import com.cloud.agent.api.OvsFetchInterfaceCommand;
 import com.cloud.agent.api.OvsSetupBridgeCommand;
+import com.cloud.agent.api.OvsVpcPhysicalTopologyConfigCommand;
+import com.cloud.agent.api.OvsVpcRoutingPolicyConfigCommand;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ReadyCommand;
@@ -98,6 +105,13 @@ public class LibvirtRequestWrapper extends RequestWrapper {
         linbvirtCommands.put(DeleteStoragePoolCommand.class, new LibvirtDeleteStoragePoolCommandWrapper());
         linbvirtCommands.put(OvsSetupBridgeCommand.class, new LibvirtOvsSetupBridgeCommandWrapper());
         linbvirtCommands.put(OvsDestroyBridgeCommand.class, new LibvirtOvsDestroyBridgeCommandWrapper());
+        linbvirtCommands.put(OvsFetchInterfaceCommand.class, new LibvirtOvsFetchInterfaceCommandWrapper());
+        linbvirtCommands.put(OvsVpcPhysicalTopologyConfigCommand.class, new LibvirtOvsVpcPhysicalTopologyConfigCommandWrapper());
+        linbvirtCommands.put(OvsVpcRoutingPolicyConfigCommand.class, new LibvirtOvsVpcRoutingPolicyConfigCommandWrapper());
+        linbvirtCommands.put(CreateStoragePoolCommand.class, new LibvirtCreateStoragePoolCommandWrapper());
+        linbvirtCommands.put(ModifyStoragePoolCommand.class, new LibvirtModifyStoragePoolCommandWrapper());
+        linbvirtCommands.put(CleanupNetworkRulesCmd.class, new LibvirtCleanupNetworkRulesCommandWrapper());
+        linbvirtCommands.put(NetworkRulesVmSecondaryIpCommand.class, new LibvirtNetworkRulesVmSecondaryIpCommandWrapper());
 
         resources.put(LibvirtComputingResource.class, linbvirtCommands);
     }

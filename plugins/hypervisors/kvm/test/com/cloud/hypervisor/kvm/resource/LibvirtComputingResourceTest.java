@@ -68,6 +68,8 @@ import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
+import com.cloud.agent.api.CleanupNetworkRulesCmd;
+import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetStorageStatsCommand;
@@ -77,8 +79,17 @@ import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
+import com.cloud.agent.api.ModifyStoragePoolCommand;
+import com.cloud.agent.api.NetworkRulesVmSecondaryIpCommand;
 import com.cloud.agent.api.OvsDestroyBridgeCommand;
+import com.cloud.agent.api.OvsFetchInterfaceCommand;
 import com.cloud.agent.api.OvsSetupBridgeCommand;
+import com.cloud.agent.api.OvsVpcPhysicalTopologyConfigCommand;
+import com.cloud.agent.api.OvsVpcPhysicalTopologyConfigCommand.Host;
+import com.cloud.agent.api.OvsVpcPhysicalTopologyConfigCommand.Tier;
+import com.cloud.agent.api.OvsVpcPhysicalTopologyConfigCommand.Vm;
+import com.cloud.agent.api.OvsVpcRoutingPolicyConfigCommand;
+import com.cloud.agent.api.OvsVpcRoutingPolicyConfigCommand.Acl;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ReadyCommand;
@@ -1994,5 +2005,206 @@ public class LibvirtComputingResourceTest {
         assertFalse(answer.getResult());
 
         verify(libvirtComputingResource, times(1)).destroyTunnelNetwork(command.getBridgeName());
+    }
+
+    @Test
+    public void testOvsFetchInterfaceCommand() {
+        final String label = "eth0";
+
+        final OvsFetchInterfaceCommand command = new OvsFetchInterfaceCommand(label);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testOvsVpcPhysicalTopologyConfigCommand() {
+        final Host[] hosts = null;
+        final Tier[] tiers = null;
+        final Vm[] vms = null;
+        final String cidr = null;
+
+        final OvsVpcPhysicalTopologyConfigCommand command = new OvsVpcPhysicalTopologyConfigCommand(hosts, tiers, vms, cidr);
+
+        when(libvirtComputingResource.getOvsTunnelPath()).thenReturn("/path");
+        when(libvirtComputingResource.getTimeout()).thenReturn(0);
+
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getOvsTunnelPath();
+        verify(libvirtComputingResource, times(1)).getTimeout();
+    }
+
+    @Test
+    public void testOvsVpcRoutingPolicyConfigCommand() {
+        final String id = null;
+        final String cidr = null;
+        final Acl[] acls = null;
+        final com.cloud.agent.api.OvsVpcRoutingPolicyConfigCommand.Tier[] tiers = null;
+
+        final OvsVpcRoutingPolicyConfigCommand command = new OvsVpcRoutingPolicyConfigCommand(id, cidr, acls, tiers);
+
+        when(libvirtComputingResource.getOvsTunnelPath()).thenReturn("/path");
+        when(libvirtComputingResource.getTimeout()).thenReturn(0);
+
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getOvsTunnelPath();
+        verify(libvirtComputingResource, times(1)).getTimeout();
+    }
+
+    @Test
+    public void testCreateStoragePoolCommand() {
+        final StoragePool pool = Mockito.mock(StoragePool.class);
+        final CreateStoragePoolCommand command = new CreateStoragePoolCommand(true, pool);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testModifyStoragePoolCommand() {
+        final StoragePool pool = Mockito.mock(StoragePool.class);;
+        final ModifyStoragePoolCommand command = new ModifyStoragePoolCommand(true, pool);
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool kvmStoragePool = Mockito.mock(KVMStoragePool.class);
+
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.createStoragePool(command.getPool().getUuid(), command.getPool().getHost(), command.getPool().getPort(), command.getPool().getPath(), command.getPool()
+                .getUserInfo(), command.getPool().getType())).thenReturn(kvmStoragePool);
+
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(storagePoolMgr, times(1)).createStoragePool(command.getPool().getUuid(), command.getPool().getHost(), command.getPool().getPort(), command.getPool().getPath(), command.getPool()
+                .getUserInfo(), command.getPool().getType());
+    }
+
+    @Test
+    public void testModifyStoragePoolCommandFailure() {
+        final StoragePool pool = Mockito.mock(StoragePool.class);;
+        final ModifyStoragePoolCommand command = new ModifyStoragePoolCommand(true, pool);
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.createStoragePool(command.getPool().getUuid(), command.getPool().getHost(), command.getPool().getPort(), command.getPool().getPath(), command.getPool()
+                .getUserInfo(), command.getPool().getType())).thenReturn(null);
+
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(storagePoolMgr, times(1)).createStoragePool(command.getPool().getUuid(), command.getPool().getHost(), command.getPool().getPort(), command.getPool().getPath(), command.getPool()
+                .getUserInfo(), command.getPool().getType());
+    }
+
+    @Test
+    public void testCleanupNetworkRulesCmd() {
+        final CleanupNetworkRulesCmd command = new CleanupNetworkRulesCmd(1);
+
+        when(libvirtComputingResource.cleanupRules()).thenReturn(true);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).cleanupRules();
+    }
+
+    @Test
+    public void testNetworkRulesVmSecondaryIpCommand() {
+        final String vmName = "Test";
+        final String vmMac = "00:00:00:00";
+        final String secondaryIp = "172.168.25.25";
+        final boolean action = true;
+
+        final NetworkRulesVmSecondaryIpCommand command = new NetworkRulesVmSecondaryIpCommand(vmName, vmMac, secondaryIp, action );
+
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+        final Connect conn = Mockito.mock(Connect.class);
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        try {
+            when(libvirtConnectionWrapper.getConnectionByVmName(command.getVmName())).thenReturn(conn);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+        when(libvirtComputingResource.configureNetworkRulesVMSecondaryIP(conn, command.getVmName(), command.getVmSecIp(), command.getAction())).thenReturn(true);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(command.getVmName());
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        verify(libvirtComputingResource, times(1)).configureNetworkRulesVMSecondaryIP(conn, command.getVmName(), command.getVmSecIp(), command.getAction());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testNetworkRulesVmSecondaryIpCommandFailure() {
+        final String vmName = "Test";
+        final String vmMac = "00:00:00:00";
+        final String secondaryIp = "172.168.25.25";
+        final boolean action = true;
+
+        final NetworkRulesVmSecondaryIpCommand command = new NetworkRulesVmSecondaryIpCommand(vmName, vmMac, secondaryIp, action );
+
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        try {
+            when(libvirtConnectionWrapper.getConnectionByVmName(command.getVmName())).thenThrow(LibvirtException.class);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(command.getVmName());
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
     }
 }
