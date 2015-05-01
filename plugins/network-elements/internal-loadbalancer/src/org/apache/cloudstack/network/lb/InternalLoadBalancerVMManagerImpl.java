@@ -376,7 +376,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
 
         //if offering wasn't set, try to get the default one
         if (_internalLbVmOfferingId == 0L) {
-            boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
+            boolean useLocalStorage = Boolean.parseBoolean(configs.get(DataCenter.SystemVMUseLocalStorageCK));
             ServiceOfferingVO newOff =
                 new ServiceOfferingVO("System Offering For Internal LB VM", 1, InternalLoadBalancerVMManager.DEFAULT_INTERNALLB_VM_RAMSIZE,
                     InternalLoadBalancerVMManager.DEFAULT_INTERNALLB_VM_CPU_MHZ, null, null, true, null,

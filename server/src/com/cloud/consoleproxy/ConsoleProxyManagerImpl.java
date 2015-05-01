@@ -1208,7 +1208,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             _disableRpFilter = true;
         }
 
-        value = configs.get(Config.SystemVMUseLocalStorage.key());
+        value = configs.get(DataCenter.SystemVMUseLocalStorageCK);
         if (value != null && value.equalsIgnoreCase("true")) {
             _useLvm = true;
         }
@@ -1238,7 +1238,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
         _itMgr.registerGuru(VirtualMachine.Type.ConsoleProxy, this);
 
-        boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
+        boolean useLocalStorage = Boolean.parseBoolean(configs.get(DataCenter.SystemVMUseLocalStorageCK));
 
         //check if there is a default service offering configured
         String cpvmSrvcOffIdStr = configs.get(Config.ConsoleProxyServiceOffering.key());

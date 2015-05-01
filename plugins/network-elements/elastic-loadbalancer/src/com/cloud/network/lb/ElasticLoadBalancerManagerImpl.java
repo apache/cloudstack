@@ -290,7 +290,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         }
         _mgmtCidr = _configDao.getValue(Config.ManagementNetwork.key());
 
-        boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
+        boolean useLocalStorage = Boolean.parseBoolean(configs.get(DataCenter.SystemVMUseLocalStorageCK));
 
         _elasticLbVmRamSize = NumbersUtil.parseInt(configs.get(Config.ElasticLoadBalancerVmMemory.key()), DEFAULT_ELB_VM_RAMSIZE);
         _elasticLbvmCpuMHz = NumbersUtil.parseInt(configs.get(Config.ElasticLoadBalancerVmCpuMhz.key()), DEFAULT_ELB_VM_CPU_MHZ);

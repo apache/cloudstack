@@ -871,7 +871,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         if(_serviceOffering == null || !_serviceOffering.getSystemUse()){
             int ramSize = NumbersUtil.parseInt(_configDao.getValue("ssvm.ram.size"), DEFAULT_SS_VM_RAMSIZE);
             int cpuFreq = NumbersUtil.parseInt(_configDao.getValue("ssvm.cpu.mhz"), DEFAULT_SS_VM_CPUMHZ);
-            _useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
+            _useLocalStorage = Boolean.parseBoolean(configs.get(DataCenter.SystemVMUseLocalStorageCK));
             _serviceOffering =
                 new ServiceOfferingVO("System Offering For Secondary Storage VM", 1, ramSize, cpuFreq, null, null, false, null,
                         Storage.ProvisioningType.THIN,  _useLocalStorage, true, null, true, VirtualMachine.Type.SecondaryStorageVm, true);

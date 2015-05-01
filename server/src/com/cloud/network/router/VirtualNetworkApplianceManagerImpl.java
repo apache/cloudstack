@@ -744,7 +744,7 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
 
         _agentMgr.registerForHostEvents(new SshKeysDistriMonitor(_agentMgr, _hostDao, _configDao), true, false, false);
 
-        final boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
+        final boolean useLocalStorage = Boolean.parseBoolean(configs.get(DataCenter.SystemVMUseLocalStorageCK));
         _offering = new ServiceOfferingVO("System Offering For Software Router", 1, _routerRamSize, _routerCpuMHz, null,
                 null, true, null, ProvisioningType.THIN, useLocalStorage, true, null, true, VirtualMachine.Type.DomainRouter, true);
         _offering.setUniqueName(ServiceOffering.routerDefaultOffUniqueName);

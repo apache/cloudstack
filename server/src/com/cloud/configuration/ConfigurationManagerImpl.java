@@ -570,11 +570,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (Throwable e) {
                 throw new CloudRuntimeException("Failed to update storage.network.device2 in host_details due to exception ", e);
             }
-        } else if (Config.SystemVMUseLocalStorage.key().equalsIgnoreCase(name)) {
+        } else if (DataCenter.SystemVMUseLocalStorageCK.equalsIgnoreCase(name)) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Config 'system.vm.use.local.storage' changed to value:" + value + ", need to update System VM offerings");
             }
-            boolean useLocalStorage = Boolean.parseBoolean(_configDao.getValue(Config.SystemVMUseLocalStorage.key()));
+            boolean useLocalStorage = Boolean.parseBoolean(_configDao.getValue(DataCenter.SystemVMUseLocalStorageCK));
             ServiceOfferingVO serviceOffering = _serviceOfferingDao.findByName(ServiceOffering.consoleProxyDefaultOffUniqueName);
             if (serviceOffering != null) {
                 serviceOffering.setUseLocalStorage(useLocalStorage);
