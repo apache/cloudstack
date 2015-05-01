@@ -25,7 +25,12 @@ export M2_HOME="/usr/local/maven-3.2.1/"
 export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=500m"
 
 # Compile Cloudstack
-mvn -q -Pimpatient -Dsimulator clean install
+if [[ $RUNUNITTESTS == true ]]; then
+    mvn -q -Pimpatient -Dsimulator clean install
+else
+    mvn -q -Pimpatient -Dsimulator clean install -DskipTests=true
+fi
+
 
 # Compile API Docs
 cd tools/apidoc

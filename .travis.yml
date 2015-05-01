@@ -24,6 +24,7 @@ jdk:
 notifications:
   email: false
 env:
+- RUNUNITTESTS=true TESTS=""
 - TESTS="smoke/test_affinity_groups smoke/test_deploy_vms_with_varied_deploymentplanners smoke/test_disk_offerings smoke/test_global_settings"
 - TESTS="smoke/test_portable_publicip smoke/test_primary_storage smoke/test_privategw_acl smoke/test_public_ip_range smoke/test_pvlan smoke/test_regions"
 - TESTS="smoke/test_reset_vm_on_reboot smoke/test_resource_detail smoke/test_routers smoke/test_guest_vlan_range smoke/test_iso"
@@ -32,8 +33,7 @@ env:
 - TESTS="smoke/test_volumes smoke/test_vpc_vpn smoke/misc/test_deploy_vm smoke/test_vm_life_cycle component/test_mm_max_limits"
 - TESTS="component/test_acl_isolatednetwork_delete component/test_mm_domain_limits component/test_acl_listsnapshot"
 - TESTS="component/test_acl_listvm component/test_acl_listvolume component/test_acl_sharednetwork_deployVM-impersonation component/test_acl_sharednetwork"
-- TESTS="component/test_resource_limits component/test_snapshots component/test_usage component/test_volumes component/test_vpc"
-- TESTS="component/test_vpc_network component/test_vpc_network_lbrules component/test_vpc_offerings"
+- TESTS="component/test_snapshots"
 before_install: travis_wait 30 ./tools/travis/before_install.sh
 install: ./tools/travis/install.sh
 before_script: travis_wait 30 ./tools/travis/before_script.sh
