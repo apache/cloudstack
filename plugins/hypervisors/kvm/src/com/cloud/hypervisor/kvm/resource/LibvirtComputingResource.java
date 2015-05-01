@@ -85,7 +85,6 @@ import com.ceph.rbd.RbdImage;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BackupSnapshotAnswer;
 import com.cloud.agent.api.BackupSnapshotCommand;
-import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
@@ -98,8 +97,6 @@ import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
-import com.cloud.agent.api.OvsCreateTunnelAnswer;
-import com.cloud.agent.api.OvsCreateTunnelCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
@@ -428,6 +425,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public String getOvsTunnelPath() {
         return _ovsTunnelPath;
+    }
+
+    public KVMHAMonitor getMonitor() {
+        return _monitor;
     }
 
     private static final class KeyValueInterpreter extends OutputInterpreter {
@@ -1309,10 +1310,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
             } else if (cmd instanceof PvlanSetupCommand) {
                 return execute((PvlanSetupCommand)cmd);
-            } else if (cmd instanceof CheckOnHostCommand) {
-                return execute((CheckOnHostCommand)cmd);
-            } else if (cmd instanceof OvsCreateTunnelCommand) {
-                return execute((OvsCreateTunnelCommand)cmd);
             } else {
                 s_logger.warn("Unsupported command ");
                 return Answer.createUnsupportedCommandAnswer(cmd);
@@ -1398,39 +1395,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
-    private OvsCreateTunnelAnswer execute(final OvsCreateTunnelCommand cmd) {
-        final String bridge = cmd.getNetworkName();
-        try {
-            if (!findOrCreateTunnelNetwork(bridge)) {
-                s_logger.debug("Error during bridge setup");
-                return new OvsCreateTunnelAnswer(cmd, false,
-                        "Cannot create network", bridge);
-            }
-
-            configureTunnelNetwork(cmd.getNetworkId(), cmd.getFrom(),
-                    cmd.getNetworkName());
-            final Script command = new Script(_ovsTunnelPath, _timeout, s_logger);
-            command.add("create_tunnel");
-            command.add("--bridge", bridge);
-            command.add("--remote_ip", cmd.getRemoteIp());
-            command.add("--key", cmd.getKey().toString());
-            command.add("--src_host", cmd.getFrom().toString());
-            command.add("--dst_host", cmd.getTo().toString());
-
-            final String result = command.execute();
-            if (result != null) {
-                return new OvsCreateTunnelAnswer(cmd, true, result, null,
-                        bridge);
-            } else {
-                return new OvsCreateTunnelAnswer(cmd, false, result, bridge);
-            }
-        } catch (final Exception e) {
-            s_logger.debug("Error during tunnel setup");
-            s_logger.warn("Caught execption when creating ovs tunnel", e);
-            return new OvsCreateTunnelAnswer(cmd, false, e.getMessage(), bridge);
-        }
-    }
-
     private CopyVolumeAnswer execute(final CopyVolumeCommand cmd) {
         /**
              This method is only used for copying files from Primary Storage TO Secondary Storage
@@ -1504,26 +1468,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } catch (final ExecutionException e) {
             s_logger.warn("Unable to fence", e);
             return new FenceAnswer(cmd, false, e.getMessage());
-        }
-
-    }
-
-    protected Answer execute(final CheckOnHostCommand cmd) {
-        final ExecutorService executors = Executors.newSingleThreadExecutor();
-        final List<NfsStoragePool> pools = _monitor.getStoragePools();
-        final KVMHAChecker ha = new KVMHAChecker(pools, cmd.getHost().getPrivateNetwork().getIp());
-        final Future<Boolean> future = executors.submit(ha);
-        try {
-            final Boolean result = future.get();
-            if (result) {
-                return new Answer(cmd, false, "Heart is still beating...");
-            } else {
-                return new Answer(cmd);
-            }
-        } catch (final InterruptedException e) {
-            return new Answer(cmd, false, "can't get status of host:");
-        } catch (final ExecutionException e) {
-            return new Answer(cmd, false, "can't get status of host:");
         }
 
     }
@@ -3795,28 +3739,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return parser.getEmulator();
     }
 
-    private String getGuestType(final Connect conn, final String vmName) {
-        final LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
-        Domain dm = null;
-        try {
-            dm = conn.domainLookupByName(vmName);
-            final String xmlDesc = dm.getXMLDesc(0);
-            parser.parseDomainXML(xmlDesc);
-            return parser.getDescription();
-        } catch (final LibvirtException e) {
-            s_logger.trace("Ignoring libvirt error.", e);
-            return null;
-        } finally {
-            try {
-                if (dm != null) {
-                    dm.free();
-                }
-            } catch (final LibvirtException l) {
-                s_logger.trace("Ignoring libvirt error.", l);
-            }
-        }
-    }
-
     boolean isGuestPVEnabled(final String guestOSName) {
         if (guestOSName == null) {
             return false;
@@ -4304,13 +4226,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     @Override
     public void setName(final String name) {
         // TODO Auto-generated method stub
-
     }
 
     @Override
     public void setConfigParams(final Map<String, Object> params) {
         // TODO Auto-generated method stub
-
     }
 
     @Override
@@ -4328,7 +4248,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     @Override
     public void setRunLevel(final int level) {
         // TODO Auto-generated method stub
-
     }
 
     public HypervisorType getHypervisorType(){

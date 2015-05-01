@@ -68,6 +68,7 @@ import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkCommand;
+import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.CreateStoragePoolCommand;
@@ -83,6 +84,7 @@ import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.NetworkRulesVmSecondaryIpCommand;
+import com.cloud.agent.api.OvsCreateTunnelCommand;
 import com.cloud.agent.api.OvsDestroyBridgeCommand;
 import com.cloud.agent.api.OvsDestroyTunnelCommand;
 import com.cloud.agent.api.OvsFetchInterfaceCommand;
@@ -2541,5 +2543,115 @@ public class LibvirtComputingResourceTest {
         assertFalse(answer.getResult());
 
         verify(libvirtComputingResource, times(1)).findOrCreateTunnelNetwork(command.getBridgeName());
+    }
+
+    @Test
+    public void testCheckOnHostCommand() {
+        final com.cloud.host.Host host = Mockito.mock(com.cloud.host.Host.class);;
+
+        final CheckOnHostCommand command = new CheckOnHostCommand(host);
+
+        final KVMHAMonitor monitor = Mockito.mock(KVMHAMonitor.class);
+
+        when(libvirtComputingResource.getMonitor()).thenReturn(monitor);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getMonitor();
+    }
+
+    @Test
+    public void testOvsCreateTunnelCommand() {
+        final String remoteIp = "172.16.16.16";
+        final Integer key = 1;
+        final Long from = 1l;
+        final Long to = 2l;
+        final long networkId = 1l;
+        final String fromIp = "172.15.15.15";
+        final String networkName = "eth";
+        final String networkUuid = "8edb1156-a851-4914-afc6-468ee52ac861";
+
+        final OvsCreateTunnelCommand command = new OvsCreateTunnelCommand(remoteIp, key, from, to, networkId, fromIp, networkName, networkUuid);
+
+        final String bridge = command.getNetworkName();
+
+        when(libvirtComputingResource.findOrCreateTunnelNetwork(bridge)).thenReturn(true);
+        when(libvirtComputingResource.configureTunnelNetwork(command.getNetworkId(), command.getFrom(),
+                command.getNetworkName())).thenReturn(true);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).findOrCreateTunnelNetwork(bridge);
+        verify(libvirtComputingResource, times(1)).configureTunnelNetwork(command.getNetworkId(), command.getFrom(),
+                command.getNetworkName());
+    }
+
+    @Test
+    public void testOvsCreateTunnelCommandFailure1() {
+        final String remoteIp = "172.16.16.16";
+        final Integer key = 1;
+        final Long from = 1l;
+        final Long to = 2l;
+        final long networkId = 1l;
+        final String fromIp = "172.15.15.15";
+        final String networkName = "eth";
+        final String networkUuid = "8edb1156-a851-4914-afc6-468ee52ac861";
+
+        final OvsCreateTunnelCommand command = new OvsCreateTunnelCommand(remoteIp, key, from, to, networkId, fromIp, networkName, networkUuid);
+
+        final String bridge = command.getNetworkName();
+
+        when(libvirtComputingResource.findOrCreateTunnelNetwork(bridge)).thenReturn(false);
+        when(libvirtComputingResource.configureTunnelNetwork(command.getNetworkId(), command.getFrom(),
+                command.getNetworkName())).thenReturn(true);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).findOrCreateTunnelNetwork(bridge);
+        verify(libvirtComputingResource, times(0)).configureTunnelNetwork(command.getNetworkId(), command.getFrom(),
+                command.getNetworkName());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testOvsCreateTunnelCommandFailure2() {
+        final String remoteIp = "172.16.16.16";
+        final Integer key = 1;
+        final Long from = 1l;
+        final Long to = 2l;
+        final long networkId = 1l;
+        final String fromIp = "172.15.15.15";
+        final String networkName = "eth";
+        final String networkUuid = "8edb1156-a851-4914-afc6-468ee52ac861";
+
+        final OvsCreateTunnelCommand command = new OvsCreateTunnelCommand(remoteIp, key, from, to, networkId, fromIp, networkName, networkUuid);
+
+        final String bridge = command.getNetworkName();
+
+        when(libvirtComputingResource.findOrCreateTunnelNetwork(bridge)).thenReturn(true);
+        when(libvirtComputingResource.configureTunnelNetwork(command.getNetworkId(), command.getFrom(),
+                command.getNetworkName())).thenThrow(Exception.class);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).findOrCreateTunnelNetwork(bridge);
+        verify(libvirtComputingResource, times(1)).configureTunnelNetwork(command.getNetworkId(), command.getFrom(),
+                command.getNetworkName());
     }
 }

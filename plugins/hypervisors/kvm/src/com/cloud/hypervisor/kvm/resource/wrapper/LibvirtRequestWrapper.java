@@ -25,6 +25,7 @@ import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkCommand;
+import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.Command;
@@ -41,6 +42,7 @@ import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.NetworkRulesVmSecondaryIpCommand;
+import com.cloud.agent.api.OvsCreateTunnelCommand;
 import com.cloud.agent.api.OvsDestroyBridgeCommand;
 import com.cloud.agent.api.OvsDestroyTunnelCommand;
 import com.cloud.agent.api.OvsFetchInterfaceCommand;
@@ -120,6 +122,8 @@ public class LibvirtRequestWrapper extends RequestWrapper {
         linbvirtCommands.put(CheckSshCommand.class, new LibvirtCheckSshCommandWrapper());
         linbvirtCommands.put(CheckNetworkCommand.class, new LibvirtCheckNetworkCommandWrapper());
         linbvirtCommands.put(OvsDestroyTunnelCommand.class, new LibvirtOvsDestroyTunnelCommandWrapper());
+        linbvirtCommands.put(CheckOnHostCommand.class, new LibvirtCheckOnHostCommandWrapper());
+        linbvirtCommands.put(OvsCreateTunnelCommand.class, new LibvirtOvsCreateTunnelCommandWrapper());
 
         resources.put(LibvirtComputingResource.class, linbvirtCommands);
     }
