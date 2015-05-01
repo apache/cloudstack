@@ -19,7 +19,6 @@
 package com.cloud.utils;
 
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
@@ -63,7 +62,7 @@ public class EncryptionUtil {
             final Mac mac = Mac.getInstance("HmacSHA1");
             final SecretKeySpec keySpec = new SecretKeySpec(key.getBytes("UTF-8"), "HmacSHA1");
             mac.init(keySpec);
-            mac.update(data.getBytes(Charset.defaultCharset()));
+            mac.update(data.getBytes("UTF-8"));
             final byte[] encryptedBytes = mac.doFinal();
             return Base64.encodeBase64String(encryptedBytes);
         } catch (NoSuchAlgorithmException | InvalidKeyException | UnsupportedEncodingException e) {
