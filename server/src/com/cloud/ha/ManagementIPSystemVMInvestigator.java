@@ -78,10 +78,8 @@ public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
             List<Long> otherHosts = findHostByPod(vmHost.getPodId(), vm.getHostId());
             for (Long otherHost : otherHosts) {
                 Status vmState = testIpAddress(otherHost, nic.getIp4Address());
-                if (vmState == null) {
-                    // can't get information from that host, try the next one
-                    continue;
-                }
+                assert vmState != null;
+                // In case of Status.Unknown, next host will be tried
                 if (vmState == Status.Up) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("successfully pinged vm's private IP (" + vm.getPrivateIpAddress() + "), returning that the VM is up");
@@ -91,7 +89,8 @@ public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
                     // We can't ping the VM directly...if we can ping the host, then report the VM down.
                     // If we can't ping the host, then we don't have enough information.
                     Status vmHostState = testIpAddress(otherHost, vmHost.getPrivateIpAddress());
-                    if ((vmHostState != null) && (vmHostState == Status.Up)) {
+                    assert vmHostState != null;
+                    if (vmHostState == Status.Up) {
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("successfully pinged vm's host IP (" + vmHost.getPrivateIpAddress() +
                                 "), but could not ping VM, returning that the VM is down");
