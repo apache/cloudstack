@@ -325,10 +325,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 // set the post url, this is used in the monitoring thread to determine the SSVM
                 VolumeDataStoreVO volumeStore = _volumeStoreDao.findByVolume(vol.getId());
-                if (volumeStore != null) {
-                    volumeStore.setExtractUrl(url);
-                    _volumeStoreDao.persist(volumeStore);
-                }
+                assert (volumeStore != null) : "sincle volume is registered, volumestore cannot be null at this stage";
+                volumeStore.setExtractUrl(url);
+                _volumeStoreDao.persist(volumeStore);
 
                 response.setId(UUID.fromString(vol.getUuid()));
 
