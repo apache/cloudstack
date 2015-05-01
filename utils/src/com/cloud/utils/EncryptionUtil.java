@@ -18,17 +18,20 @@
  */
 package com.cloud.utils;
 
-import com.cloud.utils.exception.CloudRuntimeException;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.jasypt.encryption.pbe.PBEStringEncryptor;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import java.io.UnsupportedEncodingException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class EncryptionUtil {
     public static final Logger s_logger = Logger.getLogger(EncryptionUtil.class.getName());
@@ -60,7 +63,7 @@ public class EncryptionUtil {
             final Mac mac = Mac.getInstance("HmacSHA1");
             final SecretKeySpec keySpec = new SecretKeySpec(key.getBytes("UTF-8"), "HmacSHA1");
             mac.init(keySpec);
-            mac.update(data.getBytes());
+            mac.update(data.getBytes(Charset.defaultCharset()));
             final byte[] encryptedBytes = mac.doFinal();
             return Base64.encodeBase64String(encryptedBytes);
         } catch (NoSuchAlgorithmException | InvalidKeyException | UnsupportedEncodingException e) {
