@@ -30,7 +30,9 @@ import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreateStoragePoolCommand;
+import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
+import com.cloud.agent.api.FenceCommand;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
@@ -54,6 +56,7 @@ import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
+import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.check.CheckSshCommand;
@@ -124,6 +127,9 @@ public class LibvirtRequestWrapper extends RequestWrapper {
         linbvirtCommands.put(OvsDestroyTunnelCommand.class, new LibvirtOvsDestroyTunnelCommandWrapper());
         linbvirtCommands.put(CheckOnHostCommand.class, new LibvirtCheckOnHostCommandWrapper());
         linbvirtCommands.put(OvsCreateTunnelCommand.class, new LibvirtOvsCreateTunnelCommandWrapper());
+        linbvirtCommands.put(CreateVolumeFromSnapshotCommand.class, new LibvirtCreateVolumeFromSnapshotCommandWrapper());
+        linbvirtCommands.put(FenceCommand.class, new LibvirtFenceCommandWrapper());
+        linbvirtCommands.put(SecurityGroupRulesCmd.class, new LibvirtSecurityGroupRulesCommandWrapper());
 
         resources.put(LibvirtComputingResource.class, linbvirtCommands);
     }

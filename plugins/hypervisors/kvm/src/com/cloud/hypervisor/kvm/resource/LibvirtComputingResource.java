@@ -44,10 +44,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -88,10 +84,6 @@ import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
-import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
-import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
-import com.cloud.agent.api.FenceAnswer;
-import com.cloud.agent.api.FenceCommand;
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
@@ -103,8 +95,6 @@ import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
-import com.cloud.agent.api.SecurityGroupRuleAnswer;
-import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
@@ -138,7 +128,6 @@ import com.cloud.dc.Vlan;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.kvm.resource.KVMHABase.NfsStoragePool;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ClockDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ConsoleDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.CpuModeDef;
@@ -1284,14 +1273,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((ManageSnapshotCommand)cmd);
             } else if (cmd instanceof BackupSnapshotCommand) {
                 return execute((BackupSnapshotCommand)cmd);
-            } else if (cmd instanceof CreateVolumeFromSnapshotCommand) {
-                return execute((CreateVolumeFromSnapshotCommand)cmd);
             } else if (cmd instanceof CreatePrivateTemplateFromSnapshotCommand) {
                 return execute((CreatePrivateTemplateFromSnapshotCommand)cmd);
-            } else if (cmd instanceof SecurityGroupRulesCmd) {
-                return execute((SecurityGroupRulesCmd)cmd);
-            } else if (cmd instanceof FenceCommand) {
-                return execute((FenceCommand)cmd);
             } else if (cmd instanceof StartCommand) {
                 return execute((StartCommand)cmd);
             } else if (cmd instanceof PlugNicCommand) {
@@ -1448,28 +1431,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 _storagePoolMgr.deleteStoragePool(secondaryStoragePool.getType(), secondaryStoragePool.getUuid());
             }
         }
-    }
-
-    protected FenceAnswer execute(final FenceCommand cmd) {
-        final ExecutorService executors = Executors.newSingleThreadExecutor();
-        final List<NfsStoragePool> pools = _monitor.getStoragePools();
-        final KVMHAChecker ha = new KVMHAChecker(pools, cmd.getHostIp());
-        final Future<Boolean> future = executors.submit(ha);
-        try {
-            final Boolean result = future.get();
-            if (result) {
-                return new FenceAnswer(cmd, false, "Heart is still beating...");
-            } else {
-                return new FenceAnswer(cmd);
-            }
-        } catch (final InterruptedException e) {
-            s_logger.warn("Unable to fence", e);
-            return new FenceAnswer(cmd, false, e.getMessage());
-        } catch (final ExecutionException e) {
-            s_logger.warn("Unable to fence", e);
-            return new FenceAnswer(cmd, false, e.getMessage());
-        }
-
     }
 
     protected Storage.StorageResourceType getStorageResourceType() {
@@ -2265,25 +2226,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return new BackupSnapshotAnswer(cmd, true, null, snapshotRelPath + File.separator + snapshotName, true);
     }
 
-    protected CreateVolumeFromSnapshotAnswer execute(final CreateVolumeFromSnapshotCommand cmd) {
-        try {
-
-            String snapshotPath = cmd.getSnapshotUuid();
-            final int index = snapshotPath.lastIndexOf("/");
-            snapshotPath = snapshotPath.substring(0, index);
-            final KVMStoragePool secondaryPool = _storagePoolMgr.getStoragePoolByURI(cmd.getSecondaryStorageUrl() + snapshotPath);
-            final KVMPhysicalDisk snapshot = secondaryPool.getPhysicalDisk(cmd.getSnapshotName());
-
-            final String primaryUuid = cmd.getPrimaryStoragePoolNameLabel();
-            final KVMStoragePool primaryPool = _storagePoolMgr.getStoragePool(cmd.getPool().getType(), primaryUuid);
-            final String volUuid = UUID.randomUUID().toString();
-            final KVMPhysicalDisk disk = _storagePoolMgr.copyPhysicalDisk(snapshot, volUuid, primaryPool, 0);
-            return new CreateVolumeFromSnapshotAnswer(cmd, true, "", disk.getName());
-        } catch (final CloudRuntimeException e) {
-            return new CreateVolumeFromSnapshotAnswer(cmd, false, e.toString(), null);
-        }
-    }
-
     protected CreatePrivateTemplateAnswer execute(final CreatePrivateTemplateFromSnapshotCommand cmd) {
         final String templateFolder = cmd.getAccountId() + File.separator + cmd.getNewTemplateId();
         final String templateInstallFolder = "template/tmpl/" + templateFolder;
@@ -2447,32 +2389,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (secondaryStorage != null) {
                 _storagePoolMgr.deleteStoragePool(secondaryStorage.getType(), secondaryStorage.getUuid());
             }
-        }
-    }
-
-    private Answer execute(final SecurityGroupRulesCmd cmd) {
-        String vif = null;
-        String brname = null;
-        try {
-            final Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
-            final List<InterfaceDef> nics = getInterfaces(conn, cmd.getVmName());
-            vif = nics.get(0).getDevName();
-            brname = nics.get(0).getBrName();
-        } catch (final LibvirtException e) {
-            return new SecurityGroupRuleAnswer(cmd, false, e.toString());
-        }
-
-        final boolean result =
-                add_network_rules(cmd.getVmName(), Long.toString(cmd.getVmId()), cmd.getGuestIp(), cmd.getSignature(), Long.toString(cmd.getSeqNum()), cmd.getGuestMac(),
-                        cmd.stringifyRules(), vif, brname, cmd.getSecIpsString());
-
-        if (!result) {
-            s_logger.warn("Failed to program network rules for vm " + cmd.getVmName());
-            return new SecurityGroupRuleAnswer(cmd, false, "programming network rules failed");
-        } else {
-            s_logger.debug("Programmed network rules for vm " + cmd.getVmName() + " guestIp=" + cmd.getGuestIp() + ",ingress numrules=" + cmd.getIngressRuleSet().length +
-                    ",egress numrules=" + cmd.getEgressRuleSet().length);
-            return new SecurityGroupRuleAnswer(cmd);
         }
     }
 
@@ -4101,7 +4017,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
-    private boolean add_network_rules(final String vmName, final String vmId, final String guestIP, final String sig, final String seq, final String mac, final String rules, final String vif, final String brname,
+    public boolean addNetworkRules(final String vmName, final String vmId, final String guestIP, final String sig, final String seq, final String mac, final String rules, final String vif, final String brname,
             final String secIps) {
         if (!_canBridgeFirewall) {
             return false;
