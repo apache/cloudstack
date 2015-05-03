@@ -23,8 +23,9 @@ function usage() {
     echo "The commonly used Arguments are:"
     echo "-p|--pack oss|OSS             To package with only redistributable libraries (default)"
     echo "-p|--pack noredist|NOREDIST   To package with non-redistributable libraries"
-    echo "-d centos7|centos63|fedora20|fedora21  To build a package for a distribution"
+    echo "-d centos7|centos6|debian     To build a package for a distribution"
     echo "-s simulator|SIMULATOR        To build for Simulator"
+    echo "-j jetty                      To build with jetty (default is tomcat)"
     echo ""
     echo "Examples: ./package.sh -p|--pack oss|OSS"
     echo "          ./package.sh -p|--pack noredist|NOREDIST"
@@ -32,11 +33,49 @@ function usage() {
     exit 1
 }
 
-# packaging
+# checkDeps
+# $1 distribution name
+function checkDeps(){
+    # Check JDK
+    if [ "$1" == "debian" ]
+    then
+    JDK=$(dpkg -l | grep "openjdk-.-jdk")
+    for version in $JDK; do [ "${version:8:1}" -ge "7" ] && break; done;
+    else 
+    JDK=$(rpm -qa | grep "java-1...0-openjdk-devel")
+    for version in $JDK; do [ "${version:7:1}" -ge "7" ] && break; done;
+    fi
+    if [ "$?" -gt "0" ] || [ -z "$JDK" ] ; then
+        echo -e "JDK-devel 1.7.0+ not found\nCannot retrieve version to package\nPackage Build Failed"
+        exit 2
+    fi
+    # Check Maven
+    MVN=`which mvn`
+    if [ -z "$MVN" ] ; then
+        MVN=`locate bin/mvn | grep -e mvn$ | tail -1`
+        if [ -z "$MVN" ] ; then
+            echo -e "mvn not found\ncannot retrieve version to package\nPackage Build Failed"
+            exit 2
+        fi
+    fi
+}
+# packageRPM/DEB
 #   $1 redist flag
 #   $2 simulator flag
 #   $3 distribution name
-function packaging() {
+#   $4 servlet engine name
+function packageDEB() {
+    export OSSNOSS $1
+    export SIM $2
+    export SERVLETENGINE $3
+    dpkg-buildpackage -uc -us
+    mkdir ../dist
+    mv ../*.deb ../dist
+    mv ../*.tar.gz ../dist
+    mv ../*.changes ../dist
+    mv ../*.dsc ../dist
+}
+function packageRPM() {
     CWD=`pwd`
     RPMDIR=$CWD/../dist/rpmbuild
     PACK_PROJECT=cloudstack
@@ -46,16 +85,12 @@ function packaging() {
     if [ -n "$2" ] ; then
         DEFSIM="-D_sim $2"
     fi
+    if [ -n "$4" ] ; then
+        SERVLETENGINE="-D_servletengine $4"
+    fi
 
     DISTRO=$3
-    MVN=`which mvn`
-    if [ -z "$MVN" ] ; then
-        MVN=`locate bin/mvn | grep -e mvn$ | tail -1`
-        if [ -z "$MVN" ] ; then
-            echo "mvn not found\n cannot retrieve version to package\n RPM Build Failed"
-            exit 2
-        fi
-    fi
+
     VERSION=`(cd ../; $MVN org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version) | grep --color=none '^[0-9]\.'`
     if echo $VERSION | grep -q SNAPSHOT ; then
         REALVER=`echo $VERSION | cut -d '-' -f 1`
@@ -69,7 +104,8 @@ function packaging() {
     fi
 
     echo Preparing to package Apache CloudStack ${VERSION}
-
+    echo ". cleaning up old dist folder"
+    rm -rf $RPMDIR
     mkdir -p $RPMDIR/SPECS
     mkdir -p $RPMDIR/BUILD
     mkdir -p $RPMDIR/RPMS
@@ -83,7 +119,7 @@ function packaging() {
     echo ". executing rpmbuild"
     cp $DISTRO/cloud.spec $RPMDIR/SPECS
 
-    (cd $RPMDIR; rpmbuild --define "_topdir $RPMDIR" "${DEFVER}" "${DEFREL}" ${DEFPRE+"${DEFPRE}"} ${DEFOSSNOSS+"$DEFOSSNOSS"} ${DEFSIM+"$DEFSIM"} -bb SPECS/cloud.spec)
+    (cd $RPMDIR; rpmbuild --define "_topdir $RPMDIR" "${DEFVER}" "${DEFREL}" ${DEFPRE+"${DEFPRE}"} ${DEFOSSNOSS+"$DEFOSSNOSS"} ${DEFSIM+"$DEFSIM"} ${SERVLETENGINE+"$SERVLETENGINE"} -bb SPECS/cloud.spec)
 
     if [ $? -ne 0 ]; then
         echo "RPM Build Failed "
@@ -95,13 +131,13 @@ function packaging() {
 
 }
 
-
 TARGETDISTRO=""
 sim=""
 packageval=""
-
-    SHORTOPTS="hp:d:"
-    LONGOPTS="help,pack:,simulator:distribution"
+SERVLETENGINE="catalina"
+    
+    SHORTOPTS="hp:d:j"
+    LONGOPTS="help,pack:,simulator:distribution,jetty"
     ARGS=$(getopt -s bash -u -a --options $SHORTOPTS  --longoptions $LONGOPTS --name $0 -- "$@")
     eval set -- "$ARGS"
     echo "$ARGS"
@@ -142,6 +178,10 @@ packageval=""
             TARGETDISTRO=$2
             shift
             ;;
+        -j | --jetty)
+            SERVLETENGINE=jetty
+            shift
+            ;;
         -)
             echo "Unrecognized option..."
             usage
@@ -159,5 +199,10 @@ packageval=""
         usage
         exit 1
     fi
-
-    packaging "$packageval" "$sim" "$TARGETDISTRO"
+    checkDeps $TARGETDISTRO
+    if [ $TARGETDISTRO == "debian" ]
+    then
+        packageDEB "$packageval" "$sim" "$SERVLETENGINE"
+    else
+        packageRPM "$packageval" "$sim" "$TARGETDISTRO" "$SERVLETENGINE"
+    fi

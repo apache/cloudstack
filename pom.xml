@@ -101,6 +101,8 @@
     <cs.findbugs.version>3.0.0</cs.findbugs.version>
     <cs.javadoc.version>2.10.1</cs.javadoc.version>
     <cs.opensaml.version>2.6.1</cs.opensaml.version>
+    <cs.tomcat.version>8.0.22</cs.tomcat.version>
+    <cs.jetty.version>9.2.11.v20150529</cs.jetty.version>
   </properties>
 
   <distributionManagement>
@@ -196,7 +198,6 @@
         <groupId>mysql</groupId>
         <artifactId>mysql-connector-java</artifactId>
         <version>${cs.mysql.version}</version>
-        <scope>provided,test</scope>
       </dependency>
       <dependency>
         <groupId>log4j</groupId>
@@ -1109,5 +1110,28 @@
         <module>tools/wix-cloudstack-maven-plugin</module>
       </modules>
     </profile>
+    <profile>
+      <id>tomcat</id>
+      <activation>
+        <property>
+          <name>catalina</name>
+        </property>
+      </activation>
+      <modules>
+        <module>client/catalina</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>jetty</id>
+      <activation>
+        <property>
+          <name>jetty</name>
+        </property>
+      </activation>
+      <modules>
+        <module>client/jetty</module>
+      </modules>
+    </profile>
+
   </profiles>
 </project>

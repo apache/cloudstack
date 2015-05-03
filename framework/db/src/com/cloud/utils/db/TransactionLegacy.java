@@ -199,6 +199,11 @@ public class TransactionLegacy implements Closeable {
     }
 
     public static Connection getStandaloneConnectionWithException() throws SQLException {
+        try{
+            Class.forName("com.mysql.jdbc.Driver").newInstance();
+        } catch (Exception e) {
+            s_logger.error("Error instantiating mysql jdbc driver: ", e);
+        }
         Connection conn = s_ds.getConnection();
         if (s_connLogger.isTraceEnabled()) {
             s_connLogger.trace("Retrieving a standalone connection: dbconn" + System.identityHashCode(conn));

@@ -74,12 +74,11 @@ docs/runbook/tmp
 docs/runbook/publish
 .project
 Gemfile.lock
-debian/tmp
-debian/files
-debian/cloudstack-*/*
-debian/*.substvars
-debian/*.debhelper
-replace.properties.tmp
+packaging/debian/tmp
+packaging/debian/files
+packaging/debian/cloudstack-*/*
+packaging/debian/*.substvars
+packaging/debian/*.debhelper
 build-indep-stamp
 configure-stamp
 *_flymake.js

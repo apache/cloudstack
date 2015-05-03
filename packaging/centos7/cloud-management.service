@@ -16,8 +16,6 @@
 # under the License.
 
 # Systemd unit file for CloudStack Management server
-# 
-# clone tomcat service, see /usr/lib/systemd/system/tomcat.service
 
 [Unit]
 Description=CloudStack Management Server
@@ -25,12 +23,11 @@ After=syslog.target network.target
 
 [Service]
 Type=forking
-ExecStart=/usr/sbin/tomcat-sysd start
-ExecStop=/usr/sbin/tomcat-sysd stop
+ExecStart=/usr/sbin/cloudstack-management-sysd start
+ExecStop=/usr/sbin/cloudstack-management-sysd stop
 SuccessExitStatus=143
 User=cloud
 Group=cloud
-EnvironmentFile=/etc/sysconfig/cloudstack-management
 
 [Install]
 WantedBy=multi-user.target

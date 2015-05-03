@@ -42,9 +42,9 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.mortbay.jetty</groupId>
-      <artifactId>jetty</artifactId>
-      <version>6.1.26</version>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-server</artifactId>
+      <version>${cs.jetty.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
