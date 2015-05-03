@@ -662,6 +662,7 @@ class TestAdvancedZoneStoppedVM(cloudstackTestCase):
         # 3.  Register an ISO and attach it to the VM
         # 4.  Verify that ISO is attached to the VM
         """
+
         if self.hypervisor.lower() in ['lxc']:
             self.skipTest(
                 "feature is not supported in %s" %
@@ -727,6 +728,10 @@ class TestAdvancedZoneStoppedVM(cloudstackTestCase):
         # 4.  Verify that ISO is attached to the VM
         """
 
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest(
+                "feature is not supported in %s" %
+                self.hypervisor)
 
         # Create VM in account
         virtual_machine = VirtualMachine.create(
