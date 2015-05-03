@@ -188,6 +188,7 @@
     <module>services</module>
     <module>maven-standard</module>
     <module>quickcloud</module>
+    <module>tomcat</module>
   </modules>
 
   <dependencyManagement>

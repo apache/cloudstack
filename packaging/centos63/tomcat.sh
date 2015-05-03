@@ -1,3 +1,4 @@
+#!/bin/bash
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -15,4 +16,31 @@
 # specific language governing permissions and limitations
 # under the License.
 
-. /etc/rc.d/init.d/tomcat6 start
+. /etc/sysconfig/cloudstack-management
+
+if [ -r /usr/share/java-utils/java-functions ]; then
+  . /usr/share/java-utils/java-functions
+else
+  echo "Can't read Java functions library, aborting"
+  exit 1
+fi
+
+set_javacmd
+
+MAIN_CLASS="org.apache.catalina.startup.Bootstrap"
+
+FLAGS="$JAVA_OPTS $CATALINA_OPTS"
+OPTIONS="-Dcatalina.base=$CATALINA_BASE \
+-Dcatalina.home=$CATALINA_HOME \
+-Djava.endorsed.dirs=$JAVA_ENDORSED_DIRS \
+-Djava.io.tmpdir=$CATALINA_TMPDIR \
+-Djava.util.logging.config.file=$CATALINA_BASE/conf/log4j-cloud.xml \
+-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
+
+if [ "$1" = "start" ] ; then
+  run start
+elif [ "$1" = "stop" ] ; then
+  run stop
+fi
+
+
