@@ -1,22 +1,6 @@
 #!/bin/bash
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-# 
-#   http://www.apache.org/licenses/LICENSE-2.0
-# 
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
 #
-# cloudstack-management      This shell script takes care of starting and stopping Tomcat
+# tomcat6      This shell script takes care of starting and stopping Tomcat
 #
 # chkconfig: - 80 20
 #
@@ -34,82 +18,278 @@
 # - heavily rewritten by Deepak Bhole and Jason Corley
 #
 
-if [ -r /etc/rc.d/init.d/functions ]; then
-    . /etc/rc.d/init.d/functions
-fi
+## Source function library.
+#. /etc/rc.d/init.d/functions
+# Source LSB function library.
 if [ -r /lib/lsb/init-functions ]; then
     . /lib/lsb/init-functions
+else
+    exit 1
 fi
 
+DISTRIB_ID=`lsb_release -i -s 2>/dev/null`
 
 NAME="$(basename $0)"
-export SERVICE_NAME="$NAME"
-stop() {
-	SHUTDOWN_WAIT="30"
-	count="0"
-	if [ -f /var/run/${NAME}.pid ]; then
-		pid=`cat /var/run/${NAME}.pid`
-		kill $pid &>/dev/null
-		until [ "$(ps --pid $pid | grep -c $pid)" -eq "0" ] || \
-			[ "$count" -gt "$SHUTDOWN_WAIT" ]
-		do
-			sleep 1
-			let count="${count}+1"
-		done
-		if [ "$(ps --pid $pid | grep -c $pid)" -eq "0" ]; then
-			log_success_msg "Stopping ${NAME}:"
-			rm -f /var/run/${NAME}.pid
-			rm -f /var/lock/subsys/${NAME}
-		else
-			log_failure_msg "Stopping ${NAME}:"
-		fi
-	else
-		echo "Cannot find PID file of ${NAME}"
-		log_failure_msg "Stopping ${NAME}:"
-	fi
-}
+unset ISBOOT
+if [ "${NAME:0:1}" = "S" -o "${NAME:0:1}" = "K" ]; then
+    NAME="${NAME:3}"
+    ISBOOT="1"
+fi
 
-set_ulimit() {
-    fd_limit=`ulimit -n`
-    if [ "$fd_limit" != "4096" ]; then
-        user=`whoami`
-        if [ $user == "root" ]; then
-            ulimit -n 4096
-        fi
+# For SELinux we need to use 'runuser' not 'su'
+if [ -x "/sbin/runuser" ]; then
+    SU="/sbin/runuser -s /bin/sh"
+else
+    SU="/bin/su -s /bin/sh"
+fi
+
+# Get the tomcat config (use this for environment specific settings)
+TOMCAT_CFG="/etc/sysconfig/cloudstack-management"
+if [ -r "$TOMCAT_CFG" ]; then
+    . $TOMCAT_CFG
+fi
+
+# Get instance specific config file
+#if [ -r "/etc/sysconfig/${NAME}" ]; then
+#    . /etc/sysconfig/${NAME}
+#fi
+
+# Define which connector port to use
+CONNECTOR_PORT="${CONNECTOR_PORT:-8080}"
+
+# Path to the tomcat launch script
+TOMCAT_SCRIPT="/etc/init.d/tomcat.sh"
+
+# Tomcat program name
+TOMCAT_PROG="${NAME}"
+        
+# Define the tomcat username
+TOMCAT_USER="${TOMCAT_USER:-tomcat}"
+
+# Define the tomcat group
+TOMCAT_GROUP="${TOMCAT_GROUP:-`id -gn $TOMCAT_USER`}"
+
+# Define the tomcat log file
+TOMCAT_LOG="${TOMCAT_LOG:-/var/log/${NAME}-initd.log}"
+
+# Define the pid file name
+# If change is needed, use sysconfig instead of here
+export CATALINA_PID="${CATALINA_PID:-/var/run/${NAME}.pid}"
+
+RETVAL="0"
+
+function parseOptions() {
+    options=""
+    options="$options $(
+                 awk '!/^#/ && !/^$/ { ORS=" "; print "export ", $0, ";" }' \
+                 $TOMCAT_CFG
+             )"
+    if [ -r "/etc/sysconfig/${NAME}" ]; then
+        options="$options $(
+                     awk '!/^#/ && !/^$/ { ORS=" "; 
+                                           print "export ", $0, ";" }' \
+                     /etc/sysconfig/${NAME}
+                 )"
     fi
+    TOMCAT_SCRIPT="$options ${TOMCAT_SCRIPT}"
 }
 
-handle_pid_file() {
-     if [ "$1" -ne 0 ] && [ "$1" -ne 3 ]; then
-        echo "The pid file locates at /var/run/${NAME}.pid and lock file at /var/lock/subsys/${NAME}.
-        Starting ${NAME} will take care of them or you can manually clean up."
-    fi
-}
-
-start() {
-    readpath=$(readlink -f $0)
-    source `dirname $readpath`/tomcat.sh
+# rhbz 757632
+function version() {
+	parseOptions
+	$SU - $TOMCAT_USER -c "${TOMCAT_SCRIPT} version" >> ${TOMCAT_LOG} 2>&1 || RETVAL="4"
 }
 
 # See how we were called.
+function start() {
+  
+   echo -n "Starting ${TOMCAT_PROG}: "
+   if [ "$RETVAL" != "0" ]; then 
+     log_failure_msg
+     return
+   fi
+   if [ -f "/var/lock/subsys/${NAME}" ]; then
+        if [ -f "${CATALINA_PID}" ]; then
+            read kpid < ${CATALINA_PID}
+#           if checkpid $kpid 2>&1; then
+            if [ -d "/proc/${kpid}" ]; then
+                log_success_msg
+                if [ "$DISTRIB_ID" = "MandrivaLinux" ]; then
+                    echo
+                fi
+                RETVAL="0"
+                return
+            fi
+        fi
+    fi
+    # fix permissions on the log and pid files
+    touch $CATALINA_PID 2>&1 || RETVAL="4"
+    if [ "$RETVAL" -eq "0" -a "$?" -eq "0" ]; then 
+      chown ${TOMCAT_USER}:${TOMCAT_GROUP} $CATALINA_PID
+    fi
+    if [ "$?" != "0" ]; then
+	RETVAL="4"
+    fi
+    parseOptions
+    if [ "$RETVAL" -eq "0" -a "$SECURITY_MANAGER" = "true" ]; then
+        $SU - $TOMCAT_USER -c "${TOMCAT_SCRIPT} start-security" \
+            >> ${TOMCAT_LOG} 2>&1 || RETVAL="4"
+    else
+       
+       [ "$RETVAL" -eq "0" ] && $SU - $TOMCAT_USER -c "${TOMCAT_SCRIPT} start" >> ${TOMCAT_LOG} 2>&1 || RETVAL="4"
+    fi
+    if [ "$RETVAL" -eq "0" ]; then 
+        log_success_msg
+        touch /var/lock/subsys/${NAME}
+    else
+        log_failure_msg "Error code ${RETVAL}"
+    fi
+    if [ "$DISTRIB_ID" = "MandrivaLinux" ]; then
+        echo
+    fi
+}
+
+function stop() {
+    echo -n "Stopping ${TOMCAT_PROG}: "
+    if [ -f "/var/lock/subsys/${NAME}" ]; then
+      parseOptions
+      if [ "$RETVAL" -eq "0" ]; then
+         touch /var/lock/subsys/${NAME} 2>&1 || RETVAL="4"
+         [ "$RETVAL" -eq "0" ] && $SU - $TOMCAT_USER -c "${TOMCAT_SCRIPT} stop" >> ${TOMCAT_LOG} 2>&1 || RETVAL="4"
+      fi
+      if [ "$RETVAL" -eq "0" ]; then
+         count="0"
+         if [ -f "${CATALINA_PID}" ]; then
+            read kpid < ${CATALINA_PID}
+            until [ "$(ps --pid $kpid | grep -c $kpid)" -eq "0" ] || \
+                      [ "$count" -gt "$SHUTDOWN_WAIT" ]; do
+                    if [ "$SHUTDOWN_VERBOSE" = "true" ]; then
+                        echo "waiting for processes $kpid to exit"
+                    fi
+                    sleep 1
+                    let count="${count}+1"
+                done
+                if [ "$count" -gt "$SHUTDOWN_WAIT" ]; then
+                    if [ "$SHUTDOWN_VERBOSE" = "true" ]; then
+                        log_warning_msg "killing processes which did not stop after ${SHUTDOWN_WAIT} seconds"
+                    fi
+                    kill -9 $kpid
+                fi
+                log_success_msg
+            fi
+            rm -f /var/lock/subsys/${NAME} ${CATALINA_PID}
+        else
+            log_failure_msg
+            RETVAL="4"
+        fi
+    else
+        log_success_msg
+        RETVAL="0"
+    fi
+    if [ "$DISTRIB_ID" = "MandrivaLinux" ]; then
+        echo
+    fi
+}
+
+function status()
+{
+   checkpidfile 
+   if [ "$RETVAL" -eq "0" ]; then
+      log_success_msg "${NAME} (pid ${kpid}) is running..."
+   elif [ "$RETVAL" -eq "1" ]; then
+      log_failure_msg "PID file exists, but process is not running"
+   else 
+      checklockfile
+      if [ "$RETVAL" -eq "2" ]; then
+         log_failure_msg "${NAME} lockfile exists but process is not running"
+      else
+         pid="$(/usr/bin/pgrep -d , -u ${TOMCAT_USER} -G ${TOMCAT_GROUP} java)"
+         if [ -z "$pid" ]; then
+             log_success_msg "${NAME} is stopped"
+             RETVAL="3"
+         else
+             log_success_msg "${NAME} (pid ${kpid}) is running..."
+             RETVAL="0"
+         fi
+      fi
+  fi
+}
+
+function checklockfile()
+{
+   if [ -f /var/lock/subsys/${NAME} ]; then
+      pid="$(/usr/bin/pgrep -d , -u ${TOMCAT_USER} -G ${TOMCAT_GROUP} java)"
+# The lockfile exists but the process is not running
+      if [ -z "$pid" ]; then
+         RETVAL="2"
+      fi
+   fi
+}
+
+function checkpidfile()
+{
+   if [ -f "${CATALINA_PID}" ]; then
+      read kpid < ${CATALINA_PID}
+      if [ -d "/proc/${kpid}" ]; then
+# The pid file exists and the process is running
+          RETVAL="0"
+         return
+      else
+# The pid file exists but the process is not running
+         RETVAL="1"
+         return
+      fi
+   else
+# pid file does not exist and program is not running
+      RETVAL="3"
+      return
+  fi
+}
+
+function usage()
+{
+   echo "Usage: $0 {start|stop|restart|condrestart|try-restart|reload|force-reload|status|version}"
+   RETVAL="2"
+}
+
+# See how we were called.
+RETVAL="0"
 case "$1" in
-    status)
-		status ${NAME}
-		RETVAL=$?
-        handle_pid_file $RETVAL
-		;;
+    start)
+        start
+        ;;
     stop)
-		stop
-		;;
+        stop
+        ;;
     restart)
-		stop
-		set start
-        set_ulimit
-	        start
-		;;
-	*)
-        set_ulimit
-                start
+        stop
+        start
+        ;;
+    condrestart|try-restart)
+        if [ -f "/var/run/${NAME}.pid" ]; then
+            stop
+            start
+        fi
+        ;;
+    reload)
+        RETVAL="3"
+        ;;
+    force-reload)
+        if [ -f "/var/run/${NAME}.pid" ]; then
+            stop
+            start
+        fi
+        ;;
+    status)
+        status
+        ;;
+    version)
+	 	version
+#        ${TOMCAT_SCRIPT} version
+        ;;
+    *)
+      usage
+      ;;
 esac
 
 exit $RETVAL

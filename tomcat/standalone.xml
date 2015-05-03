@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<assembly>
+    <id>standalone</id>
+    <formats>
+        <format>dir</format>
+    </formats>
+    <includeBaseDirectory>true</includeBaseDirectory>
+    <baseDirectory></baseDirectory>
+
+    <!--Copy all project files-->
+    <fileSets>
+
+        <!--Copy all Tomcat stuff-->
+        <fileSet>
+            <directory>src/main/tomcat/bin</directory>
+            <outputDirectory>/bin</outputDirectory>
+            <fileMode>755</fileMode>
+        </fileSet>
+
+        <fileSet>
+            <directory>conf</directory>
+            <outputDirectory>/conf</outputDirectory>
+        </fileSet>
+
+
+        <!--Create $ASSEMBLY_ROOT/temp directory-->
+        <fileSet>
+            <directory>${project.build.outputDirectory}</directory>
+            <excludes>
+                <exclude>**/*</exclude>
+            </excludes>
+            <outputDirectory>/temp</outputDirectory>
+        </fileSet>
+
+        <!--Create $ASSEMBLY_ROOT/logs directory-->
+        <fileSet>
+            <directory>${project.build.outputDirectory}</directory>
+            <excludes>
+                <exclude>**/*</exclude>
+            </excludes>
+            <outputDirectory>/logs</outputDirectory>
+        </fileSet>
+    </fileSets>
+
+    <files>
+        <file>
+            <source>${project.build.directory}/${project.build.finalName}-bootstrap.jar</source>
+            <destName>bootstrap.jar</destName>
+            <outputDirectory>/bin</outputDirectory>
+        </file>
+    </files>
+
+    <!--Copy all dependencies-->
+    <dependencySets>
+
+        <!--Copy all project non-tomcat dependencies-->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <excludes>
+                <!--Tomcat juli is expected to be put to the $CATALINA_HOME/bin-->
+                <exclude>org.apache.tomcat:tomcat-juli:*</exclude>
+            </excludes>
+            <outputDirectory>/lib</outputDirectory>
+            <outputFileNameMapping>${artifact.artifactId}.${artifact.extension}</outputFileNameMapping>
+        </dependencySet>
+
+        <!--Copy tomcat 'juli' dependency-->
+        <dependencySet>
+            <useProjectArtifact>true</useProjectArtifact>
+            <scope>runtime</scope>
+            <includes>
+                <include>org.apache.tomcat:tomcat-juli:*</include>
+            </includes>
+            <outputDirectory>/bin</outputDirectory>
+            <outputFileNameMapping>${artifact.artifactId}.${artifact.extension}</outputFileNameMapping>
+        </dependencySet>
+
+    </dependencySets>
+
+</assembly>

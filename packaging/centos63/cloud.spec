@@ -43,8 +43,6 @@ Group:     System Environment/Libraries
 Source0:   %{name}-%{_maventag}.tgz
 BuildRoot: %{_tmppath}/%{name}-%{_maventag}-%{release}-build
 
-BuildRequires: java-1.7.0-openjdk-devel
-BuildRequires: tomcat6
 BuildRequires: ws-commons-util
 BuildRequires: jpackage-utils
 BuildRequires: gcc
@@ -59,8 +57,8 @@ intelligent IaaS cloud implementation.
 
 %package management
 Summary:   CloudStack management server UI
-Requires: tomcat6
-Requires: java-1.7.0-openjdk
+Requires: redhat-lsb-core
+Requires: java => 1.7.0
 Requires: python
 Requires: bash
 Requires: bzip2
@@ -112,7 +110,7 @@ The Apache CloudStack files shared between agent and management server
 %package agent
 Summary: CloudStack Agent for KVM hypervisors
 Requires: openssh-clients
-Requires: java-1.7.0-openjdk
+Requires: java => 1.7.0
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: bridge-utils
@@ -151,7 +149,7 @@ The CloudStack baremetal agent
 
 %package usage
 Summary: CloudStack Usage calculation server
-Requires: java-1.7.0-openjdk
+Requires: java => 1.7.0
 Requires: jsvc
 Requires: jakarta-commons-daemon
 Requires: jakarta-commons-daemon-jsvc
@@ -173,7 +171,6 @@ Apache CloudStack command line interface
 %package mysql-ha
 Summary: Apache CloudStack Balancing Strategy for MySQL
 Requires: mysql-connector-java
-Requires: tomcat6
 Group: System Environmnet/Libraries
 %description mysql-ha
 Apache CloudStack Balancing Strategy for MySQL
@@ -200,7 +197,7 @@ if [ "%{_ossnoss}" == "NOREDIST" -o "%{_ossnoss}" == "noredist" ] ; then
       mvn -Psystemvm -Dnoredist -Dsimulator clean package
    else
       echo "Executing mvn noredist packaging without simulator..."
-      mvn -Psystemvm -Dnoredist clean package
+      mvn -Psystemvm -DSkipTests -Dnoredist clean package
    fi
 else
    if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then 
@@ -208,7 +205,7 @@ else
       mvn -Psystemvm -Dsimulator clean package
    else
       echo "Executing mvn default packaging without simulator ..."
-      mvn -Psystemvm clean package
+      mvn -Psystemvm -DSkipTests clean package
    fi
 fi 
 
@@ -253,13 +250,15 @@ mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management
 
 # Specific for tomcat
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost/client
-ln -sf /usr/share/tomcat6/bin ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/bin
+#ln -sf /usr/share/tomcat6/bin ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/bin
+cp -r tomcat/target/cloudstack-tomcat-standalone/bin ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/
 ln -sf /etc/%{name}/management ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/conf
-ln -sf /usr/share/tomcat6/lib ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib
+#ln -sf /usr/share/tomcat6/lib ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib
+cp -r tomcat/target/cloudstack-tomcat-standalone/lib ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/
 ln -sf /var/log/%{name}/management ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/logs
 ln -sf /var/cache/%{name}/management/temp ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/temp
 ln -sf /var/cache/%{name}/management/work ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/work
-
+cp -r tomcat/target/cloudstack-tomcat-standalone/conf/* ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/
 /bin/touch ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management/catalina.out
 
 install -D client/target/utilities/bin/cloud-migrate-databases ${RPM_BUILD_ROOT}%{_bindir}/%{name}-migrate-databases
@@ -279,14 +278,8 @@ cp -r client/target/cloud-client-ui-%{_maventag}/* ${RPM_BUILD_ROOT}%{_datadir}/
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/scripts
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/vms
 
-for name in db.properties log4j-cloud.xml tomcat6-nonssl.conf tomcat6-ssl.conf server-ssl.xml server-nonssl.xml \
-            catalina.policy catalina.properties classpath.conf tomcat-users.xml web.xml environment.properties java.security.ciphers; do
-  mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/$name \
-    ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
-done
-
-ln -s %{_sysconfdir}/%{name}/management/log4j-cloud.xml \
-    ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/log4j-cloud.xml
+#ln -s %{_sysconfdir}/%{name}/management/log4j-cloud.xml \
+#    ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/log4j-cloud.xml
 
 mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/context.xml \
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost/client
@@ -297,6 +290,7 @@ install -D client/target/pythonlibs/jasypt-1.9.2.jar ${RPM_BUILD_ROOT}%{_datadir
 install -D packaging/centos63/cloud-ipallocator.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-ipallocator
 install -D packaging/centos63/cloud-management.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-management
 install -D packaging/centos63/cloud-management.sysconfig ${RPM_BUILD_ROOT}%{_sysconfdir}/sysconfig/%{name}-management
+install -D packaging/centos63/cloud-management.sudoers ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d/%{name}-management
 install -D packaging/centos63/tomcat.sh ${RPM_BUILD_ROOT}%{_initrddir}/tomcat.sh
 
 chmod 770 ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina
@@ -395,10 +389,6 @@ fi
 if [ "$1" == "1" ] ; then
     /sbin/chkconfig --add cloudstack-management > /dev/null 2>&1 || true
     /sbin/chkconfig --level 345 cloudstack-management on > /dev/null 2>&1 || true
-fi
-
-if [ -d "%{_datadir}/%{name}-management" ] ; then
-   ln -s %{_datadir}/%{name}-bridge/webapps %{_datadir}/%{name}-management/webapps7080
 fi
 
 if [ ! -f %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util ] ; then
@@ -536,14 +526,18 @@ fi
 %dir %attr(0770,root,cloud) %{_localstatedir}/cache/%{name}/management/temp
 %dir %attr(0770,root,cloud) %{_localstatedir}/log/%{name}/management
 %config(noreplace) %{_sysconfdir}/sysconfig/%{name}-management
+%config(noreplace) %{_sysconfdir}/sudoers.d/%{name}-management
 %config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/management/db.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j-cloud.xml
-%config(noreplace) %{_sysconfdir}/%{name}/management/tomcat6-nonssl.conf
-%config(noreplace) %{_sysconfdir}/%{name}/management/tomcat6-ssl.conf
+%config(noreplace) %{_sysconfdir}/%{name}/management/server.xml
+%config(noreplace) %{_sysconfdir}/%{name}/management/tomcat.conf
 %config(noreplace) %{_sysconfdir}/%{name}/management/Catalina/localhost/client/context.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/catalina.policy
 %config(noreplace) %{_sysconfdir}/%{name}/management/catalina.properties
-%config(noreplace) %{_sysconfdir}/%{name}/management/classpath.conf
+%config(noreplace) %{_sysconfdir}/%{name}/management/context.xml
+#%config(noreplace) %{_sysconfdir}/%{name}/management/classpath.conf
+%config(noreplace) %{_sysconfdir}/%{name}/management/cloudmanagementserver.keystore
+%config(noreplace) %{_sysconfdir}/%{name}/management/logging.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/server-nonssl.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/server-ssl.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat-users.xml

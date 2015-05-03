@@ -15,19 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-module cloudstack-agent 1.0;
+Cmnd_Alias CLOUDSTACK = /bin/mkdir, /bin/mount, /bin/umount, /bin/cp, /bin/chmod, /usr/bin/keytool, /bin/keytool
 
-require {
-	type nfs_t;
-	type system_conf_t;
-	type mount_t;
-	type qemu_t;
-	class file unlink;
-	class filesystem getattr;
-}
+Defaults:cloud !requiretty 
 
-#============= mount_t ==============
-allow mount_t system_conf_t:file unlink;
-
-#============= qemu_t ==============
-allow qemu_t nfs_t:filesystem getattr;
+cloud   ALL=(root) NOPASSWD:CLOUDSTACK

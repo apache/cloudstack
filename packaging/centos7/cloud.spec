@@ -43,9 +43,7 @@ Group:     System Environment/Libraries
 Source0:   %{name}-%{_maventag}.tgz
 BuildRoot: %{_tmppath}/%{name}-%{_maventag}-%{release}-build
 
-BuildRequires: java-1.7.0-openjdk-devel
-BuildRequires: tomcat => 7.0
-BuildRequires: ws-commons-util
+#BuildRequires: ws-commons-util
 BuildRequires: jpackage-utils
 BuildRequires: gcc
 BuildRequires: glibc-devel
@@ -59,8 +57,7 @@ intelligent IaaS cloud implementation.
 
 %package management
 Summary:   CloudStack management server UI
-Requires: tomcat => 7.0
-Requires: java => 1.7.0
+Requires: java >= 1.7.0
 Requires: python
 Requires: bash
 Requires: bzip2
@@ -72,7 +69,6 @@ Requires: nfs-utils
 Requires: wget
 Requires: mysql
 Requires: mysql-connector-java
-Requires: ws-commons-util
 Requires: jpackage-utils
 Requires: sudo
 Requires: /sbin/service
@@ -154,7 +150,6 @@ Apache CloudStack command line interface
 %package mysql-ha
 Summary: Apache CloudStack Balancing Strategy for MySQL
 Requires: mysql-connector-java
-Requires: tomcat => 7.0
 Group: System Environmnet/Libraries
 %description mysql-ha
 Apache CloudStack Balancing Strategy for MySQL
@@ -228,14 +223,17 @@ mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/run
 
 # Specific for tomcat
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost/client
-ln -sf /usr/share/tomcat/bin ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/bin
+#ln -sf /usr/share/tomcat/bin ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/bin
+cp -r tomcat/target/cloudstack-tomcat-standalone/bin ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/
 ln -sf /etc/%{name}/management ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/conf
-ln -sf /usr/share/tomcat/lib ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib
+#ln -sf /usr/share/tomcat/lib ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib
+cp -r tomcat/target/cloudstack-tomcat-standalone/lib ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/
 ln -sf /var/log/%{name}/management ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/logs
 ln -sf /var/cache/%{name}/management/temp ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/temp
 ln -sf /var/cache/%{name}/management/work ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/work
-
+cp -r tomcat/target/cloudstack-tomcat-standalone/conf/* ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/
 /bin/touch ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management/catalina.out
+
 
 install -D client/target/utilities/bin/cloud-migrate-databases ${RPM_BUILD_ROOT}%{_bindir}/%{name}-migrate-databases
 install -D client/target/utilities/bin/cloud-set-guest-password ${RPM_BUILD_ROOT}%{_bindir}/%{name}-set-guest-password
@@ -254,13 +252,6 @@ cp -r client/target/cloud-client-ui-%{_maventag}/* ${RPM_BUILD_ROOT}%{_datadir}/
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/scripts
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/vms
 
-for name in catalina.properties db.properties log4j-cloud.xml web.xml \
-            server.xml commons-logging.properties environment.properties java.security.ciphers tomcat-users.xml
-do
-  cp packaging/centos7/tomcat7/$name \
-    ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
-done
-
 #ln -s %{_sysconfdir}/%{name}/management/log4j-cloud.xml \
 #    ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/log4j-cloud.xml
 
@@ -276,6 +267,7 @@ install -D packaging/centos7/cloud-management.service ${RPM_BUILD_ROOT}%{_unitdi
 install -D packaging/centos7/cloud-management.sudoers ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d/%{name}-management
 install -D packaging/centos7/cloud.limits ${RPM_BUILD_ROOT}%{_sysconfdir}/security/limits.d/cloud
 touch ${RPM_BUILD_ROOT}%{_localstatedir}/run/%{name}-management.pid
+install -D packaging/centos7/cloud-management-sysd ${RPM_BUILD_ROOT}/usr/sbin/%{name}-management-sysd
 
 chmod 770 ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina
 chmod 770 ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost
@@ -362,10 +354,6 @@ if [ "$1" == "1" ] ; then
     /usr/bin/systemctl on cloudstack-management > /dev/null 2>&1 || true
 fi
 
-if [ -d "%{_datadir}/%{name}-management" ] ; then
-   ln -s %{_datadir}/%{name}-bridge/webapps %{_datadir}/%{name}-management/webapps7080
-fi
-
 if [ ! -f %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util ] ; then
     echo Please download vhd-util from http://download.cloud.com.s3.amazonaws.com/tools/vhd-util and put it in 
     echo %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/
@@ -446,6 +434,7 @@ fi
 %dir %attr(0770,root,cloud) %{_localstatedir}/cache/%{name}/management/work
 %dir %attr(0770,root,cloud) %{_localstatedir}/cache/%{name}/management/temp
 %dir %attr(0770,root,cloud) %{_localstatedir}/log/%{name}/management
+%config(noreplace) /usr/sbin/%{name}-management-sysd
 %config(noreplace) %{_sysconfdir}/sysconfig/%{name}-management
 %config(noreplace) %{_sysconfdir}/sudoers.d/%{name}-management
 %config(noreplace) %{_sysconfdir}/security/limits.d/cloud
@@ -453,8 +442,15 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j-cloud.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/Catalina/localhost/client/context.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/catalina.properties
+%config(noreplace) %{_sysconfdir}/%{name}/management/catalina.policy
+%config(noreplace) %{_sysconfdir}/%{name}/management/context.xml
+%config(noreplace) %{_sysconfdir}/%{name}/management/cloudmanagementserver.keystore
+%config(noreplace) %{_sysconfdir}/%{name}/management/logging.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat-users.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/web.xml
+%config(noreplace) %{_sysconfdir}/%{name}/management/server-nonssl.xml
+%config(noreplace) %{_sysconfdir}/%{name}/management/server-ssl.xml
+%config(noreplace) %{_sysconfdir}/%{name}/management/tomcat.conf
 %config(noreplace) %{_sysconfdir}/%{name}/management/server.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/environment.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/java.security.ciphers

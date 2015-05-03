@@ -48,6 +48,13 @@ function packaging() {
     fi
 
     DISTRO=$3
+
+    JDK=$(rpm -qa | grep "java-1...0-openjdk-devel")
+    for version in $JDK; do [ "${version:7:1}" -ge "7" ] && echo  ${version:7:1}; done;
+    if [ "$?" -gt "0" ] || [ -z "$JDK" ] ; then
+        echo "java-1.x.0-jdk-devel 1.7.0+ not found\n Cannot retrieve version to package\n RPM Build Failed"
+        exit 2
+    fi
     MVN=`which mvn`
     if [ -z "$MVN" ] ; then
         MVN=`locate bin/mvn | grep -e mvn$ | tail -1`
@@ -69,7 +76,8 @@ function packaging() {
     fi
 
     echo Preparing to package Apache CloudStack ${VERSION}
-
+    echo ". cleaning up old dist folder"
+    rm -rf $RPMDIR
     mkdir -p $RPMDIR/SPECS
     mkdir -p $RPMDIR/BUILD
     mkdir -p $RPMDIR/RPMS

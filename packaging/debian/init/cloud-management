@@ -35,7 +35,7 @@ NAME=cloudstack-management
 DESC="CloudStack-specific Tomcat servlet engine"
 DAEMON=/usr/bin/jsvc
 CATALINA_HOME=/usr/share/cloudstack-management
-DEFAULT=/etc/cloudstack/management/tomcat6.conf
+DEFAULT=/etc/cloudstack/management/tomcat.conf
 JVM_TMP=/tmp/$NAME-temp
 
 # We have to explicitly set the HOME variable to the homedir from the user "cloud"
@@ -60,8 +60,6 @@ fi
 
 # The following variables can be overwritten in $DEFAULT
 
-# Run Tomcat 6 as this user ID
-TOMCAT6_USER=tomcat6
 
 # The first existing directory is used for JAVA_HOME (if JAVA_HOME is not
 # defined in $DEFAULT)
@@ -147,7 +145,7 @@ case "$1" in
 
 	log_daemon_msg "Starting $DESC" "$NAME"
 	if start-stop-daemon --test --start --pidfile "$CATALINA_PID" \
-		--user $TOMCAT6_USER --startas "$JAVA_HOME/bin/java" \
+		--user $TOMCAT_USER --startas "$JAVA_HOME/bin/java" \
 		>/dev/null; then
 
 		# Regenerate POLICY_CACHE file
@@ -166,19 +164,19 @@ case "$1" in
 			log_failure_msg "could not create JVM temporary directory"
 			exit 1
 		}
-		chown $TOMCAT6_USER "$JVM_TMP"
+		chown $TOMCAT_USER "$JVM_TMP"
 		cd "$JVM_TMP"
 
 
 		# fix storage issues on nfs mounts
 		umask 000
-		$DAEMON -user "$TOMCAT6_USER" -cp "$JSVC_CLASSPATH" \
+		$DAEMON -user "$TOMCAT_USER" -cp "$JSVC_CLASSPATH" \
 		    -outfile SYSLOG -errfile SYSLOG \
 		    -pidfile "$CATALINA_PID" $JAVA_OPTS "$BOOTSTRAP_CLASS"
 
 		sleep 5
         	if start-stop-daemon --test --start --pidfile "$CATALINA_PID" \
-			--user $TOMCAT6_USER --startas "$JAVA_HOME/bin/java" \
+			--user $TOMCAT_USER --startas "$JAVA_HOME/bin/java" \
 			>/dev/null; then
 			log_end_msg 1
 		else
@@ -192,7 +190,7 @@ case "$1" in
   stop)
 	log_daemon_msg "Stopping $DESC" "$NAME"
         if start-stop-daemon --test --start --pidfile "$CATALINA_PID" \
-		--user "$TOMCAT6_USER" --startas "$JAVA_HOME/bin/java" \
+		--user "$TOMCAT_USER" --startas "$JAVA_HOME/bin/java" \
 		>/dev/null; then
 		log_progress_msg "(not running)"
 	else
@@ -204,7 +202,7 @@ case "$1" in
 	;;
    status)
         if start-stop-daemon --test --start --pidfile "$CATALINA_PID" \
-		--user $TOMCAT6_USER --startas "$JAVA_HOME/bin/java" \
+		--user $TOMCAT_USER --startas "$JAVA_HOME/bin/java" \
 		>/dev/null; then
 
 		if [ -f "$CATALINA_PID" ]; then
@@ -220,7 +218,7 @@ case "$1" in
         ;;
   restart|force-reload)
         if start-stop-daemon --test --stop --pidfile "$CATALINA_PID" \
-		--user $TOMCAT6_USER --startas "$JAVA_HOME/bin/java" \
+		--user $TOMCAT_USER --startas "$JAVA_HOME/bin/java" \
 		>/dev/null; then
 		$0 stop
 		sleep 1
@@ -229,7 +227,7 @@ case "$1" in
 	;;
   try-restart)
         if start-stop-daemon --test --start --pidfile "$CATALINA_PID" \
-		--user $TOMCAT6_USER --startas "$JAVA_HOME/bin/java" \
+		--user $TOMCAT_USER --startas "$JAVA_HOME/bin/java" \
 		>/dev/null; then
 		$0 start
 	fi
