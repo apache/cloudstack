@@ -284,6 +284,9 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                     payload.setDescription(template.getDisplayText());
                     payloads.add(payload);
                 }
+                if(payloads.isEmpty()) {
+                    throw new CloudRuntimeException("unable to find zone or an image store with enough capacity");
+                }
                 _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
                 return payloads;
             }
