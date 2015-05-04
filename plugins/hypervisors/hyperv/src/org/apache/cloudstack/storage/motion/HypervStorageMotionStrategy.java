@@ -18,12 +18,29 @@
  */
 package org.apache.cloudstack.storage.motion;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.MigrateWithStorageAnswer;
+import com.cloud.agent.api.MigrateWithStorageCommand;
+import com.cloud.agent.api.MigrateWithStorageGetDestPathsAnswer;
+import com.cloud.agent.api.MigrateWithStorageGetDestPathsCommand;
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.alert.AlertManager;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.Host;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -37,25 +54,10 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.MigrateWithStorageAnswer;
-import com.cloud.agent.api.MigrateWithStorageCommand;
-import com.cloud.agent.api.to.StorageFilerTO;
-import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.agent.api.to.VolumeTO;
-import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.OperationTimedoutException;
-import com.cloud.host.Host;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.utils.Pair;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.dao.VMInstanceDao;
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class HypervStorageMotionStrategy implements DataMotionStrategy {
@@ -65,6 +67,7 @@ public class HypervStorageMotionStrategy implements DataMotionStrategy {
     @Inject VolumeDataFactory volFactory;
     @Inject PrimaryDataStoreDao storagePoolDao;
     @Inject VMInstanceDao instanceDao;
+    @Inject AlertManager alertMgr;
 
     @Override
     public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
@@ -121,7 +124,29 @@ public class HypervStorageMotionStrategy implements DataMotionStrategy {
                 volumeToFilerto.add(new Pair<VolumeTO, StorageFilerTO>(volumeTo, filerTo));
             }
 
-            MigrateWithStorageCommand command = new MigrateWithStorageCommand(to, volumeToFilerto, destHost.getPrivateIpAddress());
+            AlertManager.AlertType alertType = AlertManager.AlertType.ALERT_TYPE_USERVM_MIGRATE;
+            if (VirtualMachine.Type.DomainRouter.equals(vm.getType())) {
+                alertType = AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER_MIGRATE;
+            } else if (VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
+                alertType = AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY_MIGRATE;
+            }
+
+            // Migration across cluster needs to be done in three phases.
+            // 1. Get the destination paths from destination host
+            // 2. send the migration with storage command with paths get in first step
+            // 3. Complete the process. Update the volume details.
+            MigrateWithStorageGetDestPathsCommand getDestPathsCmd = new MigrateWithStorageGetDestPathsCommand(volumeToFilerto);
+            MigrateWithStorageGetDestPathsAnswer getDestPathsAnswer = (MigrateWithStorageGetDestPathsAnswer)agentMgr.send(destHost.getId(), getDestPathsCmd);
+
+            if (getDestPathsAnswer == null) {
+                s_logger.error("Migration with storage of vm " + vm + " to host " + destHost + " failed.");
+                throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost);
+            } else if (!getDestPathsAnswer.getResult()) {
+                s_logger.error("Migration with storage of vm " + vm + " failed. Details: " + getDestPathsAnswer.getDetails());
+                throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost + ". " + getDestPathsAnswer.getDetails());
+            }
+
+            MigrateWithStorageCommand command = new MigrateWithStorageCommand(to, destHost.getPrivateIpAddress(), getDestPathsAnswer.getVolumeToDestPathsAsList());
             MigrateWithStorageAnswer answer = (MigrateWithStorageAnswer) agentMgr.send(srcHost.getId(), command);
             if (answer == null) {
                 s_logger.error("Migration with storage of vm " + vm + " failed.");
@@ -134,7 +159,6 @@ public class HypervStorageMotionStrategy implements DataMotionStrategy {
                 // Update the volume details after migration.
                 updateVolumePathsAfterMigration(volumeToPool, answer.getVolumeTos());
             }
-
             return answer;
         } catch (OperationTimedoutException e) {
             s_logger.error("Error while migrating vm " + vm + " to host " + destHost, e);

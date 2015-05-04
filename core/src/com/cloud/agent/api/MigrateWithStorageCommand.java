@@ -29,15 +29,14 @@ import com.cloud.utils.Pair;
 
 public class MigrateWithStorageCommand extends Command {
     VirtualMachineTO vm;
-    Map<VolumeTO, StorageFilerTO> volumeToFiler;
-    List<Pair<VolumeTO, StorageFilerTO>> volumeToFilerAsList;
-    String tgtHost;
+    Map<VolumeTO, StorageFilerTO> volumeToFiler = null;
+    List<Pair<VolumeTO, StorageFilerTO>> volumeToFilerAsList = null;
+    List<Pair<VolumeTO, String>> volumeToDestPathsAsList = null;
+    String tgtHost = null;
 
     public MigrateWithStorageCommand(VirtualMachineTO vm, Map<VolumeTO, StorageFilerTO> volumeToFiler) {
         this.vm = vm;
         this.volumeToFiler = volumeToFiler;
-        this.volumeToFilerAsList = null;
-        this.tgtHost = null;
     }
 
     public MigrateWithStorageCommand(VirtualMachineTO vm, List<Pair<VolumeTO, StorageFilerTO>> volumeToFilerAsList) {
@@ -50,14 +49,19 @@ public class MigrateWithStorageCommand extends Command {
     public MigrateWithStorageCommand(VirtualMachineTO vm, Map<VolumeTO, StorageFilerTO> volumeToFiler, String tgtHost) {
         this.vm = vm;
         this.volumeToFiler = volumeToFiler;
-        this.volumeToFilerAsList = null;
         this.tgtHost = tgtHost;
+
     }
 
     public MigrateWithStorageCommand(VirtualMachineTO vm, List<Pair<VolumeTO, StorageFilerTO>> volumeToFilerAsList, String tgtHost) {
         this.vm = vm;
-        this.volumeToFiler = null;
         this.volumeToFilerAsList = volumeToFilerAsList;
+        this.tgtHost = tgtHost;
+    }
+
+    public MigrateWithStorageCommand(VirtualMachineTO vm, String tgtHost, List<Pair<VolumeTO, String>> volumeToDestPathsAsList) {
+        this.vm = vm;
+        this.volumeToDestPathsAsList = volumeToDestPathsAsList;
         this.tgtHost = tgtHost;
     }
 
@@ -71,6 +75,10 @@ public class MigrateWithStorageCommand extends Command {
 
     public List<Pair<VolumeTO, StorageFilerTO>> getVolumeToFilerAsList() {
         return volumeToFilerAsList;
+    }
+
+    public List<Pair<VolumeTO, String>> getVolumeToDestPathsAsList() {
+        return volumeToDestPathsAsList;
     }
 
     public String getTargetHost() {

@@ -87,6 +87,21 @@
     <Compile Include="ROOT.CIMV2.Win32_Processor.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="ROOT.MSCluster.MSCluster_Cluster.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.MSCluster.MSCluster_ClusterSharedVolume.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.MSCluster.MSCluster_Node.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.MSCluster.MSCluster_Resource.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.MSCluster.MSCluster_ResourceGroup.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="ROOT.virtualization.v2.Msvm_ComputerSystem.cs">
       <SubType>Component</SubType>
     </Compile>

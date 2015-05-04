@@ -29,6 +29,7 @@ using CloudStack.Plugin.WmiWrappers.ROOT.CIMV2;
 using System.IO;
 using System.Net.NetworkInformation;
 using System.Net;
+using CloudStack.Plugin.WmiWrappers.ROOT.MSCLUSTER;
 
 namespace HypervResource
 {
@@ -115,13 +116,13 @@ namespace HypervResource
         /// <summary>
         /// Returns ComputerSystem lacking any NICs and VOLUMEs
         /// </summary>
-        public ComputerSystem CreateVM(string name, long memory_mb, int vcpus)
+        public ComputerSystem CreateVM(string name, long memory_mb, int vcpus, string configurationDataRoot)
         {
             // Obtain controller for Hyper-V virtualisation subsystem
             VirtualSystemManagementService vmMgmtSvc = GetVirtualisationSystemManagementService();
 
             // Create VM with correct name and default resources
-            ComputerSystem vm = CreateDefaultVm(vmMgmtSvc, name);
+            ComputerSystem vm = CreateDefaultVm(vmMgmtSvc, name, configurationDataRoot);
 
             // Update the resource settings for the VM.
 
@@ -229,6 +230,8 @@ namespace HypervResource
             string errMsg = vmName;
             var diskDrives = vmInfo.disks;
             var bootArgs = vmInfo.bootArgs;
+            bool haEnabled = vmInfo.enableHA;
+            string type = vmInfo.type;
 
             // assert
             errMsg = vmName + ": missing disk information, array empty or missing, agent expects *at least* one disk for a VM";
@@ -245,7 +248,9 @@ namespace HypervResource
                 throw new ArgumentException(errMsg);
             }
 
-
+            // Call remove VM from cluster to make sure that there is no leftover VM already added to cluster
+            // As there might be VM on other host which is added to cluster
+            RemoveVmFromCluster(vmName);
             // For existing VMs, return when we spot one of this name not stopped.  In the meantime, remove any existing VMs of same name.
             ComputerSystem vmWmiObj = null;
             while ((vmWmiObj = GetComputerSystem(vmName)) != null)
@@ -275,9 +280,29 @@ namespace HypervResource
                 }
             }
 
+            // find the root disk storage pool to put vm configuration data in that place as clustered vm requires configuration data on shared storage
+            string configurationDataRoot = null;
+            foreach (var diskDrive in diskDrives)
+            {
+                if (diskDrive.type == "ROOT")
+                {
+                    VolumeObjectTO volInfo = VolumeObjectTO.ParseJson(diskDrive.data);
+                    if (volInfo != null && volInfo.primaryDataStore != null && !String.IsNullOrEmpty(volInfo.primaryDataStore.Path))
+                    {
+                        configurationDataRoot = volInfo.primaryDataStore.Path;
+                    }
+                }
+            }
+            if (configurationDataRoot == null)
+            {
+                errMsg = vmName + ": Missing folder PrimaryDataStore for  ROOT disk";
+                logger.Debug(errMsg);
+                throw new ArgumentException(errMsg);
+            }
+
             // Create vm carcase
             logger.DebugFormat("Going ahead with create VM {0}, {1} vcpus, {2}MB RAM", vmName, vcpus, memSize);
-            var newVm = CreateVM(vmName, memSize, vcpus);
+            var newVm = CreateVM(vmName, memSize, vcpus, configurationDataRoot);
 
             // Add a SCSI controller for attaching/detaching data volumes.
             AddScsiController(newVm);
@@ -474,7 +499,7 @@ namespace HypervResource
             }
 
             // call patch systemvm iso only for systemvms
-            if (vmName.StartsWith("r-") || vmName.StartsWith("s-") || vmName.StartsWith("v-"))
+            if (Utils.IsSystemVM(type))
             {
                 if (systemVmIso != null && systemVmIso.Length != 0)
                 {
@@ -482,13 +507,17 @@ namespace HypervResource
                 }
             }
 
+            // Adding vm to cluster, if cluster is present on node
+            logger.DebugFormat("Adding VM {0} to cluster", vmName);
+            AddVmToCluster(vmName, Utils.GetPriority(haEnabled, type));
+
             logger.DebugFormat("Starting VM {0}", vmName);
             SetState(newVm, RequiredState.Enabled);
             // Mark the VM as created by cloudstack tag
             TagVm(newVm);
 
             // we need to reboot to get the hv kvp daemon get started vr gets configured.
-            if (vmName.StartsWith("r-") || vmName.StartsWith("s-") || vmName.StartsWith("v-"))
+            if (Utils.IsSystemVM(type))
             {
                 System.Threading.Thread.Sleep(90000);
             }
@@ -1200,17 +1229,21 @@ namespace HypervResource
         {
             logger.DebugFormat("Got request to destroy vm {0}", displayName);
 
-            var vm = GetComputerSystem(displayName);
+            var vm = GetFailoverComputerSystem(displayName);
             if ( vm  == null )
             {
                 logger.DebugFormat("VM {0} already destroyed (or never existed)", displayName);
                 return;
             }
 
-            //try to shutdown vm first
-            ShutdownVm(vm);
+            // remove vm from cluster
+            RemoveVmFromCluster(displayName);
 
-            if(GetComputerSystem(vm.ElementName).EnabledState != EnabledState.Disabled)
+            //try to shutdown vm first
+            ShutdownVm(GetFailoverComputerSystem(displayName));
+
+
+            if (GetFailoverComputerSystem(displayName).EnabledState != EnabledState.Disabled)
             {
                 logger.Info("Could not shutdown system cleanly, will forcefully delete the system");
             }
@@ -1283,14 +1316,12 @@ namespace HypervResource
         /// </summary>
         /// <param name="desplayName"></param>
         /// <param name="destination host"></param>
-        public void MigrateVm(string vmName, string destination)
+        public void MigrateVm(string vmName, string destination, Utils.Priority priority)
         {
             ComputerSystem vm = GetComputerSystem(vmName);
             VirtualSystemMigrationSettingData migrationSettingData = VirtualSystemMigrationSettingData.CreateInstance();
             VirtualSystemMigrationService service = GetVirtualisationSystemMigrationService();
 
-            IPAddress addr = IPAddress.Parse(destination);
-            IPHostEntry entry = Dns.GetHostEntry(addr);
             string[] destinationHost = new string[] { destination };
 
             migrationSettingData.LateBoundObject["MigrationType"] = MigrationType.VirtualSystem;
@@ -1298,22 +1329,39 @@ namespace HypervResource
             migrationSettingData.LateBoundObject["DestinationIPAddressList"] = destinationHost;
             string migrationSettings = migrationSettingData.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20);
 
-            ManagementPath jobPath;
-            var ret_val = service.MigrateVirtualSystemToHost(vm.Path, entry.HostName, migrationSettings, null, null, out jobPath);
-            if (ret_val == ReturnCode.Started)
+            // to support vm migration across cluster remove vm from cluster before migration and then add to cluster on other host
+            string host = GetHostNameWithoutDomain(destination);
+            bool vmPartOfCluster = GetResourceGroup(vmName) != null ? true : false;
+            if (vmPartOfCluster && GetNode(host) == null)
             {
-                MigrationJobCompleted(jobPath);
+                RemoveVmFromCluster(vmName);
             }
-            else if (ret_val != ReturnCode.Completed)
+
+            try
             {
-                var errMsg = string.Format(
-                    "Failed migrating VM {0} (GUID {1}) due to {2}",
-                    vm.ElementName,
-                    vm.Name,
-                    ReturnCode.ToString(ret_val));
-                var ex = new WmiException(errMsg);
-                logger.Error(errMsg, ex);
-                throw ex;
+                ManagementPath jobPath;
+                var ret_val = service.MigrateVirtualSystemToHost(vm.Path, host, migrationSettings, null, null, out jobPath);
+                if (ret_val == ReturnCode.Started)
+                {
+                    MigrationJobCompleted(jobPath);
+                }
+                else if (ret_val != ReturnCode.Completed)
+                {
+                    var errMsg = string.Format(
+                        "Failed migrating VM {0} (GUID {1}) due to {2}",
+                        vm.ElementName,
+                        vm.Name,
+                        ReturnCode.ToString(ret_val));
+                    var ex = new WmiException(errMsg);
+                    logger.Error(errMsg, ex);
+                    throw ex;
+                }
+            }
+            catch (Exception e)
+            {
+                AddVmToCluster(vmName, priority);
+                EnableVm(vmName);
+                throw e;
             }
         }
 
@@ -1378,7 +1426,7 @@ namespace HypervResource
         /// <param name="displayName"></param>
         /// <param name="destination host"></param>
         /// <param name="volumeToPool"> volume to me migrated to which pool</param>
-        public void MigrateVmWithVolume(string vmName, string destination, Dictionary<string, string> volumeToPool)
+        public void MigrateVmWithVolume(string vmName, string destination, Dictionary<string, string> volumeToPool, Utils.Priority priority)
         {
             ComputerSystem vm = GetComputerSystem(vmName);
             VirtualSystemMigrationSettingData migrationSettingData = VirtualSystemMigrationSettingData.CreateInstance();
@@ -1404,8 +1452,6 @@ namespace HypervResource
                 }
             }
 
-            IPAddress addr = IPAddress.Parse(destination);
-            IPHostEntry entry = Dns.GetHostEntry(addr);
             string[] destinationHost = new string[] { destination };
 
             migrationSettingData.LateBoundObject["MigrationType"] = MigrationType.VirtualSystemAndStorage;
@@ -1413,23 +1459,49 @@ namespace HypervResource
             migrationSettingData.LateBoundObject["DestinationIPAddressList"] = destinationHost;
             string migrationSettings = migrationSettingData.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20);
 
-            ManagementPath jobPath;
-            var ret_val = service.MigrateVirtualSystemToHost(vm.Path, entry.HostName, migrationSettings, rasds, null, out jobPath);
-            if (ret_val == ReturnCode.Started)
+            // to support vm migration across cluster remove vm from cluster before migration and then add to cluster on other host
+            string host = GetHostNameWithoutDomain(destination);
+            bool vmPartOfCluster = GetResourceGroup(vmName) != null ? true : false;
+            if (vmPartOfCluster && GetNode(host) == null)
             {
-                MigrationJobCompleted(jobPath);
+                RemoveVmFromCluster(vmName);
             }
-            else if (ret_val != ReturnCode.Completed)
+
+            ManagementPath jobPath;
+            try
             {
-                var errMsg = string.Format(
-                    "Failed migrating VM {0} and its volumes to destination {1} (GUID {2}) due to {3}",
-                    vm.ElementName,
-                    destination,
-                    vm.Name,
-                    ReturnCode.ToString(ret_val));
-                var ex = new WmiException(errMsg);
-                logger.Error(errMsg, ex);
-                throw ex;
+                var ret_val = service.MigrateVirtualSystemToHost(vm.Path, host, migrationSettings, rasds, null, out jobPath);
+                if (ret_val == ReturnCode.Started)
+                {
+                    MigrationJobCompleted(jobPath);
+                }
+                else if (ret_val != ReturnCode.Completed)
+                {
+                    var errMsg = string.Format(
+                        "Failed migrating VM {0} and its volumes to destination {1} (GUID {2}) due to {3}",
+                        vm.ElementName,
+                        destination,
+                        vm.Name,
+                        ReturnCode.ToString(ret_val));
+                    var ex = new WmiException(errMsg);
+                    logger.Error(errMsg, ex);
+                    throw ex;
+                }
+            }
+            catch (Exception e)
+            {
+                AddVmToCluster(vmName, priority);
+                EnableVm(vmName);
+                throw e;
+            }
+        }
+
+        public void EnableVm(string vmName)
+        {
+            var vm = GetComputerSystem(vmName);
+            if (vm.EnabledState != EnabledState.Enabled)
+            {
+                SetState(vm, RequiredState.Enabled);
             }
         }
 
@@ -1999,7 +2071,7 @@ namespace HypervResource
             return true;
         }
 
-        private static ComputerSystem CreateDefaultVm(VirtualSystemManagementService vmMgmtSvc, string name)
+        private static ComputerSystem CreateDefaultVm(VirtualSystemManagementService vmMgmtSvc, string name, string configurationDataRoot)
         {
             // Tweak default settings by basing new VM on default global setting object 
             // with designed display name.
@@ -2010,6 +2082,7 @@ namespace HypervResource
             vs_gs_data.LateBoundObject["AutomaticStartupAction"] = startupAction.ToString();
             vs_gs_data.LateBoundObject["AutomaticShutdownAction"] = stopAction.ToString();
             vs_gs_data.LateBoundObject["Notes"] = new string[] { "CloudStack creating VM, do not edit. \n" };
+            vs_gs_data.LateBoundObject["ConfigurationDataRoot"] = configurationDataRoot;
 
             System.Management.ManagementPath jobPath;
             System.Management.ManagementPath defined_sys;
@@ -2325,10 +2398,39 @@ namespace HypervResource
             return null;
         }
 
+        public ComputerSystem GetFailoverComputerSystem (string displayName)
+        {
+            for (int i = 0; i < 10; i++)
+            {
+                var svm = GetComputerSystem(displayName);
+                if (svm == null)
+                {
+                    System.Threading.Thread.Sleep(2000);
+                    logger.Debug("VM is missing, may be due to failover. Retrying ...");
+                }
+                else
+                {
+                    return svm;
+                }
+            }
+            return null;
+        }
+
         public ComputerSystem.ComputerSystemCollection GetComputerSystemCollection()
         {
-            var wmiQuery = String.Format("ProcessId >= 0");
+            var wmiQuery = String.Format("InstallDate is not null");
             return ComputerSystem.GetInstances(wmiQuery);
+        }
+
+        public string GetHostName()
+        {
+            var wmiQuery = String.Format("InstallDate is null");
+            var systems = ComputerSystem.GetInstances(wmiQuery);
+            if (systems.Count == 1)
+            {
+                return systems.OfType<ComputerSystem>().First().ElementName;
+            }
+            return null;
         }
 
         public ShutdownComponent GetShutdownComponent(ComputerSystem vm)
@@ -2748,6 +2850,300 @@ namespace HypervResource
 
             return null;
         }
+
+        public void AddVmToCluster(string vm, Utils.Priority priority)
+        {
+            if (IsClusterPresent() && GetResourceGroup(vm) == null)
+            {
+                GetCluster().AddVirtualMachine(vm);
+                SetHAParameters(vm, priority);
+            }
+        }
+
+        public void RemoveVmFromCluster(string vm)
+        {
+            if (IsClusterPresent())
+            {
+                var resGroup = GetResourceGroup(vm);
+
+                if (resGroup != null)
+                {
+                    resGroup.DestroyGroup(0);
+                }
+            }
+        }
+
+        public bool IsClusterPresent()
+        {
+            bool result = false;
+            try
+            {
+                SelectQuery selectQuery = new SelectQuery("MSCluster_Cluster");
+                ManagementObjectSearcher searcher = new ManagementObjectSearcher(GetClusterManagementScope(), selectQuery);
+
+                var objects = searcher.Get();
+
+                result = (objects.Count != 1) ? false : true;
+            }
+            catch (Exception ex)
+            {
+                logger.Info("Cluster doesn't seems to be present on this host: " + ex.Message);
+            }
+            return result;
+        }
+
+        public List<string> GetNodeOwnedDisabledVms()
+        {
+            List<string> offlineVms = new List<string>();
+            if (IsClusterPresent())
+            {
+                var wmiQuery = String.Format("ownerNode='{0}' and state=3 and type='virtual machine'", GetHostName());
+                var offlineVmResources = Resource.GetInstances(wmiQuery);
+
+                foreach (Resource vm in offlineVmResources)
+                {
+                    offlineVms.Add(vm.OwnerGroup);
+                    RemoveVmFromCluster(vm.OwnerGroup);
+                }
+            }
+            return offlineVms;
+        }
+
+        public string GetClusterName()
+        {
+            if (IsClusterPresent())
+            {
+                var clusters = Cluster.GetInstances();
+                if (clusters.Count == 1)
+                {
+                    return clusters.OfType<Cluster>().First().Name;
+                }
+            }
+            return null;
+        }
+
+        public bool IsHostAlive(string host)
+        {
+            try
+            {
+                var node = GetNode(GetHostNameWithoutDomain(host));
+                if (node != null)
+                {
+                    switch (node.State)
+                    {
+                        case Node.StateValues.Up:
+                        case Node.StateValues.Paused:
+                        case Node.StateValues.Unknown0:
+                            return true;
+                        default:
+                            return false;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                logger.Info("Failed to determine state of node: " + host + " Error: " + e.Message);
+            }
+            return false;
+        }
+
+        private Node GetNode(string host)
+        {
+            var wmiQuery = String.Format("Name=\"{0}\"", host);
+            var nodes = Node.GetInstances(wmiQuery);
+            if (nodes.Count == 1)
+            {
+                return nodes.OfType<Node>().First();
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public Dictionary<string, List<string>> GetClusterDetails()
+        {
+            Dictionary<string, List<string>> clusterDetails = new Dictionary<string, List<string>>();
+            if (IsClusterPresent())
+            {
+                List<String> nodes = new List<string>();
+                foreach (Node node in Node.GetInstances())
+                {
+                    nodes.Add(node.Name);
+                }
+
+                clusterDetails.Add(GetCluster().Name, nodes);
+            }
+            else
+            {
+                clusterDetails.Add("ClusterNotPresent", null);
+                logger.Info("Cluster not present returning bogus guid");
+            }
+            return clusterDetails;
+        }
+
+        private string GetHostNameWithoutDomain(string host)
+        {
+            IPAddress addr = IPAddress.Parse(host);
+            IPHostEntry entry = Dns.GetHostEntry(addr);
+            string hostName = entry.HostName;
+            if (hostName.IndexOf('.') > 0)
+            {
+                return hostName.Substring(0, hostName.IndexOf('.'));
+            }
+            else
+            {
+                return host;
+            }
+        }
+
+        private void SetHAParameters(string vmResourceGroup, Utils.Priority priority)
+        {
+            var resGroup = GetResourceGroup(vmResourceGroup);
+
+            resGroup.AutoCommit = true;
+            resGroup.FailoverPeriod = 6;
+            resGroup.FailoverThreshold = 120;
+            resGroup.Priority = (uint)priority;
+
+            if (priority > 0)
+            {
+                var wmiQuery = String.Format("ownerGroup=\"{0}\"", resGroup.Name);
+                var resources = Resource.GetInstances(wmiQuery);
+
+                foreach (Resource resource in resources)
+                {
+                    resource.AutoCommit = true;
+                    resource.RestartThreshold = 5;
+                }
+            }
+        }
+
+        private ResourceGroup GetResourceGroup(string groupName)
+        {
+            var wmiQuery = String.Format("Name=\"{0}\"", groupName);
+            var resGroups = ResourceGroup.GetInstances(wmiQuery);
+
+            if (resGroups.Count > 0)
+            {
+                return resGroups.OfType<ResourceGroup>().First();
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        private Resource GetResource(string resourceName)
+        {
+            var wmiQuery = String.Format("Name=\"{0}\"", resourceName);
+            var resources = Resource.GetInstances(wmiQuery);
+
+            if (resources.Count != 1)
+            {
+                ThrowWMIException(String.Format("There are 0 or more than 1 resource with name \"{0}\"", resourceName));
+            }
+
+            return resources.OfType<Resource>().First();
+
+        }
+
+        public string FindClusterSharedVolume(string volumeName)
+        {
+            volumeName = volumeName.Substring(1);
+            if (IsClusterPresent())
+            {
+                return GetCsvToResource(volumeName);
+            }
+            ThrowWMIException("Cluster Shared Volume with specified disk name does not exist");
+            return null;
+        }
+
+        private ClusterSharedVolume GetCSVToPath(string volumePath)
+        {
+            var wmiQuery = String.Format("Name=\"{0}\"", volumePath);
+            var csvs = ClusterSharedVolume.GetInstances(wmiQuery);
+            return csvs.OfType<ClusterSharedVolume>().First();
+        }
+
+        private Cluster GetCluster()
+        {
+            var clusters = Cluster.GetInstances();
+
+            if (clusters.Count != 1)
+            {
+                ThrowWMIException("There are 0 or more than 1 clusters on this host. How can this be even possible?");
+            }
+
+            return clusters.OfType<Cluster>().First();
+        }
+
+        private string GetCsvToResource(string resourceName)
+        {
+            SelectQuery selectQuery = new SelectQuery("MSCluster_ClusterSharedVolumeToResource", String.Format("PartComponent=\"MSCluster_Resource.Name=\\\"{0}\\\"\"", resourceName));
+            ManagementObjectSearcher searcher = new ManagementObjectSearcher(GetClusterManagementScope(), selectQuery);
+
+            var objects = searcher.Get();
+            if (objects.Count != 1)
+            {
+                ThrowWMIException(string.Format("Specified disk resource {0} either does not exist or is not unique", resourceName));
+            }
+
+            foreach (var csvToRes in objects)
+            {
+                string groupComponent = (string)csvToRes["GroupComponent"];
+                string[] groupTokens = groupComponent.Split('"');
+                string csvName = groupTokens[1];
+                csvName = csvName.Replace("\\\\", "\\");
+                return csvName;
+            }
+
+            ThrowWMIException(string.Format("Specified disk resource {0} does not exist", resourceName));
+            return null;
+        }
+
+        private Resource GetResourceToCsv(string volumePath)
+        {
+            volumePath = volumePath.Replace("\\", "\\\\");
+            SelectQuery selectQuery = new SelectQuery("MSCluster_ClusterSharedVolumeToResource",
+                String.Format("GroupComponent=\"MSCluster_ClusterSharedVolume.Name=\\\"{0}\\\"\"", volumePath));
+            ManagementObjectSearcher searcher = new ManagementObjectSearcher(GetClusterManagementScope(), selectQuery);
+
+            var objects = searcher.Get();
+            if (objects.Count != 1)
+            {
+                ThrowWMIException(string.Format("Specified CSV {0} either does not exist or is not unique", volumePath));
+            }
+
+            string resourceName = null;
+
+            foreach (var ResToCsv in objects)
+            {
+                string groupComponent = (string)ResToCsv["PartComponent"];
+                string[] groupTokens = groupComponent.Split('"');
+                resourceName = groupTokens[1];
+            }
+
+            var wmiQuery = String.Format("Name=\"{0}\"", resourceName);
+            var disks = Resource.GetInstances(wmiQuery);
+
+            return disks.OfType<Resource>().First();
+        }
+
+        private ManagementScope GetClusterManagementScope()
+        {
+            ManagementScope mgmtScope = new System.Management.ManagementScope();
+            mgmtScope.Path.NamespacePath = "root\\MSCluster";
+            return mgmtScope;
+        }
+
+        private void ThrowWMIException(string message)
+        {
+            var errMsg = string.Format(message);
+            var ex = new WmiException(errMsg);
+            logger.Error(errMsg, ex);
+            throw ex;
+        }
     }
 
     public class WmiException : Exception
@@ -2987,18 +3383,18 @@ namespace HypervResource
 
         public static string ToCloudStackPowerState(UInt16 value)
         {
-            string result = "PowerUnknown";
+            string result = "PowerOff";
             switch (value)
             {
                 case Enabled: result = "PowerOn"; break;
                 case Disabled: result = "PowerOff"; break;
-                case Paused: result = "PowerUnknown"; break;
-                case Suspended: result = "PowerUnknown"; break;
+                case Paused: result = "PowerOn"; break; //Assuming this change is made manually by User for some maintainence
+                case Suspended: result = "PowerOff"; break;
                 case Starting: result = "PowerOn"; break;
-                case Snapshotting: result = "PowerUnknown"; break; // NOT used
+                case Snapshotting: result = "PowerOn"; break; // NOT used
                 case Saving: result = "PowerOn"; break;
                 case Stopping: result = "PowerOff"; break;
-                case Pausing: result = "PowerUnknown"; break;
+                case Pausing: result = "PowerOn"; break;
                 case Resuming: result = "PowerOn"; break;
             }
             return result;

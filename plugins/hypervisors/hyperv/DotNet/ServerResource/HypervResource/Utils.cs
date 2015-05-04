@@ -26,6 +26,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Reflection;
+using System.Security.Cryptography;
 
 namespace HypervResource
 {
@@ -35,6 +36,17 @@ namespace HypervResource
 
         private const string TASK_PREFIX = "cloudstack-heartbeat-";
         private const string BATCH_FILE = "heartbeat.bat";
+
+        /// <summary>
+        /// Defines priority labels.
+        /// </summary>
+        public enum Priority : uint
+        {
+            High = 5000,
+            Medium = 2000,
+            Low = 1000,
+            Zero = 0
+        };
 
         /// <summary>
         /// Associate CloudStack object's content with a fully qualified type name.
@@ -109,6 +121,32 @@ namespace HypervResource
 
             s_logger.Info(CloudStackTypes.CopyCommand + ": copy " + Path.Combine(cifsShareDetails.UncPath, filePathRelativeToShare) + " to " + destFile);
             File.Copy(dest, destFile, true);
+        }
+
+        public static bool IsSystemVM(String type)
+        {
+            return !type.Equals("User", StringComparison.OrdinalIgnoreCase);
+        }
+
+        public static Priority GetPriority(bool haEnabled, string vmType)
+        {
+
+            if (IsDomainRouter(vmType))
+            {
+                return Priority.High;
+            }
+            else if (haEnabled)
+            {
+                return Priority.Medium;
+            }
+            else
+            {
+                return Priority.Zero;
+            }
+        }
+        public static bool IsDomainRouter(string vmType)
+        {
+            return vmType.Equals("DomainRouter", StringComparison.OrdinalIgnoreCase);
         }
 
         public static void GetShareDetails(string remoteUNC, out long capacity, out long available)

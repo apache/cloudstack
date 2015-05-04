@@ -67,7 +67,6 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.log4j.Logger;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -1702,7 +1701,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     protected boolean checkVmOnHost(final VirtualMachine vm, final long hostId) throws AgentUnavailableException, OperationTimedoutException {
-        final Answer answer = _agentMgr.send(hostId, new CheckVirtualMachineCommand(vm.getInstanceName()));
+        final Answer answer = _agentMgr.send(hostId, new CheckVirtualMachineCommand(vm.getInstanceName(), vm.isHaEnabled(), vm.getType()));
         if (answer == null || !answer.getResult()) {
             return false;
         }
@@ -2321,7 +2320,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 s_logger.info("Migration was unsuccessful.  Cleaning up: " + vm);
                 _alertMgr.sendAlert(alertType, srcHost.getDataCenterId(), srcHost.getPodId(),
                         "Unable to migrate vm " + vm.getInstanceName() + " from host " + srcHost.getName() + " in zone " + dc.getName() + " and pod " + dc.getName(),
-                        "Migrate Command failed.  Please check logs.");
+                        "Migrate Command failed. HA may not work for VM.  Please check logs.");
                 try {
                     _agentMgr.send(destHostId, new Commands(cleanup(vm.getInstanceName())), null);
                     stateTransitTo(vm, Event.OperationFailed, srcHostId);

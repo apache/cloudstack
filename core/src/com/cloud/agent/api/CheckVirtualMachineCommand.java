@@ -19,17 +19,27 @@
 
 package com.cloud.agent.api;
 
+import com.cloud.vm.VirtualMachine;
+
 public class CheckVirtualMachineCommand extends Command {
 
     private String vmName;
+    private Boolean haEnabled;
+    private VirtualMachine.Type vmType;
+
+    public CheckVirtualMachineCommand(String vmName, Boolean haEnabled, VirtualMachine.Type vmType) {
+        this.vmName = vmName;
+        this.haEnabled = haEnabled;
+        this.vmType = vmType;
+        setWait(20);
+    }
 
     protected CheckVirtualMachineCommand() {
 
     }
 
     public CheckVirtualMachineCommand(String vmName) {
-        this.vmName = vmName;
-        setWait(20);
+        this(vmName, null, null);
     }
 
     public String getVmName() {

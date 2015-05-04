@@ -30,7 +30,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -42,8 +41,8 @@ import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.configuration.Config;
 import com.cloud.alert.AlertManager;
+import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -65,6 +64,11 @@ import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.storage.StorageLayer;
+import com.cloud.utils.db.QueryBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.exception.CloudRuntimeException;
+import javax.persistence.EntityExistsException;
+
 
 /**
  * Methods to discover and managem a Hyper-V agent. Prepares a
@@ -128,6 +132,14 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
         long agentId = agent.getId();
         HostVO host = _hostDao.findById(agentId);
 
+        Map<String, List<String>> clusterDetails = HypervDirectConnectResource.GetClusterDetails(host.getPrivateIpAddress());
+        if(clusterDetails == null) {
+            String errMsg = "Not able to connect to host: " + host.getName();
+            s_logger.error(errMsg);
+            throw new ConnectionException(true, errMsg);
+        }
+
+        Map.Entry<String, List<String>> entry = clusterDetails.entrySet().iterator().next();
         // Our Hyper-V machines are not participating in pools, and the pool id
         // we provide them is not persisted.
         // This means the pool id can vary.
@@ -135,6 +147,10 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
         if (cluster.getGuid() == null) {
             cluster.setGuid(startup.getPool());
             _clusterDao.update(cluster.getId(), cluster);
+        } else if (entry.getValue() != null && !cluster.getGuid().equals(startup.getPool())) {
+            String msg = "Failover cluster name changed for cluster " + cluster.getId();
+            s_logger.warn(msg);
+            throw new CloudRuntimeException(msg);
         }
 
         if (s_logger.isDebugEnabled()) {
@@ -246,35 +262,87 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
         }
 
         try {
-            String hostname = uri.getHost();
-            InetAddress ia = InetAddress.getByName(hostname);
-            String agentIp = ia.getHostAddress();
-            String uuidSeed = agentIp;
-            String guidWithTail = calcServerResourceGuid(uuidSeed) + "-HypervResource";
+            String hostname;
+            InetAddress ia;
+            try {
+                hostname = uri.getHost();
+                ia = InetAddress.getByName(hostname);
+            }  catch (UnknownHostException e) {
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, dcId, podId, "Unable to add " + uri.getHost(), "Error is " + e.getMessage());
 
-            if (_resourceMgr.findHostByGuid(guidWithTail) != null) {
-                s_logger.debug("Skipping " + agentIp + " because " + guidWithTail + " is already in the database.");
+                s_logger.warn("Unable to instantiate " + uri.getHost(), e);
                 return null;
+
+            }
+
+            String agentIp = ia.getHostAddress();
+
+            Map<String, List<String>> clusterDetails = HypervDirectConnectResource.GetClusterDetails(agentIp);
+            if(clusterDetails == null) {
+                String errMsg = "Agent not running, or no route to agent on at " + agentIp;
+                s_logger.error(errMsg);
+                throw new DiscoveryException(errMsg);
             }
 
             s_logger.info("Creating" + HypervDirectConnectResource.class.getName() + " HypervDummyResourceBase for zone/pod/cluster " + dcId + "/" + podId + "/" +
-                clusterId);
+                    clusterId);
 
             // Some Hypervisors organise themselves in pools.
             // The startup command tells us what pool they are using.
             // In the meantime, we have to place a GUID corresponding to the
             // pool in the database
             // This GUID may change.
-            if (cluster.getGuid() == null) {
-                cluster.setGuid(UUID.nameUUIDFromBytes(String.valueOf(clusterId).getBytes(Charset.forName("UTF-8"))).toString());
-                _clusterDao.update(clusterId, cluster);
+            Map.Entry<String, List<String>> entry = clusterDetails.entrySet().iterator().next();
+            List<HostVO> clusterHosts = _resourceMgr.listAllHostsInCluster(clusterId);
+
+            String clusterGuid;
+            if(entry.getValue() == null) {
+                if (cluster.getGuid() == null) {
+                    clusterGuid = UUID.nameUUIDFromBytes(String.valueOf(clusterId).getBytes(Charset.forName("UTF-8"))).toString();
+                    cluster.setGuid(clusterGuid);
+                    _clusterDao.update(clusterId, cluster);
+                }
+            } else {
+                clusterGuid = entry.getKey();
+                if (cluster.getGuid() == null) {
+                    setClusterGuid(cluster, clusterGuid);
+                } else {
+                    if (clusterHosts != null && clusterHosts.size() > 0) {
+                        if (!cluster.getGuid().equals(clusterGuid)) {
+                            String msg = "This host " + agentIp + " is not part of Failover Cluster corresponding to cluster " + cluster.getName() + " on Hyper-V";
+                            s_logger.warn(msg);
+                            throw new DiscoveryException(msg);
+                        }
+                    } else {
+                        setClusterGuid(cluster, clusterGuid);
+                    }
+                }
+
+                if (!((clusterHosts.size() + 1) == entry.getValue().size())) {
+                    s_logger.warn("All hosts from corresponding Failover cluster to cluster[" + cluster.getName() + "] are not added to CloudStack, Please add them also");
+                    StringBuilder sb = new StringBuilder();
+                    for (String node : entry.getValue()) {
+                        sb.append(node);
+                        sb.append("; ");
+                    }
+                    s_logger.warn("Hosts in corresponding failover cluster to cluster[" + cluster.getName() + "]: " + sb.toString());
+                }
             }
 
+            String guidWithTail = calcServerResourceGuid(agentIp) + "-HypervResource";
+
+            if (_resourceMgr.findHostByGuid(guidWithTail) != null) {
+                s_logger.debug("Skipping " + agentIp + " because " + guidWithTail + " is already in the database.");
+                return null;
+            }
+
+            Map<HypervDirectConnectResource, Map<String, String>> resources = new HashMap<HypervDirectConnectResource, Map<String, String>>();
             // Settings required by all server resources managing a hypervisor
             Map<String, Object> params = new HashMap<String, Object>();
             params.put("zone", Long.toString(dcId));
             params.put("pod", Long.toString(podId));
             params.put("cluster", Long.toString(clusterId));
+
             params.put("guid", guidWithTail);
             params.put("ipaddress", agentIp);
 
@@ -290,35 +358,52 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
             params.put("router.aggregation.command.each.timeout", _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
 
             HypervDirectConnectResource resource = new HypervDirectConnectResource();
-            resource.configure(agentIp, params);
+            try {
+                resource.configure(agentIp, params);
+            } catch (ConfigurationException e) {
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, dcId, podId, "Unable to add " + uri.getHost(), "Error is " + e.getMessage());
+                s_logger.warn("Unable to instantiate " + uri.getHost(), e);
+                return null;
+            }
 
             // Assert
             // TODO: test by using bogus URL and bogus virtual path in URL
             ReadyCommand ping = new ReadyCommand();
             Answer pingAns = resource.executeRequest(ping);
             if (pingAns == null || !pingAns.getResult()) {
-                String errMsg = "Agent not running, or no route to agent on at " + uri;
+                String errMsg = "Agent not running, or no route to agent on at " + agentIp;
                 s_logger.debug(errMsg);
                 throw new DiscoveryException(errMsg);
             }
 
-            Map<HypervDirectConnectResource, Map<String, String>> resources = new HashMap<HypervDirectConnectResource, Map<String, String>>();
             resources.put(resource, details);
-
             // TODO: does the resource have to create a connection?
             return resources;
-        } catch (ConfigurationException e) {
-            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, dcId, podId, "Unable to add " + uri.getHost(), "Error is " + e.getMessage());
-            s_logger.warn("Unable to instantiate " + uri.getHost(), e);
-        } catch (UnknownHostException e) {
-            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, dcId, podId, "Unable to add " + uri.getHost(), "Error is " + e.getMessage());
-
-            s_logger.warn("Unable to instantiate " + uri.getHost(), e);
         } catch (Exception e) {
             String msg = " can't setup agent, due to " + e.toString() + " - " + e.getMessage();
             s_logger.warn(msg);
         }
         return null;
+    }
+
+    void setClusterGuid(ClusterVO cluster, String guid) {
+        cluster.setGuid(guid);
+        try {
+            _clusterDao.update(cluster.getId(), cluster);
+        } catch (EntityExistsException e) {
+            QueryBuilder<ClusterVO> sc = QueryBuilder.create(ClusterVO.class);
+            sc.and(sc.entity().getGuid(), SearchCriteria.Op.EQ, guid);
+            List<ClusterVO> clusters = sc.list();
+            ClusterVO clu = clusters.get(0);
+            List<HostVO> clusterHosts = _resourceMgr.listAllHostsInCluster(clu.getId());
+            if (clusterHosts == null || clusterHosts.size() == 0) {
+                clu.setGuid(null);
+                _clusterDao.update(clu.getId(), clu);
+                _clusterDao.update(cluster.getId(), cluster);
+                return;
+            }
+            throw e;
+        }
     }
 
     /**

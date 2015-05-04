@@ -45,6 +45,10 @@ namespace HypervResource
                 {
                     return path;
                 }
+                else if (this.isPreSetup)
+                {
+                    return CloudStackTypes.wmiCallsV2.FindClusterSharedVolume(path);
+                }
                 else
                 {
                     return this.UncPath;
@@ -84,6 +88,21 @@ namespace HypervResource
             }
         }
 
+        public Boolean isPreSetup
+        {
+            get
+            {
+                if (poolType.Equals("PreSetup"))
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
         public static PrimaryDataStoreTO ParseJson(dynamic json)
         {
             PrimaryDataStoreTO result = null;
@@ -102,10 +121,15 @@ namespace HypervResource
                     poolType = (string)primaryDataStoreTOJson.poolType
                 };
 
-                if (!result.isLocal)
+                if (!result.isLocal && !result.isPreSetup)
                 {
                     // Delete security credentials in original command.  Prevents logger from spilling the beans, as it were.
                     String uriStr = @"cifs://" + result.host + result.path;
+                    result.uri = new Uri(uriStr);
+                }
+                else if (result.isPreSetup)
+                {
+                    string uriStr = @"presetup://" + result.host + result.path;
                     result.uri = new Uri(uriStr);
                 }
             }
@@ -125,7 +149,7 @@ namespace HypervResource
                 if (this.primaryDataStore != null)
                 {
                     PrimaryDataStoreTO store = this.primaryDataStore;
-                    if (store.isLocal)
+                    if (store.isLocal || store.isPreSetup)
                     {
                         String volume = this.path;
                         if (String.IsNullOrEmpty(volume))
@@ -291,6 +315,10 @@ namespace HypervResource
                     if (store.isLocal)
                     {
                         fileName = Path.Combine(store.Path, this.path);
+                    }
+                    else if (store.isPreSetup)
+                    {
+                        fileName = store.Path + @"\" + this.path;
                     }
                     else
                     {
@@ -661,11 +689,31 @@ namespace HypervResource
         }
     }
 
+    public class Pair
+    {
+        [JsonProperty("u")]
+        public dynamic second;
+        [JsonProperty("t")]
+        public dynamic first;
+
+        public Pair(dynamic first, dynamic second)
+        {
+            this.second = second;
+            this.first = first;
+        }
+    }
+
     /// <summary>
     /// Fully qualified named for a number of types used in CloudStack.  Used to specify the intended type for JSON serialised objects. 
     /// </summary>
     public class CloudStackTypes
     {
+        public static IWmiCallsV2 wmiCallsV2
+        {
+            get;
+            set;
+        }
+
         public const string Answer = "com.cloud.agent.api.Answer";
         public const string AttachIsoCommand = "com.cloud.agent.api.AttachIsoCommand";
         public const string AnsBackupSnapshotAnswerwer = "com.cloud.agent.api.BackupSnapshotAnswer";
@@ -722,6 +770,8 @@ namespace HypervResource
         public const string MigrateCommand = "com.cloud.agent.api.MigrateCommand";
         public const string MigrateWithStorageAnswer = "com.cloud.agent.api.MigrateWithStorageAnswer";
         public const string MigrateWithStorageCommand = "com.cloud.agent.api.MigrateWithStorageCommand";
+        public const string MigrateWithStorageGetDestPathsCommand = "com.cloud.agent.api.MigrateWithStorageGetDestPathsCommand";
+        public const string MigrateWithStorageGetDestPathsAnswer = "com.cloud.agent.api.MigrateWithStorageGetDestPathsAnswer";
         public const string ModifySshKeysCommand = "com.cloud.agent.api.ModifySshKeysCommand";
         public const string ModifyStoragePoolAnswer = "com.cloud.agent.api.ModifyStoragePoolAnswer";
         public const string ModifyStoragePoolCommand = "com.cloud.agent.api.ModifyStoragePoolCommand";
@@ -874,5 +924,6 @@ namespace HypervResource
         public const string DettachAnswer = "org.apache.cloudstack.storage.command.DettachAnswer";
         public const string DettachCommand = "org.apache.cloudstack.storage.command.DettachCommand";
         public const string HostVmStateReportCommand = "org.apache.cloudstack.HostVmStateReportCommand";
+        public const string GetClusterDetailsCommand = "org.apache.cloudstack.GetClusterDetailsCommand";
     }
 }

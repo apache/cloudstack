@@ -93,6 +93,17 @@ namespace HypervResource
             return settings.Get(getPrimaryKey(id));
         }
 
+        public void removePrimaryStorage(string id)
+        {
+            Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            KeyValueConfigurationCollection settings = config.AppSettings.Settings;
+            string key = getPrimaryKey(id);
+            if (settings[key] != null)
+            {
+                settings.Remove(key);
+            }
+        }
+
         public void setPrimaryStorage(string id, string path)
         {
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
@@ -162,7 +173,21 @@ namespace HypervResource
         {
         }
 
-        public static IWmiCallsV2 wmiCallsV2 { get; set;}
+        // below variable to avoid infinite loop/recursion
+        private static IWmiCallsV2 wmiCalls;
+
+        public static IWmiCallsV2 wmiCallsV2
+        {
+            get
+            {
+                return wmiCalls;
+            }
+            set
+            {
+                wmiCalls = value;
+                CloudStackTypes.wmiCallsV2 = value;
+            }
+        }
 
         // GET api/HypervResource
         public string Get()
@@ -784,13 +809,24 @@ namespace HypervResource
                 bool result = true;
                 try
                 {
-                    foreach (string poolPath in config.getAllPrimaryStorages())
+                    if (wmiCallsV2.IsClusterPresent())
                     {
-                        if (IsHostAlive(poolPath, (string)cmd.host.privateNetwork.ip))
+                        if (wmiCallsV2.IsHostAlive((string)cmd.host.privateNetwork.ip))
                         {
                             result = false;
                             details = "host is alive";
-                            break;
+                        }
+                    }
+                    else
+                    {
+                        foreach (string poolPath in config.getAllPrimaryStorages())
+                        {
+                            if (IsHostAlive(poolPath, (string)cmd.host.privateNetwork.ip))
+                            {
+                                result = false;
+                                details = "host is alive";
+                                break;
+                            }
                         }
                     }
                 }
@@ -870,20 +906,31 @@ namespace HypervResource
                 logger.Info(CloudStackTypes.CheckVirtualMachineCommand + Utils.CleanString(cmd.ToString()));
                 string details = null;
                 bool result = false;
-                string vmName = cmd.vmName;
+                string vmName = (string)cmd.vmName;
+                String type = (string)cmd.vmType;
+                bool haEnabled = (bool)cmd.haEnabled;
                 string powerState = null;
 
-                // TODO: Look up the VM, convert Hyper-V state to CloudStack version.
-                var sys = wmiCallsV2.GetComputerSystem(vmName);
-                if (sys == null)
+                try
                 {
-                    details = CloudStackTypes.CheckVirtualMachineCommand + " requested unknown VM " + vmName;
-                    logger.Error(details);
+                    var sys = wmiCallsV2.GetComputerSystem(vmName);
+                    if (sys == null)
+                    {
+                        details = CloudStackTypes.CheckVirtualMachineCommand + " requested unknown VM " + vmName;
+                        logger.Error(details);
+                    }
+                    else
+                    {
+                        powerState = EnabledState.ToCloudStackPowerState(sys.EnabledState);
+                        wmiCallsV2.AddVmToCluster(vmName, Utils.GetPriority(haEnabled, type));
+                        wmiCallsV2.EnableVm(vmName);
+                        result = true;
+                    }
                 }
-                else
+                catch (Exception sysEx)
                 {
-                    powerState = EnabledState.ToCloudStackPowerState(sys.EnabledState);
-                    result = true;
+                    details = CloudStackTypes.CheckVirtualMachineCommand + " failed due to " + sysEx.Message;
+                    logger.Error(details, sysEx);
                 }
 
                 object ansContent = new
@@ -978,14 +1025,11 @@ namespace HypervResource
                     else if (poolType == StoragePoolType.NetworkFilesystem ||
                         poolType == StoragePoolType.SMB)
                     {
-                        NFSTO share = new NFSTO();
-                        String uriStr = "cifs://" + (string)cmd.pool.host + (string)cmd.pool.path;
-                        share.uri = new Uri(uriStr);
-                        hostPath = Utils.NormalizePath(share.UncPath);
-
-                        // Check access to share.
-                        Utils.GetShareDetails(hostPath, out capacityBytes, out availableBytes);
-                        config.setPrimaryStorage((string)cmd.pool.uuid, hostPath);
+                        AddOrRemoveSmb(cmd, ref capacityBytes, ref availableBytes, ref hostPath);
+                    }
+                    else if (poolType == StoragePoolType.PreSetup)
+                    {
+                        AddOrRemoveCsv(cmd, ref details, ref capacityBytes, ref availableBytes, ref hostPath, ref result);
                     }
                     else
                     {
@@ -1022,28 +1066,90 @@ namespace HypervResource
                     contextMap = contextMap
                 };
 
-                if (result)
+                if (!wmiCallsV2.IsClusterPresent() && result)
                 {
-                    try
-                    {
-                        if ((bool)cmd.add)
-                        {
-                            logger.Info("Adding HeartBeat Task to task scheduler for pool " + (string)cmd.pool.uuid);
-                            Utils.AddHeartBeatTask((string)cmd.pool.uuid, hostPath, config.PrivateIpAddress);
-                        }
-                        else
-                        {
-                            logger.Info("Deleting HeartBeat Task from task scheduler for pool " + (string)cmd.pool.uuid);
-                            Utils.RemoveHeartBeatTask(cmd.pool.uuid);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        logger.Error("Error occurred in adding/delete HeartBeat Task to/from Task Scheduler : " + e.Message);
-                    }
+                    AddOrRemoveHeartbeatTask(cmd, hostPath);
                 }
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.ModifyStoragePoolAnswer);
+            }
+        }
+
+        private static void AddOrRemoveHeartbeatTask(dynamic cmd, string hostPath)
+        {
+            try
+            {
+                if ((bool)cmd.add)
+                {
+                    logger.Info("Adding HeartBeat Task to task scheduler for pool " + (string)cmd.pool.uuid);
+                    Utils.AddHeartBeatTask((string)cmd.pool.uuid, hostPath, config.PrivateIpAddress);
+                }
+                else
+                {
+                    logger.Info("Deleting HeartBeat Task from task scheduler for pool " + (string)cmd.pool.uuid);
+                    Utils.RemoveHeartBeatTask(cmd.pool.uuid);
+                }
+            }
+            catch (Exception e)
+            {
+                logger.Error("Error occurred in adding/delete HeartBeat Task to/from Task Scheduler : " + e.Message);
+            }
+        }
+
+        private static void AddOrRemoveCsv(dynamic cmd, ref string details, ref long capacityBytes, ref long availableBytes, ref string hostPath, ref bool result)
+        {
+            if ((bool)cmd.add)
+            {
+                hostPath = config.getPrimaryStorage((string)cmd.pool.uuid);
+                if (hostPath == null)
+                {
+                    logger.Info("Adding cluster shared volume");
+                    try
+                    {
+                        try
+                        {
+                            hostPath = wmiCallsV2.FindClusterSharedVolume((string)cmd.pool.path);
+                        }
+                        catch (Exception e)
+                        {
+                            logger.Error("Disk is not already added to CSV " + e.Message);
+                        }
+                        config.setPrimaryStorage((string)cmd.pool.uuid, hostPath);
+                    }
+                    catch (Exception e)
+                    {
+                        result = false;
+                        details = e.Message;
+                    }
+                }
+
+                if (hostPath != null)
+                {
+                    Utils.GetShareDetails(hostPath, out capacityBytes, out availableBytes);
+                }
+            }
+            else
+            {
+                config.removePrimaryStorage((string)cmd.pool.uuid);
+            }
+        }
+
+        private static void AddOrRemoveSmb(dynamic cmd, ref long capacityBytes, ref long availableBytes, ref string hostPath)
+        {
+            if ((bool)cmd.add)
+            {
+                NFSTO share = new NFSTO();
+                String uriStr = "cifs://" + (string)cmd.pool.host + (string)cmd.pool.path;
+                share.uri = new Uri(uriStr);
+                hostPath = Utils.NormalizePath(share.UncPath);
+
+                // Check access to share.
+                Utils.GetShareDetails(hostPath, out capacityBytes, out availableBytes);
+                config.setPrimaryStorage((string)cmd.pool.uuid, hostPath);
+            }
+            else
+            {
+                config.removePrimaryStorage((string)cmd.pool.uuid);
             }
         }
 
@@ -1061,7 +1167,8 @@ namespace HypervResource
 
             if (poolType != StoragePoolType.Filesystem &&
                 poolType != StoragePoolType.NetworkFilesystem &&
-                poolType != StoragePoolType.SMB)
+                poolType != StoragePoolType.SMB &&
+                poolType != StoragePoolType.PreSetup)
             {
                 details = "Request to create / modify unsupported pool type: " + (poolTypeStr == null ? "NULL" : poolTypeStr) + "in cmd " + JsonConvert.SerializeObject(cmd);
                 logger.Error(details);
@@ -1216,7 +1323,7 @@ namespace HypervResource
                     if (vm == null || vm.EnabledState == 2)
                     {
                         // VM is not available or vm is not in running state
-                        return ReturnCloudStackTypedJArray(new { result = false, details = "VM is not available or vm is not running on host, bailing out", vm = vmName, contextMap = contextMap }, CloudStackTypes.StopAnswer);
+                        return ReturnCloudStackTypedJArray(new { result = true, details = "VM is not available or vm is not running on host, bailing out", vm = vmName, contextMap = contextMap }, CloudStackTypes.StopAnswer);
                     }
                 }
                 try
@@ -1261,7 +1368,7 @@ namespace HypervResource
                     string volumeName = volume.uuid + ".vhdx";
                     string volumePath = null;
 
-                    if (primary.isLocal)
+                    if (primary.isLocal || primary.isPreSetup)
                     {
                         volumePath = Path.Combine(primary.Path, volumeName);
                     }
@@ -1694,6 +1801,7 @@ namespace HypervResource
 
                             if (srcVolumeObjectTO.nfsDataStore != null && srcVolumeObjectTO.primaryDataStore == null)
                             {
+                                destVolumeObjectTO.path = destVolumeObjectTO.uuid;
                                 logger.Info("Copied volume from secondary data store to primary. Path: " + destVolumeObjectTO.path);
                             }
                             else if (srcVolumeObjectTO.primaryDataStore != null && srcVolumeObjectTO.nfsDataStore == null)
@@ -1838,7 +1946,7 @@ namespace HypervResource
                 }
             }
         }
-
+ 
         private static void DownloadS3ObjectToFile(string srcObjectKey, S3TO srcS3TO, string destFile)
         {
             AmazonS3Config S3Config = new AmazonS3Config
@@ -1916,7 +2024,7 @@ namespace HypervResource
                         used = capacity - available;
                         result = true;
                     }
-                    else if (poolType == StoragePoolType.NetworkFilesystem || poolType == StoragePoolType.SMB)
+                    else if (poolType == StoragePoolType.NetworkFilesystem || poolType == StoragePoolType.SMB || poolType == StoragePoolType.PreSetup)
                     {
                         string sharePath = config.getPrimaryStorage((string)cmd.id);
                         if (sharePath != null)
@@ -2066,8 +2174,10 @@ namespace HypervResource
                 try
                 {
                     string vm = (string)cmd.vmName;
+                    String type = (string)cmd.vmTO.type;
+                    bool haEnabled = (bool)cmd.vmTO.enableHA;
                     string destination = (string)cmd.destIp;
-                    wmiCallsV2.MigrateVm(vm, destination);
+                    wmiCallsV2.MigrateVm(vm, destination, Utils.GetPriority(haEnabled, type));
                     result = true;
                 }
                 catch (Exception sysEx)
@@ -2140,17 +2250,19 @@ namespace HypervResource
                 try
                 {
                     string vm = (string)cmd.vm.name;
+                    String type = (string)cmd.vm.type;
+                    bool haEnabled = (bool)cmd.vm.enableHA;
                     string destination = (string)cmd.tgtHost;
-                    var volumeToPoolList = cmd.volumeToFilerAsList;
+                    var volumeToPoolList = cmd.volumeToDestPathsAsList;
                     var volumeToPool = new Dictionary<string, string>();
                     foreach (var item in volumeToPoolList)
                     {
                         volumeTos.Add(item.t);
-                        string poolPath = GetStoragePoolPath(item.u);
+                        string poolPath = (string)item.u;
                         volumeToPool.Add((string)item.t.path, poolPath);
                     }
 
-                    wmiCallsV2.MigrateVmWithVolume(vm, destination, volumeToPool);
+                    wmiCallsV2.MigrateVmWithVolume(vm, destination, volumeToPool, Utils.GetPriority(haEnabled, type));
                     result = true;
                 }
                 catch (Exception sysEx)
@@ -2168,6 +2280,48 @@ namespace HypervResource
                 };
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.MigrateWithStorageAnswer);
+            }
+        }
+
+        // POST api/HypervResource/MigrateWithStorageGetDestPathsCommand
+        [HttpPost]
+        [ActionName(CloudStackTypes.MigrateWithStorageGetDestPathsCommand)]
+        public JContainer MigrateWithStorageGetDestPathsCommand([FromBody]dynamic cmd)
+        {
+            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
+            {
+                logger.Info(CloudStackTypes.MigrateWithStorageGetDestPathsCommand + Utils.CleanString(cmd.ToString()));
+
+                string details = null;
+                bool result = false;
+                var volumeToDestPathsAsList = new List<Pair>();
+
+                try
+                {
+                    var volumeToPoolList = cmd.volumeToFilerAsList;
+                    foreach (var item in volumeToPoolList)
+                    {
+                        string poolPath = GetStoragePoolPath(item.u);
+                        volumeToDestPathsAsList.Add(new Pair(item.t, poolPath));
+                    }
+
+                    result = true;
+                }
+                catch (Exception sysEx)
+                {
+                    details = CloudStackTypes.MigrateWithStorageGetDestPathsCommand + " failed due to " + sysEx.Message;
+                    logger.Error(details, sysEx);
+                }
+
+                object ansContent = new
+                {
+                    result = result,
+                    volumeToDestPathsAsList = volumeToDestPathsAsList,
+                    details = details,
+                    contextMap = contextMap
+                };
+
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.MigrateWithStorageGetDestPathsAnswer);
             }
         }
 
@@ -2190,6 +2344,10 @@ namespace HypervResource
             {
                 return pool.path;
             }
+            else if (poolType == StoragePoolType.PreSetup)
+            {
+                return wmiCallsV2.FindClusterSharedVolume((string)pool.path);
+            }
 
             throw new ArgumentException("Couldn't parse path for pool type " + poolTypeStr);
         }
@@ -2207,6 +2365,11 @@ namespace HypervResource
                 dynamic strtRouteCmd = cmdArray[0][CloudStackTypes.StartupRoutingCommand];
 
                 // Insert networking details
+                string name = wmiCallsV2.GetHostName();
+                if (name != null)
+                {
+                    strtRouteCmd.name = name;
+                }
                 string privateIpAddress = strtRouteCmd.privateIpAddress;
                 config.PrivateIpAddress = privateIpAddress;
                 string subnet;
@@ -2242,6 +2405,12 @@ namespace HypervResource
                 strtRouteCmd.cpus = cores;
                 strtRouteCmd.speed = mhz;
                 strtRouteCmd.cpuSockets = sockets;
+                string clusterName = wmiCallsV2.GetClusterName();
+                if (clusterName != null)
+                {
+                    strtRouteCmd.pool = clusterName;
+                }
+                //TODO what to do in upgrade scenarios and cluster is not present will there be issue
                 ulong memoryKBs;
                 ulong freeMemoryKBs;
                 wmiCallsV2.GetMemoryResources(out memoryKBs, out freeMemoryKBs);
@@ -2364,6 +2533,8 @@ namespace HypervResource
                 try
                 {
                     var vmCollection = wmiCallsV2.GetComputerSystemCollection();
+                    List<string> nodeOwnedDisabledVms = wmiCallsV2.GetNodeOwnedDisabledVms();
+                    List<string> localHostDisabledVms = new List<string>();
                     foreach (ComputerSystem vm in vmCollection)
                     {
                         if (EnabledState.ToCloudStackPowerState(vm.EnabledState).Equals("PowerOn"))
@@ -2374,6 +2545,7 @@ namespace HypervResource
                         }
                         if (EnabledState.ToCloudStackPowerState(vm.EnabledState).Equals("PowerOff"))
                         {
+                            localHostDisabledVms.Add(vm.ElementName);
                             string note = wmiCallsV2.GetVmNote((wmiCallsV2.GetVmSettings(vm)).Path);
                             if (note != null && note.Contains("CloudStack"))
                             {
@@ -2397,6 +2569,15 @@ namespace HypervResource
                             }
                         }
                     }
+                    if (nodeOwnedDisabledVms != null && nodeOwnedDisabledVms.Any())
+                    {
+                        foreach (string vm in nodeOwnedDisabledVms.Except<string>(localHostDisabledVms))
+                        {
+                            var dict = new Dictionary<string, string>();
+                            dict.Add(vm, "PowerOn");
+                            hostVmStateReport.Add(dict);
+                        }
+                    }
                 }
                 catch (Exception sysEx)
                 {
@@ -2408,6 +2589,37 @@ namespace HypervResource
                 logger.Info(String.Format("{0}: {1}",CloudStackTypes.HostVmStateReportCommand, answer.ToString()));
 
                 return answer;
+            }
+        }
+
+        // POST api/HypervResource/GetClusterDetailsCommand
+        [HttpPost]
+        [ActionName(CloudStackTypes.GetClusterDetailsCommand)]
+        public JContainer GetClusterDetailsCommand([FromBody]dynamic cmd)
+        {
+            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
+            {
+                logger.Info(CloudStackTypes.GetClusterDetailsCommand + cmd.ToString());
+
+                try
+                {
+                    Dictionary<string, List<string>> clusterDetails = wmiCallsV2.GetClusterDetails();
+                    if (clusterDetails != null)
+                    {
+                        var answer = JObject.FromObject(clusterDetails);
+                        logger.Info(String.Format("{0}: {1}", CloudStackTypes.GetClusterDetailsCommand, answer.ToString()));
+                        return answer;
+                    }
+                    else
+                    {
+                        logger.Info(String.Format("{0}: {1}", CloudStackTypes.GetClusterDetailsCommand, "This host is not added to any Failover cluster"));
+                    }
+                }
+                catch (Exception e)
+                {
+                    logger.Error(String.Format("{0}: {1}", CloudStackTypes.GetClusterDetailsCommand, "Failed to get Cluster Details " + e.Message));
+                }
+                    return null;
             }
         }
 
