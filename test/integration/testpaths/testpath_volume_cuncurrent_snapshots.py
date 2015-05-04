@@ -15,6 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 """ Test cases for VM/Volume snapshot Test Path
+    Snapshot Test cases related to handling concurrent snapshots at host level.
 """
 
 from nose.plugins.attrib import attr
@@ -56,7 +57,8 @@ def MigrateRootVolume(self,
             1. vm:               VM to be migrated
                                  is to be migrated
             2. expectexception:  If exception is expected while migration
-            3. destinationHost:  Destination host where the VM should get migrated
+            3. destinationHost:  Destination host where the VM\
+                                 should get migrated
     """
 
     if expectexception:
@@ -108,6 +110,9 @@ def MigrateRootVolume(self,
 def CreateSnapshot(self, root_volume, is_recurring):
     """Create Snapshot"""
     if is_recurring:
+        self.testdata["recurring_snapshot"]["intervaltype"] = 'HOURLY'
+        self.testdata["recurring_snapshot"]["schedule"] = 1
+
         recurring_snapshot = SnapshotPolicy.create(
             self.apiclient,
             root_volume.id,
@@ -115,11 +120,13 @@ def CreateSnapshot(self, root_volume, is_recurring):
         )
         self.rec_policy_pool.append(recurring_snapshot)
     else:
-        root_vol_snap = Snapshot.create(
+        root_vol_snapshot = Snapshot.create(
             self.apiclient,
             root_volume.id)
 
-        self.snapshot_pool.append(root_vol_snap)
+        self.snapshot_pool.append(root_vol_snapshot)
+
+    return
 
 
 class TestConcurrentSnapshots(cloudstackTestCase):
@@ -141,6 +148,9 @@ class TestConcurrentSnapshots(cloudstackTestCase):
             cls.testdata["ostype"])
 
         cls._cleanup = []
+
+        # Set sleep time as per Snapshot Recurring Policy - HOURLY
+        cls.sleep_time_for_hourly_policy = 60 * 60 * 1
 
         cls.mgtSvrDetails = cls.config.__dict__["mgtSvr"][0].__dict__
 
@@ -183,7 +193,7 @@ class TestConcurrentSnapshots(cloudstackTestCase):
                 cls.vm_pool.append(cls.vm)
                 cls._cleanup.append(cls.vm)
 
-            cls.chekcsum_pool = []
+            cls.checksum_pool = []
             cls.root_pool = []
             cls.snapshot_pool = []
             cls.rec_policy_pool = []
@@ -201,7 +211,7 @@ class TestConcurrentSnapshots(cloudstackTestCase):
                     root_volumes[0],
                     "rootdiskdevice")
 
-                cls.chekcsum_pool.append(checksum_root)
+                cls.checksum_pool.append(checksum_root)
                 cls.root_pool.append(root_volumes[0])
             try:
                 cls.pools = StoragePool.list(cls.apiclient, zoneid=cls.zone.id)
@@ -247,20 +257,22 @@ class TestConcurrentSnapshots(cloudstackTestCase):
         sshClient.execute(command)
 
         return
+
     @classmethod
     def StopVM(cls, vms):
         for vm in vms:
             vm.stop(cls.apiclient)
         return
 
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_01_concurrent_snapshots(self):
         """Concurrent Snapshots
             1. Create snapshot on 2 new VMs in parallel and check
                     1. all snapshot jobs are running
                     2. listSnapshots should list all the snapshots
-                    3. Verify secondary_storage NFS share conains the required
-                        volume under /secondary/snapshots/$accountid/$volumeid/$snapshot_uuid.
+                    3. Verify secondary_storage NFS share
+                       contains the required volume under
+                       /secondary/snapshots/$accountid/$volumeid/$snapshot_uuid.
                     4. Verify backup_snap_id was non null in "snapshots"table
             2. Perform step 1 for all the 4 VM's.
             3. Verify that VM gets migrated when snapshot
@@ -270,21 +282,30 @@ class TestConcurrentSnapshots(cloudstackTestCase):
             5. Perform live Migration then stop all the
                 VM's after that verify that snapshot creation success .
             6. Verify success of snapshots creation in case:
-                Stop the running VM while performing concurrent snapshot on volumes
+                Stop the running VM while performing
+                concurrent snapshot on volumes
             7. Verify success of snapshots creation in case:
                 Start Migration of VM's and then Stop the running VM then
                 performing concurrent snapshot on volumes
         """
         # Step 1
         try:
-            t1 = Thread(target=CreateSnapshot, args=(self,
-                                                     self.root_pool[0], False))
-            t2 = Thread(target=CreateSnapshot,
-                        args=(self, self.root_pool[1], False))
-            t1.start()
-            t2.start()
-            t1.join()
-            t2.join()
+            create_snapshot_thread_1 = Thread(
+                target=CreateSnapshot,
+                args=(
+                    self,
+                    self.root_pool[0],
+                    False))
+            create_snapshot_thread_2 = Thread(
+                target=CreateSnapshot,
+                args=(
+                    self,
+                    self.root_pool[1],
+                    False))
+            create_snapshot_thread_1.start()
+            create_snapshot_thread_2.start()
+            create_snapshot_thread_1.join()
+            create_snapshot_thread_2.join()
 
         except:
             self.debug("Error: unable to start thread")
@@ -296,9 +317,9 @@ class TestConcurrentSnapshots(cloudstackTestCase):
             listall=True
         )
 
-        for snaps in self.snapshot_pool:
-            self.assertTrue(snaps.id in any(
-                snp.id) for snp in snapshots)
+        for snapshot in self.snapshot_pool:
+            self.assertTrue(snapshot.id in any(
+                s.id) for s in snapshots)
 
         for snapshot in self.snapshot_pool:
             self.assertTrue(
@@ -309,21 +330,21 @@ class TestConcurrentSnapshots(cloudstackTestCase):
                     self.zone.id,
                     snapshot.id))
 
-        for snap in self.snapshot_pool:
-            snap.delete(self.apiclient)
+        for snapshot in self.snapshot_pool:
+            snapshot.delete(self.apiclient)
 
         self.snapshot_pool = []
         # Step 2
         thread_pool = []
         for i in range(4):
             try:
-                t = Thread(
+                create_snapshot_thread_1 = Thread(
                     target=CreateSnapshot,
                     args=(
                         self,
                         self.root_pool[i],
                         False))
-                thread_pool.append(t)
+                thread_pool.append(create_snapshot_thread_1)
 
             except Exception as e:
                 raise Exception(
@@ -343,9 +364,9 @@ class TestConcurrentSnapshots(cloudstackTestCase):
             listall=True
         )
 
-        for snaps in self.snapshot_pool:
-            self.assertTrue(snaps.id in any(
-                snp.id) for snp in snapshots)
+        for snapshot in self.snapshot_pool:
+            self.assertTrue(snapshot.id in any(
+                s.id) for s in snapshots)
 
         for snapshot in self.snapshot_pool:
             self.assertTrue(
@@ -356,30 +377,30 @@ class TestConcurrentSnapshots(cloudstackTestCase):
                     self.zone.id,
                     snapshot.id))
 
-        for snap in self.snapshot_pool:
-            snap.delete(self.apiclient)
+        for snapshot in self.snapshot_pool:
+            snapshot.delete(self.apiclient)
 
         self.snapshot_pool = []
 
         # Step 3
         # Recurring snapshot
         try:
-            t1 = Thread(
+            create_snapshot_thread_1 = Thread(
                 target=CreateSnapshot,
                 args=(
                     self,
                     self.root_pool[0],
                     True))
-            t2 = Thread(
+            create_snapshot_thread_2 = Thread(
                 target=CreateSnapshot,
                 args=(
                     self,
                     self.root_pool[1],
                     True))
-            t1.start()
-            t2.start()
-            t1.join()
-            t2.join()
+            create_snapshot_thread_1.start()
+            create_snapshot_thread_2.start()
+            create_snapshot_thread_1.join()
+            create_snapshot_thread_2.join()
 
         except:
             self.debug("Error: unable to start thread")
@@ -398,7 +419,8 @@ class TestConcurrentSnapshots(cloudstackTestCase):
                 "snapshot list validation failed due to %s" %
                 list_validation[2])
 
-        time.sleep(3600)
+        time.sleep(self.sleep_time_for_hourly_policy)
+
         snapshots = list_snapshots(
             self.apiclient,
             account=self.account.name,
@@ -406,9 +428,9 @@ class TestConcurrentSnapshots(cloudstackTestCase):
             listall=True
         )
 
-        for snaps in self.snapshot_pool:
-            self.assertTrue(snaps.id in any(
-                snp.id) for snp in snapshots)
+        for snapshot in self.snapshot_pool:
+            self.assertTrue(snapshot.id in any(
+                s.id) for s in snapshots)
 
         for snapshot in self.snapshot_pool:
             self.assertTrue(
@@ -419,8 +441,8 @@ class TestConcurrentSnapshots(cloudstackTestCase):
                     self.zone.id,
                     snapshot.id))
 
-        for snap in self.snapshot_pool:
-            snap.delete(self.apiclient)
+        for snapshot in self.snapshot_pool:
+            snapshot.delete(self.apiclient)
 
         self.snapshot_pool = []
 
@@ -433,13 +455,13 @@ class TestConcurrentSnapshots(cloudstackTestCase):
         thread_pool = []
         for i in range(4):
             try:
-                t = Thread(
+                create_snapshot_thread_1 = Thread(
                     target=CreateSnapshot,
                     args=(
                         self,
                         self.root_pool[i],
                         True))
-                thread_pool.append(t)
+                thread_pool.append(create_snapshot_thread_1)
 
             except Exception as e:
                 raise Exception(
@@ -465,10 +487,12 @@ class TestConcurrentSnapshots(cloudstackTestCase):
                 PASS,
                 "snapshot list validation failed due to %s" %
                 list_validation_1[2])
-        time.sleep(3600)
-        for snaps in self.snapshot_pool:
-            self.assertTrue(snaps.id in any(
-                snp.id) for snp in snapshots)
+
+        time.sleep(self.sleep_time_for_hourly_policy)
+
+        for snapshot in self.snapshot_pool:
+            self.assertTrue(snapshot.id in any(
+                s.id) for s in snapshots)
 
         for snapshot in self.snapshot_pool:
             self.assertTrue(
@@ -479,8 +503,8 @@ class TestConcurrentSnapshots(cloudstackTestCase):
                     self.zone.id,
                     snapshot.id))
 
-        for snap in self.snapshot_pool:
-            snap.delete(self.apiclient)
+        for snapshot in self.snapshot_pool:
+            snapshot.delete(self.apiclient)
 
         self.snapshot_pool = []
 
@@ -494,23 +518,23 @@ class TestConcurrentSnapshots(cloudstackTestCase):
         try:
             thread_pool = []
             for i in range(4):
-                t = Thread(
+                create_snapshot_thread_1 = Thread(
                     target=CreateSnapshot,
                     args=(
                         self,
                         self.root_pool[i],
                         False))
-                thread_pool.append(t)
+                thread_pool.append(create_snapshot_thread_1)
 
             destinationHost = Host.listForMigration(
                 self.apiclient,
                 virtualmachineid=self.vm_pool[3].id)
-            t2 = Thread(target=MigrateRootVolume,
-                        args=(self,
-                              self.vm_pool[3],
-                              destinationHost[0]))
+            migrate_volume_thread_1 = Thread(target=MigrateRootVolume,
+                                             args=(self,
+                                                   self.vm_pool[3],
+                                                   destinationHost[0]))
 
-            thread_pool.append(t2)
+            thread_pool.append(migrate_volume_thread_1)
 
             for thread in thread_pool:
                 thread.start()
@@ -530,9 +554,9 @@ class TestConcurrentSnapshots(cloudstackTestCase):
             listall=True
         )
 
-        for snaps in self.snapshot_pool:
-            self.assertTrue(snaps.id in any(
-                snp.id) for snp in snapshots)
+        for snapshot in self.snapshot_pool:
+            self.assertTrue(snapshot.id in any(
+                s.id) for s in snapshots)
 
         for snapshot in self.snapshot_pool:
             self.assertTrue(
@@ -543,8 +567,8 @@ class TestConcurrentSnapshots(cloudstackTestCase):
                     self.zone.id,
                     snapshot.id))
 
-        for snap in self.snapshot_pool:
-            snap.delete(self.apiclient)
+        for snapshot in self.snapshot_pool:
+            snapshot.delete(self.apiclient)
 
         self.snapshot_pool = []
 
@@ -552,19 +576,19 @@ class TestConcurrentSnapshots(cloudstackTestCase):
         try:
             thread_pool = []
             for i in range(4):
-                t = Thread(
+                create_snapshot_thread_1 = Thread(
                     target=CreateSnapshot,
                     args=(
                         self,
                         self.root_pool[i],
                         False))
-                thread_pool.append(t)
+                thread_pool.append(create_snapshot_thread_1)
 
-            t2 = Thread(target=self.StopVM,
-                        args=(self.vm_pool,
-                              ))
+            stop_vm_thread_1 = Thread(target=self.StopVM,
+                                      args=(self.vm_pool,
+                                            ))
 
-            thread_pool.append(t2)
+            thread_pool.append(stop_vm_thread_1)
 
             for thread in thread_pool:
                 thread.start()
@@ -584,9 +608,9 @@ class TestConcurrentSnapshots(cloudstackTestCase):
             listall=True
         )
 
-        for snaps in self.snapshot_pool:
-            self.assertTrue(snaps.id in any(
-                snp.id) for snp in snapshots)
+        for snapshot in self.snapshot_pool:
+            self.assertTrue(snapshot.id in any(
+                s.id) for s in snapshots)
 
         for snapshot in self.snapshot_pool:
             self.assertTrue(
@@ -597,8 +621,8 @@ class TestConcurrentSnapshots(cloudstackTestCase):
                     self.zone.id,
                     snapshot.id))
 
-        for snap in self.snapshot_pool:
-            snap.delete(self.apiclient)
+        for snapshot in self.snapshot_pool:
+            snapshot.delete(self.apiclient)
 
         self.snapshot_pool = []
 
@@ -609,38 +633,38 @@ class TestConcurrentSnapshots(cloudstackTestCase):
                 destinationHost = Host.listForMigration(
                     self.apiclient,
                     virtualmachineid=self.vm_pool[i].id)
-                t = Thread(target=MigrateRootVolume,
-                           args=(self,
-                                 self.vm_pool[i],
-                                 destinationHost[0]))
+                migrate_volume_thread_1 = Thread(target=MigrateRootVolume,
+                                                 args=(self,
+                                                       self.vm_pool[i],
+                                                       destinationHost[0]))
 
-                thread_pool.append(t)
+                thread_pool.append(migrate_volume_thread_1)
 
-            for t in thread_pool:
-                t.start()
+            for thread in thread_pool:
+                thread.start()
 
-            for t in thread_pool:
-                t.join()
+            for thread in thread_pool:
+                thread.join()
 
             for vm in self.vm_pool:
                 if vm.state != "Stopped":
                     vm.stop(self.apiclient)
 
-            t_pool = []
+            thread_pool = []
             for vm in self.vm_pool[:2]:
-                t = Thread(
+                create_snapshot_thread_1 = Thread(
                     target=CreateSnapshot,
                     args=(
                         self,
                         self.root_pool[0],
                         False))
-                t_pool.append(t)
+                thread_pool.append(create_snapshot_thread_1)
 
-            for t in t_pool:
-                t.start()
+            for thread in thread_pool:
+                thread.start()
 
-            for t in t_pool:
-                t.join()
+            for thread in thread_pool:
+                thread.join()
 
         except:
             self.debug("Error: unable to start thread")
@@ -652,9 +676,9 @@ class TestConcurrentSnapshots(cloudstackTestCase):
             listall=True
         )
 
-        for snaps in self.snapshot_pool:
-            self.assertTrue(snaps.id in any(
-                snp.id) for snp in snapshots)
+        for snapshot in self.snapshot_pool:
+            self.assertTrue(snapshot.id in any(
+                s.id) for s in snapshots)
 
         for snapshot in self.snapshot_pool:
             self.assertTrue(
@@ -665,13 +689,13 @@ class TestConcurrentSnapshots(cloudstackTestCase):
                     self.zone.id,
                     snapshot.id))
 
-        for snap in self.snapshot_pool:
-            snap.delete(self.apiclient)
+        for snapshot in self.snapshot_pool:
+            snapshot.delete(self.apiclient)
 
         self.snapshot_pool = []
 
     @attr(tags=["advanced", "basic"])
-    def test_02_concurrent_snapshots_configuation(self):
+    def test_02_concurrent_snapshots_configuration(self):
         """Concurrent Snapshots
             1. Verify that CreateSnapshot command fails when it
                 takes more time than job.expire.minute
@@ -712,13 +736,13 @@ class TestConcurrentSnapshots(cloudstackTestCase):
         try:
             thread_pool = []
             for i in range(4):
-                t = Thread(
+                create_snapshot_thread_1 = Thread(
                     target=CreateSnapshot,
                     args=(
                         self,
                         self.root_pool[i],
                         False))
-                thread_pool.append(t)
+                thread_pool.append(create_snapshot_thread_1)
 
             for thread in thread_pool:
                 thread.start()
