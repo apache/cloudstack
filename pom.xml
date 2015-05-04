@@ -707,6 +707,8 @@
               <exclude>README.md</exclude>
               <exclude>INSTALL.md</exclude>
               <exclude>CONTRIBUTING.md</exclude>
+              <exclude>Dockerfile</exclude>
+              <exclude>supervisord.conf</exclude>
               <exclude>.idea/</exclude>
               <exclude>**/*.log</exclude>
               <exclude>**/*.patch</exclude>
