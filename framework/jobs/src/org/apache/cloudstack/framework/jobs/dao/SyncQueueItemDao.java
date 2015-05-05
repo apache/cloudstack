@@ -30,7 +30,7 @@ public interface SyncQueueItemDao extends GenericDao<SyncQueueItemVO, Long> {
 
     public List<SyncQueueItemVO> getActiveQueueItems(Long msid, boolean exclusive);
 
-    public List<SyncQueueItemVO> getBlockedQueueItems(long thresholdMs, boolean exclusive);
+    public List<SyncQueueItemVO> getBlockedQueueItems(long thresholdMs, long snapshotThresholdMs, String jobCmd, boolean exclusive);
 
     public Long getQueueItemIdByContentIdAndType(long contentId, String contentType);
 }
