@@ -24,25 +24,26 @@ jdk:
 notifications:
   email: false
 env:
-- TESTS="smoke/test_affinity_groups smoke/test_deploy_vms_with_varied_deploymentplanners smoke/test_disk_offerings smoke/test_global_settings"
-- TESTS="smoke/test_portable_publicip smoke/test_primary_storage smoke/test_privategw_acl smoke/test_public_ip_range smoke/test_pvlan smoke/test_regions"
-- TESTS="smoke/test_reset_vm_on_reboot smoke/test_resource_detail smoke/test_routers smoke/test_guest_vlan_range smoke/test_iso"
-- TESTS="smoke/test_secondary_storage smoke/test_service_offerings smoke/test_ssvm smoke/test_templates"
-- TESTS="smoke/test_multipleips_per_nic smoke/test_network smoke/test_non_contigiousvlan smoke/test_over_provisioning"
-- TESTS="smoke/test_volumes smoke/test_vpc_vpn smoke/misc/test_deploy_vm smoke/test_vm_life_cycle component/test_mm_max_limits"
-- TESTS="component/test_acl_isolatednetwork_delete component/test_mm_domain_limits component/test_acl_listsnapshot"
-- TESTS="component/test_acl_listvm component/test_acl_listvolume component/test_acl_sharednetwork_deployVM-impersonation component/test_acl_sharednetwork"
-- TESTS="component/test_resource_limits component/test_snapshots component/test_usage component/test_volumes component/test_vpc"
-- TESTS="component/test_vpc_network component/test_vpc_network_lbrules component/test_vpc_offerings"
+  global:
+     - REGRESSION_CYCLE=4
+     - REGRESSION_INDEX=6
+  matrix:
+    - TESTS="smoke/test_affinity_groups smoke/test_primary_storage"
+    - TESTS="smoke/test_deploy_vms_with_varied_deploymentplanners smoke/test_disk_offerings smoke/test_global_settings smoke/test_multipleips_per_nic"
+    - TESTS="smoke/test_portable_publicip smoke/test_privategw_acl smoke/test_public_ip_range smoke/test_pvlan smoke/test_regions smoke/test_network"
+    - TESTS="smoke/test_reset_vm_on_reboot smoke/test_resource_detail smoke/test_routers smoke/test_guest_vlan_range smoke/test_iso smoke/test_non_contigiousvlan"
+    - TESTS="smoke/test_secondary_storage smoke/test_service_offerings smoke/test_ssvm smoke/test_templates smoke/test_over_provisioning"
+
+    - TESTS="smoke/test_volumes smoke/test_vpc_vpn smoke/misc/test_deploy_vm smoke/test_vm_life_cycle component/test_mm_max_limits"
+    - TESTS="component/test_acl_isolatednetwork_delete component/test_mm_domain_limits component/test_acl_listsnapshot"
+    - TESTS="component/test_acl_listvm component/test_acl_sharednetwork_deployVM-impersonation component/test_acl_sharednetwork"
+    - TESTS="component/test_snapshots component/test_acl_listvolume"
 before_install: travis_wait 30 ./tools/travis/before_install.sh
 install: ./tools/travis/install.sh
 before_script: travis_wait 30 ./tools/travis/before_script.sh
 script:
-- mkdir -p integration-test-results/smoke/misc
-- mkdir -p integration-test-results/component
-- travis_wait 30 sleep 30
-- for suite in $TESTS; do travis_wait 30 nosetests --with-xunit --xunit-file=integration-test-results/$suite.xml --with-marvin --marvin-config=setup/dev/advanced.cfg test/integration/$suite.py -s -a tags=advanced,required_hardware=false --zone=Sandbox-simulator --hypervisor=simulator || true ; done
-- python ./tools/travis/xunit-reader.py integration-test-results/
+  - travis_wait 30 sleep 30
+  - ./tools/travis/script.sh $TESTS
 after_success: ./tools/travis/after_success.sh
 after_failure: ./tools/travis/after_failure.sh
 after_script: ./tools/travis/after_script.sh

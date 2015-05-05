@@ -19,3 +19,29 @@
 # This script should be responsible for bring up the
 # test environment and executing the tests.
 #
+
+export TEST_JOB_NUMBER=`echo $TRAVIS_JOB_NUMBER | cut -d. -f1`
+export TEST_SEQUENCE_NUMBER=`echo $TRAVIS_JOB_NUMBER | cut -d. -f2`
+
+#run regression test only on $REGRESSION_CYCLE
+MOD=$(( $TEST_JOB_NUMBER % $REGRESSION_CYCLE ))
+
+if [ $MOD -ne 0 ]; then
+ if [ $TEST_SEQUENCE_NUMBER -ge $REGRESSION_INDEX ]; then
+   #skip test
+   echo "Skipping tests ... SUCCESS !"
+   exit 0
+ fi
+fi
+
+mkdir -p integration-test-results/smoke/misc
+mkdir -p integration-test-results/component
+
+
+for suite in $1; do
+  travis_wait 30
+  nosetests --with-xunit --xunit-file=integration-test-results/$suite.xml --with-marvin --marvin-config=setup/dev/advanced.cfg test/integration/$suite.py -s -a tags=advanced,required_hardware=false --zone=Sandbox-simulator --hypervisor=simulator || true ;
+done
+
+
+python ./tools/travis/xunit-reader.py integration-test-results/
