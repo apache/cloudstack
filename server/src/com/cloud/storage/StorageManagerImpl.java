@@ -116,6 +116,8 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.DiscoveryException;
@@ -732,6 +734,32 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return details;
     }
 
+    @ActionEvent(eventType = EventTypes.EVENT_DISABLE_PRIMARY_STORAGE, eventDescription = "disable storage pool")
+    private void disablePrimaryStoragePool(StoragePoolVO primaryStorage) {
+        if (!primaryStorage.getStatus().equals(StoragePoolStatus.Up)) {
+            throw new InvalidParameterValueException("Primary storage with id " + primaryStorage.getId() + " cannot be disabled. Storage pool state : " +
+                    primaryStorage.getStatus().toString());
+        }
+
+        DataStoreProvider provider = _dataStoreProviderMgr.getDataStoreProvider(primaryStorage.getStorageProviderName());
+        DataStoreLifeCycle dataStoreLifeCycle = provider.getDataStoreLifeCycle();
+        DataStore store = _dataStoreMgr.getDataStore(primaryStorage.getId(), DataStoreRole.Primary);
+        ((PrimaryDataStoreLifeCycle)dataStoreLifeCycle).disableStoragePool(store);
+    }
+
+    @ActionEvent(eventType = EventTypes.EVENT_ENABLE_PRIMARY_STORAGE, eventDescription = "enable storage pool")
+    private void enablePrimaryStoragePool(StoragePoolVO primaryStorage) {
+        if (!primaryStorage.getStatus().equals(StoragePoolStatus.Disabled)) {
+            throw new InvalidParameterValueException("Primary storage with id " + primaryStorage.getId() + " cannot be enabled. Storage pool state : " +
+                    primaryStorage.getStatus().toString());
+        }
+
+        DataStoreProvider provider = _dataStoreProviderMgr.getDataStoreProvider(primaryStorage.getStorageProviderName());
+        DataStoreLifeCycle dataStoreLifeCycle = provider.getDataStoreLifeCycle();
+        DataStore store = _dataStoreMgr.getDataStore(primaryStorage.getId(), DataStoreRole.Primary);
+        ((PrimaryDataStoreLifeCycle)dataStoreLifeCycle).enableStoragePool(store);
+    }
+
     @Override
     public PrimaryDataStoreInfo updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException {
         // Input validation
@@ -816,7 +844,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         }
 
-        if (updatedDetails.size() >= 0) {
+        Boolean enabled = cmd.getEnabled();
+        if (enabled != null) {
+            if (enabled) {
+                enablePrimaryStoragePool(pool);
+            } else {
+                disablePrimaryStoragePool(pool);
+            }
+        } else if (updatedDetails.size() >= 0) {
             _storagePoolDao.updateDetails(id, updatedDetails);
         }
 

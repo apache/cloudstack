@@ -54,6 +54,10 @@ public class UpdateStoragePoolCmd extends BaseCmd {
     @Parameter(name = ApiConstants.CAPACITY_BYTES, type = CommandType.LONG, required = false, description = "bytes CloudStack can provision from this storage pool")
     private Long capacityBytes;
 
+    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, required = false, description = "false to disable the pool for allocation of new volumes, true to" +
+            " enable it back.")
+    private Boolean enabled;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -72,6 +76,10 @@ public class UpdateStoragePoolCmd extends BaseCmd {
 
     public Long getCapacityBytes() {
         return capacityBytes;
+    }
+
+    public Boolean getEnabled() {
+        return enabled;
     }
 
     /////////////////////////////////////////////////////
