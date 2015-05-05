@@ -150,7 +150,7 @@ class TestISO(cloudstackTestCase):
         cls._cleanup = []
         cls.unsupportedHypervisor = False
         cls.hypervisor = get_hypervisor_type(cls.apiclient)
-        if cls.hypervisor == "simulator":
+        if cls.hypervisor.lower() == "simulator":
             cls.unsupportedHypervisor = True
             return
 
