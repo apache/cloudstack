@@ -265,10 +265,10 @@ class TestVolumeSnapshot(cloudstackTestCase):
         root_vol_state = root_volume_cluster.state
 
         ckecksum_random_root_cluster = createChecksum(
-            self.testdata,
-            self.vm_1,
-            root_volume_cluster,
-            "rootdiskdevice")
+            service=self.testdata,
+            virtual_machine=self.vm_1,
+            disk=root_volume_cluster,
+            disk_type="rootdiskdevice")
 
         self.vm_1.stop(self.apiclient)
         root_vol_snap = Snapshot.create(
@@ -412,17 +412,10 @@ class TestVolumeSnapshot(cloudstackTestCase):
 
         compareChecksum(
             self.apiclient,
-            self.testdata,
-            ckecksum_random_root_cluster,
-            "rootdiskdevice",
-            self.template.id,
-            self.account.name,
-            self.account.domainid,
-            self.service_offering.id,
-            self.zone.id,
-            self.zone.networktype,
-            virt_machine=vm_from_temp,
-            disk=None,
+            service=self.testdata,
+            original_checksum=ckecksum_random_root_cluster,
+            disk_type="rootdiskdevice",
+            virt_machine=vm_from_temp
         )
         vm_from_temp.delete(self.apiclient)
         # Step 4
@@ -523,17 +516,10 @@ class TestVolumeSnapshot(cloudstackTestCase):
         # Step 6:
         compareChecksum(
             self.apiclient,
-            self.testdata,
-            ckecksum_random_root_cluster,
-            "rootdiskdevice",
-            self.template.id,
-            self.account.name,
-            self.account.domainid,
-            self.service_offering.id,
-            self.zone.id,
-            self.zone.networktype,
-            virt_machine=vm_from_temp_2,
-            disk=None,
+            service=self.testdata,
+            original_checksum=ckecksum_random_root_cluster,
+            disk_type="rootdiskdevice",
+            virt_machine=vm_from_temp_2
         )
 
         vm_from_temp_2.delete(self.apiclient)
@@ -585,17 +571,10 @@ class TestVolumeSnapshot(cloudstackTestCase):
 
             compareChecksum(
                 self.apiclient,
-                self.testdata,
-                ckecksum_random_root_cluster,
-                "rootdiskdevice",
-                self.template.id,
-                self.account.name,
-                self.account.domainid,
-                self.service_offering.id,
-                self.zone.id,
-                self.zone.networktype,
-                virt_machine=vm_from_temp,
-                disk=None,
+                service=self.testdata,
+                original_checksum=ckecksum_random_root_cluster,
+                disk_type="rootdiskdevice",
+                virt_machine=vm_from_temp
             )
             vm_from_temp.delete(self.apiclient)
             templateFromSnapshot.delete(self.apiclient)
@@ -644,17 +623,10 @@ class TestVolumeSnapshot(cloudstackTestCase):
 
             compareChecksum(
                 self.apiclient,
-                self.testdata,
-                ckecksum_random_root_cluster,
-                "rootdiskdevice",
-                self.template.id,
-                self.account.name,
-                self.account.domainid,
-                self.service_offering.id,
-                self.zone.id,
-                self.zone.networktype,
-                virt_machine=vm_from_temp,
-                disk=None,
+                service=self.testdata,
+                original_checksum=ckecksum_random_root_cluster,
+                disk_type="rootdiskdevice",
+                virt_machine=vm_from_temp
             )
 
             templateFromSnapshot.delete(self.apiclient)
@@ -665,10 +637,10 @@ class TestVolumeSnapshot(cloudstackTestCase):
 
         # Step 9
         ckecksum_root_cluster = createChecksum(
-            self.testdata,
-            self.vm_1,
-            root_volume_cluster,
-            "rootdiskdevice")
+            service=self.testdata,
+            virtual_machine=self.vm_1,
+            disk=root_volume_cluster,
+            disk_type="rootdiskdevice")
 
         self.vm_1.stop(self.apiclient)
 
@@ -721,8 +693,6 @@ class TestVolumeSnapshot(cloudstackTestCase):
             mode=self.zone.networktype
         )
 
-        vm_from_temp_2.start(self.apiclient)
-
         self.assertNotEqual(
             vm_from_temp_2,
             None,
@@ -731,17 +701,10 @@ class TestVolumeSnapshot(cloudstackTestCase):
 
         compareChecksum(
             self.apiclient,
-            self.testdata,
-            ckecksum_root_cluster,
-            "rootdiskdevice",
-            self.template.id,
-            self.account.name,
-            self.account.domainid,
-            self.service_offering.id,
-            self.zone.id,
-            self.zone.networktype,
-            virt_machine=vm_from_temp_2,
-            disk=None
+            service=self.testdata,
+            original_checksum=ckecksum_root_cluster,
+            disk_type="rootdiskdevice",
+            virt_machine=vm_from_temp_2
         )
 
         vm_from_temp_2.delete(self.apiclient)
@@ -778,10 +741,10 @@ class TestVolumeSnapshot(cloudstackTestCase):
         # Data Disk
         self.vm_1.start(self.apiclient)
         ckecksum_data_disk = createChecksum(
-            self.testdata,
-            self.vm_1,
-            data_disk,
-            "datadiskdevice_1")
+            service=self.testdata,
+            virtual_machine=self.vm_1,
+            disk=data_disk,
+            disk_type="datadiskdevice_1")
 
         data_vol_state = data_disk.state
 
@@ -879,17 +842,10 @@ class TestVolumeSnapshot(cloudstackTestCase):
 
         compareChecksum(
             self.apiclient,
-            self.testdata,
-            ckecksum_data_disk,
-            "datadiskdevice_1",
-            self.template.id,
-            self.account.name,
-            self.account.domainid,
-            self.service_offering.id,
-            self.zone.id,
-            self.zone.networktype,
-            virt_machine=new_vm,
-            disk=volumeFromSnap
+            service=self.testdata,
+            original_checksum=ckecksum_data_disk,
+            disk_type="datadiskdevice_1",
+            virt_machine=new_vm
         )
 
         # Step 12
@@ -930,10 +886,10 @@ class TestVolumeSnapshot(cloudstackTestCase):
         self.vm_1.start(self.apiclient)
 
         checksum_data_2 = createChecksum(
-            self.testdata,
-            self.vm_1,
-            data_disk_2_list[0],
-            "datadiskdevice_2")
+            service=self.testdata,
+            virtual_machine=self.vm_1,
+            disk=data_disk_2_list[0],
+            disk_type="datadiskdevice_2")
 
         # Step 13
         self.vm_1.detach_volume(self.apiclient,
@@ -994,17 +950,10 @@ class TestVolumeSnapshot(cloudstackTestCase):
 
         compareChecksum(
             self.apiclient,
-            self.testdata,
-            checksum_data_2,
-            "datadiskdevice_2",
-            self.template.id,
-            self.account.name,
-            self.account.domainid,
-            self.service_offering.id,
-            self.zone.id,
-            self.zone.networktype,
-            virt_machine=self.vm_2,
-            disk=volumeFromSnap_2
+            service=self.testdata,
+            original_checksum=checksum_data_2,
+            disk_type="datadiskdevice_2",
+            virt_machine=self.vm_2
         )
 
         # Step 14
