@@ -16,26 +16,20 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.text.DateFormat;
-import java.text.MessageFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -54,10 +48,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
-import org.apache.cloudstack.utils.qemu.QemuImgException;
-import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
@@ -67,26 +58,14 @@ import org.libvirt.DomainBlockStats;
 import org.libvirt.DomainInfo;
 import org.libvirt.DomainInfo.DomainState;
 import org.libvirt.DomainInterfaceStats;
-import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
 import org.libvirt.NodeInfo;
 import org.libvirt.StorageVol;
 
-import com.ceph.rados.IoCTX;
-import com.ceph.rados.Rados;
-import com.ceph.rados.RadosException;
-import com.ceph.rbd.Rbd;
-import com.ceph.rbd.RbdException;
-import com.ceph.rbd.RbdImage;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.BackupSnapshotAnswer;
-import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
-import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.HostVmStateReportEntry;
-import com.cloud.agent.api.ManageSnapshotAnswer;
-import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
@@ -156,7 +135,6 @@ import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Volume;
@@ -234,7 +212,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static final String SSHPUBKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.pub.cloud";
 
     private String _mountPoint = "/mnt";
-    StorageLayer _storage;
+    private StorageLayer _storage;
     private KVMStoragePoolManager _storagePoolMgr;
 
     private VifDriver _defaultVifDriver;
@@ -275,9 +253,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private final Map <String, String> _pifs = new HashMap<String, String>();
     private final Map<String, VmStats> _vmStats = new ConcurrentHashMap<String, VmStats>();
-
-    protected static final MessageFormat SnapshotXML = new MessageFormat("   <domainsnapshot>" + "       <name>{0}</name>" + "          <domain>"
-            + "            <uuid>{1}</uuid>" + "        </domain>" + "    </domainsnapshot>");
 
     protected static final HashMap<DomainState, PowerState> s_powerStatesTable;
     static {
@@ -412,6 +387,22 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public KVMHAMonitor getMonitor() {
         return _monitor;
+    }
+
+    public StorageLayer getStorage() {
+        return _storage;
+    }
+
+    public String createTmplPath() {
+        return _createTmplPath;
+    }
+
+    public int getCmdsTimeout() {
+        return _cmdsTimeout;
+    }
+
+    public String manageSnapshotPath() {
+        return _manageSnapshotPath;
     }
 
     private static final class KeyValueInterpreter extends OutputInterpreter {
@@ -1261,13 +1252,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         try {
-            if (cmd instanceof CreatePrivateTemplateFromVolumeCommand) {
-                return execute((CreatePrivateTemplateFromVolumeCommand)cmd);
-            } else if (cmd instanceof ManageSnapshotCommand) {
-                return execute((ManageSnapshotCommand)cmd);
-            } else if (cmd instanceof BackupSnapshotCommand) {
-                return execute((BackupSnapshotCommand)cmd);
-            } else if (cmd instanceof CreatePrivateTemplateFromSnapshotCommand) {
+            if (cmd instanceof CreatePrivateTemplateFromSnapshotCommand) {
                 return execute((CreatePrivateTemplateFromSnapshotCommand)cmd);
             } else if (cmd instanceof StartCommand) {
                 return execute((StartCommand)cmd);
@@ -1899,248 +1884,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return new ExecutionResult(true, null);
     }
 
-    protected ManageSnapshotAnswer execute(final ManageSnapshotCommand cmd) {
-        final String snapshotName = cmd.getSnapshotName();
-        final String snapshotPath = cmd.getSnapshotPath();
-        final String vmName = cmd.getVmName();
-        try {
-            final Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
-            DomainState state = null;
-            Domain vm = null;
-            if (vmName != null) {
-                try {
-                    vm = getDomain(conn, cmd.getVmName());
-                    state = vm.getInfo().state;
-                } catch (final LibvirtException e) {
-                    s_logger.trace("Ignoring libvirt error.", e);
-                }
-            }
-
-            final KVMStoragePool primaryPool = _storagePoolMgr.getStoragePool(cmd.getPool().getType(), cmd.getPool().getUuid());
-
-            final KVMPhysicalDisk disk = primaryPool.getPhysicalDisk(cmd.getVolumePath());
-            if (state == DomainState.VIR_DOMAIN_RUNNING && !primaryPool.isExternalSnapshot()) {
-                final String vmUuid = vm.getUUIDString();
-                final Object[] args = new Object[] {snapshotName, vmUuid};
-                final String snapshot = SnapshotXML.format(args);
-                s_logger.debug(snapshot);
-                if (cmd.getCommandSwitch().equalsIgnoreCase(ManageSnapshotCommand.CREATE_SNAPSHOT)) {
-                    vm.snapshotCreateXML(snapshot);
-                } else {
-                    final DomainSnapshot snap = vm.snapshotLookupByName(snapshotName);
-                    snap.delete(0);
-                }
-
-                /*
-                 * libvirt on RHEL6 doesn't handle resume event emitted from
-                 * qemu
-                 */
-                vm = getDomain(conn, cmd.getVmName());
-                state = vm.getInfo().state;
-                if (state == DomainState.VIR_DOMAIN_PAUSED) {
-                    vm.resume();
-                }
-            } else {
-                /**
-                 * For RBD we can't use libvirt to do our snapshotting or any Bash scripts.
-                 * libvirt also wants to store the memory contents of the Virtual Machine,
-                 * but that's not possible with RBD since there is no way to store the memory
-                 * contents in RBD.
-                 *
-                 * So we rely on the Java bindings for RBD to create our snapshot
-                 *
-                 * This snapshot might not be 100% consistent due to writes still being in the
-                 * memory of the Virtual Machine, but if the VM runs a kernel which supports
-                 * barriers properly (>2.6.32) this won't be any different then pulling the power
-                 * cord out of a running machine.
-                 */
-                if (primaryPool.getType() == StoragePoolType.RBD) {
-                    try {
-                        final Rados r = new Rados(primaryPool.getAuthUserName());
-                        r.confSet("mon_host", primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
-                        r.confSet("key", primaryPool.getAuthSecret());
-                        r.confSet("client_mount_timeout", "30");
-                        r.connect();
-                        s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
-
-                        final IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
-                        final Rbd rbd = new Rbd(io);
-                        final RbdImage image = rbd.open(disk.getName());
-
-                        if (cmd.getCommandSwitch().equalsIgnoreCase(ManageSnapshotCommand.CREATE_SNAPSHOT)) {
-                            s_logger.debug("Attempting to create RBD snapshot " + disk.getName() + "@" + snapshotName);
-                            image.snapCreate(snapshotName);
-                        } else {
-                            s_logger.debug("Attempting to remove RBD snapshot " + disk.getName() + "@" + snapshotName);
-                            image.snapRemove(snapshotName);
-                        }
-
-                        rbd.close(image);
-                        r.ioCtxDestroy(io);
-                    } catch (final Exception e) {
-                        s_logger.error("A RBD snapshot operation on " + disk.getName() + " failed. The error was: " + e.getMessage());
-                    }
-                } else {
-                    /* VM is not running, create a snapshot by ourself */
-                    final Script command = new Script(_manageSnapshotPath, _cmdsTimeout, s_logger);
-                    if (cmd.getCommandSwitch().equalsIgnoreCase(ManageSnapshotCommand.CREATE_SNAPSHOT)) {
-                        command.add("-c", disk.getPath());
-                    } else {
-                        command.add("-d", snapshotPath);
-                    }
-
-                    command.add("-n", snapshotName);
-                    final String result = command.execute();
-                    if (result != null) {
-                        s_logger.debug("Failed to manage snapshot: " + result);
-                        return new ManageSnapshotAnswer(cmd, false, "Failed to manage snapshot: " + result);
-                    }
-                }
-            }
-            return new ManageSnapshotAnswer(cmd, cmd.getSnapshotId(), disk.getPath() + File.separator + snapshotName, true, null);
-        } catch (final LibvirtException e) {
-            s_logger.debug("Failed to manage snapshot: " + e.toString());
-            return new ManageSnapshotAnswer(cmd, false, "Failed to manage snapshot: " + e.toString());
-        }
-
-    }
-
-    protected BackupSnapshotAnswer execute(final BackupSnapshotCommand cmd) {
-        final Long dcId = cmd.getDataCenterId();
-        final Long accountId = cmd.getAccountId();
-        final Long volumeId = cmd.getVolumeId();
-        final String secondaryStoragePoolUrl = cmd.getSecondaryStorageUrl();
-        final String snapshotName = cmd.getSnapshotName();
-        String snapshotDestPath = null;
-        String snapshotRelPath = null;
-        final String vmName = cmd.getVmName();
-        KVMStoragePool secondaryStoragePool = null;
-        try {
-            final Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
-
-            secondaryStoragePool = _storagePoolMgr.getStoragePoolByURI(secondaryStoragePoolUrl);
-
-            final String ssPmountPath = secondaryStoragePool.getLocalPath();
-            snapshotRelPath = File.separator + "snapshots" + File.separator + dcId + File.separator + accountId + File.separator + volumeId;
-
-            snapshotDestPath = ssPmountPath + File.separator + "snapshots" + File.separator + dcId + File.separator + accountId + File.separator + volumeId;
-            final KVMStoragePool primaryPool = _storagePoolMgr.getStoragePool(cmd.getPool().getType(), cmd.getPrimaryStoragePoolNameLabel());
-            final KVMPhysicalDisk snapshotDisk = primaryPool.getPhysicalDisk(cmd.getVolumePath());
-
-            /**
-             * RBD snapshots can't be copied using qemu-img, so we have to use
-             * the Java bindings for librbd here.
-             *
-             * These bindings will read the snapshot and write the contents to
-             * the secondary storage directly
-             *
-             * It will stop doing so if the amount of time spend is longer then
-             * cmds.timeout
-             */
-            if (primaryPool.getType() == StoragePoolType.RBD) {
-                try {
-                    final Rados r = new Rados(primaryPool.getAuthUserName());
-                    r.confSet("mon_host", primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
-                    r.confSet("key", primaryPool.getAuthSecret());
-                    r.confSet("client_mount_timeout", "30");
-                    r.connect();
-                    s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
-
-                    final IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
-                    final Rbd rbd = new Rbd(io);
-                    final RbdImage image = rbd.open(snapshotDisk.getName(), snapshotName);
-                    final File fh = new File(snapshotDestPath);
-                    try(BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(fh));) {
-                        final int chunkSize = 4194304;
-                        long offset = 0;
-                        s_logger.debug("Backuping up RBD snapshot " + snapshotName + " to  " + snapshotDestPath);
-                        while (true) {
-                            final byte[] buf = new byte[chunkSize];
-                            final int bytes = image.read(offset, buf, chunkSize);
-                            if (bytes <= 0) {
-                                break;
-                            }
-                            bos.write(buf, 0, bytes);
-                            offset += bytes;
-                        }
-                        s_logger.debug("Completed backing up RBD snapshot " + snapshotName + " to  " + snapshotDestPath + ". Bytes written: " + offset);
-                    }catch(final IOException ex)
-                    {
-                        s_logger.error("BackupSnapshotAnswer:Exception:"+ ex.getMessage());
-                    }
-                    r.ioCtxDestroy(io);
-                } catch (final RadosException e) {
-                    s_logger.error("A RADOS operation failed. The error was: " + e.getMessage());
-                    return new BackupSnapshotAnswer(cmd, false, e.toString(), null, true);
-                } catch (final RbdException e) {
-                    s_logger.error("A RBD operation on " + snapshotDisk.getName() + " failed. The error was: " + e.getMessage());
-                    return new BackupSnapshotAnswer(cmd, false, e.toString(), null, true);
-                }
-            } else {
-                final Script command = new Script(_manageSnapshotPath, _cmdsTimeout, s_logger);
-                command.add("-b", snapshotDisk.getPath());
-                command.add("-n", snapshotName);
-                command.add("-p", snapshotDestPath);
-                command.add("-t", snapshotName);
-                final String result = command.execute();
-                if (result != null) {
-                    s_logger.debug("Failed to backup snaptshot: " + result);
-                    return new BackupSnapshotAnswer(cmd, false, result, null, true);
-                }
-            }
-            /* Delete the snapshot on primary */
-
-            DomainState state = null;
-            Domain vm = null;
-            if (vmName != null) {
-                try {
-                    vm = getDomain(conn, cmd.getVmName());
-                    state = vm.getInfo().state;
-                } catch (final LibvirtException e) {
-                    s_logger.trace("Ignoring libvirt error.", e);
-                }
-            }
-
-            final KVMStoragePool primaryStorage = _storagePoolMgr.getStoragePool(cmd.getPool().getType(), cmd.getPool().getUuid());
-            if (state == DomainState.VIR_DOMAIN_RUNNING && !primaryStorage.isExternalSnapshot()) {
-                final String vmUuid = vm.getUUIDString();
-                final Object[] args = new Object[] {snapshotName, vmUuid};
-                final String snapshot = SnapshotXML.format(args);
-                s_logger.debug(snapshot);
-                final DomainSnapshot snap = vm.snapshotLookupByName(snapshotName);
-                snap.delete(0);
-
-                /*
-                 * libvirt on RHEL6 doesn't handle resume event emitted from
-                 * qemu
-                 */
-                vm = getDomain(conn, cmd.getVmName());
-                state = vm.getInfo().state;
-                if (state == DomainState.VIR_DOMAIN_PAUSED) {
-                    vm.resume();
-                }
-            } else {
-                final Script command = new Script(_manageSnapshotPath, _cmdsTimeout, s_logger);
-                command.add("-d", snapshotDisk.getPath());
-                command.add("-n", snapshotName);
-                final String result = command.execute();
-                if (result != null) {
-                    s_logger.debug("Failed to backup snapshot: " + result);
-                    return new BackupSnapshotAnswer(cmd, false, "Failed to backup snapshot: " + result, null, true);
-                }
-            }
-        } catch (final LibvirtException e) {
-            return new BackupSnapshotAnswer(cmd, false, e.toString(), null, true);
-        } catch (final CloudRuntimeException e) {
-            return new BackupSnapshotAnswer(cmd, false, e.toString(), null, true);
-        } finally {
-            if (secondaryStoragePool != null) {
-                _storagePoolMgr.deleteStoragePool(secondaryStoragePool.getType(), secondaryStoragePool.getUuid());
-            }
-        }
-        return new BackupSnapshotAnswer(cmd, true, null, snapshotRelPath + File.separator + snapshotName, true);
-    }
-
     protected CreatePrivateTemplateAnswer execute(final CreatePrivateTemplateFromSnapshotCommand cmd) {
         final String templateFolder = cmd.getAccountId() + File.separator + cmd.getNewTemplateId();
         final String templateInstallFolder = "template/tmpl/" + templateFolder;
@@ -2194,115 +1937,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
             if (snapshotPool != null) {
                 _storagePoolMgr.deleteStoragePool(snapshotPool.getType(), snapshotPool.getUuid());
-            }
-        }
-    }
-
-    protected CreatePrivateTemplateAnswer execute(final CreatePrivateTemplateFromVolumeCommand cmd) {
-        final String secondaryStorageURL = cmd.getSecondaryStorageUrl();
-
-        KVMStoragePool secondaryStorage = null;
-        KVMStoragePool primary = null;
-        try {
-            final String templateFolder = cmd.getAccountId() + File.separator + cmd.getTemplateId() + File.separator;
-            final String templateInstallFolder = "/template/tmpl/" + templateFolder;
-
-            secondaryStorage = _storagePoolMgr.getStoragePoolByURI(secondaryStorageURL);
-
-            try {
-                primary = _storagePoolMgr.getStoragePool(cmd.getPool().getType(), cmd.getPrimaryStoragePoolNameLabel());
-            } catch (final CloudRuntimeException e) {
-                if (e.getMessage().contains("not found")) {
-                    primary =
-                            _storagePoolMgr.createStoragePool(cmd.getPool().getUuid(), cmd.getPool().getHost(), cmd.getPool().getPort(), cmd.getPool().getPath(),
-                                    cmd.getPool().getUserInfo(), cmd.getPool().getType());
-                } else {
-                    return new CreatePrivateTemplateAnswer(cmd, false, e.getMessage());
-                }
-            }
-
-            final KVMPhysicalDisk disk = primary.getPhysicalDisk(cmd.getVolumePath());
-            final String tmpltPath = secondaryStorage.getLocalPath() + File.separator + templateInstallFolder;
-            _storage.mkdirs(tmpltPath);
-
-            if (primary.getType() != StoragePoolType.RBD) {
-                final Script command = new Script(_createTmplPath, _cmdsTimeout, s_logger);
-                command.add("-f", disk.getPath());
-                command.add("-t", tmpltPath);
-                command.add("-n", cmd.getUniqueName() + ".qcow2");
-
-                final String result = command.execute();
-
-                if (result != null) {
-                    s_logger.debug("failed to create template: " + result);
-                    return new CreatePrivateTemplateAnswer(cmd, false, result);
-                }
-            } else {
-                s_logger.debug("Converting RBD disk " + disk.getPath() + " into template " + cmd.getUniqueName());
-
-                final QemuImgFile srcFile =
-                        new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(primary.getSourceHost(), primary.getSourcePort(), primary.getAuthUserName(),
-                                primary.getAuthSecret(), disk.getPath()));
-                srcFile.setFormat(PhysicalDiskFormat.RAW);
-
-                final QemuImgFile destFile = new QemuImgFile(tmpltPath + "/" + cmd.getUniqueName() + ".qcow2");
-                destFile.setFormat(PhysicalDiskFormat.QCOW2);
-
-                final QemuImg q = new QemuImg(0);
-                try {
-                    q.convert(srcFile, destFile);
-                } catch (final QemuImgException e) {
-                    s_logger.error("Failed to create new template while converting " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " +
-                            e.getMessage());
-                }
-
-                final File templateProp = new File(tmpltPath + "/template.properties");
-                if (!templateProp.exists()) {
-                    templateProp.createNewFile();
-                }
-
-                String templateContent = "filename=" + cmd.getUniqueName() + ".qcow2" + System.getProperty("line.separator");
-
-                final DateFormat dateFormat = new SimpleDateFormat("MM_dd_yyyy");
-                final Date date = new Date();
-                templateContent += "snapshot.name=" + dateFormat.format(date) + System.getProperty("line.separator");
-
-                try(FileOutputStream templFo = new FileOutputStream(templateProp);) {
-                    templFo.write(templateContent.getBytes());
-                    templFo.flush();
-                }catch(final IOException ex)
-                {
-                    s_logger.error("CreatePrivateTemplateAnswer:Exception:"+ex.getMessage());
-                }
-
-            }
-
-            final Map<String, Object> params = new HashMap<String, Object>();
-            params.put(StorageLayer.InstanceConfigKey, _storage);
-            final Processor qcow2Processor = new QCOW2Processor();
-
-            qcow2Processor.configure("QCOW2 Processor", params);
-
-            final FormatInfo info = qcow2Processor.process(tmpltPath, null, cmd.getUniqueName());
-
-            final TemplateLocation loc = new TemplateLocation(_storage, tmpltPath);
-            loc.create(1, true, cmd.getUniqueName());
-            loc.addFormat(info);
-            loc.save();
-
-            return new CreatePrivateTemplateAnswer(cmd, true, null, templateInstallFolder + cmd.getUniqueName() + ".qcow2", info.virtualSize, info.size,
-                    cmd.getUniqueName(), ImageFormat.QCOW2);
-        } catch (final InternalErrorException e) {
-            return new CreatePrivateTemplateAnswer(cmd, false, e.toString());
-        } catch (final IOException e) {
-            return new CreatePrivateTemplateAnswer(cmd, false, e.toString());
-        } catch (final ConfigurationException e) {
-            return new CreatePrivateTemplateAnswer(cmd, false, e.toString());
-        } catch (final CloudRuntimeException e) {
-            return new CreatePrivateTemplateAnswer(cmd, false, e.toString());
-        } finally {
-            if (secondaryStorage != null) {
-                _storagePoolMgr.deleteStoragePool(secondaryStorage.getType(), secondaryStorage.getUuid());
             }
         }
     }

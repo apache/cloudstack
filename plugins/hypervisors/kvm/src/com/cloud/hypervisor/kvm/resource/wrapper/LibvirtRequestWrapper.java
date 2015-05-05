@@ -23,12 +23,14 @@ import java.util.Hashtable;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
+import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
@@ -39,6 +41,7 @@ import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.MaintainCommand;
+import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
@@ -136,6 +139,9 @@ public class LibvirtRequestWrapper extends RequestWrapper {
         linbvirtCommands.put(PlugNicCommand.class, new LibvirtPlugNicCommandWrapper());
         linbvirtCommands.put(UnPlugNicCommand.class, new LibvirtUnPlugNicCommandWrapper());
         linbvirtCommands.put(NetworkUsageCommand.class, new LibvirtNetworkUsageCommandWrapper());
+        linbvirtCommands.put(CreatePrivateTemplateFromVolumeCommand.class, new LibvirtCreatePrivateTemplateFromVolumeCommandWrapper());
+        linbvirtCommands.put(ManageSnapshotCommand.class, new LibvirtManageSnapshotCommandWrapper());
+        linbvirtCommands.put(BackupSnapshotCommand.class, new LibvirtBackupSnapshotCommandWrapper());
 
         resources.put(LibvirtComputingResource.class, linbvirtCommands);
     }

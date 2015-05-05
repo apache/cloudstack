@@ -66,11 +66,13 @@ import org.xml.sax.SAXException;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
+import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
+import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
@@ -81,6 +83,7 @@ import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.MaintainCommand;
+import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
@@ -3313,7 +3316,6 @@ public class LibvirtComputingResourceTest {
         final Answer answer = wrapper.execute(command, libvirtComputingResource);
         assertTrue(answer.getResult());
 
-        //Being called twice, although I did not find the second place yet.
         verify(libvirtComputingResource, times(1)).networkUsage(command.getPrivateIP(), "create", null);
     }
 
@@ -3337,7 +3339,6 @@ public class LibvirtComputingResourceTest {
         final Answer answer = wrapper.execute(command, libvirtComputingResource);
         assertTrue(answer.getResult());
 
-        //Being called twice, although I did not find the second place yet.
         verify(libvirtComputingResource, times(1)).configureVPCNetworkUsage(command.getPrivateIP(), command.getGatewayIP(), "create", command.getVpcCIDR());
     }
 
@@ -3360,7 +3361,6 @@ public class LibvirtComputingResourceTest {
         final Answer answer = wrapper.execute(command, libvirtComputingResource);
         assertTrue(answer.getResult());
 
-        //Being called twice, although I did not find the second place yet.
         verify(libvirtComputingResource, times(1)).getVPCNetworkStats(command.getPrivateIP(), command.getGatewayIP(), command.getOption());
     }
 
@@ -3383,7 +3383,6 @@ public class LibvirtComputingResourceTest {
         final Answer answer = wrapper.execute(command, libvirtComputingResource);
         assertTrue(answer.getResult());
 
-        //Being called twice, although I did not find the second place yet.
         verify(libvirtComputingResource, times(1)).getVPCNetworkStats(command.getPrivateIP(), command.getGatewayIP(), command.getOption());
     }
 
@@ -3406,7 +3405,135 @@ public class LibvirtComputingResourceTest {
         final Answer answer = wrapper.execute(command, libvirtComputingResource);
         assertTrue(answer.getResult());
 
-        //Being called twice, although I did not find the second place yet.
         verify(libvirtComputingResource, times(1)).configureVPCNetworkUsage(command.getPrivateIP(), command.getGatewayIP(), command.getOption(), command.getVpcCIDR());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testCreatePrivateTemplateFromVolumeCommand() {
+        //Simple test used to make sure the flow (LibvirtComputingResource => Request => CommandWrapper) is working.
+        //The code is way to big and complex. Will finish the refactor and come back to this to add more cases.
+
+        final StoragePool pool = Mockito.mock(StoragePool.class);;
+        final String secondaryStorageUrl = "nfs:/192.168.2.2/storage/secondary";
+        final long templateId = 1l;
+        final long accountId = 1l;
+        final String userSpecifiedName = "User";
+        final String uniqueName = "Unique";
+        final String volumePath = "/123/vol";
+        final String vmName = "Test";
+        final int wait = 0;
+
+        final CreatePrivateTemplateFromVolumeCommand command = new CreatePrivateTemplateFromVolumeCommand(pool, secondaryStorageUrl, templateId, accountId, userSpecifiedName, uniqueName, volumePath, vmName, wait);
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool secondaryStorage = Mockito.mock(KVMStoragePool.class);
+        //final KVMStoragePool primary = Mockito.mock(KVMStoragePool.class);
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.getStoragePoolByURI(secondaryStorageUrl)).thenReturn(secondaryStorage);
+        when(storagePoolMgr.getStoragePool(command.getPool().getType(), command.getPrimaryStoragePoolNameLabel())).thenThrow(new CloudRuntimeException("error"));
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(storagePoolMgr, times(1)).getStoragePoolByURI(secondaryStorageUrl);
+        verify(storagePoolMgr, times(1)).getStoragePool(command.getPool().getType(), command.getPrimaryStoragePoolNameLabel());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testManageSnapshotCommandLibvirtException() {
+        //Simple test used to make sure the flow (LibvirtComputingResource => Request => CommandWrapper) is working.
+        //The code is way to big and complex. Will finish the refactor and come back to this to add more cases.
+
+        final StoragePool pool = Mockito.mock(StoragePool.class);;
+        final String volumePath = "/123/vol";
+        final String vmName = "Test";
+
+        final long snapshotId = 1l;
+        final String preSnapshotPath = "/snapshot/path";
+        final String snapshotName = "snap";
+
+        final ManageSnapshotCommand command = new ManageSnapshotCommand(snapshotId, volumePath, pool, preSnapshotPath, snapshotName, vmName);
+
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+        //final Connect conn = Mockito.mock(Connect.class);
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+
+        try {
+            when(libvirtConnectionWrapper.getConnectionByVmName(command.getVmName())).thenThrow(LibvirtException.class);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(command.getVmName());
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testBackupSnapshotCommandLibvirtException() {
+        //Simple test used to make sure the flow (LibvirtComputingResource => Request => CommandWrapper) is working.
+        //The code is way to big and complex. Will finish the refactor and come back to this to add more cases.
+
+        final StoragePool pool = Mockito.mock(StoragePool.class);;
+        final String secondaryStorageUrl = "nfs:/192.168.2.2/storage/secondary";
+        final long accountId = 1l;
+        final String volumePath = "/123/vol";
+        final String vmName = "Test";
+        final int wait = 0;
+
+        final long snapshotId = 1l;
+        final String snapshotName = "snap";
+
+        final Long dcId = 1l;
+        final Long volumeId = 1l;
+        final Long secHostId = 1l;
+        final String snapshotUuid = "9a0afe7c-26a7-4585-bf87-abf82ae106d9";
+        final String prevBackupUuid = "003a0cc2-2e04-417a-bee0-534ef1724561";
+        final boolean isVolumeInactive = false;
+        final String prevSnapshotUuid = "1791efae-f22d-474b-87c6-92547d6c5877";
+
+        final BackupSnapshotCommand command = new BackupSnapshotCommand(secondaryStorageUrl, dcId, accountId, volumeId, snapshotId, secHostId, volumePath, pool, snapshotUuid, snapshotName, prevSnapshotUuid, prevBackupUuid, isVolumeInactive, vmName, wait);
+
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+        //final Connect conn = Mockito.mock(Connect.class);
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+
+        try {
+            when(libvirtConnectionWrapper.getConnectionByVmName(command.getVmName())).thenThrow(LibvirtException.class);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(command.getVmName());
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
     }
 }
