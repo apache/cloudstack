@@ -19,7 +19,16 @@
 """
 
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.lib.base import *
+from marvin.lib.base import (Account,
+                             Capacities,
+                             Cluster,
+                             Configurations,
+                             FAILED,
+                             Host,
+                             PASS,
+                             ServiceOffering,
+                             time,
+                             VirtualMachine,)
 from marvin.lib.utils import cleanup_resources, validateList
 from marvin.lib.common import (get_zone,
                                get_domain,
@@ -65,6 +74,18 @@ def ssh_kvm_host(password, ipaddr, instance_name):
     mem.append(int(max[2]))
     mem.append(int(min[2]))
     return mem
+
+
+def capacity_parser(capacity):
+    cpu = []
+    mem = []
+    cpu.append(capacity[0].capacitytotal)
+    cpu.append(capacity[0].capacityused)
+    cpu.append(capacity[0].percentused)
+    mem.append(capacity[1].capacitytotal)
+    mem.append(capacity[1].capacityused)
+    mem.append(capacity[1].percentused)
+    return cpu, mem
 
 
 class Overcommit (cloudstackTestCase):
@@ -236,7 +257,7 @@ class Overcommit (cloudstackTestCase):
                 listHost[0].ipaddress,
                 self.deployVmResponse.instancename)
 
-        if listHost[0].hypervisor.lower() == 'kvm':
+        elif listHost[0].hypervisor.lower() == 'kvm':
 
             k = ssh_kvm_host(
                 self.testdata["configurableData"]["password"],
@@ -261,7 +282,7 @@ class Overcommit (cloudstackTestCase):
                 listHost[0].ipaddress,
                 self.deployVmResponse.instancename)
 
-        if listHost[0].hypervisor.lower() == 'kvm':
+        elif listHost[0].hypervisor.lower() == 'kvm':
             time.sleep(200)
             k1 = ssh_kvm_host(
                 self.testdata["configurableData"]["password"],
@@ -309,15 +330,7 @@ class Overcommit (cloudstackTestCase):
             PASS,
             "check list capacity response for cluster id %s" %
             listHost[0].clusterid)
-
-        cpu = []
-        mem = []
-        cpu.append(capacity[0].capacitytotal)
-        cpu.append(capacity[0].capacityused)
-        cpu.append(capacity[0].percentused)
-        mem.append(capacity[1].capacitytotal)
-        mem.append(capacity[1].capacityused)
-        mem.append(capacity[1].percentused)
+        cpu, mem = capacity_parser(capacity)
 
         Configurations.update(self.apiclient,
                               clusterid=listHost[0].clusterid,
@@ -337,16 +350,7 @@ class Overcommit (cloudstackTestCase):
             PASS,
             "check list capacity response for cluster id %s" %
             listHost[0].clusterid)
-
-        cpu1 = []
-        mem1 = []
-        cpu1.append(capacity1[0].capacitytotal)
-        cpu1.append(capacity1[0].capacityused)
-        cpu1.append(capacity1[0].percentused)
-        mem1.append(capacity1[1].capacitytotal)
-        mem1.append(capacity1[1].capacityused)
-        mem1.append(capacity1[1].percentused)
-
+        cpu1, mem1 = capacity_parser(capacity1)
         self.assertEqual(2 * cpu[0],
                          cpu1[0],
                          "check total capacity ")
@@ -404,15 +408,7 @@ class Overcommit (cloudstackTestCase):
             PASS,
             "check list capacity response for zone id %s" %
             self.zone.id)
-        cpu = []
-        mem = []
-        cpu.append(capacity[0].capacitytotal)
-        cpu.append(capacity[0].capacityused)
-        cpu.append(capacity[0].percentused)
-        mem.append(capacity[1].capacitytotal)
-        mem.append(capacity[1].capacityused)
-        mem.append(capacity[1].percentused)
-
+        cpu, mem = capacity_parser(capacity)
         for id in xrange(k):
             Configurations.update(self.apiclient,
                                   clusterid=list_cluster[id].id,
@@ -430,15 +426,8 @@ class Overcommit (cloudstackTestCase):
         self.assertEqual(validateList(capacity1)[0],
                          PASS,
                          "check list capacity for zone id %s" % self.zone.id)
-        cpu1 = []
-        mem1 = []
-        cpu1.append(capacity1[0].capacitytotal)
-        cpu1.append(capacity1[0].capacityused)
-        cpu1.append(capacity1[0].percentused)
-        mem1.append(capacity1[1].capacitytotal)
-        mem1.append(capacity1[1].capacityused)
-        mem1.append(capacity1[1].percentused)
 
+        cpu1, mem1 = capacity_parser(capacity1)
         self.assertEqual(2 * cpu[0],
                          cpu1[0],
                          "check total capacity ")
