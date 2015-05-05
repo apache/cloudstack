@@ -659,4 +659,14 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
 
         SolidFireUtil.updateCsDbWithSolidFireIopsInfo(storagePool.getId(), _primaryDataStoreDao, _storagePoolDetailsDao, minIops, maxIops, burstIops);
     }
+
+    @Override
+    public void enableStoragePool(DataStore dataStore) {
+        _primaryDataStoreHelper.enable(dataStore);
+    }
+
+    @Override
+    public void disableStoragePool(DataStore dataStore) {
+        _primaryDataStoreHelper.disable(dataStore);
+    }
 }

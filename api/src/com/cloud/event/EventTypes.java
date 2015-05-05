@@ -54,6 +54,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project;
 import com.cloud.server.ResourceTag;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSHypervisor;
 import com.cloud.storage.Snapshot;
@@ -305,6 +306,10 @@ public class EventTypes {
     public static final String EVENT_MAINTENANCE_CANCEL_PRIMARY_STORAGE = "MAINT.CANCEL.PS";
     public static final String EVENT_MAINTENANCE_PREPARE = "MAINT.PREPARE";
     public static final String EVENT_MAINTENANCE_PREPARE_PRIMARY_STORAGE = "MAINT.PREPARE.PS";
+
+    // Primary storage pool
+    public static final String EVENT_ENABLE_PRIMARY_STORAGE = "ENABLE.PS";
+    public static final String EVENT_DISABLE_PRIMARY_STORAGE = "DISABLE.PS";
 
     // VPN
     public static final String EVENT_REMOTE_ACCESS_VPN_CREATE = "VPN.REMOTE.ACCESS.CREATE";
@@ -727,6 +732,10 @@ public class EventTypes {
         entityEventDetails.put(EVENT_MAINTENANCE_CANCEL_PRIMARY_STORAGE, Host.class);
         entityEventDetails.put(EVENT_MAINTENANCE_PREPARE, Host.class);
         entityEventDetails.put(EVENT_MAINTENANCE_PREPARE_PRIMARY_STORAGE, Host.class);
+
+        // Primary storage pool
+        entityEventDetails.put(EVENT_ENABLE_PRIMARY_STORAGE, StoragePool.class);
+        entityEventDetails.put(EVENT_DISABLE_PRIMARY_STORAGE, StoragePool.class);
 
         // VPN
         entityEventDetails.put(EVENT_REMOTE_ACCESS_VPN_CREATE, RemoteAccessVpn.class);

@@ -76,6 +76,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         AllFieldSearch.and("datacenterId", AllFieldSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         AllFieldSearch.and("hostAddress", AllFieldSearch.entity().getHostAddress(), SearchCriteria.Op.EQ);
         AllFieldSearch.and("status", AllFieldSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        AllFieldSearch.and("scope", AllFieldSearch.entity().getScope(), SearchCriteria.Op.EQ);
         AllFieldSearch.and("path", AllFieldSearch.entity().getPath(), SearchCriteria.Op.EQ);
         AllFieldSearch.and("podId", AllFieldSearch.entity().getPodId(), Op.EQ);
         AllFieldSearch.and("clusterId", AllFieldSearch.entity().getClusterId(), Op.EQ);
@@ -304,6 +305,26 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         } else {
             Map<String, String> details = tagsToDetails(tags);
             storagePools = findPoolsByDetails(dcId, podId, clusterId, details, ScopeType.CLUSTER);
+        }
+
+        return storagePools;
+    }
+
+    @Override
+    public List<StoragePoolVO> findDisabledPoolsByScope(long dcId, Long podId, Long clusterId, ScopeType scope) {
+        List<StoragePoolVO> storagePools = null;
+        SearchCriteria<StoragePoolVO> sc = AllFieldSearch.create();
+        sc.setParameters("status", StoragePoolStatus.Disabled);
+        sc.setParameters("scope", scope);
+
+        if (scope == ScopeType.ZONE) {
+            sc.setParameters("datacenterId", dcId);
+            storagePools = listBy(sc);
+        } else if ((scope == ScopeType.CLUSTER || scope == ScopeType.HOST) && podId != null && clusterId != null) {
+            sc.setParameters("datacenterId", dcId);
+            sc.setParameters("podId", podId);
+            sc.setParameters("clusterId", clusterId);
+            storagePools = listBy(sc);
         }
 
         return storagePools;
