@@ -21,6 +21,26 @@
 # or internet downloads.
 #
 
+export TEST_JOB_NUMBER=`echo $TRAVIS_JOB_NUMBER | cut -d. -f1`
+export TEST_SEQUENCE_NUMBER=`echo $TRAVIS_JOB_NUMBER | cut -d. -f2`
+
+echo "REGRESSION_CYCLE=$REGRESSION_CYCLE"
+echo "TEST_JOB_NUMBER=$TEST_JOB_NUMBER"
+echo "TEST_SEQUENCE_NUMBER=$TEST_SEQUENCE_NUMBER"
+
+#run regression test only on $REGRESSION_CYCLE
+MOD=$(( $TEST_JOB_NUMBER % $REGRESSION_CYCLE ))
+
+echo "MOD=$MOD"
+
+if [ $MOD -ne 0 ]; then
+ if [ $TEST_SEQUENCE_NUMBER -ge $REGRESSION_INDEX ]; then
+   #skip test
+   echo "Skipping tests ... SUCCESS !"
+   exit 0
+ fi
+fi
+
 echo -e "#### System Information ####"
 
 echo -e "\nJava Version: "
