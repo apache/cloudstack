@@ -694,7 +694,7 @@ class TestConcurrentSnapshots(cloudstackTestCase):
 
         self.snapshot_pool = []
 
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_02_concurrent_snapshots_configuration(self):
         """Concurrent Snapshots
             1. Verify that CreateSnapshot command fails when it
