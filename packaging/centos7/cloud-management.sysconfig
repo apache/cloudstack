@@ -27,11 +27,7 @@ CATALINA_HOME="/usr/share/cloudstack-management"
 JASPER_HOME="/usr/share/cloudstack-management"
 CATALINA_TMPDIR="/usr/share/cloudstack-management/temp"
 
-JAVA_OPTS="-Djava.awt.headless=true -Dcom.sun.management.jmxremote=false -Xmx2g -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/cloudstack/management/ -XX:PermSize=512M -XX:MaxPermSize=800m -Djava.net.preferIPv4Stack=true"
-
-if [ -r "/etc/cloudstack/management/cloudmanagementserver.keystore" ] ; then
-  JAVA_OPTS="$JAVA_OPTS -Djavax.net.ssl.trustStore=/etc/cloudstack/management/cloudmanagementserver.keystore -Djavax.net.ssl.trustStorePassword=vmops.com"
-fi
+JAVA_OPTS="-Djava.awt.headless=true -Dcom.sun.management.jmxremote=false -Xmx2g -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/cloudstack/management/ -XX:PermSize=512M -XX:MaxPermSize=800m -Djava.net.preferIPv4Stack=true -Djavax.net.ssl.trustStore=/etc/cloudstack/management/cloudmanagementserver.keystore -Djavax.net.ssl.trustStorePassword=vmops.com"
 
 TOMCAT_USER="cloud"
 
@@ -44,6 +40,4 @@ SHUTDOWN_VERBOSE="false"
 # Set the TOMCAT_PID location
 CATALINA_PID="/var/run/cloudstack-management.pid"
 
-CLASSPATH=/etc/cloudstack/management:/usr/share/cloudstack-common:/usr/share/cloudstack-management/setup:/usr/share/java/mysql-connector-java.jar:/usr/share/cloudstack-management/bin:/usr/share/cloudstack-management/bin/tomcat-juli.jar:/usr/share/cloudstack-management/bin/clientBootStrap.jar:/usr/share/java/commons-daemon.jar
-VERBOSE=1
-#USE_JSVC="true"
+CLASSPATH=/etc/cloudstack/management:/usr/share/cloudstack-common:/usr/share/cloudstack-management/setup:/usr/share/java/mysql-connector-java.jar:/usr/share/cloudstack-management/bin:/usr/share/cloudstack-management/bin/tomcat-juli.jar:/usr/share/cloudstack-management/bin/bootstrap.jar:/usr/share/java/commons-daemon.jar

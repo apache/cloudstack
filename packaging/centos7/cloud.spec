@@ -498,7 +498,8 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/management/catalina.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat-users.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/web.xml
-%config(noreplace) %{_sysconfdir}/%{name}/management/server.xml
+%config(noreplace) %{_sysconfdir}/%{name}/management/server-nonssl.xml
+%config(noreplace) %{_sysconfdir}/%{name}/management/server-ssl.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/environment.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/java.security.ciphers
 %config(noreplace) %{_sysconfdir}/%{name}/management/cloud-bridge.properties

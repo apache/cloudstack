@@ -45,7 +45,7 @@
     <files>
         <file>
             <source>${project.build.directory}/${project.build.finalName}-bootstrap.jar</source>
-            <destName>clientBootStrap.jar</destName>
+            <destName>bootstrap.jar</destName>
             <outputDirectory>/bin</outputDirectory>
         </file>
     </files>

@@ -44,7 +44,7 @@ Source0:   %{name}-%{_maventag}.tgz
 BuildRoot: %{_tmppath}/%{name}-%{_maventag}-%{release}-build
 
 BuildRequires: java-1.7.0-openjdk-devel
-BuildRequires: tomcat6
+#BuildRequires: tomcat6
 BuildRequires: ws-commons-util
 BuildRequires: jpackage-utils
 BuildRequires: gcc
@@ -59,7 +59,7 @@ intelligent IaaS cloud implementation.
 
 %package management
 Summary:   CloudStack management server UI
-Requires: tomcat6
+#Requires: tomcat6
 Requires: java-1.7.0-openjdk
 Requires: python
 Requires: bash
@@ -182,7 +182,7 @@ Apache Cloudstack AWS API compatibility wrapper
 %package mysql-ha
 Summary: Apache CloudStack Balancing Strategy for MySQL
 Requires: mysql-connector-java
-Requires: tomcat6
+#Requires: tomcat6
 Group: System Environmnet/Libraries
 %description mysql-ha
 Apache CloudStack Balancing Strategy for MySQL
@@ -206,18 +206,18 @@ if [ "%{_ossnoss}" == "NOREDIST" -o "%{_ossnoss}" == "noredist" ] ; then
    echo "Executing mvn packaging with non-redistributable libraries"
    if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then 
       echo "Executing mvn noredist packaging with simulator ..."
-      mvn -Pawsapi,systemvm -Dnoredist -Dsimulator clean package 
+      mvn -Pawsapi,systemvm -Dnoredist -Dsimulator package 
    else
       echo "Executing mvn noredist packaging without simulator..."
-      mvn -Pawsapi,systemvm -Dnoredist clean package
+      mvn -Pawsapi,systemvm -Dnoredis package
    fi
 else
    if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then 
       echo "Executing mvn default packaging simulator ..."
-      mvn -Pawsapi,systemvm -Dsimulator clean package 
+      mvn -Pawsapi,systemvm -Dsimulator package 
    else
       echo "Executing mvn default packaging without simulator ..."
-      mvn -Pawsapi,systemvm clean package
+      mvn -Pawsapi,systemvm package
    fi
 fi 
 
@@ -291,14 +291,8 @@ cp -r client/target/cloud-client-ui-%{_maventag}/* ${RPM_BUILD_ROOT}%{_datadir}/
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/scripts
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/vms
 
-for name in db.properties log4j-cloud.xml tomcat6-nonssl.conf tomcat6-ssl.conf server-ssl.xml server-nonssl.xml \
-            catalina.policy catalina.properties classpath.conf tomcat-users.xml web.xml environment.properties java.security.ciphers; do
-  mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/$name \
-    ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
-done
-
-ln -s %{_sysconfdir}/%{name}/management/log4j-cloud.xml \
-    ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/log4j-cloud.xml
+#ln -s %{_sysconfdir}/%{name}/management/log4j-cloud.xml \
+#    ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/log4j-cloud.xml
 
 mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/context.xml \
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost/client
@@ -586,12 +580,11 @@ fi
 %config(noreplace) %{_sysconfdir}/sysconfig/%{name}-management
 %config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/management/db.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j-cloud.xml
-%config(noreplace) %{_sysconfdir}/%{name}/management/tomcat6-nonssl.conf
-%config(noreplace) %{_sysconfdir}/%{name}/management/tomcat6-ssl.conf
+%config(noreplace) %{_sysconfdir}/%{name}/management/server.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/Catalina/localhost/client/context.xml
-%config(noreplace) %{_sysconfdir}/%{name}/management/catalina.policy
+#%config(noreplace) %{_sysconfdir}/%{name}/management/catalina.policy
 %config(noreplace) %{_sysconfdir}/%{name}/management/catalina.properties
-%config(noreplace) %{_sysconfdir}/%{name}/management/classpath.conf
+#%config(noreplace) %{_sysconfdir}/%{name}/management/classpath.conf
 %config(noreplace) %{_sysconfdir}/%{name}/management/server-nonssl.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/server-ssl.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat-users.xml
