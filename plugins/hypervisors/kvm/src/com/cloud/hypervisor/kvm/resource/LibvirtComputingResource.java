@@ -64,7 +64,6 @@ import org.libvirt.StorageVol;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
@@ -84,7 +83,6 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -140,10 +138,6 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Volume;
 import com.cloud.storage.resource.StorageSubsystemCommandHandler;
 import com.cloud.storage.resource.StorageSubsystemCommandHandlerBase;
-import com.cloud.storage.template.Processor;
-import com.cloud.storage.template.Processor.FormatInfo;
-import com.cloud.storage.template.QCOW2Processor;
-import com.cloud.storage.template.TemplateLocation;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -1252,9 +1246,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         try {
-            if (cmd instanceof CreatePrivateTemplateFromSnapshotCommand) {
-                return execute((CreatePrivateTemplateFromSnapshotCommand)cmd);
-            } else if (cmd instanceof StartCommand) {
+            if (cmd instanceof StartCommand) {
                 return execute((StartCommand)cmd);
             } else if (cmd instanceof NetworkElementCommand) {
                 return _virtRouterResource.executeRequest((NetworkElementCommand)cmd);
@@ -1882,63 +1874,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         return new ExecutionResult(true, null);
-    }
-
-    protected CreatePrivateTemplateAnswer execute(final CreatePrivateTemplateFromSnapshotCommand cmd) {
-        final String templateFolder = cmd.getAccountId() + File.separator + cmd.getNewTemplateId();
-        final String templateInstallFolder = "template/tmpl/" + templateFolder;
-        final String tmplName = UUID.randomUUID().toString();
-        final String tmplFileName = tmplName + ".qcow2";
-        KVMStoragePool secondaryPool = null;
-        KVMStoragePool snapshotPool = null;
-        try {
-            String snapshotPath = cmd.getSnapshotUuid();
-            final int index = snapshotPath.lastIndexOf("/");
-            snapshotPath = snapshotPath.substring(0, index);
-            snapshotPool = _storagePoolMgr.getStoragePoolByURI(cmd.getSecondaryStorageUrl() + snapshotPath);
-            final KVMPhysicalDisk snapshot = snapshotPool.getPhysicalDisk(cmd.getSnapshotName());
-
-            secondaryPool = _storagePoolMgr.getStoragePoolByURI(cmd.getSecondaryStorageUrl());
-
-            final String templatePath = secondaryPool.getLocalPath() + File.separator + templateInstallFolder;
-
-            _storage.mkdirs(templatePath);
-
-            final String tmplPath = templateInstallFolder + File.separator + tmplFileName;
-            final Script command = new Script(_createTmplPath, _cmdsTimeout, s_logger);
-            command.add("-t", templatePath);
-            command.add("-n", tmplFileName);
-            command.add("-f", snapshot.getPath());
-            command.execute();
-
-            final Map<String, Object> params = new HashMap<String, Object>();
-            params.put(StorageLayer.InstanceConfigKey, _storage);
-            final Processor qcow2Processor = new QCOW2Processor();
-            qcow2Processor.configure("QCOW2 Processor", params);
-            final FormatInfo info = qcow2Processor.process(templatePath, null, tmplName);
-
-            final TemplateLocation loc = new TemplateLocation(_storage, templatePath);
-            loc.create(1, true, tmplName);
-            loc.addFormat(info);
-            loc.save();
-
-            return new CreatePrivateTemplateAnswer(cmd, true, "", tmplPath, info.virtualSize, info.size, tmplName, info.format);
-        } catch (final ConfigurationException e) {
-            return new CreatePrivateTemplateAnswer(cmd, false, e.getMessage());
-        } catch (final InternalErrorException e) {
-            return new CreatePrivateTemplateAnswer(cmd, false, e.getMessage());
-        } catch (final IOException e) {
-            return new CreatePrivateTemplateAnswer(cmd, false, e.getMessage());
-        } catch (final CloudRuntimeException e) {
-            return new CreatePrivateTemplateAnswer(cmd, false, e.getMessage());
-        } finally {
-            if (secondaryPool != null) {
-                _storagePoolMgr.deleteStoragePool(secondaryPool.getType(), secondaryPool.getUuid());
-            }
-            if (snapshotPool != null) {
-                _storagePoolMgr.deleteStoragePool(snapshotPool.getType(), snapshotPool.getUuid());
-            }
-        }
     }
 
     protected PowerState convertToPowerState(final DomainState ps) {

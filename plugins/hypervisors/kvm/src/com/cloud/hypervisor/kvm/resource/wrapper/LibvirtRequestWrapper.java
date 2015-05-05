@@ -30,6 +30,7 @@ import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
@@ -142,6 +143,7 @@ public class LibvirtRequestWrapper extends RequestWrapper {
         linbvirtCommands.put(CreatePrivateTemplateFromVolumeCommand.class, new LibvirtCreatePrivateTemplateFromVolumeCommandWrapper());
         linbvirtCommands.put(ManageSnapshotCommand.class, new LibvirtManageSnapshotCommandWrapper());
         linbvirtCommands.put(BackupSnapshotCommand.class, new LibvirtBackupSnapshotCommandWrapper());
+        linbvirtCommands.put(CreatePrivateTemplateFromSnapshotCommand.class, new LibvirtCreatePrivateTemplateFromSnapshotCommandWrapper());
 
         resources.put(LibvirtComputingResource.class, linbvirtCommands);
     }

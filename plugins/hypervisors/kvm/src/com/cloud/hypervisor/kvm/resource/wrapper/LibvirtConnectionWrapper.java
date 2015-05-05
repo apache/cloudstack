@@ -16,13 +16,25 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.naming.ConfigurationException;
+
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
+import com.cloud.storage.StorageLayer;
+import com.cloud.storage.template.Processor;
+import com.cloud.storage.template.QCOW2Processor;
+import com.cloud.storage.template.TemplateLocation;
 
 /**
- * This class is used to wrap the calls to LibvirtConnection and ease the burden of the unit tests.
+ * This class is used to wrap the calls to several static methods. By doing so, we make easier to mock this class
+ * and the methods wrapped here.
+ *
  * Please do not instantiate this class directly, but inject it using the {@code @Inject} annotation.
  */
 public class LibvirtConnectionWrapper {
@@ -33,5 +45,24 @@ public class LibvirtConnectionWrapper {
 
     public Connect getConnection() throws LibvirtException {
         return LibvirtConnection.getConnection();
+    }
+
+    public TemplateLocation buildTemplateLocation(final StorageLayer storage, final String templatePath) {
+        final TemplateLocation location = new TemplateLocation(storage, templatePath);
+        return location;
+    }
+
+    public Processor buildQCOW2Processor(final StorageLayer storage) throws ConfigurationException {
+        final Map<String, Object> params = new HashMap<String, Object>();
+        params.put(StorageLayer.InstanceConfigKey, storage);
+
+        final Processor qcow2Processor = new QCOW2Processor();
+        qcow2Processor.configure("QCOW2 Processor", params);
+
+        return qcow2Processor;
+    }
+
+    public String buildTemplateUUIDName() {
+        return UUID.randomUUID().toString();
     }
 }

@@ -29,6 +29,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
+import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathConstants;
@@ -72,6 +74,7 @@ import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
+import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
@@ -139,8 +142,12 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkSetupInfo;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StorageLayer;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
+import com.cloud.storage.template.Processor;
+import com.cloud.storage.template.Processor.FormatInfo;
+import com.cloud.storage.template.TemplateLocation;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -3535,5 +3542,352 @@ public class LibvirtComputingResourceTest {
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
+    }
+
+    @Test
+    public void testCreatePrivateTemplateFromSnapshotCommand() {
+        final StoragePool pool = Mockito.mock(StoragePool.class);
+        final String secondaryStoragePoolURL = "nfs:/192.168.2.2/storage/secondary";
+        final Long dcId = 1l;
+        final Long accountId = 1l;
+        final Long volumeId = 1l;
+        final String backedUpSnapshotUuid = "/run/9a0afe7c-26a7-4585-bf87-abf82ae106d9/";
+        final String backedUpSnapshotName = "snap";
+        final String origTemplateInstallPath = "/install/path/";
+        final Long newTemplateId = 2l;
+        final String templateName = "templ";
+        final int wait = 0;
+
+        final CreatePrivateTemplateFromSnapshotCommand command = new CreatePrivateTemplateFromSnapshotCommand(pool, secondaryStoragePoolURL, dcId, accountId, volumeId, backedUpSnapshotUuid, backedUpSnapshotName, origTemplateInstallPath, newTemplateId, templateName, wait);
+
+        final String templatePath = "/template/path";
+        final String localPath = "/mnt/local";
+        final String tmplName = "ce97bbc1-34fe-4259-9202-74bbce2562ab";
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool secondaryPool = Mockito.mock(KVMStoragePool.class);
+        final KVMStoragePool snapshotPool = Mockito.mock(KVMStoragePool.class);
+        final KVMPhysicalDisk snapshot = Mockito.mock(KVMPhysicalDisk.class);
+        final StorageLayer storage = Mockito.mock(StorageLayer.class);
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+        final TemplateLocation location = Mockito.mock(TemplateLocation.class);
+        final Processor qcow2Processor = Mockito.mock(Processor.class);
+        final FormatInfo info = Mockito.mock(FormatInfo.class);
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+
+        String snapshotPath = command.getSnapshotUuid();
+        final int index = snapshotPath.lastIndexOf("/");
+        snapshotPath = snapshotPath.substring(0, index);
+
+        when(storagePoolMgr.getStoragePoolByURI(command.getSecondaryStorageUrl() + snapshotPath)).thenReturn(snapshotPool);
+        when(storagePoolMgr.getStoragePoolByURI(command.getSecondaryStorageUrl())).thenReturn(secondaryPool);
+        when(snapshotPool.getPhysicalDisk(command.getSnapshotName())).thenReturn(snapshot);
+        when(secondaryPool.getLocalPath()).thenReturn(localPath);
+        when(libvirtComputingResource.getStorage()).thenReturn(storage);
+
+        when(libvirtComputingResource.createTmplPath()).thenReturn(templatePath);
+        when(libvirtComputingResource.getCmdsTimeout()).thenReturn(1);
+
+        final String templateFolder = command.getAccountId() + File.separator + command.getNewTemplateId();
+        final String templateInstallFolder = "template/tmpl/" + templateFolder;
+        final String tmplPath = secondaryPool.getLocalPath() + File.separator + templateInstallFolder;
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        when(libvirtConnectionWrapper.buildTemplateLocation(storage, tmplPath)).thenReturn(location);
+        when(libvirtConnectionWrapper.buildTemplateUUIDName()).thenReturn(tmplName);
+
+        try {
+            when(libvirtConnectionWrapper.buildQCOW2Processor(storage)).thenReturn(qcow2Processor);
+            when(qcow2Processor.process(tmplPath, null, tmplName)).thenReturn(info);
+        } catch (final ConfigurationException e) {
+            fail(e.getMessage());
+        } catch (final InternalErrorException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(storagePoolMgr, times(1)).getStoragePoolByURI(command.getSecondaryStorageUrl() + snapshotPath);
+        verify(storagePoolMgr, times(1)).getStoragePoolByURI(command.getSecondaryStorageUrl());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testCreatePrivateTemplateFromSnapshotCommandConfigurationException() {
+        final StoragePool pool = Mockito.mock(StoragePool.class);
+        final String secondaryStoragePoolURL = "nfs:/192.168.2.2/storage/secondary";
+        final Long dcId = 1l;
+        final Long accountId = 1l;
+        final Long volumeId = 1l;
+        final String backedUpSnapshotUuid = "/run/9a0afe7c-26a7-4585-bf87-abf82ae106d9/";
+        final String backedUpSnapshotName = "snap";
+        final String origTemplateInstallPath = "/install/path/";
+        final Long newTemplateId = 2l;
+        final String templateName = "templ";
+        final int wait = 0;
+
+        final CreatePrivateTemplateFromSnapshotCommand command = new CreatePrivateTemplateFromSnapshotCommand(pool, secondaryStoragePoolURL, dcId, accountId, volumeId, backedUpSnapshotUuid, backedUpSnapshotName, origTemplateInstallPath, newTemplateId, templateName, wait);
+
+        final String templatePath = "/template/path";
+        final String localPath = "/mnt/local";
+        final String tmplName = "ce97bbc1-34fe-4259-9202-74bbce2562ab";
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool secondaryPool = Mockito.mock(KVMStoragePool.class);
+        final KVMStoragePool snapshotPool = Mockito.mock(KVMStoragePool.class);
+        final KVMPhysicalDisk snapshot = Mockito.mock(KVMPhysicalDisk.class);
+        final StorageLayer storage = Mockito.mock(StorageLayer.class);
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+        final TemplateLocation location = Mockito.mock(TemplateLocation.class);
+        final Processor qcow2Processor = Mockito.mock(Processor.class);
+        final FormatInfo info = Mockito.mock(FormatInfo.class);
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+
+        String snapshotPath = command.getSnapshotUuid();
+        final int index = snapshotPath.lastIndexOf("/");
+        snapshotPath = snapshotPath.substring(0, index);
+
+        when(storagePoolMgr.getStoragePoolByURI(command.getSecondaryStorageUrl() + snapshotPath)).thenReturn(snapshotPool);
+        when(storagePoolMgr.getStoragePoolByURI(command.getSecondaryStorageUrl())).thenReturn(secondaryPool);
+        when(snapshotPool.getPhysicalDisk(command.getSnapshotName())).thenReturn(snapshot);
+        when(secondaryPool.getLocalPath()).thenReturn(localPath);
+        when(libvirtComputingResource.getStorage()).thenReturn(storage);
+
+        when(libvirtComputingResource.createTmplPath()).thenReturn(templatePath);
+        when(libvirtComputingResource.getCmdsTimeout()).thenReturn(1);
+
+        final String templateFolder = command.getAccountId() + File.separator + command.getNewTemplateId();
+        final String templateInstallFolder = "template/tmpl/" + templateFolder;
+        final String tmplPath = secondaryPool.getLocalPath() + File.separator + templateInstallFolder;
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        when(libvirtConnectionWrapper.buildTemplateLocation(storage, tmplPath)).thenReturn(location);
+        when(libvirtConnectionWrapper.buildTemplateUUIDName()).thenReturn(tmplName);
+
+        try {
+            when(libvirtConnectionWrapper.buildQCOW2Processor(storage)).thenThrow(ConfigurationException.class);
+            when(qcow2Processor.process(tmplPath, null, tmplName)).thenReturn(info);
+        } catch (final ConfigurationException e) {
+            fail(e.getMessage());
+        } catch (final InternalErrorException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(storagePoolMgr, times(1)).getStoragePoolByURI(command.getSecondaryStorageUrl() + snapshotPath);
+        verify(storagePoolMgr, times(1)).getStoragePoolByURI(command.getSecondaryStorageUrl());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testCreatePrivateTemplateFromSnapshotCommandInternalErrorException() {
+        final StoragePool pool = Mockito.mock(StoragePool.class);
+        final String secondaryStoragePoolURL = "nfs:/192.168.2.2/storage/secondary";
+        final Long dcId = 1l;
+        final Long accountId = 1l;
+        final Long volumeId = 1l;
+        final String backedUpSnapshotUuid = "/run/9a0afe7c-26a7-4585-bf87-abf82ae106d9/";
+        final String backedUpSnapshotName = "snap";
+        final String origTemplateInstallPath = "/install/path/";
+        final Long newTemplateId = 2l;
+        final String templateName = "templ";
+        final int wait = 0;
+
+        final CreatePrivateTemplateFromSnapshotCommand command = new CreatePrivateTemplateFromSnapshotCommand(pool, secondaryStoragePoolURL, dcId, accountId, volumeId, backedUpSnapshotUuid, backedUpSnapshotName, origTemplateInstallPath, newTemplateId, templateName, wait);
+
+        final String templatePath = "/template/path";
+        final String localPath = "/mnt/local";
+        final String tmplName = "ce97bbc1-34fe-4259-9202-74bbce2562ab";
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool secondaryPool = Mockito.mock(KVMStoragePool.class);
+        final KVMStoragePool snapshotPool = Mockito.mock(KVMStoragePool.class);
+        final KVMPhysicalDisk snapshot = Mockito.mock(KVMPhysicalDisk.class);
+        final StorageLayer storage = Mockito.mock(StorageLayer.class);
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+        final TemplateLocation location = Mockito.mock(TemplateLocation.class);
+        final Processor qcow2Processor = Mockito.mock(Processor.class);
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+
+        String snapshotPath = command.getSnapshotUuid();
+        final int index = snapshotPath.lastIndexOf("/");
+        snapshotPath = snapshotPath.substring(0, index);
+
+        when(storagePoolMgr.getStoragePoolByURI(command.getSecondaryStorageUrl() + snapshotPath)).thenReturn(snapshotPool);
+        when(storagePoolMgr.getStoragePoolByURI(command.getSecondaryStorageUrl())).thenReturn(secondaryPool);
+        when(snapshotPool.getPhysicalDisk(command.getSnapshotName())).thenReturn(snapshot);
+        when(secondaryPool.getLocalPath()).thenReturn(localPath);
+        when(libvirtComputingResource.getStorage()).thenReturn(storage);
+
+        when(libvirtComputingResource.createTmplPath()).thenReturn(templatePath);
+        when(libvirtComputingResource.getCmdsTimeout()).thenReturn(1);
+
+        final String templateFolder = command.getAccountId() + File.separator + command.getNewTemplateId();
+        final String templateInstallFolder = "template/tmpl/" + templateFolder;
+        final String tmplPath = secondaryPool.getLocalPath() + File.separator + templateInstallFolder;
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        when(libvirtConnectionWrapper.buildTemplateLocation(storage, tmplPath)).thenReturn(location);
+        when(libvirtConnectionWrapper.buildTemplateUUIDName()).thenReturn(tmplName);
+
+        try {
+            when(libvirtConnectionWrapper.buildQCOW2Processor(storage)).thenReturn(qcow2Processor);
+            when(qcow2Processor.process(tmplPath, null, tmplName)).thenThrow(InternalErrorException.class);
+        } catch (final ConfigurationException e) {
+            fail(e.getMessage());
+        } catch (final InternalErrorException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(storagePoolMgr, times(1)).getStoragePoolByURI(command.getSecondaryStorageUrl() + snapshotPath);
+        verify(storagePoolMgr, times(1)).getStoragePoolByURI(command.getSecondaryStorageUrl());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testCreatePrivateTemplateFromSnapshotCommandIOException() {
+        final StoragePool pool = Mockito.mock(StoragePool.class);
+        final String secondaryStoragePoolURL = "nfs:/192.168.2.2/storage/secondary";
+        final Long dcId = 1l;
+        final Long accountId = 1l;
+        final Long volumeId = 1l;
+        final String backedUpSnapshotUuid = "/run/9a0afe7c-26a7-4585-bf87-abf82ae106d9/";
+        final String backedUpSnapshotName = "snap";
+        final String origTemplateInstallPath = "/install/path/";
+        final Long newTemplateId = 2l;
+        final String templateName = "templ";
+        final int wait = 0;
+
+        final CreatePrivateTemplateFromSnapshotCommand command = new CreatePrivateTemplateFromSnapshotCommand(pool, secondaryStoragePoolURL, dcId, accountId, volumeId, backedUpSnapshotUuid, backedUpSnapshotName, origTemplateInstallPath, newTemplateId, templateName, wait);
+
+        final String templatePath = "/template/path";
+        final String localPath = "/mnt/local";
+        final String tmplName = "ce97bbc1-34fe-4259-9202-74bbce2562ab";
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool secondaryPool = Mockito.mock(KVMStoragePool.class);
+        final KVMStoragePool snapshotPool = Mockito.mock(KVMStoragePool.class);
+        final KVMPhysicalDisk snapshot = Mockito.mock(KVMPhysicalDisk.class);
+        final StorageLayer storage = Mockito.mock(StorageLayer.class);
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+        final TemplateLocation location = Mockito.mock(TemplateLocation.class);
+        final Processor qcow2Processor = Mockito.mock(Processor.class);
+        final FormatInfo info = Mockito.mock(FormatInfo.class);
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+
+        String snapshotPath = command.getSnapshotUuid();
+        final int index = snapshotPath.lastIndexOf("/");
+        snapshotPath = snapshotPath.substring(0, index);
+
+        when(storagePoolMgr.getStoragePoolByURI(command.getSecondaryStorageUrl() + snapshotPath)).thenReturn(snapshotPool);
+        when(storagePoolMgr.getStoragePoolByURI(command.getSecondaryStorageUrl())).thenReturn(secondaryPool);
+        when(snapshotPool.getPhysicalDisk(command.getSnapshotName())).thenReturn(snapshot);
+        when(secondaryPool.getLocalPath()).thenReturn(localPath);
+        when(libvirtComputingResource.getStorage()).thenReturn(storage);
+
+        when(libvirtComputingResource.createTmplPath()).thenReturn(templatePath);
+        when(libvirtComputingResource.getCmdsTimeout()).thenReturn(1);
+
+        final String templateFolder = command.getAccountId() + File.separator + command.getNewTemplateId();
+        final String templateInstallFolder = "template/tmpl/" + templateFolder;
+        final String tmplPath = secondaryPool.getLocalPath() + File.separator + templateInstallFolder;
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        when(libvirtConnectionWrapper.buildTemplateLocation(storage, tmplPath)).thenReturn(location);
+        when(libvirtConnectionWrapper.buildTemplateUUIDName()).thenReturn(tmplName);
+
+        try {
+            when(libvirtConnectionWrapper.buildQCOW2Processor(storage)).thenReturn(qcow2Processor);
+            when(qcow2Processor.process(tmplPath, null, tmplName)).thenReturn(info);
+
+            when(location.create(1, true, tmplName)).thenThrow(IOException.class);
+
+        } catch (final ConfigurationException e) {
+            fail(e.getMessage());
+        } catch (final InternalErrorException e) {
+            fail(e.getMessage());
+        } catch (final IOException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(storagePoolMgr, times(1)).getStoragePoolByURI(command.getSecondaryStorageUrl() + snapshotPath);
+        verify(storagePoolMgr, times(1)).getStoragePoolByURI(command.getSecondaryStorageUrl());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testCreatePrivateTemplateFromSnapshotCommandCloudRuntime() {
+        final StoragePool pool = Mockito.mock(StoragePool.class);
+        final String secondaryStoragePoolURL = "nfs:/192.168.2.2/storage/secondary";
+        final Long dcId = 1l;
+        final Long accountId = 1l;
+        final Long volumeId = 1l;
+        final String backedUpSnapshotUuid = "/run/9a0afe7c-26a7-4585-bf87-abf82ae106d9/";
+        final String backedUpSnapshotName = "snap";
+        final String origTemplateInstallPath = "/install/path/";
+        final Long newTemplateId = 2l;
+        final String templateName = "templ";
+        final int wait = 0;
+
+        final CreatePrivateTemplateFromSnapshotCommand command = new CreatePrivateTemplateFromSnapshotCommand(pool, secondaryStoragePoolURL, dcId, accountId, volumeId, backedUpSnapshotUuid, backedUpSnapshotName, origTemplateInstallPath, newTemplateId, templateName, wait);
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool secondaryPool = Mockito.mock(KVMStoragePool.class);
+        final KVMStoragePool snapshotPool = Mockito.mock(KVMStoragePool.class);
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+
+        final String tmplName = "ce97bbc1-34fe-4259-9202-74bbce2562ab";
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+
+        String snapshotPath = command.getSnapshotUuid();
+        final int index = snapshotPath.lastIndexOf("/");
+        snapshotPath = snapshotPath.substring(0, index);
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        when(libvirtConnectionWrapper.buildTemplateUUIDName()).thenReturn(tmplName);
+
+        when(storagePoolMgr.getStoragePoolByURI(command.getSecondaryStorageUrl() + snapshotPath)).thenReturn(snapshotPool);
+        when(storagePoolMgr.getStoragePoolByURI(command.getSecondaryStorageUrl())).thenReturn(secondaryPool);
+        when(snapshotPool.getPhysicalDisk(command.getSnapshotName())).thenThrow(CloudRuntimeException.class);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(storagePoolMgr, times(1)).getStoragePoolByURI(command.getSecondaryStorageUrl() + snapshotPath);
+        verify(storagePoolMgr, times(1)).getStoragePoolByURI(command.getSecondaryStorageUrl());
     }
 }
