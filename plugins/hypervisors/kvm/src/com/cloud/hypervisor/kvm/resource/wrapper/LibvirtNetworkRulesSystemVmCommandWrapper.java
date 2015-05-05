@@ -36,9 +36,9 @@ public final class LibvirtNetworkRulesSystemVmCommandWrapper extends CommandWrap
     public Answer execute(final NetworkRulesSystemVmCommand command, final LibvirtComputingResource libvirtComputingResource) {
         boolean success = false;
         try {
-            final LibvirtConnectionWrapper libvirtConnectionWrapper = libvirtComputingResource.getLibvirtConnectionWrapper();
+            final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtConnectionWrapper();
 
-            final Connect conn = libvirtConnectionWrapper.getConnectionByVmName(command.getVmName());
+            final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName());
             success = libvirtComputingResource.configureDefaultNetworkRulesForSystemVm(conn, command.getVmName());
         } catch (final LibvirtException e) {
             s_logger.trace("Ignoring libvirt error.", e);

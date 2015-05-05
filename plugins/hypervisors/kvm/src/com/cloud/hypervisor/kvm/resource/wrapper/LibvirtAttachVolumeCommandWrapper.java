@@ -36,9 +36,9 @@ public final class LibvirtAttachVolumeCommandWrapper extends CommandWrapper<Atta
     @Override
     public Answer execute(final AttachVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
         try {
-            final LibvirtConnectionWrapper libvirtConnectionWrapper = libvirtComputingResource.getLibvirtConnectionWrapper();
+            final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtConnectionWrapper();
 
-            final Connect conn = libvirtConnectionWrapper.getConnectionByVmName(command.getVmName());
+            final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName());
 
             final KVMStoragePool primary = libvirtComputingResource.getStoragePoolMgr().getStoragePool(command.getPooltype(), command.getPoolUuid());
             final KVMPhysicalDisk disk = primary.getPhysicalDisk(command.getVolumePath());

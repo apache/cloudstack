@@ -53,8 +53,8 @@ public final class LibvirtManageSnapshotCommandWrapper extends CommandWrapper<Ma
         final String snapshotPath = command.getSnapshotPath();
         final String vmName = command.getVmName();
         try {
-            final LibvirtConnectionWrapper libvirtConnectionWrapper = libvirtComputingResource.getLibvirtConnectionWrapper();
-            final Connect conn = libvirtConnectionWrapper.getConnectionByVmName(vmName);
+            final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtConnectionWrapper();
+            final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(vmName);
             DomainState state = null;
             Domain vm = null;
             if (vmName != null) {

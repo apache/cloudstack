@@ -119,7 +119,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SerialDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.TermPolicy;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VideoDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VirtioSerialDef;
-import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtConnectionWrapper;
+import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtRequestWrapper;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
@@ -272,7 +272,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected int _stopTimeout;
 
     @Inject
-    private LibvirtConnectionWrapper libvirtConnectionWrapper;
+    private LibvirtUtilitiesHelper libvirtUtilitiesHelper;
 
     @Override
     public ExecutionResult executeInVR(final String routerIp, final String script, final String args) {
@@ -335,8 +335,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return new ExecutionResult(true, null);
     }
 
-    public LibvirtConnectionWrapper getLibvirtConnectionWrapper() {
-        return libvirtConnectionWrapper;
+    public LibvirtUtilitiesHelper getLibvirtConnectionWrapper() {
+        return libvirtUtilitiesHelper;
     }
 
     public VirtualRoutingResource getVirtRouterResource() {

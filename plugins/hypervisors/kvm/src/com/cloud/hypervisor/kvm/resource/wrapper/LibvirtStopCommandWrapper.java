@@ -44,11 +44,11 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
     public Answer execute(final StopCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final String vmName = command.getVmName();
 
-        final LibvirtConnectionWrapper libvirtConnectionWrapper = libvirtComputingResource.getLibvirtConnectionWrapper();
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtConnectionWrapper();
 
         if (command.checkBeforeCleanup()) {
             try {
-                final Connect conn = libvirtConnectionWrapper.getConnectionByVmName(vmName);
+                final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(vmName);
                 final Domain vm = conn.domainLookupByName(command.getVmName());
                 if (vm != null && vm.getInfo().state == DomainState.VIR_DOMAIN_RUNNING) {
                     return new StopAnswer(command, "vm is still running on host", false);
@@ -59,7 +59,7 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
         }
 
         try {
-            final Connect conn = libvirtConnectionWrapper.getConnectionByVmName(vmName);
+            final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(vmName);
 
             final List<DiskDef> disks = libvirtComputingResource.getDisks(conn, vmName);
             final List<InterfaceDef> ifaces = libvirtComputingResource.getInterfaces(conn, vmName);

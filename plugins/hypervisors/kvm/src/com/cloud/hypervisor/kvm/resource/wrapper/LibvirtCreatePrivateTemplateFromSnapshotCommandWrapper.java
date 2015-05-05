@@ -48,11 +48,11 @@ public final class LibvirtCreatePrivateTemplateFromSnapshotCommandWrapper extend
 
     @Override
     public Answer execute(final CreatePrivateTemplateFromSnapshotCommand command, final LibvirtComputingResource libvirtComputingResource) {
-        final LibvirtConnectionWrapper libvirtConnectionWrapper = libvirtComputingResource.getLibvirtConnectionWrapper();
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtConnectionWrapper();
 
         final String templateFolder = command.getAccountId() + File.separator + command.getNewTemplateId();
         final String templateInstallFolder = "template/tmpl/" + templateFolder;
-        final String tmplName = libvirtConnectionWrapper.buildTemplateUUIDName();
+        final String tmplName = libvirtUtilitiesHelper.buildTemplateUUIDName();
         final String tmplFileName = tmplName + ".qcow2";
 
         KVMStoragePool secondaryPool = null;
@@ -84,9 +84,9 @@ public final class LibvirtCreatePrivateTemplateFromSnapshotCommandWrapper extend
             scriptCommand.add("-f", snapshot.getPath());
             scriptCommand.execute();
 
-            final Processor qcow2Processor = libvirtConnectionWrapper.buildQCOW2Processor(storage);
+            final Processor qcow2Processor = libvirtUtilitiesHelper.buildQCOW2Processor(storage);
             final FormatInfo info = qcow2Processor.process(templatePath, null, tmplName);
-            final TemplateLocation loc = libvirtConnectionWrapper.buildTemplateLocation(storage, templatePath);
+            final TemplateLocation loc = libvirtUtilitiesHelper.buildTemplateLocation(storage, templatePath);
 
             loc.create(1, true, tmplName);
             loc.addFormat(info);

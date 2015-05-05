@@ -35,10 +35,10 @@ public final class LibvirtRebootCommandWrapper extends CommandWrapper<RebootComm
 
     @Override
     public Answer execute(final RebootCommand command, final LibvirtComputingResource libvirtComputingResource) {
-        final LibvirtConnectionWrapper libvirtConnectionWrapper = libvirtComputingResource.getLibvirtConnectionWrapper();
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtConnectionWrapper();
 
         try {
-            final Connect conn = libvirtConnectionWrapper.getConnectionByVmName(command.getVmName());
+            final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName());
             final String result = libvirtComputingResource.rebootVM(conn, command.getVmName());
             if (result == null) {
                 Integer vncPort = null;

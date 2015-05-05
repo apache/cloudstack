@@ -63,9 +63,9 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         Connect conn = null;
         String xmlDesc = null;
         try {
-            final LibvirtConnectionWrapper libvirtConnectionWrapper = libvirtComputingResource.getLibvirtConnectionWrapper();
+            final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtConnectionWrapper();
 
-            conn = libvirtConnectionWrapper.getConnectionByVmName(vmName);
+            conn = libvirtUtilitiesHelper.getConnectionByVmName(vmName);
             ifaces = libvirtComputingResource.getInterfaces(conn, vmName);
             disks = libvirtComputingResource.getDisks(conn, vmName);
             dm = conn.domainLookupByName(vmName);

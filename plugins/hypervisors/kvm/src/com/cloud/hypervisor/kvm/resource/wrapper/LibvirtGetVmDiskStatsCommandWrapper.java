@@ -40,11 +40,11 @@ public final class LibvirtGetVmDiskStatsCommandWrapper extends CommandWrapper<Ge
     @Override
     public Answer execute(final GetVmDiskStatsCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final List<String> vmNames = command.getVmNames();
-        final LibvirtConnectionWrapper libvirtConnectionWrapper = libvirtComputingResource.getLibvirtConnectionWrapper();
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtConnectionWrapper();
 
         try {
             final HashMap<String, List<VmDiskStatsEntry>> vmDiskStatsNameMap = new HashMap<String, List<VmDiskStatsEntry>>();
-            final Connect conn = libvirtConnectionWrapper.getConnection();
+            final Connect conn = libvirtUtilitiesHelper.getConnection();
             for (final String vmName : vmNames) {
                 final List<VmDiskStatsEntry> statEntry = libvirtComputingResource.getVmDiskStat(conn, vmName);
                 if (statEntry == null) {

@@ -37,7 +37,7 @@ import com.cloud.storage.template.TemplateLocation;
  *
  * Please do not instantiate this class directly, but inject it using the {@code @Inject} annotation.
  */
-public class LibvirtConnectionWrapper {
+public class LibvirtUtilitiesHelper {
 
     public Connect getConnectionByVmName(final String vmName) throws LibvirtException {
         return LibvirtConnection.getConnectionByVmName(vmName);

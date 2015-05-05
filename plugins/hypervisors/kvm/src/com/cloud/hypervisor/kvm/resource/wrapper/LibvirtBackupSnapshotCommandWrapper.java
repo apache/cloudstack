@@ -68,8 +68,8 @@ public final class LibvirtBackupSnapshotCommandWrapper extends CommandWrapper<Ba
         final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
 
         try {
-            final LibvirtConnectionWrapper libvirtConnectionWrapper = libvirtComputingResource.getLibvirtConnectionWrapper();
-            final Connect conn = libvirtConnectionWrapper.getConnectionByVmName(vmName);
+            final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtConnectionWrapper();
+            final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(vmName);
 
             secondaryStoragePool = storagePoolMgr.getStoragePoolByURI(secondaryStoragePoolUrl);
 

@@ -35,9 +35,9 @@ public final class LibvirtAttachIsoCommandWrapper extends CommandWrapper<AttachI
     @Override
     public Answer execute(final AttachIsoCommand command, final LibvirtComputingResource libvirtComputingResource) {
         try {
-            final LibvirtConnectionWrapper libvirtConnectionWrapper = libvirtComputingResource.getLibvirtConnectionWrapper();
+            final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtConnectionWrapper();
 
-            final Connect conn = libvirtConnectionWrapper.getConnectionByVmName(command.getVmName());
+            final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName());
             libvirtComputingResource.attachOrDetachISO(conn, command.getVmName(), command.getIsoPath(), command.isAttach());
         } catch (final LibvirtException e) {
             return new Answer(command, false, e.toString());

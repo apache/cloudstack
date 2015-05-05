@@ -54,9 +54,9 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
 
         final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
         try {
-            final LibvirtConnectionWrapper libvirtConnectionWrapper = libvirtComputingResource.getLibvirtConnectionWrapper();
+            final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtConnectionWrapper();
 
-            final Connect conn = libvirtConnectionWrapper.getConnectionByVmName(vm.getName());
+            final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(vm.getName());
             for (final NicTO nic : nics) {
                 libvirtComputingResource.getVifDriver(nic.getType()).plug(nic, null, "");
             }

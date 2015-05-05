@@ -46,8 +46,8 @@ public final class LibvirtPlugNicCommandWrapper extends CommandWrapper<PlugNicCo
         final String vmName = command.getVmName();
         Domain vm = null;
         try {
-            final LibvirtConnectionWrapper libvirtConnectionWrapper = libvirtComputingResource.getLibvirtConnectionWrapper();
-            final Connect conn = libvirtConnectionWrapper.getConnectionByVmName(vmName);
+            final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtConnectionWrapper();
+            final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(vmName);
             vm = libvirtComputingResource.getDomain(conn, vmName);
 
             final List<InterfaceDef> pluggedNics = libvirtComputingResource.getInterfaces(conn, vmName);
