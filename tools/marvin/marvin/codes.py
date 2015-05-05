@@ -133,10 +133,3 @@ Switch Type
 '''
 VMWAREDVS = "vmwaredvs"
 
-'''
-Storage Pool Tags
-'''
-CLUSTERTAG1 = "cwps1"
-CLUSTERTAG2 = "cwps2"
-ZONETAG1 = "zwps1"
-ZONETAG2 = "zwps2"
