@@ -1115,7 +1115,7 @@ class Template:
     @classmethod
     def register(cls, apiclient, services, zoneid=None,
                  account=None, domainid=None, hypervisor=None,
-                 projectid=None):
+                 projectid=None,details=None):
         """Create template from URL"""
 
         # Create template from Virtual machine and Volume ID
@@ -1171,6 +1171,9 @@ class Template:
             cmd.projectid = projectid
         elif "projectid" in services:
             cmd.projectid = services["projectid"]
+
+	if details:
+            cmd.details = details
 
         # Register Template
         template = apiclient.registerTemplate(cmd)
