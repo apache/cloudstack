@@ -87,13 +87,9 @@ import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
-import com.cloud.agent.api.NetworkUsageAnswer;
-import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
-import com.cloud.agent.api.PlugNicAnswer;
-import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.StartAnswer;
@@ -101,8 +97,6 @@ import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
-import com.cloud.agent.api.UnPlugNicAnswer;
-import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.routing.IpAssocCommand;
@@ -1277,14 +1271,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((CreatePrivateTemplateFromSnapshotCommand)cmd);
             } else if (cmd instanceof StartCommand) {
                 return execute((StartCommand)cmd);
-            } else if (cmd instanceof PlugNicCommand) {
-                return execute((PlugNicCommand)cmd);
-            } else if (cmd instanceof UnPlugNicCommand) {
-                return execute((UnPlugNicCommand)cmd);
             } else if (cmd instanceof NetworkElementCommand) {
                 return _virtRouterResource.executeRequest((NetworkElementCommand)cmd);
-            } else if (cmd instanceof NetworkUsageCommand) {
-                return execute((NetworkUsageCommand)cmd);
             } else if (cmd instanceof CopyVolumeCommand) {
                 return execute((CopyVolumeCommand)cmd);
             } else if (cmd instanceof ResizeVolumeCommand) {
@@ -1697,79 +1685,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 // each interface at this point, so inform all vif drivers
                 for (final VifDriver vifDriver : getAllVifDrivers()) {
                     vifDriver.unplug(pluggedNic);
-                }
-            }
-        }
-    }
-
-    private PlugNicAnswer execute(final PlugNicCommand cmd) {
-        final NicTO nic = cmd.getNic();
-        final String vmName = cmd.getVmName();
-        Domain vm = null;
-        try {
-            final Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
-            vm = getDomain(conn, vmName);
-            final List<InterfaceDef> pluggedNics = getInterfaces(conn, vmName);
-            Integer nicnum = 0;
-            for (final InterfaceDef pluggedNic : pluggedNics) {
-                if (pluggedNic.getMacAddress().equalsIgnoreCase(nic.getMac())) {
-                    s_logger.debug("found existing nic for mac " + pluggedNic.getMacAddress() + " at index " + nicnum);
-                    return new PlugNicAnswer(cmd, true, "success");
-                }
-                nicnum++;
-            }
-            vm.attachDevice(getVifDriver(nic.getType()).plug(nic, "Other PV", "").toString());
-            return new PlugNicAnswer(cmd, true, "success");
-        } catch (final LibvirtException e) {
-            final String msg = " Plug Nic failed due to " + e.toString();
-            s_logger.warn(msg, e);
-            return new PlugNicAnswer(cmd, false, msg);
-        } catch (final InternalErrorException e) {
-            final String msg = " Plug Nic failed due to " + e.toString();
-            s_logger.warn(msg, e);
-            return new PlugNicAnswer(cmd, false, msg);
-        } finally {
-            if (vm != null) {
-                try {
-                    vm.free();
-                } catch (final LibvirtException l) {
-                    s_logger.trace("Ignoring libvirt error.", l);
-                }
-            }
-        }
-    }
-
-    private UnPlugNicAnswer execute(final UnPlugNicCommand cmd) {
-        Connect conn;
-        final NicTO nic = cmd.getNic();
-        final String vmName = cmd.getVmName();
-        Domain vm = null;
-        try {
-            conn = LibvirtConnection.getConnectionByVmName(vmName);
-            vm = getDomain(conn, vmName);
-            final List<InterfaceDef> pluggedNics = getInterfaces(conn, vmName);
-            for (final InterfaceDef pluggedNic : pluggedNics) {
-                if (pluggedNic.getMacAddress().equalsIgnoreCase(nic.getMac())) {
-                    vm.detachDevice(pluggedNic.toString());
-                    // We don't know which "traffic type" is associated with
-                    // each interface at this point, so inform all vif drivers
-                    for (final VifDriver vifDriver : getAllVifDrivers()) {
-                        vifDriver.unplug(pluggedNic);
-                    }
-                    return new UnPlugNicAnswer(cmd, true, "success");
-                }
-            }
-            return new UnPlugNicAnswer(cmd, true, "success");
-        } catch (final LibvirtException e) {
-            final String msg = " Unplug Nic failed due to " + e.toString();
-            s_logger.warn(msg, e);
-            return new UnPlugNicAnswer(cmd, false, msg);
-        } finally {
-            if (vm != null) {
-                try {
-                    vm.free();
-                } catch (final LibvirtException l) {
-                    s_logger.trace("Ignoring libvirt error.", l);
                 }
             }
         }
@@ -2445,7 +2360,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return usageParser.getLine();
     }
 
-    protected long[] getNetworkStats(final String privateIP) {
+    public long[] getNetworkStats(final String privateIP) {
         final String result = networkUsage(privateIP, "get", null);
         final long[] stats = new long[2];
         if (result != null) {
@@ -2459,7 +2374,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return stats;
     }
 
-    protected String VPCNetworkUsage(final String privateIpAddress, final String publicIp, final String option, final String vpcCIDR) {
+    public String configureVPCNetworkUsage(final String privateIpAddress, final String publicIp, final String option, final String vpcCIDR) {
         final Script getUsage = new Script(_routerProxyPath, s_logger);
         getUsage.add("vpc_netusage.sh");
         getUsage.add(privateIpAddress);
@@ -2487,8 +2402,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return usageParser.getLine();
     }
 
-    protected long[] getVPCNetworkStats(final String privateIP, final String publicIp, final String option) {
-        final String result = VPCNetworkUsage(privateIP, publicIp, option, null);
+    public long[] getVPCNetworkStats(final String privateIP, final String publicIp, final String option) {
+        final String result = configureVPCNetworkUsage(privateIP, publicIp, option, null);
         final long[] stats = new long[2];
         if (result != null) {
             final String[] splitResult = result.split(":");
@@ -2499,33 +2414,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
         return stats;
-    }
-
-    private Answer execute(final NetworkUsageCommand cmd) {
-        if (cmd.isForVpc()) {
-            if (cmd.getOption() != null && cmd.getOption().equals("create")) {
-                final String result = VPCNetworkUsage(cmd.getPrivateIP(), cmd.getGatewayIP(), "create", cmd.getVpcCIDR());
-                final NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, result, 0L, 0L);
-                return answer;
-            } else if (cmd.getOption() != null && (cmd.getOption().equals("get") || cmd.getOption().equals("vpn"))) {
-                final long[] stats = getVPCNetworkStats(cmd.getPrivateIP(), cmd.getGatewayIP(), cmd.getOption());
-                final NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, "", stats[0], stats[1]);
-                return answer;
-            } else {
-                final String result = VPCNetworkUsage(cmd.getPrivateIP(), cmd.getGatewayIP(), cmd.getOption(), cmd.getVpcCIDR());
-                final NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, result, 0L, 0L);
-                return answer;
-            }
-        } else {
-            if (cmd.getOption() != null && cmd.getOption().equals("create")) {
-                final String result = networkUsage(cmd.getPrivateIP(), "create", null);
-                final NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, result, 0L, 0L);
-                return answer;
-            }
-            final long[] stats = getNetworkStats(cmd.getPrivateIP());
-            final NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, "", stats[0], stats[1]);
-            return answer;
-        }
     }
 
     protected void handleVmStartFailure(final Connect conn, final String vmName, final LibvirtVMDef vm) {

@@ -86,6 +86,7 @@ import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.NetworkRulesVmSecondaryIpCommand;
+import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.OvsCreateTunnelCommand;
 import com.cloud.agent.api.OvsDestroyBridgeCommand;
 import com.cloud.agent.api.OvsDestroyTunnelCommand;
@@ -98,6 +99,7 @@ import com.cloud.agent.api.OvsVpcPhysicalTopologyConfigCommand.Vm;
 import com.cloud.agent.api.OvsVpcRoutingPolicyConfigCommand;
 import com.cloud.agent.api.OvsVpcRoutingPolicyConfigCommand.Acl;
 import com.cloud.agent.api.PingTestCommand;
+import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootCommand;
@@ -105,6 +107,7 @@ import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.SecurityGroupRulesCmd.IpPortAndProto;
 import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.check.CheckSshCommand;
@@ -2927,5 +2930,483 @@ public class LibvirtComputingResourceTest {
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
+    }
+
+    @Test
+    public void testPlugNicCommandMatchMack() {
+        final NicTO nic = Mockito.mock(NicTO.class);
+        final String instanceName = "Test";
+        final Type vmtype = Type.DomainRouter;
+
+        final PlugNicCommand command = new PlugNicCommand(nic, instanceName, vmtype);
+
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+        final Connect conn = Mockito.mock(Connect.class);
+        final Domain vm = Mockito.mock(Domain.class);
+
+        final List<InterfaceDef> nics = new ArrayList<InterfaceDef>();
+        final InterfaceDef intDef = Mockito.mock(InterfaceDef.class);
+        nics.add(intDef);
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        when(libvirtComputingResource.getInterfaces(conn, command.getVmName())).thenReturn(nics);
+
+        when(intDef.getDevName()).thenReturn("eth0");
+        when(intDef.getBrName()).thenReturn("br0");
+        when(intDef.getMacAddress()).thenReturn("00:00:00:00");
+
+        when(nic.getMac()).thenReturn("00:00:00:00");
+
+        try {
+            when(libvirtConnectionWrapper.getConnectionByVmName(command.getVmName())).thenReturn(conn);
+            when(libvirtComputingResource.getDomain(conn, instanceName)).thenReturn(vm);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(command.getVmName());
+            verify(libvirtComputingResource, times(1)).getDomain(conn, instanceName);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testPlugNicCommandNoMatchMack() {
+        final NicTO nic = Mockito.mock(NicTO.class);
+        final String instanceName = "Test";
+        final Type vmtype = Type.DomainRouter;
+
+        final PlugNicCommand command = new PlugNicCommand(nic, instanceName, vmtype);
+
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+        final Connect conn = Mockito.mock(Connect.class);
+        final Domain vm = Mockito.mock(Domain.class);
+        final VifDriver vifDriver = Mockito.mock(VifDriver.class);
+        final InterfaceDef interfaceDef = Mockito.mock(InterfaceDef.class);
+
+        final List<InterfaceDef> nics = new ArrayList<InterfaceDef>();
+        final InterfaceDef intDef = Mockito.mock(InterfaceDef.class);
+        nics.add(intDef);
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        when(libvirtComputingResource.getInterfaces(conn, command.getVmName())).thenReturn(nics);
+
+        when(intDef.getDevName()).thenReturn("eth0");
+        when(intDef.getBrName()).thenReturn("br0");
+        when(intDef.getMacAddress()).thenReturn("00:00:00:00");
+
+        when(nic.getMac()).thenReturn("00:00:00:01");
+
+        try {
+            when(libvirtConnectionWrapper.getConnectionByVmName(command.getVmName())).thenReturn(conn);
+            when(libvirtComputingResource.getDomain(conn, instanceName)).thenReturn(vm);
+
+            when(libvirtComputingResource.getVifDriver(nic.getType())).thenReturn(vifDriver);
+
+            when(vifDriver.plug(nic, "Other PV", "")).thenReturn(interfaceDef);
+            when(interfaceDef.toString()).thenReturn("Interface");
+
+            final String interfaceDefStr = interfaceDef.toString();
+            doNothing().when(vm).attachDevice(interfaceDefStr);
+
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        } catch (final InternalErrorException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(command.getVmName());
+            verify(libvirtComputingResource, times(1)).getDomain(conn, instanceName);
+            verify(libvirtComputingResource, times(1)).getVifDriver(nic.getType());
+            verify(vifDriver, times(1)).plug(nic, "Other PV", "");
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        } catch (final InternalErrorException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testPlugNicCommandLibvirtException() {
+        final NicTO nic = Mockito.mock(NicTO.class);
+        final String instanceName = "Test";
+        final Type vmtype = Type.DomainRouter;
+
+        final PlugNicCommand command = new PlugNicCommand(nic, instanceName, vmtype);
+
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+
+        try {
+            when(libvirtConnectionWrapper.getConnectionByVmName(command.getVmName())).thenThrow(LibvirtException.class);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(command.getVmName());
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testPlugNicCommandInternalError() {
+        final NicTO nic = Mockito.mock(NicTO.class);
+        final String instanceName = "Test";
+        final Type vmtype = Type.DomainRouter;
+
+        final PlugNicCommand command = new PlugNicCommand(nic, instanceName, vmtype);
+
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+        final Connect conn = Mockito.mock(Connect.class);
+        final Domain vm = Mockito.mock(Domain.class);
+        final VifDriver vifDriver = Mockito.mock(VifDriver.class);
+
+        final List<InterfaceDef> nics = new ArrayList<InterfaceDef>();
+        final InterfaceDef intDef = Mockito.mock(InterfaceDef.class);
+        nics.add(intDef);
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        when(libvirtComputingResource.getInterfaces(conn, command.getVmName())).thenReturn(nics);
+
+        when(intDef.getDevName()).thenReturn("eth0");
+        when(intDef.getBrName()).thenReturn("br0");
+        when(intDef.getMacAddress()).thenReturn("00:00:00:00");
+
+        when(nic.getMac()).thenReturn("00:00:00:01");
+
+        try {
+            when(libvirtConnectionWrapper.getConnectionByVmName(command.getVmName())).thenReturn(conn);
+            when(libvirtComputingResource.getDomain(conn, instanceName)).thenReturn(vm);
+
+            when(libvirtComputingResource.getVifDriver(nic.getType())).thenReturn(vifDriver);
+
+            when(vifDriver.plug(nic, "Other PV", "")).thenThrow(InternalErrorException.class);
+
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        } catch (final InternalErrorException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(command.getVmName());
+            verify(libvirtComputingResource, times(1)).getDomain(conn, instanceName);
+            verify(libvirtComputingResource, times(1)).getVifDriver(nic.getType());
+            verify(vifDriver, times(1)).plug(nic, "Other PV", "");
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        } catch (final InternalErrorException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testUnPlugNicCommandMatchMack() {
+        final NicTO nic = Mockito.mock(NicTO.class);
+        final String instanceName = "Test";
+
+        final UnPlugNicCommand command = new UnPlugNicCommand(nic, instanceName);
+
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+        final Connect conn = Mockito.mock(Connect.class);
+        final Domain vm = Mockito.mock(Domain.class);
+        final InterfaceDef interfaceDef = Mockito.mock(InterfaceDef.class);
+
+        final List<InterfaceDef> nics = new ArrayList<InterfaceDef>();
+        final InterfaceDef intDef = Mockito.mock(InterfaceDef.class);
+        nics.add(intDef);
+
+        final VifDriver vifDriver = Mockito.mock(VifDriver.class);
+        final List<VifDriver> drivers = new ArrayList<VifDriver>();
+        drivers.add(vifDriver);
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        when(libvirtComputingResource.getInterfaces(conn, command.getVmName())).thenReturn(nics);
+
+        when(intDef.getDevName()).thenReturn("eth0");
+        when(intDef.getBrName()).thenReturn("br0");
+        when(intDef.getMacAddress()).thenReturn("00:00:00:00");
+
+        when(nic.getMac()).thenReturn("00:00:00:00");
+
+        try {
+            when(libvirtConnectionWrapper.getConnectionByVmName(command.getVmName())).thenReturn(conn);
+            when(libvirtComputingResource.getDomain(conn, instanceName)).thenReturn(vm);
+
+            when(interfaceDef.toString()).thenReturn("Interface");
+
+            final String interfaceDefStr = interfaceDef.toString();
+            doNothing().when(vm).detachDevice(interfaceDefStr);
+
+            when(libvirtComputingResource.getAllVifDrivers()).thenReturn(drivers);
+
+            doNothing().when(vifDriver).unplug(intDef);
+
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(command.getVmName());
+            verify(libvirtComputingResource, times(1)).getDomain(conn, instanceName);
+            verify(libvirtComputingResource, times(1)).getAllVifDrivers();
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testUnPlugNicCommandNoNics() {
+        final NicTO nic = Mockito.mock(NicTO.class);
+        final String instanceName = "Test";
+
+        final UnPlugNicCommand command = new UnPlugNicCommand(nic, instanceName);
+
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+        final Connect conn = Mockito.mock(Connect.class);
+        final Domain vm = Mockito.mock(Domain.class);
+
+        final List<InterfaceDef> nics = new ArrayList<InterfaceDef>();
+
+        final VifDriver vifDriver = Mockito.mock(VifDriver.class);
+        final List<VifDriver> drivers = new ArrayList<VifDriver>();
+        drivers.add(vifDriver);
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+        when(libvirtComputingResource.getInterfaces(conn, command.getVmName())).thenReturn(nics);
+
+        try {
+            when(libvirtConnectionWrapper.getConnectionByVmName(command.getVmName())).thenReturn(conn);
+            when(libvirtComputingResource.getDomain(conn, instanceName)).thenReturn(vm);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(command.getVmName());
+            verify(libvirtComputingResource, times(1)).getDomain(conn, instanceName);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testUnPlugNicCommandLibvirtException() {
+        final NicTO nic = Mockito.mock(NicTO.class);
+        final String instanceName = "Test";
+
+        final UnPlugNicCommand command = new UnPlugNicCommand(nic, instanceName);
+
+        final LibvirtConnectionWrapper libvirtConnectionWrapper = Mockito.mock(LibvirtConnectionWrapper.class);
+
+        when(libvirtComputingResource.getLibvirtConnectionWrapper()).thenReturn(libvirtConnectionWrapper);
+
+        try {
+            when(libvirtConnectionWrapper.getConnectionByVmName(command.getVmName())).thenThrow(LibvirtException.class);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtConnectionWrapper();
+        try {
+            verify(libvirtConnectionWrapper, times(1)).getConnectionByVmName(command.getVmName());
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testNetworkUsageCommandNonVpc() {
+        final String privateIP = "169.16.16.16";
+        final String domRName = "domR";
+        final boolean forVpc = false;
+        final String gatewayIP = "10.1.1.1";
+
+        final NetworkUsageCommand command = new NetworkUsageCommand(privateIP, domRName, forVpc, gatewayIP);
+
+        libvirtComputingResource.getNetworkStats(command.getPrivateIP());
+
+        when(libvirtComputingResource.getNetworkStats(command.getPrivateIP())).thenReturn(new long[]{10l, 10l});
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        //Being called twice, although I did not find the second place yet.
+        verify(libvirtComputingResource, times(2)).getNetworkStats(command.getPrivateIP());
+    }
+
+    @Test
+    public void testNetworkUsageCommandNonVpcCreate() {
+        final String privateIP = "169.16.16.16";
+        final String domRName = "domR";
+        final boolean forVpc = false;
+
+        final NetworkUsageCommand command = new NetworkUsageCommand(privateIP, domRName, "create", forVpc);
+
+        libvirtComputingResource.getNetworkStats(command.getPrivateIP());
+
+        when(libvirtComputingResource.networkUsage(command.getPrivateIP(), "create", null)).thenReturn("SUCCESS");
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        //Being called twice, although I did not find the second place yet.
+        verify(libvirtComputingResource, times(1)).networkUsage(command.getPrivateIP(), "create", null);
+    }
+
+    @Test
+    public void testNetworkUsageCommandVpcCreate() {
+        final String privateIP = "169.16.16.16";
+        final String domRName = "domR";
+        final boolean forVpc = true;
+        final String gatewayIP = "10.1.1.1";
+        final String vpcCidr = "10.1.1.0/24";
+
+        final NetworkUsageCommand command = new NetworkUsageCommand(privateIP, domRName, forVpc, gatewayIP, vpcCidr);
+
+        libvirtComputingResource.getNetworkStats(command.getPrivateIP());
+
+        when(libvirtComputingResource.configureVPCNetworkUsage(command.getPrivateIP(), command.getGatewayIP(), "create", command.getVpcCIDR())).thenReturn("SUCCESS");
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        //Being called twice, although I did not find the second place yet.
+        verify(libvirtComputingResource, times(1)).configureVPCNetworkUsage(command.getPrivateIP(), command.getGatewayIP(), "create", command.getVpcCIDR());
+    }
+
+    @Test
+    public void testNetworkUsageCommandVpcGet() {
+        final String privateIP = "169.16.16.16";
+        final String domRName = "domR";
+        final boolean forVpc = true;
+        final String gatewayIP = "10.1.1.1";
+
+        final NetworkUsageCommand command = new NetworkUsageCommand(privateIP, domRName, forVpc, gatewayIP);
+
+        libvirtComputingResource.getNetworkStats(command.getPrivateIP());
+
+        when(libvirtComputingResource.getVPCNetworkStats(command.getPrivateIP(), command.getGatewayIP(), command.getOption())).thenReturn(new long[]{10l, 10l});
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        //Being called twice, although I did not find the second place yet.
+        verify(libvirtComputingResource, times(1)).getVPCNetworkStats(command.getPrivateIP(), command.getGatewayIP(), command.getOption());
+    }
+
+    @Test
+    public void testNetworkUsageCommandVpcVpn() {
+        final String privateIP = "169.16.16.16";
+        final String domRName = "domR";
+        final boolean forVpc = true;
+        final String gatewayIP = "10.1.1.1";
+
+        final NetworkUsageCommand command = new NetworkUsageCommand(privateIP, domRName, "vpn", forVpc, gatewayIP);
+
+        libvirtComputingResource.getNetworkStats(command.getPrivateIP());
+
+        when(libvirtComputingResource.getVPCNetworkStats(command.getPrivateIP(), command.getGatewayIP(), command.getOption())).thenReturn(new long[]{10l, 10l});
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        //Being called twice, although I did not find the second place yet.
+        verify(libvirtComputingResource, times(1)).getVPCNetworkStats(command.getPrivateIP(), command.getGatewayIP(), command.getOption());
+    }
+
+    @Test
+    public void testNetworkUsageCommandVpcNoOption() {
+        final String privateIP = "169.16.16.16";
+        final String domRName = "domR";
+        final boolean forVpc = true;
+        final String gatewayIP = "10.1.1.1";
+
+        final NetworkUsageCommand command = new NetworkUsageCommand(privateIP, domRName, null, forVpc, gatewayIP);
+
+        libvirtComputingResource.getNetworkStats(command.getPrivateIP());
+
+        when(libvirtComputingResource.configureVPCNetworkUsage(command.getPrivateIP(), command.getGatewayIP(), command.getOption(), command.getVpcCIDR())).thenReturn("FAILURE");
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        //Being called twice, although I did not find the second place yet.
+        verify(libvirtComputingResource, times(1)).configureVPCNetworkUsage(command.getPrivateIP(), command.getGatewayIP(), command.getOption(), command.getVpcCIDR());
     }
 }

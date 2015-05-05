@@ -44,6 +44,7 @@ import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.NetworkRulesVmSecondaryIpCommand;
+import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.OvsCreateTunnelCommand;
 import com.cloud.agent.api.OvsDestroyBridgeCommand;
 import com.cloud.agent.api.OvsDestroyTunnelCommand;
@@ -52,12 +53,14 @@ import com.cloud.agent.api.OvsSetupBridgeCommand;
 import com.cloud.agent.api.OvsVpcPhysicalTopologyConfigCommand;
 import com.cloud.agent.api.OvsVpcRoutingPolicyConfigCommand;
 import com.cloud.agent.api.PingTestCommand;
+import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
@@ -130,6 +133,9 @@ public class LibvirtRequestWrapper extends RequestWrapper {
         linbvirtCommands.put(CreateVolumeFromSnapshotCommand.class, new LibvirtCreateVolumeFromSnapshotCommandWrapper());
         linbvirtCommands.put(FenceCommand.class, new LibvirtFenceCommandWrapper());
         linbvirtCommands.put(SecurityGroupRulesCmd.class, new LibvirtSecurityGroupRulesCommandWrapper());
+        linbvirtCommands.put(PlugNicCommand.class, new LibvirtPlugNicCommandWrapper());
+        linbvirtCommands.put(UnPlugNicCommand.class, new LibvirtUnPlugNicCommandWrapper());
+        linbvirtCommands.put(NetworkUsageCommand.class, new LibvirtNetworkUsageCommandWrapper());
 
         resources.put(LibvirtComputingResource.class, linbvirtCommands);
     }
