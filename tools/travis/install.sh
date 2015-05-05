@@ -19,18 +19,31 @@
 # This should be used to create the build.
 #
 
+
+export TEST_JOB_NUMBER=`echo $TRAVIS_JOB_NUMBER | cut -d. -f1`
+export TEST_SEQUENCE_NUMBER=`echo $TRAVIS_JOB_NUMBER | cut -d. -f2`
+
+#run regression test only on $REGRESSION_CYCLE
+MOD=$(( $TEST_JOB_NUMBER % $REGRESSION_CYCLE ))
+
+if [ $MOD -ne 0 ]; then
+ if [ $TEST_SEQUENCE_NUMBER -ge $REGRESSION_INDEX ]; then
+   #skip test
+   echo "Skipping tests ... SUCCESS !"
+   exit 0
+ fi
+fi
+
 export CATALINA_BASE=/opt/tomcat
 export CATALINA_HOME=/opt/tomcat
 export M2_HOME="/usr/local/maven-3.2.1/"
 export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=500m"
 
-# Compile Cloudstack
-if [[ $RUNUNITTESTS == true ]]; then
-    mvn -q -Pimpatient -Dsimulator clean install
+if [ $TEST_SEQUENCE_NUMBER -eq 1 ]; then
+   mvn -q -Pimpatient -Dsimulator clean install
 else
-    mvn -q -Pimpatient -Dsimulator clean install -DskipTests=true
+   mvn -q -Pimpatient -Dsimulator clean install -DskipTests=true
 fi
-
 
 # Compile API Docs
 cd tools/apidoc
