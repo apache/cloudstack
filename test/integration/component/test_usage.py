@@ -493,14 +493,18 @@ class TestVolumeUsage(cloudstackTestCase):
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
+        cls._cleanup = []
+        cls.unsupportedStorageType = False
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         if cls.hypervisor.lower() == 'lxc':
             if not find_storage_pool_type(cls.api_client, storagetype='rbd'):
-                raise unittest.SkipTest("RBD storage type is required for data volumes for LXC")
+                cls.unsupportedStorageType = True
+                return
         cls.disk_offering = DiskOffering.create(
             cls.api_client,
             cls.services["disk_offering"]
         )
+        cls._cleanup.append(cls.disk_offering)
         template = get_template(
             cls.api_client,
             cls.zone.id,
@@ -516,6 +520,7 @@ class TestVolumeUsage(cloudstackTestCase):
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
 
         cls.services["account"] = cls.account.name
 
@@ -523,6 +528,7 @@ class TestVolumeUsage(cloudstackTestCase):
             cls.api_client,
             cls.services["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
         cls.virtual_machine = VirtualMachine.create(
             cls.api_client,
             cls.services["server"],
@@ -531,11 +537,6 @@ class TestVolumeUsage(cloudstackTestCase):
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id
         )
-        cls._cleanup = [
-            cls.service_offering,
-            cls.disk_offering,
-            cls.account,
-        ]
         return
 
     @classmethod
@@ -551,6 +552,9 @@ class TestVolumeUsage(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
+
+        if self.unsupportedStorageType:
+            self.skipTest("Skipping because of unsupported storage type")
         return
 
     def tearDown(self):
@@ -1177,14 +1181,17 @@ class TestSnapshotUsage(cloudstackTestCase):
     def setUpClass(cls):
         cls.testClient = super(TestSnapshotUsage, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
-        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
-        if cls.hypervisor.lower() == 'lxc':
-            raise unittest.SkipTest("snapshots are not supported on LXC")
+        cls._cleanup = []
+        cls.unsupportedHypervisor = False
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() in ['hyperv', 'lxc']:
+            cls.unsupportedHypervisor = True
+            return
 
         template = get_template(
             cls.api_client,
@@ -1235,6 +1242,10 @@ class TestSnapshotUsage(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
+
+        if self.unsupportedHypervisor:
+            self.skipTest("Snapshots are not supported on %s" %
+                    self.hypervisor)
         return
 
     def tearDown(self):
