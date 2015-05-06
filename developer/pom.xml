@@ -131,15 +131,6 @@
                 <argument>${basedir}/target/db/create-schema-premium.sql</argument>
                 <!-- Seed templates -->
                 <argument>${basedir}/target/db/templates.sql</argument>
-                <!-- Run cloudbridge related sqls -->
-                <argument>${basedir}/target/db/cloudbridge_schema.sql</argument>
-                <argument>${basedir}/target/db/cloudbridge_multipart.sql</argument>
-                <argument>${basedir}/target/db/cloudbridge_index.sql</argument>
-                <argument>${basedir}/target/db/cloudbridge_multipart_alter.sql</argument>
-                <argument>${basedir}/target/db/cloudbridge_bucketpolicy.sql</argument>
-                <argument>${basedir}/target/db/cloudbridge_policy_alter.sql</argument>
-                <argument>${basedir}/target/db/cloudbridge_offering.sql</argument>
-                <argument>${basedir}/target/db/cloudbridge_offering_alter.sql</argument>
                 <!-- Seed the database -->
                 <argument>${basedir}/developer-prefill.sql</argument>
                 <argument>${basedir}/developer-prefill.sql.override</argument>
