@@ -31,6 +31,7 @@ import static org.mockito.Mockito.when;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,6 +55,7 @@ import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainBlockStats;
 import org.libvirt.DomainInfo;
+import org.libvirt.DomainInfo.DomainState;
 import org.libvirt.DomainInterfaceStats;
 import org.libvirt.LibvirtException;
 import org.libvirt.NodeInfo;
@@ -107,6 +109,7 @@ import com.cloud.agent.api.OvsVpcRoutingPolicyConfigCommand.Acl;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
@@ -504,10 +507,13 @@ public class LibvirtComputingResourceTest {
     }
 
     @Test
-    public void testStopCommandCheck() {
+    public void testStopCommandCheckVmNOTRunning() {
         final Connect conn = Mockito.mock(Connect.class);
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
-        final Domain domain = Mockito.mock(Domain.class);
+        final Domain vm = Mockito.mock(Domain.class);
+        final DomainInfo info = Mockito.mock(DomainInfo.class);
+        final DomainState state = DomainInfo.DomainState.VIR_DOMAIN_SHUTDOWN;
+        info.state = state;
 
         final String vmName = "Test";
         final StopCommand command = new StopCommand(vmName, false, true);
@@ -515,7 +521,10 @@ public class LibvirtComputingResourceTest {
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         try {
             when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
-            when(conn.domainLookupByName(command.getVmName())).thenReturn(domain);
+            when(conn.domainLookupByName(command.getVmName())).thenReturn(vm);
+
+            when(vm.getInfo()).thenReturn(info);
+
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
@@ -530,6 +539,83 @@ public class LibvirtComputingResourceTest {
         verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
         try {
             verify(libvirtUtilitiesHelper, times(2)).getConnectionByVmName(vmName);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testStopCommandCheckException1() {
+        final Connect conn = Mockito.mock(Connect.class);
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+        final Domain vm = Mockito.mock(Domain.class);
+        final DomainInfo info = Mockito.mock(DomainInfo.class);
+        final DomainState state = DomainInfo.DomainState.VIR_DOMAIN_RUNNING;
+        info.state = state;
+
+        final String vmName = "Test";
+        final StopCommand command = new StopCommand(vmName, false, true);
+
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        try {
+            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenThrow(LibvirtException.class);
+            when(conn.domainLookupByName(command.getVmName())).thenReturn(vm);
+
+            when(vm.getInfo()).thenReturn(info);
+
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
+        try {
+            verify(libvirtUtilitiesHelper, times(2)).getConnectionByVmName(vmName);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testStopCommandCheckVmRunning() {
+        final Connect conn = Mockito.mock(Connect.class);
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+        final Domain vm = Mockito.mock(Domain.class);
+        final DomainInfo info = Mockito.mock(DomainInfo.class);
+        final DomainState state = DomainInfo.DomainState.VIR_DOMAIN_RUNNING;
+        info.state = state;
+
+        final String vmName = "Test";
+        final StopCommand command = new StopCommand(vmName, false, true);
+
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        try {
+            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
+            when(conn.domainLookupByName(command.getVmName())).thenReturn(vm);
+
+            when(vm.getInfo()).thenReturn(info);
+
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
+        try {
+            verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(vmName);
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
@@ -4097,5 +4183,149 @@ public class LibvirtComputingResourceTest {
         assertTrue(answer.getResult());
 
         verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+    }
+
+    @Test
+    public void testPvlanSetupCommandDhcpAdd() {
+        final String op = "add";
+        final URI uri = URI.create("http://localhost");
+        final String networkTag = "/105";
+        final String dhcpName = "dhcp";
+        final String dhcpMac = "00:00:00:00";
+        final String dhcpIp = "172.10.10.10";
+
+        final PvlanSetupCommand command = PvlanSetupCommand.createDhcpSetup(op, uri, networkTag, dhcpName, dhcpMac, dhcpIp);
+
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+        final Connect conn = Mockito.mock(Connect.class);
+
+        final String guestBridgeName = "br0";
+        when(libvirtComputingResource.getGuestBridgeName()).thenReturn(guestBridgeName);
+
+        final int timeout = 0;
+        when(libvirtComputingResource.getTimeout()).thenReturn(timeout);
+        final String ovsPvlanDhcpHostPath = "/pvlan";
+        when(libvirtComputingResource.getOvsPvlanDhcpHostPath()).thenReturn(ovsPvlanDhcpHostPath);
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+
+        final List<InterfaceDef> ifaces = new ArrayList<InterfaceDef>();
+        final InterfaceDef nic = Mockito.mock(InterfaceDef.class);
+        ifaces.add(nic);
+
+        try {
+            when(libvirtUtilitiesHelper.getConnectionByVmName(dhcpName)).thenReturn(conn);
+            when(libvirtComputingResource.getInterfaces(conn, dhcpName)).thenReturn(ifaces);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
+        try {
+            verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(dhcpName);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testPvlanSetupCommandVm() {
+        final String op = "add";
+        final URI uri = URI.create("http://localhost");
+        final String networkTag = "/105";
+        final String vmMac = "00:00:00:00";
+
+        final PvlanSetupCommand command = PvlanSetupCommand.createVmSetup(op, uri, networkTag, vmMac);
+
+        final String guestBridgeName = "br0";
+        when(libvirtComputingResource.getGuestBridgeName()).thenReturn(guestBridgeName);
+        final int timeout = 0;
+        when(libvirtComputingResource.getTimeout()).thenReturn(timeout);
+
+        final String ovsPvlanVmPath = "/pvlan";
+        when(libvirtComputingResource.getOvsPvlanVmPath()).thenReturn(ovsPvlanVmPath);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testPvlanSetupCommandDhcpException() {
+        final String op = "add";
+        final URI uri = URI.create("http://localhost");
+        final String networkTag = "/105";
+        final String dhcpName = "dhcp";
+        final String dhcpMac = "00:00:00:00";
+        final String dhcpIp = "172.10.10.10";
+
+        final PvlanSetupCommand command = PvlanSetupCommand.createDhcpSetup(op, uri, networkTag, dhcpName, dhcpMac, dhcpIp);
+
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+
+        final String guestBridgeName = "br0";
+        when(libvirtComputingResource.getGuestBridgeName()).thenReturn(guestBridgeName);
+
+        final int timeout = 0;
+        when(libvirtComputingResource.getTimeout()).thenReturn(timeout);
+        final String ovsPvlanDhcpHostPath = "/pvlan";
+        when(libvirtComputingResource.getOvsPvlanDhcpHostPath()).thenReturn(ovsPvlanDhcpHostPath);
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+
+        try {
+            when(libvirtUtilitiesHelper.getConnectionByVmName(dhcpName)).thenThrow(LibvirtException.class);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
+        try {
+            verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(dhcpName);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testPvlanSetupCommandDhcpDelete() {
+        final String op = "delete";
+        final URI uri = URI.create("http://localhost");
+        final String networkTag = "/105";
+        final String dhcpName = "dhcp";
+        final String dhcpMac = "00:00:00:00";
+        final String dhcpIp = "172.10.10.10";
+
+        final PvlanSetupCommand command = PvlanSetupCommand.createDhcpSetup(op, uri, networkTag, dhcpName, dhcpMac, dhcpIp);
+
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+
+        final String guestBridgeName = "br0";
+        when(libvirtComputingResource.getGuestBridgeName()).thenReturn(guestBridgeName);
+
+        final int timeout = 0;
+        when(libvirtComputingResource.getTimeout()).thenReturn(timeout);
+        final String ovsPvlanDhcpHostPath = "/pvlan";
+        when(libvirtComputingResource.getOvsPvlanDhcpHostPath()).thenReturn(ovsPvlanDhcpHostPath);
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
     }
 }

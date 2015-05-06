@@ -59,6 +59,7 @@ import com.cloud.agent.api.OvsVpcRoutingPolicyConfigCommand;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
@@ -146,6 +147,7 @@ public class LibvirtRequestWrapper extends RequestWrapper {
         linbvirtCommands.put(BackupSnapshotCommand.class, new LibvirtBackupSnapshotCommandWrapper());
         linbvirtCommands.put(CreatePrivateTemplateFromSnapshotCommand.class, new LibvirtCreatePrivateTemplateFromSnapshotCommandWrapper());
         linbvirtCommands.put(CopyVolumeCommand.class, new LibvirtCopyVolumeCommandWrapper());
+        linbvirtCommands.put(PvlanSetupCommand.class, new LibvirtPvlanSetupCommandWrapper());
 
         resources.put(LibvirtComputingResource.class, linbvirtCommands);
     }

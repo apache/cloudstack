@@ -68,7 +68,6 @@ import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
-import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
@@ -395,6 +394,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public String manageSnapshotPath() {
         return _manageSnapshotPath;
+    }
+
+    public String getGuestBridgeName() {
+        return _guestBridgeName;
+    }
+
+    public String getOvsPvlanDhcpHostPath() {
+        return _ovsPvlanDhcpHostPath;
+    }
+
+    public String getOvsPvlanVmPath() {
+        return _ovsPvlanVmPath;
     }
 
     private static final class KeyValueInterpreter extends OutputInterpreter {
@@ -1252,8 +1263,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((ResizeVolumeCommand)cmd);
             } else if (cmd instanceof StorageSubSystemCommand) {
                 return storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
-            } else if (cmd instanceof PvlanSetupCommand) {
-                return execute((PvlanSetupCommand)cmd);
             } else {
                 s_logger.warn("Unsupported command ");
                 return Answer.createUnsupportedCommandAnswer(cmd);
@@ -1517,61 +1526,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             s_logger.debug("failed to get vNet id from bridge " + brName + "attached to physical interface" + pif);
             return "";
         }
-    }
-
-    private Answer execute(final PvlanSetupCommand cmd) {
-        final String primaryPvlan = cmd.getPrimary();
-        final String isolatedPvlan = cmd.getIsolated();
-        final String op = cmd.getOp();
-        final String dhcpName = cmd.getDhcpName();
-        final String dhcpMac = cmd.getDhcpMac();
-        final String dhcpIp = cmd.getDhcpIp();
-        final String vmMac = cmd.getVmMac();
-        boolean add = true;
-
-        String opr = "-A";
-        if (op.equals("delete")) {
-            opr = "-D";
-            add = false;
-        }
-
-        String result = null;
-        Connect conn;
-        try {
-            if (cmd.getType() == PvlanSetupCommand.Type.DHCP) {
-                final Script script = new Script(_ovsPvlanDhcpHostPath, _timeout, s_logger);
-                if (add) {
-                    conn = LibvirtConnection.getConnectionByVmName(dhcpName);
-                    final List<InterfaceDef> ifaces = getInterfaces(conn, dhcpName);
-                    final InterfaceDef guestNic = ifaces.get(0);
-                    script.add(opr, "-b", _guestBridgeName, "-p", primaryPvlan, "-i", isolatedPvlan, "-n", dhcpName, "-d", dhcpIp, "-m", dhcpMac, "-I",
-                            guestNic.getDevName());
-                } else {
-                    script.add(opr, "-b", _guestBridgeName, "-p", primaryPvlan, "-i", isolatedPvlan, "-n", dhcpName, "-d", dhcpIp, "-m", dhcpMac);
-                }
-                result = script.execute();
-                if (result != null) {
-                    s_logger.warn("Failed to program pvlan for dhcp server with mac " + dhcpMac);
-                    return new Answer(cmd, false, result);
-                } else {
-                    s_logger.info("Programmed pvlan for dhcp server with mac " + dhcpMac);
-                }
-            } else if (cmd.getType() == PvlanSetupCommand.Type.VM) {
-                final Script script = new Script(_ovsPvlanVmPath, _timeout, s_logger);
-                script.add(opr, "-b", _guestBridgeName, "-p", primaryPvlan, "-i", isolatedPvlan, "-v", vmMac);
-                result = script.execute();
-                if (result != null) {
-                    s_logger.warn("Failed to program pvlan for vm with mac " + vmMac);
-                    return new Answer(cmd, false, result);
-                } else {
-                    s_logger.info("Programmed pvlan for vm with mac " + vmMac);
-                }
-            }
-        } catch (final LibvirtException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return new Answer(cmd, true, result);
     }
 
     private void VifHotPlug(final Connect conn, final String vmName, final String broadcastUri, final String macAddr) throws InternalErrorException, LibvirtException {
