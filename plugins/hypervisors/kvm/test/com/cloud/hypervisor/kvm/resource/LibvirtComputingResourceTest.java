@@ -24,6 +24,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -121,6 +122,7 @@ import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.SecurityGroupRulesCmd.IpPortAndProto;
+import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
@@ -749,6 +751,96 @@ public class LibvirtComputingResourceTest {
 
         final Answer answer = wrapper.execute(command, libvirtComputingResource);
         assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
+        try {
+            verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(vmName);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testRebootCommandException1() {
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+
+        final String vmName = "Test";
+        final RebootCommand command = new RebootCommand(vmName);
+
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        try {
+            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenThrow(LibvirtException.class);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
+        try {
+            verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(vmName);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testRebootCommandError() {
+        final Connect conn = Mockito.mock(Connect.class);
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+
+        final String vmName = "Test";
+        final RebootCommand command = new RebootCommand(vmName);
+
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        try {
+            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
+            when(libvirtComputingResource.rebootVM(conn, command.getVmName())).thenReturn("error");
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
+        try {
+            verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(vmName);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testRebootCommandException2() {
+        final Connect conn = Mockito.mock(Connect.class);
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+
+        final String vmName = "Test";
+        final RebootCommand command = new RebootCommand(vmName);
+
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        try {
+            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
+            when(libvirtComputingResource.rebootVM(conn, command.getVmName())).thenThrow(LibvirtException.class);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
 
         verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
         try {
@@ -3588,6 +3680,65 @@ public class LibvirtComputingResourceTest {
         }
     }
 
+    @Test
+    public void testManageSnapshotCommandLibvirt() {
+        final StoragePool storagePool = Mockito.mock(StoragePool.class);;
+        final String volumePath = "/123/vol";
+        final String vmName = "Test";
+        final long snapshotId = 1l;
+        final String preSnapshotPath = "/snapshot/path";
+        final String snapshotName = "snap";
+
+        final ManageSnapshotCommand command = new ManageSnapshotCommand(snapshotId, volumePath, storagePool, preSnapshotPath, snapshotName, vmName);
+
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+        final Connect conn = Mockito.mock(Connect.class);
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool primaryPool = Mockito.mock(KVMStoragePool.class);
+        final Domain vm = Mockito.mock(Domain.class);
+        final DomainInfo info = Mockito.mock(DomainInfo.class);
+        final DomainState state = DomainInfo.DomainState.VIR_DOMAIN_RUNNING;
+        info.state = state;
+
+        final KVMPhysicalDisk disk = Mockito.mock(KVMPhysicalDisk.class);
+
+        final StorageFilerTO pool = command.getPool();
+
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        try {
+            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
+            when(libvirtComputingResource.getDomain(conn, command.getVmName())).thenReturn(vm);
+            when(vm.getInfo()).thenReturn(info);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(primaryPool);
+        when(primaryPool.getPhysicalDisk(command.getVolumePath())).thenReturn(disk);
+        when(primaryPool.isExternalSnapshot()).thenReturn(false);
+
+        try {
+            when(vm.getUUIDString()).thenReturn("cdb18980-546d-4153-b916-70ee9edf0908");
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
+        try {
+            verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(vmName);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     public void testBackupSnapshotCommandLibvirtException() {
@@ -4544,5 +4695,356 @@ public class LibvirtComputingResourceTest {
 
         final Answer answer = wrapper.execute(command, libvirtComputingResource);
         assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testStartCommandFailedConnect() {
+        final VirtualMachineTO vmSpec = Mockito.mock(VirtualMachineTO.class);
+        final com.cloud.host.Host host = Mockito.mock(com.cloud.host.Host.class);
+        final boolean executeInSequence = false;
+
+        final StartCommand command = new StartCommand(vmSpec, host, executeInSequence);
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+        final Connect conn = Mockito.mock(Connect.class);
+        final LibvirtVMDef vmDef = Mockito.mock(LibvirtVMDef.class);
+
+        final NicTO nic = Mockito.mock(NicTO.class);
+        final NicTO[] nics = new NicTO[]{nic};
+
+        final String vmName = "Test";
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(vmSpec.getNics()).thenReturn(nics);
+        when(vmSpec.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
+        when(vmSpec.getName()).thenReturn(vmName);
+        when(libvirtComputingResource.createVMFromSpec(vmSpec)).thenReturn(vmDef);
+
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        try {
+            when(libvirtUtilitiesHelper.getConnectionByType(vmDef.getHvsType())).thenReturn(conn);
+            doNothing().when(libvirtComputingResource).createVbd(conn, vmSpec, vmName, vmDef);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        } catch (final InternalErrorException e) {
+            fail(e.getMessage());
+        } catch (final URISyntaxException e) {
+            fail(e.getMessage());
+        }
+
+        when(storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec)).thenReturn(false);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
+        try {
+            verify(libvirtUtilitiesHelper, times(1)).getConnectionByType(vmDef.getHvsType());
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testStartCommandLibvirtException() {
+        final VirtualMachineTO vmSpec = Mockito.mock(VirtualMachineTO.class);
+        final com.cloud.host.Host host = Mockito.mock(com.cloud.host.Host.class);
+        final boolean executeInSequence = false;
+
+        final StartCommand command = new StartCommand(vmSpec, host, executeInSequence);
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+        final LibvirtVMDef vmDef = Mockito.mock(LibvirtVMDef.class);
+
+        final NicTO nic = Mockito.mock(NicTO.class);
+        final NicTO[] nics = new NicTO[]{nic};
+
+        final String vmName = "Test";
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(vmSpec.getNics()).thenReturn(nics);
+        when(vmSpec.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
+        when(vmSpec.getName()).thenReturn(vmName);
+        when(libvirtComputingResource.createVMFromSpec(vmSpec)).thenReturn(vmDef);
+
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        try {
+            when(libvirtUtilitiesHelper.getConnectionByType(vmDef.getHvsType())).thenThrow(LibvirtException.class);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
+        try {
+            verify(libvirtUtilitiesHelper, times(1)).getConnectionByType(vmDef.getHvsType());
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testStartCommandInternalError() {
+        final VirtualMachineTO vmSpec = Mockito.mock(VirtualMachineTO.class);
+        final com.cloud.host.Host host = Mockito.mock(com.cloud.host.Host.class);
+        final boolean executeInSequence = false;
+
+        final StartCommand command = new StartCommand(vmSpec, host, executeInSequence);
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+        final Connect conn = Mockito.mock(Connect.class);
+        final LibvirtVMDef vmDef = Mockito.mock(LibvirtVMDef.class);
+
+        final NicTO nic = Mockito.mock(NicTO.class);
+        final NicTO[] nics = new NicTO[]{nic};
+
+        final String vmName = "Test";
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(vmSpec.getNics()).thenReturn(nics);
+        when(vmSpec.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
+        when(vmSpec.getName()).thenReturn(vmName);
+        when(libvirtComputingResource.createVMFromSpec(vmSpec)).thenReturn(vmDef);
+
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        try {
+            when(libvirtUtilitiesHelper.getConnectionByType(vmDef.getHvsType())).thenReturn(conn);
+            doThrow(InternalErrorException.class).when(libvirtComputingResource).createVbd(conn, vmSpec, vmName, vmDef);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        } catch (final InternalErrorException e) {
+            fail(e.getMessage());
+        } catch (final URISyntaxException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
+        try {
+            verify(libvirtUtilitiesHelper, times(1)).getConnectionByType(vmDef.getHvsType());
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testStartCommandUriException() {
+        final VirtualMachineTO vmSpec = Mockito.mock(VirtualMachineTO.class);
+        final com.cloud.host.Host host = Mockito.mock(com.cloud.host.Host.class);
+        final boolean executeInSequence = false;
+
+        final StartCommand command = new StartCommand(vmSpec, host, executeInSequence);
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+        final Connect conn = Mockito.mock(Connect.class);
+        final LibvirtVMDef vmDef = Mockito.mock(LibvirtVMDef.class);
+
+        final NicTO nic = Mockito.mock(NicTO.class);
+        final NicTO[] nics = new NicTO[]{nic};
+
+        final String vmName = "Test";
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(vmSpec.getNics()).thenReturn(nics);
+        when(vmSpec.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
+        when(vmSpec.getName()).thenReturn(vmName);
+        when(libvirtComputingResource.createVMFromSpec(vmSpec)).thenReturn(vmDef);
+
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        try {
+            when(libvirtUtilitiesHelper.getConnectionByType(vmDef.getHvsType())).thenReturn(conn);
+            doThrow(URISyntaxException.class).when(libvirtComputingResource).createVbd(conn, vmSpec, vmName, vmDef);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        } catch (final InternalErrorException e) {
+            fail(e.getMessage());
+        } catch (final URISyntaxException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
+        try {
+            verify(libvirtUtilitiesHelper, times(1)).getConnectionByType(vmDef.getHvsType());
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testStartCommand() {
+        final VirtualMachineTO vmSpec = Mockito.mock(VirtualMachineTO.class);
+        final com.cloud.host.Host host = Mockito.mock(com.cloud.host.Host.class);
+        final boolean executeInSequence = false;
+
+        final StartCommand command = new StartCommand(vmSpec, host, executeInSequence);
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+        final Connect conn = Mockito.mock(Connect.class);
+        final LibvirtVMDef vmDef = Mockito.mock(LibvirtVMDef.class);
+        final VirtualRoutingResource virtRouterResource = Mockito.mock(VirtualRoutingResource.class);
+
+        final NicTO nic = Mockito.mock(NicTO.class);
+        final NicTO[] nics = new NicTO[]{nic};
+
+        final String vmName = "Test";
+        final String controlIp = "169.122.10.10";
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(vmSpec.getNics()).thenReturn(nics);
+        when(vmSpec.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
+        when(vmSpec.getName()).thenReturn(vmName);
+        when(libvirtComputingResource.createVMFromSpec(vmSpec)).thenReturn(vmDef);
+
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        try {
+            when(libvirtUtilitiesHelper.getConnectionByType(vmDef.getHvsType())).thenReturn(conn);
+            doNothing().when(libvirtComputingResource).createVbd(conn, vmSpec, vmName, vmDef);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        } catch (final InternalErrorException e) {
+            fail(e.getMessage());
+        } catch (final URISyntaxException e) {
+            fail(e.getMessage());
+        }
+
+        when(storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec)).thenReturn(true);
+        try {
+            doNothing().when(libvirtComputingResource).createVifs(vmSpec, vmDef);
+
+            when(libvirtComputingResource.startVM(conn, vmName, vmDef.toString())).thenReturn("SUCCESS");
+
+            when(vmSpec.getBootArgs()).thenReturn("ls -lart");
+            when(libvirtComputingResource.passCmdLine(vmName, vmSpec.getBootArgs())).thenReturn(true);
+
+            when(nic.getIp()).thenReturn(controlIp);
+            when(nic.getType()).thenReturn(TrafficType.Control);
+            when(libvirtComputingResource.getVirtRouterResource()).thenReturn(virtRouterResource);
+            when(virtRouterResource.connect(controlIp, 1, 5000)).thenReturn(true);
+        } catch (final InternalErrorException e) {
+            fail(e.getMessage());
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
+        try {
+            verify(libvirtUtilitiesHelper, times(1)).getConnectionByType(vmDef.getHvsType());
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testStartCommandIsolationEc2() {
+        final VirtualMachineTO vmSpec = Mockito.mock(VirtualMachineTO.class);
+        final com.cloud.host.Host host = Mockito.mock(com.cloud.host.Host.class);
+        final boolean executeInSequence = false;
+
+        final StartCommand command = new StartCommand(vmSpec, host, executeInSequence);
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+        final Connect conn = Mockito.mock(Connect.class);
+        final LibvirtVMDef vmDef = Mockito.mock(LibvirtVMDef.class);
+        final VirtualRoutingResource virtRouterResource = Mockito.mock(VirtualRoutingResource.class);
+
+        final NicTO nic = Mockito.mock(NicTO.class);
+        final NicTO[] nics = new NicTO[]{nic};
+
+        final String vmName = "Test";
+        final String controlIp = "169.122.10.10";
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(vmSpec.getNics()).thenReturn(nics);
+        when(vmSpec.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
+        when(vmSpec.getName()).thenReturn(vmName);
+        when(libvirtComputingResource.createVMFromSpec(vmSpec)).thenReturn(vmDef);
+
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        try {
+            when(libvirtUtilitiesHelper.getConnectionByType(vmDef.getHvsType())).thenReturn(conn);
+            doNothing().when(libvirtComputingResource).createVbd(conn, vmSpec, vmName, vmDef);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        } catch (final InternalErrorException e) {
+            fail(e.getMessage());
+        } catch (final URISyntaxException e) {
+            fail(e.getMessage());
+        }
+
+        when(storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec)).thenReturn(true);
+        try {
+            doNothing().when(libvirtComputingResource).createVifs(vmSpec, vmDef);
+
+            when(libvirtComputingResource.startVM(conn, vmName, vmDef.toString())).thenReturn("SUCCESS");
+
+            when(nic.isSecurityGroupEnabled()).thenReturn(true);
+            when(nic.getIsolationUri()).thenReturn(new URI("ec2://test"));
+
+
+            when(vmSpec.getBootArgs()).thenReturn("ls -lart");
+            when(libvirtComputingResource.passCmdLine(vmName, vmSpec.getBootArgs())).thenReturn(true);
+
+            when(nic.getIp()).thenReturn(controlIp);
+            when(nic.getType()).thenReturn(TrafficType.Control);
+            when(libvirtComputingResource.getVirtRouterResource()).thenReturn(virtRouterResource);
+            when(virtRouterResource.connect(controlIp, 1, 5000)).thenReturn(true);
+        } catch (final InternalErrorException e) {
+            fail(e.getMessage());
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        } catch (final URISyntaxException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
+        try {
+            verify(libvirtUtilitiesHelper, times(1)).getConnectionByType(vmDef.getHvsType());
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
     }
 }

@@ -66,6 +66,7 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
+import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
@@ -155,6 +156,7 @@ public class LibvirtRequestWrapper extends RequestWrapper {
         linbvirtCommands.put(ResizeVolumeCommand.class, new LibvirtResizeVolumeCommandWrapper());
         linbvirtCommands.put(NetworkElementCommand.class, new LibvirtNetworkElementCommandWrapper());
         linbvirtCommands.put(StorageSubSystemCommand.class, new LibvirtStorageSubSystemCommandWrapper());
+        linbvirtCommands.put(StartCommand.class, new LibvirtStartCommandWrapper());
 
         resources.put(LibvirtComputingResource.class, linbvirtCommands);
     }

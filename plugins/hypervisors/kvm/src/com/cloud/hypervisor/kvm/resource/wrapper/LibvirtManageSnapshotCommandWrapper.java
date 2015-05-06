@@ -36,9 +36,11 @@ import com.ceph.rbd.RbdImage;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
+import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.script.Script;
@@ -66,7 +68,9 @@ public final class LibvirtManageSnapshotCommandWrapper extends CommandWrapper<Ma
                 }
             }
 
-            final KVMStoragePool primaryPool = libvirtComputingResource.getStoragePoolMgr().getStoragePool(command.getPool().getType(), command.getPool().getUuid());
+            KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
+            StorageFilerTO pool = command.getPool();
+            final KVMStoragePool primaryPool = storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid());
 
             final KVMPhysicalDisk disk = primaryPool.getPhysicalDisk(command.getVolumePath());
             if (state == DomainState.VIR_DOMAIN_RUNNING && !primaryPool.isExternalSnapshot()) {

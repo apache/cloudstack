@@ -67,8 +67,6 @@ import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
-import com.cloud.agent.api.StartAnswer;
-import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
@@ -118,7 +116,6 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.hypervisor.kvm.storage.KVMStorageProcessor;
 import com.cloud.network.Networks.BroadcastDomainType;
-import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.ServerResource;
@@ -1173,7 +1170,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return "0".equals(command.execute(null));
     }
 
-    private boolean passCmdLine(final String vmName, final String cmdLine) throws InternalErrorException {
+    public boolean passCmdLine(final String vmName, final String cmdLine) throws InternalErrorException {
         final Script command = new Script(_patchViaSocketPath, 5 * 1000, s_logger);
         String result;
         command.add("-n", vmName);
@@ -1199,7 +1196,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    protected String startVM(final Connect conn, final String vmName, final String domainXML) throws LibvirtException, InternalErrorException {
+    public String startVM(final Connect conn, final String vmName, final String domainXML) throws LibvirtException, InternalErrorException {
         try {
             /*
                 We create a transient domain here. When this method gets
@@ -1253,19 +1250,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
             return wrapper.execute(cmd, this);
         } catch (final Exception e) {
-            //[TODO] ignore for now, we still need to finish the other commands.
-            //return Answer.createUnsupportedCommandAnswer(cmd);
-        }
-
-        try {
-            if (cmd instanceof StartCommand) {
-                return execute((StartCommand)cmd);
-            } else {
-                s_logger.warn("Unsupported command ");
-                return Answer.createUnsupportedCommandAnswer(cmd);
-            }
-        } catch (final IllegalArgumentException e) {
-            return new Answer(cmd, false, e.getMessage());
+            return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }
 
@@ -1791,7 +1776,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return stats;
     }
 
-    protected void handleVmStartFailure(final Connect conn, final String vmName, final LibvirtVMDef vm) {
+    public void handleVmStartFailure(final Connect conn, final String vmName, final LibvirtVMDef vm) {
         if (vm != null && vm.getDevices() != null) {
             cleanupVMNetworks(conn, vm.getDevices().getInterfaces());
         }
@@ -1814,25 +1799,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return uuid;
     }
 
-    private void getOsVersion() {
-        final String version = Script.runSimpleBashScript("cat /etc/redhat-release | awk '{print $7}'");
-        if (version != null) {
-            final String[] versions = version.split("\\.");
-            if (versions.length == 2) {
-                final String major = versions[0];
-                final String minor = versions[1];
-                try {
-                    final Integer m = Integer.parseInt(major);
-                    final Integer min = Integer.parseInt(minor);
-                    hostOsVersion = new Pair<>(m, min);
-                } catch(final NumberFormatException e) {
-
-                }
-            }
-        }
-    }
-
-    protected LibvirtVMDef createVMFromSpec(final VirtualMachineTO vmTO) {
+    public LibvirtVMDef createVMFromSpec(final VirtualMachineTO vmTO) {
         final LibvirtVMDef vm = new LibvirtVMDef();
         vm.setDomainName(vmTO.getName());
         String uuid = vmTO.getUuid();
@@ -1972,7 +1939,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return vm;
     }
 
-    protected void createVifs(final VirtualMachineTO vmSpec, final LibvirtVMDef vm) throws InternalErrorException, LibvirtException {
+    public void createVifs(final VirtualMachineTO vmSpec, final LibvirtVMDef vm) throws InternalErrorException, LibvirtException {
         final NicTO[] nics = vmSpec.getNics();
         final Map <String, String> params = vmSpec.getDetails();
         String nicAdapter = "";
@@ -1984,107 +1951,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if (nic.getDeviceId() == i) {
                     createVif(vm, nic, nicAdapter);
                 }
-            }
-        }
-    }
-
-    protected StartAnswer execute(final StartCommand cmd) {
-        final VirtualMachineTO vmSpec = cmd.getVirtualMachine();
-        vmSpec.setVncAddr(cmd.getHostIp());
-        final String vmName = vmSpec.getName();
-        LibvirtVMDef vm = null;
-
-        DomainState  state = DomainState.VIR_DOMAIN_SHUTOFF;
-        Connect conn = null;
-        try {
-            final NicTO[] nics = vmSpec.getNics();
-
-            for (final NicTO nic : nics) {
-                if (vmSpec.getType() != VirtualMachine.Type.User) {
-                    nic.setPxeDisable(true);
-                }
-            }
-
-            vm = createVMFromSpec(vmSpec);
-
-            conn = LibvirtConnection.getConnectionByType(vm.getHvsType());
-
-            createVbd(conn, vmSpec, vmName, vm);
-
-            if (!_storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec)) {
-                return new StartAnswer(cmd, "Failed to connect physical disks to host");
-            }
-
-            createVifs(vmSpec, vm);
-
-            s_logger.debug("starting " + vmName + ": " + vm.toString());
-            startVM(conn, vmName, vm.toString());
-
-            for (final NicTO nic : nics) {
-                if (nic.isSecurityGroupEnabled() || nic.getIsolationUri() != null && nic.getIsolationUri().getScheme().equalsIgnoreCase(IsolationType.Ec2.toString())) {
-                    if (vmSpec.getType() != VirtualMachine.Type.User) {
-                        configureDefaultNetworkRulesForSystemVm(conn, vmName);
-                        break;
-                    } else {
-                        final List<String> nicSecIps = nic.getNicSecIps();
-                        String secIpsStr;
-                        final StringBuilder sb = new StringBuilder();
-                        if (nicSecIps != null) {
-                            for (final String ip : nicSecIps) {
-                                sb.append(ip).append(":");
-                            }
-                            secIpsStr = sb.toString();
-                        } else {
-                            secIpsStr = "0:";
-                        }
-                        default_network_rules(conn, vmName, nic, vmSpec.getId(), secIpsStr);
-                    }
-                }
-            }
-
-            // pass cmdline info to system vms
-            if (vmSpec.getType() != VirtualMachine.Type.User) {
-                //wait and try passCmdLine for 5 minutes at most for CLOUDSTACK-2823
-                String controlIp = null;
-                for (final NicTO nic : nics) {
-                    if (nic.getType() == TrafficType.Control) {
-                        controlIp = nic.getIp();
-                        break;
-                    }
-                }
-                for (int count = 0; count < 30; count++) {
-                    passCmdLine(vmName, vmSpec.getBootArgs());
-                    //check router is up?
-                    final boolean result = _virtRouterResource.connect(controlIp, 1, 5000);
-                    if (result) {
-                        break;
-                    }
-                }
-            }
-
-            state = DomainState.VIR_DOMAIN_RUNNING;
-            return new StartAnswer(cmd);
-        } catch (final LibvirtException e) {
-            s_logger.warn("LibvirtException ", e);
-            if (conn != null) {
-                handleVmStartFailure(conn, vmName, vm);
-            }
-            return new StartAnswer(cmd, e.getMessage());
-        } catch (final InternalErrorException e) {
-            s_logger.warn("InternalErrorException ", e);
-            if (conn != null) {
-                handleVmStartFailure(conn, vmName, vm);
-            }
-            return new StartAnswer(cmd, e.getMessage());
-        } catch (final URISyntaxException e) {
-            s_logger.warn("URISyntaxException ", e);
-            if (conn != null) {
-                handleVmStartFailure(conn, vmName, vm);
-            }
-            return new StartAnswer(cmd, e.getMessage());
-        } finally {
-            if (state != DomainState.VIR_DOMAIN_RUNNING) {
-                _storagePoolMgr.disconnectPhysicalDisksViaVmSpec(vmSpec);
             }
         }
     }
@@ -2107,7 +1973,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    protected void createVbd(final Connect conn, final VirtualMachineTO vmSpec, final String vmName, final LibvirtVMDef vm) throws InternalErrorException, LibvirtException, URISyntaxException {
+    public void createVbd(final Connect conn, final VirtualMachineTO vmSpec, final String vmName, final LibvirtVMDef vm) throws InternalErrorException, LibvirtException, URISyntaxException {
         final List<DiskTO> disks = Arrays.asList(vmSpec.getDisks());
         Collections.sort(disks, new Comparator<DiskTO>() {
             @Override
@@ -3197,7 +3063,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
-    protected boolean default_network_rules(final Connect conn, final String vmName, final NicTO nic, final Long vmId, final String secIpStr) {
+    public boolean defaultNetworkRules(final Connect conn, final String vmName, final NicTO nic, final Long vmId, final String secIpStr) {
         if (!_canBridgeFirewall) {
             return false;
         }

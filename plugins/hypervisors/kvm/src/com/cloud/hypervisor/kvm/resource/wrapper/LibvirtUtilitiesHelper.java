@@ -65,4 +65,8 @@ public class LibvirtUtilitiesHelper {
     public String generatereUUIDName() {
         return UUID.randomUUID().toString();
     }
+
+    public Connect getConnectionByType(final String hvsType) throws LibvirtException {
+        return LibvirtConnection.getConnectionByType(hvsType);
+    }
 }
