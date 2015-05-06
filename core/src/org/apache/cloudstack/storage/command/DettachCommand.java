@@ -19,10 +19,9 @@
 
 package org.apache.cloudstack.storage.command;
 
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DiskTO;
 
-public class DettachCommand extends Command implements StorageSubSystemCommand {
+public class DettachCommand extends StorageSubSystemCommand {
     private DiskTO disk;
     private String vmName;
     private boolean _managed;
@@ -30,7 +29,7 @@ public class DettachCommand extends Command implements StorageSubSystemCommand {
     private String _storageHost;
     private int _storagePort;
 
-    public DettachCommand(DiskTO disk, String vmName) {
+    public DettachCommand(final DiskTO disk, final String vmName) {
         super();
         this.disk = disk;
         this.vmName = vmName;
@@ -45,7 +44,7 @@ public class DettachCommand extends Command implements StorageSubSystemCommand {
         return disk;
     }
 
-    public void setDisk(DiskTO disk) {
+    public void setDisk(final DiskTO disk) {
         this.disk = disk;
     }
 
@@ -53,11 +52,11 @@ public class DettachCommand extends Command implements StorageSubSystemCommand {
         return vmName;
     }
 
-    public void setVmName(String vmName) {
+    public void setVmName(final String vmName) {
         this.vmName = vmName;
     }
 
-    public void setManaged(boolean managed) {
+    public void setManaged(final boolean managed) {
         _managed = managed;
     }
 
@@ -65,7 +64,7 @@ public class DettachCommand extends Command implements StorageSubSystemCommand {
         return _managed;
     }
 
-    public void set_iScsiName(String iScsiName) {
+    public void set_iScsiName(final String iScsiName) {
         _iScsiName = iScsiName;
     }
 
@@ -73,7 +72,7 @@ public class DettachCommand extends Command implements StorageSubSystemCommand {
         return _iScsiName;
     }
 
-    public void setStorageHost(String storageHost) {
+    public void setStorageHost(final String storageHost) {
         _storageHost = storageHost;
     }
 
@@ -81,7 +80,7 @@ public class DettachCommand extends Command implements StorageSubSystemCommand {
         return _storageHost;
     }
 
-    public void setStoragePort(int storagePort) {
+    public void setStoragePort(final int storagePort) {
         _storagePort = storagePort;
     }
 
@@ -90,7 +89,7 @@ public class DettachCommand extends Command implements StorageSubSystemCommand {
     }
 
     @Override
-    public void setExecuteInSequence(boolean inSeq) {
+    public void setExecuteInSequence(final boolean inSeq) {
 
     }
 }

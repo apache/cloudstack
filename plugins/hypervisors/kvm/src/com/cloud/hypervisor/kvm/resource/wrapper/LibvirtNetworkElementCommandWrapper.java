@@ -17,10 +17,19 @@
 // under the License.
 //
 
-package org.apache.cloudstack.storage.command;
+package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import com.cloud.agent.api.Command;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
+import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.resource.CommandWrapper;
 
-public abstract class StorageSubSystemCommand extends Command {
-    abstract void setExecuteInSequence(boolean inSeq);
+public final class LibvirtNetworkElementCommandWrapper extends CommandWrapper<NetworkElementCommand, Answer, LibvirtComputingResource> {
+
+    @Override
+    public Answer execute(final NetworkElementCommand command, final LibvirtComputingResource libvirtComputingResource) {
+        final VirtualRoutingResource virtRouterResource = libvirtComputingResource.getVirtRouterResource();
+        return virtRouterResource.executeRequest(command);
+    }
 }

@@ -20,6 +20,8 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.util.Hashtable;
 
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
@@ -70,6 +72,7 @@ import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
@@ -150,6 +153,8 @@ public class LibvirtRequestWrapper extends RequestWrapper {
         linbvirtCommands.put(CopyVolumeCommand.class, new LibvirtCopyVolumeCommandWrapper());
         linbvirtCommands.put(PvlanSetupCommand.class, new LibvirtPvlanSetupCommandWrapper());
         linbvirtCommands.put(ResizeVolumeCommand.class, new LibvirtResizeVolumeCommandWrapper());
+        linbvirtCommands.put(NetworkElementCommand.class, new LibvirtNetworkElementCommandWrapper());
+        linbvirtCommands.put(StorageSubSystemCommand.class, new LibvirtStorageSubSystemCommandWrapper());
 
         resources.put(LibvirtComputingResource.class, linbvirtCommands);
     }

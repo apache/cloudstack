@@ -46,6 +46,8 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import org.apache.cloudstack.storage.command.AttachAnswer;
+import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.commons.lang.SystemUtils;
 import org.junit.Assert;
@@ -76,6 +78,8 @@ import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckOnHostCommand;
+import com.cloud.agent.api.CheckRouterAnswer;
+import com.cloud.agent.api.CheckRouterCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
@@ -152,6 +156,7 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
+import com.cloud.storage.resource.StorageSubsystemCommandHandler;
 import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.TemplateLocation;
@@ -4505,5 +4510,39 @@ public class LibvirtComputingResourceTest {
         assertFalse(answer.getResult());
 
         verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+    }
+
+    @Test
+    public void testNetworkElementCommand() {
+        final CheckRouterCommand command = new CheckRouterCommand();
+
+        final VirtualRoutingResource virtRouterResource = Mockito.mock(VirtualRoutingResource.class);
+        when(libvirtComputingResource.getVirtRouterResource()).thenReturn(virtRouterResource);
+
+        when(virtRouterResource.executeRequest(command)).thenReturn(new CheckRouterAnswer(command, "mock_resource"));
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testStorageSubSystemCommand() {
+        final DiskTO disk = Mockito.mock(DiskTO.class);
+        final String vmName = "Test";
+        final AttachCommand command = new AttachCommand(disk, vmName);
+
+        final StorageSubsystemCommandHandler handler = Mockito.mock(StorageSubsystemCommandHandler.class);
+        when(libvirtComputingResource.getStorageHandler()).thenReturn(handler);
+
+        when(handler.handleStorageCommands(command)).thenReturn(new AttachAnswer(disk));
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
     }
 }

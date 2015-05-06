@@ -45,7 +45,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
@@ -406,6 +405,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public String getResizeVolumePath() {
         return _resizeVolumePath;
+    }
+
+    public StorageSubsystemCommandHandler getStorageHandler() {
+        return storageHandler;
     }
 
     private static final class KeyValueInterpreter extends OutputInterpreter {
@@ -1257,10 +1260,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
             if (cmd instanceof StartCommand) {
                 return execute((StartCommand)cmd);
-            } else if (cmd instanceof NetworkElementCommand) {
-                return _virtRouterResource.executeRequest((NetworkElementCommand)cmd);
-            } else if (cmd instanceof StorageSubSystemCommand) {
-                return storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
             } else {
                 s_logger.warn("Unsupported command ");
                 return Answer.createUnsupportedCommandAnswer(cmd);
