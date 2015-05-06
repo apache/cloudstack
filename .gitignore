@@ -37,7 +37,6 @@ build.number
 cloud.log.*.*
 unittest
 deps/cloud.userlibraries
-deps/awsapi-lib/
 .DS_Store
 .idea
 *.iml
@@ -61,14 +60,12 @@ tools/cli/build/
 #.*
 
 target-eclipse
-awsapi/modules/*
 !.gitignore
 .classpath
 .settings.xml
 .settings/
 db.properties.override
 replace.properties.override
-awsapi/overlays/
 tools/marvin/marvin/cloudstackAPI/*
 *.egg-info/
 docs/tmp

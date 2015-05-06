@@ -80,12 +80,6 @@
                 <copy todir="${basedir}/target/db" filtering="true">
                   <fileset dir="${basedir}/../setup/db/"/>
                 </copy>
-                <copy todir="${basedir}/target/db" filtering="true">
-                  <fileset
-                      dir="${basedir}/../awsapi-setup/db/mysql/">
-                    <include name="**/*.sql"/>
-                  </fileset>
-                </copy>
               </target>
             </configuration>
           </execution>
@@ -137,21 +131,12 @@
                 <argument>${basedir}/target/db/create-schema-premium.sql</argument>
                 <!-- Seed templates -->
                 <argument>${basedir}/target/db/templates.sql</argument>
-                <!-- Run cloudbridge related sqls -->
-                <argument>${basedir}/target/db/cloudbridge_schema.sql</argument>
-                <argument>${basedir}/target/db/cloudbridge_multipart.sql</argument>
-                <argument>${basedir}/target/db/cloudbridge_index.sql</argument>
-                <argument>${basedir}/target/db/cloudbridge_multipart_alter.sql</argument>
-                <argument>${basedir}/target/db/cloudbridge_bucketpolicy.sql</argument>
-                <argument>${basedir}/target/db/cloudbridge_policy_alter.sql</argument>
-                <argument>${basedir}/target/db/cloudbridge_offering.sql</argument>
-                <argument>${basedir}/target/db/cloudbridge_offering_alter.sql</argument>
                 <!-- Seed the database -->
                 <argument>${basedir}/developer-prefill.sql</argument>
                 <argument>${basedir}/developer-prefill.sql.override</argument>
                 <!-- Do database upgrade-->
                 <argument>com.cloud.upgrade.DatabaseUpgradeChecker</argument>
-                <argument>--database=cloud,usage,awsapi</argument>
+                <argument>--database=cloud,usage</argument>
                 <argument>--rootpassword=${db.root.password}</argument>
                 <!-- Print help using -h or dash-dash-help -->
                 <!-- Do dry run using -d or dash-dash-dry -->

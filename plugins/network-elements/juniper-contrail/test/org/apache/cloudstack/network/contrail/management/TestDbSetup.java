@@ -94,10 +94,6 @@ public class TestDbSetup {
         config.setProperty("db.usage.username", System.getProperty("user.name"));
         config.setProperty("db.usage.password", "");
 
-        config.setProperty("db.awsapi.port", "" + port);
-        config.setProperty("db.awsapi.username", System.getProperty("user.name"));
-        config.setProperty("db.awsapi.password", "");
-
         config.setProperty("db.simulator.port", "" + port);
         config.setProperty("db.simulator.username", System.getProperty("user.name"));
         config.setProperty("db.simulator.password", "");

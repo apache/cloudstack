@@ -265,26 +265,6 @@ for full help
             self.runMysql(text, p, True)
             self.info(None, True)
 
-        awsApiDbDir = '/usr/share/cloudstack-bridge/setup'
-        for f in ["cloudbridge_db.sql"]:
-            p = os.path.join(awsApiDbDir,f)
-            if not os.path.exists(p): continue
-            text = file(p).read()
-            for t, r in replacements: text = text.replace(t,r)
-            self.info("Applying %s"%p)
-            self.runMysql(text, p, True)
-            self.info(None, True)
-
-        for f in ["cloudbridge_schema", "cloudbridge_multipart", "cloudbridge_index", "cloudbridge_multipart_alter", "cloudbridge_bucketpolicy", "cloudbridge_policy_alter",
-            "cloudbridge_offering", "cloudbridge_offering_alter"]:
-            if os.path.isfile(p):
-                p = os.path.join(awsApiDbDir,"%s.sql"%f)
-                if not os.path.exists(p): continue
-                text = file(p).read()
-                self.info("Applying %s"%p)
-                self.runMysql(text, p, True)
-                self.info(None, True)
-
     def prepareDBFiles(self):
         def prepareDBDotProperties():
             dbpPath = os.path.join(self.dbConfPath, 'db.properties')
