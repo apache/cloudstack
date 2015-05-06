@@ -60,7 +60,6 @@ import org.libvirt.DomainInfo.DomainState;
 import org.libvirt.DomainInterfaceStats;
 import org.libvirt.LibvirtException;
 import org.libvirt.NodeInfo;
-import org.libvirt.StorageVol;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -80,15 +79,12 @@ import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
-import com.cloud.agent.api.storage.ResizeVolumeAnswer;
-import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.NicTO;
-import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
@@ -406,6 +402,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public String getOvsPvlanVmPath() {
         return _ovsPvlanVmPath;
+    }
+
+    public String getResizeVolumePath() {
+        return _resizeVolumePath;
     }
 
     private static final class KeyValueInterpreter extends OutputInterpreter {
@@ -1259,8 +1259,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((StartCommand)cmd);
             } else if (cmd instanceof NetworkElementCommand) {
                 return _virtRouterResource.executeRequest((NetworkElementCommand)cmd);
-            } else if (cmd instanceof ResizeVolumeCommand) {
-                return execute((ResizeVolumeCommand)cmd);
             } else if (cmd instanceof StorageSubSystemCommand) {
                 return storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
             } else {
@@ -1401,7 +1399,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    private String getResizeScriptType(final KVMStoragePool pool, final KVMPhysicalDisk vol) {
+    public String getResizeScriptType(final KVMStoragePool pool, final KVMPhysicalDisk vol) {
         final StoragePoolType poolType = pool.getType();
         final PhysicalDiskFormat volFormat = vol.getFormat();
 
@@ -1415,92 +1413,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return "QCOW2";
         }
         throw new CloudRuntimeException("Cannot determine resize type from pool type " + pool.getType());
-    }
-
-    /* uses a local script now, eventually support for virStorageVolResize() will maybe work on
-       qcow2 and lvm and we can do this in libvirt calls */
-    public Answer execute(final ResizeVolumeCommand cmd) {
-        final String volid = cmd.getPath();
-        final long newSize = cmd.getNewSize();
-        final long currentSize = cmd.getCurrentSize();
-        final String vmInstanceName = cmd.getInstanceName();
-        final boolean shrinkOk = cmd.getShrinkOk();
-        final StorageFilerTO spool = cmd.getPool();
-        final String notifyOnlyType = "NOTIFYONLY";
-
-        if ( currentSize == newSize) {
-            // nothing to do
-            s_logger.info("No need to resize volume: current size " + currentSize + " is same as new size " + newSize);
-            return new ResizeVolumeAnswer(cmd, true, "success", currentSize);
-        }
-
-        try {
-            KVMStoragePool pool = _storagePoolMgr.getStoragePool(spool.getType(), spool.getUuid());
-            final KVMPhysicalDisk vol = pool.getPhysicalDisk(volid);
-            final String path = vol.getPath();
-            String type = getResizeScriptType(pool, vol);
-
-            if (pool.getType() != StoragePoolType.RBD) {
-                if (type.equals("QCOW2") && shrinkOk) {
-                    return new ResizeVolumeAnswer(cmd, false, "Unable to shrink volumes of type " + type);
-                }
-            } else {
-                s_logger.debug("Volume " + path + " is on a RBD storage pool. No need to query for additional information.");
-            }
-
-            s_logger.debug("Resizing volume: " + path + "," + currentSize + "," + newSize + "," + type + "," + vmInstanceName + "," + shrinkOk);
-
-            /* libvirt doesn't support resizing (C)LVM devices, and corrupts QCOW2 in some scenarios, so we have to do these via Bash script */
-            if (pool.getType() != StoragePoolType.CLVM && vol.getFormat() != PhysicalDiskFormat.QCOW2) {
-                s_logger.debug("Volume " + path +  " can be resized by libvirt. Asking libvirt to resize the volume.");
-                try {
-                    final Connect conn = LibvirtConnection.getConnection();
-                    final StorageVol v = conn.storageVolLookupByPath(path);
-                    int flags = 0;
-
-                    if (conn.getLibVirVersion() > 1001000 && vol.getFormat() == PhysicalDiskFormat.RAW && pool.getType() != StoragePoolType.RBD) {
-                        flags = 1;
-                    }
-                    if (shrinkOk) {
-                        flags = 4;
-                    }
-
-                    v.resize(newSize, flags);
-                    type = notifyOnlyType;
-                } catch (final LibvirtException e) {
-                    return new ResizeVolumeAnswer(cmd, false, e.toString());
-                }
-            }
-            s_logger.debug("Invoking resize script to handle type " + type);
-            final Script resizecmd = new Script(_resizeVolumePath, _cmdsTimeout, s_logger);
-            resizecmd.add("-s", String.valueOf(newSize));
-            resizecmd.add("-c", String.valueOf(currentSize));
-            resizecmd.add("-p", path);
-            resizecmd.add("-t", type);
-            resizecmd.add("-r", String.valueOf(shrinkOk));
-            resizecmd.add("-v", vmInstanceName);
-            final String result = resizecmd.execute();
-
-            if (result != null) {
-                if(type.equals(notifyOnlyType)) {
-                    return new ResizeVolumeAnswer(cmd, true, "Resize succeeded, but need reboot to notify guest");
-                } else {
-                    return new ResizeVolumeAnswer(cmd, false, result);
-                }
-            }
-
-            /* fetch new size as seen from libvirt, don't want to assume anything */
-            pool = _storagePoolMgr.getStoragePool(spool.getType(), spool.getUuid());
-            pool.refresh();
-            final long finalSize = pool.getPhysicalDisk(volid).getVirtualSize();
-            s_logger.debug("after resize, size reports as " + finalSize + ", requested " + newSize);
-            return new ResizeVolumeAnswer(cmd, true, "success", finalSize);
-        } catch (final CloudRuntimeException e) {
-            final String error = "Failed to resize volume: " + e.getMessage();
-            s_logger.debug(error);
-            return new ResizeVolumeAnswer(cmd, false, error);
-        }
-
     }
 
     private String getBroadcastUriFromBridge(final String brName) {

@@ -74,6 +74,7 @@ import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.RequestWrapper;
@@ -148,6 +149,7 @@ public class LibvirtRequestWrapper extends RequestWrapper {
         linbvirtCommands.put(CreatePrivateTemplateFromSnapshotCommand.class, new LibvirtCreatePrivateTemplateFromSnapshotCommandWrapper());
         linbvirtCommands.put(CopyVolumeCommand.class, new LibvirtCopyVolumeCommandWrapper());
         linbvirtCommands.put(PvlanSetupCommand.class, new LibvirtPvlanSetupCommandWrapper());
+        linbvirtCommands.put(ResizeVolumeCommand.class, new LibvirtResizeVolumeCommandWrapper());
 
         resources.put(LibvirtComputingResource.class, linbvirtCommands);
     }

@@ -46,6 +46,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.commons.lang.SystemUtils;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -59,6 +60,7 @@ import org.libvirt.DomainInfo.DomainState;
 import org.libvirt.DomainInterfaceStats;
 import org.libvirt.LibvirtException;
 import org.libvirt.NodeInfo;
+import org.libvirt.StorageVol;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -126,6 +128,7 @@ import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
@@ -4327,5 +4330,180 @@ public class LibvirtComputingResourceTest {
 
         final Answer answer = wrapper.execute(command, libvirtComputingResource);
         assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testResizeVolumeCommand() {
+        final String path = "nfs:/192.168.2.2/storage/secondary";
+        final StorageFilerTO pool = Mockito.mock(StorageFilerTO.class);
+        final Long currentSize = 100l;
+        final Long newSize = 200l;
+        final boolean shrinkOk = true;
+        final String vmInstance = "Test";
+
+        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance);
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
+        final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+        final Connect conn = Mockito.mock(Connect.class);
+        final StorageVol v = Mockito.mock(StorageVol.class);
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
+        when(storagePool.getPhysicalDisk(path)).thenReturn(vol);
+        when(vol.getPath()).thenReturn(path);
+        when(libvirtComputingResource.getResizeScriptType(storagePool, vol)).thenReturn("FILE");
+        when(storagePool.getType()).thenReturn(StoragePoolType.RBD);
+        when(vol.getFormat()).thenReturn(PhysicalDiskFormat.FILE);
+
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        try {
+            when(libvirtUtilitiesHelper.getConnection()).thenReturn(conn);
+            when(conn.storageVolLookupByPath(path)).thenReturn(v);
+
+            when(conn.getLibVirVersion()).thenReturn(10010l);
+
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+
+        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
+        try {
+            verify(libvirtUtilitiesHelper, times(1)).getConnection();
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testResizeVolumeCommandSameSize() {
+        final String path = "nfs:/192.168.2.2/storage/secondary";
+        final StorageFilerTO pool = Mockito.mock(StorageFilerTO.class);
+        final Long currentSize = 100l;
+        final Long newSize = 100l;
+        final boolean shrinkOk = false;
+        final String vmInstance = "Test";
+
+        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testResizeVolumeCommandShrink() {
+        final String path = "nfs:/192.168.2.2/storage/secondary";
+        final StorageFilerTO pool = Mockito.mock(StorageFilerTO.class);
+        final Long currentSize = 100l;
+        final Long newSize = 200l;
+        final boolean shrinkOk = true;
+        final String vmInstance = "Test";
+
+        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance);
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
+        final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
+        when(storagePool.getPhysicalDisk(path)).thenReturn(vol);
+        when(vol.getPath()).thenReturn(path);
+        when(libvirtComputingResource.getResizeScriptType(storagePool, vol)).thenReturn("QCOW2");
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testResizeVolumeCommandException() {
+        final String path = "nfs:/192.168.2.2/storage/secondary";
+        final StorageFilerTO pool = Mockito.mock(StorageFilerTO.class);
+        final Long currentSize = 100l;
+        final Long newSize = 200l;
+        final boolean shrinkOk = false;
+        final String vmInstance = "Test";
+
+        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance);
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
+        final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
+        when(storagePool.getPhysicalDisk(path)).thenReturn(vol);
+        when(vol.getPath()).thenReturn(path);
+        when(libvirtComputingResource.getResizeScriptType(storagePool, vol)).thenReturn("FILE");
+        when(storagePool.getType()).thenReturn(StoragePoolType.RBD);
+        when(vol.getFormat()).thenReturn(PhysicalDiskFormat.FILE);
+
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        try {
+            when(libvirtUtilitiesHelper.getConnection()).thenThrow(LibvirtException.class);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+
+        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
+        try {
+            verify(libvirtUtilitiesHelper, times(1)).getConnection();
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testResizeVolumeCommandException2() {
+        final String path = "nfs:/192.168.2.2/storage/secondary";
+        final StorageFilerTO pool = Mockito.mock(StorageFilerTO.class);
+        final Long currentSize = 100l;
+        final Long newSize = 200l;
+        final boolean shrinkOk = false;
+        final String vmInstance = "Test";
+
+        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance);
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
+        when(storagePool.getPhysicalDisk(path)).thenThrow(CloudRuntimeException.class);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
     }
 }
