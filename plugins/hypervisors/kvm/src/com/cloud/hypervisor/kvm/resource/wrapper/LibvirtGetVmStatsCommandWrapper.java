@@ -44,7 +44,7 @@ public final class LibvirtGetVmStatsCommandWrapper extends CommandWrapper<GetVmS
             final HashMap<String, VmStatsEntry> vmStatsNameMap = new HashMap<String, VmStatsEntry>();
             for (final String vmName : vmNames) {
 
-                final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtConnectionWrapper();
+                final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
 
                 final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(vmName);
                 final VmStatsEntry statEntry = libvirtComputingResource.getVmStat(conn, vmName);

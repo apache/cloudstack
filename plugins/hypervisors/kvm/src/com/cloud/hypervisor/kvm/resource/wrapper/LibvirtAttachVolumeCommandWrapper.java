@@ -36,7 +36,7 @@ public final class LibvirtAttachVolumeCommandWrapper extends CommandWrapper<Atta
     @Override
     public Answer execute(final AttachVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
         try {
-            final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtConnectionWrapper();
+            final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
 
             final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName());
 

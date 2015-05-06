@@ -45,7 +45,7 @@ public final class LibvirtUnPlugNicCommandWrapper extends CommandWrapper<UnPlugN
         final String vmName = command.getVmName();
         Domain vm = null;
         try {
-            final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtConnectionWrapper();
+            final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
 
             final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(vmName);
             vm = libvirtComputingResource.getDomain(conn, vmName);

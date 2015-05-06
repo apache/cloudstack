@@ -33,7 +33,7 @@ public final class LibvirtGetVncPortCommandWrapper extends CommandWrapper<GetVnc
     @Override
     public Answer execute(final GetVncPortCommand command, final LibvirtComputingResource libvirtComputingResource) {
         try {
-            final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtConnectionWrapper();
+            final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
 
             final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(command.getName());
             final Integer vncPort = libvirtComputingResource.getVncPort(conn, command.getName());

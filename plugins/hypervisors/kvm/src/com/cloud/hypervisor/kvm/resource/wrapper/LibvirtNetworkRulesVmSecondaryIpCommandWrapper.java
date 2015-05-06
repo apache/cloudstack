@@ -36,7 +36,7 @@ public final class LibvirtNetworkRulesVmSecondaryIpCommandWrapper extends Comman
     public Answer execute(final NetworkRulesVmSecondaryIpCommand command, final LibvirtComputingResource libvirtComputingResource) {
         boolean result = false;
         try {
-            final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtConnectionWrapper();
+            final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
 
             final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName());
             result = libvirtComputingResource.configureNetworkRulesVMSecondaryIP(conn, command.getVmName(), command.getVmSecIp(), command.getAction());

@@ -41,7 +41,7 @@ public final class LibvirtSecurityGroupRulesCommandWrapper extends CommandWrappe
         String vif = null;
         String brname = null;
         try {
-            final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtConnectionWrapper();
+            final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
 
             final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName());
             final List<InterfaceDef> nics = libvirtComputingResource.getInterfaces(conn, command.getVmName());

@@ -81,8 +81,6 @@ import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
-import com.cloud.agent.api.storage.CopyVolumeAnswer;
-import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -119,8 +117,8 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SerialDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.TermPolicy;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VideoDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VirtioSerialDef;
-import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtRequestWrapper;
+import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
@@ -335,7 +333,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return new ExecutionResult(true, null);
     }
 
-    public LibvirtUtilitiesHelper getLibvirtConnectionWrapper() {
+    public LibvirtUtilitiesHelper getLibvirtUtilitiesHelper() {
         return libvirtUtilitiesHelper;
     }
 
@@ -1250,8 +1248,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((StartCommand)cmd);
             } else if (cmd instanceof NetworkElementCommand) {
                 return _virtRouterResource.executeRequest((NetworkElementCommand)cmd);
-            } else if (cmd instanceof CopyVolumeCommand) {
-                return execute((CopyVolumeCommand)cmd);
             } else if (cmd instanceof ResizeVolumeCommand) {
                 return execute((ResizeVolumeCommand)cmd);
             } else if (cmd instanceof StorageSubSystemCommand) {
@@ -1341,61 +1337,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return false;
         }
         return true;
-    }
-
-    private CopyVolumeAnswer execute(final CopyVolumeCommand cmd) {
-        /**
-             This method is only used for copying files from Primary Storage TO Secondary Storage
-
-             It COULD also do it the other way around, but the code in the ManagementServerImpl shows
-             that it always sets copyToSecondary to true
-
-         */
-        final boolean copyToSecondary = cmd.toSecondaryStorage();
-        String volumePath = cmd.getVolumePath();
-        final StorageFilerTO pool = cmd.getPool();
-        final String secondaryStorageUrl = cmd.getSecondaryStorageURL();
-        KVMStoragePool secondaryStoragePool = null;
-        KVMStoragePool primaryPool = null;
-        try {
-            try {
-                primaryPool = _storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid());
-            } catch (final CloudRuntimeException e) {
-                if (e.getMessage().contains("not found")) {
-                    primaryPool =
-                            _storagePoolMgr.createStoragePool(cmd.getPool().getUuid(), cmd.getPool().getHost(), cmd.getPool().getPort(), cmd.getPool().getPath(),
-                                    cmd.getPool().getUserInfo(), cmd.getPool().getType());
-                } else {
-                    return new CopyVolumeAnswer(cmd, false, e.getMessage(), null, null);
-                }
-            }
-
-            final String volumeName = UUID.randomUUID().toString();
-
-            if (copyToSecondary) {
-                final String destVolumeName = volumeName + ".qcow2";
-                final KVMPhysicalDisk volume = primaryPool.getPhysicalDisk(cmd.getVolumePath());
-                final String volumeDestPath = "/volumes/" + cmd.getVolumeId() + File.separator;
-                secondaryStoragePool = _storagePoolMgr.getStoragePoolByURI(secondaryStorageUrl);
-                secondaryStoragePool.createFolder(volumeDestPath);
-                _storagePoolMgr.deleteStoragePool(secondaryStoragePool.getType(), secondaryStoragePool.getUuid());
-                secondaryStoragePool = _storagePoolMgr.getStoragePoolByURI(secondaryStorageUrl + volumeDestPath);
-                _storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, secondaryStoragePool, 0);
-                return new CopyVolumeAnswer(cmd, true, null, null, volumeName);
-            } else {
-                volumePath = "/volumes/" + cmd.getVolumeId() + File.separator;
-                secondaryStoragePool = _storagePoolMgr.getStoragePoolByURI(secondaryStorageUrl + volumePath);
-                final KVMPhysicalDisk volume = secondaryStoragePool.getPhysicalDisk(cmd.getVolumePath() + ".qcow2");
-                _storagePoolMgr.copyPhysicalDisk(volume, volumeName, primaryPool, 0);
-                return new CopyVolumeAnswer(cmd, true, null, null, volumeName);
-            }
-        } catch (final CloudRuntimeException e) {
-            return new CopyVolumeAnswer(cmd, false, e.toString(), null, null);
-        } finally {
-            if (secondaryStoragePool != null) {
-                _storagePoolMgr.deleteStoragePool(secondaryStoragePool.getType(), secondaryStoragePool.getUuid());
-            }
-        }
     }
 
     protected Storage.StorageResourceType getStorageResourceType() {

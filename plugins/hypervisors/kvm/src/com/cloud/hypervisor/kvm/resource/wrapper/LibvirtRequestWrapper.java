@@ -69,6 +69,7 @@ import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
+import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
@@ -144,6 +145,7 @@ public class LibvirtRequestWrapper extends RequestWrapper {
         linbvirtCommands.put(ManageSnapshotCommand.class, new LibvirtManageSnapshotCommandWrapper());
         linbvirtCommands.put(BackupSnapshotCommand.class, new LibvirtBackupSnapshotCommandWrapper());
         linbvirtCommands.put(CreatePrivateTemplateFromSnapshotCommand.class, new LibvirtCreatePrivateTemplateFromSnapshotCommandWrapper());
+        linbvirtCommands.put(CopyVolumeCommand.class, new LibvirtCopyVolumeCommandWrapper());
 
         resources.put(LibvirtComputingResource.class, linbvirtCommands);
     }

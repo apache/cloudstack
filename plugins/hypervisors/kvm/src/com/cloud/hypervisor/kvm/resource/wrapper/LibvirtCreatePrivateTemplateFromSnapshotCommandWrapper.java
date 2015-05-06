@@ -48,11 +48,11 @@ public final class LibvirtCreatePrivateTemplateFromSnapshotCommandWrapper extend
 
     @Override
     public Answer execute(final CreatePrivateTemplateFromSnapshotCommand command, final LibvirtComputingResource libvirtComputingResource) {
-        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtConnectionWrapper();
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
 
         final String templateFolder = command.getAccountId() + File.separator + command.getNewTemplateId();
         final String templateInstallFolder = "template/tmpl/" + templateFolder;
-        final String tmplName = libvirtUtilitiesHelper.buildTemplateUUIDName();
+        final String tmplName = libvirtUtilitiesHelper.generatereUUIDName();
         final String tmplFileName = tmplName + ".qcow2";
 
         KVMStoragePool secondaryPool = null;

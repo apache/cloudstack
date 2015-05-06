@@ -35,7 +35,7 @@ public final class LibvirtRebootCommandWrapper extends CommandWrapper<RebootComm
 
     @Override
     public Answer execute(final RebootCommand command, final LibvirtComputingResource libvirtComputingResource) {
-        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtConnectionWrapper();
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
 
         try {
             final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName());

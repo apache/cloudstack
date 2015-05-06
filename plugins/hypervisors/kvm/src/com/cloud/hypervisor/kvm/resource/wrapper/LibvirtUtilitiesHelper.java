@@ -62,7 +62,7 @@ public class LibvirtUtilitiesHelper {
         return qcow2Processor;
     }
 
-    public String buildTemplateUUIDName() {
+    public String generatereUUIDName() {
         return UUID.randomUUID().toString();
     }
 }

@@ -34,7 +34,7 @@ public final class LibvirtCheckVirtualMachineCommandWrapper extends CommandWrapp
     @Override
     public Answer execute(final CheckVirtualMachineCommand command, final LibvirtComputingResource libvirtComputingResource) {
         try {
-            final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtConnectionWrapper();
+            final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
 
             final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName());
             final PowerState state = libvirtComputingResource.getVmState(conn, command.getVmName());

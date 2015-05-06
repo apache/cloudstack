@@ -44,7 +44,7 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
     public Answer execute(final StopCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final String vmName = command.getVmName();
 
-        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtConnectionWrapper();
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
 
         if (command.checkBeforeCleanup()) {
             try {
