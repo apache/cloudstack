@@ -44,7 +44,6 @@ Source0:   %{name}-%{_maventag}.tgz
 BuildRoot: %{_tmppath}/%{name}-%{_maventag}-%{release}-build
 
 BuildRequires: java-1.7.0-openjdk-devel
-#BuildRequires: tomcat6
 BuildRequires: ws-commons-util
 BuildRequires: jpackage-utils
 BuildRequires: gcc
@@ -59,7 +58,6 @@ intelligent IaaS cloud implementation.
 
 %package management
 Summary:   CloudStack management server UI
-#Requires: tomcat6
 Requires: java-1.7.0-openjdk
 Requires: python
 Requires: bash
@@ -182,7 +180,6 @@ Apache Cloudstack AWS API compatibility wrapper
 %package mysql-ha
 Summary: Apache CloudStack Balancing Strategy for MySQL
 Requires: mysql-connector-java
-#Requires: tomcat6
 Group: System Environmnet/Libraries
 %description mysql-ha
 Apache CloudStack Balancing Strategy for MySQL
