@@ -496,6 +496,9 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j-cloud.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/Catalina/localhost/client/context.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/catalina.properties
+%config(noreplace) %{_sysconfdir}/%{name}/management/catalina.policy
+%config(noreplace) %{_sysconfdir}/%{name}/management/cloudmanagementserver.keystore
+%config(noreplace) %{_sysconfdir}/%{name}/management/logging.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat-users.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/web.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/server-nonssl.xml

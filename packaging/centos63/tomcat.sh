@@ -34,8 +34,9 @@ if [ "$1" = "start" ]; then
     -Dcatalina.home="$CATALINA_HOME" \
     -Djava.endorsed.dirs="$JAVA_ENDORSED_DIRS" \
     -Djava.io.tmpdir="$CATALINA_TMPDIR" \
-    -Djava.util.logging.config.file="${CATALINA_BASE}/conf/logging.properties" \
+    -Djava.util.logging.config.file=$CATALINA_BASE/conf/logging.properties \
     -Djava.util.logging.manager="org.apache.juli.ClassLoaderLogManager" \
+    -Djava.security.properties=$CATALINA_BASE/conf/java.security.ciphers
     org.apache.catalina.startup.Bootstrap start \
     >> ${CATALINA_BASE}/logs/catalina.out 2>&1 &
     if [ ! -z "$CATALINA_PID" ]; then

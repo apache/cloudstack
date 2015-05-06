@@ -24,7 +24,7 @@ Description=CloudStack Management Server
 After=syslog.target network.target
 
 [Service]
-Type=simple
+Type=forking
 ExecStart=/usr/sbin/cloudstack-management-sysd start
 ExecStop=/usr/sbin/cloudstack-management-sysd stop
 SuccessExitStatus=143
