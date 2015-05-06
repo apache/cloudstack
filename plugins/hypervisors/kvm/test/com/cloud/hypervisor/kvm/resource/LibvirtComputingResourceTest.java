@@ -119,6 +119,7 @@ import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
+import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
@@ -133,8 +134,8 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.NfsStoragePool;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
-import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtRequestWrapper;
+import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
@@ -3889,5 +3890,212 @@ public class LibvirtComputingResourceTest {
         verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
         verify(storagePoolMgr, times(1)).getStoragePoolByURI(command.getSecondaryStorageUrl() + snapshotPath);
         verify(storagePoolMgr, times(1)).getStoragePoolByURI(command.getSecondaryStorageUrl());
+    }
+
+    @Test
+    public void testCopyVolumeCommand() {
+        final StoragePool storagePool = Mockito.mock(StoragePool.class);
+        final String secondaryStoragePoolURL = "nfs:/192.168.2.2/storage/secondary";
+        final Long volumeId = 1l;
+        final int wait = 0;
+        final String volumePath = "/vol/path";
+        final boolean toSecondaryStorage = true;
+        final boolean executeInSequence = false;
+
+        final CopyVolumeCommand command = new CopyVolumeCommand(volumeId, volumePath, storagePool, secondaryStoragePoolURL, toSecondaryStorage, wait, executeInSequence );
+
+        final String destVolumeName = "ce97bbc1-34fe-4259-9202-74bbce2562ab";
+        final String volumeDestPath = "/volumes/" + command.getVolumeId() + File.separator;
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool secondary = Mockito.mock(KVMStoragePool.class);
+        final KVMStoragePool primary = Mockito.mock(KVMStoragePool.class);
+
+        final KVMPhysicalDisk disk = Mockito.mock(KVMPhysicalDisk.class);
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+
+        final StorageFilerTO pool = command.getPool();
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(primary);
+
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        when(libvirtUtilitiesHelper.generatereUUIDName()).thenReturn(destVolumeName);
+        when(primary.getPhysicalDisk(command.getVolumePath())).thenReturn(disk);
+        when(storagePoolMgr.getStoragePoolByURI(secondaryStoragePoolURL)).thenReturn(secondary);
+        when(secondary.getType()).thenReturn(StoragePoolType.ManagedNFS);
+        when(secondary.getUuid()).thenReturn("60d979d8-d132-4181-8eca-8dfde50d7df6");
+        when(secondary.createFolder(volumeDestPath)).thenReturn(true);
+        when(storagePoolMgr.deleteStoragePool(secondary.getType(), secondary.getUuid())).thenReturn(true);
+        when(storagePoolMgr.getStoragePoolByURI(secondaryStoragePoolURL + volumeDestPath)).thenReturn(secondary);
+        when(storagePoolMgr.copyPhysicalDisk(disk, destVolumeName, secondary, 0)).thenReturn(disk);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+    }
+
+    @Test
+    public void testCopyVolumeCommandToSecFalse() {
+        final StoragePool storagePool = Mockito.mock(StoragePool.class);
+        final String secondaryStoragePoolURL = "nfs:/192.168.2.2/storage/secondary";
+        final Long volumeId = 1l;
+        final int wait = 0;
+        final String volumePath = "/vol/path";
+        final boolean toSecondaryStorage = false;
+        final boolean executeInSequence = false;
+
+        final CopyVolumeCommand command = new CopyVolumeCommand(volumeId, volumePath, storagePool, secondaryStoragePoolURL, toSecondaryStorage, wait, executeInSequence );
+
+        final String destVolumeName = "ce97bbc1-34fe-4259-9202-74bbce2562ab";
+        final String volumeDestPath = "/volumes/" + command.getVolumeId() + File.separator;
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool secondary = Mockito.mock(KVMStoragePool.class);
+        final KVMStoragePool primary = Mockito.mock(KVMStoragePool.class);
+
+        final KVMPhysicalDisk disk = Mockito.mock(KVMPhysicalDisk.class);
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+
+        final StorageFilerTO pool = command.getPool();
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(primary);
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        when(libvirtUtilitiesHelper.generatereUUIDName()).thenReturn(destVolumeName);
+        when(secondary.getType()).thenReturn(StoragePoolType.ManagedNFS);
+        when(secondary.getUuid()).thenReturn("60d979d8-d132-4181-8eca-8dfde50d7df6");
+        when(storagePoolMgr.getStoragePoolByURI(secondaryStoragePoolURL + volumeDestPath)).thenReturn(secondary);
+        when(primary.getPhysicalDisk(command.getVolumePath() + ".qcow2")).thenReturn(disk);
+        when(storagePoolMgr.copyPhysicalDisk(disk, destVolumeName, primary, 0)).thenReturn(disk);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testCopyVolumeCommandCloudRuntime() {
+        final StoragePool storagePool = Mockito.mock(StoragePool.class);
+        final String secondaryStoragePoolURL = "nfs:/192.168.2.2/storage/secondary";
+        final Long volumeId = 1l;
+        final int wait = 0;
+        final String volumePath = "/vol/path";
+        final boolean toSecondaryStorage = false;
+        final boolean executeInSequence = false;
+
+        final CopyVolumeCommand command = new CopyVolumeCommand(volumeId, volumePath, storagePool, secondaryStoragePoolURL, toSecondaryStorage, wait, executeInSequence );
+
+        final String destVolumeName = "ce97bbc1-34fe-4259-9202-74bbce2562ab";
+        final String volumeDestPath = "/volumes/" + command.getVolumeId() + File.separator;
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool secondary = Mockito.mock(KVMStoragePool.class);
+        final KVMStoragePool primary = Mockito.mock(KVMStoragePool.class);
+
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+
+        final StorageFilerTO pool = command.getPool();
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(primary);
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        when(libvirtUtilitiesHelper.generatereUUIDName()).thenReturn(destVolumeName);
+        when(secondary.getType()).thenReturn(StoragePoolType.ManagedNFS);
+        when(secondary.getUuid()).thenReturn("60d979d8-d132-4181-8eca-8dfde50d7df6");
+        when(storagePoolMgr.getStoragePoolByURI(secondaryStoragePoolURL + volumeDestPath)).thenReturn(secondary);
+        when(secondary.getPhysicalDisk(command.getVolumePath() + ".qcow2")).thenThrow(CloudRuntimeException.class);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+    }
+
+    @Test
+    public void testCopyVolumeCommandCloudRuntime2() {
+        final StoragePool storagePool = Mockito.mock(StoragePool.class);
+        final String secondaryStoragePoolURL = "nfs:/192.168.2.2/storage/secondary";
+        final Long volumeId = 1l;
+        final int wait = 0;
+        final String volumePath = "/vol/path";
+        final boolean toSecondaryStorage = false;
+        final boolean executeInSequence = false;
+
+        final CopyVolumeCommand command = new CopyVolumeCommand(volumeId, volumePath, storagePool, secondaryStoragePoolURL, toSecondaryStorage, wait, executeInSequence );
+
+        final StorageFilerTO pool = command.getPool();
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenThrow(new CloudRuntimeException("error"));
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
+    }
+
+    @Test
+    public void testCopyVolumeCommandPrimaryNotFound() {
+        final StoragePool storagePool = Mockito.mock(StoragePool.class);
+        final String secondaryStoragePoolURL = "nfs:/192.168.2.2/storage/secondary";
+        final Long volumeId = 1l;
+        final int wait = 0;
+        final String volumePath = "/vol/path";
+        final boolean toSecondaryStorage = false;
+        final boolean executeInSequence = false;
+
+        final CopyVolumeCommand command = new CopyVolumeCommand(volumeId, volumePath, storagePool, secondaryStoragePoolURL, toSecondaryStorage, wait, executeInSequence );
+
+        final String destVolumeName = "ce97bbc1-34fe-4259-9202-74bbce2562ab";
+        final String volumeDestPath = "/volumes/" + command.getVolumeId() + File.separator;
+
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool secondary = Mockito.mock(KVMStoragePool.class);
+        final KVMStoragePool primary = Mockito.mock(KVMStoragePool.class);
+
+        final KVMPhysicalDisk disk = Mockito.mock(KVMPhysicalDisk.class);
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+
+        final StorageFilerTO pool = command.getPool();
+
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenThrow(new CloudRuntimeException("not found"));
+
+        when(storagePoolMgr.createStoragePool(pool.getUuid(), pool.getHost(), pool.getPort(), pool.getPath(),
+                pool.getUserInfo(), pool.getType())).thenReturn(primary);
+
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        when(libvirtUtilitiesHelper.generatereUUIDName()).thenReturn(destVolumeName);
+        when(secondary.getType()).thenReturn(StoragePoolType.ManagedNFS);
+        when(secondary.getUuid()).thenReturn("60d979d8-d132-4181-8eca-8dfde50d7df6");
+        when(storagePoolMgr.getStoragePoolByURI(secondaryStoragePoolURL + volumeDestPath)).thenReturn(secondary);
+        when(primary.getPhysicalDisk(command.getVolumePath() + ".qcow2")).thenReturn(disk);
+        when(storagePoolMgr.copyPhysicalDisk(disk, destVolumeName, primary, 0)).thenReturn(disk);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+        assertTrue(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
     }
 }

@@ -37,11 +37,12 @@ public final class LibvirtCopyVolumeCommandWrapper extends CommandWrapper<CopyVo
     @Override
     public Answer execute(final CopyVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
         /**
-        This method is only used for copying files from Primary Storage TO Secondary Storage
-
-        It COULD also do it the other way around, but the code in the ManagementServerImpl shows
-        that it always sets copyToSecondary to true
-
+         * This method is only used for copying files from Primary Storage TO
+         * Secondary Storage
+         *
+         * It COULD also do it the other way around, but the code in the
+         * ManagementServerImpl shows that it always sets copyToSecondary to
+         * true
          */
         final boolean copyToSecondary = command.toSecondaryStorage();
         String volumePath = command.getVolumePath();
@@ -56,9 +57,7 @@ public final class LibvirtCopyVolumeCommandWrapper extends CommandWrapper<CopyVo
                 primaryPool = storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid());
             } catch (final CloudRuntimeException e) {
                 if (e.getMessage().contains("not found")) {
-                    primaryPool =
-                            storagePoolMgr.createStoragePool(command.getPool().getUuid(), command.getPool().getHost(), command.getPool().getPort(), command.getPool().getPath(),
-                                    command.getPool().getUserInfo(), command.getPool().getType());
+                    primaryPool = storagePoolMgr.createStoragePool(pool.getUuid(), pool.getHost(), pool.getPort(), pool.getPath(), pool.getUserInfo(), pool.getType());
                 } else {
                     return new CopyVolumeAnswer(command, false, e.getMessage(), null, null);
                 }
