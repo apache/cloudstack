@@ -39,62 +39,71 @@ import time
 # These tests need to be run separately and not in parallel with other tests.
 # Because it disables the infrastructure for brief periods
 
-def update_host(self, state, host_id):
+
+def update_host(apiclient, state, host_id):
     """
     Function to Enable/Disable Host
     """
     host_status = Host.update(
-                                  self.apiclient,
-                                  id=host_id,
-                                  allocationstate=state
-                                 )
+        apiclient,
+        id=host_id,
+        allocationstate=state
+    )
     return host_status.resourcestate
 
-def update_cluster(self, state, cluster_id, managed_state):
+
+def update_cluster(apiclient, state, cluster_id, managed_state):
     """
     Function to Enable/Disable cluster
     """
     cluster_status = Cluster.update(
-                                  self.apiclient,
-                                  id=cluster_id,
-                                  allocationstate=state,
-                                  managedstate=managed_state
-                                  )
-    return cluster_status.managedstate,cluster_status.allocationstate
+        apiclient,
+        id=cluster_id,
+        allocationstate=state,
+        managedstate=managed_state
+    )
+    return cluster_status.managedstate, cluster_status.allocationstate
 
-def update_pod(self, state, pod_id):
+
+def update_pod(apiclient, state, pod_id):
     """
     Function to Enable/Disable pod
     """
     pod_status = Pod.update(
-                                  self.apiclient,
-                                  id=pod_id,
-                                  allocationstate=state
-                                  )
+        apiclient,
+        id=pod_id,
+        allocationstate=state
+    )
     return pod_status.allocationstate
 
-def update_zone(self, state, zone_id):
+
+def update_zone(apiclient, state, zone_id):
     """
     Function to Enable/Disable zone
     """
-    zone_status = self.zone.update(
-                                  self.apiclient,
-                                  id=zone_id,
-                                  allocationstate=state
-                                  )
+    zone_status = Zone.update(
+        apiclient,
+        id=zone_id,
+        allocationstate=state
+    )
     return zone_status.allocationstate
 
-def check_db(self,host_state):
+
+def check_db(self, host_state):
     """
     Function to check capacity_state in op_host_capacity table
     """
-    capacity_state = self.dbclient.execute("select capacity_state from op_host_capacity where host_id='%s';" % self.host_db_id[0][0])
+    capacity_state = self.dbclient.execute(
+        "select capacity_state from op_host_capacity where host_id='%s';" %
+        self.host_db_id[0][0])
     self.assertEqual(
-            capacity_state[0][0],
-            host_state + "d",
-            "Invalid db query response for capacity_state %s" % self.host_db_id[0][0]
-        )
+        capacity_state[0][0],
+        host_state +
+        "d",
+        "Invalid db query response for capacity_state %s" %
+        self.host_db_id[0][0])
     return capacity_state[0][0]
+
 
 class TestHosts(cloudstackTestCase):
 
@@ -109,18 +118,20 @@ class TestHosts(cloudstackTestCase):
         cls.dbclient = cls.testClient.getDbConnection()
         cls._cleanup = []
 
-        #get zone, domain etc
+        # get zone, domain etc
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
         cls.pod = get_pod(cls.apiclient, cls.zone.id)
 
         # list hosts
         hosts = list_hosts(cls.apiclient)
-        if len(hosts) > 0 :
-                            cls.my_host_id = hosts[0].id
-                            cls.host_db_id = cls.dbclient.execute("select id from host where uuid='%s';" % cls.my_host_id)
-                            cls.my_cluster_id = hosts[0].clusterid
-        else :
+        if len(hosts) > 0:
+            cls.my_host_id = hosts[0].id
+            cls.host_db_id = cls.dbclient.execute(
+                "select id from host where uuid='%s';" %
+                cls.my_host_id)
+            cls.my_cluster_id = hosts[0].clusterid
+        else:
             raise unittest.SkipTest("There is no host available in the setup")
 
     @classmethod
@@ -138,225 +149,263 @@ class TestHosts(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "basic"], required_hardware="false")
-    def test_01_op_host_capacity_disable_cluster(self) :
+    def test_01_op_host_capacity_disable_cluster(self):
         """
         Disable the host and it's cluster,
         make sure that capacity_state is not affected by enabling/disabling
         of cluster in the op_host_capacity table
         """
-        #disable the host and check op_host_capacity table
+        # disable the host and check op_host_capacity table
 
         host_state = "Disable"
-        host_resourcestate = update_host(host_state, self.my_host_id)
+        host_resourcestate = update_host(
+            self.apiclient,
+            host_state,
+            self.my_host_id)
         self.assertEqual(
-                         host_resourcestate,
-                         host_state + "d",
-                         "Host state not correct"
-                        )
-        check_db(host_state)
-        #disable the cluster and check op_host_capacity table
-        cluster_state= "Disabled"
-        managed_state= "Managed"
-        cluster_managedstate,cluster_allocationstate = update_cluster(cluster_state, self.my_cluster_id, managed_state)
+            host_resourcestate,
+            host_state + "d",
+            "Host state not correct"
+        )
+        check_db(self, host_state)
+        # disable the cluster and check op_host_capacity table
+        cluster_state = "Disabled"
+        managed_state = "Managed"
+        cluster_managedstate, cluster_allocationstate = update_cluster(
+            self.apiclient, cluster_state, self.my_cluster_id, managed_state)
         self.assertEqual(
-                         cluster_allocationstate,
-                         cluster_state,
-                         "Not able to enable/disable the cluster"
-                         )
+            cluster_allocationstate,
+            cluster_state,
+            "Not able to enable/disable the cluster"
+        )
         self.assertEqual(
-                         cluster_managedstate,
-                         managed_state,
-                         "Not able to managed/unmanage the cluster"
-                         )
+            cluster_managedstate,
+            managed_state,
+            "Not able to managed/unmanage the cluster"
+        )
 
-        check_db(host_state)
-        #enable the cluster and check op_host_capacity table
-        cluster_state= "Enabled"
-        cluster_managedstate,cluster_allocationstate = update_cluster(cluster_state, self.my_cluster_id, managed_state)
+        check_db(self, host_state)
+        # enable the cluster and check op_host_capacity table
+        cluster_state = "Enabled"
+        cluster_managedstate, cluster_allocationstate = update_cluster(
+            self.apiclient, cluster_state, self.my_cluster_id, managed_state)
         self.assertEqual(
-                         cluster_allocationstate,
-                         cluster_state,
-                         "Not able to enable/disable the cluster"
-                         )
+            cluster_allocationstate,
+            cluster_state,
+            "Not able to enable/disable the cluster"
+        )
         self.assertEqual(
-                         cluster_managedstate,
-                         managed_state,
-                         "Not able to managed/unmanage the cluster"
-                         )
-        check_db(host_state)
-        #enable the host and check op_host_capacity table
+            cluster_managedstate,
+            managed_state,
+            "Not able to managed/unmanage the cluster"
+        )
+        check_db(self, host_state)
+        # enable the host and check op_host_capacity table
 
         host_state = "Enable"
-        host_resourcestate = update_host(host_state, self.my_host_id)
+        host_resourcestate = update_host(
+            self.apiclient,
+            host_state,
+            self.my_host_id)
         self.assertEqual(
-                         host_resourcestate,
-                         host_state + "d",
-                         "Host state not correct"
-                        )
-        check_db(host_state)
+            host_resourcestate,
+            host_state + "d",
+            "Host state not correct"
+        )
+        check_db(self, host_state)
         return
 
     @attr(tags=["advanced", "basic"], required_hardware="false")
-    def test_02_op_host_capacity_disable_pod(self) :
+    def test_02_op_host_capacity_disable_pod(self):
         """
         Disable the host and it's pod,
         make sure that capacity_state is not affected by enabling/disabling
         of pod in the op_host_capacity table
         """
-        #disable the host and check op_host_capacity table
+        # disable the host and check op_host_capacity table
 
         host_state = "Disable"
-        host_resourcestate = update_host(host_state, self.my_host_id)
+        host_resourcestate = update_host(
+            self.apiclient,
+            host_state,
+            self.my_host_id)
         self.assertEqual(
-                         host_resourcestate,
-                         host_state + "d",
-                         "Host state not correct"
-                        )
-        check_db(host_state)
-        #disable the pod and check op_host_capacity table
-        pod_state= "Disabled"
-        pod_allocationstate = update_pod(pod_state, self.pod.id)
+            host_resourcestate,
+            host_state + "d",
+            "Host state not correct"
+        )
+        check_db(self, host_state)
+        # disable the pod and check op_host_capacity table
+        pod_state = "Disabled"
+        pod_allocationstate = update_pod(
+            self.apiclient,
+            pod_state,
+            self.pod.id)
         self.assertEqual(
-                         pod_allocationstate,
-                         pod_state,
-                         "Not able to enable/disable the pod"
-                         )
-        check_db(host_state)
-        #enable the pod and check op_host_capacity table
-        pod_state= "Enabled"
-        pod_allocationstate = update_pod(pod_state, self.pod.id)
+            pod_allocationstate,
+            pod_state,
+            "Not able to enable/disable the pod"
+        )
+        check_db(self, host_state)
+        # enable the pod and check op_host_capacity table
+        pod_state = "Enabled"
+        pod_allocationstate = update_pod(
+            self.apiclient,
+            pod_state,
+            self.pod.id)
         self.assertEqual(
-                         pod_allocationstate,
-                         pod_state,
-                         "Not able to enable/disable the pod"
-                         )
-        check_db(host_state)
-        #enable the host and check op_host_capacity table
+            pod_allocationstate,
+            pod_state,
+            "Not able to enable/disable the pod"
+        )
+        check_db(self, host_state)
+        # enable the host and check op_host_capacity table
 
         host_state = "Enable"
-        host_resourcestate = update_host(host_state, self.my_host_id)
+        host_resourcestate = update_host(
+            self.apiclient,
+            host_state,
+            self.my_host_id)
         self.assertEqual(
-                         host_resourcestate,
-                         host_state + "d",
-                         "Host state not correct"
-                        )
-        check_db(host_state)
+            host_resourcestate,
+            host_state + "d",
+            "Host state not correct"
+        )
+        check_db(self, host_state)
         return
 
-
     @attr(tags=["advanced", "basic", "tag1"], required_hardware="false")
-    def test_03_op_host_capacity_disable_zone(self) :
+    def test_03_op_host_capacity_disable_zone(self):
         """
         Disable the host and it's zone,
         make sure that capacity_state is not affected by enabling/disabling
         of zone in the op_host_capacity table
         """
-        #disable the host and check op_host_capacity table
+        # disable the host and check op_host_capacity table
 
         host_state = "Disable"
-        host_resourcestate = update_host(host_state, self.my_host_id)
+        host_resourcestate = update_host(
+            self.apiclient,
+            host_state,
+            self.my_host_id)
         self.assertEqual(
-                         host_resourcestate,
-                         host_state + "d",
-                         "Host state not correct"
-                        )
-        check_db(host_state)
-        #disbale the zone and check op_host_capacity table
-        zone_state= "Disabled"
-        zone_allocationstate = update_zone(zone_state, self.zone.id)
+            host_resourcestate,
+            host_state + "d",
+            "Host state not correct"
+        )
+        check_db(self, host_state)
+        # disbale the zone and check op_host_capacity table
+        zone_state = "Disabled"
+        zone_allocationstate = update_zone(
+            self.apiclient,
+            zone_state,
+            self.zone.id)
         self.assertEqual(
-                         zone_allocationstate,
-                         zone_state,
-                         "Not able to enable/disable the zone"
-                         )
-        check_db(host_state)
-        #enable the zone and check op_host_capacity table
-        zone_state= "Enabled"
-        zone_allocationstate = update_zone(zone_state, self.zone.id)
+            zone_allocationstate,
+            zone_state,
+            "Not able to enable/disable the zone"
+        )
+        check_db(self, host_state)
+        # enable the zone and check op_host_capacity table
+        zone_state = "Enabled"
+        zone_allocationstate = update_zone(
+            self.apiclient,
+            zone_state,
+            self.zone.id)
         self.assertEqual(
-                         zone_allocationstate,
-                         zone_state,
-                         "Not able to enable/disable the zone"
-                         )
-        check_db(host_state)
-        #enable the host and check op_host_capacity table
+            zone_allocationstate,
+            zone_state,
+            "Not able to enable/disable the zone"
+        )
+        check_db(self, host_state)
+        # enable the host and check op_host_capacity table
 
         host_state = "Enable"
-        host_resourcestate = update_host(host_state, self.my_host_id)
+        host_resourcestate = update_host(
+            self.apiclient,
+            host_state,
+            self.my_host_id)
         self.assertEqual(
-                         host_resourcestate,
-                         host_state + "d",
-                         "Host state not correct"
-                        )
-        check_db(host_state)
+            host_resourcestate,
+            host_state + "d",
+            "Host state not correct"
+        )
+        check_db(self, host_state)
         return
 
     @attr(tags=["advanced", "basic"], required_hardware="false")
-    def test_04_disable_host_unmanage_cluster_check_hosts_status(self) :
+    def test_04_disable_host_unmanage_cluster_check_hosts_status(self):
         """
         Disable the host then unmanage the cluster,
         make sure that the host goes to Disconnected state
         """
-        #disable host
+        # disable host
         host_state = "Disable"
-        host_resourcestate = update_host(host_state, self.my_host_id)
+        host_resourcestate = update_host(
+            self.apiclient,
+            host_state,
+            self.my_host_id)
         self.assertEqual(
-                         host_resourcestate,
-                         host_state + "d",
-                         "Host state not correct"
-                        )
-        #unmanage cluster
-        cluster_state= "Enabled"
-        managed_state= "Unmanaged"
-        cluster_managedstate,cluster_allocationstate = update_cluster(cluster_state, self.my_cluster_id, managed_state)
+            host_resourcestate,
+            host_state + "d",
+            "Host state not correct"
+        )
+        # unmanage cluster
+        cluster_state = "Enabled"
+        managed_state = "Unmanaged"
+        cluster_managedstate, cluster_allocationstate = update_cluster(
+            self.apiclient, cluster_state, self.my_cluster_id, managed_state)
         self.assertEqual(
-                         cluster_allocationstate,
-                         cluster_state,
-                         "Not able to enable/disable the cluster"
-                         )
+            cluster_allocationstate,
+            cluster_state,
+            "Not able to enable/disable the cluster"
+        )
         self.assertEqual(
-                         cluster_managedstate,
-                         managed_state,
-                         "Not able to managed/unmanage the cluster"
-                         )
-        #check host state now
+            cluster_managedstate,
+            managed_state,
+            "Not able to managed/unmanage the cluster"
+        )
+        # check host state now
         time.sleep(30)
         host_list = list_hosts(self.apiclient, id=self.my_host_id)
 
         self.assertEqual(
-                         host_list[0].state,
-                         "Disconnected",
-                         " Host is not in Disconnected state after unmanaging cluster"
-                         )
-        #manage the cluster again and let the hosts come back to Up state.
-        managed_state= "Managed"
-        cluster_managedstate,cluster_allocationstate = update_cluster(cluster_state, self.my_cluster_id, managed_state)
+            host_list[0].state,
+            "Disconnected",
+            " Host is not in Disconnected state after unmanaging cluster"
+        )
+        # manage the cluster again and let the hosts come back to Up state.
+        managed_state = "Managed"
+        cluster_managedstate, cluster_allocationstate = update_cluster(
+            self.apiclient, cluster_state, self.my_cluster_id, managed_state)
         self.assertEqual(
-                         cluster_allocationstate,
-                         cluster_state,
-                         "Not able to enable/disable the cluster"
-                         )
+            cluster_allocationstate,
+            cluster_state,
+            "Not able to enable/disable the cluster"
+        )
         self.assertEqual(
-                         cluster_managedstate,
-                         managed_state,
-                         "Not able to managed/unmanage the cluster"
-                         )
-        #check host state now
+            cluster_managedstate,
+            managed_state,
+            "Not able to managed/unmanage the cluster"
+        )
+        # check host state now
         time.sleep(90)
         host_list = list_hosts(self.apiclient, id=self.my_host_id)
 
         self.assertEqual(
-                         host_list[0].state,
-                         "Up",
-                         " Host is not in Up state after managing cluster"
-                         )
-        #enable the host
+            host_list[0].state,
+            "Up",
+            " Host is not in Up state after managing cluster"
+        )
+        # enable the host
         host_state = "Enable"
-        host_resourcestate = update_host(host_state, self.my_host_id)
+        host_resourcestate = update_host(
+            self.apiclient,
+            host_state,
+            self.my_host_id)
         self.assertEqual(
-                         host_resourcestate,
-                         host_state + "d",
-                         "Host state not correct"
-                        )
+            host_resourcestate,
+            host_state + "d",
+            "Host state not correct"
+        )
         return
-
