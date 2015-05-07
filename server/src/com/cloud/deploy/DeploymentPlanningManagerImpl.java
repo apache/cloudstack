@@ -31,6 +31,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.fsm.StateMachine2;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;

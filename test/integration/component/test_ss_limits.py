@@ -127,7 +127,7 @@ class TestSecondaryStorageLimits(cloudstackTestCase):
         except Exception as e:
             return [FAIL, e]
         return [PASS, None]
-
+ 
     @data(ROOT_DOMAIN_ADMIN, CHILD_DOMAIN_ADMIN)
     @attr(tags = ["advanced"], required_hardware="true")
     def test_01_register_template(self, value):
