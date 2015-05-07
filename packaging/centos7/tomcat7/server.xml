@@ -77,36 +77,4 @@
       </Host>
     </Engine>
   </Service>
-
-  <Service name="CloudStackAwsApi">
-
-    <Executor name="tomcatThreadPool" namePrefix="catalina-exec-"
-        maxThreads="150" minSpareThreads="25"/>
-
-    <Connector executor="tomcatThreadPool"
-               port="7080" protocol="HTTP/1.1"
-               connectionTimeout="20000"
-               acceptCount="150"
-               enableLookups="false"
-               maxThreads="150"
-               maxHttpHeaderSize="8192"
-               redirectPort="8443" />
-
-    <Engine name="Catalina7080" defaultHost="localhost">
-
-      <Realm className="org.apache.catalina.realm.LockOutRealm">
-        <Realm className="org.apache.catalina.realm.UserDatabaseRealm"
-               resourceName="UserDatabase"/>
-      </Realm>
-
-      <Host name="localhost" appBase="webapps7080"
-            unpackWARs="true" autoDeploy="true">
-
-        <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs"
-               prefix="localhost_7080_access_log." suffix=".txt"
-               pattern="%h %l %u %t &quot;%r&quot; %s %b" />
-
-      </Host>
-    </Engine>
-  </Service>
 </Server>

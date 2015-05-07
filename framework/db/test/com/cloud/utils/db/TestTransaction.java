@@ -127,30 +127,4 @@ public class TestTransaction {
         verify(conn, times(0)).rollback();
         verify(conn, times(1)).close();
     }
-
-    @Test
-    public void testOtherdatabaseRollback() throws Exception {
-        after();
-        setup(TransactionLegacy.AWSAPI_DB);
-
-        try {
-            Transaction.execute(new TransactionCallbackNoReturn() {
-                @Override
-                public void doInTransactionWithoutResult(TransactionStatus status) {
-                    assertEquals(TransactionLegacy.AWSAPI_DB, TransactionLegacy.currentTxn().getDatabaseId().shortValue());
-
-                    throw new RuntimeException("Panic!");
-                }
-            });
-            fail();
-        } catch (RuntimeException e) {
-            assertEquals("Panic!", e.getMessage());
-        }
-
-        verify(conn).setAutoCommit(false);
-        verify(conn, times(0)).commit();
-        verify(conn, times(1)).rollback();
-        verify(conn, times(1)).close();
-    }
-
 }

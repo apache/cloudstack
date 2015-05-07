@@ -18,9 +18,7 @@
 """
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.lib.utils import (cleanup_resources,
-                              random_gen,
-                              format_volume_to_ext3)
+from marvin.lib.utils import (cleanup_resources)
 from marvin.lib.base import (Account,
                              ServiceOffering,
                              DiskOffering,
@@ -35,19 +33,19 @@ from marvin.lib.common import (get_domain,
                                get_template,
                                list_volumes,
                                list_virtual_machines,
+                               createChecksum,
+                               compareChecksum
                                list_storage_pools,
                                list_clusters,
                                list_hosts,
                                validateList
                                )
 from marvin.codes import (PASS,
-                          ZONETAG1,
-                          CLUSTERTAG1)
+			  ZONETAG1,
+			  CLUSTERTAG1)
 
 from marvin.cloudstackAPI import (deleteVolume)
 
-import hashlib
-from marvin.sshClient import SshClient
 import time
 from threading import Thread
 
@@ -70,6 +68,7 @@ def GetDestinationPool(self,
                 break
 
     return destinationPool
+
 
 
 def MigrateRootVolume(self,
@@ -201,200 +200,6 @@ def MigrateDataVolume(self,
     return
 
 
-def createChecksum(self, virtual_machine, disk, disk_type):
-    """ Write data on the disk and return the md5 checksum"""
-
-    random_data_0 = random_gen(size=100)
-    # creating checksum(MD5)
-    m = hashlib.md5()
-    m.update(random_data_0)
-    checksum_random_data_0 = m.hexdigest()
-    try:
-        ssh_client = SshClient(
-            virtual_machine.ssh_ip,
-            virtual_machine.ssh_port,
-            virtual_machine.username,
-            virtual_machine.password
-        )
-    except Exception as e:
-        self.fail("SSH failed for VM: %s" %
-                  e)
-
-    self.debug("Formatting volume: %s to ext3" % disk.id)
-    # Format partition using ext3
-    # Note that this is the second data disk partition of virtual machine
-    # as it was already containing data disk before attaching the new volume,
-    # Hence datadiskdevice_2
-
-    format_volume_to_ext3(
-        ssh_client,
-        self.testdata["volume_write_path"][
-            virtual_machine.hypervisor][disk_type]
-    )
-    cmds = ["fdisk -l",
-            "mkdir -p %s" % self.testdata["data_write_paths"]["mount_dir"],
-            "mount -t ext3 %s1 %s" % (
-                self.testdata["volume_write_path"][
-                    virtual_machine.hypervisor][disk_type],
-                self.testdata["data_write_paths"]["mount_dir"]
-            ),
-            "mkdir -p %s/%s/%s " % (
-                self.testdata["data_write_paths"]["mount_dir"],
-                self.testdata["data_write_paths"]["sub_dir"],
-                self.testdata["data_write_paths"]["sub_lvl_dir1"],
-            ),
-            "echo %s > %s/%s/%s/%s" % (
-                random_data_0,
-                self.testdata["data_write_paths"]["mount_dir"],
-                self.testdata["data_write_paths"]["sub_dir"],
-                self.testdata["data_write_paths"]["sub_lvl_dir1"],
-                self.testdata["data_write_paths"]["random_data"]
-            ),
-            "cat %s/%s/%s/%s" % (
-                self.testdata["data_write_paths"]["mount_dir"],
-                self.testdata["data_write_paths"]["sub_dir"],
-                self.testdata["data_write_paths"]["sub_lvl_dir1"],
-                self.testdata["data_write_paths"]["random_data"]
-            )
-            ]
-
-    for c in cmds:
-        self.debug("Command: %s" % c)
-        result = ssh_client.execute(c)
-        self.debug(result)
-
-    # Unmount the storage
-    cmds = [
-        "umount %s" % (self.testdata["data_write_paths"]["mount_dir"]),
-    ]
-
-    for c in cmds:
-        self.debug("Command: %s" % c)
-        ssh_client.execute(c)
-
-    return checksum_random_data_0
-
-
-def compareChecksum(
-        self,
-        original_checksum,
-        disk_type,
-        virt_machine=None,
-        disk=None,
-        new_vm=False):
-    """
-    Create md5 checksum of the data present on the disk and compare
-    it with the given checksum
-    """
-
-    if disk_type == "datadiskdevice_1" and new_vm:
-        new_virtual_machine = VirtualMachine.create(
-            self.userapiclient,
-            self.testdata["small"],
-            templateid=self.template.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid,
-            serviceofferingid=self.service_offering_cluster1.id,
-            zoneid=self.zone.id,
-            mode=self.zone.networktype
-        )
-
-        new_virtual_machine.start(self.userapiclient)
-
-        self.debug("Attaching volume: %s to VM: %s" % (
-            disk.id,
-            new_virtual_machine.id
-        ))
-
-        new_virtual_machine.attach_volume(
-            self.apiclient,
-            disk
-        )
-
-        # Rebooting is required so that newly attached disks are detected
-        self.debug("Rebooting : %s" % new_virtual_machine.id)
-        new_virtual_machine.reboot(self.apiclient)
-
-    else:
-        # If the disk is root disk then no need to create new VM
-        # Just start the original machine on which root disk is
-        new_virtual_machine = virt_machine
-        if new_virtual_machine.state != "Running":
-            new_virtual_machine.start(self.userapiclient)
-
-    try:
-        # Login to VM to verify test directories and files
-
-        self.debug(
-            "SSH into (Public IP: ) %s " % new_virtual_machine.ssh_ip)
-        ssh = SshClient(
-            new_virtual_machine.ssh_ip,
-            new_virtual_machine.ssh_port,
-            new_virtual_machine.username,
-            new_virtual_machine.password
-        )
-    except Exception as e:
-        self.fail("SSH access failed for VM: %s, Exception: %s" %
-                  (new_virtual_machine.ipaddress, e))
-
-    # Mount datadiskdevice_1 because this is the first data disk of the new
-    # virtual machine
-    cmds = ["blkid",
-            "fdisk -l",
-            "mkdir -p %s" % self.testdata["data_write_paths"]["mount_dir"],
-            "mount -t ext3 %s1 %s" % (
-                self.testdata["volume_write_path"][
-                    new_virtual_machine.hypervisor][disk_type],
-                self.testdata["data_write_paths"]["mount_dir"]
-            ),
-            ]
-
-    for c in cmds:
-        self.debug("Command: %s" % c)
-        result = ssh.execute(c)
-        self.debug(result)
-
-    returned_data_0 = ssh.execute(
-        "cat %s/%s/%s/%s" % (
-            self.testdata["data_write_paths"]["mount_dir"],
-            self.testdata["data_write_paths"]["sub_dir"],
-            self.testdata["data_write_paths"]["sub_lvl_dir1"],
-            self.testdata["data_write_paths"]["random_data"]
-        ))
-
-    n = hashlib.md5()
-    n.update(returned_data_0[0])
-    checksum_returned_data_0 = n.hexdigest()
-
-    self.debug("returned_data_0: %s" % returned_data_0[0])
-
-    # Verify returned data
-    self.assertEqual(
-        original_checksum,
-        checksum_returned_data_0,
-        "Cheskum does not match with checksum of original data"
-    )
-
-    # Unmount the Sec Storage
-    cmds = [
-        "umount %s" % (self.testdata["data_write_paths"]["mount_dir"]),
-    ]
-
-    for c in cmds:
-        self.debug("Command: %s" % c)
-        ssh.execute(c)
-
-    if new_vm:
-        new_virtual_machine.detach_volume(
-            self.apiclient,
-            disk
-        )
-
-        new_virtual_machine.delete(self.apiclient)
-
-    return
-
-
 class TestStorageMigration(cloudstackTestCase):
 
     @classmethod
@@ -414,21 +219,19 @@ class TestStorageMigration(cloudstackTestCase):
             cls.testdata["ostype"])
 
         cls._cleanup = []
-        cls.unsupportedHypervisor = False
-        cls.insuffPools = False
-
         if cls.hypervisor.lower() not in [
                 "vmware",
                 "kvm",
                 "xenserver",
                 "hyper-v"]:
-            cls.unsupportedHypervisor = True
-            return
+            raise unittest.SkipTest(
+                "Storage migration not supported on %s" %
+                cls.hypervisor)
+
         try:
             cls.pools = StoragePool.list(cls.apiclient, zoneid=cls.zone.id)
         except Exception as e:
-            cls.insuffPools = True
-            return
+            raise unittest.SkipTest(e)
         try:
 
             # Create an account
@@ -485,6 +288,17 @@ class TestStorageMigration(cloudstackTestCase):
             )
             cls._cleanup.append(cls.disk_offering_cluster1)
 
+            cls.new_virtual_machine = VirtualMachine.create(
+                cls.apiclient,
+                cls.testdata["small"],
+                templateid=cls.template.id,
+                accountid=cls.account.name,
+                domainid=cls.account.domainid,
+                serviceofferingid=cls.service_offering.id,
+                zoneid=cls.zone.id,
+                mode=cls.zone.networktype
+            )
+
             # If local storage is enabled, alter the offerings to use
             # localstorage
             if cls.zone.localstorageenabled:
@@ -506,13 +320,10 @@ class TestStorageMigration(cloudstackTestCase):
             cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
-
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
-        if self.unsupportedHypervisor or self.insuffPools:
-            self.skipTest("Skipping test because unsupported hypervisor\
-                    %s" % self.hypervisor)
+
         self.cleanup = []
 
     def tearDown(self):
@@ -524,7 +335,7 @@ class TestStorageMigration(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="True")
+    @attr(tags=["advanced", "basic"],required_hardware="true")
     def test_01_migrate_root_and_data_disk_nonlive(self):
         """ Test migrate Volume (root and data disk)
 
@@ -545,8 +356,10 @@ class TestStorageMigration(cloudstackTestCase):
 
         In addition to this,
         Create snapshot of root and data disk after migration.
-        For root disk, create template from snapshot, deploy Vm and compare checksum
-        For data disk, Create volume from snapshot, attach to VM and compare checksum
+        For root disk, create template from snapshot, 
+                deploy Vm and compare checksum
+        For data disk, Create volume from snapshot, 
+                attach to VM and compare checksum
 
         """
 
@@ -652,10 +465,10 @@ class TestStorageMigration(cloudstackTestCase):
         # 2. Migrate Volume
         # 3. Compare checksum with data on volume on new pool
         checksum_random_root_cluster = createChecksum(
-            self,
-            vm_cluster,
-            root_volume_cluster,
-            "rootdiskdevice")
+            service=self.testdata,
+            virtual_machine=vm_cluster,
+            disk=root_volume_cluster,
+            disk_type="rootdiskdevice")
 
         vm_cluster.stop(self.userapiclient)
 
@@ -668,11 +481,11 @@ class TestStorageMigration(cloudstackTestCase):
         vm_cluster.start(self.userapiclient)
 
         compareChecksum(
-            self,
-            checksum_random_root_cluster,
-            "rootdiskdevice",
-            virt_machine=vm_cluster,
-            disk=None,
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_random_root_cluster,
+            disk_type="rootdiskdevice",
+            virt_machine=vm_cluster
         )
         self.debug("Done with compare checksum")
 
@@ -691,11 +504,11 @@ class TestStorageMigration(cloudstackTestCase):
         vm_cluster.start(self.userapiclient)
 
         compareChecksum(
-            self,
-            checksum_random_root_cluster,
-            "rootdiskdevice",
-            virt_machine=vm_cluster,
-            disk=None,
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_random_root_cluster,
+            disk_type="rootdiskdevice",
+            virt_machine=vm_cluster
         )
 
         vm_cluster.stop(self.userapiclient)
@@ -714,10 +527,10 @@ class TestStorageMigration(cloudstackTestCase):
         vm_cluster.start(self.userapiclient)
 
         checksum_random_data_cluster = createChecksum(
-            self,
-            vm_cluster,
-            data_volumes_cluster_list[0],
-            "datadiskdevice_1")
+            service=self.testdata,
+            virtual_machine=vm_cluster,
+            disk=data_volumes_cluster_list[0],
+            disk_type="datadiskdevice_1")
 
         vm_cluster.detach_volume(
             self.apiclient,
@@ -741,14 +554,27 @@ class TestStorageMigration(cloudstackTestCase):
 
         vm_cluster.start(self.userapiclient)
 
-        compareChecksum(
-            self,
-            checksum_random_data_cluster,
-            "datadiskdevice_1",
-            virt_machine=None,
-            disk=data_volumes_cluster_list[0],
-            new_vm=True)
+        self.new_virtual_machine.attach_volume(
+            self.apiclient,
+            data_volumes_cluster_list[0]
+        )
 
+        # Rebooting is required so that newly attached disks are detected
+        self.new_virtual_machine.reboot(self.apiclient)
+
+        compareChecksum(
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_random_data_cluster,
+            disk_type="datadiskdevice_1",
+            virt_machine=self.new_virtual_machine
+        )
+
+        self.new_virtual_machine.detach_volume(
+            self.apiclient,
+            data_volumes_cluster_list[0])
+
+        self.new_virtual_machine.reboot(self.apiclient)
         # Add more data to disks
         data_volume_clust_2 = Volume.create(
             self.apiclient,
@@ -774,10 +600,10 @@ class TestStorageMigration(cloudstackTestCase):
 
         # Ensure we can add data to newly added disks
         createChecksum(
-            self,
-            vm_cluster,
-            data_disk_2_volumes_cluster_list[0],
-            "datadiskdevice_2")
+            service=self.testdata,
+            virtual_machine=vm_cluster,
+            disk=data_disk_2_volumes_cluster_list[0],
+            disk_type="datadiskdevice_2")
 
         vm_cluster.detach_volume(
             self.apiclient,
@@ -810,10 +636,10 @@ class TestStorageMigration(cloudstackTestCase):
         root_volume_snap = root_volumes_snap_list[0]
 
         createChecksum(
-            self,
-            vm_from_temp,
-            root_volume_snap,
-            "rootdiskdevice")
+            service=self.testdata,
+            virtual_machine=vm_from_temp,
+            disk=root_volume_snap,
+            disk_type="rootdiskdevice")
 
         templateFromSnapshot.delete(self.apiclient)
 
@@ -840,10 +666,10 @@ class TestStorageMigration(cloudstackTestCase):
         vm_from_temp.reboot(self.userapiclient)
 
         createChecksum(
-            self,
-            vm_from_temp,
-            data_from_snap[0],
-            "datadiskdevice_1")
+            service=self.testdata,
+            virtual_machine=vm_from_temp,
+            disk=data_from_snap[0],
+            disk_type="datadiskdevice_1")
 
         vm_from_temp.detach_volume(
             self.userapiclient,
@@ -866,13 +692,24 @@ class TestStorageMigration(cloudstackTestCase):
             destinationPool)
 
         vm_cluster.start(self.userapiclient)
+
+        self.new_virtual_machine.attach_volume(
+            self.apiclient,
+            data_volumes_cluster_list[0]
+        )
+
+        # Rebooting is required so that newly attached disks are detected
+        self.new_virtual_machine.reboot(self.apiclient)
+
         compareChecksum(
-            self,
-            checksum_random_data_cluster,
-            "datadiskdevice_1",
-            virt_machine=None,
-            disk=data_volumes_cluster_list[0],
-            new_vm=True)
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_random_data_cluster,
+            disk_type="datadiskdevice_1",
+            virt_machine=self.new_virtual_machine
+        )
+
+        self.new_virtual_machine.delete(self.apiclient)
 
         vm_cluster.stop(self.userapiclient)
         # Try to Migrate DATA Volume from CWPS to Local Storage
@@ -921,8 +758,6 @@ class TestStorageMigration(cloudstackTestCase):
             mode=self.zone.networktype
         )
 
-        vm_zone.start(self.userapiclient)
-
         # Get ROOT Volume Id
         root_volumes_zone_list = list_volumes(
             self.apiclient,
@@ -958,10 +793,10 @@ class TestStorageMigration(cloudstackTestCase):
         # Step 4
         # Migrate ROOT Volume from ZWPS to other ZWPS
         checksum_random_root_zone = createChecksum(
-            self,
-            vm_zone,
-            data_volumes_zone_list[0],
-            "rootdiskdevice")
+            service=self.testdata,
+            virtual_machine=vm_zone,
+            disk=data_volumes_zone_list[0],
+            disk_type="rootdiskdevice")
 
         vm_zone.stop(self.userapiclient)
 
@@ -973,11 +808,11 @@ class TestStorageMigration(cloudstackTestCase):
         vm_zone.start(self.userapiclient)
 
         compareChecksum(
-            self,
-            checksum_random_root_zone,
-            "rootdiskdevice",
-            virt_machine=vm_zone,
-            disk=None,
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_random_root_zone,
+            disk_type="rootdiskdevice",
+            virt_machine=vm_zone
         )
 
         vm_zone.stop(self.userapiclient)
@@ -1000,18 +835,18 @@ class TestStorageMigration(cloudstackTestCase):
         vm_zone.start(self.userapiclient)
 
         compareChecksum(
-            self,
-            checksum_random_root_zone,
-            "rootdiskdevice",
-            virt_machine=vm_zone,
-            disk=None,
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_random_root_zone,
+            disk_type="rootdiskdevice",
+            virt_machine=vm_zone
         )
 
         checksum_random_data_zone = createChecksum(
-            self,
-            vm_zone,
-            data_volumes_zone_list[0],
-            "datadiskdevice_1")
+            service=self.testdata,
+            virtual_machine=vm_zone,
+            disk=data_volumes_zone_list[0],
+            disk_type="datadiskdevice_1")
 
         vm_zone.stop(self.userapiclient)
 
@@ -1022,13 +857,25 @@ class TestStorageMigration(cloudstackTestCase):
             "ZONE")
         MigrateDataVolume(self, data_volumes_zone_list[0], destinationPool)
 
+        self.new_virtual_machine.attach_volume(
+            self.apiclient,
+            data_volumes_zone_list[0]
+        )
+
+        # Rebooting is required so that newly attached disks are detected
+        self.new_virtual_machine.reboot(self.apiclient)
+
         compareChecksum(
-            self,
-            checksum_random_data_zone,
-            "datadiskdevice_1",
-            virt_machine=None,
-            disk=data_volumes_zone_list[0],
-            new_vm=True)
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_random_data_zone,
+            disk_type="datadiskdevice_1",
+            virt_machine=self.new_virtual_machine
+        )
+
+        self.new_virtual_machine.detach_volume(
+            self.apiclient,
+            data_volumes_zone_list[0])
 
         vm_zone.stop(self.userapiclient)
         # Try to Migrate DATA Volume from ZWPS to Local Storage
@@ -1051,13 +898,26 @@ class TestStorageMigration(cloudstackTestCase):
             destinationPool)
 
         vm_zone.start(self.userapiclient)
+
+        self.new_virtual_machine.attach_volume(
+            self.apiclient,
+            data_volumes_zone_list[0]
+        )
+
+        # Rebooting is required so that newly attached disks are detected
+        self.new_virtual_machine.reboot(self.apiclient)
+
         compareChecksum(
-            self,
-            checksum_random_data_zone,
-            "datadiskdevice_1",
-            virt_machine=None,
-            disk=data_volumes_zone_list[0],
-            new_vm=True)
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_random_data_zone,
+            disk_type="datadiskdevice_1",
+            virt_machine=self.new_virtual_machine
+        )
+
+        self.new_virtual_machine.detach_volume(
+            self.apiclient,
+            data_volumes_zone_list[0])
 
         # Delete ROOT and DATA Volume from ZWPS
 
@@ -1140,10 +1000,10 @@ class TestStorageMigration(cloudstackTestCase):
             # Step 6
             # Migrate root and data volume from Local to another Local storage
             checksum_random_root_local = createChecksum(
-                self,
-                vm_local,
-                data_volumes_local_list[0],
-                "rootdiskdevice")
+                service=self.testdata,
+                virtual_machine=vm_local,
+                disk=data_volumes_local_list[0],
+                disk_type="rootdiskdevice")
 
             vm_local.stop(self.userapiclient)
 
@@ -1155,18 +1015,18 @@ class TestStorageMigration(cloudstackTestCase):
             vm_local.start(self.userapiclient)
 
             compareChecksum(
-                self,
-                checksum_random_root_local,
-                "rootdiskdevice",
-                virt_machine=vm_cluster,
-                disk=None,
+                self.apiclient,
+                service=self.testdata,
+                original_checksum=checksum_random_root_local,
+                disk_type="rootdiskdevice",
+                virt_machine=vm_cluster
             )
 
             checksum_random_data_local = createChecksum(
-                self,
-                vm_local,
-                data_volumes_local_list[0],
-                "datadiskdevice_1")
+                service=self.testdata,
+                virtual_machine=vm_local,
+                disk=data_volumes_local_list[0],
+                disk_type="datadiskdevice_1")
 
             vm_local.stop(self.userapiclient)
             destinationPool = GetDestinationPool(
@@ -1178,15 +1038,28 @@ class TestStorageMigration(cloudstackTestCase):
                 data_volumes_local_list[0],
                 destinationPool)
 
+            self.new_virtual_machine.attach_volume(
+                self.apiclient,
+                data_volumes_local_list[0]
+            )
+
+            # Rebooting is required so that newly attached disks are detected
+            self.new_virtual_machine.reboot(self.apiclient)
+
             vm_local.start(self.userapiclient)
             compareChecksum(
-                self,
-                checksum_random_data_local,
-                "datadiskdevice_1",
-                virt_machine=None,
-                disk=data_volumes_local_list[0],
-                new_vm=True)
+                self.apiclient,
+                service=self.testdata,
+                original_checksum=checksum_random_data_local,
+                disk_type="datadiskdevice_1",
+                virt_machine=self.new_virtual_machine
+            )
 
+            self.new_virtual_machine.detach_volume(
+                self.apiclient,
+                data_volumes_local_list[0])
+
+            self.new_virtual_machine.reboot(self.apiclient)
             # Delete ROOT and DATA Volume from Local Storage
 
             self.debug("Deleting Volume %s" % data_volume_local.id)
@@ -1211,7 +1084,7 @@ class TestStorageMigration(cloudstackTestCase):
                 ), None, "VM list should be empty")
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="True")
+    @attr(tags=["advanced", "basic"],required_hardware="true")
     def test_02_migration_nonlive_xenserver_supported(self):
         """ Test migrate Volume (root and data disk) for Hypervisor Xenserver
 
@@ -1316,10 +1189,10 @@ class TestStorageMigration(cloudstackTestCase):
 
         # Migrate ROOT Volume from CWPS to other CWPS
         checksum_random_root_cluster = createChecksum(
-            self,
-            vm_cluster,
-            root_volume_cluster,
-            "rootdiskdevice")
+            service=self.testdata,
+            virtual_machine=vm_cluster,
+            disk=root_volume_cluster,
+            disk_type="rootdiskdevice")
 
         vm_cluster.stop(self.userapiclient)
 
@@ -1332,11 +1205,11 @@ class TestStorageMigration(cloudstackTestCase):
         vm_cluster.start(self.userapiclient)
 
         compareChecksum(
-            self,
-            checksum_random_root_cluster,
-            "rootdiskdevice",
-            virt_machine=vm_cluster,
-            disk=None,
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_random_root_cluster,
+            disk_type="rootdiskdevice",
+            virt_machine=vm_cluster
         )
         self.debug("Done with compare checksum after first checksum")
 
@@ -1350,10 +1223,10 @@ class TestStorageMigration(cloudstackTestCase):
         vm_cluster.reboot(self.userapiclient)
 
         checksum_random_data_cluster = createChecksum(
-            self,
-            vm_cluster,
-            data_volumes_cluster_list[0],
-            "datadiskdevice_1")
+            service=self.testdata,
+            virtual_machine=vm_cluster,
+            disk=data_volumes_cluster_list[0],
+            disk_type="datadiskdevice_1")
 
         vm_cluster.stop(self.userapiclient)
 
@@ -1369,13 +1242,27 @@ class TestStorageMigration(cloudstackTestCase):
 
         vm_cluster.detach_volume(self.apiclient, data_volumes_cluster_list[0])
 
+        self.new_virtual_machine.attach_volume(
+            self.apiclient,
+            data_volumes_cluster_list[0]
+        )
+
+        # Rebooting is required so that newly attached disks are detected
+        self.new_virtual_machine.reboot(self.apiclient)
+
         compareChecksum(
-            self,
-            checksum_random_data_cluster,
-            "datadiskdevice_1",
-            virt_machine=None,
-            disk=data_volumes_cluster_list[0],
-            new_vm=True)
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_random_data_cluster,
+            disk_type="datadiskdevice_1",
+            virt_machine=self.new_virtual_machine
+        )
+
+        self.new_virtual_machine.detach_volume(
+            self.apiclient,
+            data_volumes_cluster_list[0])
+
+        self.new_virtual_machine.reboot(self.apiclient)
 
         # snapshot test case t14 compare checksum for same VM
         vm_cluster.attach_volume(
@@ -1386,11 +1273,11 @@ class TestStorageMigration(cloudstackTestCase):
         vm_cluster.reboot(self.apiclient)
 
         compareChecksum(
-            self,
-            checksum_random_data_cluster,
-            "datadiskdevice_1",
-            virt_machine=vm_cluster,
-            disk=data_volumes_cluster_list[0]
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_random_data_cluster,
+            disk_type="datadiskdevice_1",
+            virt_machine=vm_cluster
         )
 
         # Add more data to disks
@@ -1417,10 +1304,10 @@ class TestStorageMigration(cloudstackTestCase):
         )
 
         createChecksum(
-            self,
-            vm_cluster,
-            data_disk_2_volumes_cluster_list[0],
-            "datadiskdevice_2")
+            service=self.testdata,
+            virtual_machine=vm_cluster,
+            disk=data_disk_2_volumes_cluster_list[0],
+            disk_type="datadiskdevice_2")
 
         vm_cluster.detach_volume(
             self.apiclient,
@@ -1479,10 +1366,10 @@ class TestStorageMigration(cloudstackTestCase):
         root_volume_snap = root_volumes_snap_list[0]
 
         createChecksum(
-            self,
-            vm_from_temp,
-            root_volume_snap,
-            "rootdiskdevice")
+            service=self.testdata,
+            virtual_machine=vm_from_temp,
+            disk=root_volume_snap,
+            disk_type="rootdiskdevice")
 
         templateFromSnapshot.delete(self.apiclient)
 
@@ -1509,10 +1396,10 @@ class TestStorageMigration(cloudstackTestCase):
         vm_from_temp.reboot(self.userapiclient)
 
         createChecksum(
-            self,
-            vm_from_temp,
-            data_from_snap[0],
-            "datadiskdevice_1")
+            service=self.testdata,
+            virtual_machine=vm_from_temp,
+            disk=data_from_snap[0],
+            disk_type="datadiskdevice_1")
 
         vm_from_temp.detach_volume(
             self.userapiclient,
@@ -1603,10 +1490,10 @@ class TestStorageMigration(cloudstackTestCase):
             vm_local.reboot(self.userapiclient)
 
             createChecksum(
-                self,
-                vm_local,
-                root_volume_local,
-                "rootdiskdevice")
+                service=self.testdata,
+                virtual_machine=vm_local,
+                disk=root_volume_local,
+                disk_type="rootdiskdevice")
 
             vm_local.stop(self.userapiclient)
 
@@ -1656,7 +1543,7 @@ class TestStorageMigration(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="True")
+    @attr(tags=["advanced", "basic"],required_hardware="true")
     def test_03_migrate_root_and_data_disk_nonlive_cwps_vmware(self):
         """ Test migrate Volume (root and data disk)
 
@@ -1764,10 +1651,10 @@ class TestStorageMigration(cloudstackTestCase):
         # Step 2
         # Migrate ROOT Volume from CWPS to other CWPS
         checksum_random_root_cluster = createChecksum(
-            self,
-            vm_cluster,
-            root_volume_cluster,
-            "rootdiskdevice")
+            service=self.testdata,
+            virtual_machine=vm_cluster,
+            disk=root_volume_cluster,
+            disk_type="rootdiskdevice")
 
         vm_cluster.stop(self.userapiclient)
 
@@ -1780,20 +1667,20 @@ class TestStorageMigration(cloudstackTestCase):
         vm_cluster.start(self.userapiclient)
 
         compareChecksum(
-            self,
-            checksum_random_root_cluster,
-            "rootdiskdevice",
-            virt_machine=vm_cluster,
-            disk=None,
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_random_root_cluster,
+            disk_type="rootdiskdevice",
+            virt_machine=vm_cluster
         )
         self.debug("Done with compare checksum")
 
         vm_cluster.start(self.userapiclient)
         checksum_random_data_cluster = createChecksum(
-            self,
-            vm_cluster,
-            data_volumes_cluster_list[0],
-            "datadiskdevice_1")
+            service=self.testdata,
+            virtual_machine=vm_cluster,
+            disk=data_volumes_cluster_list[0],
+            disk_type="datadiskdevice_1")
 
         vm_cluster.detach_volume(
             self.apiclient,
@@ -1814,14 +1701,27 @@ class TestStorageMigration(cloudstackTestCase):
 
         vm_cluster.start(self.userapiclient)
 
-        compareChecksum(
-            self,
-            checksum_random_data_cluster,
-            "datadiskdevice_1",
-            virt_machine=None,
-            disk=data_volumes_cluster_list[0],
-            new_vm=True)
+        self.new_virtual_machine.attach_volume(
+            self.apiclient,
+            data_volumes_cluster_list[0]
+        )
 
+        # Rebooting is required so that newly attached disks are detected
+        self.new_virtual_machine.reboot(self.apiclient)
+
+        compareChecksum(
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_random_data_cluster,
+            disk_type="datadiskdevice_1",
+            virt_machine=self.new_virtual_machine
+        )
+
+        self.new_virtual_machine.detach_volume(
+            self.apiclient,
+            data_volumes_cluster_list[0])
+
+        self.new_virtual_machine.reboot(self.apiclient)
         # snapshot test case t14 compare checksum for same VM
         vm_cluster.attach_volume(
             self.apiclient,
@@ -1831,11 +1731,11 @@ class TestStorageMigration(cloudstackTestCase):
         vm_cluster.reboot(self.apiclient)
 
         compareChecksum(
-            self,
-            checksum_random_data_cluster,
-            "datadiskdevice_1",
-            virt_machine=vm_cluster,
-            disk=data_volumes_cluster_list[0]
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_random_data_cluster,
+            disk_type="datadiskdevice_1",
+            virt_machine=vm_cluster
         )
 
         # Add more data to disks
@@ -1862,10 +1762,10 @@ class TestStorageMigration(cloudstackTestCase):
         )
 
         createChecksum(
-            self,
-            vm_cluster,
-            data_disk_2_volumes_cluster_list[0],
-            "datadiskdevice_2")
+            service=self.testdata,
+            virtual_machine=vm_cluster,
+            disk=data_disk_2_volumes_cluster_list[0],
+            disk_type="datadiskdevice_2")
 
         vm_cluster.detach_volume(
             self.apiclient,
@@ -1898,10 +1798,10 @@ class TestStorageMigration(cloudstackTestCase):
         root_volume_snap = root_volumes_snap_list[0]
 
         createChecksum(
-            self,
-            vm_from_temp,
-            root_volume_snap,
-            "rootdiskdevice")
+            service=self.testdata,
+            virtual_machine=vm_from_temp,
+            disk=root_volume_snap,
+            disk_type="rootdiskdevice")
 
         templateFromSnapshot.delete(self.apiclient)
 
@@ -1928,10 +1828,10 @@ class TestStorageMigration(cloudstackTestCase):
         vm_from_temp.reboot(self.userapiclient)
 
         createChecksum(
-            self,
-            vm_from_temp,
-            data_from_snap[0],
-            "datadiskdevice_1")
+            service=self.testdata,
+            virtual_machine=vm_from_temp,
+            disk=data_from_snap[0],
+            disk_type="datadiskdevice_1")
 
         vm_from_temp.detach_volume(
             self.userapiclient,
@@ -2023,10 +1923,10 @@ class TestStorageMigration(cloudstackTestCase):
             # Step 6
             # Migrate root and data volume from Local to another Local storage
             checksum_random_root_local = createChecksum(
-                self,
-                vm_local,
-                data_volumes_local_list[0],
-                "rootdiskdevice")
+                service=self.testdata,
+                virtual_machine=vm_local,
+                disk=data_volumes_local_list[0],
+                disk_type="rootdiskdevice")
 
             vm_local.stop(self.userapiclient)
 
@@ -2038,18 +1938,18 @@ class TestStorageMigration(cloudstackTestCase):
             vm_local.start(self.userapiclient)
 
             compareChecksum(
-                self,
-                checksum_random_root_local,
-                "rootdiskdevice",
-                virt_machine=vm_cluster,
-                disk=None,
+                self.apiclient,
+                service=self.testdata,
+                original_checksum=checksum_random_root_local,
+                disk_type="rootdiskdevice",
+                virt_machine=vm_cluster
             )
 
             checksum_random_data_local = createChecksum(
-                self,
-                vm_local,
-                data_volumes_local_list[0],
-                "datadiskdevice_1")
+                service=self.testdata,
+                virtual_machine=vm_local,
+                disk=data_volumes_local_list[0],
+                disk_type="datadiskdevice_1")
 
             vm_local.stop(self.userapiclient)
             destinationPool = GetDestinationPool(
@@ -2062,14 +1962,28 @@ class TestStorageMigration(cloudstackTestCase):
                 destinationPool)
 
             vm_local.start(self.userapiclient)
-            compareChecksum(
-                self,
-                checksum_random_data_local,
-                "datadiskdevice_1",
-                virt_machine=None,
-                disk=data_volumes_local_list[0],
-                new_vm=True)
 
+            self.new_virtual_machine.attach_volume(
+                self.apiclient,
+                data_volumes_local_list[0]
+            )
+
+            # Rebooting is required so that newly attached disks are detected
+            self.new_virtual_machine.reboot(self.apiclient)
+
+            compareChecksum(
+                self.apiclient,
+                service=self.testdata,
+                original_checksum=checksum_random_data_local,
+                disk_type="datadiskdevice_1",
+                virt_machine=self.new_virtual_machine
+            )
+
+            self.new_virtual_machine.detach_volume(
+                self.apiclient,
+                data_volumes_local_list[0])
+
+            self.new_virtual_machine.reboot(self.apiclient)
             # Delete ROOT and DATA Volume from Local Storage
 
             self.debug("Deleting Volume %s" % data_volume_local.id)
@@ -2094,7 +2008,7 @@ class TestStorageMigration(cloudstackTestCase):
                 ), None, "VM list should be empty")
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="True")
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_04_migrate_root_and_data_disk_nonlive_zwps_vmware(self):
         """ Test migrate Volume (root and data disk)
 
@@ -2147,8 +2061,6 @@ class TestStorageMigration(cloudstackTestCase):
             mode=self.zone.networktype
         )
 
-        vm_zone.start(self.userapiclient)
-
         # Get ROOT Volume Id
         root_volumes_zone_list = list_volumes(
             self.apiclient,
@@ -2184,10 +2096,10 @@ class TestStorageMigration(cloudstackTestCase):
         # Step 4
         # Migrate ROOT Volume from ZWPS to other ZWPS
         checksum_random_root_zone = createChecksum(
-            self,
-            vm_zone,
-            data_volumes_zone_list[0],
-            "rootdiskdevice")
+            service=self.testdata,
+            virtual_machine=vm_zone,
+            disk=data_volumes_zone_list[0],
+            disk_type="rootdiskdevice")
 
         vm_zone.stop(self.userapiclient)
 
@@ -2199,27 +2111,18 @@ class TestStorageMigration(cloudstackTestCase):
         vm_zone.start(self.userapiclient)
 
         compareChecksum(
-            self,
-            checksum_random_root_zone,
-            "rootdiskdevice",
-            virt_machine=vm_zone,
-            disk=None,
-        )
-        vm_zone.start(self.userapiclient)
-
-        compareChecksum(
-            self,
-            checksum_random_root_zone,
-            "rootdiskdevice",
-            virt_machine=vm_zone,
-            disk=None,
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_random_root_zone,
+            disk_type="rootdiskdevice",
+            virt_machine=vm_zone
         )
 
         checksum_random_data_zone = createChecksum(
-            self,
-            vm_zone,
-            data_volumes_zone_list[0],
-            "datadiskdevice_1")
+            service=self.testdata,
+            virtual_machine=vm_zone,
+            disk=data_volumes_zone_list[0],
+            disk_type="datadiskdevice_1")
 
         vm_zone.stop(self.userapiclient)
 
@@ -2230,14 +2133,27 @@ class TestStorageMigration(cloudstackTestCase):
             "ZONE")
         MigrateDataVolume(self, data_volumes_zone_list[0], destinationPool)
 
-        compareChecksum(
-            self,
-            checksum_random_data_zone,
-            "datadiskdevice_1",
-            virt_machine=None,
-            disk=data_volumes_zone_list[0],
-            new_vm=True)
+        self.new_virtual_machine.attach_volume(
+            self.apiclient,
+            data_volumes_zone_list[0]
+        )
 
+        # Rebooting is required so that newly attached disks are detected
+        self.new_virtual_machine.reboot(self.apiclient)
+
+        compareChecksum(
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_random_data_zone,
+            disk_type="datadiskdevice_1",
+            virt_machine=self.new_virtual_machine
+        )
+
+        self.new_virtual_machine.detach_volume(
+            self.apiclient,
+            data_volumes_zone_list[0])
+
+        self.new_virtual_machine.reboot(self.apiclient)
         # Delete ROOT and DATA Volume from ZWPS
         self.debug("Deleting Volume %s" % data_volume_zone.id)
 
@@ -2285,15 +2201,15 @@ class NegativeTestStorageMigration(cloudstackTestCase):
             cls.testdata["ostype"])
 
         cls._cleanup = []
-        cls.unsupportedHypervisor = False
-        cls.insuffPools = False
+
         if cls.hypervisor.lower() not in [
                 "vmware",
                 "kvm",
                 "xenserver",
                 "hyper-v"]:
-            cls.unsupportedHypervisor = True
-            return
+            raise unittest.SkipTest(
+                "Storage migration not supported on %s" %
+                cls.hypervisor)
 
         try:
             cls.pools = StoragePool.list(cls.apiclient, zoneid=cls.zone.id)
@@ -2306,8 +2222,7 @@ class NegativeTestStorageMigration(cloudstackTestCase):
                 "There must be at least two cluster wide\
                 storage pools available in the setup"
         except Exception as e:
-            cls.insuffPools = True
-            return
+            raise unittest.SkipTest(e)
         try:
 
             # Create an account
@@ -2389,9 +2304,6 @@ class NegativeTestStorageMigration(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
-        if self.unsupportedHypervisor or self.insuffPools:
-            self.skipTest("Skipping test because unsupported hypervisor\
-                    %s" % self.hypervisor)
         self.cleanup = []
 
     def tearDown(self):
@@ -2444,14 +2356,15 @@ class NegativeTestStorageMigration(cloudstackTestCase):
         except Exception as e:
             self.exceptionList.append(e)
 
-    @attr(tags=["advanced", "basic"], required_hardware="True")
+    @attr(tags=["advanced", "basic"],required_hardware="true")
     def test_01_migrate_data_disk_negative_test(self):
         """ Negative test cases
 
         # 1. Deploy a VM on cluster wide primary storage.
         # 2. Add some data to disks and create checksum
         # 3. Migrate root and data volume from cluster-to-cluster wide storage pool
-        # 4. While migration(ROOT disk) is in progress try following scenarios, they should fail:
+        # 4. While migration(ROOT disk) is in progress try following scenarios, 
+                they should fail:
              I. Take snapshot of the disk
              II. Create Template from the volume
              III. Destroy the instance
@@ -2506,16 +2419,16 @@ class NegativeTestStorageMigration(cloudstackTestCase):
         # Calculate checksum of ROOT and DATA Disks
 
         checksum_root_disk = self.createChecksum(
-            self,
-            vm_cluster,
-            root_volume_cluster,
-            "rootdiskdevice")
+            service=self.testdata,
+            virtual_machine=vm_cluster,
+            disk=root_volume_cluster,
+            disk_type="rootdiskdevice")
 
         checksum_data_disk = self.createChecksum(
-            self,
-            vm_cluster,
-            data_disk,
-            "datadiskdevice_1")
+            service=self.testdata,
+            virtual_machine=vm_cluster,
+            disk=data_disk,
+            disk_type="datadiskdevice_1")
 
         volumes = Volume.list(
             self.userapiclient,
@@ -2623,16 +2536,18 @@ class NegativeTestStorageMigration(cloudstackTestCase):
         self.debug("Done with create checksum")
 
         compareChecksum(
-            self,
-            checksum_root_disk,
-            "rootdiskdevice",
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_root_disk,
+            disk_type="rootdiskdevice",
             virt_machine=vm_cluster
         )
 
         compareChecksum(
-            self,
-            checksum_data_disk,
-            "datadiskdevice_1",
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_data_disk,
+            disk_type="datadiskdevice_1",
             virt_machine=vm_cluster
         )
 
@@ -2699,17 +2614,16 @@ class TestLiveStorageMigration(cloudstackTestCase):
             cls.testdata["ostype"])
 
         cls._cleanup = []
-        cls.unsupportedHypervisor = False
-        cls.insuffPools = False
+
         if cls.hypervisor.lower() in ["kvm", "lxc"]:
-            cls.unsupportedHypervisor = True
-            return
+            raise unittest.SkipTest(
+                "Live Storage migration not supported on %s" %
+                cls.hypervisor)
 
         try:
             cls.pools = StoragePool.list(cls.apiclient, zoneid=cls.zone.id)
         except Exception as e:
-            cls.insuffPools = True
-            return
+            raise unittest.SkipTest(e)
         try:
 
             # Create an account
@@ -2791,9 +2705,6 @@ class TestLiveStorageMigration(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
-        if self.unsupportedHypervisor or self.insuffPools:
-            self.skipTest("Skipping test because unsupported hypervisor\
-                    %s" % self.hypervisor)
         self.cleanup = []
 
     def tearDown(self):
@@ -2805,13 +2716,12 @@ class TestLiveStorageMigration(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic"],
-        required_hardware="True")
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_01_migrate_live(self):
         """ Test migrate Volume (root and data disk)
 
         # 1. Deploy a VM on cluster wide primary storage.
-        # 2. Migrate root and data volume to two different storage pools\
+        # 2. Migrate root and data volume to two different storage pools
              in same cluster.
 
         """
@@ -2889,10 +2799,10 @@ class TestLiveStorageMigration(cloudstackTestCase):
         # Step 2
         # Migrate ROOT Volume from CWPS to other CWPS
         checksum_random_root_cluster = createChecksum(
-            self,
-            vm_cluster,
-            root_volume_cluster,
-            "rootdiskdevice")
+            service=self.testdata,
+            virtual_machine=vm_cluster,
+            disk=root_volume_cluster,
+            disk_type="rootdiskdevice")
 
         # Get Destnation Pool
         # Avoid storage Pool on which ROOT disk exists
@@ -2911,19 +2821,19 @@ class TestLiveStorageMigration(cloudstackTestCase):
             islive=True)
 
         compareChecksum(
-            self,
-            checksum_random_root_cluster,
-            "rootdiskdevice",
-            virt_machine=vm_cluster,
-            disk=None,
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_random_root_cluster,
+            disk_type="rootdiskdevice",
+            virt_machine=vm_cluster
         )
 
         # Migrate DATA Volume from CWPS to other CWPS
         checksum_random_data_cluster = createChecksum(
-            self,
-            vm_cluster,
-            data_volume_1_cluster,
-            "datadiskdevice_1")
+            service=self.testdata,
+            virtual_machine=vm_cluster,
+            disk=data_volume_1_cluster,
+            disk_type="datadiskdevice_1")
 
         # Get Destnation Pool
         # Avoid storage Pool allocated for ROOT disk, and Pool on which DATA
@@ -2955,14 +2865,27 @@ class TestLiveStorageMigration(cloudstackTestCase):
             data_volume_clust_1
         )
 
-        compareChecksum(
-            self,
-            checksum_random_data_cluster,
-            "datadiskdevice_1",
-            virt_machine=None,
-            disk=data_volume_1_cluster,
-            new_vm=True)
+        self.new_virtual_machine.attach_volume(
+            self.apiclient,
+            data_volume_1_cluster
+        )
 
+        # Rebooting is required so that newly attached disks are detected
+        self.new_virtual_machine.reboot(self.apiclient)
+
+        compareChecksum(
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_random_data_cluster,
+            disk_type="datadiskdevice_1",
+            virt_machine=self.new_virtual_machine
+        )
+
+        self.new_virtual_machine.detach_volume(
+            self.apiclient,
+            data_volume_1_cluster)
+
+        self.new_virtual_machine.reboot(self.apiclient)
         # Destroy and expunge VM and data disk
         vm_cluster.delete(self.apiclient)
 
@@ -2989,16 +2912,16 @@ class TestLiveStorageMigration(cloudstackTestCase):
             ), None, "Volume list should be empty")
 
         return
-
     @unittest.skip(
         "Requires setup with 2 pods - Each pod having 2 clusters. \
             Yet to be tested")
-    @attr(tags=["advanced", "basic"], required_hardware="True")
+
+    @attr(tags=["advanced", "basic"],required_hardware="true")
     def test_02_migration_live_different_pods(self):
         """ Test migrate Volume (root and data disk)
 
         # 1. Deploy a VM on cluster wide primary storage.
-        # 2. Migrate root and data volume to two different storage pools\
+        # 2. Migrate root and data volume to two different storage pools
              in same cluster.
 
         """
@@ -3088,10 +3011,10 @@ class TestLiveStorageMigration(cloudstackTestCase):
         # Step 2
         # Migrate ROOT Volume from CWPS to other CWPS
         checksum_random_root_cluster = createChecksum(
-            self,
-            vm_cluster,
-            root_volume_cluster,
-            "rootdiskdevice")
+            service=self.testdata,
+            virtual_machine=vm_cluster,
+            disk=root_volume_cluster,
+            disk_type="rootdiskdevice")
 
         # Get Destnation Pool
         # Avoid storage Pool on which ROOT disk exists
@@ -3110,19 +3033,19 @@ class TestLiveStorageMigration(cloudstackTestCase):
             islive=True)
 
         compareChecksum(
-            self,
-            checksum_random_root_cluster,
-            "rootdiskdevice",
-            virt_machine=vm_cluster,
-            disk=None,
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_random_root_cluster,
+            disk_type="rootdiskdevice",
+            virt_machine=vm_cluster
         )
 
         # Migrate DATA Volume from CWPS to other CWPS
         checksum_random_data_cluster = createChecksum(
-            self,
-            vm_cluster,
-            data_volume_1_cluster,
-            "datadiskdevice_1")
+            service=self.testdata,
+            virtual_machine=vm_cluster,
+            disk=data_volume_1_cluster,
+            disk_type="datadiskdevice_1")
 
         # Get Destnation Pool
         # Avoid storage Pool allocated for ROOT disk, and Pool on which DATA
@@ -3155,14 +3078,27 @@ class TestLiveStorageMigration(cloudstackTestCase):
             data_volume_clust_1
         )
 
-        compareChecksum(
-            self,
-            checksum_random_data_cluster,
-            "datadiskdevice_1",
-            virt_machine=None,
-            disk=data_volume_1_cluster,
-            new_vm=True)
+        self.new_virtual_machine.attach_volume(
+            self.apiclient,
+            data_volume_1_cluster
+        )
 
+        # Rebooting is required so that newly attached disks are detected
+        self.new_virtual_machine.reboot(self.apiclient)
+
+        compareChecksum(
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_random_data_cluster,
+            disk_type="datadiskdevice_1",
+            virt_machine=self.new_virtual_machine
+        )
+
+        self.new_virtual_machine.detach_volume(
+            self.apiclient,
+            data_volume_1_cluster)
+
+        self.new_virtual_machine.reboot(self.apiclient)
         # Add disk 2
 
         data_volume_clust_2 = Volume.create(
@@ -3192,20 +3128,33 @@ class TestLiveStorageMigration(cloudstackTestCase):
         # Add data to second data disk
 
         checksum_random_data_cluster = createChecksum(
-            self,
-            vm_cluster,
-            data_volume_2_cluster,
-            "datadiskdevice_2")
+            service=self.testdata,
+            virtual_machine=vm_cluster,
+            disk=data_volume_2_cluster,
+            disk_type="datadiskdevice_2")
 
         # TO-DO Migration
+        self.new_virtual_machine.attach_volume(
+            self.apiclient,
+            data_volume_2_cluster
+        )
+
+        # Rebooting is required so that newly attached disks are detected
+        self.new_virtual_machine.reboot(self.apiclient)
 
         compareChecksum(
-            self,
-            checksum_random_data_cluster,
-            "datadiskdevice_2",
-            virt_machine=None,
-            disk=data_volume_2_cluster,
-            new_vm=True)
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_random_data_cluster,
+            disk_type="datadiskdevice_2",
+            virt_machine=self.new_virtual_machine
+        )
+
+        self.new_virtual_machine.detach_volume(
+            self.apiclient,
+            data_volume_2_cluster)
+
+        self.new_virtual_machine.reboot(self.apiclient)
 
         # TO-DO: Create Snapshot, Migrate and Restore Snapshot
         # But Restore snapshot to previous stage
@@ -3223,8 +3172,6 @@ class TestLiveStorageMigration(cloudstackTestCase):
             zoneid=self.zone.id,
             mode=self.zone.networktype
         )
-
-        vm_zone.start(self.userapiclient)
 
         # Get ROOT Volume Id
         root_volumes_zone_list = list_volumes(
@@ -3261,20 +3208,20 @@ class TestLiveStorageMigration(cloudstackTestCase):
         # Step 4
         # Migrate ROOT Volume from ZWPS to other ZWPS
         checksum_random_root_zone = createChecksum(
-            self,
-            vm_zone,
-            root_volume_zone,
-            "rootdiskdevice")
+            service=self.testdata,
+            virtual_machine=vm_zone,
+            disk=root_volume_zone,
+            disk_type="rootdiskdevice")
 
         destinationPool = GetDestinationPool(self, root_volume_zone, "ZONE")
         MigrateRootVolume(self, vm_zone, destinationPool)
 
         compareChecksum(
-            self,
-            checksum_random_root_zone,
-            "rootdiskdevice",
-            virt_machine=vm_zone,
-            disk=None,
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_random_root_zone,
+            disk_type="rootdiskdevice",
+            virt_machine=vm_zone
         )
 
         # Try to Migrate ROOT Volume from ZWPS to Cluster wide Storage
@@ -3287,20 +3234,20 @@ class TestLiveStorageMigration(cloudstackTestCase):
             expectexception=True)
 
         compareChecksum(
-            self,
-            checksum_random_root_zone,
-            "rootdiskdevice",
-            virt_machine=vm_cluster,
-            disk=None,
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_random_root_zone,
+            disk_type="rootdiskdevice",
+            virt_machine=vm_cluster
         )
 
         # DATA Disk
 
         checksum_random_data_zone = createChecksum(
-            self,
-            vm_zone,
-            data_volumes_zone_list[0],
-            "datadiskdevice_1")
+            service=self.testdata,
+            virtual_machine=vm_zone,
+            disk=data_volumes_zone_list[0],
+            disk_type="datadiskdevice_1")
 
         # Migrate DATA Volume from ZWPS to other ZWPS
         destinationPool = GetDestinationPool(
@@ -3309,13 +3256,27 @@ class TestLiveStorageMigration(cloudstackTestCase):
             "ZONE")
         MigrateDataVolume(self, data_volumes_zone_list[0], destinationPool)
 
+        self.new_virtual_machine.attach_volume(
+            self.apiclient,
+            data_volumes_zone_list[0]
+        )
+
+        # Rebooting is required so that newly attached disks are detected
+        self.new_virtual_machine.reboot(self.apiclient)
+
         compareChecksum(
-            self,
-            checksum_random_data_zone,
-            "datadiskdevice_1",
-            virt_machine=None,
-            disk=data_volumes_zone_list[0],
-            new_vm=True)
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_random_data_zone,
+            disk_type="datadiskdevice_1",
+            virt_machine=self.new_virtual_machine
+        )
+
+        self.new_virtual_machine.detach_volume(
+            self.apiclient,
+            data_volumes_zone_list[0])
+
+        self.new_virtual_machine.reboot(self.apiclient)
 
         # Try to Migrate DATA Volume from ZWPS to Cluster wide Storage
         destinationPool = GetDestinationPool(self, data_volume_zone, "CLUSTER")
@@ -3325,13 +3286,26 @@ class TestLiveStorageMigration(cloudstackTestCase):
             destinationPool,
             expectexception=True)
 
+        self.new_virtual_machine.attach_volume(
+            self.apiclient,
+            data_volumes_zone_list[0]
+        )
+
+        # Rebooting is required so that newly attached disks are detected
+        self.new_virtual_machine.reboot(self.apiclient)
         compareChecksum(
-            self,
-            checksum_random_data_zone,
-            "datadiskdevice_1",
-            virt_machine=None,
-            disk=data_volumes_zone_list[0],
-            new_vm=True)
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_random_data_zone,
+            disk_type="datadiskdevice_1",
+            virt_machine=self.new_virtual_machine
+        )
+
+        self.new_virtual_machine.detach_volume(
+            self.apiclient,
+            data_volumes_zone_list[0])
+
+        self.new_virtual_machine.reboot(self.apiclient)
 
         # Try to Migrate DATA Volume from ZWPS to Cluster wide Storage
         destinationPool = GetDestinationPool(self, data_volume_zone, "CLUSTER")
@@ -3341,13 +3315,26 @@ class TestLiveStorageMigration(cloudstackTestCase):
             destinationPool,
             expectexception=True)
 
+        self.new_virtual_machine.attach_volume(
+            self.apiclient,
+            data_volumes_zone_list[0]
+        )
+
+        # Rebooting is required so that newly attached disks are detected
+        self.new_virtual_machine.reboot(self.apiclient)
         compareChecksum(
-            self,
-            checksum_random_data_zone,
-            "datadiskdevice_1",
-            virt_machine=None,
-            disk=data_volumes_zone_list[0],
-            new_vm=True)
+            self.apiclient,
+            service=self.testdata,
+            original_checksum=checksum_random_data_zone,
+            disk_type="datadiskdevice_1",
+            virt_machine=self.new_virtual_machine
+        )
+
+        self.new_virtual_machine.detach_volume(
+            self.apiclient,
+            data_volumes_zone_list[0])
+
+        self.new_virtual_machine.reboot(self.apiclient)
 
         # Destroy and expunge VM and data disk
         vm_zone.delete(self.apiclient)
@@ -3407,10 +3394,10 @@ class TestLiveStorageMigration(cloudstackTestCase):
                 self.apiclient,
                 id=root_volume_cluster.id,
             ), None, "Volume list should be empty")
+	
+	return
 
-        return
-
-def MigrateVmWithVolume(self,vm,destinationHost,volumes,pools):
+ def MigrateVmWithVolume(self,vm,destinationHost,volumes,pools):
     """
         This method is used to migrate a vm and its volumes using migrate virtual machine with volume API
         INPUTS:
@@ -3868,3 +3855,4 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
 
         check_files(self, vm,destinationHost)
+

@@ -230,7 +230,7 @@ class TestPathVolume(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
-        if self.unsupportedHypervisor or self.insuffPools:
+        if self.unsupportedHypervisor or self.insuffStorage:
             self.skipTest("Skipping test because of insuff resources\
                     %s" % self.hypervisor)
 

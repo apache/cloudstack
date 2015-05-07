@@ -58,7 +58,7 @@ intelligent IaaS cloud implementation.
 
 %package management
 Summary:   CloudStack management server UI
-Requires: java-1.7.0-openjdk
+Requires: java = 1.7.0
 Requires: python
 Requires: bash
 Requires: bzip2
@@ -80,7 +80,6 @@ Requires: mkisofs
 Requires: MySQL-python
 Requires: ipmitool
 Requires: %{name}-common = %{_ver}
-Requires: %{name}-awsapi = %{_ver}
 Requires: iptables-services
 Group:     System Environment/Libraries
 %description management
@@ -97,7 +96,7 @@ The Apache CloudStack files shared between agent and management server
 %package agent
 Summary: CloudStack Agent for KVM hypervisors
 Requires: openssh-clients
-Requires: java-1.7.0-openjdk
+Requires: java => 1.7.0
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: bridge-utils
@@ -132,7 +131,7 @@ The CloudStack baremetal agent
 
 %package usage
 Summary: CloudStack Usage calculation server
-Requires: java-1.7.0-openjdk
+Requires: java => 1.7.0
 Requires: jsvc
 Requires: jakarta-commons-daemon
 Requires: jakarta-commons-daemon-jsvc
@@ -148,13 +147,6 @@ Provides: python-marvin
 Group: System Environment/Libraries
 %description cli
 Apache CloudStack command line interface
-
-%package awsapi
-Summary: Apache CloudStack AWS API compatibility wrapper
-Requires: %{name}-management = %{_ver}
-Group: System Environment/Libraries
-%description awsapi
-Apache Cloudstack AWS API compatibility wrapper
 
 %if "%{_ossnoss}" == "noredist"
 %package mysql-ha
@@ -189,14 +181,13 @@ if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then
    FLAGS="$FLAGS -Dsimulator"
 fi 
 
-mvn -Pawsapi,systemvm -DskipTests $FLAGS clean package
+mvn -Psystemvm -DskipTests $FLAGS clean package
 
 %install
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
 # Common directories
 mkdir -p ${RPM_BUILD_ROOT}%{_bindir}
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/agent
-mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/awsapi
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/ipallocator
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/cache/%{name}/management/work
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/cache/%{name}/management/temp
@@ -228,7 +219,6 @@ mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management
-mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/awsapi
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/run
 
@@ -324,36 +314,11 @@ mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/usage/
 cp -r cloud-cli/cloudtool ${RPM_BUILD_ROOT}%{python_sitearch}/
 install cloud-cli/cloudapis/cloud.py ${RPM_BUILD_ROOT}%{python_sitearch}/cloudapis.py
 
-# AWS API
-mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi
-mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/setup
-cp -r awsapi/target/cloud-awsapi-%{_maventag}/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi
-install -D awsapi-setup/setup/cloud-setup-bridge ${RPM_BUILD_ROOT}%{_bindir}/cloudstack-setup-bridge
-install -D awsapi-setup/setup/cloudstack-aws-api-register ${RPM_BUILD_ROOT}%{_bindir}/cloudstack-aws-api-register
-cp -r awsapi-setup/db/mysql/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/setup
-cp awsapi/resource/Axis2/axis2.xml ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/conf
-cp awsapi/target/WEB-INF/services/cloud-ec2.aar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/services
-
-
-for name in cloud-bridge.properties commons-logging.properties ec2-service.properties ; do
-  mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/$name \
-    ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
-done
-
 # MYSQL HA
 if [ "x%{_ossnoss}" == "xnoredist" ] ; then
   mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-mysql-ha/lib
   cp -r plugins/database/mysql-ha/target/cloud-plugin-database-mysqlha-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-mysql-ha/lib
 fi
-
-#Don't package the below for AWS API
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/db.properties
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/LICENSE.txt
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/log4j.properties
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/log4j-vmops.xml
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/META-INF
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/NOTICE.txt
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/services.xml
 
 #License files from whisker
 install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-management-%{version}/NOTICE
@@ -364,8 +329,6 @@ install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-agent
 install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-agent-%{version}/LICENSE
 install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-usage-%{version}/NOTICE
 install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-usage-%{version}/LICENSE
-install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-awsapi-%{version}/NOTICE
-install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-awsapi-%{version}/LICENSE
 install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-cli-%{version}/NOTICE
 install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-cli-%{version}/LICENSE
 if [ "x%{_ossnoss}" == "xnoredist" ] ; then
@@ -375,10 +338,6 @@ fi
 
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
-
-%pre awsapi
-id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
-     -r -s /bin/sh -d %{_localstatedir}/cloudstack/management cloud|| true
 
 %preun management
 /usr/bin/systemctl stop cloudstack-management || true
@@ -466,11 +425,6 @@ if [ -f "%{_sysconfdir}/%{name}/management/key" ]; then
     ln -s %{_sysconfdir}/%{name}/management/key %{_sysconfdir}/%{name}/usage/key
 fi
 
-#%post awsapi
-#if [ -d "%{_datadir}/%{name}-management" ] ; then
-#   ln -s %{_datadir}/%{name}-bridge/webapps %{_datadir}/%{name}-management/webapps7080
-#fi
-
 #No default permission as the permission setup is complex
 %files management
 %defattr(-,root,root,-)
@@ -484,7 +438,6 @@ fi
 %dir %attr(0770,root,cloud) %{_localstatedir}/cache/%{name}/management/work
 %dir %attr(0770,root,cloud) %{_localstatedir}/cache/%{name}/management/temp
 %dir %attr(0770,root,cloud) %{_localstatedir}/log/%{name}/management
-%dir %attr(0770,root,cloud) %{_localstatedir}/log/%{name}/awsapi
 %config(noreplace) /usr/sbin/%{name}-management-sysd
 %config(noreplace) %{_sysconfdir}/sysconfig/%{name}-management
 %config(noreplace) %{_sysconfdir}/sudoers.d/%{name}-management
@@ -504,9 +457,7 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/management/server.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/environment.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/java.security.ciphers
-%config(noreplace) %{_sysconfdir}/%{name}/management/cloud-bridge.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/commons-logging.properties
-%config(noreplace) %{_sysconfdir}/%{name}/management/ec2-service.properties
 %attr(0755,root,root) %{_unitdir}/%{name}-management.service
 %attr(0755,cloud,cloud) %{_localstatedir}/run/%{name}-management.pid
 
@@ -584,18 +535,6 @@ fi
 %{_defaultdocdir}/%{name}-cli-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-cli-%{version}/NOTICE
 
-%files awsapi
-%defattr(0644,cloud,cloud,0755)
-%{_datadir}/%{name}-bridge/webapps/awsapi
-%attr(0644,root,root) %{_datadir}/%{name}-bridge/setup/*
-%attr(0755,root,root) %{_bindir}/cloudstack-aws-api-register
-%attr(0755,root,root) %{_bindir}/cloudstack-setup-bridge
-%attr(0666,cloud,cloud) %{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/crypto.properties
-%attr(0666,cloud,cloud) %{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/xes.keystore
-
-%{_defaultdocdir}/%{name}-awsapi-%{version}/LICENSE
-%{_defaultdocdir}/%{name}-awsapi-%{version}/NOTICE
-
 %if "%{_ossnoss}" == "noredist"
 %files mysql-ha
 %defattr(0644,cloud,cloud,0755)
@@ -608,6 +547,9 @@ fi
 %attr(0755,root,root) %{_bindir}/cloudstack-setup-baremetal
 
 %changelog
+* Thu Apr 30 2015 Rohit Yadav <bhaisaab@apache.org> 4.6.0
+- Remove awsapi package
+
 * Wed Nov 19 2014 Hugo Trippaers <hugo@apache.org> 4.6.0
 - Create a specific spec for CentOS 7
 
