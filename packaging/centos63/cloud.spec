@@ -58,6 +58,7 @@ intelligent IaaS cloud implementation.
 
 %package management
 Summary:   CloudStack management server UI
+Requires: redhat-lsb-core
 Requires: java-1.7.0-openjdk
 Requires: python
 Requires: bash
