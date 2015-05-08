@@ -18,7 +18,7 @@
     <cs.jdk.version>1.7</cs.jdk.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <tomcat.version>8.0.21</tomcat.version>
+    <tomcat.version>8.0.22</tomcat.version>
   </properties>
   <dependencies>
         <dependency>

@@ -69,7 +69,8 @@ function packaging() {
     fi
 
     echo Preparing to package Apache CloudStack ${VERSION}
-
+    echo ". cleaning up old dist folder"
+    rm -rf $RPMDIR
     mkdir -p $RPMDIR/SPECS
     mkdir -p $RPMDIR/BUILD
     mkdir -p $RPMDIR/RPMS

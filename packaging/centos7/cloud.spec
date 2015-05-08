@@ -44,7 +44,7 @@ Source0:   %{name}-%{_maventag}.tgz
 BuildRoot: %{_tmppath}/%{name}-%{_maventag}-%{release}-build
 
 BuildRequires: java-1.7.0-openjdk-devel
-BuildRequires: ws-commons-util
+#BuildRequires: ws-commons-util
 BuildRequires: jpackage-utils
 BuildRequires: gcc
 BuildRequires: glibc-devel
@@ -58,7 +58,7 @@ intelligent IaaS cloud implementation.
 
 %package management
 Summary:   CloudStack management server UI
-Requires: java = 1.7.0
+Requires: java >= 1.7.0
 Requires: python
 Requires: bash
 Requires: bzip2
@@ -70,7 +70,6 @@ Requires: nfs-utils
 Requires: wget
 Requires: mysql
 Requires: mysql-connector-java
-Requires: ws-commons-util
 Requires: jpackage-utils
 Requires: sudo
 Requires: /sbin/service
