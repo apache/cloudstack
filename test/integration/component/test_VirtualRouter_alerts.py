@@ -203,9 +203,9 @@ class TestVRServiceFailureAlerting(cloudstackTestCase):
         # 30minutes)
 
         qresultset = self.dbclient.execute(
-            "select id from alert where subject \
-                    = '%s' ORDER BY id DESC LIMIT 1;" %
-            str(alertSubject))
+            "select id from alert where subject like\
+                    '%{0}%' ORDER BY id DESC LIMIT 1;".format(
+            str(alertSubject)))
         self.assertNotEqual(
             len(qresultset),
             0,
