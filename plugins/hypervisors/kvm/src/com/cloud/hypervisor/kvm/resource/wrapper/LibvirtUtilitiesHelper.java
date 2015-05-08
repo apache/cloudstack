@@ -25,6 +25,7 @@ import javax.naming.ConfigurationException;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 
+import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.template.Processor;
@@ -68,5 +69,17 @@ public class LibvirtUtilitiesHelper {
 
     public Connect getConnectionByType(final String hvsType) throws LibvirtException {
         return LibvirtConnection.getConnectionByType(hvsType);
+    }
+
+    public String retrieveSshKeysPath() {
+        return LibvirtComputingResource.SSHKEYSPATH;
+    }
+
+    public String retrieveSshPubKeyPath() {
+        return LibvirtComputingResource.SSHPUBKEYPATH;
+    }
+
+    public String retrieveSshPrvKeyPath() {
+        return LibvirtComputingResource.SSHPRVKEYPATH;
     }
 }

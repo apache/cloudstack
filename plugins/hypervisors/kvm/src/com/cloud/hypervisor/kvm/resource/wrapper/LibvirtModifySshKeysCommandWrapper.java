@@ -38,21 +38,28 @@ public final class LibvirtModifySshKeysCommandWrapper extends CommandWrapper<Mod
 
     @Override
     public Answer execute(final ModifySshKeysCommand command, final LibvirtComputingResource libvirtComputingResource) {
-        final File sshKeysDir = new File(LibvirtComputingResource.SSHKEYSPATH);
+
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
+
+        final String sshkeyspath = libvirtUtilitiesHelper.retrieveSshKeysPath();
+        final String sshpubkeypath = libvirtUtilitiesHelper.retrieveSshPubKeyPath();
+        final String sshprvkeypath = libvirtUtilitiesHelper.retrieveSshPrvKeyPath();
+
+        final File sshKeysDir = new File(sshkeyspath);
         String result = null;
         if (!sshKeysDir.exists()) {
             // Change permissions for the 700
             final Script script = new Script("mkdir", libvirtComputingResource.getTimeout(), s_logger);
             script.add("-m", "700");
-            script.add(LibvirtComputingResource.SSHKEYSPATH);
+            script.add(sshkeyspath);
             script.execute();
 
             if (!sshKeysDir.exists()) {
-                s_logger.debug("failed to create directory " + LibvirtComputingResource.SSHKEYSPATH);
+                s_logger.debug("failed to create directory " + sshkeyspath);
             }
         }
 
-        final File pubKeyFile = new File(LibvirtComputingResource.SSHPUBKEYPATH);
+        final File pubKeyFile = new File(sshpubkeypath);
         if (!pubKeyFile.exists()) {
             try {
                 pubKeyFile.createNewFile();
@@ -66,16 +73,16 @@ public final class LibvirtModifySshKeysCommandWrapper extends CommandWrapper<Mod
             try (FileOutputStream pubkStream = new FileOutputStream(pubKeyFile)) {
                 pubkStream.write(command.getPubKey().getBytes());
             } catch (final FileNotFoundException e) {
-                result = "File" + LibvirtComputingResource.SSHPUBKEYPATH + "is not found:"
+                result = "File" + sshpubkeypath + "is not found:"
                         + e.toString();
                 s_logger.debug(result);
             } catch (final IOException e) {
-                result = "Write file " + LibvirtComputingResource.SSHPUBKEYPATH + ":" + e.toString();
+                result = "Write file " + sshpubkeypath + ":" + e.toString();
                 s_logger.debug(result);
             }
         }
 
-        final File prvKeyFile = new File(LibvirtComputingResource.SSHPRVKEYPATH);
+        final File prvKeyFile = new File(sshprvkeypath);
         if (!prvKeyFile.exists()) {
             try {
                 prvKeyFile.createNewFile();
@@ -92,14 +99,14 @@ public final class LibvirtModifySshKeysCommandWrapper extends CommandWrapper<Mod
                     prvKStream.write(prvKey.getBytes());
                 }
             } catch (final FileNotFoundException e) {
-                result = "File" + LibvirtComputingResource.SSHPRVKEYPATH + "is not found:" + e.toString();
+                result = "File" + sshprvkeypath + "is not found:" + e.toString();
                 s_logger.debug(result);
             } catch (final IOException e) {
-                result = "Write file " + LibvirtComputingResource.SSHPRVKEYPATH + ":" + e.toString();
+                result = "Write file " + sshprvkeypath + ":" + e.toString();
                 s_logger.debug(result);
             }
             final Script script = new Script("chmod", libvirtComputingResource.getTimeout(), s_logger);
-            script.add("600", LibvirtComputingResource.SSHPRVKEYPATH);
+            script.add("600", sshprvkeypath);
             script.execute();
         }
 

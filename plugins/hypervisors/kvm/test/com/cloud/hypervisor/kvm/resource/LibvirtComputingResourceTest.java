@@ -1711,6 +1711,13 @@ public class LibvirtComputingResourceTest {
     public void testModifySshKeysCommand() {
         final ModifySshKeysCommand command = new ModifySshKeysCommand("", "");
 
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+
+        when(libvirtUtilitiesHelper.retrieveSshKeysPath()).thenReturn("/path/keys");
+        when(libvirtUtilitiesHelper.retrieveSshPubKeyPath()).thenReturn("/path/pub/keys");
+        when(libvirtUtilitiesHelper.retrieveSshPrvKeyPath()).thenReturn("/path/pvt/keys");
+
         when(libvirtComputingResource.getTimeout()).thenReturn(0);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
