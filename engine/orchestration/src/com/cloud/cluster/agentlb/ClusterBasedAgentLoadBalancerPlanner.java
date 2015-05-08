@@ -61,6 +61,7 @@ public class ClusterBasedAgentLoadBalancerPlanner extends AdapterBase implements
 
         sc = QueryBuilder.create(HostVO.class);
         sc.and(sc.entity().getManagementServerId(), Op.EQ, msId);
+        sc.and(sc.entity().getType(), Op.EQ, Host.Type.Routing);
         sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
         List<HostVO> directHosts = sc.list();
 
