@@ -741,6 +741,7 @@ dictionary = {
 'label.lang.japanese': '<fmt:message key="label.lang.japanese" />',
 'label.lang.korean': '<fmt:message key="label.lang.korean" />',
 'label.lang.spanish': '<fmt:message key="label.lang.spanish" />',
+'label.lang.hungarian': '<fmt:message key="label.lang.hungarian" />',
 'label.last.disconnected': '<fmt:message key="label.last.disconnected" />',
 'label.last.name': '<fmt:message key="label.last.name" />',
 'label.latest.events': '<fmt:message key="label.latest.events" />',

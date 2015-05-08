@@ -88,6 +88,7 @@
                                 <option value="ar"><fmt:message key="label.lang.arabic"/></option>
                                 <option value="nl_NL"><fmt:message key="label.lang.dutch"/></option>
                                 <option value="pl"><fmt:message key="label.lang.polish"/></option>
+                                <option value="hu"><fmt:message key="label.lang.hungarian"/></option>
                             </select>
                         </div>
                     </div>
