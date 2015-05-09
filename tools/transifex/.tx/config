@@ -40,6 +40,7 @@ trans.ca = work-dir/messages_ca.properties
 trans.de_DE = work-dir/messages_de_DE.properties
 trans.es = work-dir/messages_es.properties
 trans.fr_FR = work-dir/messages_fr_FR.properties
+trans.hu = work-dir/messages_hu.properties
 trans.it_IT = work-dir/messages_it_IT.properties
 trans.ja_JP = work-dir/messages_ja_JP.properties
 trans.ko_KR = work-dir/messages_ko_KR.properties
