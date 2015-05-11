@@ -536,6 +536,7 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/management/Catalina/localhost/client/context.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/catalina.policy
 %config(noreplace) %{_sysconfdir}/%{name}/management/catalina.properties
+%config(noreplace) %{_sysconfdir}/%{name}/management/context.xml
 #%config(noreplace) %{_sysconfdir}/%{name}/management/classpath.conf
 %config(noreplace) %{_sysconfdir}/%{name}/management/cloudmanagementserver.keystore
 %config(noreplace) %{_sysconfdir}/%{name}/management/logging.properties

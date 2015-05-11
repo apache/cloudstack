@@ -23,6 +23,7 @@
 /etc/cloudstack/management/server-ssl.xml
 /etc/cloudstack/management/server-nonssl.xml
 /etc/cloudstack/management/server.xml
+/etc/cloudstack/management/context.xml
 /etc/cloudstack/management/classpath.conf
 /etc/cloudstack/management/db.properties
 /etc/cloudstack/management/tomcat.conf
