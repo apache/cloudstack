@@ -3718,7 +3718,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     protected boolean sendCommandsToRouter(final VirtualRouter router, final Commands cmds) throws AgentUnavailableException {
         if(!checkRouterVersion(router)){
             s_logger.debug("Router requires upgrade. Unable to send command to router:" + router.getId() + ", router template version : " + router.getTemplateVersion()
-                    + ", minimal required version : " + MinVRVersion);
+                    + ", minimal required version : " + NetworkOrchestrationService.MinVRVersion.valueIn(router.getDataCenterId()));
             throw new CloudRuntimeException("Unable to send command. Upgrade in progress. Please contact administrator.");
         }
         Answer[] answers = null;
@@ -4355,8 +4355,10 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         if(router.getTemplateVersion() == null){
             return false;
         }
+        long dcid = router.getDataCenterId();
+        final String dcVersion = NetworkOrchestrationService.MinVRVersion.valueIn(dcid);
         final String trimmedVersion = Version.trimRouterVersion(router.getTemplateVersion());
-        return (Version.compare(trimmedVersion, MinVRVersion) >= 0);
+        return (Version.compare(trimmedVersion, dcVersion) >= 0);
     }
 
     private List<Long> rebootRouters(List<DomainRouterVO> routers){
