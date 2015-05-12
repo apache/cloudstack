@@ -168,6 +168,7 @@ if ! ovftool_loc="$(type -p "ovftool")" || [ -z "$ovftool_loc" ]; then
     vboxmanage export $machine_uuid --output $appliance-$branch-vmware.ovf
     mv $appliance-$branch-vmware.ovf $appliance-$branch-vmware.ovf-orig
     java -cp convert Convert convert_ovf_vbox_to_esx.xslt $appliance-$branch-vmware.ovf-orig $appliance-$branch-vmware.ovf
+    chmod 666 *.vmdk *.ovf
     tar -cf $appliance-$branch-vmware.ova $appliance-$branch-vmware.ovf $appliance-$branch-vmware-disk[0-9].vmdk
     rm -f $appliance-$branch-vmware.ovf $appliance-$branch-vmware.ovf-orig $appliance-$branch-vmware-disk[0-9].vmdk
 else
