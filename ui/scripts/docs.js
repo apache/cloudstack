@@ -1168,7 +1168,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpRegisterISOExtractable: {
-        desc: 'Whether the ISO is extractable or not',
+        desc: 'Whether the ISO is downloadable by users or not',
         externalLink: ''
     },
     helpRegisterISOPublic: {
@@ -1209,7 +1209,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpRegisterTemplateExtractable: {
-        desc: 'Whether the template is extractable or not',
+        desc: 'Whether the template is downloadable by users or not',
         externalLink: ''
     },
     helpRegisterTemplateDynamicallyScalable: {
