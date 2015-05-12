@@ -18,6 +18,62 @@
 
 set -x
 
+
+function stage_vmx (){
+    cat << VMXFILE > "$1.vmx"
+.encoding = "UTF-8"
+displayname = "$1"
+annotation = "$1"
+guestos = "otherlinux-64"
+virtualhw.version = "7"
+config.version = "8"
+numvcpus = "1"
+cpuid.coresPerSocket = "1"
+memsize = "256"
+pciBridge0.present = "TRUE"
+pciBridge4.present = "TRUE"
+pciBridge4.virtualDev = "pcieRootPort"
+pciBridge4.functions = "8"
+pciBridge5.present = "TRUE"
+pciBridge5.virtualDev = "pcieRootPort"
+pciBridge5.functions = "8"
+pciBridge6.present = "TRUE"
+pciBridge6.virtualDev = "pcieRootPort"
+pciBridge6.functions = "8"
+pciBridge7.present = "TRUE"
+pciBridge7.virtualDev = "pcieRootPort"
+pciBridge7.functions = "8"
+vmci0.present = "TRUE"
+floppy0.present = "FALSE"
+ide0:0.clientDevice = "FALSE"
+ide0:0.present = "TRUE"
+ide0:0.deviceType = "atapi-cdrom"
+ide0:0.autodetect = "TRUE"
+ide0:0.startConnected = "FALSE"
+mks.enable3d = "false"
+svga.autodetect = "false"
+svga.vramSize = "4194304"
+scsi0:0.present = "TRUE"
+scsi0:0.deviceType = "disk"
+scsi0:0.fileName = "$2"
+scsi0:0.mode = "persistent"
+scsi0:0.writeThrough = "false"
+scsi0.virtualDev = "lsilogic"
+scsi0.present = "TRUE"
+vmci0.unrestricted = "false"
+ethernet0.present = "TRUE"
+ethernet0.virtualDev = "e1000"
+ethernet0.connectionType = "bridged"
+ethernet0.startConnected = "TRUE"
+ethernet0.addressType = "generated"
+ethernet0.wakeonpcktrcv = "false"
+vcpu.hotadd = "false"
+vcpu.hotremove = "false"
+firmware = "bios"
+mem.hotadd = "false"
+VMXFILE
+}
+
 if [ ! -z "$1" ]
 then
   appliance="$1"
@@ -105,13 +161,22 @@ echo "$appliance exported for KVM: dist/$appliance-$branch-kvm.qcow2.bz2"
 
 # Export both ova and vmdk for VMWare
 vboxmanage clonehd $hdd_uuid $appliance-$branch-vmware.vmdk --format VMDK
+chmod 666 $appliance-$branch-vmware.vmdk
+
+if ! ovftool_loc="$(type -p "ovftool")" || [ -z "$ovftool_loc" ]; then
+    echo "ovftool not found, using traditional method to export ova file"
+    vboxmanage export $machine_uuid --output $appliance-$branch-vmware.ovf
+    mv $appliance-$branch-vmware.ovf $appliance-$branch-vmware.ovf-orig
+    java -cp convert Convert convert_ovf_vbox_to_esx.xslt $appliance-$branch-vmware.ovf-orig $appliance-$branch-vmware.ovf
+    tar -cf $appliance-$branch-vmware.ova $appliance-$branch-vmware.ovf $appliance-$branch-vmware-disk[0-9].vmdk
+    rm -f $appliance-$branch-vmware.ovf $appliance-$branch-vmware.ovf-orig $appliance-$branch-vmware-disk[0-9].vmdk
+else
+    echo "ovftool found, using it to export ova file"
+    stage_vmx $appliance-$branch-vmware $appliance-$branch-vmware.vmdk
+    ovftool $appliance-$branch-vmware.vmx $appliance-$branch-vmware.ova
+fi
 bzip2 $appliance-$branch-vmware.vmdk
 echo "$appliance exported for VMWare: dist/$appliance-$branch-vmware.vmdk.bz2"
-vboxmanage export $machine_uuid --output $appliance-$branch-vmware.ovf
-mv $appliance-$branch-vmware.ovf $appliance-$branch-vmware.ovf-orig
-java -cp convert Convert convert_ovf_vbox_to_esx.xslt $appliance-$branch-vmware.ovf-orig $appliance-$branch-vmware.ovf
-tar -cf $appliance-$branch-vmware.ova $appliance-$branch-vmware.ovf $appliance-$branch-vmware-disk[0-9].vmdk
-rm -f $appliance-$branch-vmware.ovf $appliance-$branch-vmware.ovf-orig $appliance-$branch-vmware-disk[0-9].vmdk
 echo "$appliance exported for VMWare: dist/$appliance-$branch-vmware.ova"
 
 # Export for HyperV
