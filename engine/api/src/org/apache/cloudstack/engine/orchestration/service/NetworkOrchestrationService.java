@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
@@ -62,9 +63,13 @@ public interface NetworkOrchestrationService {
     static final String NetworkLockTimeoutCK = "network.lock.timeout";
     static final String GuestDomainSuffixCK = "guest.domain.suffix";
     static final String NetworkThrottlingRateCK = "network.throttling.rate";
+    static final String MinVRVersionCK = "minreq.sysvmtemplate.version";
+
+    static final ConfigKey<String> MinVRVersion = new ConfigKey<String>(String.class, MinVRVersionCK, "Advanced", "4.5.0",
+            "What version should the Virtual Routers report", true, ConfigKey.Scope.Zone, null);
 
     static final ConfigKey<Integer> NetworkLockTimeout = new ConfigKey<Integer>(Integer.class, NetworkLockTimeoutCK, "Network", "600",
-        "Lock wait timeout (seconds) while implementing network", true);
+        "Lock wait timeout (seconds) while implementing network", true, Scope.Global, null);
     static final ConfigKey<String> GuestDomainSuffix = new ConfigKey<String>(String.class, GuestDomainSuffixCK, "Network", "cloud.internal",
         "Default domain name for vms inside virtualized networks fronted by router", true, ConfigKey.Scope.Zone, null);
     static final ConfigKey<Integer> NetworkThrottlingRate = new ConfigKey<Integer>("Network", Integer.class, NetworkThrottlingRateCK, "200",
