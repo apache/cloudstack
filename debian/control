@@ -15,7 +15,7 @@ Description: A common package which contains files which are shared by several C
 
 Package: cloudstack-management
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, cloudstack-common (= ${source:Version}), tomcat6,  sudo, jsvc, python-mysqldb, libmysql-java, python-paramiko, augeas-tools, mysql-client, adduser
+Depends: ${misc:Depends}, ${python:Depends}, cloudstack-common (= ${source:Version}), tomcat6 | tomcat7 | tomcat8, sudo, jsvc, python-mysqldb, libmysql-java, python-paramiko, augeas-tools, mysql-client, adduser
 Conflicts: cloud-server, cloud-client, cloud-client-ui
 Description: CloudStack server library
  The CloudStack management server
