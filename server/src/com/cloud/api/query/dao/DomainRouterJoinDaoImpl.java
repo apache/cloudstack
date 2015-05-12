@@ -22,18 +22,17 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.NicResponse;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.maint.Version;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.user.Account;
@@ -83,7 +82,7 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         if (router.getTemplateVersion() != null) {
             String routerVersion = Version.trimRouterVersion(router.getTemplateVersion());
             routerResponse.setVersion(routerVersion);
-            routerResponse.setRequiresUpgrade((Version.compare(routerVersion, VirtualNetworkApplianceService.MinVRVersion) < 0));
+            routerResponse.setRequiresUpgrade((Version.compare(routerVersion, NetworkOrchestrationService.MinVRVersion.valueIn(router.getDataCenterId())) < 0));
         } else {
             routerResponse.setVersion("UNKNOWN");
             routerResponse.setRequiresUpgrade(true);
