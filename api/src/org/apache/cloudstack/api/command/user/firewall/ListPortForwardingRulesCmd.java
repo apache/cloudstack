@@ -57,7 +57,7 @@ public class ListPortForwardingRulesCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.NETWORK_ID,
                type = CommandType.UUID,
                entityType = NetworkResponse.class,
-               description = "list port forwarding rules for ceratin network",
+               description = "list port forwarding rules for certain network",
                since = "4.3")
     private Long networkId;
 
