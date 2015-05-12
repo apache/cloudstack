@@ -33,7 +33,7 @@ class TestDeployVMWithTags(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-
+        cls.cleanup.append(cls.account)
         template = get_template(
             cls.apiclient,
             cls.zone.id,
@@ -54,11 +54,12 @@ class TestDeployVMWithTags(cloudstackTestCase):
             cls.apiclient,
             cls.services["service_offerings"]["tiny"]
         )
-
+        cls.cleanup.append(cls.service_offering)
         cls.network_offering = NetworkOffering.create(
             cls.apiclient,
             cls.services["network_offering"],
         )
+        cls.cleanup.append(cls.network_offering)
         # Enable Network offering
         cls.network_offering.update(cls.apiclient, state='Enabled')
 
@@ -72,7 +73,14 @@ class TestDeployVMWithTags(cloudstackTestCase):
             domainid=cls.domain.id,
             zoneid=cls.zone.id
         )
+        cls.cleanup.append(cls.network)
 
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cleanup_resources(cls.apiclient, cls.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
 
     def test_deploy_vm_with_tags(self):
         """Test Deploy Virtual Machine
