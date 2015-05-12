@@ -56,6 +56,12 @@ class TestProjectPrivateTemplate(cloudstackTestCase):
         cls.debug(cls.account.id)
         #Fetch an api client with the user account created
 
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cleanup_resources(cls.apiclient, cls.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
 
     def test_project_private_template(self):
         self.api_client = self.testClient.getUserApiClient(UserName=self.account.name, DomainName=self.account.domain)
@@ -109,16 +115,14 @@ class TestProjectPrivateTemplate(cloudstackTestCase):
         self.volume = list_volumes[0]
 
         #Create template from Virtual machine and Volume ID
-        self.services["projtemplate"]={}
-        self.services["projtemplate"]["name"] = "Project_Private_template"
-        self.services["projtemplate"]["ispublic"] = False
-        self.services["projtemplate"]["displaytext"] = "This template should be visible only in project scope"
-        self.services["projtemplate"]["ostype"] = self.services["ostype"]
-        self.services["projtemplate"]["templatefilter"] = self.services["templatefilter"]
+        self.services["project"]["ispublic"] = False
+        self.services["project"]["displaytext"] = "This template should be visible only in project scope"
+        self.services["project"]["ostype"] = self.services["ostype"]
+        self.services["project"]["templatefilter"] = self.services["templatefilter"]
 
         project_template = Template.create(
                                 self.api_client,
-                                self.services["projtemplate"],
+                                self.services["project"],
                                 self.volume.id,
                                 projectid=self.project.id
                                 )
@@ -128,7 +132,7 @@ class TestProjectPrivateTemplate(cloudstackTestCase):
 
         list_template_response = Template.list(
                                     self.api_client,
-                                    templatefilter=self.services["projtemplate"]["templatefilter"],
+                                    templatefilter=self.services["project"]["templatefilter"],
                                     projectid=self.project.id
                                     )
 
@@ -144,19 +148,8 @@ class TestProjectPrivateTemplate(cloudstackTestCase):
                             "There is one private template for this account in this project"
                         )
 
-        self.assertNotEqual(
-                            len(list_template_response),
-                            0,
-                            "There is not associated Private template for this account in this project"
-                        )
 
 
 
-
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.apiclient, cls.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+    
 
