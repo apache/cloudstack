@@ -895,6 +895,25 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     @Override
+    public  boolean isSharedNetworkWithoutServices (long networkId) {
+
+        Network network = _networksDao.findById(networkId);
+
+        if (network != null && network.getGuestType() != GuestType.Shared) {
+            return false;
+        }
+
+        List<Service> services = listNetworkOfferingServices(network.getNetworkOfferingId());
+
+        if (services == null || services.isEmpty()) {
+            return true;
+        }
+
+        return false;
+    }
+
+
+    @Override
     public boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service... services) {
         return (_ntwkOfferingSrvcDao.areServicesSupportedByNetworkOffering(networkOfferingId, services));
     }
