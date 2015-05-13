@@ -38,6 +38,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -635,7 +636,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
     }
 
     @Test
-    public void testFindOfferingIdReceivingNewOne() {
+    public void testFindOfferingIdFromNetwork() {
         // Prepare
         deployment.serviceOfferingId = 1L;
         when(mockNw.getNetworkOfferingId()).thenReturn(OFFERING_ID);
@@ -646,24 +647,26 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         deployment.findServiceOfferingId();
 
         // Assert
-        assertEquals("Given that no Offering was found, the previous Offering Id should be kept",
+        assertEquals("Service offering id not matching the one associated with network offering",
                 OFFERING_ID, deployment.serviceOfferingId.longValue());
     }
 
     @Test
-    public void testFindOfferingIdReceivingKeepingPrevious() {
+    public void testFindOfferingIdDefault() {
         // Prepare
         deployment.serviceOfferingId = 1L;
         when(mockNw.getNetworkOfferingId()).thenReturn(OFFERING_ID);
         when(mockNetworkOfferingDao.findById(OFFERING_ID)).thenReturn(mockNwOfferingVO);
         when(mockNwOfferingVO.getServiceOfferingId()).thenReturn(null);
+        when(mockServiceOfferingDao.findByName(Matchers.anyString())).thenReturn(mockSvcOfferingVO);
+        when(mockSvcOfferingVO.getId()).thenReturn(DEFAULT_OFFERING_ID);
 
         // Execute
         deployment.findServiceOfferingId();
 
         // Assert
-        assertEquals("Found Offering Id didn't replace previous one",
-                1L, deployment.serviceOfferingId.longValue());
+        assertEquals("Since there is no service offering associated with network offering, offering id should have matched default one",
+                DEFAULT_OFFERING_ID, deployment.serviceOfferingId.longValue());
     }
 
     @Test

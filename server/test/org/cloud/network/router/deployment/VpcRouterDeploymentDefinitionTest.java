@@ -31,6 +31,7 @@ import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 
 import com.cloud.deploy.DeployDestination;
@@ -178,23 +179,24 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
     }
 
     @Test
-    public void testFindOfferingIdLeavingPrevious() {
+    public void testFindOfferingIdDefault() {
         // Prepare
-        final Long initialOfferingId = deployment.serviceOfferingId;
         final VpcOfferingVO vpcOffering = mock(VpcOfferingVO.class);
         when(mockVpcOffDao.findById(VPC_OFFERING_ID)).thenReturn(vpcOffering);
         when(vpcOffering.getServiceOfferingId()).thenReturn(null);
+        when(mockServiceOfferingDao.findByName(Matchers.anyString())).thenReturn(mockSvcOfferingVO);
+        when(mockSvcOfferingVO.getId()).thenReturn(DEFAULT_OFFERING_ID);
 
         // Execute
         deployment.findServiceOfferingId();
 
         // Assert
-        assertEquals("Offering Id shouldn't have been updated",
-                initialOfferingId, deployment.serviceOfferingId);
+        assertEquals("Since there is no service offering associated with VPC offering, offering id should have matched default one",
+                DEFAULT_OFFERING_ID, deployment.serviceOfferingId.longValue());
     }
 
     @Test
-    public void testFindOfferingIdSettingNewOne() {
+    public void testFindOfferingIdFromVPC() {
         // Prepare
         final VpcOfferingVO vpcOffering = mock(VpcOfferingVO.class);
         when(mockVpcOffDao.findById(VPC_OFFERING_ID)).thenReturn(vpcOffering);
@@ -204,7 +206,7 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
         deployment.findServiceOfferingId();
 
         // Assert
-        assertEquals("Offering Id should have been updated",
+        assertEquals("Service offering id not matching the one associated with VPC offering",
                 VPC_OFFERING_ID, deployment.serviceOfferingId.longValue());
     }
 

@@ -33,6 +33,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -169,7 +170,7 @@ public class VirtualRouterElementTest {
     private RouterDeploymentDefinitionBuilder routerDeploymentDefinitionBuilder;
 
     @InjectMocks
-    private VpcVirtualNetworkApplianceManagerImpl _routerMgr ;
+    private VpcVirtualNetworkApplianceManagerImpl _routerMgr;
 
     @InjectMocks
     private VirtualRouterElement virtualRouterElement;
@@ -210,7 +211,7 @@ public class VirtualRouterElementTest {
     public void testPrepare() {
         virtualRouterElement._routerMgr = _routerMgr;
         virtualRouterElement.routerDeploymentDefinitionBuilder = routerDeploymentDefinitionBuilder;
-        mockDAOs(testNetwork,testOffering);
+        mockDAOs(testNetwork, testOffering);
         mockMgrs();
 
         boolean done = false;
@@ -276,6 +277,7 @@ public class VirtualRouterElementTest {
                 VirtualMachine.Type.DomainRouter,
                 /* defaultUse */ false);
         when(_serviceOfferingDao.findById(0L)).thenReturn(svcoff);
+        when(_serviceOfferingDao.findByName(Matchers.anyString())).thenReturn(svcoff);
         final DomainRouterVO router = new DomainRouterVO(/* id */ 1L,
                 /* serviceOfferingId */ 1L,
                 /* elementId */ 0L,

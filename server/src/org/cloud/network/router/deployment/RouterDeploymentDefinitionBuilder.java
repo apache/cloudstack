@@ -45,6 +45,7 @@ import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.vm.DomainRouterVO;
@@ -67,6 +68,8 @@ public class RouterDeploymentDefinitionBuilder {
     private VirtualRouterProviderDao vrProviderDao;
     @Inject
     private NetworkOfferingDao networkOfferingDao;
+    @Inject
+    private ServiceOfferingDao serviceOfferingDao;
     @Inject
     private IpAddressManager ipAddrMgr;
     @Inject
@@ -120,6 +123,7 @@ public class RouterDeploymentDefinitionBuilder {
         routerDeploymentDefinition.networkModel = networkModel;
         routerDeploymentDefinition.vrProviderDao = vrProviderDao;
         routerDeploymentDefinition.networkOfferingDao = networkOfferingDao;
+        routerDeploymentDefinition.serviceOfferingDao = serviceOfferingDao;
         routerDeploymentDefinition.ipAddrMgr = ipAddrMgr;
         routerDeploymentDefinition.vmDao = vmDao;
         routerDeploymentDefinition.podDao = podDao;

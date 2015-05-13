@@ -32,6 +32,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.log4j.Logger;
 
+import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
@@ -70,8 +71,10 @@ import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
@@ -141,16 +144,16 @@ public class LoadBalanceRuleHandler {
     @Inject
     private VirtualRouterProviderDao _vrProviderDao;
     @Inject
+    private ServiceOfferingDao _serviceOfferingDao;
+    @Inject
     private UserDao _userDao;
 
     static final private String ELB_VM_NAME_PREFIX = "l";
 
-    private final ServiceOfferingVO _elasticLbVmOffering;
     private final String _instance;
     private final Account _systemAcct;
 
-    public LoadBalanceRuleHandler(final ServiceOfferingVO elasticLbVmOffering, final String instance, final Account systemAcct) {
-        _elasticLbVmOffering = elasticLbVmOffering;
+    public LoadBalanceRuleHandler(String instance, Account systemAcct) {
         _instance = instance;
         _systemAcct = systemAcct;
     }
@@ -279,12 +282,23 @@ public class LoadBalanceRuleHandler {
                     userId =  _userDao.listByAccount(owner.getAccountId()).get(0).getId();
                 }
 
-                elbVm = new DomainRouterVO(id, _elasticLbVmOffering.getId(), vrProvider.getId(), VirtualMachineName.getSystemVmName(id, _instance, ELB_VM_NAME_PREFIX),
+                String offeringName = ServiceOffering.elbVmDefaultOffUniqueName;
+                Boolean useLocalStorage = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId());
+                if (useLocalStorage != null && useLocalStorage.booleanValue()) {
+                    offeringName += "-Local";
+                }
+                ServiceOfferingVO elasticLbVmOffering = _serviceOfferingDao.findByName(offeringName);
+                if (elasticLbVmOffering == null) {
+                    String message = "System service offering " + offeringName + " not found";
+                    s_logger.error(message);
+                    throw new CloudRuntimeException(message);
+                }
+                elbVm = new DomainRouterVO(id, elasticLbVmOffering.getId(), vrProvider.getId(), VirtualMachineName.getSystemVmName(id, _instance, ELB_VM_NAME_PREFIX),
                         template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), userId, false, RedundantState.UNKNOWN,
-                        _elasticLbVmOffering.getOfferHA(), false, null);
+                        elasticLbVmOffering.getOfferHA(), false, null);
                 elbVm.setRole(Role.LB);
                 elbVm = _routerDao.persist(elbVm);
-                _itMgr.allocate(elbVm.getInstanceName(), template, _elasticLbVmOffering, networks, plan, null);
+                _itMgr.allocate(elbVm.getInstanceName(), template, elasticLbVmOffering, networks, plan, null);
                 elbVm = _routerDao.findById(elbVm.getId());
                 //TODO: create usage stats
             }
