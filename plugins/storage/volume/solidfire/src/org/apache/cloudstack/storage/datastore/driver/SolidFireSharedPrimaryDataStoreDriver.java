@@ -16,50 +16,5 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.driver;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.storage.command.CommandResult;
-
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.DataTO;
-
 public class SolidFireSharedPrimaryDataStoreDriver extends CloudStackPrimaryDataStoreDriverImpl {
-    @Override
-    public DataTO getTO(DataObject data) {
-        return null;
-    }
-
-    @Override
-    public DataStoreTO getStoreTO(DataStore store) {
-        return null;
-    }
-
-    @Override
-    public boolean canCopy(DataObject srcData, DataObject destData) {
-        return false;
-    }
-
-    @Override
-    public void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void revertSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CommandResult> callback) {
-        throw new UnsupportedOperationException();
-    }
 }

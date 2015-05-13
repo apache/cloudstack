@@ -17,7 +17,7 @@
 """ BVT tests for Volumes
 """
 #Import Local Modules
-from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 #from marvin.cloudstackException import *
 from marvin.cloudstackAPI import (deleteVolume,
                                   extractVolume,
@@ -332,7 +332,16 @@ class TestVolumes(cloudstackTestCase):
                                     serviceofferingid=cls.service_offering.id,
                                     mode=cls.services["mode"]
                                 )
+        pools = StoragePool.list(cls.apiclient)
+        # cls.assertEqual(
+        #         validateList(pools)[0],
+        #         PASS,
+        #         "storage pool list validation failed")
 
+
+
+        if cls.hypervisor.lower() == 'lxc' and cls.storage_pools.type.lower() != 'rbd':
+            raise unittest.SkipTest("Snapshots not supported on Hyper-V or LXC")
         cls.volume = Volume.create(
                                    cls.apiclient,
                                    cls.services,

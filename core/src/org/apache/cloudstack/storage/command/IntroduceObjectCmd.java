@@ -19,13 +19,12 @@
 
 package org.apache.cloudstack.storage.command;
 
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataTO;
 
-public class IntroduceObjectCmd extends Command implements StorageSubSystemCommand {
-    private DataTO dataTO;
+public class IntroduceObjectCmd extends StorageSubSystemCommand {
+    private final DataTO dataTO;
 
-    public IntroduceObjectCmd(DataTO dataTO) {
+    public IntroduceObjectCmd(final DataTO dataTO) {
         this.dataTO = dataTO;
     }
 
@@ -39,7 +38,7 @@ public class IntroduceObjectCmd extends Command implements StorageSubSystemComma
     }
 
     @Override
-    public void setExecuteInSequence(boolean inSeq) {
+    public void setExecuteInSequence(final boolean inSeq) {
 
     }
 }

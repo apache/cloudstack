@@ -3659,12 +3659,15 @@ class Configurations:
     """Manage Configuration"""
 
     @classmethod
-    def update(cls, apiclient, name, value=None):
+    def update(cls, apiclient, name, value=None, zoneid=None):
         """Updates the specified configuration"""
 
         cmd = updateConfiguration.updateConfigurationCmd()
         cmd.name = name
         cmd.value = value
+
+        if zoneid:
+            cmd.zoneid = zoneid
         apiclient.updateConfiguration(cmd)
 
     @classmethod

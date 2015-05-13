@@ -543,7 +543,7 @@ class TestVPCNetwork(cloudstackTestCase):
     def test_04_create_multiple_networks_with_lb(self, value):
         """ Test create multiple networks with LB service (Should fail)
         """
-
+        self.skipTest('Skipping test due to CLOUDSTACK-8437')
         # Validate the following
         # 1. Create a VPC using Default Offering
         # 2. Create a network offering with guest type=Isolated that has LB

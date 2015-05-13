@@ -698,7 +698,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public Object unmarshallResultObject(AsyncJob job) {
-        if(job.getResult() != null)
+        if(job != null && job.getResult() != null)
             return JobSerializerHelper.fromObjectSerializedString(job.getResult());
         return null;
     }
