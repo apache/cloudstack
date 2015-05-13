@@ -19,17 +19,16 @@
 
 package org.apache.cloudstack.storage.command;
 
-import com.cloud.agent.api.Command;
 
-public final class AttachPrimaryDataStoreCmd extends Command implements StorageSubSystemCommand {
+public final class AttachPrimaryDataStoreCmd extends StorageSubSystemCommand {
     @Override
-    public void setExecuteInSequence(boolean inSeq) {
+    public void setExecuteInSequence(final boolean inSeq) {
 
     }
 
     private final String dataStore;
 
-    public AttachPrimaryDataStoreCmd(String uri) {
+    public AttachPrimaryDataStoreCmd(final String uri) {
         super();
         dataStore = uri;
     }
