@@ -43,7 +43,6 @@ Group:     System Environment/Libraries
 Source0:   %{name}-%{_maventag}.tgz
 BuildRoot: %{_tmppath}/%{name}-%{_maventag}-%{release}-build
 
-BuildRequires: java-1.7.0-openjdk-devel
 BuildRequires: ws-commons-util
 BuildRequires: jpackage-utils
 BuildRequires: gcc
@@ -59,7 +58,7 @@ intelligent IaaS cloud implementation.
 %package management
 Summary:   CloudStack management server UI
 Requires: redhat-lsb-core
-Requires: java-1.7.0-openjdk
+Requires: java => 1.7.0
 Requires: python
 Requires: bash
 Requires: bzip2
@@ -111,7 +110,7 @@ The Apache CloudStack files shared between agent and management server
 %package agent
 Summary: CloudStack Agent for KVM hypervisors
 Requires: openssh-clients
-Requires: java-1.7.0-openjdk
+Requires: java => 1.7.0
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: bridge-utils
@@ -150,7 +149,7 @@ The CloudStack baremetal agent
 
 %package usage
 Summary: CloudStack Usage calculation server
-Requires: java-1.7.0-openjdk
+Requires: java => 1.7.0
 Requires: jsvc
 Requires: jakarta-commons-daemon
 Requires: jakarta-commons-daemon-jsvc
@@ -198,7 +197,7 @@ if [ "%{_ossnoss}" == "NOREDIST" -o "%{_ossnoss}" == "noredist" ] ; then
       mvn -Psystemvm -Dnoredist -Dsimulator clean package
    else
       echo "Executing mvn noredist packaging without simulator..."
-      mvn -Psystemvm -Dnoredist clean package
+      mvn -Psystemvm -DSkipTests -Dnoredist clean package
    fi
 else
    if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then 
@@ -206,7 +205,7 @@ else
       mvn -Psystemvm -Dsimulator clean package
    else
       echo "Executing mvn default packaging without simulator ..."
-      mvn -Psystemvm clean package
+      mvn -Psystemvm -DSkipTests clean package
    fi
 fi 
 
@@ -389,10 +388,6 @@ fi
 if [ "$1" == "1" ] ; then
     /sbin/chkconfig --add cloudstack-management > /dev/null 2>&1 || true
     /sbin/chkconfig --level 345 cloudstack-management on > /dev/null 2>&1 || true
-fi
-
-if [ -d "%{_datadir}/%{name}-management" ] ; then
-   ln -s %{_datadir}/%{name}-bridge/webapps %{_datadir}/%{name}-management/webapps7080
 fi
 
 if [ ! -f %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util ] ; then

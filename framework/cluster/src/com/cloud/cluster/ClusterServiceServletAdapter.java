@@ -35,7 +35,7 @@ import com.cloud.utils.db.DbProperties;
 public class ClusterServiceServletAdapter extends AdapterBase implements ClusterServiceAdapter {
 
     private static final Logger s_logger = Logger.getLogger(ClusterServiceServletAdapter.class);
-    private static final int DEFAULT_SERVICE_PORT = 9090;
+    private static final int DEFAULT_SERVICE_PORT = 9190;
     private static final int DEFAULT_REQUEST_TIMEOUT = 300;            // 300 seconds
 
     @Inject

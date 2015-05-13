@@ -221,8 +221,8 @@
       <fire:FirewallException Id="p_8787" Name="port_8787"
         Description="for cloudstack management server" Port="8787"
         Profile="all" Protocol="tcp" Scope="any" />
-      <fire:FirewallException Id="p_9090" Name="port_9090"
-        Description="for cloudstack management server" Port="9090"
+      <fire:FirewallException Id="p_9190" Name="port_9190"
+        Description="for cloudstack management server" Port="9190"
         Profile="all" Protocol="tcp" Scope="any" />
 
       <fire:FirewallException Id="p_3922" Name="port_3922"

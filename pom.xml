@@ -88,7 +88,7 @@
     <cs.lang.version>2.6</cs.lang.version>
     <cs.commons-io.version>2.4</cs.commons-io.version>
     <cs.commons-validator.version>1.4.0</cs.commons-validator.version>
-    <cs.reflections.version>0.9.8</cs.reflections.version>
+    <cs.reflections.version>0.9.9</cs.reflections.version>
     <cs.java-ipv6.version>0.15</cs.java-ipv6.version>
     <cs.replace.properties>build/replace.properties</cs.replace.properties>
     <cs.libvirt-java.version>0.5.1</cs.libvirt-java.version>
