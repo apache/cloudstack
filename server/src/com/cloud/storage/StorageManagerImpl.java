@@ -42,6 +42,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.hypervisor.Hypervisor;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
@@ -111,6 +112,7 @@ import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerHost;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
@@ -546,9 +548,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @DB
     @Override
     public DataStore createLocalStorage(Host host, StoragePoolInfo pInfo) throws ConnectionException {
-
         DataCenterVO dc = _dcDao.findById(host.getDataCenterId());
-        if (dc == null || !dc.isLocalStorageEnabled()) {
+        if (dc == null) {
+            return null;
+        }
+        boolean useLocalStorageForSystemVM = false;
+        Boolean isLocal = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dc.getId());
+        if (isLocal != null) {
+            useLocalStorageForSystemVM = isLocal.booleanValue();
+        }
+        if (!(dc.isLocalStorageEnabled() || useLocalStorageForSystemVM)) {
             return null;
         }
         DataStore store;

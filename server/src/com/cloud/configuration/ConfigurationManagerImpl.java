@@ -38,7 +38,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -72,6 +71,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.region.PortableIp;
@@ -215,7 +215,7 @@ import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 
 @Local(value = {ConfigurationManager.class, ConfigurationService.class})
-public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService {
+public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class);
 
     @Inject
@@ -334,6 +334,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     protected Set<String> configValuesForValidation;
     private Set<String> weightBasedParametersForValidation;
     private Set<String> overprovisioningFactorsForValidation;
+
+    public static final ConfigKey<Boolean> SystemVMUseLocalStorage = new ConfigKey<Boolean>(Boolean.class, "system.vm.use.local.storage", "Advanced", "false",
+            "Indicates whether to use local storage pools or shared storage pools for system VMs.", false, ConfigKey.Scope.Zone, null);
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -575,35 +578,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (Throwable e) {
                 throw new CloudRuntimeException("Failed to update storage.network.device2 in host_details due to exception ", e);
             }
-        } else if (DataCenter.SystemVMUseLocalStorageCK.equalsIgnoreCase(name)) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Config 'system.vm.use.local.storage' changed to value:" + value + ", need to update System VM offerings");
-            }
-            boolean useLocalStorage = Boolean.parseBoolean(_configDao.getValue(DataCenter.SystemVMUseLocalStorageCK));
-            ServiceOfferingVO serviceOffering = _serviceOfferingDao.findByName(ServiceOffering.consoleProxyDefaultOffUniqueName);
-            if (serviceOffering != null) {
-                serviceOffering.setUseLocalStorage(useLocalStorage);
-                if (!_serviceOfferingDao.update(serviceOffering.getId(), serviceOffering)) {
-                    throw new CloudRuntimeException("Failed to update ConsoleProxy offering's use_local_storage option to value:" + useLocalStorage);
-                }
-            }
-
-            serviceOffering = _serviceOfferingDao.findByName(ServiceOffering.routerDefaultOffUniqueName);
-            if (serviceOffering != null) {
-                serviceOffering.setUseLocalStorage(useLocalStorage);
-                if (!_serviceOfferingDao.update(serviceOffering.getId(), serviceOffering)) {
-                    throw new CloudRuntimeException("Failed to update SoftwareRouter offering's use_local_storage option to value:" + useLocalStorage);
-                }
-            }
-
-            serviceOffering = _serviceOfferingDao.findByName(ServiceOffering.ssvmDefaultOffUniqueName);
-            if (serviceOffering != null) {
-                serviceOffering.setUseLocalStorage(useLocalStorage);
-                if (!_serviceOfferingDao.update(serviceOffering.getId(), serviceOffering)) {
-                    throw new CloudRuntimeException("Failed to update SecondaryStorage offering's use_local_storage option to value:" + useLocalStorage);
-                }
-            }
-        }else if (Config.SecStorageSecureCopyCert.key().equalsIgnoreCase(name)) {
+        } else if (Config.SecStorageSecureCopyCert.key().equalsIgnoreCase(name)) {
             //FIXME - Ideally there should be a listener model to listen to global config changes and be able to take action gracefully.
             //Expire the download urls
             String sqlTemplate = "update template_store_ref set download_url_created=?";
@@ -622,8 +597,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (Throwable e) {
                 throw new CloudRuntimeException("Failed to clean up download URLs in template_store_ref or volume_store_ref due to exception ", e);
             }
-
-
         }
 
         txn.commit();
@@ -5200,4 +5173,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         _secChecker = secChecker;
     }
 
+    @Override
+    public String getConfigComponentName() {
+        return ConfigurationManagerImpl.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {SystemVMUseLocalStorage};
+    }
 }

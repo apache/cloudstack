@@ -46,6 +46,7 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.Config;
+import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -380,15 +381,15 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
 
         //if offering wasn't set, try to get the default one
         if (_internalLbVmOfferingId == 0L) {
-            final boolean useLocalStorage = Boolean.parseBoolean(configs.get(DataCenter.SystemVMUseLocalStorageCK));
-            ServiceOfferingVO newOff =
-                    new ServiceOfferingVO("System Offering For Internal LB VM", 1, InternalLoadBalancerVMManager.DEFAULT_INTERNALLB_VM_RAMSIZE,
-                            InternalLoadBalancerVMManager.DEFAULT_INTERNALLB_VM_CPU_MHZ, null, null, true, null,
-                            Storage.ProvisioningType.THIN, useLocalStorage, true, null, true,
-                            VirtualMachine.Type.InternalLoadBalancerVm, true);
-            newOff.setUniqueName(ServiceOffering.internalLbVmDefaultOffUniqueName);
-            newOff = _serviceOfferingDao.persistSystemServiceOffering(newOff);
-            _internalLbVmOfferingId = newOff.getId();
+            List<ServiceOfferingVO> offerings = _serviceOfferingDao.createSystemServiceOfferings("System Offering For Internal LB VM",
+                    ServiceOffering.internalLbVmDefaultOffUniqueName, 1, InternalLoadBalancerVMManager.DEFAULT_INTERNALLB_VM_RAMSIZE,
+                    InternalLoadBalancerVMManager.DEFAULT_INTERNALLB_VM_CPU_MHZ, null, null, true, null,
+                    Storage.ProvisioningType.THIN, true, null, true, VirtualMachine.Type.InternalLoadBalancerVm, true);
+            if (offerings == null || offerings.size() < 2) {
+                String msg = "Data integrity problem : System Offering For Internal LB VM has been removed?";
+                s_logger.error(msg);
+                throw new ConfigurationException(msg);
+            }
         }
 
         _itMgr.registerGuru(VirtualMachine.Type.InternalLoadBalancerVm, this);
@@ -620,9 +621,24 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
             }
 
             final LinkedHashMap<Network, List<? extends NicProfile>> networks = createInternalLbVmNetworks(guestNetwork, plan, requestedGuestIp);
+            long internalLbVmOfferingId = _internalLbVmOfferingId;
+            if (internalLbVmOfferingId == 0L) {
+                String offeringName = ServiceOffering.internalLbVmDefaultOffUniqueName;
+                Boolean useLocalStorage = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId());
+                if (useLocalStorage != null && useLocalStorage.booleanValue()) {
+                    offeringName += "-Local";
+                }
+                ServiceOfferingVO serviceOffering = _serviceOfferingDao.findByName(offeringName);
+                if (serviceOffering == null) {
+                    String message = "System service offering " + offeringName + " not found";
+                    s_logger.error(message);
+                    throw new CloudRuntimeException(message);
+                }
+                internalLbVmOfferingId = serviceOffering.getId();
+            }
             //Pass startVm=false as we are holding the network lock that needs to be released at the end of vm allocation
             final DomainRouterVO internalLbVm =
-                    deployInternalLbVm(owner, dest, plan, params, internalLbProviderId, _internalLbVmOfferingId, guestNetwork.getVpcId(), networks, false);
+                    deployInternalLbVm(owner, dest, plan, params, internalLbProviderId, internalLbVmOfferingId, guestNetwork.getVpcId(), networks, false);
             if (internalLbVm != null) {
                 _internalLbVmDao.addRouterToGuestNetwork(internalLbVm, guestNetwork);
                 internalLbVms.add(internalLbVm);

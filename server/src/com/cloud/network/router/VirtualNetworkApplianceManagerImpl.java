@@ -631,12 +631,15 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
         _agentMgr.registerForHostEvents(new SshKeysDistriMonitor(_agentMgr, _hostDao, _configDao), true, false, false);
 
-        final boolean useLocalStorage = Boolean.parseBoolean(configs.get(DataCenter.SystemVMUseLocalStorageCK));
-        ServiceOfferingVO offering = new ServiceOfferingVO("System Offering For Software Router", 1, _routerRamSize, _routerCpuMHz, null, null, true, null, ProvisioningType.THIN,
-                useLocalStorage, true, null, true, VirtualMachine.Type.DomainRouter, true);
-        offering.setUniqueName(ServiceOffering.routerDefaultOffUniqueName);
-        offering = _serviceOfferingDao.persistSystemServiceOffering(offering);
-        _routerDeploymentManagerBuilder.setOfferingId(offering.getId());
+        List<ServiceOfferingVO> offerings = _serviceOfferingDao.createSystemServiceOfferings("System Offering For Software Router",
+                ServiceOffering.routerDefaultOffUniqueName, 1, _routerRamSize, _routerCpuMHz, null,
+                null, true, null, ProvisioningType.THIN, true, null, true, VirtualMachine.Type.DomainRouter, true);
+        // this can sometimes happen, if DB is manually or programmatically manipulated
+        if (offerings == null || offerings.size() < 2) {
+            final String msg = "Data integrity problem : System Offering For Software router VM has been removed?";
+            s_logger.error(msg);
+            throw new ConfigurationException(msg);
+        }
 
         NetworkHelperImpl.setSystemAccount(_accountMgr.getSystemAccount());
 

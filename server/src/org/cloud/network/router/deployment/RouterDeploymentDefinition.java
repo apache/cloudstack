@@ -23,6 +23,7 @@ import java.util.Map;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.log4j.Logger;
 
+import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
@@ -52,7 +53,10 @@ import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.db.DB;
@@ -80,6 +84,7 @@ public class RouterDeploymentDefinition {
     protected NetworkModel networkModel;
     protected VirtualRouterProviderDao vrProviderDao;
     protected NetworkOfferingDao networkOfferingDao;
+    protected ServiceOfferingDao serviceOfferingDao;
     protected IpAddressManager ipAddrMgr;
     protected VMInstanceDao vmDao;
     protected HostPodDao podDao;
@@ -354,10 +359,23 @@ public class RouterDeploymentDefinition {
         }
     }
 
+    protected void findDefaultServiceOfferingId() {
+        String offeringName = ServiceOffering.routerDefaultOffUniqueName;
+        Boolean useLocalStorage = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId());
+        if (useLocalStorage != null && useLocalStorage.booleanValue()) {
+            offeringName += "-Local";
+        }
+        ServiceOfferingVO serviceOffering = serviceOfferingDao.findByName(offeringName);
+        if (serviceOffering == null) {
+            throw new CloudRuntimeException("System service offering " + offeringName + " not found");
+        }
+        serviceOfferingId = serviceOffering.getId();
+    }
+
     protected void findServiceOfferingId() {
-        final Long networkOfferingId = networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
-        if (networkOfferingId != null) {
-            serviceOfferingId = networkOfferingId;
+        serviceOfferingId = networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
+        if (serviceOfferingId == null) {
+            findDefaultServiceOfferingId();
         }
     }
 
