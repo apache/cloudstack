@@ -45,23 +45,23 @@ public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, description = "Lists rule with the specified ID.")
-    private Long id;
+    protected Long id;
 
     @Parameter(name = ApiConstants.IP_ADDRESS_ID,
                type = CommandType.UUID,
                entityType = IPAddressResponse.class,
-               description = "the id of IP address of the firwall services")
-    private Long ipAddressId;
+               description = "the id of IP address of the firewall services")
+    protected Long ipAddressId;
 
     @Parameter(name = ApiConstants.NETWORK_ID,
                type = CommandType.UUID,
                entityType = NetworkResponse.class,
-               description = "list firewall rules for ceratin network",
+               description = "list firewall rules for certain network",
                since = "4.3")
-    private Long networkId;
+    protected Long networkId;
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
-    private Boolean display;
+    protected Boolean display;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
