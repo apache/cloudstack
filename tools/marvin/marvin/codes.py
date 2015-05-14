@@ -54,6 +54,7 @@ Snapshot States - END
 
 RECURRING = "RECURRING"
 ENABLED = "Enabled"
+DISABLED = "Disabled"
 NETWORK_OFFERING = "network_offering"
 ROOT = "ROOT"
 INVALID_INPUT = "INVALID INPUT"

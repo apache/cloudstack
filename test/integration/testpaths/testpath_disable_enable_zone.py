@@ -39,7 +39,11 @@ from marvin.lib.common import (get_domain,
                                )
 
 from marvin.cloudstackAPI import updateZone
-import time
+from marvin.codes import (ENABLED,
+                          DISABLED,
+                          STOPPED,
+                          RUNNING)
+
 
 class TestDisableEnableZone(cloudstackTestCase):
 
@@ -96,7 +100,12 @@ class TestDisableEnableZone(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            pass
+            if cls.zone.allocationstate == DISABLED:
+                cmd = updateZone.updateZoneCmd()
+                cmd.id = cls.zone.id
+                cmd.allocationstate = ENABLED
+                cls.apiclient.updateZone(cmd)
+
             cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -113,21 +122,21 @@ class TestDisableEnableZone(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic"],required_hardware=“true”)
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_01_disable_enable_zone(self):
-        """snapshot hardning
+        """disable enable zone
             1. Disable zone and verify following things:
                 For admin user:
                     1. Should be create to start/stop exsiting vms
-                    2. Should be create to deploy new vm, snapshot,volume,template,iso in the same zone
+                    2. Should be create to deploy new vm, snapshot,volume,
+                       template,iso in the same zone
                 For Non-admin user:
                     1. Should be create to start/stop exsiting vms
-                    2. Should not be create to deploy new vm, snapshot,volume,template,iso in the same zone
+                    2. Should not be create to deploy new vm, snapshot,volume,
+                       template,iso in the same zone
             2. Enable the above disabled zone and verify that:
-                -All users should be create to deploy new vm, snapshot,volume,template,iso in the same zone
-            3. Try to delete the zone and it should fail with error message:
-                -"The zone is not deletable because there are servers running in this zone"
-
+                -All users should be create to deploy new vm,
+                    snapshot,volume,template,iso in the same zone
         """
         # Step 1
         vm_user = VirtualMachine.create(
@@ -152,42 +161,42 @@ class TestDisableEnableZone(cloudstackTestCase):
 
         cmd = updateZone.updateZoneCmd()
         cmd.id = self.zone.id
-        cmd.allocationstate = "Disabled"
+        cmd.allocationstate = DISABLED
         self.apiclient.updateZone(cmd)
         zoneList = Zone.list(self.apiclient, id=self.zone.id)
 
         self.assertEqual(zoneList[0].allocationstate,
-                         "Disabled",
+                         DISABLED,
                          "Check if the zone is in disabled state"
                          )
-        # Verify the exsisting vms should be running
+
+        # Both user and admin vms shoul be running
         self.assertEqual(vm_user.state,
-                         "Running",
-                         "Verify that the vm is running")
+                         RUNNING,
+                         "Verify that the user vm is running")
 
         self.assertEqual(vm_root.state,
-                         "Running",
-                         "Verify that the vm is running")
+                         RUNNING,
+                         "Verify that the admin vm is running")
 
-        time.sleep(30)
         vm_root.stop(self.apiclient)
         vm_user.stop(self.apiclient)
 
         root_state = self.dbclient.execute(
-                "select state from vm_instance where name='%s'" %
-                vm_root.name)[0][0]
+            "select state from vm_instance where name='%s'" %
+            vm_root.name)[0][0]
 
         user_state = self.dbclient.execute(
-                "select state from vm_instance where name='%s'" %
-                vm_user.name)[0][0]
+            "select state from vm_instance where name='%s'" %
+            vm_user.name)[0][0]
 
         self.assertEqual(root_state,
-                "Stopped",
-                "verify that vm should stop")
+                         STOPPED,
+                         "verify that vm is Stopped")
 
         self.assertEqual(user_state,
-                "Stopped",
-                "verify that vm should stop")
+                         STOPPED,
+                         "verify that vm is stopped")
 
         root_volume = list_volumes(
             self.userapiclient,
@@ -202,7 +211,8 @@ class TestDisableEnableZone(cloudstackTestCase):
 
         self.assertNotEqual(snap,
                             None,
-                            "Verify that admin should snashot")
+                            "Verify that admin should be \
+                                    able to create snapshot")
 
         snapshots = list_snapshots(
             self.apiclient,
@@ -212,22 +222,22 @@ class TestDisableEnableZone(cloudstackTestCase):
         template_from_snapshot = Template.create_from_snapshot(
             self.apiclient,
             snapshots[0],
-            self.testdata["template_2"])
+            self.testdata["privatetemplate"])
 
         self.assertNotEqual(
             template_from_snapshot,
             None,
-            "Check if template gets created"
+            "Verify that admin should be able to create template"
         )
 
         builtin_info = get_builtin_template_info(self.apiclient, self.zone.id)
-        self.testdata["template_2"]["url"] = builtin_info[0]
-        self.testdata["template_2"]["hypervisor"] = builtin_info[1]
-        self.testdata["template_2"]["format"] = builtin_info[2]
+        self.testdata["privatetemplate"]["url"] = builtin_info[0]
+        self.testdata["privatetemplate"]["hypervisor"] = builtin_info[1]
+        self.testdata["privatetemplate"]["format"] = builtin_info[2]
 
         template_regis = Template.register(
             self.apiclient,
-            self.testdata["template_2"],
+            self.testdata["privatetemplate"],
             zoneid=self.zone.id)
 
         self.assertNotEqual(
@@ -295,7 +305,7 @@ class TestDisableEnableZone(cloudstackTestCase):
         with self.assertRaises(Exception):
             Template.register(
                 self.userapiclient,
-                self.testdata["template_2"],
+                self.testdata["privatetemplate"],
                 zoneid=self.zone.id)
 
         with self.assertRaises(Exception):
@@ -318,7 +328,7 @@ class TestDisableEnableZone(cloudstackTestCase):
             )
 
         # Step 2
-        cmd.allocationstate = "Enabled"
+        cmd.allocationstate = ENABLED
         self.apiclient.updateZone(cmd)
 
         # After enabling the zone all users should be able to add new VM,
@@ -354,7 +364,7 @@ class TestDisableEnableZone(cloudstackTestCase):
         template_from_snapshot = Template.create_from_snapshot(
             self.apiclient,
             snapshots[0],
-            self.testdata["template_2"])
+            self.testdata["privatetemplate"])
 
         self.assertNotEqual(
             template_from_snapshot,
@@ -364,7 +374,7 @@ class TestDisableEnableZone(cloudstackTestCase):
 
         template_regis = Template.register(
             self.apiclient,
-            self.testdata["template_2"],
+            self.testdata["privatetemplate"],
             zoneid=self.zone.id)
 
         self.assertNotEqual(
@@ -436,7 +446,7 @@ class TestDisableEnableZone(cloudstackTestCase):
 
         template_regis = Template.register(
             self.userapiclient,
-            self.testdata["template_2"],
+            self.testdata["privatetemplate"],
             zoneid=self.zone.id)
 
         self.assertNotEqual(
@@ -478,8 +488,5 @@ class TestDisableEnableZone(cloudstackTestCase):
             "Check if volume gets created"
         )
         user_vm_new.delete(self.apiclient)
-        # Step 3
-        # Deletion of zone should fail if vm,volume is present on the zone
-        with self.assertRaises(Exception):
-            self.zone.delete(self.apiclient)
+
         return
