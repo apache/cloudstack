@@ -282,17 +282,7 @@ public class LoadBalanceRuleHandler {
                     userId =  _userDao.listByAccount(owner.getAccountId()).get(0).getId();
                 }
 
-                String offeringName = ServiceOffering.elbVmDefaultOffUniqueName;
-                Boolean useLocalStorage = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId());
-                if (useLocalStorage != null && useLocalStorage.booleanValue()) {
-                    offeringName += "-Local";
-                }
-                ServiceOfferingVO elasticLbVmOffering = _serviceOfferingDao.findByName(offeringName);
-                if (elasticLbVmOffering == null) {
-                    String message = "System service offering " + offeringName + " not found";
-                    s_logger.error(message);
-                    throw new CloudRuntimeException(message);
-                }
+                ServiceOfferingVO elasticLbVmOffering = _serviceOfferingDao.findDefaultSystemOffering(ServiceOffering.elbVmDefaultOffUniqueName, ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId()));
                 elbVm = new DomainRouterVO(id, elasticLbVmOffering.getId(), vrProvider.getId(), VirtualMachineName.getSystemVmName(id, _instance, ELB_VM_NAME_PREFIX),
                         template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), userId, false, RedundantState.UNKNOWN,
                         elasticLbVmOffering.getOfferHA(), false, null);

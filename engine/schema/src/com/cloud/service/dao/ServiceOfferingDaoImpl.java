@@ -276,4 +276,19 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
 
         return list;
     }
+
+    @Override
+    public ServiceOfferingVO findDefaultSystemOffering(String offeringName, Boolean useLocalStorage) {
+        String name = offeringName;
+        if (useLocalStorage != null && useLocalStorage.booleanValue()) {
+            name += "-Local";
+        }
+        ServiceOfferingVO serviceOffering = findByName(name);
+        if (serviceOffering == null) {
+            String message = "System service offering " + name + " not found";
+            s_logger.error(message);
+            throw new CloudRuntimeException(message);
+        }
+        return serviceOffering;
+    }
 }
