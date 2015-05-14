@@ -578,17 +578,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         ServiceOfferingVO serviceOffering = _serviceOffering;
         if (serviceOffering == null) {
-            String offeringName = ServiceOffering.ssvmDefaultOffUniqueName;
-            Boolean useLocalStorage = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenterId);
-            if (useLocalStorage != null && useLocalStorage.booleanValue()) {
-                offeringName += "-Local";
-            }
-            serviceOffering = _offeringDao.findByName(offeringName);
-            if (serviceOffering == null) {
-                String message = "System service offering " + offeringName + " not found";
-                s_logger.error(message);
-                throw new CloudRuntimeException(message);
-            }
+            serviceOffering = _offeringDao.findDefaultSystemOffering(ServiceOffering.ssvmDefaultOffUniqueName, ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenterId));
         }
         SecondaryStorageVmVO secStorageVm =
             new SecondaryStorageVmVO(id, serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,

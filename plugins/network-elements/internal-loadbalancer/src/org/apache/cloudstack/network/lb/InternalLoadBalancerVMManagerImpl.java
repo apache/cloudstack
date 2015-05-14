@@ -623,17 +623,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
             final LinkedHashMap<Network, List<? extends NicProfile>> networks = createInternalLbVmNetworks(guestNetwork, plan, requestedGuestIp);
             long internalLbVmOfferingId = _internalLbVmOfferingId;
             if (internalLbVmOfferingId == 0L) {
-                String offeringName = ServiceOffering.internalLbVmDefaultOffUniqueName;
-                Boolean useLocalStorage = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId());
-                if (useLocalStorage != null && useLocalStorage.booleanValue()) {
-                    offeringName += "-Local";
-                }
-                ServiceOfferingVO serviceOffering = _serviceOfferingDao.findByName(offeringName);
-                if (serviceOffering == null) {
-                    String message = "System service offering " + offeringName + " not found";
-                    s_logger.error(message);
-                    throw new CloudRuntimeException(message);
-                }
+                ServiceOfferingVO serviceOffering = _serviceOfferingDao.findDefaultSystemOffering(ServiceOffering.internalLbVmDefaultOffUniqueName, ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId()));
                 internalLbVmOfferingId = serviceOffering.getId();
             }
             //Pass startVm=false as we are holding the network lock that needs to be released at the end of vm allocation

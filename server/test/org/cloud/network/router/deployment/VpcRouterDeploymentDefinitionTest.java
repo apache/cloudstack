@@ -184,7 +184,7 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
         final VpcOfferingVO vpcOffering = mock(VpcOfferingVO.class);
         when(mockVpcOffDao.findById(VPC_OFFERING_ID)).thenReturn(vpcOffering);
         when(vpcOffering.getServiceOfferingId()).thenReturn(null);
-        when(mockServiceOfferingDao.findByName(Matchers.anyString())).thenReturn(mockSvcOfferingVO);
+        when(mockServiceOfferingDao.findDefaultSystemOffering(Matchers.anyString(), Matchers.anyBoolean())).thenReturn(mockSvcOfferingVO);
         when(mockSvcOfferingVO.getId()).thenReturn(DEFAULT_OFFERING_ID);
 
         // Execute

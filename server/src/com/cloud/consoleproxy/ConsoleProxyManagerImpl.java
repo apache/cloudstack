@@ -718,17 +718,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
         ServiceOfferingVO serviceOffering = _serviceOffering;
         if (serviceOffering == null) {
-            String offeringName = ServiceOffering.consoleProxyDefaultOffUniqueName;
-            Boolean useLocalStorage = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenterId);
-            if (useLocalStorage != null && useLocalStorage.booleanValue()) {
-                offeringName += "-Local";
-            }
-            serviceOffering = _offeringDao.findByName(offeringName);
-            if (serviceOffering == null) {
-                String message = "System service offering " + offeringName + " not found";
-                s_logger.error(message);
-                throw new CloudRuntimeException(message);
-            }
+            serviceOffering = _offeringDao.findDefaultSystemOffering(ServiceOffering.consoleProxyDefaultOffUniqueName, ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenterId));
         }
         ConsoleProxyVO proxy =
             new ConsoleProxyVO(id, serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,

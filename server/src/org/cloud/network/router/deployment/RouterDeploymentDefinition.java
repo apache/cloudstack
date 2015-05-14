@@ -360,15 +360,7 @@ public class RouterDeploymentDefinition {
     }
 
     protected void findDefaultServiceOfferingId() {
-        String offeringName = ServiceOffering.routerDefaultOffUniqueName;
-        Boolean useLocalStorage = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId());
-        if (useLocalStorage != null && useLocalStorage.booleanValue()) {
-            offeringName += "-Local";
-        }
-        ServiceOfferingVO serviceOffering = serviceOfferingDao.findByName(offeringName);
-        if (serviceOffering == null) {
-            throw new CloudRuntimeException("System service offering " + offeringName + " not found");
-        }
+        ServiceOfferingVO serviceOffering = serviceOfferingDao.findDefaultSystemOffering(ServiceOffering.routerDefaultOffUniqueName, ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId()));
         serviceOfferingId = serviceOffering.getId();
     }
 
