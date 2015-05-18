@@ -100,12 +100,12 @@ class TestDisableEnableZone(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            if cls.zone.allocationstate == DISABLED:
+            zoneList = Zone.list(cls.apiclient, id=cls.zone.id)
+            if zoneList[0].allocationstate == DISABLED:
                 cmd = updateZone.updateZoneCmd()
-                cmd.id = cls.zone.id
+                cmd.id = zoneList[0].id
                 cmd.allocationstate = ENABLED
                 cls.apiclient.updateZone(cmd)
-
             cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -137,6 +137,9 @@ class TestDisableEnableZone(cloudstackTestCase):
             2. Enable the above disabled zone and verify that:
                 -All users should be create to deploy new vm,
                     snapshot,volume,template,iso in the same zone
+            3. Try to delete the zone and it should fail with error message:
+                -"The zone is not deletable because there are
+                    servers running in this zone"
         """
         # Step 1
         vm_user = VirtualMachine.create(
@@ -146,8 +149,8 @@ class TestDisableEnableZone(cloudstackTestCase):
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
-            zoneid=self.zone.id,
-            mode=self.zone.networktype)
+            zoneid=self.zone.id
+        )
 
         vm_root = VirtualMachine.create(
             self.apiclient,
@@ -156,8 +159,8 @@ class TestDisableEnableZone(cloudstackTestCase):
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
-            zoneid=self.zone.id,
-            mode=self.zone.networktype)
+            zoneid=self.zone.id
+        )
 
         cmd = updateZone.updateZoneCmd()
         cmd.id = self.zone.id
@@ -286,8 +289,7 @@ class TestDisableEnableZone(cloudstackTestCase):
                                   accountid=self.account.name,
                                   domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
-                                  zoneid=self.zone.id,
-                                  mode=self.zone.networktype
+                                  zoneid=self.zone.id
                                   )
 
         root_volume = list_volumes(
@@ -341,8 +343,8 @@ class TestDisableEnableZone(cloudstackTestCase):
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
-            zoneid=self.zone.id,
-            mode=self.zone.networktype)
+            zoneid=self.zone.id
+        )
 
         self.assertNotEqual(root_vm_new,
                             None,
@@ -424,8 +426,8 @@ class TestDisableEnableZone(cloudstackTestCase):
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
-            zoneid=self.zone.id,
-            mode=self.zone.networktype)
+            zoneid=self.zone.id
+        )
 
         self.assertNotEqual(user_vm_new,
                             None,
@@ -488,5 +490,10 @@ class TestDisableEnableZone(cloudstackTestCase):
             "Check if volume gets created"
         )
         user_vm_new.delete(self.apiclient)
+
+        # Step 3
+        # Deletion of zone should fail if vm,volume is present on the zone
+        with self.assertRaises(Exception):
+            self.zone.delete(self.apiclient)
 
         return
