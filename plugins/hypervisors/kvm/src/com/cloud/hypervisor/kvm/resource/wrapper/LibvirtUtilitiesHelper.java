@@ -82,4 +82,8 @@ public class LibvirtUtilitiesHelper {
     public String retrieveSshPrvKeyPath() {
         return LibvirtComputingResource.SSHPRVKEYPATH;
     }
+
+    public String retrieveBashScriptPath() {
+        return LibvirtComputingResource.BASH_SCRIPT_PATH;
+    }
 }
