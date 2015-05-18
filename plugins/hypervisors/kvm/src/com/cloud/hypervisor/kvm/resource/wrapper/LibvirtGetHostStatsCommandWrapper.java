@@ -37,7 +37,11 @@ public final class LibvirtGetHostStatsCommandWrapper extends CommandWrapper<GetH
 
     @Override
     public Answer execute(final GetHostStatsCommand command, final LibvirtComputingResource libvirtComputingResource) {
-        final Script cpuScript = new Script("/bin/bash", s_logger);
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
+        final String bashScriptPath = libvirtUtilitiesHelper.retrieveBashScriptPath();
+
+
+        final Script cpuScript = new Script(bashScriptPath, s_logger);
         cpuScript.add("-c");
         cpuScript.add("idle=$(top -b -n 1| awk -F, '/^[%]*[Cc]pu/{$0=$4; gsub(/[^0-9.,]+/,\"\"); print }'); echo $idle");
 
@@ -50,7 +54,7 @@ public final class LibvirtGetHostStatsCommandWrapper extends CommandWrapper<GetH
         final double cpuUtil = 100.0D - Double.parseDouble(parser.getLine());
 
         long freeMem = 0;
-        final Script memScript = new Script("/bin/bash", s_logger);
+        final Script memScript = new Script(bashScriptPath, s_logger);
         memScript.add("-c");
         memScript.add("freeMem=$(free|grep cache:|awk '{print $4}');echo $freeMem");
         final OutputInterpreter.OneLineParser Memparser = new OutputInterpreter.OneLineParser();
@@ -61,7 +65,7 @@ public final class LibvirtGetHostStatsCommandWrapper extends CommandWrapper<GetH
         }
         freeMem = Long.parseLong(Memparser.getLine());
 
-        final Script totalMem = new Script("/bin/bash", s_logger);
+        final Script totalMem = new Script(bashScriptPath, s_logger);
         totalMem.add("-c");
         totalMem.add("free|grep Mem:|awk '{print $2}'");
         final OutputInterpreter.OneLineParser totMemparser = new OutputInterpreter.OneLineParser();
