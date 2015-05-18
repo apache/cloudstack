@@ -249,6 +249,10 @@ configure_services() {
   chkconfig cloud off
   chkconfig xl2tpd off
   chkconfig radvd off
+
+  # Disable services that slow down boot and are not used anyway
+  chkconfig x11-common off
+  chkconfig console-setup off
 }
 
 do_signature() {
