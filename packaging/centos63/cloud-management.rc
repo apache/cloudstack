@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# tomcat6      This shell script takes care of starting and stopping Tomcat
+# cloudstack-management      This shell script takes care of starting and stopping Tomcat
 #
 # chkconfig: - 80 20
 #

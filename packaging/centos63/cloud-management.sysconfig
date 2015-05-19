@@ -15,7 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# Required for a tocmat cloned service
 NAME=cloudstack-management
 
 # Where your java installation lives

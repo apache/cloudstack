@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.cloudstack</groupId>
   <artifactId>cloudstack-tomcat</artifactId>
-  <version>${tomcat.version}</version>
+  <version>4.6.0-SNAPSHOT</version>
 
   <name>Apache CloudStack Custom Tomcat</name>
   <parent>
@@ -18,40 +18,39 @@
     <cs.jdk.version>1.7</cs.jdk.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <tomcat.version>8.0.22</tomcat.version>
   </properties>
   <dependencies>
         <dependency>
             <groupId>org.apache.tomcat</groupId>
             <artifactId>tomcat-catalina</artifactId>
-            <version>${tomcat.version}</version>
+            <version>${cs.tomcat.version}</version>
             <scope>runtime</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.tomcat</groupId>
             <artifactId>tomcat-catalina-ha</artifactId>
-            <version>${tomcat.version}</version>
+            <version>${cs.tomcat.version}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.tomcat</groupId>
             <artifactId>tomcat-coyote</artifactId>
-            <version>${tomcat.version}</version>
+            <version>${cs.tomcat.version}</version>
             <scope>runtime</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.tomcat</groupId>
             <artifactId>tomcat-jasper</artifactId>
-            <version>${tomcat.version}</version>
+            <version>${cs.tomcat.version}</version>
             <scope>runtime</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.tomcat</groupId>
             <artifactId>tomcat-juli</artifactId>
-            <version>${tomcat.version}</version>
+            <version>${cs.tomcat.version}</version>
             <scope>runtime</scope>
         </dependency>
 

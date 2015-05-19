@@ -408,6 +408,23 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>com.googlecode.todomap</groupId>  
+        <artifactId>maven-jettygzip-plugin</artifactId>  
+        <version>0.0.4</version>  
+        <configuration>  
+          <webappDirectory>${project.build.directory}/generated-webapp</webappDirectory>  
+          <outputDirectory>${project.build.directory}/generated-webapp</outputDirectory>  
+        </configuration>  
+        <executions>  
+          <execution>  
+            <phase>prepare-package</phase>  
+            <goals>  
+              <goal>process</goal>  
+            </goals>  
+          </execution>  
+        </executions>  
+      </plugin>  
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-war-plugin</artifactId>
         <version>2.5</version>
@@ -451,7 +468,7 @@
           <webAppSourceDirectory>${project.build.directory}/generated-webapp</webAppSourceDirectory>
           <webAppConfig>
             <contextPath>/client</contextPath>
-            <extraClasspath>${project.build.directory}/utilities/scripts/db/;${project.build.directory}/utilities/scripts/db/db/</extraClasspath>
+            <extraClasspath>${project.build.directory}/conf/;${project.build.directory}/utilities/scripts/db/;${project.build.directory}/utilities/scripts/db/db/</extraClasspath>
           </webAppConfig>
           
           <systemProperties>
@@ -500,22 +517,6 @@
                 </copy>
                 <copy todir="${basedir}/target/generated-webapp">
                   <fileset dir="${basedir}/../ui"/>
-                </copy>
-                <copy overwrite="true" todir="${basedir}/target/generated-webapp/WEB-INF/classes">
-                  <fileset dir="${basedir}/tomcatconf">
-                    <include name="*.in"/>
-                  </fileset>
-                  <globmapper from="*.in" to="*"/>
-                  <filterchain>
-                    <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
-                      <param type="propertiesfile" value="${cs.replace.properties}"/>
-                    </filterreader>
-                  </filterchain>
-                </copy>
-                <copy overwrite="true" todir="${basedir}/target/generated-webapp/WEB-INF/classes">
-                  <fileset dir="${basedir}/tomcatconf">
-                    <exclude name="*.in"/>
-                  </fileset>
                 </copy>
                 <copy overwrite="true" todir="${basedir}/target/utilities/bin">
                   <fileset dir="${basedir}/../setup/bindir">

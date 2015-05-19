@@ -223,15 +223,13 @@ mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/run
 
 # Specific for tomcat
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost/client
-#ln -sf /usr/share/tomcat/bin ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/bin
 cp -r tomcat/target/cloudstack-tomcat-standalone/bin ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/
 ln -sf /etc/%{name}/management ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/conf
-#ln -sf /usr/share/tomcat/lib ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib
 cp -r tomcat/target/cloudstack-tomcat-standalone/lib ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/
 ln -sf /var/log/%{name}/management ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/logs
 ln -sf /var/cache/%{name}/management/temp ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/temp
 ln -sf /var/cache/%{name}/management/work ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/work
-cp -r tomcat/target/cloudstack-tomcat-standalone/conf/* ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/
+cp -r client/target/conf/* ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/
 /bin/touch ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management/catalina.out
 
 
@@ -255,7 +253,7 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/cl
 #ln -s %{_sysconfdir}/%{name}/management/log4j-cloud.xml \
 #    ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/log4j-cloud.xml
 
-mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/context.xml \
+mv ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/context.xml \
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost/client
 
 install python/bindir/cloud-external-ipallocator.py ${RPM_BUILD_ROOT}%{_bindir}/%{name}-external-ipallocator.py
@@ -358,6 +356,7 @@ if [ ! -f %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util
     echo Please download vhd-util from http://download.cloud.com.s3.amazonaws.com/tools/vhd-util and put it in 
     echo %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/
 fi
+chown cloud. %{_localstatedir}/run/%{name}-management.pid
 
 %preun agent
 /sbin/service cloudstack-agent stop || true
@@ -443,15 +442,16 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/management/Catalina/localhost/client/context.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/catalina.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/catalina.policy
-%config(noreplace) %{_sysconfdir}/%{name}/management/context.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/cloudmanagementserver.keystore
 %config(noreplace) %{_sysconfdir}/%{name}/management/logging.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat-users.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/web.xml
-%config(noreplace) %{_sysconfdir}/%{name}/management/server-nonssl.xml
-%config(noreplace) %{_sysconfdir}/%{name}/management/server-ssl.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat.conf
-%config(noreplace) %{_sysconfdir}/%{name}/management/server.xml
+%config(noreplace) %{_sysconfdir}/%{name}/management/classpath.conf
+%config(noreplace) %{_sysconfdir}/%{name}/management/server-ssl.xml
+%config(noreplace) %{_sysconfdir}/%{name}/management/server-nonssl.xml
+%config(noreplace) %{_sysconfdir}/%{name}/management/ehcache.xml
+%config(noreplace) %{_sysconfdir}/%{name}/management/commands.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/environment.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/java.security.ciphers
 %config(noreplace) %{_sysconfdir}/%{name}/management/commons-logging.properties

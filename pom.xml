@@ -101,6 +101,7 @@
     <cs.findbugs.version>3.0.0</cs.findbugs.version>
     <cs.javadoc.version>2.10.1</cs.javadoc.version>
     <cs.opensaml.version>2.6.1</cs.opensaml.version>
+    <cs.tomcat.version>8.0.22</cs.tomcat.version>
   </properties>
 
   <distributionManagement>
@@ -959,6 +960,9 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>2.18.1</version>
+          <configuration>
+              <argLine>-Djava.security.egd=file:/dev/./urandom</argLine>
+          </configuration>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
