@@ -36,11 +36,11 @@ from marvin.codes import PASS, BACKED_UP
 from threading import Thread
 
 
-class TestVolumeSnapshot(cloudstackTestCase):
+class TestConcurrentSnapshotLimit(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        testClient = super(TestVolumeSnapshot, cls).getClsTestClient()
+        testClient = super(TestConcurrentSnapshotLimit, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.testdata = testClient.getParsedTestDataConfig()
         cls.hypervisor = cls.testClient.getHypervisorInfo()
