@@ -18,7 +18,7 @@ package com.cloud.network.firewall;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.command.user.firewall.ListFirewallRulesCmd;
+import org.apache.cloudstack.api.command.user.firewall.IListFirewallRulesCmd;
 
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -28,10 +28,9 @@ import com.cloud.utils.Pair;
 
 public interface FirewallService {
     FirewallRule createIngressFirewallRule(FirewallRule rule) throws NetworkRuleConflictException;
-
     FirewallRule createEgressFirewallRule(FirewallRule rule) throws NetworkRuleConflictException;
 
-    Pair<List<? extends FirewallRule>, Integer> listFirewallRules(ListFirewallRulesCmd cmd);
+    Pair<List<? extends FirewallRule>, Integer> listFirewallRules(IListFirewallRulesCmd cmd);
 
     /**
      * Revokes a firewall rule
@@ -44,7 +43,6 @@ public interface FirewallService {
     boolean revokeEgressFirewallRule(long ruleId, boolean apply);
 
     boolean applyEgressFirewallRules(FirewallRule rule, Account caller) throws ResourceUnavailableException;
-
     boolean applyIngressFirewallRules(long ipId, Account caller) throws ResourceUnavailableException;
 
     FirewallRule getFirewallRule(long ruleId);

@@ -22,11 +22,14 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
+import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 
@@ -35,7 +38,7 @@ import com.cloud.utils.Pair;
 
 @APICommand(name = "listEgressFirewallRules", description = "Lists all egress firewall rules for network id.", responseObject = FirewallResponse.class, entityType = {FirewallRule.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListEgressFirewallRulesCmd extends ListFirewallRulesCmd {
+public class ListEgressFirewallRulesCmd extends BaseListTaggedResourcesCmd implements IListFirewallRulesCmd {
     public static final Logger s_logger = Logger.getLogger(ListEgressFirewallRulesCmd.class.getName());
     private static final String s_name = "listegressfirewallrulesresponse";
 
@@ -48,26 +51,44 @@ public class ListEgressFirewallRulesCmd extends ListFirewallRulesCmd {
     @Parameter(name = ApiConstants.NETWORK_ID,
                type = CommandType.UUID,
                entityType = NetworkResponse.class,
-               description = "the id network network for the egress firwall services")
+               description = "the network id for the egress firewall services")
     private Long networkId;
+
+    @Parameter(name = ApiConstants.IP_ADDRESS_ID,
+               type = CommandType.UUID,
+               entityType = IPAddressResponse.class,
+               description = "the id of IP address of the firewall services")
+    private Long ipAddressId;
+
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    @Override
+    public Long getIpAddressId() {
+        return ipAddressId;
+    }
+
     public Long getNetworkId() {
         return networkId;
     }
 
-    @Override
     public FirewallRule.TrafficType getTrafficType() {
         return FirewallRule.TrafficType.Egress;
     }
 
-    @Override
     public Long getId() {
         return id;
+    }
+
+    @Override
+    public Boolean getDisplay() {
+        if (display != null) {
+            return display;
+        }
+        return super.getDisplay();
     }
 
     /////////////////////////////////////////////////////
