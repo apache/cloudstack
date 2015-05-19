@@ -86,4 +86,8 @@ public class LibvirtUtilitiesHelper {
     public String retrieveBashScriptPath() {
         return LibvirtComputingResource.BASH_SCRIPT_PATH;
     }
+
+    public int retrieveDefaultPingTieout() {
+        return LibvirtComputingResource.DEFAULT_PING_TIMEOUT;
+    }
 }

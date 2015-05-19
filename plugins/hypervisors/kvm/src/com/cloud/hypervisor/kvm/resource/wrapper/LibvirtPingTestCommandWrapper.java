@@ -33,13 +33,16 @@ public final class LibvirtPingTestCommandWrapper extends CommandWrapper<PingTest
 
     @Override
     public Answer execute(final PingTestCommand command, final LibvirtComputingResource libvirtComputingResource) {
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
+        final int defaultPingTimeout = libvirtUtilitiesHelper.retrieveDefaultPingTieout();
+
         String result = null;
         final String computingHostIp = command.getComputingHostIp(); // TODO, split the command into 2 types
 
         if (computingHostIp != null) {
-            result = doPingTest(libvirtComputingResource, computingHostIp);
+            result = doPingTest(libvirtComputingResource, computingHostIp, defaultPingTimeout);
         } else if (command.getRouterIp() != null && command.getPrivateIp() != null) {
-            result = doPingTest(libvirtComputingResource, command.getRouterIp(), command.getPrivateIp());
+            result = doPingTest(libvirtComputingResource, command.getRouterIp(), command.getPrivateIp(), defaultPingTimeout);
         } else {
             return new Answer(command, false, "routerip and private ip is null");
         }
@@ -50,14 +53,14 @@ public final class LibvirtPingTestCommandWrapper extends CommandWrapper<PingTest
         return new Answer(command);
     }
 
-    protected String doPingTest(final LibvirtComputingResource libvirtComputingResource, final String computingHostIp) {
-        final Script command = new Script(libvirtComputingResource.getPingTestPath(), 10000, s_logger);
+    protected String doPingTest(final LibvirtComputingResource libvirtComputingResource, final String computingHostIp, final int defaultPingTimeout) {
+        final Script command = new Script(libvirtComputingResource.getPingTestPath(), defaultPingTimeout, s_logger);
         command.add("-h", computingHostIp);
         return command.execute();
     }
 
-    protected String doPingTest(final LibvirtComputingResource libvirtComputingResource, final String domRIp, final String vmIp) {
-        final Script command = new Script(libvirtComputingResource.getPingTestPath(), 10000, s_logger);
+    protected String doPingTest(final LibvirtComputingResource libvirtComputingResource, final String domRIp, final String vmIp, final int defaultPingTimeout) {
+        final Script command = new Script(libvirtComputingResource.getPingTestPath(), defaultPingTimeout, s_logger);
         command.add("-i", domRIp);
         command.add("-p", vmIp);
         return command.execute();
