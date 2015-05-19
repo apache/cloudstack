@@ -388,7 +388,10 @@
             },
 
             addPrimaryStorage: function(args) {
-                return args.data.localstorageenabled != 'on';
+                if(args.data.localstorageenabled == 'on' && args.data.localstorageenabledforsystemvm == 'on') {
+                    return false; //skip step only when both localstorage and localstorage for system vm are checked
+                }
+                return true;
             }
         },
 
@@ -689,23 +692,15 @@
                         label: 'label.local.storage.enabled',
                         isBoolean: true,
                         onChange: function(args) {
-                            var $checkbox = args.$checkbox;
 
-                            if ($checkbox.is(':checked')) {
-                                cloudStack.dialog.confirm({
-                                    message: 'message.zoneWizard.enable.local.storage',
-                                    action: function() {
-                                        $checkbox.attr('checked', true);
-                                    },
-                                    cancelAction: function() {
-                                        $checkbox.attr('checked', false);
-                                    }
-                                });
+                        }
+                    },
 
-                                return false;
-                            }
+                    localstorageenabledforsystemvm: {
+                        label: 'label.local.storage.enabled.system.vms',
+                        isBoolean: true,
+                        onChange: function(args) {
 
-                            return true;
                         }
                     }
                 }
@@ -2346,8 +2341,8 @@
         },
 
         action: function(args) {      	
-        	var $wizard = args.wizard;
-        	        	
+            var $wizard = args.wizard;
+            var formData = args.data;
             var advZoneConfiguredVirtualRouterCount = 0; //for multiple physical networks in advanced zone. Each physical network has 2 virtual routers: regular one and VPC one.
 
             var success = args.response.success;
@@ -4522,29 +4517,52 @@
                         });
                     }
 
-                    $.ajax({
-                        url: createURL("addHost"),
-                        type: "POST",
-                        data: data,
-                        success: function(json) {
-                            stepFns.addPrimaryStorage({
-                                data: $.extend(args.data, {
-                                    returnedHost: json.addhostresponse.host[0]
-                                })
-                            });
-                        },
-                        error: function(XMLHttpResponse) {
-                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                            error('addHost', errorMsg, {
-                                fn: 'addHost',
-                                args: args
-                            });
-                        }
-                    });
+                    var addHostAjax = function() {
+                        $.ajax({
+                            url: createURL("addHost"),
+                            type: "POST",
+                            data: data,
+                            success: function(json) {
+                                stepFns.addPrimaryStorage({
+                                    data: $.extend(args.data, {
+                                        returnedHost: json.addhostresponse.host[0]
+                                    })
+                                });
+                            },
+                            error: function(XMLHttpResponse) {
+                                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                error('addHost', errorMsg, {
+                                    fn: 'addHost',
+                                    args: args
+                                });
+                            }
+                        });
+                    };
+
+                    if(args.data.zone.localstorageenabledforsystemvm == 'on') {
+                        $.ajax({
+                            url: createURL("updateConfiguration&name=system.vm.use.local.storage&value=true&zoneid=" + args.data.returnedZone.id),
+                            dataType: "json",
+                            success: function(json) {
+                                addHostAjax();
+                            },
+                            error: function(XMLHttpResponse) {
+                               var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                               error('addHost', errorMsg, {
+                                   fn: 'addHost',
+                                   args: args
+                               });
+                            }
+                        });
+                    } else {
+                        addHostAjax();
+                    }
+
+
                 },
 
                 addPrimaryStorage: function(args) {
-                    if (args.data.zone.localstorageenabled == 'on') { //use local storage, don't need primary storage. So, skip this step.
+                    if (args.data.zone.localstorageenabled == 'on' && args.data.zone.localstorageenabledforsystemvm == 'on') { //use local storage, don't need primary storage. So, skip this step.
                         stepFns.addSecondaryStorage({
                             data: args.data
                         });
