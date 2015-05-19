@@ -37,6 +37,10 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 import org.reflections.Reflections;
+import org.reflections.util.ConfigurationBuilder;
+import org.reflections.util.ClasspathHelper;
+import org.reflections.scanners.SubTypesScanner;
+import org.reflections.scanners.TypeAnnotationsScanner;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -45,6 +49,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class ReflectUtil {
 
     private static final Logger s_logger = Logger.getLogger(ReflectUtil.class);
+    private static final Logger logger = Logger.getLogger(Reflections.class);
 
     public static Pair<Class<?>, Field> getAnyField(Class<?> clazz, String fieldName) {
         try {
@@ -65,10 +70,13 @@ public class ReflectUtil {
     public static Set<Class<?>> getClassesWithAnnotation(Class<? extends Annotation> annotation, String[] packageNames) {
         Reflections reflections;
         Set<Class<?>> classes = new HashSet<Class<?>>();
+        ConfigurationBuilder builder=new ConfigurationBuilder();
         for (String packageName : packageNames) {
-            reflections = new Reflections(packageName);
-            classes.addAll(reflections.getTypesAnnotatedWith(annotation));
+             builder.addUrls(ClasspathHelper.forPackage(packageName));
         }
+        builder.setScanners(new SubTypesScanner(),new TypeAnnotationsScanner());
+        reflections = new Reflections(builder);
+        classes.addAll(reflections.getTypesAnnotatedWith(annotation));
         return classes;
     }
 
