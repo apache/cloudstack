@@ -18,6 +18,7 @@ package com.cloud.network;
 
 import java.util.List;
 
+import com.cloud.utils.db.DB;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.dc.DataCenter;
@@ -165,6 +166,10 @@ public interface IpAddressManager {
 
     PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp,
         boolean isSystem) throws InsufficientAddressCapacityException;
+
+    @DB
+    void allocateNicValues(NicProfile nic, DataCenter dc, VirtualMachineProfile vm, Network network, String requestedIpv4,
+                           String requestedIpv6) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException;
 
     int getRuleCountForIp(Long addressId, FirewallRule.Purpose purpose, FirewallRule.State state);
 

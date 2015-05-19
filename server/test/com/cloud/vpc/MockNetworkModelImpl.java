@@ -230,6 +230,11 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
         return null;
     }
 
+    @Override
+    public boolean isSharedNetworkWithoutServices(long networkId) {
+        return false;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkModel#areServicesSupportedByNetworkOffering(long, com.cloud.network.Network.Service[])
      */

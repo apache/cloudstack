@@ -246,14 +246,17 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientVirtualNetworkCapacityException,
                     InsufficientAddressCapacityException {
-                    _ipAddrMgr.allocateDirectIp(nic, dc, vm, network, requestedIp4Addr, requestedIp6Addr);
-                    //save the placeholder nic if the vm is the Virtual router
-                    if (vm.getType() == VirtualMachine.Type.DomainRouter) {
-                        Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, null);
-                        if (placeholderNic == null) {
-                            s_logger.debug("Saving placeholder nic with ip4 address " + nic.getIp4Address() + " and ipv6 address " + nic.getIp6Address() +
-                                " for the network " + network);
-                            _networkMgr.savePlaceholderNic(network, nic.getIp4Address(), nic.getIp6Address(), VirtualMachine.Type.DomainRouter);
+                    if (_networkModel.isSharedNetworkWithoutServices(network.getId())) {
+                        _ipAddrMgr.allocateDirectIp(nic, dc, vm, network, requestedIp4Addr, requestedIp6Addr);
+                    } else {
+                        //save the placeholder nic if the vm is the Virtual router
+                        if (vm.getType() == VirtualMachine.Type.DomainRouter) {
+                            Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, null);
+                            if (placeholderNic == null) {
+                                s_logger.debug("Saving placeholder nic with ip4 address " + nic.getIp4Address() + " and ipv6 address " + nic.getIp6Address() +
+                                        " for the network " + network);
+                                _networkMgr.savePlaceholderNic(network, nic.getIp4Address(), nic.getIp6Address(), VirtualMachine.Type.DomainRouter);
+                            }
                         }
                     }
                 }
