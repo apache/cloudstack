@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
@@ -53,6 +54,12 @@ public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
                description = "domainId of the account owning the affinity group",
                entityType = DomainResponse.class)
     private Long domainId;
+
+    @Parameter(name = ApiConstants.PROJECT_ID,
+               type = CommandType.UUID,
+               entityType = ProjectResponse.class,
+               description = "create affinity group for project")
+    private Long projectId;
 
     @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "optional description of the affinity group")
     private String description;
@@ -88,6 +95,10 @@ public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
 
     public String getAffinityGroupType() {
         return affinityGroupType;
+    }
+
+    public Long getProjectId() {
+        return projectId;
     }
 
     // ///////////////////////////////////////////////////
