@@ -916,19 +916,28 @@ public class LibvirtComputingResourceTest {
         }
     }
 
-    @Test(expected = NumberFormatException.class)
+    @Test
     public void testGetHostStatsCommand() {
         // A bit difficult to test due to the logger being passed and the parser itself relying on the connection.
         // Have to spend some more time afterwards in order to refactor the wrapper itself.
 
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+        final String bashScriptPath = "/path";
+
         final String uuid = "e8d6b4d0-bc6d-4613-b8bb-cb9e0600f3c6";
         final GetHostStatsCommand command = new GetHostStatsCommand(uuid, "summer", 1l);
+
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        when(libvirtUtilitiesHelper.retrieveBashScriptPath()).thenReturn(bashScriptPath);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
 
         final Answer answer = wrapper.execute(command, libvirtComputingResource);
         assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
+        verify(libvirtUtilitiesHelper, times(1)).retrieveBashScriptPath();
     }
 
     @Test

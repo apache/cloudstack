@@ -48,7 +48,7 @@ function install_packages() {
   if [ "${arch}" != "i386" ]; then
     dpkg --add-architecture i386
     apt-get update
-    ${apt_get} install links:i386 libuuid1:i386
+    ${apt_get} install links:i386 libuuid1:i386 libc6:i386
   fi
 
   ${apt_get} install \

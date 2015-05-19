@@ -33,6 +33,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
 import com.cloud.vm.DiskProfile;
@@ -53,6 +54,16 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
 
         if (dskCh.useLocalStorage()) {
             return null;
+        }
+
+        if (s_logger.isTraceEnabled()) {
+            // Log the pools details that are ignored because they are in disabled state
+            List<StoragePoolVO> disabledPools = _storagePoolDao.findDisabledPoolsByScope(plan.getDataCenterId(), null, null, ScopeType.ZONE);
+            if (disabledPools != null && !disabledPools.isEmpty()) {
+                for (StoragePoolVO pool : disabledPools) {
+                    s_logger.trace("Ignoring pool " + pool + " as it is in disabled state.");
+                }
+            }
         }
 
         List<StoragePool> suitablePools = new ArrayList<StoragePool>();

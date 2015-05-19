@@ -192,6 +192,20 @@ public class PrimaryDataStoreHelper {
         return true;
     }
 
+    public boolean disable(DataStore store) {
+        StoragePoolVO pool = this.dataStoreDao.findById(store.getId());
+        pool.setStatus(StoragePoolStatus.Disabled);
+        this.dataStoreDao.update(pool.getId(), pool);
+        return true;
+    }
+
+    public boolean enable(DataStore store) {
+        StoragePoolVO pool = this.dataStoreDao.findById(store.getId());
+        pool.setStatus(StoragePoolStatus.Up);
+        dataStoreDao.update(pool.getId(), pool);
+        return true;
+    }
+
     protected boolean deletePoolStats(Long poolId) {
         CapacityVO capacity1 = _capacityDao.findByHostIdType(poolId, Capacity.CAPACITY_TYPE_STORAGE);
         CapacityVO capacity2 = _capacityDao.findByHostIdType(poolId, Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED);
