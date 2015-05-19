@@ -88,6 +88,8 @@ public interface NetworkModel {
 
     Map<Capability, String> getNetworkServiceCapabilities(long networkId, Service service);
 
+    boolean isSharedNetworkWithoutServices(long networkId);
+
     boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service... services);
 
     Network getNetworkWithSGWithFreeIPs(Long zoneId);
