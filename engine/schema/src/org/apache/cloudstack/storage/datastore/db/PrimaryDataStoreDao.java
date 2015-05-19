@@ -77,6 +77,8 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
 
     List<StoragePoolVO> findPoolsByTags(long dcId, long podId, Long clusterId, String[] tags);
 
+    List<StoragePoolVO> findDisabledPoolsByScope(long dcId, Long podId, Long clusterId, ScopeType scope);
+
     /**
      * Find pool by UUID.
      *

@@ -166,6 +166,16 @@ public class NexentaPrimaryDataStoreLifeCycle
     }
 
     @Override
+    public void enableStoragePool(DataStore dataStore) {
+        dataStoreHelper.enable(dataStore);
+    }
+
+    @Override
+    public void disableStoragePool(DataStore dataStore) {
+        dataStoreHelper.disable(dataStore);
+    }
+
+    @Override
     public boolean deleteDataStore(DataStore store) {
         return dataStoreHelper.deletePrimaryDataStore(store);
     }
