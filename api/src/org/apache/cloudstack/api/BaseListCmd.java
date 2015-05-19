@@ -21,7 +21,7 @@ import java.util.Map;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.exception.CSExceptionErrorCode;
 
-public abstract class BaseListCmd extends BaseCmd {
+public abstract class BaseListCmd extends BaseCmd implements IBaseListCmd {
 
     private static Long s_maxPageSize = null;
     public static final Long s_pageSizeUnlimited = -1L;
@@ -47,14 +47,17 @@ public abstract class BaseListCmd extends BaseCmd {
     public BaseListCmd() {
     }
 
+    @Override
     public String getKeyword() {
         return keyword;
     }
 
+    @Override
     public Integer getPage() {
         return page;
     }
 
+    @Override
     public Integer getPageSize() {
         if (pageSize != null && s_maxPageSize.longValue() != s_pageSizeUnlimited && pageSize.longValue() > s_maxPageSize.longValue()) {
             throw new InvalidParameterValueException("Page size can't exceed max allowed page size value: " + s_maxPageSize.longValue());
@@ -84,6 +87,7 @@ public abstract class BaseListCmd extends BaseCmd {
         return 0;
     }
 
+    @Override
     public Long getPageSizeVal() {
         Long defaultPageSize = s_maxPageSize;
         final Integer pageSizeInt = getPageSize();
@@ -97,6 +101,7 @@ public abstract class BaseListCmd extends BaseCmd {
         return defaultPageSize;
     }
 
+    @Override
     public Long getStartIndex() {
         Long startIndex = Long.valueOf(0);
         final Long pageSizeVal = getPageSizeVal();
@@ -112,6 +117,7 @@ public abstract class BaseListCmd extends BaseCmd {
         return startIndex;
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.None;
     }

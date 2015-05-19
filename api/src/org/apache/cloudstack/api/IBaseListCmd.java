@@ -14,17 +14,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 package org.apache.cloudstack.api;
 
-import org.apache.cloudstack.api.response.ProjectResponse;
+public interface IBaseListCmd {
+    String getKeyword();
 
-public abstract class BaseListProjectAndAccountResourcesCmd extends BaseListAccountResourcesCmd implements IBaseListProjectAndAccountResourcesCmd {
+    Integer getPage();
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "list objects by project")
-    private Long projectId;
+    Integer getPageSize();
 
-    @Override
-    public Long getProjectId() {
-        return projectId;
-    }
+    Long getPageSizeVal();
+
+    Long getStartIndex();
+
+    ApiCommandJobType getInstanceType();
 }
