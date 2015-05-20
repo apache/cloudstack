@@ -1824,6 +1824,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
         guest.setGuestArch(vmTO.getArch());
         guest.setMachineType("pc");
+        guest.setUuid(uuid);
         guest.setBootOrder(GuestDef.bootOrder.CDROM);
         guest.setBootOrder(GuestDef.bootOrder.HARDISK);
 
