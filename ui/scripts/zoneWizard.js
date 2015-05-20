@@ -471,7 +471,7 @@
                         desc: 'message.tooltip.internal.dns.2',
                         validation: {
                             ipv4: true
-                        },
+                        }
                     },
                     hypervisor: {
                         label: 'label.hypervisor',
