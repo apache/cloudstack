@@ -144,6 +144,14 @@ class TestRecurringSnapshots(cloudstackTestCase):
         cls.testClient = super(TestRecurringSnapshots, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
+        cls._cleanup = []
+
+        cls.unsupportedHypervisor = False
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() in ['hyperv', "lxc"]:
+            cls.unsupportedHypervisor = True
+            return
+
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
@@ -153,6 +161,7 @@ class TestRecurringSnapshots(cloudstackTestCase):
             cls.api_client,
             cls.services["disk_offering"]
         )
+        cls._cleanup.append(cls.disk_offering)
         template = get_template(
             cls.api_client,
             cls.zone.id,
@@ -175,6 +184,7 @@ class TestRecurringSnapshots(cloudstackTestCase):
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
 
         cls.services["account"] = cls.account.name
 
@@ -182,6 +192,7 @@ class TestRecurringSnapshots(cloudstackTestCase):
             cls.api_client,
             cls.services["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
         cls.virtual_machine_with_disk = \
             VirtualMachine.create(
                 cls.api_client,
@@ -200,11 +211,6 @@ class TestRecurringSnapshots(cloudstackTestCase):
                 domainid=cls.account.domainid,
                 serviceofferingid=cls.service_offering.id
             )
-        cls._cleanup = [
-            cls.service_offering,
-            cls.disk_offering,
-            cls.account,
-        ]
         return
 
     @classmethod
@@ -220,6 +226,9 @@ class TestRecurringSnapshots(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
+
+        if self.unsupportedHypervisor:
+            self.skipTest("Snapshots feature is not supported on Hyper-V/LXC")
         return
 
     def tearDown(self):
