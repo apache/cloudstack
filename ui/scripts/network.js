@@ -1697,7 +1697,7 @@
                                                             name: 'source',
                                                             description: _l('label.lb.algorithm.source')
                                                         }];
-                                                    if (typeof args.context != 'undefined') {
+                                                    if (typeof args.context == 'undefined') {
                                                         data = getLBAlgorithms(args.context.networks[0]);
                                                     }
                                                     args.response.success({
@@ -3541,7 +3541,7 @@
                                                             name: 'source',
                                                             description: _l('label.lb.algorithm.source')
                                                         }];
-                                                    if (typeof args.context != 'undefined') {
+                                                    if (typeof args.context == 'undefined') {
                                                         data = getLBAlgorithms(args.context.networks[0]);
                                                     }
                                                     args.response.success({
