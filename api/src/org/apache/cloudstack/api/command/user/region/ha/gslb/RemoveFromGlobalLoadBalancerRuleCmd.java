@@ -42,7 +42,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.StringUtils;
 
 @APICommand(name = "removeFromGlobalLoadBalancerRule",
-            description = "Removes a load balancer rule association with" + " global load balancer rule",
+            description = "Removes a load balancer rule association with global load balancer rule",
             responseObject = SuccessResponse.class,
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
@@ -67,7 +67,7 @@ public class RemoveFromGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
                collectionType = CommandType.UUID,
                entityType = FirewallRuleResponse.class,
                required = true,
-               description = "the list load balancer rules that " + "will be assigned to gloabal load balacner rule")
+               description = "the list load balancer rules that will be assigned to gloabal load balancer rule")
     private List<Long> loadBalancerRulesIds;
 
     /////////////////////////////////////////////////////
