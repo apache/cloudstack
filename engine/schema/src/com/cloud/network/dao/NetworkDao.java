@@ -31,6 +31,8 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long>, StateDao<State,
 
     List<NetworkVO> listByOwner(long ownerId);
 
+    List<NetworkVO> listByGuestType(GuestType type);
+
     List<NetworkVO> listBy(long accountId, long offeringId, long dataCenterId);
 
     List<NetworkVO> listBy(long accountId, long dataCenterId, String cidr, boolean skipVpc);
