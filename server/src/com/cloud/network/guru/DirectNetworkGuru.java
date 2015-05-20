@@ -245,10 +245,11 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
             Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientCapacityException>() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientVirtualNetworkCapacityException,
-                    InsufficientAddressCapacityException {
+                        InsufficientAddressCapacityException {
                     if (_networkModel.isSharedNetworkWithoutServices(network.getId())) {
-                        _ipAddrMgr.allocateDirectIp(nic, dc, vm, network, requestedIp4Addr, requestedIp6Addr);
+                        _ipAddrMgr.allocateNicValues(nic, dc, vm, network, requestedIp4Addr, requestedIp6Addr);
                     } else {
+                        _ipAddrMgr.allocateDirectIp(nic, dc, vm, network, requestedIp4Addr, requestedIp6Addr);
                         //save the placeholder nic if the vm is the Virtual router
                         if (vm.getType() == VirtualMachine.Type.DomainRouter) {
                             Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, null);
