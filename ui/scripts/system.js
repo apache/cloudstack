@@ -3985,7 +3985,7 @@
                                         })
                                     });
                                 }
-                            },
+                            }
                         },
                         actions: {
                             enable: {
@@ -7486,7 +7486,7 @@
                                         actionFilter: networkProviderActionFilter('GloboDns')
                                     });
                                 }
-                            },
+                            }
                         },
                         actions: {
                             add: {
@@ -12917,7 +12917,7 @@
                             label: 'label.api.version'
                         },
                         retrycount: {
-                            label: 'label.numretries',
+                            label: 'label.numretries'
                         },
                         retryinterval: {
                             label: 'label.retry.interval'
@@ -13073,7 +13073,7 @@
                                         label: 'label.api.version'
                                     },
                                     retrycount: {
-                                        label: 'label.numretries',
+                                        label: 'label.numretries'
                                     },
                                     retryinterval: {
                                         label: 'label.retry.interval'
@@ -15710,7 +15710,7 @@
                                         $.extend(data, {
                                             agentusername: args.data.agentUsername,
                                             agentpassword: args.data.agentPassword,
-                                            agentport: args.data.agentPort,
+                                            agentport: args.data.agentPort
                                        });
                                     }
                                 }
@@ -20286,7 +20286,7 @@
                 var jid = json[apiCmdRes].jobid;
                 args.response.success({
                     _custom: {
-                        jobId: jid,
+                        jobId: jid
                     }
                 });
             }

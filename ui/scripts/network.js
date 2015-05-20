@@ -677,7 +677,7 @@
                                                 data: null
                                                 });
                                             }
-                                        },
+                                        }
                                     },
                                     account: {
                                         label: 'label.account',

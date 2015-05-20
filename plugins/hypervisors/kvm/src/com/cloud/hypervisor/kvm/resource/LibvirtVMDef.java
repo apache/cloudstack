@@ -59,6 +59,7 @@ public class LibvirtVMDef {
         private String _initrd;
         private String _root;
         private String _cmdline;
+        private String _uuid;
         private final List<bootOrder> _bootdevs = new ArrayList<bootOrder>();
         private String _machine;
 
@@ -93,10 +94,23 @@ public class LibvirtVMDef {
             _bootdevs.add(order);
         }
 
+        public void setUuid(String uuid) {
+            _uuid = uuid;
+        }
+
         @Override
         public String toString() {
             if (_type == guestType.KVM) {
                 StringBuilder guestDef = new StringBuilder();
+
+                guestDef.append("<sysinfo type='smbios'>\n");
+                guestDef.append("<system>\n");
+                guestDef.append("<entry name='manufacturer'>Apache Software Foundation</entry>\n");
+                guestDef.append("<entry name='product'>CloudStack " + _type.toString() + " Hypervisor</entry>\n");
+                guestDef.append("<entry name='uuid'>" + _uuid + "</entry>\n");
+                guestDef.append("</system>\n");
+                guestDef.append("</sysinfo>\n");
+
                 guestDef.append("<os>\n");
                 guestDef.append("<type ");
                 if (_arch != null) {
@@ -111,6 +125,7 @@ public class LibvirtVMDef {
                         guestDef.append("<boot dev='" + bo + "'/>\n");
                     }
                 }
+                guestDef.append("<smbios mode='sysinfo'/>\n");
                 guestDef.append("</os>\n");
                 return guestDef.toString();
             } else if (_type == guestType.LXC) {
