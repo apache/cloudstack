@@ -1273,33 +1273,57 @@ public class LibvirtComputingResourceTest {
     public void testPingTestHostIpCommand() {
         final PingTestCommand command = new PingTestCommand("172.1.10.10");
 
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        when(libvirtUtilitiesHelper.retrieveDefaultPingTieout()).thenReturn(1);
+
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
 
         final Answer answer = wrapper.execute(command, libvirtComputingResource);
         assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
+        verify(libvirtUtilitiesHelper, times(1)).retrieveDefaultPingTieout();
     }
 
     @Test
     public void testPingTestPvtIpCommand() {
         final PingTestCommand command = new PingTestCommand("169.17.1.10", "192.168.10.10");
 
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        when(libvirtUtilitiesHelper.retrieveDefaultPingTieout()).thenReturn(1);
+
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
 
         final Answer answer = wrapper.execute(command, libvirtComputingResource);
         assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
+        verify(libvirtUtilitiesHelper, times(1)).retrieveDefaultPingTieout();
     }
 
     @Test
     public void testPingOnlyOneIpCommand() {
         final PingTestCommand command = new PingTestCommand("169.17.1.10", null);
 
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        when(libvirtUtilitiesHelper.retrieveDefaultPingTieout()).thenReturn(1);
+
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
 
         final Answer answer = wrapper.execute(command, libvirtComputingResource);
         assertFalse(answer.getResult());
+
+        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
+        verify(libvirtUtilitiesHelper, times(1)).retrieveDefaultPingTieout();
     }
 
     @Test
