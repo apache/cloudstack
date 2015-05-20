@@ -56,6 +56,11 @@ public class VmDataCommand extends NetworkElementCommand {
         this.executeInSequence = executeInSequence;
     }
 
+    public VmDataCommand(String vmName) {
+        this.vmName = vmName;
+        this.vmData = new ArrayList<String[]>();
+    }
+
     public String getVmIpAddress() {
         return vmIpAddress;
     }
