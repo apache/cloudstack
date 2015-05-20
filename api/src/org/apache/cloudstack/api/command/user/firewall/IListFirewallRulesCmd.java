@@ -14,17 +14,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api;
 
-import org.apache.cloudstack.api.response.ProjectResponse;
+package org.apache.cloudstack.api.command.user.firewall;
 
-public abstract class BaseListProjectAndAccountResourcesCmd extends BaseListAccountResourcesCmd implements IBaseListProjectAndAccountResourcesCmd {
+import com.cloud.network.rules.FirewallRule;
+import org.apache.cloudstack.api.IBaseListTaggedResourcesCmd;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "list objects by project")
-    private Long projectId;
+public interface IListFirewallRulesCmd extends IBaseListTaggedResourcesCmd {
+    Long getIpAddressId();
 
-    @Override
-    public Long getProjectId() {
-        return projectId;
-    }
+    FirewallRule.TrafficType getTrafficType();
+
+    Long getId();
+
+    Long getNetworkId();
 }

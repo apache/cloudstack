@@ -810,7 +810,7 @@
                                             }
                                         },
                                         name: {
-                                            label: 'label.name',
+                                            label: 'label.name'
                                         }
                                     }
                                 },

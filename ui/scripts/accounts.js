@@ -1531,7 +1531,7 @@
                                         label: 'label.name',
                                         validation: {
                                             required: true
-                                        },
+                                        }
                                     },
                                     publickey: {
                                         label: 'Public Key'
@@ -1587,7 +1587,7 @@
                                                     data: items
                                                 });
                                             }
-                                        },
+                                        }
                                     },
                                     account: {
                                         label: 'label.account',
