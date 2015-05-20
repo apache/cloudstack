@@ -857,7 +857,7 @@ public class LibvirtComputingResourceTest {
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
 
         final String vmName = "Test";
-        final RebootRouterCommand command = new RebootRouterCommand(vmName, "192.168.0.10");
+        final RebootRouterCommand command = new RebootRouterCommand(vmName, "127.0.0.1");
 
         when(libvirtComputingResource.getVirtRouterResource()).thenReturn(routingResource);
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
@@ -890,7 +890,7 @@ public class LibvirtComputingResourceTest {
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
 
         final String vmName = "Test";
-        final RebootRouterCommand command = new RebootRouterCommand(vmName, "192.168.0.10");
+        final RebootRouterCommand command = new RebootRouterCommand(vmName, "127.0.0.1");
 
         when(libvirtComputingResource.getVirtRouterResource()).thenReturn(routingResource);
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
@@ -1235,7 +1235,7 @@ public class LibvirtComputingResourceTest {
         try {
             when(conn.domainLookupByName(vmName)).thenReturn(dm);
 
-            when(libvirtComputingResource.getPrivateIp()).thenReturn("192.168.1.10");
+            when(libvirtComputingResource.getPrivateIp()).thenReturn("127.0.0.1");
             when(dm.getXMLDesc(0)).thenReturn("host_domain");
             when(dm.isPersistent()).thenReturn(1);
             doNothing().when(dm).undefine();
@@ -1271,7 +1271,7 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testPingTestHostIpCommand() {
-        final PingTestCommand command = new PingTestCommand("172.1.10.10");
+        final PingTestCommand command = new PingTestCommand("127.0.0.1");
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -1282,7 +1282,7 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testPingTestPvtIpCommand() {
-        final PingTestCommand command = new PingTestCommand("169.17.1.10", "192.168.10.10");
+        final PingTestCommand command = new PingTestCommand("127.0.0.1", "127.0.0.1");
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -1293,7 +1293,7 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testPingOnlyOneIpCommand() {
-        final PingTestCommand command = new PingTestCommand("169.17.1.10", null);
+        final PingTestCommand command = new PingTestCommand("127.0.0.1", null);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -1632,7 +1632,7 @@ public class LibvirtComputingResourceTest {
         final int interval = 0;
         final long proxyVmId = 0l;
         final String proxyVmName = "host";
-        final String proxyManagementIp = "169.172.15.16";
+        final String proxyManagementIp = "127.0.0.1";
         final int proxyCmdPort = 0;
 
         final WatchConsoleProxyLoadCommand command = new WatchConsoleProxyLoadCommand(interval, proxyVmId, proxyVmName, proxyManagementIp, proxyCmdPort);
@@ -1648,7 +1648,7 @@ public class LibvirtComputingResourceTest {
     public void testCheckConsoleProxyLoadCommand() {
         final long proxyVmId = 0l;
         final String proxyVmName = "host";
-        final String proxyManagementIp = "169.172.15.16";
+        final String proxyManagementIp = "127.0.0.1";
         final int proxyCmdPort = 0;
 
         final CheckConsoleProxyLoadCommand command = new CheckConsoleProxyLoadCommand(proxyVmId, proxyVmName, proxyManagementIp, proxyCmdPort);
@@ -2440,7 +2440,7 @@ public class LibvirtComputingResourceTest {
     public void testNetworkRulesVmSecondaryIpCommand() {
         final String vmName = "Test";
         final String vmMac = "00:00:00:00";
-        final String secondaryIp = "172.168.25.25";
+        final String secondaryIp = "127.0.0.1";
         final boolean action = true;
 
         final NetworkRulesVmSecondaryIpCommand command = new NetworkRulesVmSecondaryIpCommand(vmName, vmMac, secondaryIp, action );
@@ -2476,7 +2476,7 @@ public class LibvirtComputingResourceTest {
     public void testNetworkRulesVmSecondaryIpCommandFailure() {
         final String vmName = "Test";
         final String vmMac = "00:00:00:00";
-        final String secondaryIp = "172.168.25.25";
+        final String secondaryIp = "127.0.0.1";
         final boolean action = true;
 
         final NetworkRulesVmSecondaryIpCommand command = new NetworkRulesVmSecondaryIpCommand(vmName, vmMac, secondaryIp, action );
@@ -2570,7 +2570,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testCheckSshCommand() {
         final String instanceName = "Test";
-        final String ip = "172.16.16.16";
+        final String ip = "127.0.0.1";
         final int port = 22;
 
         final CheckSshCommand command = new CheckSshCommand(instanceName, ip, port);
@@ -2596,7 +2596,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testCheckSshCommandFailure() {
         final String instanceName = "Test";
-        final String ip = "172.16.16.16";
+        final String ip = "127.0.0.1";
         final int port = 22;
 
         final CheckSshCommand command = new CheckSshCommand(instanceName, ip, port);
@@ -2787,12 +2787,12 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testOvsCreateTunnelCommand() {
-        final String remoteIp = "172.16.16.16";
+        final String remoteIp = "127.0.0.1";
         final Integer key = 1;
         final Long from = 1l;
         final Long to = 2l;
         final long networkId = 1l;
-        final String fromIp = "172.15.15.15";
+        final String fromIp = "127.0.0.1";
         final String networkName = "eth";
         final String networkUuid = "8edb1156-a851-4914-afc6-468ee52ac861";
 
@@ -2817,12 +2817,12 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testOvsCreateTunnelCommandFailure1() {
-        final String remoteIp = "172.16.16.16";
+        final String remoteIp = "127.0.0.1";
         final Integer key = 1;
         final Long from = 1l;
         final Long to = 2l;
         final long networkId = 1l;
-        final String fromIp = "172.15.15.15";
+        final String fromIp = "127.0.0.1";
         final String networkName = "eth";
         final String networkUuid = "8edb1156-a851-4914-afc6-468ee52ac861";
 
@@ -2848,12 +2848,12 @@ public class LibvirtComputingResourceTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testOvsCreateTunnelCommandFailure2() {
-        final String remoteIp = "172.16.16.16";
+        final String remoteIp = "127.0.0.1";
         final Integer key = 1;
         final Long from = 1l;
         final Long to = 2l;
         final long networkId = 1l;
-        final String fromIp = "172.15.15.15";
+        final String fromIp = "127.0.0.1";
         final String networkName = "eth";
         final String networkUuid = "8edb1156-a851-4914-afc6-468ee52ac861";
 
@@ -2991,7 +2991,7 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testSecurityGroupRulesCmdFalse() {
-        final String guestIp = "172.16.16.16";
+        final String guestIp = "127.0.0.1";
         final String guestMac = "00:00:00:00";
         final String vmName = "Test";
         final Long vmId = 1l;
@@ -3043,7 +3043,7 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testSecurityGroupRulesCmdTrue() {
-        final String guestIp = "172.16.16.16";
+        final String guestIp = "127.0.0.1";
         final String guestMac = "00:00:00:00";
         final String vmName = "Test";
         final Long vmId = 1l;
@@ -3105,7 +3105,7 @@ public class LibvirtComputingResourceTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testSecurityGroupRulesCmdException() {
-        final String guestIp = "172.16.16.16";
+        final String guestIp = "127.0.0.1";
         final String guestMac = "00:00:00:00";
         final String vmName = "Test";
         final Long vmId = 1l;
@@ -3625,7 +3625,7 @@ public class LibvirtComputingResourceTest {
         //The code is way to big and complex. Will finish the refactor and come back to this to add more cases.
 
         final StoragePool pool = Mockito.mock(StoragePool.class);;
-        final String secondaryStorageUrl = "nfs:/192.168.2.2/storage/secondary";
+        final String secondaryStorageUrl = "nfs:/127.0.0.1/storage/secondary";
         final long templateId = 1l;
         final long accountId = 1l;
         final String userSpecifiedName = "User";
@@ -3762,7 +3762,7 @@ public class LibvirtComputingResourceTest {
         //The code is way to big and complex. Will finish the refactor and come back to this to add more cases.
 
         final StoragePool pool = Mockito.mock(StoragePool.class);;
-        final String secondaryStorageUrl = "nfs:/192.168.2.2/storage/secondary";
+        final String secondaryStorageUrl = "nfs:/127.0.0.1/storage/secondary";
         final long accountId = 1l;
         final String volumePath = "/123/vol";
         final String vmName = "Test";
@@ -3809,7 +3809,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testCreatePrivateTemplateFromSnapshotCommand() {
         final StoragePool pool = Mockito.mock(StoragePool.class);
-        final String secondaryStoragePoolURL = "nfs:/192.168.2.2/storage/secondary";
+        final String secondaryStoragePoolURL = "nfs:/127.0.0.1/storage/secondary";
         final Long dcId = 1l;
         final Long accountId = 1l;
         final Long volumeId = 1l;
@@ -3883,7 +3883,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testCreatePrivateTemplateFromSnapshotCommandConfigurationException() {
         final StoragePool pool = Mockito.mock(StoragePool.class);
-        final String secondaryStoragePoolURL = "nfs:/192.168.2.2/storage/secondary";
+        final String secondaryStoragePoolURL = "nfs:/127.0.0.1/storage/secondary";
         final Long dcId = 1l;
         final Long accountId = 1l;
         final Long volumeId = 1l;
@@ -3957,7 +3957,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testCreatePrivateTemplateFromSnapshotCommandInternalErrorException() {
         final StoragePool pool = Mockito.mock(StoragePool.class);
-        final String secondaryStoragePoolURL = "nfs:/192.168.2.2/storage/secondary";
+        final String secondaryStoragePoolURL = "nfs:/127.0.0.1/storage/secondary";
         final Long dcId = 1l;
         final Long accountId = 1l;
         final Long volumeId = 1l;
@@ -4030,7 +4030,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testCreatePrivateTemplateFromSnapshotCommandIOException() {
         final StoragePool pool = Mockito.mock(StoragePool.class);
-        final String secondaryStoragePoolURL = "nfs:/192.168.2.2/storage/secondary";
+        final String secondaryStoragePoolURL = "nfs:/127.0.0.1/storage/secondary";
         final Long dcId = 1l;
         final Long accountId = 1l;
         final Long volumeId = 1l;
@@ -4109,7 +4109,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testCreatePrivateTemplateFromSnapshotCommandCloudRuntime() {
         final StoragePool pool = Mockito.mock(StoragePool.class);
-        final String secondaryStoragePoolURL = "nfs:/192.168.2.2/storage/secondary";
+        final String secondaryStoragePoolURL = "nfs:/127.0.0.1/storage/secondary";
         final Long dcId = 1l;
         final Long accountId = 1l;
         final Long volumeId = 1l;
@@ -4156,7 +4156,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testCopyVolumeCommand() {
         final StoragePool storagePool = Mockito.mock(StoragePool.class);
-        final String secondaryStoragePoolURL = "nfs:/192.168.2.2/storage/secondary";
+        final String secondaryStoragePoolURL = "nfs:/127.0.0.1/storage/secondary";
         final Long volumeId = 1l;
         final int wait = 0;
         final String volumePath = "/vol/path";
@@ -4203,7 +4203,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testCopyVolumeCommandToSecFalse() {
         final StoragePool storagePool = Mockito.mock(StoragePool.class);
-        final String secondaryStoragePoolURL = "nfs:/192.168.2.2/storage/secondary";
+        final String secondaryStoragePoolURL = "nfs:/127.0.0.1/storage/secondary";
         final Long volumeId = 1l;
         final int wait = 0;
         final String volumePath = "/vol/path";
@@ -4247,7 +4247,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testCopyVolumeCommandCloudRuntime() {
         final StoragePool storagePool = Mockito.mock(StoragePool.class);
-        final String secondaryStoragePoolURL = "nfs:/192.168.2.2/storage/secondary";
+        final String secondaryStoragePoolURL = "nfs:/127.0.0.1/storage/secondary";
         final Long volumeId = 1l;
         final int wait = 0;
         final String volumePath = "/vol/path";
@@ -4288,7 +4288,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testCopyVolumeCommandCloudRuntime2() {
         final StoragePool storagePool = Mockito.mock(StoragePool.class);
-        final String secondaryStoragePoolURL = "nfs:/192.168.2.2/storage/secondary";
+        final String secondaryStoragePoolURL = "nfs:/127.0.0.1/storage/secondary";
         final Long volumeId = 1l;
         final int wait = 0;
         final String volumePath = "/vol/path";
@@ -4316,7 +4316,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testCopyVolumeCommandPrimaryNotFound() {
         final StoragePool storagePool = Mockito.mock(StoragePool.class);
-        final String secondaryStoragePoolURL = "nfs:/192.168.2.2/storage/secondary";
+        final String secondaryStoragePoolURL = "nfs:/127.0.0.1/storage/secondary";
         final Long volumeId = 1l;
         final int wait = 0;
         final String volumePath = "/vol/path";
@@ -4367,7 +4367,7 @@ public class LibvirtComputingResourceTest {
         final String networkTag = "/105";
         final String dhcpName = "dhcp";
         final String dhcpMac = "00:00:00:00";
-        final String dhcpIp = "172.10.10.10";
+        final String dhcpIp = "127.0.0.1";
 
         final PvlanSetupCommand command = PvlanSetupCommand.createDhcpSetup(op, uri, networkTag, dhcpName, dhcpMac, dhcpIp);
 
@@ -4440,7 +4440,7 @@ public class LibvirtComputingResourceTest {
         final String networkTag = "/105";
         final String dhcpName = "dhcp";
         final String dhcpMac = "00:00:00:00";
-        final String dhcpIp = "172.10.10.10";
+        final String dhcpIp = "127.0.0.1";
 
         final PvlanSetupCommand command = PvlanSetupCommand.createDhcpSetup(op, uri, networkTag, dhcpName, dhcpMac, dhcpIp);
 
@@ -4482,7 +4482,7 @@ public class LibvirtComputingResourceTest {
         final String networkTag = "/105";
         final String dhcpName = "dhcp";
         final String dhcpMac = "00:00:00:00";
-        final String dhcpIp = "172.10.10.10";
+        final String dhcpIp = "127.0.0.1";
 
         final PvlanSetupCommand command = PvlanSetupCommand.createDhcpSetup(op, uri, networkTag, dhcpName, dhcpMac, dhcpIp);
 
@@ -4506,7 +4506,7 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testResizeVolumeCommand() {
-        final String path = "nfs:/192.168.2.2/storage/secondary";
+        final String path = "nfs:/127.0.0.1/storage/secondary";
         final StorageFilerTO pool = Mockito.mock(StorageFilerTO.class);
         final Long currentSize = 100l;
         final Long newSize = 200l;
@@ -4559,7 +4559,7 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testResizeVolumeCommandSameSize() {
-        final String path = "nfs:/192.168.2.2/storage/secondary";
+        final String path = "nfs:/127.0.0.1/storage/secondary";
         final StorageFilerTO pool = Mockito.mock(StorageFilerTO.class);
         final Long currentSize = 100l;
         final Long newSize = 100l;
@@ -4577,7 +4577,7 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testResizeVolumeCommandShrink() {
-        final String path = "nfs:/192.168.2.2/storage/secondary";
+        final String path = "nfs:/127.0.0.1/storage/secondary";
         final StorageFilerTO pool = Mockito.mock(StorageFilerTO.class);
         final Long currentSize = 100l;
         final Long newSize = 200l;
@@ -4606,7 +4606,7 @@ public class LibvirtComputingResourceTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testResizeVolumeCommandException() {
-        final String path = "nfs:/192.168.2.2/storage/secondary";
+        final String path = "nfs:/127.0.0.1/storage/secondary";
         final StorageFilerTO pool = Mockito.mock(StorageFilerTO.class);
         final Long currentSize = 100l;
         final Long newSize = 200l;
@@ -4654,7 +4654,7 @@ public class LibvirtComputingResourceTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testResizeVolumeCommandException2() {
-        final String path = "nfs:/192.168.2.2/storage/secondary";
+        final String path = "nfs:/127.0.0.1/storage/secondary";
         final StorageFilerTO pool = Mockito.mock(StorageFilerTO.class);
         final Long currentSize = 100l;
         final Long newSize = 200l;
