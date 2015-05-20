@@ -407,7 +407,7 @@
                                             ['featuredisos', 'instance-wizard-featured-isos'],
                                             ['communityisos', 'instance-wizard-community-isos'],
                                             ['myisos', 'instance-wizard-my-isos'],
-                                            ['sharedisos', 'instance-wizard-shared-isos'],
+                                            ['sharedisos', 'instance-wizard-shared-isos']
                                             //['isos', 'instance-wizard-all-isos']
                                         ]
                                     ).each(function() {

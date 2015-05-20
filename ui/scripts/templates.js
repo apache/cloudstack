@@ -992,7 +992,7 @@
 
                                     //***** updateTemplatePermissions *****
                                     var data = {
-                                        id: args.context.templates[0].id,
+                                        id: args.context.templates[0].id
                                         //zoneid: args.context.templates[0].zoneid //can't update template/ISO in only one zone. It always get updated in all zones.
                                     };
 
@@ -1148,7 +1148,7 @@
                                 notification: {
                                     poll: pollAsyncJobResult
                                 }
-                            },
+                            }
 
                         },
                         tabs: {
@@ -1726,8 +1726,7 @@
                                                 
                                                 templatetype: {
                                                     label: 'label.type'
-                                                },
-                                                
+                                                }
 
                                             }],
 
@@ -2134,7 +2133,7 @@
 
                                     //***** updateIsoPermissions *****
                                     var data = {
-                                        id: args.context.isos[0].id,
+                                        id: args.context.isos[0].id
                                         //zoneid: args.context.isos[0].zoneid //can't update template/ISO in only one zone. It always get updated in all zones.
                                     };
                                     //if args.data.ispublic is undefined(i.e. checkbox is hidden), do not pass ispublic to API call.

@@ -142,7 +142,7 @@
             },
             error: function(xhr) {
                 $login.find('#saml-login').hide();
-            },
+            }
         });
 
         // Select language
