@@ -26,8 +26,10 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@ResourceWrapper(handles =  GetStorageStatsCommand.class)
 public final class LibvirtGetStorageStatsCommandWrapper extends CommandWrapper<GetStorageStatsCommand, Answer, LibvirtComputingResource> {
 
     @Override

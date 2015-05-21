@@ -35,6 +35,7 @@ import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.Processor.FormatInfo;
@@ -42,6 +43,7 @@ import com.cloud.storage.template.TemplateLocation;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
+@ResourceWrapper(handles =  CreatePrivateTemplateFromSnapshotCommand.class)
 public final class LibvirtCreatePrivateTemplateFromSnapshotCommandWrapper extends CommandWrapper<CreatePrivateTemplateFromSnapshotCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtCreatePrivateTemplateFromSnapshotCommandWrapper.class);

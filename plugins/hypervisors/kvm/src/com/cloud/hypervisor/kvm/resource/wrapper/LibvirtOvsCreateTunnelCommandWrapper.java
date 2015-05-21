@@ -26,8 +26,10 @@ import com.cloud.agent.api.OvsCreateTunnelAnswer;
 import com.cloud.agent.api.OvsCreateTunnelCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.script.Script;
 
+@ResourceWrapper(handles =  OvsCreateTunnelCommand.class)
 public final class LibvirtOvsCreateTunnelCommandWrapper extends CommandWrapper<OvsCreateTunnelCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtOvsCreateTunnelCommandWrapper.class);

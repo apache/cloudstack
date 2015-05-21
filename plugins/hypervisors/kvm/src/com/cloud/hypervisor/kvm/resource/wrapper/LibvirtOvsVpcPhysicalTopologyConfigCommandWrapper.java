@@ -25,8 +25,10 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.OvsVpcPhysicalTopologyConfigCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.script.Script;
 
+@ResourceWrapper(handles =  OvsVpcPhysicalTopologyConfigCommand.class)
 public final class LibvirtOvsVpcPhysicalTopologyConfigCommandWrapper extends CommandWrapper<OvsVpcPhysicalTopologyConfigCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtOvsVpcPhysicalTopologyConfigCommandWrapper.class);
