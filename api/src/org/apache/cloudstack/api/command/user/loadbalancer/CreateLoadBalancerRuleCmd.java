@@ -72,13 +72,13 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
     @Parameter(name = ApiConstants.PRIVATE_PORT,
                type = CommandType.INTEGER,
                required = true,
-               description = "the private port of the private ip address/virtual machine where the network traffic will be load balanced to")
+               description = "the private port of the private IP address/virtual machine where the network traffic will be load balanced to")
     private Integer privatePort;
 
     @Parameter(name = ApiConstants.PUBLIC_IP_ID,
                type = CommandType.UUID,
                entityType = IPAddressResponse.class,
-               description = "public ip address id from where the network traffic will be load balanced from")
+               description = "public IP address ID from where the network traffic will be load balanced from")
     private Long publicIpId;
 
     @Parameter(name = ApiConstants.ZONE_ID,
@@ -107,7 +107,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "the domain ID associated with the load balancer")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic from")
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the CIDR list to forward traffic from")
     private List<String> cidrlist;
 
     @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "The guest network this "
@@ -153,7 +153,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
         if (publicIpId != null) {
             IpAddress ipAddr = _networkService.getIp(publicIpId);
             if (ipAddr == null || !ipAddr.readyToUse()) {
-                throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id " + publicIpId);
+                throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address ID " + publicIpId);
             }
         } else if (getEntityId() != null) {
             LoadBalancer rule = _entityMgr.findById(LoadBalancer.class, getEntityId());
@@ -167,7 +167,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
         if (publicIpId != null) {
             IpAddress ipAddr = _networkService.getIp(publicIpId);
             if (ipAddr == null || !ipAddr.readyToUse()) {
-                throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id " + publicIpId);
+                throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address ID " + publicIpId);
             } else {
                 return ipAddr.getVpcId();
             }
@@ -199,16 +199,16 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
                 }
 
                 if (networks.size() < 1) {
-                    throw new InvalidParameterValueException("Account doesn't have any Isolated networks in the zone");
+                    throw new InvalidParameterValueException("Account doesn't have any isolated networks in the zone");
                 } else if (networks.size() > 1) {
-                    throw new InvalidParameterValueException("Account has more than one Isolated network in the zone");
+                    throw new InvalidParameterValueException("Account has more than one isolated network in the zone");
                 }
 
                 return networks.get(0).getId();
             } else {
                 Network defaultGuestNetwork = _networkService.getExclusiveGuestNetwork(zoneId);
                 if (defaultGuestNetwork == null) {
-                    throw new InvalidParameterValueException("Unable to find a default Guest network for account " + getAccountName() + " in domain id=" + getDomainId());
+                    throw new InvalidParameterValueException("Unable to find a default guest network for account " + getAccountName() + " in domain ID=" + getDomainId());
                 } else {
                     return defaultGuestNetwork.getId();
                 }
@@ -218,7 +218,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
             if (ipAddr.getAssociatedWithNetworkId() != null) {
                 return ipAddr.getAssociatedWithNetworkId();
             } else {
-                throw new InvalidParameterValueException("Ip address id=" + publicIpId + " is not associated with any network");
+                throw new InvalidParameterValueException("IP address ID=" + publicIpId + " is not associated with any network");
             }
         }
     }
@@ -249,7 +249,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
     public List<String> getSourceCidrList() {
         if (cidrlist != null) {
             throw new InvalidParameterValueException(
-                "Parameter cidrList is deprecated; if you need to open firewall rule for the specific cidr, please refer to createFirewallRule command");
+                "Parameter cidrList is deprecated; if you need to open firewall rule for the specific CIDR, please refer to createFirewallRule command");
         }
         return null;
     }
@@ -309,7 +309,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
         //cidr list parameter is deprecated
         if (cidrlist != null) {
             throw new InvalidParameterValueException(
-                "Parameter cidrList is deprecated; if you need to open firewall rule for the specific cidr, please refer to createFirewallRule command");
+                "Parameter cidrList is deprecated; if you need to open firewall rule for the specific CIDR, please refer to createFirewallRule command");
         }
         try {
             LoadBalancer result =
@@ -350,7 +350,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
             if (account != null) {
                 return account.getId();
             } else {
-                throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain id=" + domainId);
+                throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain ID=" + domainId);
             }
         } else {
             throw new InvalidParameterValueException("Can't define IP owner. Either specify account/domainId or publicIpId");

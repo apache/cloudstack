@@ -50,16 +50,16 @@ public class ListSslCertsCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.CERTIFICATE_ID, type = CommandType.UUID, entityType = SslCertResponse.class, required = false, description = "Id of SSL certificate")
+    @Parameter(name = ApiConstants.CERTIFICATE_ID, type = CommandType.UUID, entityType = SslCertResponse.class, required = false, description = "ID of SSL certificate")
     private Long certId;
 
-    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, required = false, description = "Account Id")
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, required = false, description = "Account ID")
     private Long accountId;
 
-    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = false, description = "Loadbalancer Rule Id")
+    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = false, description = "Load balancer rule ID")
     private Long lbId;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, required = false, description = "project who owns the ssl cert")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, required = false, description = "Project that owns the SSL certificate")
     private Long projectId;
 
     /////////////////////////////////////////////////////
