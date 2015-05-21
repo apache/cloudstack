@@ -17,20 +17,19 @@
 // under the License.
 //
 
-package com.cloud.hypervisor.xenserver.resource.wrapper;
+package com.cloud.resource;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.GetVmDiskStatsAnswer;
-import com.cloud.agent.api.GetVmDiskStatsCommand;
-import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
-import com.cloud.resource.CommandWrapper;
-import com.cloud.resource.ResourceWrapper;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-@ResourceWrapper(handles =  GetVmDiskStatsCommand.class)
-public final class CitrixGetVmDiskStatsCommandWrapper extends CommandWrapper<GetVmDiskStatsCommand, Answer, CitrixResourceBase> {
+import com.cloud.agent.api.Command;
 
-    @Override
-    public Answer execute(final GetVmDiskStatsCommand command, final CitrixResourceBase citrixResourceBase) {
-        return new GetVmDiskStatsAnswer(command, null, null, null);
-    }
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface ResourceWrapper {
+
+    Class<? extends Command> handles();
+
 }

@@ -17,7 +17,7 @@
 // under the License.
 //
 
-package com.cloud.hypervisor.xenserver.resource.wrapper;
+package com.cloud.hypervisor.xenserver.resource.wrapper.xen610;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,6 +33,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.hypervisor.xenserver.resource.XenServer610Resource;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Network;
@@ -43,6 +44,7 @@ import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VIF;
 import com.xensource.xenapi.VM;
 
+@ResourceWrapper(handles =  MigrateWithStorageSendCommand.class)
 public final class XenServer610MigrateWithStorageSendCommandWrapper extends CommandWrapper<MigrateWithStorageSendCommand, Answer, XenServer610Resource> {
 
     private static final Logger s_logger = Logger.getLogger(XenServer610MigrateWithStorageSendCommandWrapper.class);
@@ -87,10 +89,10 @@ public final class XenServer610MigrateWithStorageSendCommandWrapper extends Comm
             // Create the vif map.
             final Map<VIF, Network> vifMap = new HashMap<VIF, Network>();
             for (final Map.Entry<NicTO, Object> entry : nicToNetwork.entrySet()) {
-                Object networkObj = entry.getValue();
+                final Object networkObj = entry.getValue();
                 if (networkObj instanceof Network) {
                     final Network network = (Network) networkObj;
-                    NicTO nic = entry.getKey();
+                    final NicTO nic = entry.getKey();
                     final VIF vif = xenServer610Resource.getVifByMac(connection, vmToMigrate, nic.getMac());
                     vifMap.put(vif, network);
                 } else {
