@@ -38,7 +38,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
 
-@APICommand(name = "assignCertToLoadBalancer", description = "Assigns a certificate to a Load Balancer Rule", responseObject = SuccessResponse.class,
+@APICommand(name = "assignCertToLoadBalancer", description = "Assigns a certificate to a load balancer rule", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AssignCertToLoadBalancerCmd extends BaseAsyncCmd {
 
@@ -68,7 +68,7 @@ public class AssignCertToLoadBalancerCmd extends BaseAsyncCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to assign certificate to loadbalancer");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to assign certificate to load balancer");
         }
     }
 
@@ -84,7 +84,7 @@ public class AssignCertToLoadBalancerCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Assigining a certificate to a loadbalancer";
+        return "Assigning a certificate to a load balancer";
     }
 
     @Override

@@ -35,7 +35,7 @@ import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.user.Account;
 
-@APICommand(name = "listLBStickinessPolicies", description = "Lists LBStickiness policies.", responseObject = LBStickinessResponse.class, since = "3.0.0",
+@APICommand(name = "listLBStickinessPolicies", description = "Lists load balancer stickiness policies.", responseObject = LBStickinessResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListLBStickinessPoliciesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListLBStickinessPoliciesCmd.class.getName());
@@ -93,17 +93,17 @@ public class ListLBStickinessPoliciesCmd extends BaseListCmd {
 
         LoadBalancer lb = null;
         if (lbRuleId == null && id == null) {
-            throw new InvalidParameterValueException("LB rule id and stickiness policy id can't be null");
+            throw new InvalidParameterValueException("load balancer rule ID and stickiness policy ID can't be null");
         }
 
         if (id != null) {
             lb = _lbService.findLbByStickinessId(id);
             if (lb == null) {
-                throw new InvalidParameterValueException("stickiness policy id doesn't exist");
+                throw new InvalidParameterValueException("stickiness policy ID doesn't exist");
             }
 
             if ((lbRuleId != null) && (lbRuleId != lb.getId())) {
-                throw new InvalidParameterValueException("stickiness policy id doesn't belong to lbId" + lbRuleId);
+                throw new InvalidParameterValueException("stickiness policy ID doesn't belong to lbId" + lbRuleId);
             }
         }
 

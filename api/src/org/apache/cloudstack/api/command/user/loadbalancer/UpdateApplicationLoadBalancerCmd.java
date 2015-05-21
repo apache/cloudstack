@@ -31,7 +31,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.FirewallRule;
 
-@APICommand(name = "updateLoadBalancer", description = "Updates a Load Balancer", responseObject = ApplicationLoadBalancerResponse.class, since = "4.4.0",
+@APICommand(name = "updateLoadBalancer", description = "Updates a load balancer", responseObject = ApplicationLoadBalancerResponse.class, since = "4.4.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateApplicationLoadBalancerCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateApplicationLoadBalancerCmd.class.getName());
@@ -41,7 +41,7 @@ public class UpdateApplicationLoadBalancerCmd extends BaseAsyncCustomIdCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of the Load Balancer")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of the load balancer")
     private Long id;
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
@@ -69,7 +69,7 @@ public class UpdateApplicationLoadBalancerCmd extends BaseAsyncCustomIdCmd {
         if (lb != null) {
             return lb.getAccountId();
         } else {
-            throw new InvalidParameterValueException("Can't find load balancer by id specified");
+            throw new InvalidParameterValueException("Can't find load balancer by ID specified");
         }
     }
 
@@ -89,7 +89,7 @@ public class UpdateApplicationLoadBalancerCmd extends BaseAsyncCustomIdCmd {
     /////////////////////////////////////////////////////
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Load balancer Id: " + getId());
+        CallContext.current().setEventDetails("Load balancer ID: " + getId());
         ApplicationLoadBalancerRule rule = _appLbService.updateApplicationLoadBalancer(getId(), this.getCustomId(), getDisplay());
         ApplicationLoadBalancerResponse lbResponse = _responseGenerator.createLoadBalancerContainerReponse(rule, _lbService.getLbInstances(getId()));
         setResponseObject(lbResponse);

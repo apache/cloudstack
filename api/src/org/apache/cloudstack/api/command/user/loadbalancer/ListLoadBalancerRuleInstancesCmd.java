@@ -62,7 +62,7 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.LIST_LB_VMIPS,
             type = CommandType.BOOLEAN,
-            description = "true if lb rule vm ip information to be included; default is false")
+            description = "true if load balancer rule VM IP information to be included; default is false")
     private boolean isListLbVmip;
 
 
