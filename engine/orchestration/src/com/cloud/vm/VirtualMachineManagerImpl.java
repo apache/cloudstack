@@ -2358,7 +2358,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new CloudRuntimeException("Unable to find " + vmUuid);
         }
 
-        final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+        ServiceOfferingVO offeringVO = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
+        final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm, null, offeringVO, null, null);
 
         final Long hostId = vm.getHostId();
         if (hostId == null) {
