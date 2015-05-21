@@ -35,6 +35,7 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.NumbersUtil;
@@ -67,6 +68,16 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
 
         if (!dskCh.useLocalStorage()) {
             return null;
+        }
+
+        if (s_logger.isTraceEnabled()) {
+            // Log the pools details that are ignored because they are in disabled state
+            List<StoragePoolVO> disabledPools = _storagePoolDao.findDisabledPoolsByScope(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), ScopeType.HOST);
+            if (disabledPools != null && !disabledPools.isEmpty()) {
+                for (StoragePoolVO pool : disabledPools) {
+                    s_logger.trace("Ignoring pool " + pool + " as it is in disabled state.");
+                }
+            }
         }
 
         List<StoragePool> suitablePools = new ArrayList<StoragePool>();

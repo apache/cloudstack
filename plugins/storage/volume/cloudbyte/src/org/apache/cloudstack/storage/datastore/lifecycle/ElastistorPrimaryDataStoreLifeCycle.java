@@ -464,6 +464,16 @@ public class ElastistorPrimaryDataStoreLifeCycle implements PrimaryDataStoreLife
         return true;
     }
 
+    @Override
+    public void enableStoragePool(DataStore dataStore) {
+        _dataStoreHelper.enable(dataStore);
+    }
+
+    @Override
+    public void disableStoragePool(DataStore dataStore) {
+        _dataStoreHelper.disable(dataStore);
+    }
+
     @SuppressWarnings("finally")
     @Override
     public boolean deleteDataStore(DataStore store) {

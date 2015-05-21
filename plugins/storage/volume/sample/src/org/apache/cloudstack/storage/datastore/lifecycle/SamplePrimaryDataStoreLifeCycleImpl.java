@@ -138,4 +138,12 @@ public class SamplePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLife
     @Override
     public void updateStoragePool(StoragePool storagePool, Map<String, String> details) {
     }
+
+    @Override
+    public void enableStoragePool(DataStore store) {
+    }
+
+    @Override
+    public void disableStoragePool(DataStore store) {
+    }
 }

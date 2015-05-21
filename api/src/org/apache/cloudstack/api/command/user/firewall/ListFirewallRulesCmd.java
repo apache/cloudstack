@@ -37,7 +37,7 @@ import com.cloud.utils.Pair;
 
 @APICommand(name = "listFirewallRules", description = "Lists all firewall rules for an IP address.", responseObject = FirewallResponse.class, entityType = {FirewallRule.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
+public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd implements IListFirewallRulesCmd {
     public static final Logger s_logger = Logger.getLogger(ListFirewallRulesCmd.class.getName());
     private static final String s_name = "listfirewallrulesresponse";
 
@@ -50,13 +50,13 @@ public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.IP_ADDRESS_ID,
                type = CommandType.UUID,
                entityType = IPAddressResponse.class,
-               description = "the id of IP address of the firwall services")
+               description = "the id of IP address of the firewall services")
     private Long ipAddressId;
 
     @Parameter(name = ApiConstants.NETWORK_ID,
                type = CommandType.UUID,
                entityType = NetworkResponse.class,
-               description = "list firewall rules for ceratin network",
+               description = "list firewall rules for certain network",
                since = "4.3")
     private Long networkId;
 
@@ -67,18 +67,22 @@ public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public Long getIpAddressId() {
         return ipAddressId;
     }
 
+    @Override
     public FirewallRule.TrafficType getTrafficType() {
         return FirewallRule.TrafficType.Ingress;
     }
 
+    @Override
     public Long getId() {
         return id;
     }
 
+    @Override
     public Long getNetworkId() {
         return networkId;
     }

@@ -104,7 +104,7 @@ class Services:
             "recurring_snapshot": {
                 "intervaltype": 'HOURLY',
                 # Frequency of snapshots
-                "maxsnaps": 1,  # Should be min 2
+                "maxsnaps": 2,  # Should be min 2
                 "schedule": 1,
                 "timezone": 'US/Arizona',
                 # Timezone Formats -
@@ -144,6 +144,14 @@ class TestRecurringSnapshots(cloudstackTestCase):
         cls.testClient = super(TestRecurringSnapshots, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
+        cls._cleanup = []
+
+        cls.unsupportedHypervisor = False
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() in ['hyperv', "lxc"]:
+            cls.unsupportedHypervisor = True
+            return
+
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
@@ -153,6 +161,7 @@ class TestRecurringSnapshots(cloudstackTestCase):
             cls.api_client,
             cls.services["disk_offering"]
         )
+        cls._cleanup.append(cls.disk_offering)
         template = get_template(
             cls.api_client,
             cls.zone.id,
@@ -175,6 +184,7 @@ class TestRecurringSnapshots(cloudstackTestCase):
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
 
         cls.services["account"] = cls.account.name
 
@@ -182,15 +192,15 @@ class TestRecurringSnapshots(cloudstackTestCase):
             cls.api_client,
             cls.services["service_offering"]
         )
-        cls.virtual_machine = cls.virtual_machine_with_disk = \
+        cls._cleanup.append(cls.service_offering)
+        cls.virtual_machine_with_disk = \
             VirtualMachine.create(
                 cls.api_client,
                 cls.services["server_with_disk"],
                 templateid=template.id,
                 accountid=cls.account.name,
                 domainid=cls.account.domainid,
-                serviceofferingid=cls.service_offering.id,
-                mode=cls.services["mode"]
+                serviceofferingid=cls.service_offering.id
             )
         cls.virtual_machine_without_disk = \
             VirtualMachine.create(
@@ -199,14 +209,8 @@ class TestRecurringSnapshots(cloudstackTestCase):
                 templateid=template.id,
                 accountid=cls.account.name,
                 domainid=cls.account.domainid,
-                serviceofferingid=cls.service_offering.id,
-                mode=cls.services["mode"]
+                serviceofferingid=cls.service_offering.id
             )
-        cls._cleanup = [
-            cls.service_offering,
-            cls.disk_offering,
-            cls.account,
-        ]
         return
 
     @classmethod
@@ -222,6 +226,9 @@ class TestRecurringSnapshots(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
+
+        if self.unsupportedHypervisor:
+            self.skipTest("Snapshots feature is not supported on Hyper-V/LXC")
         return
 
     def tearDown(self):
@@ -233,7 +240,7 @@ class TestRecurringSnapshots(cloudstackTestCase):
         return
 
     @attr(speed="slow")
-    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "basic"], required_hardware="true")
     def test_recurring_snapshot_root_disk(self):
         """Test Recurring Snapshot Root Disk
         """
@@ -243,7 +250,7 @@ class TestRecurringSnapshots(cloudstackTestCase):
 
         volume = list_volumes(
             self.apiclient,
-            virtualmachineid=self.virtual_machine_with_disk.id,
+            virtualmachineid=self.virtual_machine_without_disk.id,
             type='ROOT',
             listall=True
         )
@@ -286,10 +293,12 @@ class TestRecurringSnapshots(cloudstackTestCase):
             self.services["recurring_snapshot"]["maxsnaps"],
             "Check interval type in list resources call"
         )
-        # Sleep for (maxsnaps+1) hours to verify
+
+        max_snapshots = self.services["recurring_snapshot"]["maxsnaps"]
+        # Sleep for (max_snapshots*2) hours to verify
         # only maxsnaps snapshots are retained
         time.sleep(
-            (self.services["recurring_snapshot"]["maxsnaps"]) * 3600
+            (max_snapshots * 2) * 3600
         )
 
         timeout = self.services["timeout"]
@@ -319,13 +328,13 @@ class TestRecurringSnapshots(cloudstackTestCase):
 
         self.assertEqual(
             len(snapshots),
-            self.services["recurring_snapshot"]["maxsnaps"],
+            max_snapshots,
             "Check maximum number of recurring snapshots retained"
         )
         return
 
     @attr(speed="slow")
-    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "basic"], required_hardware="true")
     def test_recurring_snapshot_data_disk(self):
         """Test Recurring Snapshot data Disk
         """
@@ -382,10 +391,11 @@ class TestRecurringSnapshots(cloudstackTestCase):
             "Check interval type in list resources call"
         )
 
+        max_snapshots = self.services["recurring_snapshot"]["maxsnaps"]
         # Sleep for (maxsnaps) hours to verify only maxsnaps snapshots are
         # retained
         time.sleep(
-            (self.services["recurring_snapshot"]["maxsnaps"]) * 3600
+            (max_snapshots * 2) * 3600
         )
 
         timeout = self.services["timeout"]
@@ -414,7 +424,7 @@ class TestRecurringSnapshots(cloudstackTestCase):
         )
         self.assertEqual(
             len(snapshots),
-            self.services["recurring_snapshot"]["maxsnaps"],
+            max_snapshots,
             "Check maximum number of recurring snapshots retained"
         )
         return

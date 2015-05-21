@@ -41,9 +41,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -135,8 +134,7 @@ import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.XenAPIException;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ Connection.class, Host.Record.class })
+@RunWith(MockitoJUnitRunner.class)
 public class CitrixRequestWrapperTest {
 
     @Mock
@@ -279,7 +277,7 @@ public class CitrixRequestWrapperTest {
     }
 
     @Test
-    public void testStopCommandCommand() {
+    public void testStopCommand() {
         final StopCommand stopCommand = new StopCommand("Test", false, false);
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();

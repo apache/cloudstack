@@ -34,7 +34,7 @@ from marvin.lib.common import (get_domain,
                                get_template
                                )
 
-from marvin.codes import (BACKEDUP, PASS, FAIL)
+from marvin.codes import (BACKED_UP, PASS, FAIL)
 
 
 class TestStorageSnapshotsLimits(cloudstackTestCase):
@@ -202,7 +202,7 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
         # Verify Snapshot state
         self.assertEqual(
             snapshots_list[0].state.lower() in [
-                BACKEDUP,
+                BACKED_UP,
             ],
             True,
             "Snapshot state is not as expected. It is %s" %
@@ -285,7 +285,7 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
         # Verify Snapshot state
         self.assertEqual(
             snapshots_list[0].state.lower() in [
-                BACKEDUP,
+                BACKED_UP,
             ],
             True,
             "Snapshot state is not as expected. It is %s" %
@@ -321,7 +321,7 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
         # Verify Snapshot state
         self.assertEqual(
             snapshots_list[0].state.lower() in [
-                BACKEDUP,
+                BACKED_UP,
             ],
             True,
             "Snapshot state is not as expected. It is %s" %

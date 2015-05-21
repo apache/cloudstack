@@ -2157,7 +2157,7 @@
                                         label: 'label.disk.iops.write.rate'
                                     },
                                     cacheMode: {
-                                        label: 'label.cache.mode',
+                                        label: 'label.cache.mode'
                                     },
                                     tags: {
                                         label: 'label.storage.tags'
@@ -3684,7 +3684,7 @@
 
                                                 fields[id.isEnabled] = {
                                                     label: serviceDisplayName,
-                                                    isBoolean: true,
+                                                    isBoolean: true
                                                 };
 
                                                 serviceFields.push(id.isEnabled);
@@ -3734,7 +3734,7 @@
                                         dependsOn: 'service.SourceNat.isEnabled',
                                         isBoolean: true
                                     }
-                                },//end of fields
+                                }//end of fields
                             }, //end of createForm
 
                             action: function(args) {

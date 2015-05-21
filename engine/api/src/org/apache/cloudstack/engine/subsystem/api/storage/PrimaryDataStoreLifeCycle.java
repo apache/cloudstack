@@ -27,4 +27,6 @@ public interface PrimaryDataStoreLifeCycle extends DataStoreLifeCycle {
     public static final String CAPACITY_IOPS = "capacityIops";
 
     void updateStoragePool(StoragePool storagePool, Map<String, String> details);
+    void enableStoragePool(DataStore store);
+    void disableStoragePool(DataStore store);
 }

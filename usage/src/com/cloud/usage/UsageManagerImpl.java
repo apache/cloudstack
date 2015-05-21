@@ -182,10 +182,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
         final Class<?> c = UsageServer.class;
         _version = c.getPackage().getImplementationVersion();
-        if (_version == null) {
-            // TODO
-            // throw new CloudRuntimeException("Unable to find the implementation version of this usage server");
-        }
+        if (_version == null) _version="unknown";
 
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Implementation Version is " + _version);

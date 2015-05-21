@@ -33,6 +33,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.vm.DiskProfile;
@@ -70,9 +71,20 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
             return null;
         }
         if (dskCh.getTags() != null && dskCh.getTags().length != 0) {
-            s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId + " having tags:" + Arrays.toString(dskCh.getTags()));
+            s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId + " having tags:" + Arrays.toString(dskCh.getTags()) +
+                    ". Disabled pools will be ignored.");
         } else {
-            s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
+            s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId + ". Disabled pools will be ignored.");
+        }
+
+        if (s_logger.isTraceEnabled()) {
+            // Log the pools details that are ignored because they are in disabled state
+            List<StoragePoolVO> disabledPools = _storagePoolDao.findDisabledPoolsByScope(dcId, podId, clusterId, ScopeType.CLUSTER);
+            if (disabledPools != null && !disabledPools.isEmpty()) {
+                for (StoragePoolVO pool : disabledPools) {
+                    s_logger.trace("Ignoring pool " + pool + " as it is in disabled state.");
+                }
+            }
         }
 
         List<StoragePoolVO> pools = _storagePoolDao.findPoolsByTags(dcId, podId, clusterId, dskCh.getTags());

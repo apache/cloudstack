@@ -41,6 +41,7 @@ from marvin.lib.common import (get_zone,
                                find_storage_pool_type)
 
 
+
 class Services:
 
     """Test Snapshots Services

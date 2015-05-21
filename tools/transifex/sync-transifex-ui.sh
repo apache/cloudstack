@@ -17,7 +17,7 @@
 # under the License.
 
 SRCLANG=en
-LIST_LANG="ar ca de_DE es fr_FR it_IT ja_JP ko_KR nb_NO nl_NL pl pt_BR ru_RU zh_CN"
+LIST_LANG="ar ca de_DE es fr_FR it_IT ja_JP ko_KR nb_NO nl_NL pl pt_BR ru_RU zh_CN hu"
 
 DIRECTORY_RESOURCES="../../client/WEB-INF/classes/resources"
 WORKDIR="./work-dir"

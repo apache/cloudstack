@@ -79,6 +79,7 @@ public class GraphiteClient {
      */
     public void sendMetrics(Map<String, Integer> metrics, long timeStamp) {
         try (DatagramSocket sock = new DatagramSocket()){
+            java.security.Security.setProperty("networkaddress.cache.ttl", "0");
             InetAddress addr = InetAddress.getByName(this.graphiteHost);
 
             for (Map.Entry<String, Integer> metric: metrics.entrySet()) {

@@ -386,6 +386,61 @@ function compact_hdd() {
   vboxmanage modifyhd "${1}" --compact
 }
 
+function stage_vmx (){
+  cat << VMXFILE > "${1}.vmx"
+.encoding = "UTF-8"
+displayname = "${1}"
+annotation = "${1}"
+guestos = "otherlinux-64"
+virtualhw.version = "7"
+config.version = "8"
+numvcpus = "1"
+cpuid.coresPerSocket = "1"
+memsize = "256"
+pciBridge0.present = "TRUE"
+pciBridge4.present = "TRUE"
+pciBridge4.virtualDev = "pcieRootPort"
+pciBridge4.functions = "8"
+pciBridge5.present = "TRUE"
+pciBridge5.virtualDev = "pcieRootPort"
+pciBridge5.functions = "8"
+pciBridge6.present = "TRUE"
+pciBridge6.virtualDev = "pcieRootPort"
+pciBridge6.functions = "8"
+pciBridge7.present = "TRUE"
+pciBridge7.virtualDev = "pcieRootPort"
+pciBridge7.functions = "8"
+vmci0.present = "TRUE"
+floppy0.present = "FALSE"
+ide0:0.clientDevice = "FALSE"
+ide0:0.present = "TRUE"
+ide0:0.deviceType = "atapi-cdrom"
+ide0:0.autodetect = "TRUE"
+ide0:0.startConnected = "FALSE"
+mks.enable3d = "false"
+svga.autodetect = "false"
+svga.vramSize = "4194304"
+scsi0:0.present = "TRUE"
+scsi0:0.deviceType = "disk"
+scsi0:0.fileName = "$2"
+scsi0:0.mode = "persistent"
+scsi0:0.writeThrough = "false"
+scsi0.virtualDev = "lsilogic"
+scsi0.present = "TRUE"
+vmci0.unrestricted = "false"
+ethernet0.present = "TRUE"
+ethernet0.virtualDev = "e1000"
+ethernet0.connectionType = "bridged"
+ethernet0.startConnected = "TRUE"
+ethernet0.addressType = "generated"
+ethernet0.wakeonpcktrcv = "false"
+vcpu.hotadd = "false"
+vcpu.hotremove = "false"
+firmware = "bios"
+mem.hotadd = "false"
+VMXFILE
+}
+
 function xen_server_export() {
   log INFO "creating xen server export"
   local hdd_path="${1}"
@@ -450,23 +505,32 @@ function vmware_export() {
   local machine_uuid="${1}"
   local hdd_uuid="${2}"
   vboxmanage clonehd "${hdd_uuid}" "${appliance_build_name}-vmware.vmdk" --format VMDK
+
+  if ! ovftool_loc="$(type -p "ovftool")" || [ -z "$ovftool_loc" ]; then
+    log INFO "ovftool not found, using traditional method to export ova file"
+    vboxmanage export "${machine_uuid}" --output "${appliance_build_name}-vmware.ovf"
+    log INFO "${appliance} exported for VMWare: dist/${appliance_build_name}-vmware.{vmdk.bz2,ovf}"
+    add_on_exit rm -f ${appliance_build_name}-vmware.ovf
+    add_on_exit rm -f ${appliance_build_name}-vmware-disk[0-9].vmdk
+
+    # xsltproc doesn't support this XSLT so we use java to run this one XSLT
+    mv ${appliance_build_name}-vmware.ovf ${appliance_build_name}-vmware.ovf-orig
+    java -cp convert Convert convert_ovf_vbox_to_esx.xslt \
+        ${appliance_build_name}-vmware.ovf-orig \
+        ${appliance_build_name}-vmware.ovf
+    add_on_exit rm -f ${appliance_build_name}-vmware.ovf-orig
+    chmod 666 *.vmdk *.ovf
+    tar -cf ${appliance_build_name}-vmware.ova \
+        ${appliance_build_name}-vmware.ovf \
+        ${appliance_build_name}-vmware-disk[0-9].vmdk
+  else
+    log INFO "ovftool found, using it to export ova file"
+    chmod 666 ${appliance_build_name}-vmware.vmdk
+    stage_vmx ${appliance_build_name}-vmware ${appliance_build_name}-vmware.vmdk
+    ovftool ${appliance_build_name}-vmware.vmx ${appliance_build_name}-vmware.ova
+  fi
   bzip2 "${appliance_build_name}-vmware.vmdk"
   mv "${appliance_build_name}-vmware.vmdk.bz2" dist/
-  vboxmanage export "${machine_uuid}" --output "${appliance_build_name}-vmware.ovf"
-  log INFO "${appliance} exported for VMWare: dist/${appliance_build_name}-vmware.{vmdk.bz2,ovf}"
-  add_on_exit rm -f ${appliance_build_name}-vmware.ovf
-  add_on_exit rm -f ${appliance_build_name}-vmware-disk[0-9].vmdk
-
-  # xsltproc doesn't support this XSLT so we use java to run this one XSLT
-  mv ${appliance_build_name}-vmware.ovf ${appliance_build_name}-vmware.ovf-orig
-  java -cp convert Convert convert_ovf_vbox_to_esx.xslt \
-      ${appliance_build_name}-vmware.ovf-orig \
-      ${appliance_build_name}-vmware.ovf
-  add_on_exit rm -f ${appliance_build_name}-vmware.ovf-orig
-
-  tar -cf ${appliance_build_name}-vmware.ova \
-      ${appliance_build_name}-vmware.ovf \
-      ${appliance_build_name}-vmware-disk[0-9].vmdk
   mv ${appliance_build_name}-vmware.ova dist/
   log INFO "${appliance} exported for VMWare: dist/${appliance_build_name}-vmware.ova"
 }
