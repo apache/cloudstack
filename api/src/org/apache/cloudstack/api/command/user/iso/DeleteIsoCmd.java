@@ -95,7 +95,7 @@ public class DeleteIsoCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting iso " + getId();
+        return "Deleting ISO " + getId();
     }
 
     @Override
@@ -116,7 +116,7 @@ public class DeleteIsoCmd extends BaseAsyncCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete iso");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete ISO");
         }
     }
 }

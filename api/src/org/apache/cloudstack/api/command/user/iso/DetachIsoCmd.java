@@ -70,7 +70,7 @@ public class DetachIsoCmd extends BaseAsyncCmd {
         if (vm != null) {
             return vm.getAccountId();
         } else {
-            throw new InvalidParameterValueException("Unable to find vm by id " + getVirtualMachineId());
+            throw new InvalidParameterValueException("Unable to find VM by ID " + getVirtualMachineId());
         }
     }
 
@@ -81,7 +81,7 @@ public class DetachIsoCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "detaching ISO from vm: " + getVirtualMachineId();
+        return  "detaching ISO from VM: " + getVirtualMachineId();
     }
 
     @Override
@@ -93,7 +93,7 @@ public class DetachIsoCmd extends BaseAsyncCmd {
             response.setResponseName(DeployVMCmd.getResultObjectName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to detach iso");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to detach ISO");
         }
     }
 }
