@@ -101,6 +101,7 @@
     <cs.findbugs.version>3.0.0</cs.findbugs.version>
     <cs.javadoc.version>2.10.1</cs.javadoc.version>
     <cs.opensaml.version>2.6.1</cs.opensaml.version>
+    <cs.tomcat.version>8.0.22</cs.tomcat.version>
   </properties>
 
   <distributionManagement>
