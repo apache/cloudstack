@@ -1709,6 +1709,7 @@ test_data = {
                     "mode": 'HTTP_DOWNLOAD'
         },
      "setHostConfigurationForIngressRule": False,
+     "restartManagementServerThroughTestCase": False,
      "vmxnet3template": {
             "displaytext": "VMXNET3 Template",
             "name": "VMXNET3 template",
