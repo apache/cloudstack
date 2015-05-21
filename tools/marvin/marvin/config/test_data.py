@@ -959,6 +959,7 @@ test_data = {
     "recurring_snapshot": {
         "maxsnaps": 2,
         "timezone": "US/Arizona",
+        "schedule": 1
     },
     "volume_offerings": {
         0: {"diskname": "TestDiskServ"},
