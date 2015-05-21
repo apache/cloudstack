@@ -98,7 +98,7 @@ public class HostStatsEntry implements HostStats {
 
     @Override
     public double getUsedMemory() {
-        return (totalMemoryKBs - freeMemoryKBs);
+        return (totalMemoryKBs - freeMemoryKBs) * 1024;
     }
 
     @Override
