@@ -936,7 +936,7 @@ test_data = {
                      "datadiskdevice_1": '/dev/xvdb',
                     "datadiskdevice_2": '/dev/xvdc',   # Data Disk
                     },
-        "KVM":       {"rootdiskdevice": "/dev/vda",
+        "kvm":       {"rootdiskdevice": "/dev/vda",
                     "datadiskdevice_1": "/dev/vdb",
                     "datadiskdevice_2": "/dev/vdc"
                     },
