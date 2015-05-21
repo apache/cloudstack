@@ -75,6 +75,8 @@ public abstract class RequestWrapper {
                 commandWrapper = resourceCommands.get(commandClass2);
 
                 keepCommandClass = commandClass2;
+            } catch (final ClassCastException e) {
+                throw new NullPointerException("No key found for '" + keepCommandClass.getClass() + "' in the Map!");
             } catch (final NullPointerException e) {
                 // Will now traverse all the resource hierarchy. Returning null
                 // is not a problem.
@@ -108,6 +110,8 @@ public abstract class RequestWrapper {
                 keepResourceClass = resourceClass2;
 
                 commandWrapper = retrieveCommands(command.getClass(), resourceCommands2);
+            } catch (final ClassCastException e) {
+                throw new NullPointerException("No key found for '" + command.getClass() + "' in the Map!");
             } catch (final NullPointerException e) {
                 throw e;
             }
