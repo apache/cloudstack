@@ -36,7 +36,7 @@ import org.apache.cloudstack.api.response.NetworkResponse;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listEgressFirewallRules", description = "Lists all egress firewall rules for network id.", responseObject = FirewallResponse.class, entityType = {FirewallRule.class},
+@APICommand(name = "listEgressFirewallRules", description = "Lists all egress firewall rules for network ID.", responseObject = FirewallResponse.class, entityType = {FirewallRule.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListEgressFirewallRulesCmd extends BaseListTaggedResourcesCmd implements IListFirewallRulesCmd {
     public static final Logger s_logger = Logger.getLogger(ListEgressFirewallRulesCmd.class.getName());
@@ -51,13 +51,13 @@ public class ListEgressFirewallRulesCmd extends BaseListTaggedResourcesCmd imple
     @Parameter(name = ApiConstants.NETWORK_ID,
                type = CommandType.UUID,
                entityType = NetworkResponse.class,
-               description = "the network id for the egress firewall services")
+               description = "the network ID for the egress firewall services")
     private Long networkId;
 
     @Parameter(name = ApiConstants.IP_ADDRESS_ID,
                type = CommandType.UUID,
                entityType = IPAddressResponse.class,
-               description = "the id of IP address of the firewall services")
+               description = "the ID of IP address of the firewall services")
     private Long ipAddressId;
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})

@@ -50,7 +50,7 @@ public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd implements 
     @Parameter(name = ApiConstants.IP_ADDRESS_ID,
                type = CommandType.UUID,
                entityType = IPAddressResponse.class,
-               description = "the id of IP address of the firewall services")
+               description = "the ID of IP address of the firewall services")
     private Long ipAddressId;
 
     @Parameter(name = ApiConstants.NETWORK_ID,

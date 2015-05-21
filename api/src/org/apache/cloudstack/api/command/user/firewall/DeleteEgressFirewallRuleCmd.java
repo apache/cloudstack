@@ -38,7 +38,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.FirewallRule;
 
-@APICommand(name = "deleteEgressFirewallRule", description = "Deletes an ggress firewall rule", responseObject = SuccessResponse.class, entityType = {FirewallRule.class},
+@APICommand(name = "deleteEgressFirewallRule", description = "Deletes an egress firewall rule", responseObject = SuccessResponse.class, entityType = {FirewallRule.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteEgressFirewallRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteEgressFirewallRuleCmd.class.getName());
