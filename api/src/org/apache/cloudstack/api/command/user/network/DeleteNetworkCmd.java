@@ -109,7 +109,7 @@ public class DeleteNetworkCmd extends BaseAsyncCmd {
     public long getEntityOwnerId() {
         Network network = _networkService.getNetwork(id);
         if (network == null) {
-            throw new InvalidParameterValueException("Networkd id=" + id + " doesn't exist");
+            throw new InvalidParameterValueException("Network ID=" + id + " doesn't exist");
         } else {
             return _networkService.getNetwork(id).getAccountId();
         }

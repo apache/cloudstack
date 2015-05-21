@@ -41,7 +41,7 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkOfferingResponse.class, description = "list network offerings by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkOfferingResponse.class, description = "list network offerings by ID")
     private Long id;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list network offerings by name")
@@ -59,13 +59,13 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.SPECIFY_VLAN, type = CommandType.BOOLEAN, description = "the tags for the network offering.")
     private Boolean specifyVlan;
 
-    @Parameter(name = ApiConstants.AVAILABILITY, type = CommandType.STRING, description = "the availability of network offering. Default value is Required")
+    @Parameter(name = ApiConstants.AVAILABILITY, type = CommandType.STRING, description = "the availability of network offering. Default value is required")
     private String availability;
 
     @Parameter(name = ApiConstants.ZONE_ID,
                type = CommandType.UUID,
                entityType = ZoneResponse.class,
-               description = "list netowrk offerings available for network creation in specific zone")
+               description = "list network offerings available for network creation in specific zone")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "list network offerings by state")
@@ -77,7 +77,7 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
                description = "the ID of the network. Pass this in if you want to see the available network offering that a network can be changed to.")
     private Long networkId;
 
-    @Parameter(name = ApiConstants.GUEST_IP_TYPE, type = CommandType.STRING, description = "list network offerings by guest type: Shared or Isolated")
+    @Parameter(name = ApiConstants.GUEST_IP_TYPE, type = CommandType.STRING, description = "list network offerings by guest type: shared or isolated")
     private String guestIpType;
 
     @Parameter(name = ApiConstants.SUPPORTED_SERVICES,
@@ -88,7 +88,7 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.SOURCE_NAT_SUPPORTED,
                type = CommandType.BOOLEAN,
-               description = "true if need to list only netwok offerings where source nat is supported, false otherwise")
+               description = "true if need to list only netwok offerings where source NAT is supported, false otherwise")
     private Boolean sourceNatSupported;
 
     @Parameter(name = ApiConstants.SPECIFY_IP_RANGES,
