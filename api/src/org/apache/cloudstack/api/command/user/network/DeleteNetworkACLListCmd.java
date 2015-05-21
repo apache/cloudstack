@@ -32,7 +32,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteNetworkACLList", description = "Deletes a Network ACL", responseObject = SuccessResponse.class,
+@APICommand(name = "deleteNetworkACLList", description = "Deletes a network ACL", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteNetworkACLListCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteNetworkACLListCmd.class.getName());
@@ -68,7 +68,7 @@ public class DeleteNetworkACLListCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Deleting Network ACL id=" + id);
+        return ("Deleting network ACL ID=" + id);
     }
 
     @Override
@@ -79,7 +79,7 @@ public class DeleteNetworkACLListCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        CallContext.current().setEventDetails("Network ACL Id: " + id);
+        CallContext.current().setEventDetails("Network ACL ID: " + id);
         boolean result = _networkACLService.deleteNetworkACL(id);
 
         if (result) {
