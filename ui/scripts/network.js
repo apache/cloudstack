@@ -1704,7 +1704,8 @@
                                                             description: _l('label.lb.algorithm.source')
                                                         }];
                                                     if (typeof args.context == 'undefined') {
-                                                        data = getLBAlgorithms(args.context.networks[0]);
+                                                        var lbAlgs = getLBAlgorithms(args.context.networks[0]);
+                                                        data = (lbAlgs.length == 0) ? data : lbAlgs ;
                                                     }
                                                     args.response.success({
                                                         data: data
@@ -3552,7 +3553,8 @@
                                                             description: _l('label.lb.algorithm.source')
                                                         }];
                                                     if (typeof args.context == 'undefined') {
-                                                        data = getLBAlgorithms(args.context.networks[0]);
+                                                        var lbAlgs = getLBAlgorithms(args.context.networks[0]);
+                                                        data = (lbAlgs.length == 0) ? data : lbAlgs ;
                                                     }
                                                     args.response.success({
                                                         data: data
