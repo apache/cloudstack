@@ -112,7 +112,7 @@ public class UpdateEgressFirewallRuleCmd extends BaseAsyncCustomIdCmd {
         if (ownerId == null) {
             FirewallRule rule = _entityMgr.findById(FirewallRule.class, id);
             if (rule == null || rule.getTrafficType() != TrafficType.Egress) {
-                throw new InvalidParameterValueException("Unable to find egress firewall rule by id");
+                throw new InvalidParameterValueException("Unable to find egress firewall rule by ID");
             } else {
                 ownerId = _entityMgr.findById(FirewallRule.class, id).getAccountId();
             }
