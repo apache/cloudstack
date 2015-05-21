@@ -138,7 +138,7 @@ public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException {
-        CallContext.current().setEventDetails("Vm Id: " + getId());
+        CallContext.current().setEventDetails("VM ID: " + getId());
         UserVm result = _affinityGroupService.updateVMAffinityGroups(getId(), getAffinityGroupIdList());
         ArrayList<VMDetails> dc = new ArrayList<VMDetails>();
         dc.add(VMDetails.valueOf("affgrp"));
@@ -149,7 +149,7 @@ public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update vm's affinity groups");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update VM's affinity groups");
         }
     }
 
@@ -160,7 +160,7 @@ public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "updating VM Affinity Group";
+        return "updating VM affinity group";
     }
 
     @Override
