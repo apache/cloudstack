@@ -61,6 +61,7 @@ import java.util.regex.Pattern;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.utils.linux.MemStat;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
@@ -463,6 +464,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected int _timeout;
     protected int _cmdsTimeout;
     protected int _stopTimeout;
+    private MemStat _memStat = new MemStat();
 
     protected static final HashMap<DomainState, PowerState> s_powerStatesTable;
     static {
@@ -3276,28 +3278,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
         double cpuUtil = (100.0D - Double.parseDouble(parser.getLine()));
 
-        long freeMem = 0;
-        final Script memScript = new Script("/bin/bash", s_logger);
-        memScript.add("-c");
-        memScript.add("freeMem=$(free|grep cache:|awk '{print $4}');echo $freeMem");
-        final OutputInterpreter.OneLineParser Memparser = new OutputInterpreter.OneLineParser();
-        result = memScript.execute(Memparser);
-        if (result != null) {
-            s_logger.debug("Unable to get the host Mem state: " + result);
-            return new Answer(cmd, false, result);
-        }
-        freeMem = Long.parseLong(Memparser.getLine());
-
-        Script totalMem = new Script("/bin/bash", s_logger);
-        totalMem.add("-c");
-        totalMem.add("free|grep Mem:|awk '{print $2}'");
-        final OutputInterpreter.OneLineParser totMemparser = new OutputInterpreter.OneLineParser();
-        result = totalMem.execute(totMemparser);
-        if (result != null) {
-            s_logger.debug("Unable to get the host Mem state: " + result);
-            return new Answer(cmd, false, result);
-        }
-        long totMem = Long.parseLong(totMemparser.getLine());
+        _memStat.refresh();
+        double totMem = _memStat.getTotal();
+        double freeMem = _memStat.getAvailable();
 
         Pair<Double, Double> nicStats = getNicStats(_publicBridgeName);
 
