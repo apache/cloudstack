@@ -22,7 +22,6 @@ package com.cloud.resource;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 
-
 public abstract class CommandWrapper<T extends Command, A extends Answer, R extends ServerResource> {
 
     /**

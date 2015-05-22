@@ -34,6 +34,7 @@ import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.StringUtils;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Network;
@@ -44,6 +45,7 @@ import com.xensource.xenapi.VGPU;
 import com.xensource.xenapi.VIF;
 import com.xensource.xenapi.VM;
 
+@ResourceWrapper(handles =  StopCommand.class)
 public final class CitrixStopCommandWrapper extends CommandWrapper<StopCommand, Answer, CitrixResourceBase> {
 
     private static final Logger s_logger = Logger.getLogger(CitrixStopCommandWrapper.class);

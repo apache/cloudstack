@@ -17,7 +17,7 @@
 // under the License.
 //
 
-package com.cloud.hypervisor.xenserver.resource.wrapper;
+package com.cloud.hypervisor.xenserver.resource.wrapper.xen610;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,12 +30,14 @@ import com.cloud.agent.api.storage.MigrateVolumeCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.hypervisor.xenserver.resource.XenServer610Resource;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Task;
 import com.xensource.xenapi.Types;
 import com.xensource.xenapi.VDI;
 
+@ResourceWrapper(handles =  MigrateVolumeCommand.class)
 public final class XenServer610MigrateVolumeCommandWrapper extends CommandWrapper<MigrateVolumeCommand, Answer, XenServer610Resource> {
 
     private static final Logger s_logger = Logger.getLogger(XenServer610MigrateVolumeCommandWrapper.class);
@@ -47,7 +49,7 @@ public final class XenServer610MigrateVolumeCommandWrapper extends CommandWrappe
         final StorageFilerTO poolTO = command.getPool();
 
         try {
-            String uuid = poolTO.getUuid();
+            final String uuid = poolTO.getUuid();
             final SR destinationPool = xenServer610Resource.getStorageRepository(connection, uuid);
             final VDI srcVolume = xenServer610Resource.getVDIbyUuid(connection, volumeUUID);
             final Map<String, String> other = new HashMap<String, String>();

@@ -34,6 +34,7 @@ import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
@@ -41,6 +42,7 @@ import com.cloud.utils.script.Script;
 /*
  * Uses a local script now, eventually support for virStorageVolResize() will maybe work on qcow2 and lvm and we can do this in libvirt calls
  */
+@ResourceWrapper(handles =  ResizeVolumeCommand.class)
 public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<ResizeVolumeCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtResizeVolumeCommandWrapper.class);

@@ -17,7 +17,7 @@
 // under the License.
 //
 
-package com.cloud.hypervisor.xenserver.resource.wrapper;
+package com.cloud.hypervisor.xenserver.resource.wrapper.xen610;
 
 import java.util.List;
 import java.util.Set;
@@ -32,11 +32,13 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.xenserver.resource.XenServer610Resource;
 import com.cloud.hypervisor.xenserver.resource.XsHost;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.VM;
 
+@ResourceWrapper(handles =  MigrateWithStorageCompleteCommand.class)
 public final class XenServer610MigrateWithStorageCompleteCommandWrapper extends CommandWrapper<MigrateWithStorageCompleteCommand, Answer, XenServer610Resource> {
 
     private static final Logger s_logger = Logger.getLogger(XenServer610MigrateWithStorageCompleteCommandWrapper.class);

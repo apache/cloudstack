@@ -29,10 +29,12 @@ import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.VIF;
 import com.xensource.xenapi.VM;
 
+@ResourceWrapper(handles =  PlugNicCommand.class)
 public final class CitrixPlugNicCommandWrapper extends CommandWrapper<PlugNicCommand, Answer, CitrixResourceBase> {
 
     private static final Logger s_logger = Logger.getLogger(CitrixPlugNicCommandWrapper.class);

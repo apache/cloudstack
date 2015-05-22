@@ -26,11 +26,13 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.OvsDeleteFlowCommand;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Network;
 import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.XenAPIException;
 
+@ResourceWrapper(handles =  OvsDeleteFlowCommand.class)
 public final class CitrixOvsDeleteFlowCommandWrapper extends CommandWrapper<OvsDeleteFlowCommand, Answer, CitrixResourceBase> {
 
     private static final Logger s_logger = Logger.getLogger(CitrixOvsDeleteFlowCommandWrapper.class);

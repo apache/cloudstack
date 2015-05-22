@@ -25,9 +25,11 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.OvsDestroyTunnelCommand;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Network;
 
+@ResourceWrapper(handles =  OvsDestroyTunnelCommand.class)
 public final class CitrixOvsDestroyTunnelCommandWrapper extends CommandWrapper<OvsDestroyTunnelCommand, Answer, CitrixResourceBase> {
 
     private static final Logger s_logger = Logger.getLogger(CitrixOvsDestroyTunnelCommandWrapper.class);

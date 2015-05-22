@@ -17,20 +17,22 @@
 // under the License.
 //
 
-package com.cloud.hypervisor.kvm.resource.wrapper;
+package com.cloud.hypervisor.xenserver.resource.wrapper;
+
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.CleanupNetworkRulesCmd;
-import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.storage.resource.StorageSubsystemCommandHandler;
 
-@ResourceWrapper(handles =  CleanupNetworkRulesCmd.class)
-public final class LibvirtCleanupNetworkRulesCommandWrapper extends CommandWrapper<CleanupNetworkRulesCmd, Answer, LibvirtComputingResource> {
+@ResourceWrapper(handles =  StorageSubSystemCommand.class)
+public final class CitrixStorageSubSystemCommandWrapper extends CommandWrapper<StorageSubSystemCommand, Answer, CitrixResourceBase> {
 
     @Override
-    public Answer execute(final CleanupNetworkRulesCmd command, final LibvirtComputingResource libvirtComputingResource) {
-        final boolean result = libvirtComputingResource.cleanupRules();
-        return new Answer(command, result, "");
+    public Answer execute(final StorageSubSystemCommand command, final CitrixResourceBase citrixResourceBase) {
+        final StorageSubsystemCommandHandler handler = citrixResourceBase.getStorageHandler();
+        return handler.handleStorageCommands(command);
     }
 }
