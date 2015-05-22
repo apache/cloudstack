@@ -23,8 +23,10 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.resource.ServerResource;
 
+@ResourceWrapper(handles =  WatchConsoleProxyLoadCommand.class)
 public class LibvirtWatchConsoleProxyLoadCommandWrapper extends LibvirtConsoleProxyLoadCommandWrapper<WatchConsoleProxyLoadCommand, Answer, LibvirtComputingResource> {
 
     @Override

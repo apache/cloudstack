@@ -24,7 +24,9 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 
+@ResourceWrapper(handles =  NetworkElementCommand.class)
 public final class LibvirtNetworkElementCommandWrapper extends CommandWrapper<NetworkElementCommand, Answer, LibvirtComputingResource> {
 
     @Override

@@ -30,6 +30,7 @@ import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.xensource.xenapi.Bond;
@@ -41,6 +42,7 @@ import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.XenAPIException;
 
+@ResourceWrapper(handles =  SetupCommand.class)
 public final class CitrixSetupCommandWrapper extends CommandWrapper<SetupCommand, Answer, CitrixResourceBase> {
 
     private static final Logger s_logger = Logger.getLogger(CitrixSetupCommandWrapper.class);

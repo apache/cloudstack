@@ -23,7 +23,9 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 
+@ResourceWrapper(handles =  UpgradeSnapshotCommand.class)
 public final class LibvirtUpgradeSnapshotCommandWrapper extends CommandWrapper<UpgradeSnapshotCommand, Answer, LibvirtComputingResource> {
 
     @Override

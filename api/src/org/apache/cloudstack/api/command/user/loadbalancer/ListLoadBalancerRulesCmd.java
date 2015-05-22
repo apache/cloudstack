@@ -56,7 +56,7 @@ public class ListLoadBalancerRulesCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.PUBLIC_IP_ID,
                type = CommandType.UUID,
                entityType = IPAddressResponse.class,
-               description = "the public IP address id of the load balancer rule ")
+               description = "the public IP address ID of the load balancer rule")
     private Long publicIpId;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
@@ -68,7 +68,7 @@ public class ListLoadBalancerRulesCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the availability zone ID")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "list by network id the rule belongs to")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "list by network ID the rule belongs to")
     private Long networkId;
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})

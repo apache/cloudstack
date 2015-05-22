@@ -24,8 +24,10 @@ import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.xensource.xenapi.Connection;
 
+@ResourceWrapper(handles =  RebootRouterCommand.class)
 public final class CitrixRebootRouterCommandWrapper extends CommandWrapper<RebootRouterCommand, Answer, CitrixResourceBase> {
 
     @Override

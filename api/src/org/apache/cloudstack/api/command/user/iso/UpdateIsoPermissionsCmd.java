@@ -25,7 +25,7 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateIsoPermissions", description = "Updates iso permissions", responseObject = SuccessResponse.class,
+@APICommand(name = "updateIsoPermissions", description = "Updates ISO permissions", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateIsoPermissionsCmd extends BaseUpdateTemplateOrIsoPermissionsCmd {
     @Override

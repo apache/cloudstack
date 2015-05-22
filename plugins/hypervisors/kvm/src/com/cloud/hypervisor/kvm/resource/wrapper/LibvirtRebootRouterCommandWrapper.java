@@ -25,7 +25,9 @@ import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 
+@ResourceWrapper(handles =  RebootRouterCommand.class)
 public final class LibvirtRebootRouterCommandWrapper extends CommandWrapper<RebootRouterCommand, Answer, LibvirtComputingResource> {
 
     @Override

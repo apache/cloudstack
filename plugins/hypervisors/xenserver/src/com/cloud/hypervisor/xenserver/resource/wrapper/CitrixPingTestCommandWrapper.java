@@ -23,8 +23,10 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.xensource.xenapi.Connection;
 
+@ResourceWrapper(handles =  PingTestCommand.class)
 public final class CitrixPingTestCommandWrapper extends CommandWrapper<PingTestCommand, Answer, CitrixResourceBase> {
 
     @Override

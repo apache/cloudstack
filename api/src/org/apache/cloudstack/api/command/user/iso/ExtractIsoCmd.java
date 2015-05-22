@@ -49,7 +49,7 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "the ID of the ISO file")
     private Long id;
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = false, description = "the url to which the ISO would be extracted")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = false, description = "the URL to which the ISO would be extracted")
     private String url;
 
     @Parameter(name = ApiConstants.ZONE_ID,
@@ -109,7 +109,7 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "extracting iso: " + getId() + " from zone: " + getZoneId();
+        return "extracting ISO: " + getId() + " from zone: " + getZoneId();
     }
 
     public static String getStaticName() {
@@ -137,7 +137,7 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
                 response.setObjectName("iso");
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to extract iso");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to extract ISO");
             }
         } catch (InternalErrorException ex) {
             s_logger.warn("Exception: ", ex);

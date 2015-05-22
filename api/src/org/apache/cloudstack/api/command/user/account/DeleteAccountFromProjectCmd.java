@@ -47,7 +47,7 @@ public class DeleteAccountFromProjectCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = ProjectResponse.class,
                required = true,
-               description = "id of the project to remove the account from")
+               description = "ID of the project to remove the account from")
     private Long projectId;
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = true, description = "name of the account to be removed from the project")
@@ -76,7 +76,7 @@ public class DeleteAccountFromProjectCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Project id: " + projectId + "; accountName " + accountName);
+        CallContext.current().setEventDetails("Project ID: " + projectId + "; accountName " + accountName);
         boolean result = _projectService.deleteAccountFromProject(projectId, accountName);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
@@ -91,7 +91,7 @@ public class DeleteAccountFromProjectCmd extends BaseAsyncCmd {
         Project project = _projectService.getProject(projectId);
         //verify input parameters
         if (project == null) {
-            throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+            throw new InvalidParameterValueException("Unable to find project by ID " + projectId);
         }
 
         return _projectService.getProjectOwner(projectId).getId();

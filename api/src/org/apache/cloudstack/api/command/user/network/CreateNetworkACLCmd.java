@@ -66,32 +66,32 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "the ending port of ACL")
     private Integer publicEndPort;
 
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to allow traffic from/to")
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the CIDR list to allow traffic from/to")
     private List<String> cidrlist;
 
-    @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "type of the icmp message being sent")
+    @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "type of the ICMP message being sent")
     private Integer icmpType;
 
-    @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "error code for this icmp message")
+    @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "error code for this ICMP message")
     private Integer icmpCode;
 
     @Parameter(name = ApiConstants.NETWORK_ID,
                type = CommandType.UUID,
                entityType = NetworkResponse.class,
-               description = "The network of the vm the ACL will be created for")
+               description = "The network of the VM the ACL will be created for")
     private Long networkId;
 
     @Parameter(name = ApiConstants.ACL_ID,
                type = CommandType.UUID,
                entityType = NetworkACLResponse.class,
-               description = "The network of the vm the ACL will be created for")
+               description = "The network of the VM the ACL will be created for")
     private Long aclId;
 
     @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "the traffic type for the ACL,"
-        + "can be Ingress or Egress, defaulted to Ingress if not specified")
+        + "can be ingress or egress, defaulted to ingress if not specified")
     private String trafficType;
 
-    @Parameter(name = ApiConstants.NUMBER, type = CommandType.INTEGER, description = "The network of the vm the ACL will be created for")
+    @Parameter(name = ApiConstants.NUMBER, type = CommandType.INTEGER, description = "The network of the VM the ACL will be created for")
     private Integer number;
 
     @Parameter(name = ApiConstants.ACTION, type = CommandType.STRING, description = "scl entry action, allow or deny")
@@ -239,7 +239,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
         boolean success = false;
         NetworkACLItem rule = _networkACLService.getNetworkACLItem(getEntityId());
         try {
-            CallContext.current().setEventDetails("Rule Id: " + getEntityId());
+            CallContext.current().setEventDetails("Rule ID: " + getEntityId());
             success = _networkACLService.applyNetworkACL(rule.getAclId());
 
             // State is different after the rule is applied, so get new object here

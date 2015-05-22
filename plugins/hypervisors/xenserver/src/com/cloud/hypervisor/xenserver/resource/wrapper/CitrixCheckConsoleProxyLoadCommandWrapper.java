@@ -23,8 +23,10 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.resource.ServerResource;
 
+@ResourceWrapper(handles =  CheckConsoleProxyLoadCommand.class)
 public final class CitrixCheckConsoleProxyLoadCommandWrapper extends CitrixConsoleProxyLoadCommandWrapper<CheckConsoleProxyLoadCommand, Answer, CitrixResourceBase> {
 
     @Override

@@ -29,11 +29,13 @@ import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VM;
 
+@ResourceWrapper(handles =  ReadyCommand.class)
 public final class CitrixReadyCommandWrapper extends CommandWrapper<ReadyCommand, Answer, CitrixResourceBase> {
 
     private static final Logger s_logger = Logger.getLogger(CitrixReadyCommandWrapper.class);

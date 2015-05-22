@@ -1057,6 +1057,7 @@ under the License.
 'label.add.private.gateway': '<fmt:message key="label.add.private.gateway" />',
 'label.ovm3.pool': '<fmt:message key="label.ovm3.pool" />',
 'label.ovm3.cluster': '<fmt:message key="label.ovm3.cluster" />',
-'label.ovm3.vip': '<fmt:message key="label.ovm3.vip" />'
+'label.ovm3.vip': '<fmt:message key="label.ovm3.vip" />',
+'label.local.storage.enabled.system.vms': '<fmt:message key="label.local.storage.enabled.system.vms" />'
 });
 </script>

@@ -685,7 +685,6 @@ public enum Config {
             "/var/cloudstack/mnt",
             "The mount point on the Management Server for Secondary Storage.",
             null),
-//    UpgradeURL("Advanced", ManagementServer.class, String.class, "upgrade.url", "http://example.com:8080/client/agent/update.zip", "The upgrade URL is the URL of the management server that agents will connect to in order to automatically upgrade.", null),
     SystemVMAutoReserveCapacity(
             "Advanced",
             ManagementServer.class,

@@ -1438,13 +1438,13 @@ def createChecksum(service=None,
     format_volume_to_ext3(
         ssh_client,
         service["volume_write_path"][
-            virtual_machine.hypervisor][disk_type]
+            virtual_machine.hypervisor.lower()][disk_type]
     )
     cmds = ["fdisk -l",
             "mkdir -p %s" % service["data_write_paths"]["mount_dir"],
             "mount -t ext3 %s1 %s" % (
                 service["volume_write_path"][
-                    virtual_machine.hypervisor][disk_type],
+                    virtual_machine.hypervisor.lower()][disk_type],
                 service["data_write_paths"]["mount_dir"]
             ),
             "mkdir -p %s/%s/%s " % (
@@ -1514,7 +1514,7 @@ def compareChecksum(
             "mkdir -p %s" % service["data_write_paths"]["mount_dir"],
             "mount -t ext3 %s1 %s" % (
                 service["volume_write_path"][
-                    virt_machine.hypervisor][disk_type],
+                    virt_machine.hypervisor.lower()][disk_type],
                 service["data_write_paths"]["mount_dir"]
             ),
             ]

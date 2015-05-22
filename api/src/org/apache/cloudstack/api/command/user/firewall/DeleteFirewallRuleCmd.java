@@ -77,7 +77,7 @@ public class DeleteFirewallRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Deleting firewall rule id=" + id);
+        return ("Deleting firewall rule ID=" + id);
     }
 
     @Override
@@ -85,7 +85,7 @@ public class DeleteFirewallRuleCmd extends BaseAsyncCmd {
         if (ownerId == null) {
             FirewallRule rule = _entityMgr.findById(FirewallRule.class, id);
             if (rule == null) {
-                throw new InvalidParameterValueException("Unable to find firewall rule by id=" + id);
+                throw new InvalidParameterValueException("Unable to find firewall rule by ID=" + id);
             } else {
                 ownerId = _entityMgr.findById(FirewallRule.class, id).getAccountId();
             }

@@ -29,10 +29,12 @@ import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Types.XenAPIException;
 
+@ResourceWrapper(handles =  GetStorageStatsCommand.class)
 public final class CitrixGetStorageStatsCommandWrapper extends CommandWrapper<GetStorageStatsCommand, Answer, CitrixResourceBase> {
 
     private static final Logger s_logger = Logger.getLogger(CitrixGetStorageStatsCommandWrapper.class);

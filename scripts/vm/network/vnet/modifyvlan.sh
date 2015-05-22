@@ -167,6 +167,11 @@ then
    modprobe 8021q >& /dev/null
 fi
 
+if [ "$vlanId" -eq 4095 ]
+then
+    exit 0
+fi
+
 if [ "$op" == "add" ]
 then
 	# Add the vlan

@@ -46,7 +46,7 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "list account by account ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.IS_CLEANUP_REQUIRED, type = CommandType.BOOLEAN, description = "list accounts by cleanuprequred attribute (values are true or false)")
+    @Parameter(name = ApiConstants.IS_CLEANUP_REQUIRED, type = CommandType.BOOLEAN, description = "list accounts by cleanuprequired attribute (values are true or false)")
     private Boolean cleanupRequired;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list account by account name")

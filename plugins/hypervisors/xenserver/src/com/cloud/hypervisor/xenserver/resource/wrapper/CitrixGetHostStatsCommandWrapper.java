@@ -27,8 +27,10 @@ import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.HostStatsEntry;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.xensource.xenapi.Connection;
 
+@ResourceWrapper(handles =  GetHostStatsCommand.class)
 public final class CitrixGetHostStatsCommandWrapper extends CommandWrapper<GetHostStatsCommand, Answer, CitrixResourceBase> {
 
     private static final Logger s_logger = Logger.getLogger(CitrixGetHostStatsCommandWrapper.class);

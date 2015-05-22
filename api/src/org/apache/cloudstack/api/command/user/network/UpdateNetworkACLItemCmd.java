@@ -34,7 +34,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateNetworkACLItem", description = "Updates ACL Item with specified Id", responseObject = NetworkACLItemResponse.class,
+@APICommand(name = "updateNetworkACLItem", description = "Updates ACL item with specified ID", responseObject = NetworkACLItemResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateNetworkACLItemCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateNetworkACLItemCmd.class.getName());
@@ -49,7 +49,7 @@ public class UpdateNetworkACLItemCmd extends BaseAsyncCustomIdCmd {
                type = CommandType.UUID,
                entityType = NetworkACLItemResponse.class,
                required = true,
-               description = "the ID of the network ACL Item")
+               description = "the ID of the network ACL item")
     private Long id;
 
     @Parameter(name = ApiConstants.PROTOCOL,
@@ -66,10 +66,10 @@ public class UpdateNetworkACLItemCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to allow traffic from/to")
     private List<String> cidrlist;
 
-    @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "type of the icmp message being sent")
+    @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "type of the ICMP message being sent")
     private Integer icmpType;
 
-    @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "error code for this icmp message")
+    @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "error code for this ICMP message")
     private Integer icmpCode;
 
     @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "the traffic type for the ACL,"
@@ -162,7 +162,7 @@ public class UpdateNetworkACLItemCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating Network ACL Item";
+        return "Updating network ACL item";
     }
 
     public Integer getIcmpCode() {
@@ -180,7 +180,7 @@ public class UpdateNetworkACLItemCmd extends BaseAsyncCustomIdCmd {
             _networkACLService.updateNetworkACLItem(getId(), getProtocol(), getSourceCidrList(), getTrafficType(), getAction(), getNumber(), getSourcePortStart(),
                 getSourcePortEnd(), getIcmpCode(), getIcmpType(), this.getCustomId(), this.isDisplay());
         if (aclItem == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update network ACL Item");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update network ACL item");
         }
         NetworkACLItemResponse aclResponse = _responseGenerator.createNetworkACLItemResponse(aclItem);
         setResponseObject(aclResponse);

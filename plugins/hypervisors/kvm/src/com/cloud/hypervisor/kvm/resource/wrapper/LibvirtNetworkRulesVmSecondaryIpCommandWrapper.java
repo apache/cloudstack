@@ -27,7 +27,9 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.NetworkRulesVmSecondaryIpCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 
+@ResourceWrapper(handles =  NetworkRulesVmSecondaryIpCommand.class)
 public final class LibvirtNetworkRulesVmSecondaryIpCommandWrapper extends CommandWrapper<NetworkRulesVmSecondaryIpCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtOvsVpcRoutingPolicyConfigCommandWrapper.class);

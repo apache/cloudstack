@@ -247,7 +247,7 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
         }
         if (getProtocol().equalsIgnoreCase(NetUtils.ALL_PROTO)) {
             if (getSourcePortStart() != null && getSourcePortEnd() != null) {
-                throw new InvalidParameterValueException("Do not pass ports to protocol ALL, porotocol ALL do not require ports. Unable to create " +
+                throw new InvalidParameterValueException("Do not pass ports to protocol ALL, protocol ALL do not require ports. Unable to create " +
                     "firewall rule for the network id=" + networkId);
             }
         }

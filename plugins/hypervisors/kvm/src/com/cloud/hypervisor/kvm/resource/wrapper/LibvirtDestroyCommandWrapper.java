@@ -28,8 +28,10 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@ResourceWrapper(handles =  DestroyCommand.class)
 public final class LibvirtDestroyCommandWrapper extends CommandWrapper<DestroyCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtDestroyCommandWrapper.class);
@@ -38,7 +40,7 @@ public final class LibvirtDestroyCommandWrapper extends CommandWrapper<DestroyCo
     public Answer execute(final DestroyCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final VolumeTO vol = command.getVolume();
         try {
-            KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
+            final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
             final KVMStoragePool pool = storagePoolMgr.getStoragePool(vol.getPoolType(), vol.getPoolUuid());
             pool.deletePhysicalDisk(vol.getPath(), null);
             return new Answer(command, true, "Success");

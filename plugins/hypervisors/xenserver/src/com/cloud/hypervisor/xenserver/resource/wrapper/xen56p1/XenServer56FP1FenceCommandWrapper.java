@@ -17,7 +17,7 @@
 // under the License.
 //
 
-package com.cloud.hypervisor.xenserver.resource.wrapper;
+package com.cloud.hypervisor.xenserver.resource.wrapper.xen56p1;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -31,12 +31,14 @@ import com.cloud.agent.api.FenceAnswer;
 import com.cloud.agent.api.FenceCommand;
 import com.cloud.hypervisor.xenserver.resource.XenServer56Resource;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VM;
 
+@ResourceWrapper(handles =  FenceCommand.class)
 public final class XenServer56FP1FenceCommandWrapper extends CommandWrapper<FenceCommand, Answer, XenServer56Resource> {
 
     private static final Logger s_logger = Logger.getLogger(XenServer56FP1FenceCommandWrapper.class);

@@ -49,7 +49,7 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "the hypervisor for which to restrict the search")
     private String hypervisor;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "list ISO by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "list ISO by ID")
     private Long id;
 
     @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "true if the ISO is publicly available to all users, false otherwise.")
@@ -69,7 +69,7 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
                    + "* community : templates that have been marked as public but not featured. " + "* all : all templates (only usable by admins).")
     private String isoFilter = TemplateFilter.selfexecutable.toString();
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list all isos by name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list all ISOs by name")
     private String isoName;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of the zone")

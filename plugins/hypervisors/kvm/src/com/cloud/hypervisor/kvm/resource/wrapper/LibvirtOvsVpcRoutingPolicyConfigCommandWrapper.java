@@ -25,8 +25,10 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.OvsVpcRoutingPolicyConfigCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.script.Script;
 
+@ResourceWrapper(handles =  OvsVpcRoutingPolicyConfigCommand.class)
 public final class LibvirtOvsVpcRoutingPolicyConfigCommandWrapper extends CommandWrapper<OvsVpcRoutingPolicyConfigCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtOvsVpcRoutingPolicyConfigCommandWrapper.class);

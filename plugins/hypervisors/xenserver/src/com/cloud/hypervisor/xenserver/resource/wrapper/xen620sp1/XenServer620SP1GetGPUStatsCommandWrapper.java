@@ -17,7 +17,7 @@
 // under the License.
 //
 
-package com.cloud.hypervisor.xenserver.resource.wrapper;
+package com.cloud.hypervisor.xenserver.resource.wrapper.xen620sp1;
 
 import java.util.HashMap;
 
@@ -29,8 +29,10 @@ import com.cloud.agent.api.GetGPUStatsCommand;
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.hypervisor.xenserver.resource.XenServer620SP1Resource;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.xensource.xenapi.Connection;
 
+@ResourceWrapper(handles =  GetGPUStatsCommand.class)
 public final class XenServer620SP1GetGPUStatsCommandWrapper extends CommandWrapper<GetGPUStatsCommand, Answer, XenServer620SP1Resource> {
 
     private static final Logger s_logger = Logger.getLogger(XenServer620SP1GetGPUStatsCommandWrapper.class);

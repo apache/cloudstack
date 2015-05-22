@@ -24,7 +24,9 @@ import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 
+@ResourceWrapper(handles =  NetworkUsageCommand.class)
 public final class LibvirtNetworkUsageCommandWrapper extends CommandWrapper<NetworkUsageCommand, Answer, LibvirtComputingResource> {
 
     @Override

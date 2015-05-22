@@ -20,7 +20,6 @@ import com.cloud.org.Grouping;
 import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
-import org.apache.cloudstack.framework.config.ConfigKey;
 
 import java.util.Map;
 
@@ -28,9 +27,6 @@ import java.util.Map;
  *
  */
 public interface DataCenter extends InfrastructureEntity, Grouping, Identity, InternalIdentity {
-    public static final String SystemVMUseLocalStorageCK = "system.vm.use.local.storage";
-    public static final ConfigKey<Boolean> UseSystemVMLocalStorage = new ConfigKey<Boolean>(Boolean.class, SystemVMUseLocalStorageCK, "Advanced", "false",
-            "Indicates whether to use local storage pools or shared storage pools for system VMs.", true, ConfigKey.Scope.Zone, null);
 
     public enum NetworkType {
         Basic, Advanced,

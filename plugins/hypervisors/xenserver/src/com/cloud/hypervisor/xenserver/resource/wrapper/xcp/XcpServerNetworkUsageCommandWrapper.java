@@ -17,7 +17,7 @@
 // under the License.
 //
 
-package com.cloud.hypervisor.xenserver.resource.wrapper;
+package com.cloud.hypervisor.xenserver.resource.wrapper.xcp;
 
 import org.apache.log4j.Logger;
 
@@ -26,8 +26,10 @@ import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.hypervisor.xenserver.resource.XcpServerResource;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.xensource.xenapi.Connection;
 
+@ResourceWrapper(handles =  NetworkUsageCommand.class)
 public final class XcpServerNetworkUsageCommandWrapper extends CommandWrapper<NetworkUsageCommand, Answer, XcpServerResource> {
 
     private static final Logger s_logger = Logger.getLogger(XcpServerNetworkUsageCommandWrapper.class);
