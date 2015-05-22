@@ -34,7 +34,7 @@ import com.cloud.network.rules.HealthCheckPolicy;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteLBHealthCheckPolicy", description = "Deletes a load balancer HealthCheck policy.", responseObject = SuccessResponse.class, since = "4.2.0",
+@APICommand(name = "deleteLBHealthCheckPolicy", description = "Deletes a load balancer health check policy.", responseObject = SuccessResponse.class, since = "4.2.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteLBHealthCheckPolicyCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteLBHealthCheckPolicyCmd.class.getName());
@@ -47,7 +47,7 @@ public class DeleteLBHealthCheckPolicyCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = LBHealthCheckResponse.class,
                required = true,
-               description = "the ID of the load balancer HealthCheck policy")
+               description = "the ID of the load balancer health check policy")
     private Long id;
 
     // ///////////////////////////////////////////////////
@@ -84,19 +84,19 @@ public class DeleteLBHealthCheckPolicyCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "deleting load balancer HealthCheck policy: " + getId();
+        return "deleting load balancer health check policy: " + getId();
     }
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Load balancer healthcheck policy Id: " + getId());
+        CallContext.current().setEventDetails("Load balancer health check policy Id: " + getId());
         boolean result = _lbService.deleteLBHealthCheckPolicy(getId(), true);
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete load balancer healthcheck policy");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete load balancer health check policy");
         }
     }
 
@@ -109,11 +109,11 @@ public class DeleteLBHealthCheckPolicyCmd extends BaseAsyncCmd {
     public Long getSyncObjId() {
         HealthCheckPolicy policy = _entityMgr.findById(HealthCheckPolicy.class, getId());
         if (policy == null) {
-            throw new InvalidParameterValueException("Unable to find load balancer healthcheck rule: " + id);
+            throw new InvalidParameterValueException("Unable to find load balancer health check rule: " + id);
         }
         LoadBalancer lb = _lbService.findById(policy.getLoadBalancerId());
         if (lb == null) {
-            throw new InvalidParameterValueException("Unable to find load balancer rule for healthcheck rule: " + id);
+            throw new InvalidParameterValueException("Unable to find load balancer rule for health check rule: " + id);
         }
         return lb.getNetworkId();
     }

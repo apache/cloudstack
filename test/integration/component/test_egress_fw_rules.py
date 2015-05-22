@@ -108,7 +108,6 @@ class Services:
                                                "serviceCapabilityList": {
                                                                             "SourceNat": {
                                                                             "SupportedSourceNatTypes": "peraccount",
-                                                                            "RedundantRouter": "true"
                                                                             }
                                                                         },
                                              },

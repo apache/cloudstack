@@ -64,7 +64,7 @@ public class DeleteAffinityGroupCmd extends BaseAsyncCmd {
                entityType = AffinityGroupResponse.class)
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the affinity group. Mutually exclusive with id parameter")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the affinity group. Mutually exclusive with ID parameter")
     private String name;
 
     /////////////////////////////////////////////////////
@@ -87,12 +87,12 @@ public class DeleteAffinityGroupCmd extends BaseAsyncCmd {
         if (name != null) {
             id = _responseGenerator.getAffinityGroupId(name, getEntityOwnerId());
             if (id == null) {
-                throw new InvalidParameterValueException("Unable to find affinity group by name " + name + " for the account id=" + getEntityOwnerId());
+                throw new InvalidParameterValueException("Unable to find affinity group by name " + name + " for the account ID=" + getEntityOwnerId());
             }
         }
 
         if (id == null) {
-            throw new InvalidParameterValueException("Either id or name parameter is requred by deleteAffinityGroup command");
+            throw new InvalidParameterValueException("Either ID or name parameter is required by deleteAffinityGroup command");
         }
 
         return id;

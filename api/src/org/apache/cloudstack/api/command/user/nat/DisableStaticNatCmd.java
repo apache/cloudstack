@@ -35,7 +35,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 
-@APICommand(name = "disableStaticNat", description = "Disables static rule for given ip address", responseObject = SuccessResponse.class,
+@APICommand(name = "disableStaticNat", description = "Disables static rule for given IP address", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DisableStaticNatCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePortForwardingRuleCmd.class.getName());
@@ -49,7 +49,7 @@ public class DisableStaticNatCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = IPAddressResponse.class,
                required = true,
-               description = "the public IP address id for which static nat feature is being disableed")
+               description = "the public IP address ID for which static NAT feature is being disabled")
     private Long ipAddressId;
 
     /////////////////////////////////////////////////////
@@ -75,7 +75,7 @@ public class DisableStaticNatCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Disabling static nat for ip id=" + ipAddressId);
+        return ("Disabling static NAT for IP ID=" + ipAddressId);
     }
 
     @Override
@@ -91,7 +91,7 @@ public class DisableStaticNatCmd extends BaseAsyncCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to disable static nat");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to disable static NAT");
         }
     }
 
@@ -108,7 +108,7 @@ public class DisableStaticNatCmd extends BaseAsyncCmd {
     private IpAddress getIp() {
         IpAddress ip = _networkService.getIp(ipAddressId);
         if (ip == null) {
-            throw new InvalidParameterValueException("Unable to find ip address by id " + ipAddressId);
+            throw new InvalidParameterValueException("Unable to find IP address by ID " + ipAddressId);
         }
         return ip;
     }

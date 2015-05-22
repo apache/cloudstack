@@ -40,6 +40,7 @@ import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.vm.VirtualMachine;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
@@ -47,6 +48,7 @@ import com.xensource.xenapi.Types.VmPowerState;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VM;
 
+@ResourceWrapper(handles =  StartCommand.class)
 public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand, Answer, CitrixResourceBase> {
 
     private static final Logger s_logger = Logger.getLogger(CitrixStartCommandWrapper.class);

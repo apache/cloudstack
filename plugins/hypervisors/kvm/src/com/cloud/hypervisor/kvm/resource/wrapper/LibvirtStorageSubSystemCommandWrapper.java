@@ -24,8 +24,10 @@ import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.resource.StorageSubsystemCommandHandler;
 
+@ResourceWrapper(handles =  StorageSubSystemCommand.class)
 public final class LibvirtStorageSubSystemCommandWrapper extends CommandWrapper<StorageSubSystemCommand, Answer, LibvirtComputingResource> {
 
     @Override

@@ -78,7 +78,7 @@ public class AttachIsoCmd extends BaseAsyncCmd {
     public long getEntityOwnerId() {
         UserVm vm = _entityMgr.findById(UserVm.class, getVirtualMachineId());
         if (vm == null) {
-            throw new InvalidParameterValueException("Unable to find virtual machine by id " + getVirtualMachineId());
+            throw new InvalidParameterValueException("Unable to find virtual machine by ID " + getVirtualMachineId());
         }
 
         return vm.getAccountId();
@@ -91,12 +91,12 @@ public class AttachIsoCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "attaching ISO: " + getId() + " to vm: " + getVirtualMachineId();
+        return  "attaching ISO: " + getId() + " to VM: " + getVirtualMachineId();
     }
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Vm Id: " + getVirtualMachineId() + " ISO Id: " + getId());
+        CallContext.current().setEventDetails("Vm Id: " + getVirtualMachineId() + " ISO ID: " + getId());
         boolean result = _templateService.attachIso(id, virtualMachineId);
         if (result) {
             UserVm userVm = _responseGenerator.findUserVmById(virtualMachineId);
@@ -105,10 +105,10 @@ public class AttachIsoCmd extends BaseAsyncCmd {
                 response.setResponseName(DeployVMCmd.getResultObjectName());
                 setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to attach iso");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to attach ISO");
             }
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to attach iso");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to attach ISO");
         }
     }
 }

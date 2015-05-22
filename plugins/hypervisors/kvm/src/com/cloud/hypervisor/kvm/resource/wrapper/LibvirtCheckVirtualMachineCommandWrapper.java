@@ -27,8 +27,10 @@ import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.vm.VirtualMachine.PowerState;
 
+@ResourceWrapper(handles =  CheckVirtualMachineCommand.class)
 public final class LibvirtCheckVirtualMachineCommandWrapper extends CommandWrapper<CheckVirtualMachineCommand, Answer, LibvirtComputingResource> {
 
     @Override

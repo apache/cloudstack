@@ -28,10 +28,12 @@ import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.hypervisor.xenserver.resource.XsLocalNetwork;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Types.XenAPIException;
 
+@ResourceWrapper(handles =  PvlanSetupCommand.class)
 public final class CitrixPvlanSetupCommandWrapper extends CommandWrapper<PvlanSetupCommand, Answer, CitrixResourceBase> {
 
     private static final Logger s_logger = Logger.getLogger(CitrixPvlanSetupCommandWrapper.class);

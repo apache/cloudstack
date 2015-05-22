@@ -35,7 +35,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listLoadBalancers", description = "Lists Load Balancers", responseObject = ApplicationLoadBalancerResponse.class, since = "4.2.0",
+@APICommand(name = "listLoadBalancers", description = "Lists load balancers", responseObject = ApplicationLoadBalancerResponse.class, since = "4.2.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListApplicationLoadBalancersCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListApplicationLoadBalancersCmd.class.getName());
@@ -46,25 +46,25 @@ public class ListApplicationLoadBalancersCmd extends BaseListTaggedResourcesCmd 
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, description = "the ID of the Load Balancer")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, description = "the ID of the load balancer")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the Load Balancer")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the load balancer")
     private String loadBalancerName;
 
-    @Parameter(name = ApiConstants.SOURCE_IP, type = CommandType.STRING, description = "the source ip address of the Load Balancer")
+    @Parameter(name = ApiConstants.SOURCE_IP, type = CommandType.STRING, description = "the source IP address of the load balancer")
     private String sourceIp;
 
     @Parameter(name = ApiConstants.SOURCE_IP_NETWORK_ID,
                type = CommandType.UUID,
                entityType = NetworkResponse.class,
-               description = "the network id of the source ip address")
+               description = "the network ID of the source IP address")
     private Long sourceIpNetworkId;
 
-    @Parameter(name = ApiConstants.SCHEME, type = CommandType.STRING, description = "the scheme of the Load Balancer. Supported value is Internal in the current release")
+    @Parameter(name = ApiConstants.SCHEME, type = CommandType.STRING, description = "the scheme of the load balancer. Supported value is internal in the current release")
     private String scheme;
 
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "the network id of the Load Balancer")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "the network ID of the load balancer")
     private Long networkId;
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
@@ -112,7 +112,7 @@ public class ListApplicationLoadBalancersCmd extends BaseListTaggedResourcesCmd 
             if (scheme.equalsIgnoreCase(Scheme.Internal.toString())) {
                 return Scheme.Internal;
             } else {
-                throw new InvalidParameterValueException("Invalid value for scheme. Supported value is Internal");
+                throw new InvalidParameterValueException("Invalid value for scheme. Supported value is internal");
             }
         }
         return null;

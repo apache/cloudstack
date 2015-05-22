@@ -29,8 +29,10 @@ import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.network.PhysicalNetworkSetupInfo;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.xensource.xenapi.Types.XenAPIException;
 
+@ResourceWrapper(handles =  CheckNetworkCommand.class)
 public final class CitrixCheckNetworkCommandWrapper extends CommandWrapper<CheckNetworkCommand, Answer, CitrixResourceBase> {
 
     private static final Logger s_logger = Logger.getLogger(CitrixCheckNetworkCommandWrapper.class);

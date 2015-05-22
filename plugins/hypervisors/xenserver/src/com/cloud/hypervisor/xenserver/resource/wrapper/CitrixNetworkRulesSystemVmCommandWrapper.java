@@ -23,9 +23,11 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.vm.VirtualMachine;
 import com.xensource.xenapi.Connection;
 
+@ResourceWrapper(handles =  NetworkRulesSystemVmCommand.class)
 public final class CitrixNetworkRulesSystemVmCommandWrapper extends CommandWrapper<NetworkRulesSystemVmCommand, Answer, CitrixResourceBase> {
 
     @Override

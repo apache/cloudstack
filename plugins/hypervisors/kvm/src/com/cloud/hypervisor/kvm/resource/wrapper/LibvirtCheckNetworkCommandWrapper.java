@@ -27,7 +27,9 @@ import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.network.PhysicalNetworkSetupInfo;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 
+@ResourceWrapper(handles =  CheckNetworkCommand.class)
 public final class LibvirtCheckNetworkCommandWrapper extends CommandWrapper<CheckNetworkCommand, Answer, LibvirtComputingResource> {
 
     @Override
