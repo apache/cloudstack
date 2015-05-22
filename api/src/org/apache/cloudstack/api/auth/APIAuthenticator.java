@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.auth;
 
 import org.apache.cloudstack.api.ServerApiException;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.util.List;
@@ -36,7 +37,7 @@ import java.util.Map;
 public interface APIAuthenticator {
     public String authenticate(String command, Map<String, Object[]> params,
                                HttpSession session, String remoteAddress, String responseType,
-                               StringBuilder auditTrailSb, final HttpServletResponse resp) throws ServerApiException;
+                               StringBuilder auditTrailSb, final HttpServletRequest req, final HttpServletResponse resp) throws ServerApiException;
 
     public APIAuthenticationType getAPIType();
 

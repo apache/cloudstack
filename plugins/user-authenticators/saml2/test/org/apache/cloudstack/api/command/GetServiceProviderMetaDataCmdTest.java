@@ -31,6 +31,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.lang.reflect.Field;
@@ -57,6 +58,9 @@ public class GetServiceProviderMetaDataCmdTest {
     @Mock
     HttpServletResponse resp;
 
+    @Mock
+    HttpServletRequest req;
+
     @Test
     public void testAuthenticate() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException, CertificateParsingException, CertificateEncodingException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, SignatureException {
         GetServiceProviderMetaDataCmd cmd = new GetServiceProviderMetaDataCmd();
@@ -77,7 +81,7 @@ public class GetServiceProviderMetaDataCmdTest {
         Mockito.when(samlAuthManager.getIdpSingleLogOutUrl()).thenReturn(url);
         Mockito.when(samlAuthManager.getSpSingleLogOutUrl()).thenReturn(url);
 
-        String result = cmd.authenticate("command", null, session, "random", HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), resp);
+        String result = cmd.authenticate("command", null, session, "random", HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), req, resp);
         Assert.assertTrue(result.contains("md:EntityDescriptor"));
 
         Mockito.verify(samlAuthManager, Mockito.atLeast(1)).getServiceProviderId();

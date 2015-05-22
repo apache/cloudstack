@@ -58,6 +58,7 @@ import org.opensaml.saml2.core.impl.StatusBuilder;
 import org.opensaml.saml2.core.impl.StatusCodeBuilder;
 import org.opensaml.saml2.core.impl.SubjectBuilder;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.lang.reflect.Field;
@@ -94,6 +95,9 @@ public class SAML2LoginAPIAuthenticatorCmdTest {
 
     @Mock
     HttpServletResponse resp;
+
+    @Mock
+    HttpServletRequest req;
 
     private Response buildMockResponse() throws Exception {
         Response samlMessage = new ResponseBuilder().buildObject();
@@ -171,14 +175,14 @@ public class SAML2LoginAPIAuthenticatorCmdTest {
         Map<String, Object[]> params = new HashMap<String, Object[]>();
 
         // SSO redirection test
-        cmd.authenticate("command", params, session, "random", HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), resp);
+        cmd.authenticate("command", params, session, "random", HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), req, resp);
         Mockito.verify(resp, Mockito.times(1)).sendRedirect(Mockito.anyString());
 
         // SSO SAMLResponse verification test, this should throw ServerApiException for auth failure
         params.put(SAMLUtils.SAML_RESPONSE, new String[]{"Some String"});
         Mockito.stub(cmd.processSAMLResponse(Mockito.anyString())).toReturn(buildMockResponse());
         try {
-            cmd.authenticate("command", params, session, "random", HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), resp);
+            cmd.authenticate("command", params, session, "random", HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), req, resp);
         } catch (ServerApiException ignored) {
         }
         Mockito.verify(configDao, Mockito.atLeastOnce()).getValue(Mockito.anyString());
