@@ -32,6 +32,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.lang.reflect.Field;
@@ -55,6 +56,9 @@ public class SAML2LogoutAPIAuthenticatorCmdTest {
 
     @Mock
     HttpServletResponse resp;
+
+    @Mock
+    HttpServletRequest req;
 
     @Test
     public void testAuthenticate() throws Exception {
@@ -82,7 +86,7 @@ public class SAML2LogoutAPIAuthenticatorCmdTest {
         Mockito.when(session.getAttribute(Mockito.anyString())).thenReturn(null);
         Mockito.when(configDao.getValue(Mockito.anyString())).thenReturn("someString");
 
-        cmd.authenticate("command", null, session, InetAddress.getByName("127.0.0.1"), HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), resp);
+        cmd.authenticate("command", null, session, InetAddress.getByName("127.0.0.1"), HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), req, resp);
         Mockito.verify(resp, Mockito.times(1)).sendRedirect(Mockito.anyString());
         Mockito.verify(session, Mockito.atLeastOnce()).getAttribute(Mockito.anyString());
     }
