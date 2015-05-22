@@ -99,7 +99,7 @@ public class ApiServletTest {
 
         Mockito.when(authManager.getAPIAuthenticator(Mockito.anyString())).thenReturn(authenticator);
         Mockito.when(authenticator.authenticate(Mockito.anyString(), Mockito.anyMap(), Mockito.isA(HttpSession.class),
-                Mockito.anyString(), Mockito.anyString(), Mockito.isA(StringBuilder.class), Mockito.isA(HttpServletResponse.class))).thenReturn("{\"loginresponse\":{}");
+                Mockito.anyString(), Mockito.anyString(), Mockito.isA(StringBuilder.class), Mockito.isA(HttpServletRequest.class), Mockito.isA(HttpServletResponse.class))).thenReturn("{\"loginresponse\":{}");
 
         Field authManagerField = ApiServlet.class.getDeclaredField("_authManager");
         authManagerField.setAccessible(true);
@@ -210,7 +210,7 @@ public class ApiServletTest {
 
         Mockito.verify(authManager).getAPIAuthenticator("logout");
         Mockito.verify(authenticator).authenticate(Mockito.anyString(), Mockito.anyMap(), Mockito.isA(HttpSession.class),
-                Mockito.anyString(), Mockito.anyString(), Mockito.isA(StringBuilder.class), Mockito.isA(HttpServletResponse.class));
+                Mockito.anyString(), Mockito.anyString(), Mockito.isA(StringBuilder.class), Mockito.isA(HttpServletRequest.class), Mockito.isA(HttpServletResponse.class));
         Mockito.verify(session).invalidate();
     }
 
@@ -232,6 +232,6 @@ public class ApiServletTest {
 
         Mockito.verify(authManager).getAPIAuthenticator("login");
         Mockito.verify(authenticator).authenticate(Mockito.anyString(), Mockito.anyMap(), Mockito.isA(HttpSession.class),
-                Mockito.anyString(), Mockito.anyString(), Mockito.isA(StringBuilder.class), Mockito.isA(HttpServletResponse.class));
+                Mockito.anyString(), Mockito.anyString(), Mockito.isA(StringBuilder.class), Mockito.isA(HttpServletRequest.class), Mockito.isA(HttpServletResponse.class));
     }
 }
