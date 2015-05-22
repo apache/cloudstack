@@ -61,6 +61,7 @@ import java.util.regex.Pattern;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.utils.linux.CPUStat;
 import org.apache.cloudstack.utils.linux.MemStat;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -464,6 +465,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected int _timeout;
     protected int _cmdsTimeout;
     protected int _stopTimeout;
+    private CPUStat _cpuStat = new CPUStat();
     private MemStat _memStat = new MemStat();
 
     protected static final HashMap<DomainState, PowerState> s_powerStatesTable;
@@ -3266,17 +3268,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     private Answer execute(GetHostStatsCommand cmd) {
-        final Script cpuScript = new Script("/bin/bash", s_logger);
-        cpuScript.add("-c");
-        cpuScript.add("idle=$(top -b -n 1| awk -F, '/^[%]*[Cc]pu/{$0=$4; gsub(/[^0-9.,]+/,\"\"); print }'); echo $idle");
-
-        final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
-        String result = cpuScript.execute(parser);
-        if (result != null) {
-            s_logger.debug("Unable to get the host CPU state: " + result);
-            return new Answer(cmd, false, result);
-        }
-        double cpuUtil = (100.0D - Double.parseDouble(parser.getLine()));
+        double cpuUtil = _cpuStat.getCpuUsedPercent();
 
         _memStat.refresh();
         double totMem = _memStat.getTotal();
