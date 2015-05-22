@@ -31,6 +31,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.lang.reflect.Field;
@@ -51,6 +52,9 @@ public class SAML2LogoutAPIAuthenticatorCmdTest {
     @Mock
     HttpServletResponse resp;
 
+    @Mock
+    HttpServletRequest req;
+
     @Test
     public void testAuthenticate() throws Exception {
         SAML2LogoutAPIAuthenticatorCmd cmd = new SAML2LogoutAPIAuthenticatorCmd();
@@ -68,7 +72,7 @@ public class SAML2LogoutAPIAuthenticatorCmdTest {
         X509Certificate cert = SAMLUtils.generateRandomX509Certificate(SAMLUtils.generateRandomKeyPair());
         Mockito.when(session.getAttribute(Mockito.anyString())).thenReturn(null);
 
-        cmd.authenticate("command", null, session, "random", HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), resp);
+        cmd.authenticate("command", null, session, "random", HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), req, resp);
         Mockito.verify(resp, Mockito.times(1)).sendRedirect(Mockito.anyString());
         Mockito.verify(session, Mockito.atLeastOnce()).getAttribute(Mockito.anyString());
     }
