@@ -1,3 +1,4 @@
+#!/bin/bash
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -15,14 +16,5 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/etc/cloudstack/agent/agent.properties
-/etc/cloudstack/agent/environment.properties
-/etc/cloudstack/agent/log4j-cloud.xml
-/etc/profile.d/cloudstack-agent-profile.sh
-/etc/init.d/cloudstack-agent
-/usr/bin/cloudstack-setup-agent
-/usr/bin/cloudstack-ssh
-/usr/bin/cloudstack-agent-upgrade
-/var/log/cloudstack/agent
-/usr/share/cloudstack-agent/lib/*
-/usr/share/cloudstack-agent/plugins
+# need access to lsmod for adding host as non-root
+PATH=$PATH:/sbin
