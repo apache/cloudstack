@@ -19,59 +19,6 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
-
-import javax.naming.ConfigurationException;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
-
-import org.apache.cloudstack.storage.command.AttachAnswer;
-import org.apache.cloudstack.storage.command.AttachCommand;
-import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
-import org.apache.commons.lang.SystemUtils;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.libvirt.Connect;
-import org.libvirt.Domain;
-import org.libvirt.DomainBlockStats;
-import org.libvirt.DomainInfo;
-import org.libvirt.DomainInfo.DomainState;
-import org.libvirt.DomainInterfaceStats;
-import org.libvirt.LibvirtException;
-import org.libvirt.NodeInfo;
-import org.libvirt.StorageVol;
-import org.mockito.Matchers;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.runners.MockitoJUnitRunner;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
@@ -169,6 +116,59 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.Type;
+import org.apache.cloudstack.storage.command.AttachAnswer;
+import org.apache.cloudstack.storage.command.AttachCommand;
+import org.apache.cloudstack.utils.linux.CPUStat;
+import org.apache.cloudstack.utils.linux.MemStat;
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.commons.lang.SystemUtils;
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.libvirt.Connect;
+import org.libvirt.Domain;
+import org.libvirt.DomainBlockStats;
+import org.libvirt.DomainInfo;
+import org.libvirt.DomainInfo.DomainState;
+import org.libvirt.DomainInterfaceStats;
+import org.libvirt.LibvirtException;
+import org.libvirt.NodeInfo;
+import org.libvirt.StorageVol;
+import org.mockito.Matchers;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.runners.MockitoJUnitRunner;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
+
+import javax.naming.ConfigurationException;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+import java.util.UUID;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LibvirtComputingResourceTest {
@@ -920,24 +920,31 @@ public class LibvirtComputingResourceTest {
     public void testGetHostStatsCommand() {
         // A bit difficult to test due to the logger being passed and the parser itself relying on the connection.
         // Have to spend some more time afterwards in order to refactor the wrapper itself.
-
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
-        final String bashScriptPath = "/path";
+        final CPUStat cpuStat = Mockito.mock(CPUStat.class);
+        final MemStat memStat = Mockito.mock(MemStat.class);
 
         final String uuid = "e8d6b4d0-bc6d-4613-b8bb-cb9e0600f3c6";
         final GetHostStatsCommand command = new GetHostStatsCommand(uuid, "summer", 1l);
 
-        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
-        when(libvirtUtilitiesHelper.retrieveBashScriptPath()).thenReturn(bashScriptPath);
+        when(libvirtComputingResource.getCPUStat()).thenReturn(cpuStat);
+        when(libvirtComputingResource.getMemStat()).thenReturn(memStat);
+        when(libvirtComputingResource.getNicStats(Mockito.anyString())).thenReturn(new Pair<Double, Double>(1.0d, 1.0d));
+        when(cpuStat.getCpuUsedPercent()).thenReturn(0.5d);
+        when(memStat.getAvailable()).thenReturn(1500.5d);
+        when(memStat.getTotal()).thenReturn(15000d);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
 
         final Answer answer = wrapper.execute(command, libvirtComputingResource);
-        assertFalse(answer.getResult());
+        assertTrue(answer.getResult());
 
-        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
-        verify(libvirtUtilitiesHelper, times(1)).retrieveBashScriptPath();
+        verify(libvirtComputingResource, times(1)).getCPUStat();
+        verify(libvirtComputingResource, times(1)).getMemStat();
+        verify(cpuStat, times(1)).getCpuUsedPercent();
+        verify(memStat, times(1)).getAvailable();
+        verify(memStat, times(1)).getTotal();
     }
 
     @Test
