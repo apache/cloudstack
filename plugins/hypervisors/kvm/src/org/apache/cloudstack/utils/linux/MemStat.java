@@ -32,7 +32,6 @@ public class MemStat {
     private Map<String, Double> _memStats = new HashMap<String, Double>();
 
     public MemStat() {
-        refresh();
     }
 
     public Double getTotal() {
