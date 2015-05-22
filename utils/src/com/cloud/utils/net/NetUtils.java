@@ -358,6 +358,17 @@ public class NetUtils {
             endIp2Long = ip2Long(endIp2);
         }
 
+        // check if the gatewayip is the part of the ip range being added.
+        // RFC 3021 - 31-Bit Prefixes on IPv4 Point-to-Point Links
+        //     GW              Netmask         Stat IP        End IP
+        // 192.168.24.0 - 255.255.255.254 - 192.168.24.0 - 192.168.24.1
+        // https://tools.ietf.org/html/rfc3021
+        // Added by Wilder Rodrigues
+        final int ip31bitPrefixOffSet = 1;
+        if (startIp2Long - startIp1Long == startIp2Long - (endIp1Long - ip31bitPrefixOffSet)) {
+            return false;
+        }
+
         if (startIp1Long == startIp2Long || startIp1Long == endIp2Long || endIp1Long == startIp2Long || endIp1Long == endIp2Long) {
             return true;
         } else if (startIp1Long > startIp2Long && startIp1Long < endIp2Long) {
@@ -1487,6 +1498,13 @@ public class NetUtils {
         if (!isValidCIDR(cidr)) {
             return false;
         }
+
+        // check if the gatewayip is the part of the ip range being added.
+        // RFC 3021 - 31-Bit Prefixes on IPv4 Point-to-Point Links
+        //     GW              Netmask         Stat IP        End IP
+        // 192.168.24.0 - 255.255.255.254 - 192.168.24.0 - 192.168.24.1
+        // https://tools.ietf.org/html/rfc3021
+        // Added by Wilder Rodrigues
         final SubnetUtils subnetUtils = new SubnetUtils(cidr);
         subnetUtils.setInclusiveHostCount(true);
 

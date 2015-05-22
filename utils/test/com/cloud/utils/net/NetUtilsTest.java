@@ -371,4 +371,44 @@ public class NetUtilsTest {
 
         assertFalse("Out of the range. Why did it return true?", isInRange);
     }
+
+    @Test
+    public void test31BitPrefixIpRangesOverlapd() {
+        final String gw = "192.168.0.0";
+        String ip1;
+        String ip2;
+
+        // 192.168.0.0 - 192.168.0.0 - 192.168.0.1
+        // GW and IP1 overlaps, but in that case it's a 31bit IP.
+        // 192.168.0.0 - 192.168.0.1 - 192.168.0.2
+        // GW and IP1 overlaps, but in that case it's a 31bit IP.
+        // and so on.
+
+        for (int i = 0, j = 1; i <= 254; i++, j++) {
+            ip1 = "192.168.0." + i;
+            ip2 = "192.168.0." + j;
+
+            final boolean doesOverlap = NetUtils.ipRangesOverlap(ip1, ip2, gw, gw);
+            assertFalse("It should overlap, but it's a 31-bit ip", doesOverlap);
+        }
+    }
+
+    @Test
+    public void test31BitPrefixIpRangesOverlapdFail() {
+        String gw;
+        String ip1;
+        String ip2;
+
+        // 192.168.0.10 - 192.168.0.10 - 192.168.0.12
+        // GW and IP1 overlaps and in that case it's not a 31bit IP.
+
+        for (int i = 10, j = 12; i <= 254; i++, j++) {
+            gw = "192.168.0." + i;
+            ip1 = "192.168.0." + i;
+            ip2 = "192.168.0." + j;
+
+            final boolean doesOverlap = NetUtils.ipRangesOverlap(ip1, ip2, gw, gw);
+            assertTrue("It overlaps!", doesOverlap);
+        }
+    }
 }
