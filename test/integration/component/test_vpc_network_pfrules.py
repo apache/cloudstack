@@ -339,6 +339,13 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                 time.sleep(5)
                 ssh_response = str(sshClient.execute("service httpd status")).lower()
                 self.debug("httpd service status is: %s" % ssh_response)
+                if "httpd: unrecognized service" in ssh_response or "inactive" in ssh_response:
+                    ssh_res = sshClient.execute("yum install httpd -y")
+                    if "Complete!" not in ssh_res:
+                        raise Exception("Failed to install http server")
+                    sshClient.execute("service httpd start")
+                    time.sleep(5)
+                    ssh_response = str(sshClient.execute("service httpd status")).lower()
                 if not "running" in ssh_response:
                     raise Exception("Failed to start httpd service")
 
