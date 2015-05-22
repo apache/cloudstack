@@ -31,6 +31,7 @@ import com.cloud.agent.api.CreateVMSnapshotAnswer;
 import com.cloud.agent.api.CreateVMSnapshotCommand;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Pool;
@@ -42,6 +43,7 @@ import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VM;
 
+@ResourceWrapper(handles =  CreateVMSnapshotCommand.class)
 public final class CitrixCreateVMSnapshotCommandWrapper extends CommandWrapper<CreateVMSnapshotCommand, Answer, CitrixResourceBase> {
 
     private static final Logger s_logger = Logger.getLogger(CitrixCreateVMSnapshotCommandWrapper.class);

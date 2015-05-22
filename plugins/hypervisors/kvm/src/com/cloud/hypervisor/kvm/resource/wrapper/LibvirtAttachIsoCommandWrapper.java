@@ -29,7 +29,9 @@ import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 
+@ResourceWrapper(handles =  AttachIsoCommand.class)
 public final class LibvirtAttachIsoCommandWrapper extends CommandWrapper<AttachIsoCommand, Answer, LibvirtComputingResource> {
 
     @Override

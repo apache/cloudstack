@@ -31,6 +31,7 @@ import com.cloud.agent.api.ScaleVmCommand;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
@@ -38,6 +39,7 @@ import com.xensource.xenapi.Types.VmPowerState;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VM;
 
+@ResourceWrapper(handles =  ScaleVmCommand.class)
 public final class CitrixScaleVmCommandWrapper extends CommandWrapper<ScaleVmCommand, Answer, CitrixResourceBase> {
 
     private static final Logger s_logger = Logger.getLogger(CitrixScaleVmCommandWrapper.class);

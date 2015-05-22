@@ -28,9 +28,11 @@ import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.VM;
 
+@ResourceWrapper(handles =  GetVncPortCommand.class)
 public final class CitrixGetVncPortCommandWrapper extends CommandWrapper<GetVncPortCommand, Answer, CitrixResourceBase> {
 
     private static final Logger s_logger = Logger.getLogger(CitrixGetVncPortCommandWrapper.class);

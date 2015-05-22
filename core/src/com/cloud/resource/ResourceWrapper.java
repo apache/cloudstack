@@ -17,20 +17,19 @@
 // under the License.
 //
 
-package com.cloud.hypervisor.kvm.resource.wrapper;
+package com.cloud.resource;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.CleanupNetworkRulesCmd;
-import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
-import com.cloud.resource.CommandWrapper;
-import com.cloud.resource.ResourceWrapper;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-@ResourceWrapper(handles =  CleanupNetworkRulesCmd.class)
-public final class LibvirtCleanupNetworkRulesCommandWrapper extends CommandWrapper<CleanupNetworkRulesCmd, Answer, LibvirtComputingResource> {
+import com.cloud.agent.api.Command;
 
-    @Override
-    public Answer execute(final CleanupNetworkRulesCmd command, final LibvirtComputingResource libvirtComputingResource) {
-        final boolean result = libvirtComputingResource.cleanupRules();
-        return new Answer(command, result, "");
-    }
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface ResourceWrapper {
+
+    Class<? extends Command> handles();
+
 }

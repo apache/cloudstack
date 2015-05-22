@@ -31,6 +31,7 @@ import com.cloud.agent.api.DeleteVMSnapshotAnswer;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Types;
@@ -38,6 +39,7 @@ import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VM;
 
+@ResourceWrapper(handles =  DeleteVMSnapshotCommand.class)
 public final class CitrixDeleteVMSnapshotCommandWrapper extends CommandWrapper<DeleteVMSnapshotCommand, Answer, CitrixResourceBase> {
 
     private static final Logger s_logger = Logger.getLogger(CitrixDeleteVMSnapshotCommandWrapper.class);

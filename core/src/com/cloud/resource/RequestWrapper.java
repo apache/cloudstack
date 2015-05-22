@@ -19,12 +19,18 @@
 
 package com.cloud.resource;
 
+import java.text.MessageFormat;
 import java.util.Hashtable;
+import java.util.Set;
+
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 
 public abstract class RequestWrapper {
+
+    private static final Logger s_logger = Logger.getLogger(RequestWrapper.class);
 
     @SuppressWarnings("rawtypes")
     protected Hashtable<Class<? extends ServerResource>, Hashtable<Class<? extends Command>, CommandWrapper>> resources = new Hashtable<Class<? extends ServerResource>, Hashtable<Class<? extends Command>, CommandWrapper>>();
@@ -69,6 +75,8 @@ public abstract class RequestWrapper {
                 commandWrapper = resourceCommands.get(commandClass2);
 
                 keepCommandClass = commandClass2;
+            } catch (final ClassCastException e) {
+                throw new NullPointerException("No key found for '" + keepCommandClass.getClass() + "' in the Map!");
             } catch (final NullPointerException e) {
                 // Will now traverse all the resource hierarchy. Returning null
                 // is not a problem.
@@ -102,10 +110,36 @@ public abstract class RequestWrapper {
                 keepResourceClass = resourceClass2;
 
                 commandWrapper = retrieveCommands(command.getClass(), resourceCommands2);
+            } catch (final ClassCastException e) {
+                throw new NullPointerException("No key found for '" + command.getClass() + "' in the Map!");
             } catch (final NullPointerException e) {
                 throw e;
             }
         }
         return commandWrapper;
+    }
+
+    @SuppressWarnings("rawtypes")
+    protected Hashtable<Class<? extends Command>, CommandWrapper> processAnnotations(final Set<Class<? extends CommandWrapper>> wrappers) {
+        final String errorMessage = "Error when adding Xen command to map ==> '{0}'. CommandWrapper class is ==> '{1}'";
+
+        final Hashtable<Class<? extends Command>, CommandWrapper> commands = new Hashtable<Class<? extends Command>, CommandWrapper>();
+
+        for (final Class<? extends CommandWrapper> wrapper : wrappers) {
+            final ResourceWrapper annotation = wrapper.getAnnotation(ResourceWrapper.class);
+            if (annotation == null) {
+                // Just in case people add classes without the annotation in the package and we don't see it.
+                continue;
+            }
+            try {
+                commands.put(annotation.handles(), wrapper.newInstance());
+            } catch (final InstantiationException e) {
+                s_logger.warn(MessageFormat.format(errorMessage, e.getLocalizedMessage(), wrapper.toString()));
+            } catch (final IllegalAccessException e) {
+                s_logger.warn(MessageFormat.format(errorMessage, e.getLocalizedMessage(), wrapper.toString()));
+            }
+        }
+
+        return commands;
     }
 }

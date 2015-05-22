@@ -29,8 +29,10 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.template.TemplateProp;
 
+@ResourceWrapper(handles =  ModifyStoragePoolCommand.class)
 public final class LibvirtModifyStoragePoolCommandWrapper extends CommandWrapper<ModifyStoragePoolCommand, Answer, LibvirtComputingResource> {
 
     @Override

@@ -30,7 +30,9 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 
+@ResourceWrapper(handles =  AttachVolumeCommand.class)
 public final class LibvirtAttachVolumeCommandWrapper extends CommandWrapper<AttachVolumeCommand, Answer, LibvirtComputingResource> {
 
     @Override

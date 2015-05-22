@@ -17,19 +17,20 @@
 // under the License.
 //
 
-package com.cloud.hypervisor.xenserver.resource.wrapper;
+package com.cloud.hypervisor.xenserver.resource.wrapper.xen56;
 
 import org.apache.log4j.Logger;
-
-import com.xensource.xenapi.Connection;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.hypervisor.xenserver.resource.XenServer56Resource;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.ExecutionResult;
+import com.xensource.xenapi.Connection;
 
+@ResourceWrapper(handles =  NetworkUsageCommand.class)
 public final class XenServer56NetworkUsageCommandWrapper extends CommandWrapper<NetworkUsageCommand, Answer, XenServer56Resource> {
 
     private static final Logger s_logger = Logger.getLogger(XenServer56NetworkUsageCommandWrapper.class);

@@ -42,9 +42,11 @@ import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.script.Script;
 
+@ResourceWrapper(handles =  ManageSnapshotCommand.class)
 public final class LibvirtManageSnapshotCommandWrapper extends CommandWrapper<ManageSnapshotCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtManageSnapshotCommandWrapper.class);
@@ -68,8 +70,8 @@ public final class LibvirtManageSnapshotCommandWrapper extends CommandWrapper<Ma
                 }
             }
 
-            KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
-            StorageFilerTO pool = command.getPool();
+            final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
+            final StorageFilerTO pool = command.getPool();
             final KVMStoragePool primaryPool = storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid());
 
             final KVMPhysicalDisk disk = primaryPool.getPhysicalDisk(command.getVolumePath());
