@@ -408,6 +408,23 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>com.googlecode.todomap</groupId>  
+        <artifactId>maven-jettygzip-plugin</artifactId>  
+        <version>0.0.4</version>  
+        <configuration>  
+          <webappDirectory>${project.build.directory}/generated-webapp</webappDirectory>  
+          <outputDirectory>${project.build.directory}/generated-webapp</outputDirectory>  
+        </configuration>  
+        <executions>  
+          <execution>  
+            <phase>prepare-package</phase>  
+            <goals>  
+              <goal>process</goal>  
+            </goals>  
+          </execution>  
+        </executions>  
+      </plugin>  
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-war-plugin</artifactId>
         <version>2.5</version>
