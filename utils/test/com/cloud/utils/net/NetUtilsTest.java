@@ -46,11 +46,11 @@ public class NetUtilsTest {
 
     @Test
     public void testGetRandomIpFromCidrWithSize24() throws Exception {
-        String cidr = "192.168.124.1";
-        int size = 24;
-        int netCharacters = 12;
+        final String cidr = "192.168.124.1";
+        final int size = 24;
+        final int netCharacters = 12;
 
-        long ip = NetUtils.getRandomIpFromCidr(cidr, size, new TreeSet<Long>());
+        final long ip = NetUtils.getRandomIpFromCidr(cidr, size, new TreeSet<Long>());
 
         assertThat("The ip " + NetUtils.long2Ip(ip) + " retrieved must be within the cidr " + cidr + "/" + size, cidr.substring(0, netCharacters), equalTo(NetUtils.long2Ip(ip)
                 .substring(0, netCharacters)));
@@ -58,11 +58,11 @@ public class NetUtilsTest {
 
     @Test
     public void testGetRandomIpFromCidrWithSize16() throws Exception {
-        String cidr = "192.168.124.1";
-        int size = 16;
-        int netCharacters = 8;
+        final String cidr = "192.168.124.1";
+        final int size = 16;
+        final int netCharacters = 8;
 
-        long ip = NetUtils.getRandomIpFromCidr(cidr, 16, new TreeSet<Long>());
+        final long ip = NetUtils.getRandomIpFromCidr(cidr, 16, new TreeSet<Long>());
 
         assertThat("The ip " + NetUtils.long2Ip(ip) + " retrieved must be within the cidr " + cidr + "/" + size, cidr.substring(0, netCharacters), equalTo(NetUtils.long2Ip(ip)
                 .substring(0, netCharacters)));
@@ -70,11 +70,11 @@ public class NetUtilsTest {
 
     @Test
     public void testGetRandomIpFromCidrWithSize8() throws Exception {
-        String cidr = "192.168.124.1";
-        int size = 8;
-        int netCharacters = 4;
+        final String cidr = "192.168.124.1";
+        final int size = 8;
+        final int netCharacters = 4;
 
-        long ip = NetUtils.getRandomIpFromCidr(cidr, 16, new TreeSet<Long>());
+        final long ip = NetUtils.getRandomIpFromCidr(cidr, 16, new TreeSet<Long>());
 
         assertThat("The ip " + NetUtils.long2Ip(ip) + " retrieved must be within the cidr " + cidr + "/" + size, cidr.substring(0, netCharacters), equalTo(NetUtils.long2Ip(ip)
                 .substring(0, netCharacters)));
@@ -82,10 +82,10 @@ public class NetUtilsTest {
 
     @Test
     public void testGetRandomIpFromCidrUsignAvoid() throws Exception {
-        String cidr = "192.168.124.1";
-        int size = 30;
+        final String cidr = "192.168.124.1";
+        final int size = 30;
 
-        SortedSet<Long> avoid = new TreeSet<Long>();
+        final SortedSet<Long> avoid = new TreeSet<Long>();
         long ip = NetUtils.getRandomIpFromCidr(cidr, size, avoid);
         assertThat("We should be able to retrieve an ip on the first call.", ip, not(equalTo(-1L)));
         avoid.add(ip);
@@ -121,17 +121,17 @@ public class NetUtilsTest {
     public void testGetIp6FromRange() {
         assertEquals(NetUtils.getIp6FromRange("1234:5678::1-1234:5678::1"), "1234:5678::1");
         for (int i = 0; i < 5; i++) {
-            String ip = NetUtils.getIp6FromRange("1234:5678::1-1234:5678::2");
+            final String ip = NetUtils.getIp6FromRange("1234:5678::1-1234:5678::2");
             assertThat(ip, anyOf(equalTo("1234:5678::1"), equalTo("1234:5678::2")));
             s_logger.info("IP is " + ip);
         }
         String ipString = null;
-        IPv6Address ipStart = IPv6Address.fromString("1234:5678::1");
-        IPv6Address ipEnd = IPv6Address.fromString("1234:5678::ffff:ffff:ffff:ffff");
+        final IPv6Address ipStart = IPv6Address.fromString("1234:5678::1");
+        final IPv6Address ipEnd = IPv6Address.fromString("1234:5678::ffff:ffff:ffff:ffff");
         for (int i = 0; i < 10; i++) {
             ipString = NetUtils.getIp6FromRange(ipStart.toString() + "-" + ipEnd.toString());
             s_logger.info("IP is " + ipString);
-            IPv6Address ip = IPv6Address.fromString(ipString);
+            final IPv6Address ip = IPv6Address.fromString(ipString);
             assertThat(ip, greaterThanOrEqualTo(ipStart));
             assertThat(ip, lessThanOrEqualTo(ipEnd));
         }
@@ -236,9 +236,9 @@ public class NetUtilsTest {
     @Test
     public void testIsValidCIDR() throws Exception {
         //Test to check IP Range of 2 CIDR
-        String cidrFirst = "10.0.144.0/20";
-        String cidrSecond = "10.0.151.0/20";
-        String cidrThird = "10.0.144.0/21";
+        final String cidrFirst = "10.0.144.0/20";
+        final String cidrSecond = "10.0.151.0/20";
+        final String cidrThird = "10.0.144.0/21";
 
         assertTrue(NetUtils.isValidCIDR(cidrFirst));
         assertTrue(NetUtils.isValidCIDR(cidrSecond));
@@ -247,9 +247,9 @@ public class NetUtilsTest {
 
     @Test
     public void testIsValidCidrList() throws Exception {
-        String cidrFirst = "10.0.144.0/20,1.2.3.4/32,5.6.7.8/24";
-        String cidrSecond = "10.0.151.0/20,129.0.0.0/4";
-        String cidrThird = "10.0.144.0/21";
+        final String cidrFirst = "10.0.144.0/20,1.2.3.4/32,5.6.7.8/24";
+        final String cidrSecond = "10.0.151.0/20,129.0.0.0/4";
+        final String cidrThird = "10.0.144.0/21";
 
         assertTrue(NetUtils.isValidCidrList(cidrFirst));
         assertTrue(NetUtils.isValidCidrList(cidrSecond));
@@ -258,9 +258,9 @@ public class NetUtilsTest {
 
     @Test
     public void testIsSameIpRange() {
-        String cidrFirst = "10.0.144.0/20";
-        String cidrSecond = "10.0.151.0/20";
-        String cidrThird = "10.0.144.0/21";
+        final String cidrFirst = "10.0.144.0/20";
+        final String cidrSecond = "10.0.151.0/20";
+        final String cidrThird = "10.0.144.0/21";
 
         //Check for exactly same CIDRs
         assertTrue(NetUtils.isSameIpRange(cidrFirst, cidrFirst));
@@ -299,7 +299,7 @@ public class NetUtilsTest {
 
     @Test
     public void testValidateGuestCidr() throws Exception {
-        String guestCidr = "192.168.1.0/24";
+        final String guestCidr = "192.168.1.0/24";
 
         assertTrue(NetUtils.validateGuestCidr(guestCidr));
     }
@@ -342,4 +342,73 @@ public class NetUtilsTest {
         assertEquals("8.8.8.8", NetUtils.long2Ip(0x08080808l));
     }
 
+    @Test
+    public void test31BitPrefixStart() {
+        final String ipAddress = "192.168.0.0";
+        final String cidr = "192.168.0.0/31";
+
+        final boolean isInRange = NetUtils.isIpWithtInCidrRange(ipAddress, cidr);
+
+        assertTrue("Check if the subnetUtils.setInclusiveHostCount(true) has been called.", isInRange);
+    }
+
+    @Test
+    public void test31BitPrefixEnd() {
+        final String ipAddress = "192.168.0.1";
+        final String cidr = "192.168.0.0/31";
+
+        final boolean isInRange = NetUtils.isIpWithtInCidrRange(ipAddress, cidr);
+
+        assertTrue("Check if the subnetUtils.setInclusiveHostCount(true) has been called.", isInRange);
+    }
+
+    @Test
+    public void test31BitPrefixFail() {
+        final String ipAddress = "192.168.0.2";
+        final String cidr = "192.168.0.0/31";
+
+        final boolean isInRange = NetUtils.isIpWithtInCidrRange(ipAddress, cidr);
+
+        assertFalse("Out of the range. Why did it return true?", isInRange);
+    }
+
+    @Test
+    public void test31BitPrefixIpRangesOverlapd() {
+        final String gw = "192.168.0.0";
+        String ip1;
+        String ip2;
+
+        // 192.168.0.0 - 192.168.0.0 - 192.168.0.1
+        // GW and IP1 overlaps, but in that case it's a 31bit IP.
+        // 192.168.0.0 - 192.168.0.1 - 192.168.0.2
+        // GW and IP1 overlaps, but in that case it's a 31bit IP.
+        // and so on.
+
+        for (int i = 0, j = 1; i <= 254; i++, j++) {
+            ip1 = "192.168.0." + i;
+            ip2 = "192.168.0." + j;
+
+            final boolean doesOverlap = NetUtils.ipRangesOverlap(ip1, ip2, gw, gw);
+            assertFalse("It should overlap, but it's a 31-bit ip", doesOverlap);
+        }
+    }
+
+    @Test
+    public void test31BitPrefixIpRangesOverlapdFail() {
+        String gw;
+        String ip1;
+        String ip2;
+
+        // 192.168.0.10 - 192.168.0.10 - 192.168.0.12
+        // GW and IP1 overlaps and in that case it's not a 31bit IP.
+
+        for (int i = 10, j = 12; i <= 254; i++, j++) {
+            gw = "192.168.0." + i;
+            ip1 = "192.168.0." + i;
+            ip2 = "192.168.0." + j;
+
+            final boolean doesOverlap = NetUtils.ipRangesOverlap(ip1, ip2, gw, gw);
+            assertTrue("It overlaps!", doesOverlap);
+        }
+    }
 }
