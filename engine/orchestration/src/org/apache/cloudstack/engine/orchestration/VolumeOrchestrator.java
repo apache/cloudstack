@@ -587,9 +587,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     @Override
     public boolean validateVolumeSizeRange(long size) {
         if (size < 0 || (size > 0 && size < (1024 * 1024 * 1024))) {
-            throw new InvalidParameterValueException("Please specify a size of at least 1 Gb.");
+            throw new InvalidParameterValueException("Please specify a size of at least 1 GB.");
         } else if (size > (MaxVolumeSize.value() * 1024 * 1024 * 1024)) {
-            throw new InvalidParameterValueException("volume size " + size + ", but the maximum size allowed is " + MaxVolumeSize + " Gb.");
+            throw new InvalidParameterValueException("volume size " + size + ", but the maximum size allowed is " + MaxVolumeSize + " GB.");
         }
 
         return true;
@@ -662,10 +662,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         if (rootDisksize != null ) {
             rootDisksize = rootDisksize * 1024 * 1024 * 1024;
             if (rootDisksize > size) {
-                s_logger.debug("Using root disk size of " + rootDisksize + " for volume " + name);
+                s_logger.debug("Using root disk size of " + rootDisksize + " Bytes for volume " + name);
                 size = rootDisksize;
             } else {
-                s_logger.debug("Using root disk size of " + size + " for volume " + name + "since specified root disk size of " + rootDisksize + " is smaller than template");
+                s_logger.debug("Using root disk size of " + size + " Bytes for volume " + name + "since specified root disk size of " + rootDisksize + " Bytes is smaller than template");
             }
         }
 
