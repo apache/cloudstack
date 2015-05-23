@@ -194,18 +194,18 @@ if [ "%{_ossnoss}" == "NOREDIST" -o "%{_ossnoss}" == "noredist" ] ; then
    echo "Executing mvn packaging with non-redistributable libraries"
    if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then 
       echo "Executing mvn noredist packaging with simulator ..."
-      mvn -Psystemvm -Dnoredist -Dsimulator clean package
+      mvn -Psystemvm -DskipTests -Dnoredist -Dsimulator clean package
    else
       echo "Executing mvn noredist packaging without simulator..."
-      mvn -Psystemvm -DSkipTests -Dnoredist clean package
+      mvn -Psystemvm -DskipTests -Dnoredist clean package
    fi
 else
    if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then 
       echo "Executing mvn default packaging simulator ..."
-      mvn -Psystemvm -Dsimulator clean package
+      mvn -Psystemvm -DskipTests -Dsimulator clean package
    else
       echo "Executing mvn default packaging without simulator ..."
-      mvn -Psystemvm -DSkipTests clean package
+      mvn -Psystemvm -DskipTests clean package
    fi
 fi 
 
@@ -257,7 +257,7 @@ cp -r tomcat/target/cloudstack-tomcat-standalone/lib ${RPM_BUILD_ROOT}%{_datadir
 ln -sf /var/log/%{name}/management ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/logs
 ln -sf /var/cache/%{name}/management/temp ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/temp
 ln -sf /var/cache/%{name}/management/work ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/work
-cp -r tomcat/target/cloudstack-tomcat-standalone/conf/* ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/
+cp -r client/target/conf/* ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/
 /bin/touch ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management/catalina.out
 
 install -D client/target/utilities/bin/cloud-migrate-databases ${RPM_BUILD_ROOT}%{_bindir}/%{name}-migrate-databases
@@ -269,7 +269,6 @@ install -D client/target/utilities/bin/cloud-setup-management ${RPM_BUILD_ROOT}%
 install -D client/target/utilities/bin/cloud-setup-baremetal ${RPM_BUILD_ROOT}%{_bindir}/%{name}-setup-baremetal
 install -D client/target/utilities/bin/cloud-sysvmadm ${RPM_BUILD_ROOT}%{_bindir}/%{name}-sysvmadm
 install -D client/target/utilities/bin/cloud-update-xenserver-licenses ${RPM_BUILD_ROOT}%{_bindir}/%{name}-update-xenserver-licenses
-%{_cloudstackmanagementconf}
 
 cp -r client/target/utilities/scripts/db/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
 cp -r client/target/cloud-client-ui-%{_maventag}/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client
@@ -278,10 +277,7 @@ cp -r client/target/cloud-client-ui-%{_maventag}/* ${RPM_BUILD_ROOT}%{_datadir}/
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/scripts
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/vms
 
-#ln -s %{_sysconfdir}/%{name}/management/log4j-cloud.xml \
-#    ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/log4j-cloud.xml
-
-mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/context.xml \
+mv ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/context.xml \
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost/client
 
 install python/bindir/cloud-external-ipallocator.py ${RPM_BUILD_ROOT}%{_bindir}/%{name}-external-ipallocator.py
@@ -528,17 +524,17 @@ fi
 %config(noreplace) %{_sysconfdir}/sudoers.d/%{name}-management
 %config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/management/db.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j-cloud.xml
-%config(noreplace) %{_sysconfdir}/%{name}/management/server.xml
+%config(noreplace) %{_sysconfdir}/%{name}/management/server-ssl.xml
+%config(noreplace) %{_sysconfdir}/%{name}/management/server-nonssl.xml
+%config(noreplace) %{_sysconfdir}/%{name}/management/commands.properties
+%config(noreplace) %{_sysconfdir}/%{name}/management/ehcache.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat.conf
+%config(noreplace) %{_sysconfdir}/%{name}/management/classpath.conf
 %config(noreplace) %{_sysconfdir}/%{name}/management/Catalina/localhost/client/context.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/catalina.policy
 %config(noreplace) %{_sysconfdir}/%{name}/management/catalina.properties
-%config(noreplace) %{_sysconfdir}/%{name}/management/context.xml
-#%config(noreplace) %{_sysconfdir}/%{name}/management/classpath.conf
 %config(noreplace) %{_sysconfdir}/%{name}/management/cloudmanagementserver.keystore
 %config(noreplace) %{_sysconfdir}/%{name}/management/logging.properties
-%config(noreplace) %{_sysconfdir}/%{name}/management/server-nonssl.xml
-%config(noreplace) %{_sysconfdir}/%{name}/management/server-ssl.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat-users.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/web.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/environment.properties
@@ -572,7 +568,6 @@ fi
 %{_defaultdocdir}/%{name}-management-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-management-%{version}/NOTICE
 %attr(0644,cloud,cloud) %{_localstatedir}/log/%{name}/management/catalina.out
-%{_cloudstackmanagementconfattr}
 
 %files agent
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent

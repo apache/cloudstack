@@ -17,12 +17,6 @@
             <fileMode>755</fileMode>
         </fileSet>
 
-        <fileSet>
-            <directory>conf</directory>
-            <outputDirectory>/conf</outputDirectory>
-        </fileSet>
-
-
         <!--Create $ASSEMBLY_ROOT/temp directory-->
         <fileSet>
             <directory>${project.build.outputDirectory}</directory>
