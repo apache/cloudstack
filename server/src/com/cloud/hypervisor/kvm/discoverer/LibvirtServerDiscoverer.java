@@ -139,15 +139,15 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             InetAddress ia = InetAddress.getByName(hostname);
             agentIp = ia.getHostAddress();
             String guid = UUID.nameUUIDFromBytes(agentIp.getBytes()).toString();
-            String guidWithTail = guid + "-LibvirtComputingResource";/*
-                                                                      * tail
-                                                                      * added by
-                                                                      * agent
-                                                                      * .java
-                                                                      */
-            if (_resourceMgr.findHostByGuid(guidWithTail) != null) {
-                s_logger.debug("Skipping " + agentIp + " because " + guidWithTail + " is already in the database.");
-                return null;
+
+            List<HostVO> existingHosts = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.Routing, dcId);
+            if (existingHosts != null) {
+                for (HostVO existingHost : existingHosts) {
+                    if (existingHost.getGuid().toLowerCase().startsWith(guid.toLowerCase())) {
+                        s_logger.debug("Skipping " + agentIp + " because " + guid + " is already in the database for resource " + existingHost.getGuid());
+                        return null;
+                    }
+                }
             }
 
             sshConnection = new com.trilead.ssh2.Connection(agentIp, 22);
@@ -225,11 +225,11 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             kvmResource.configure("kvm agent", params);
             resources.put(kvmResource, details);
 
-            HostVO connectedHost = waitForHostConnect(dcId, podId, clusterId, guidWithTail);
+            HostVO connectedHost = waitForHostConnect(dcId, podId, clusterId, guid);
             if (connectedHost == null)
                 return null;
 
-            details.put("guid", guidWithTail);
+            details.put("guid", connectedHost.getGuid());
 
             // place a place holder guid derived from cluster ID
             if (cluster.getGuid() == null) {
@@ -261,7 +261,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
         for (int i = 0; i < _waitTime * 2; i++) {
             List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, clusterId, podId, dcId);
             for (HostVO host : hosts) {
-                if (host.getGuid().equalsIgnoreCase(guid)) {
+                if (host.getGuid().toLowerCase().startsWith(guid.toLowerCase())) {
                     return host;
                 }
             }

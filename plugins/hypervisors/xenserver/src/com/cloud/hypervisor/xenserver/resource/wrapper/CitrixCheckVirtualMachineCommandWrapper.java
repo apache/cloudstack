@@ -26,9 +26,11 @@ import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.xensource.xenapi.Connection;
 
+@ResourceWrapper(handles =  CheckVirtualMachineCommand.class)
 public final class CitrixCheckVirtualMachineCommandWrapper extends CommandWrapper<CheckVirtualMachineCommand, Answer, CitrixResourceBase> {
 
     private static final Logger s_logger = Logger.getLogger(CitrixCheckVirtualMachineCommandWrapper.class);

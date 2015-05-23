@@ -45,19 +45,19 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "list networks by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "list networks by ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the Zone ID of the network")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the zone ID of the network")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "the type of the network. Supported values are: Isolated and Shared")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "the type of the network. Supported values are: isolated and shared")
     private String guestIpType;
 
     @Parameter(name = ApiConstants.IS_SYSTEM, type = CommandType.BOOLEAN, description = "true if network is system, false otherwise")
     private Boolean isSystem;
 
-    @Parameter(name = ApiConstants.ACL_TYPE, type = CommandType.STRING, description = "list networks by ACL (access control list) type. Supported values are Account and Domain")
+    @Parameter(name = ApiConstants.ACL_TYPE, type = CommandType.STRING, description = "list networks by ACL (access control list) type. Supported values are account and domain")
     private String aclType;
 
     @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "type of the traffic")
@@ -72,16 +72,16 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.RESTART_REQUIRED, type = CommandType.BOOLEAN, description = "list networks by restartRequired")
     private Boolean restartRequired;
 
-    @Parameter(name = ApiConstants.SPECIFY_IP_RANGES, type = CommandType.BOOLEAN, description = "true if need to list only networks which support specifying ip ranges")
+    @Parameter(name = ApiConstants.SPECIFY_IP_RANGES, type = CommandType.BOOLEAN, description = "true if need to list only networks which support specifying IP ranges")
     private Boolean specifyIpRanges;
 
     @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "List networks by VPC")
     private Long vpcId;
 
-    @Parameter(name = ApiConstants.CAN_USE_FOR_DEPLOY, type = CommandType.BOOLEAN, description = "list networks available for vm deployment")
+    @Parameter(name = ApiConstants.CAN_USE_FOR_DEPLOY, type = CommandType.BOOLEAN, description = "list networks available for VM deployment")
     private Boolean canUseForDeploy;
 
-    @Parameter(name = ApiConstants.FOR_VPC, type = CommandType.BOOLEAN, description = "the network belongs to vpc")
+    @Parameter(name = ApiConstants.FOR_VPC, type = CommandType.BOOLEAN, description = "the network belongs to VPC")
     private Boolean forVpc;
 
     @Parameter(name = ApiConstants.DISPLAY_NETWORK, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})

@@ -55,7 +55,7 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCustomIdCmd {
                type = CommandType.UUID,
                entityType = FirewallRuleResponse.class,
                required = true,
-               description = "the id of the load balancer rule to update")
+               description = "the ID of the load balancer rule to update")
     private Long id;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the load balancer rule")
@@ -118,7 +118,7 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Load balancer Id: " + getId());
+        CallContext.current().setEventDetails("Load balancer ID: " + getId());
         LoadBalancer result = _lbService.updateLoadBalancerRule(this);
         if (result != null) {
             LoadBalancerResponse response = _responseGenerator.createLoadBalancerResponse(result);
@@ -138,7 +138,7 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCustomIdCmd {
     public Long getSyncObjId() {
         LoadBalancer lb = _lbService.findById(getId());
         if (lb == null) {
-            throw new InvalidParameterValueException("Unable to find load balancer rule " + getId());
+            throw new InvalidParameterValueException("Unable to find load balancer rule by ID " + getId());
         }
         return lb.getNetworkId();
     }

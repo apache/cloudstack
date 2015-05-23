@@ -936,7 +936,7 @@ test_data = {
                      "datadiskdevice_1": '/dev/xvdb',
                     "datadiskdevice_2": '/dev/xvdc',   # Data Disk
                     },
-        "KVM":       {"rootdiskdevice": "/dev/vda",
+        "kvm":       {"rootdiskdevice": "/dev/vda",
                     "datadiskdevice_1": "/dev/vdb",
                     "datadiskdevice_2": "/dev/vdc"
                     },
@@ -959,6 +959,7 @@ test_data = {
     "recurring_snapshot": {
         "maxsnaps": 2,
         "timezone": "US/Arizona",
+        "schedule": 1
     },
     "volume_offerings": {
         0: {"diskname": "TestDiskServ"},
@@ -1708,6 +1709,7 @@ test_data = {
                     "mode": 'HTTP_DOWNLOAD'
         },
      "setHostConfigurationForIngressRule": False,
+     "restartManagementServerThroughTestCase": False,
      "vmxnet3template": {
             "displaytext": "VMXNET3 Template",
             "name": "VMXNET3 template",

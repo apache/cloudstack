@@ -36,7 +36,7 @@ import com.cloud.network.IpAddress;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "enableStaticNat", description = "Enables static nat for given ip address", responseObject = SuccessResponse.class,
+@APICommand(name = "enableStaticNat", description = "Enables static NAT for given IP address", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class EnableStaticNatCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateIpForwardingRuleCmd.class.getName());
@@ -48,23 +48,23 @@ public class EnableStaticNatCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.IP_ADDRESS_ID, type = CommandType.UUID, entityType = IPAddressResponse.class, required = true, description = "the public IP "
-        + "address id for which static nat feature is being enabled")
+        + "address ID for which static NAT feature is being enabled")
     private Long ipAddressId;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "the ID of "
-        + "the virtual machine for enabling static nat feature")
+        + "the virtual machine for enabling static NAT feature")
     private Long virtualMachineId;
 
     @Parameter(name = ApiConstants.NETWORK_ID,
                type = CommandType.UUID,
                entityType = NetworkResponse.class,
-               description = "The network of the vm the static nat will be enabled for."
-                   + " Required when public Ip address is not associated with any Guest network yet (VPC case)")
+               description = "The network of the VM the static NAT will be enabled for."
+                   + " Required when public IP address is not associated with any guest network yet (VPC case)")
     private Long networkId;
     @Parameter(name = ApiConstants.VM_GUEST_IP,
                type = CommandType.STRING,
                required = false,
-               description = "VM guest nic Secondary ip address for the port forwarding rule")
+               description = "VM guest NIC secondary IP address for the port forwarding rule")
     private String vmSecondaryIp;
 
     /////////////////////////////////////////////////////
@@ -102,8 +102,8 @@ public class EnableStaticNatCmd extends BaseCmd {
         }
 
         if (ntwkId == null) {
-            throw new InvalidParameterValueException("Unable to enable static nat for the ipAddress id=" + ipAddressId +
-                " as ip is not associated with any network and no networkId is passed in");
+            throw new InvalidParameterValueException("Unable to enable static NAT for the ipAddress id=" + ipAddressId +
+                " as IP is not associated with any network and no networkId is passed in");
         }
         return ntwkId;
     }
@@ -135,7 +135,7 @@ public class EnableStaticNatCmd extends BaseCmd {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to enable static nat");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to enable static NAT");
             }
         } catch (NetworkRuleConflictException ex) {
             s_logger.info("Network rule conflict: " + ex.getMessage());

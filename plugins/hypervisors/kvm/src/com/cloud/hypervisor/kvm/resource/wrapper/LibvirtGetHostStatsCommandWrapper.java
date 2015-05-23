@@ -19,6 +19,7 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import org.apache.cloudstack.utils.linux.MemStat;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -27,10 +28,12 @@ import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.HostStatsEntry;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.Pair;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
+@ResourceWrapper(handles =  GetHostStatsCommand.class)
 public final class LibvirtGetHostStatsCommandWrapper extends CommandWrapper<GetHostStatsCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtGetHostStatsCommandWrapper.class);
@@ -53,28 +56,10 @@ public final class LibvirtGetHostStatsCommandWrapper extends CommandWrapper<GetH
         }
         final double cpuUtil = 100.0D - Double.parseDouble(parser.getLine());
 
-        long freeMem = 0;
-        final Script memScript = new Script(bashScriptPath, s_logger);
-        memScript.add("-c");
-        memScript.add("freeMem=$(free|grep cache:|awk '{print $4}');echo $freeMem");
-        final OutputInterpreter.OneLineParser Memparser = new OutputInterpreter.OneLineParser();
-        result = memScript.execute(Memparser);
-        if (result != null) {
-            s_logger.debug("Unable to get the host Mem state: " + result);
-            return new Answer(command, false, result);
-        }
-        freeMem = Long.parseLong(Memparser.getLine());
-
-        final Script totalMem = new Script(bashScriptPath, s_logger);
-        totalMem.add("-c");
-        totalMem.add("free|grep Mem:|awk '{print $2}'");
-        final OutputInterpreter.OneLineParser totMemparser = new OutputInterpreter.OneLineParser();
-        result = totalMem.execute(totMemparser);
-        if (result != null) {
-            s_logger.debug("Unable to get the host Mem state: " + result);
-            return new Answer(command, false, result);
-        }
-        final long totMem = Long.parseLong(totMemparser.getLine());
+        MemStat memStat = new MemStat();
+        memStat.refresh();
+        double totMem = memStat.getTotal();
+        double freeMem = memStat.getAvailable();
 
         final Pair<Double, Double> nicStats = libvirtComputingResource.getNicStats(libvirtComputingResource.getPublicBridgeName());
 

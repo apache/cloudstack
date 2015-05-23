@@ -46,7 +46,6 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
@@ -717,7 +716,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     if (record.isControlDomain || record.isASnapshot || record.isATemplate) {
                         continue; // Skip DOM0
                     }
-                    String platform = StringUtils.mapToString(record.platform);
+                    final String platform = StringUtils.mapToString(record.platform);
                     if (platform.isEmpty()) {
                         continue; //Skip if platform is null
                     }
@@ -1642,13 +1641,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     @Override
     public Answer executeRequest(final Command cmd) {
-
-        // We need this one because the StorageSubSystemCommand is from another
-        // hierarchy.
-        if (cmd instanceof StorageSubSystemCommand) {
-            return storageHandler.handleStorageCommands((StorageSubSystemCommand) cmd);
-        }
-
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         try {
             return wrapper.execute(cmd, this);
@@ -2010,6 +2002,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     public int getMigrateWait() {
         return _migratewait;
+    }
+
+    public StorageSubsystemCommandHandler getStorageHandler() {
+        return storageHandler;
     }
 
     protected boolean getHostInfo(final Connection conn) throws IllegalArgumentException {

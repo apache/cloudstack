@@ -77,7 +77,7 @@ do
         file=$line
         log_it "VR config: creating file: $file"
         rm -f $file
-        while read line
+        while read -r line
         do
             if [ "$line" == "</file>" ]
             then

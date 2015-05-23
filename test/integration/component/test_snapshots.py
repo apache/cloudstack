@@ -169,7 +169,7 @@ class TestSnapshots(cloudstackTestCase):
         cls.services['mode'] = cls.zone.networktype
         cls._cleanup = []
         cls.unsupportedHypervisor = False
-        cls.hypervisor = get_hypervisor_type(cls.api_client)
+        cls.hypervisor = str(get_hypervisor_type(cls.api_client)).lower()
         if cls.hypervisor.lower() in ['hyperv', 'lxc']:
             cls.unsupportedHypervisor = True
             return

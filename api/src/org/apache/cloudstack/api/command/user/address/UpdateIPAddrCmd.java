@@ -38,7 +38,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateIpAddress", description = "Updates an ip address", responseObject = IPAddressResponse.class,
+@APICommand(name = "updateIpAddress", description = "Updates an IP address", responseObject = IPAddressResponse.class,
  requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, entityType = { IpAddress.class })
 public class UpdateIPAddrCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateIPAddrCmd.class.getName());
@@ -48,14 +48,14 @@ public class UpdateIPAddrCmd extends BaseAsyncCustomIdCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = IPAddressResponse.class, required = true, description = "the id of the public ip address"
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = IPAddressResponse.class, required = true, description = "the ID of the public IP address"
             + " to update")
     private Long id;
     // unexposed parameter needed for events logging
     @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, expose = false)
     private Long ownerId;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the ip to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the IP to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     /////////////////////////////////////////////////////
@@ -85,7 +85,7 @@ public class UpdateIPAddrCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Updating ip address with id=" + id);
+        return ("Updating IP address with ID=" + id);
     }
 
 
@@ -94,7 +94,7 @@ public class UpdateIPAddrCmd extends BaseAsyncCustomIdCmd {
         if (ownerId == null) {
             IpAddress ip = getIpAddress(id);
             if (ip == null) {
-                throw new InvalidParameterValueException("Unable to find ip address by id=" + id);
+                throw new InvalidParameterValueException("Unable to find IP address by ID=" + id);
             }
             ownerId = ip.getAccountId();
         }
@@ -109,7 +109,7 @@ public class UpdateIPAddrCmd extends BaseAsyncCustomIdCmd {
         IpAddress ip = _entityMgr.findById(IpAddress.class, id);
 
         if (ip == null) {
-            throw new InvalidParameterValueException("Unable to find ip address by id=" + id);
+            throw new InvalidParameterValueException("Unable to find IP address by ID=" + id);
         } else {
             return ip;
         }

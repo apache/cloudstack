@@ -30,10 +30,12 @@ import com.cloud.agent.api.MaintainCommand;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.hypervisor.xenserver.resource.XsHost;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Types.XenAPIException;
 
+@ResourceWrapper(handles =  MaintainCommand.class)
 public final class CitrixMaintainCommandWrapper extends CommandWrapper<MaintainCommand, Answer, CitrixResourceBase> {
 
     private static final Logger s_logger = Logger.getLogger(CitrixMaintainCommandWrapper.class);

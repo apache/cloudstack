@@ -32,7 +32,9 @@ import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 
+@ResourceWrapper(handles =  GetVmStatsCommand.class)
 public final class LibvirtGetVmStatsCommandWrapper extends CommandWrapper<GetVmStatsCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtGetVmStatsCommandWrapper.class);

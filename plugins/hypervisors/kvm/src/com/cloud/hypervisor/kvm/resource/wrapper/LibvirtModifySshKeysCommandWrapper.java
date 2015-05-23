@@ -30,8 +30,10 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.script.Script;
 
+@ResourceWrapper(handles =  ModifySshKeysCommand.class)
 public final class LibvirtModifySshKeysCommandWrapper extends CommandWrapper<ModifySshKeysCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtModifySshKeysCommandWrapper.class);

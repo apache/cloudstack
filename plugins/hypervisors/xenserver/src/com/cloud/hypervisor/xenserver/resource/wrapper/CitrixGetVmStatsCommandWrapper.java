@@ -33,10 +33,12 @@ import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VM;
 
+@ResourceWrapper(handles =  GetVmStatsCommand.class)
 public final class CitrixGetVmStatsCommandWrapper extends CommandWrapper<GetVmStatsCommand, Answer, CitrixResourceBase> {
 
     private static final Logger s_logger = Logger.getLogger(CitrixGetVmStatsCommandWrapper.class);

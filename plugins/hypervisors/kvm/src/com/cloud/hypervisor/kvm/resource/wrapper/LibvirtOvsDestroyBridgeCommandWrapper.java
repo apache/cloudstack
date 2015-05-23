@@ -25,7 +25,9 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.OvsDestroyBridgeCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 
+@ResourceWrapper(handles =  OvsDestroyBridgeCommand.class)
 public final class LibvirtOvsDestroyBridgeCommandWrapper extends CommandWrapper<OvsDestroyBridgeCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtOvsDestroyBridgeCommandWrapper.class);
