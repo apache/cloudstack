@@ -468,7 +468,7 @@
           <webAppSourceDirectory>${project.build.directory}/generated-webapp</webAppSourceDirectory>
           <webAppConfig>
             <contextPath>/client</contextPath>
-            <extraClasspath>${project.build.directory}/utilities/scripts/db/;${project.build.directory}/utilities/scripts/db/db/</extraClasspath>
+            <extraClasspath>${project.build.directory}/conf/;${project.build.directory}/utilities/scripts/db/;${project.build.directory}/utilities/scripts/db/db/</extraClasspath>
           </webAppConfig>
           
           <systemProperties>
