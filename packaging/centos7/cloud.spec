@@ -223,10 +223,8 @@ mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/run
 
 # Specific for tomcat
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost/client
-#ln -sf /usr/share/tomcat/bin ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/bin
 cp -r tomcat/target/cloudstack-tomcat-standalone/bin ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/
 ln -sf /etc/%{name}/management ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/conf
-#ln -sf /usr/share/tomcat/lib ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib
 cp -r tomcat/target/cloudstack-tomcat-standalone/lib ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/
 ln -sf /var/log/%{name}/management ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/logs
 ln -sf /var/cache/%{name}/management/temp ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/temp
@@ -358,6 +356,7 @@ if [ ! -f %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util
     echo Please download vhd-util from http://download.cloud.com.s3.amazonaws.com/tools/vhd-util and put it in 
     echo %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/
 fi
+chown cloud. %{_localstatedir}/run/%{name}-management.pid
 
 %preun agent
 /sbin/service cloudstack-agent stop || true

@@ -16,8 +16,6 @@
 # under the License.
 
 # Systemd unit file for CloudStack Management server
-# 
-# clone tomcat service, see /usr/lib/systemd/system/tomcat.service
 
 [Unit]
 Description=CloudStack Management Server
