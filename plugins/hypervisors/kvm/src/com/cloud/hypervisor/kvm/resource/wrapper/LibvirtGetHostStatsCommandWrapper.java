@@ -19,9 +19,6 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import org.apache.cloudstack.utils.linux.MemStat;
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
@@ -30,8 +27,9 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.Pair;
-import com.cloud.utils.script.OutputInterpreter;
-import com.cloud.utils.script.Script;
+import org.apache.cloudstack.utils.linux.CPUStat;
+import org.apache.cloudstack.utils.linux.MemStat;
+import org.apache.log4j.Logger;
 
 @ResourceWrapper(handles =  GetHostStatsCommand.class)
 public final class LibvirtGetHostStatsCommandWrapper extends CommandWrapper<GetHostStatsCommand, Answer, LibvirtComputingResource> {
@@ -40,23 +38,10 @@ public final class LibvirtGetHostStatsCommandWrapper extends CommandWrapper<GetH
 
     @Override
     public Answer execute(final GetHostStatsCommand command, final LibvirtComputingResource libvirtComputingResource) {
-        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
-        final String bashScriptPath = libvirtUtilitiesHelper.retrieveBashScriptPath();
+        CPUStat cpuStat = libvirtComputingResource.getCPUStat();
+        MemStat memStat = libvirtComputingResource.getMemStat();
 
-
-        final Script cpuScript = new Script(bashScriptPath, s_logger);
-        cpuScript.add("-c");
-        cpuScript.add("idle=$(top -b -n 1| awk -F, '/^[%]*[Cc]pu/{$0=$4; gsub(/[^0-9.,]+/,\"\"); print }'); echo $idle");
-
-        final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
-        String result = cpuScript.execute(parser);
-        if (result != null) {
-            s_logger.debug("Unable to get the host CPU state: " + result);
-            return new Answer(command, false, result);
-        }
-        final double cpuUtil = 100.0D - Double.parseDouble(parser.getLine());
-
-        MemStat memStat = new MemStat();
+        final double cpuUtil = cpuStat.getCpuUsedPercent();
         memStat.refresh();
         double totMem = memStat.getTotal();
         double freeMem = memStat.getAvailable();
