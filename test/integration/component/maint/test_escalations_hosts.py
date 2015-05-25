@@ -77,13 +77,12 @@ def update_pod(apiclient, state, pod_id):
     return pod_status.allocationstate
 
 
-def update_zone(apiclient, state, zone_id):
+def update_zone(apiclient, state, zone):
     """
     Function to Enable/Disable zone
     """
-    zone_status = Zone.update(
+    zone_status = zone.update(
         apiclient,
-        id=zone_id,
         allocationstate=state
     )
     return zone_status.allocationstate
@@ -119,12 +118,12 @@ class TestHosts(cloudstackTestCase):
         cls._cleanup = []
 
         # get zone, domain etc
-        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
+        cls.zone = Zone(get_zone(cls.apiclient, cls.testClient.getZoneForTests()).__dict__)
         cls.domain = get_domain(cls.apiclient)
         cls.pod = get_pod(cls.apiclient, cls.zone.id)
 
         # list hosts
-        hosts = list_hosts(cls.apiclient)
+        hosts = list_hosts(cls.apiclient, type="Routing")
         if len(hosts) > 0:
             cls.my_host_id = hosts[0].id
             cls.host_db_id = cls.dbclient.execute(
@@ -299,7 +298,7 @@ class TestHosts(cloudstackTestCase):
         zone_allocationstate = update_zone(
             self.apiclient,
             zone_state,
-            self.zone.id)
+            self.zone)
         self.assertEqual(
             zone_allocationstate,
             zone_state,
@@ -311,7 +310,7 @@ class TestHosts(cloudstackTestCase):
         zone_allocationstate = update_zone(
             self.apiclient,
             zone_state,
-            self.zone.id)
+            self.zone)
         self.assertEqual(
             zone_allocationstate,
             zone_state,
