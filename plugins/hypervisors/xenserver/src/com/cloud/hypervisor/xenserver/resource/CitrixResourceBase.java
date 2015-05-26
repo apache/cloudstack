@@ -98,7 +98,7 @@ import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.xenserver.resource.wrapper.citrix.CitrixRequestWrapper;
+import com.cloud.hypervisor.xenserver.resource.wrapper.xenbase.CitrixRequestWrapper;
 import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
