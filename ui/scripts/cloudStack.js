@@ -324,13 +324,17 @@
                         g_kvmsnapshotenabled = null;
                         g_regionsecondaryenabled = null;
                         g_loginCmdText = null;
+                        g_userfullname = null;
+                        g_userid = null;
                         
-                        $.cookie('sessionkey', null);
-                        $.cookie('username', null);
-                        $.cookie('account', null);
-                        $.cookie('domainid', null);
-                        $.cookie('role', null);  
-                        $.cookie('timezone', null);
+                        $.cookie(window.location.hostname+'_sessionkey', null);
+                        $.cookie(window.location.hostname+'_username', null);
+                        $.cookie(window.location.hostname+'_account', null);
+                        $.cookie(window.location.hostname+'_domainid', null);
+                        $.cookie(window.location.hostname+'_role', null);  
+                        $.cookie(window.location.hostname+'_timezone', null);
+                        $.cookie(window.location.hostname+'_userfullname', null);
+                        $.cookie(window.location.hostname+'_userid', null);
                         
                         if (onLogoutCallback()) { //onLogoutCallback() will set g_loginResponse(single-sign-on variable) to null, then bypassLoginCheck() will show login screen.
                             document.location.reload(); //when onLogoutCallback() returns true, reload the current document.
@@ -348,12 +352,12 @@
             },
 
             samlLoginAction: function(args) {
-                $.cookie('sessionkey', null);
-                $.cookie('username', null);
-                $.cookie('account', null);
-                $.cookie('domainid', null);
-                $.cookie('role', null);
-                $.cookie('timezone', null);
+                $.cookie(window.location.hostname+'_sessionkey', null);
+                $.cookie(window.location.hostname+'_username', null);
+                $.cookie(window.location.hostname+'_account', null);
+                $.cookie(window.location.hostname+'_domainid', null);
+                $.cookie(window.location.hostname+'_role', null);
+                $.cookie(window.location.hostname+'_timezone', null);
                 window.location.href = createURL('samlSso');
             },
 
