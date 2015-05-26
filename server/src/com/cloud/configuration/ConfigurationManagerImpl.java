@@ -37,6 +37,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -85,7 +87,6 @@ import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
@@ -3178,9 +3179,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                 + otherVlanGateway + " ,and netmask " + otherVlanNetmask
                                 + ", Please specify the gateway/netmask if you want to extend ip range" );
                     }
-                    if (NetUtils.ipRangesOverlap(startIP, endIP, otherVlanStartIP, otherVlanEndIP)) {
-                        throw new InvalidParameterValueException("The IP range already has IPs that overlap with the new range." +
+                    if (!NetUtils.is31PrefixCidr(newCidr)) {
+                        if (NetUtils.ipRangesOverlap(startIP, endIP, otherVlanStartIP, otherVlanEndIP)) {
+                            throw new InvalidParameterValueException("The IP range already has IPs that overlap with the new range." +
                                 " Please specify a different start IP/end IP.");
+                        }
                     }
                 }
             }
