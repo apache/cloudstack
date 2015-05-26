@@ -3675,7 +3675,7 @@ class TestSharedNetworks(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced", "dvs"], required_hardware="true")
+    @attr(tags=["dvs"], required_hardware="true")
     def test_guest_traffic_port_groups_shared_network(self):
         """ Verify vcenter port groups are created for shared network
 

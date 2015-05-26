@@ -2064,7 +2064,7 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "dvs"], required_hardware="true")
+    @attr(tags=["dvs"], required_hardware="true")
     def test_guest_traffic_port_groups_vpc_network(self):
         """ Verify port groups are created for guest traffic
         used by vpc network """
