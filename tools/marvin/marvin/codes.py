@@ -133,3 +133,16 @@ STORAGE_TRAFFIC = "storage"
 Switch Type
 '''
 VMWAREDVS = "vmwaredvs"
+
+'''
+Storage Pools State
+'''
+
+UP = "up"
+
+'''
+Storage Pools Scope
+'''
+
+CLUSTER = "cluster"
+
