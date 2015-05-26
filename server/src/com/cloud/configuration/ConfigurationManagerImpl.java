@@ -3024,15 +3024,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
 
                     // extend IP range
-	                if (!vlanGateway.equals(otherVlanGateway) || !vlanNetmask.equals(vlan.getVlanNetmask())) {
-	                        throw new InvalidParameterValueException("The IP range has already been added with gateway "
-	                                + otherVlanGateway + " ,and netmask " + otherVlanNetmask
-	                                + ", Please specify the gateway/netmask if you want to extend ip range" );
-	                }
-	                if (!NetUtils.is31PrefixCidr(newCidr)) {
-	                    if (NetUtils.ipRangesOverlap(startIP, endIP, otherVlanStartIP, otherVlanEndIP)) {
-	                        throw new InvalidParameterValueException("The IP range already has IPs that overlap with the new range." +
-	                                " Please specify a different start IP/end IP.");
+                    if (!vlanGateway.equals(otherVlanGateway) || !vlanNetmask.equals(vlan.getVlanNetmask())) {
+                        throw new InvalidParameterValueException("The IP range has already been added with gateway "
+                                    + otherVlanGateway + " ,and netmask " + otherVlanNetmask
+                                    + ", Please specify the gateway/netmask if you want to extend ip range" );
+                    }
+                    if (!NetUtils.is31PrefixCidr(newCidr)) {
+                        if (NetUtils.ipRangesOverlap(startIP, endIP, otherVlanStartIP, otherVlanEndIP)) {
+                            throw new InvalidParameterValueException("The IP range already has IPs that overlap with the new range." +
+                                    " Please specify a different start IP/end IP.");
                         }
                     }
                 }
