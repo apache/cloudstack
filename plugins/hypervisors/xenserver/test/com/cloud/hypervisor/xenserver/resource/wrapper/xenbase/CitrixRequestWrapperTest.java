@@ -29,10 +29,14 @@ import static org.mockito.Mockito.when;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.agent.api.GetVmIpAddressCommand;
+import com.xensource.xenapi.VM;
+import com.xensource.xenapi.VMGuestMetrics;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -1830,6 +1834,37 @@ public class CitrixRequestWrapperTest {
         final Answer answer = wrapper.execute(command, citrixResourceBase);
         assertTrue(answer.getResult());
     }
+
+    @Test
+    public void testGetVmIpAddressCommand() throws XenAPIException, XmlRpcException {
+
+        final Connection conn = Mockito.mock(Connection.class);
+        final VM vm = Mockito.mock(VM.class);
+        final VMGuestMetrics mtr = Mockito.mock(VMGuestMetrics.class);
+        VMGuestMetrics.Record rec = Mockito.mock(VMGuestMetrics.Record.class);
+
+        Map<String, String> vmIpsMap = new HashMap<>();
+        vmIpsMap.put("Test", "10.1.1.121");
+        rec.networks = vmIpsMap;
+
+        final GetVmIpAddressCommand getVmIpAddrCmd = new GetVmIpAddressCommand("Test", "10.1.1.0/24", false);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+
+        when(citrixResourceBase.getConnection()).thenReturn(conn);
+        when(citrixResourceBase.getVM(conn, getVmIpAddrCmd.getVmName())).thenReturn(vm);
+        when(vm.getGuestMetrics(conn)).thenReturn(mtr);
+        when(mtr.getRecord(conn)).thenReturn(rec);
+
+        final Answer answer = wrapper.execute(getVmIpAddrCmd, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertTrue(answer.getResult());
+    }
+
 }
 
 class NotAValidCommand extends Command {
