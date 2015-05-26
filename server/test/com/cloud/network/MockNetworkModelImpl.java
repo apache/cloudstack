@@ -893,4 +893,9 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
         return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    @Override
+    public List<String[]> generateVmData(String userData, String serviceOffering, String zoneName, String vmName, long vmId, String publicKey, String password, Boolean isWindows) {
+        return null;
+    }
+
 }
