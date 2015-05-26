@@ -378,13 +378,7 @@ public class NetUtilsTest {
         String ip1;
         String ip2;
 
-        // 192.168.0.0 - 192.168.0.0 - 192.168.0.1
-        // GW and IP1 overlaps, but in that case it's a 31bit IP.
-        // 192.168.0.0 - 192.168.0.1 - 192.168.0.2
-        // GW and IP1 overlaps, but in that case it's a 31bit IP.
-        // and so on.
-
-        for (int i = 0, j = 1; i <= 254; i++, j++) {
+        for (int i = 1, j = 2; i <= 254; i++, j++) {
             ip1 = "192.168.0." + i;
             ip2 = "192.168.0." + j;
 
@@ -399,9 +393,6 @@ public class NetUtilsTest {
         String ip1;
         String ip2;
 
-        // 192.168.0.10 - 192.168.0.10 - 192.168.0.12
-        // GW and IP1 overlaps and in that case it's not a 31bit IP.
-
         for (int i = 10, j = 12; i <= 254; i++, j++) {
             gw = "192.168.0." + i;
             ip1 = "192.168.0." + i;
@@ -410,5 +401,21 @@ public class NetUtilsTest {
             final boolean doesOverlap = NetUtils.ipRangesOverlap(ip1, ip2, gw, gw);
             assertTrue("It overlaps!", doesOverlap);
         }
+    }
+
+    @Test
+    public void testIs31PrefixCidrFail() {
+        final String cidr = "10.10.0.0/32";
+        final boolean is31PrefixCidr = NetUtils.is31PrefixCidr(cidr);
+
+        assertFalse("It should fail! 32 bit prefix.", is31PrefixCidr);
+    }
+
+    @Test
+    public void testIs31PrefixCidr() {
+        final String cidr = "10.10.0.0/31";
+        final boolean is31PrefixCidr = NetUtils.is31PrefixCidr(cidr);
+
+        assertTrue("It should pass! 31 bit prefix.", is31PrefixCidr);
     }
 }
