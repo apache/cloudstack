@@ -54,7 +54,7 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
     List<String[]> vmData = null;
 
     String configDriveLabel = null;
-    String configDriveIsoBaseLocation = "/tmp/"; //TODO: Make this location configurable.
+    String configDriveIsoBaseLocation = "/tmp/";
     String configDriveIsoRootFolder = null;
     String configDriveIsoFile = null;
 
@@ -273,6 +273,7 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
         this.vmData = vmData;
     }
 
+    @Override
     public String getConfigDriveLabel() {
         return configDriveLabel;
     }

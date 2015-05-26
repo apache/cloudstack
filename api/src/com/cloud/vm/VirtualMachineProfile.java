@@ -38,6 +38,8 @@ public interface VirtualMachineProfile {
 
     void setVmData(List<String[]> vmData);
 
+    String getConfigDriveLabel();
+
     void setConfigDriveLabel(String configDriveLabel);
 
     String getConfigDriveIsoRootFolder();
