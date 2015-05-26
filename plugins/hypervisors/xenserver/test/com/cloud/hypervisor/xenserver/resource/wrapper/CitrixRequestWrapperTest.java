@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.hypervisor.xenserver.resource.wrapper;
+package com.cloud.hypervisor.xenserver.resource.wrapper.citrix;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -33,6 +33,8 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.storage.command.AttachAnswer;
+import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.xmlrpc.XmlRpcException;
@@ -109,6 +111,7 @@ import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
@@ -123,6 +126,7 @@ import com.cloud.network.PhysicalNetworkSetupInfo;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.resource.StorageSubsystemCommandHandler;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.xensource.xenapi.Connection;
@@ -133,6 +137,7 @@ import com.xensource.xenapi.PIF;
 import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.XenAPIException;
+
 
 @RunWith(MockitoJUnitRunner.class)
 public class CitrixRequestWrapperTest {
@@ -1806,6 +1811,24 @@ public class CitrixRequestWrapperTest {
 
         // Requires more testing, but the VirtualResourceRouting is quite big.
         assertNull(answer);
+    }
+
+    @Test
+    public void testStorageSubSystemCommand() {
+        final DiskTO disk = Mockito.mock(DiskTO.class);
+        final String vmName = "Test";
+        final AttachCommand command = new AttachCommand(disk, vmName);
+
+        final StorageSubsystemCommandHandler handler = Mockito.mock(StorageSubsystemCommandHandler.class);
+        when(citrixResourceBase.getStorageHandler()).thenReturn(handler);
+
+        when(handler.handleStorageCommands(command)).thenReturn(new AttachAnswer(disk));
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, citrixResourceBase);
+        assertTrue(answer.getResult());
     }
 }
 

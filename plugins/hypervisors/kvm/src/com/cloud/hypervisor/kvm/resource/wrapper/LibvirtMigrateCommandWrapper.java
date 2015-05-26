@@ -43,7 +43,9 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.MigrateKVMAsync;
 import com.cloud.hypervisor.kvm.resource.VifDriver;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 
+@ResourceWrapper(handles =  MigrateCommand.class)
 public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtMigrateCommandWrapper.class);

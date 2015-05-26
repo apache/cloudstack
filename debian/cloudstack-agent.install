@@ -18,6 +18,7 @@
 /etc/cloudstack/agent/agent.properties
 /etc/cloudstack/agent/environment.properties
 /etc/cloudstack/agent/log4j-cloud.xml
+/etc/profile.d/cloudstack-agent-profile.sh
 /etc/init.d/cloudstack-agent
 /usr/bin/cloudstack-setup-agent
 /usr/bin/cloudstack-ssh

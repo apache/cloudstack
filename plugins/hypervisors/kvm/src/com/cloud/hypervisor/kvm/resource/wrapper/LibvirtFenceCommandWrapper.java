@@ -35,7 +35,9 @@ import com.cloud.hypervisor.kvm.resource.KVMHAChecker;
 import com.cloud.hypervisor.kvm.resource.KVMHAMonitor;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 
+@ResourceWrapper(handles =  FenceCommand.class)
 public final class LibvirtFenceCommandWrapper extends CommandWrapper<FenceCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtFenceCommandWrapper.class);

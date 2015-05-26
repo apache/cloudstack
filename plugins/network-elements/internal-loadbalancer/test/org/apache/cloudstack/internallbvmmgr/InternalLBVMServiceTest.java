@@ -17,6 +17,8 @@
 package org.apache.cloudstack.internallbvmmgr;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.inject.Inject;
 
@@ -44,6 +46,7 @@ import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
@@ -90,7 +93,12 @@ public class InternalLBVMServiceTest extends TestCase {
         ServiceOfferingVO off = new ServiceOfferingVO("alena", 1, 1,
                 1, 1, 1, false, "alena", Storage.ProvisioningType.THIN, false, false, null, false, VirtualMachine.Type.InternalLoadBalancerVm, false);
         off = setId(off, 1);
-        Mockito.when(_svcOffDao.persistSystemServiceOffering(Matchers.any(ServiceOfferingVO.class))).thenReturn(off);
+        List<ServiceOfferingVO> list = new ArrayList<ServiceOfferingVO>();
+        list.add(off);
+        list.add(off);
+        Mockito.when(_svcOffDao.createSystemServiceOfferings(Matchers.anyString(), Matchers.anyString(), Matchers.anyInt(), Matchers.anyInt(), Matchers.anyInt(),
+                Matchers.anyInt(), Matchers.anyInt(), Matchers.anyBoolean(), Matchers.anyString(), Matchers.any(ProvisioningType.class), Matchers.anyBoolean(),
+                Matchers.anyString(), Matchers.anyBoolean(), Matchers.any(VirtualMachine.Type.class), Matchers.anyBoolean())).thenReturn(list);
 
         ComponentContext.initComponentsLifeCycle();
 

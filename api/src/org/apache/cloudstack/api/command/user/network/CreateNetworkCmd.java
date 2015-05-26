@@ -66,24 +66,24 @@ public class CreateNetworkCmd extends BaseCmd {
                type = CommandType.UUID,
                entityType = NetworkOfferingResponse.class,
                required = true,
-               description = "the network offering id")
+               description = "the network offering ID")
     private Long networkOfferingId;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the Zone ID for the network")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the zone ID for the network")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID,
                type = CommandType.UUID,
                entityType = PhysicalNetworkResponse.class,
-               description = "the Physical Network ID the network belongs to")
+               description = "the physical network ID the network belongs to")
     private Long physicalNetworkId;
 
     @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, description = "the gateway of the network. Required "
-        + "for Shared networks and Isolated networks when it belongs to VPC")
+        + "for shared networks and isolated networks when it belongs to VPC")
     private String gateway;
 
     @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, description = "the netmask of the network. Required "
-        + "for Shared networks and Isolated networks when it belongs to VPC")
+        + "for shared networks and isolated networks when it belongs to VPC")
     private String netmask;
 
     @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, description = "the beginning IP address in the network IP range")
@@ -93,21 +93,21 @@ public class CreateNetworkCmd extends BaseCmd {
         + " range. If not specified, will be defaulted to startIP")
     private String endIp;
 
-    @Parameter(name = ApiConstants.ISOLATED_PVLAN, type = CommandType.STRING, description = "the isolated private vlan for this network")
+    @Parameter(name = ApiConstants.ISOLATED_PVLAN, type = CommandType.STRING, description = "the isolated private VLAN for this network")
     private String isolatedPvlan;
 
     @Parameter(name = ApiConstants.NETWORK_DOMAIN, type = CommandType.STRING, description = "network domain")
     private String networkDomain;
 
     @Parameter(name = ApiConstants.ACL_TYPE, type = CommandType.STRING, description = "Access control type; supported values"
-        + " are account and domain. In 3.0 all shared networks should have aclType=Domain, and all Isolated networks"
-        + " - Account. Account means that only the account owner can use the network, domain - all accouns in the domain can use the network")
+        + " are account and domain. In 3.0 all shared networks should have aclType=Domain, and all isolated networks"
+        + " - Account. Account means that only the account owner can use the network, domain - all accounts in the domain can use the network")
     private String aclType;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "account who will own the network")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "account that will own the network")
     private String accountName;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the ssh key")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the SSH key")
     private Long projectId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "domain ID of the account owning a network")
@@ -139,7 +139,7 @@ public class CreateNetworkCmd extends BaseCmd {
  description = "an optional field, whether to the display the network to the end user or not.", authorized = {RoleType.Admin})
     private Boolean displayNetwork;
 
-    @Parameter(name = ApiConstants.ACL_ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, description = "Network ACL Id associated for the network")
+    @Parameter(name = ApiConstants.ACL_ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, description = "Network ACL ID associated for the network")
     private Long aclId;
 
     /////////////////////////////////////////////////////
@@ -221,7 +221,7 @@ public class CreateNetworkCmd extends BaseCmd {
         Long physicalNetworkId = getPhysicalNetworkId();
 
         if (physicalNetworkId == null && zoneId == null) {
-            throw new InvalidParameterValueException("Zone id is required");
+            throw new InvalidParameterValueException("Zone ID is required");
         }
 
         return zoneId;
@@ -230,14 +230,14 @@ public class CreateNetworkCmd extends BaseCmd {
     public Long getPhysicalNetworkId() {
         NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, networkOfferingId);
         if (offering == null) {
-            throw new InvalidParameterValueException("Unable to find network offering by id " + networkOfferingId);
+            throw new InvalidParameterValueException("Unable to find network offering by ID " + networkOfferingId);
         }
 
         if (physicalNetworkId != null) {
             if (offering.getGuestType() == GuestType.Shared) {
                 return physicalNetworkId;
             } else {
-                throw new InvalidParameterValueException("Physical network id can be specified for networks of guest ip type " + GuestType.Shared + " only.");
+                throw new InvalidParameterValueException("Physical network OD can be specified for networks of guest IP type " + GuestType.Shared + " only.");
             }
         } else {
             if (zoneId == null) {

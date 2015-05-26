@@ -27,7 +27,9 @@ import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 
+@ResourceWrapper(handles =  GetVncPortCommand.class)
 public final class LibvirtGetVncPortCommandWrapper extends CommandWrapper<GetVncPortCommand, Answer, LibvirtComputingResource> {
 
     @Override

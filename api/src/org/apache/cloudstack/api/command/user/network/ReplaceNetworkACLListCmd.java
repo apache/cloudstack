@@ -34,7 +34,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@APICommand(name = "replaceNetworkACLList", description = "Replaces ACL associated with a Network or private gateway", responseObject = SuccessResponse.class,
+@APICommand(name = "replaceNetworkACLList", description = "Replaces ACL associated with a network or private gateway", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ReplaceNetworkACLListCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ReplaceNetworkACLListCmd.class.getName());
@@ -84,7 +84,7 @@ public class ReplaceNetworkACLListCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Associating Network ACL id=" + aclId + " with Network id=" + networkId);
+        return ("Associating network ACL ID=" + aclId + " with network ID=" + networkId);
     }
 
     @Override
@@ -96,14 +96,14 @@ public class ReplaceNetworkACLListCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException {
         if (getNetworkId() == null && getPrivateGatewayId() == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Network id and private gateway can't be null at  the same time");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Network ID and private gateway can't be null at the same time");
         }
 
         if (getNetworkId() != null && getPrivateGatewayId() != null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Network id and private gateway can't be passed  at  the same time");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Network ID and private gateway can't be passed at the same time");
         }
 
-        CallContext.current().setEventDetails("Network ACL Id: " + aclId);
+        CallContext.current().setEventDetails("Network ACL ID: " + aclId);
         boolean result = false;
         if (getPrivateGatewayId() != null) {
             result = _networkACLService.replaceNetworkACLonPrivateGw(aclId, privateGatewayId);

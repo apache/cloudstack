@@ -353,7 +353,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                                 services=cls.services["lbrule"],
                                 traffictype='Ingress'
                                 )
-
+        cls.services["icmp_rule"]["protocol"] = "all"
         cls.nwacl_internet_1 = NetworkACL.create(
                                         cls.api_client,
                                         networkid=cls.network_1.id,
@@ -843,6 +843,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                                 ipaddress=self.public_ip_1.ipaddress.ipaddress,
                                 reconnect=True)
             self.debug("SSH into VM is successfully")
+            ssh.execute("yum install wget -y")
         except Exception as e:
             self.fail("Failed to SSH into instance")
 
@@ -1146,7 +1147,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                                 services=cls.services["lbrule"],
                                 traffictype='Ingress'
                                 )
-
+        cls.services["icmp_rule"]["protocol"] = "all"
         cls.nwacl_internet_1 = NetworkACL.create(
                                         cls.api_client,
                                         networkid=cls.network_1.id,
@@ -1596,6 +1597,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                                 ipaddress=self.public_ip_1.ipaddress.ipaddress,
                                 reconnect=True)
             self.debug("SSH into VM is successfully")
+            ssh.execute("yum install wget -y")
         except Exception as e:
             self.fail("Failed to SSH into instance")
 
@@ -2885,7 +2887,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
                                 services=cls.services["lbrule"],
                                 traffictype='Ingress'
                                 )
-
+            cls.services["icmp_rule"]["protocol"] = "all"
             cls.nwacl_internet = NetworkACL.create(
                                         cls.api_client,
                                         networkid=cls.network_1.id,
@@ -3456,6 +3458,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
                                 "get_ssh_client should return ssh handle")
 
             self.debug("SSH into VM is successfully")
+            ssh.execute("yum install wget -y")
         except Exception as e:
             self.fail("Failed to SSH into instance: %s" % e)
 

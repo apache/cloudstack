@@ -81,7 +81,7 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Deleting port forwarding rule for id=" + id);
+        return ("Deleting port forwarding rule for ID=" + id);
     }
 
     @Override
@@ -89,7 +89,7 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
         if (ownerId == null) {
             PortForwardingRule rule = _entityMgr.findById(PortForwardingRule.class, id);
             if (rule == null) {
-                throw new InvalidParameterValueException("Unable to find port forwarding rule by id=" + id);
+                throw new InvalidParameterValueException("Unable to find port forwarding rule by ID=" + id);
             } else {
                 ownerId = _entityMgr.findById(PortForwardingRule.class, id).getAccountId();
             }
@@ -100,7 +100,7 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Rule Id: " + id);
+        CallContext.current().setEventDetails("Rule ID: " + id);
         //revoke corresponding firewall rule first
         boolean result = _firewallService.revokeRelatedFirewallRule(id, true);
         result = result && _rulesService.revokePortForwardingRule(id, true);

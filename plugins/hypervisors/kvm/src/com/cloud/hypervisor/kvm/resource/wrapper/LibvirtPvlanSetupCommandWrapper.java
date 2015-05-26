@@ -30,8 +30,10 @@ import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.script.Script;
 
+@ResourceWrapper(handles =  PvlanSetupCommand.class)
 public final class LibvirtPvlanSetupCommandWrapper extends CommandWrapper<PvlanSetupCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtPvlanSetupCommandWrapper.class);

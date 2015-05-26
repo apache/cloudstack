@@ -982,7 +982,7 @@ public class LibvirtVMDef {
                 netBuilder.append("<script path='" + _scriptPath + "'/>\n");
             }
             if (_pxeDisable) {
-                netBuilder.append("<rom bar='off' file='dummy'/>");
+                netBuilder.append("<rom bar='off' file=''/>");
             }
             if (_virtualPortType != null) {
                 netBuilder.append("<virtualport type='" + _virtualPortType + "'>\n");

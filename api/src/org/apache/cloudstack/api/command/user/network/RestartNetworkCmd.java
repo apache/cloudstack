@@ -39,7 +39,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 
 @APICommand(name = "restartNetwork",
-            description = "Restarts the network; includes 1) restarting network elements - virtual routers, dhcp servers 2) reapplying all public ips 3) reapplying loadBalancing/portForwarding rules",
+            description = "Restarts the network; includes 1) restarting network elements - virtual routers, DHCP servers 2) reapplying all public IPs 3) reapplying loadBalancing/portForwarding rules",
         responseObject = IPAddressResponse.class, entityType = {Network.class},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
@@ -51,7 +51,7 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkResponse.class, required = true, description = "The id of the network to restart.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkResponse.class, required = true, description = "The ID of the network to restart.")
     private Long id;
 
     @Parameter(name = ApiConstants.CLEANUP, type = CommandType.BOOLEAN, required = false, description = "If cleanup old network elements")
@@ -64,7 +64,7 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
     public Long getNetworkId() {
         Network network = _networkService.getNetwork(id);
         if (network == null) {
-            throw new InvalidParameterValueException("Unable to find network by id " + id);
+            throw new InvalidParameterValueException("Unable to find network by ID " + id);
         } else {
             return network.getId();
         }
@@ -125,7 +125,7 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
     public long getEntityOwnerId() {
         Network network = _networkService.getNetwork(id);
         if (network == null) {
-            throw new InvalidParameterValueException("Networkd id=" + id + " doesn't exist");
+            throw new InvalidParameterValueException("Networkd ID=" + id + " doesn't exist");
         } else {
             return _networkService.getNetwork(id).getAccountId();
         }

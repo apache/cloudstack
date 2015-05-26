@@ -85,13 +85,13 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.NETWORK_ID,
                type = CommandType.UUID,
                entityType = NetworkResponse.class,
-               description = "The network this ip address should be associated to.")
+               description = "The network this IP address should be associated to.")
     private Long networkId;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Deploy vm for the project")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Deploy VM for the project")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "the VPC you want the ip address to "
+    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "the VPC you want the IP address to "
         + "be associated with")
     private Long vpcId;
 
@@ -103,10 +103,10 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
                type = CommandType.INTEGER,
                entityType = RegionResponse.class,
                required = false,
-               description = "region ID from where portable ip is to be associated.")
+               description = "region ID from where portable IP is to be associated.")
     private Integer regionId;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the ip to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the IP to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     /////////////////////////////////////////////////////
@@ -142,7 +142,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
             }
         }
 
-        throw new InvalidParameterValueException("Unable to figure out zone to assign ip to."
+        throw new InvalidParameterValueException("Unable to figure out zone to assign IP to."
                 + " Please specify either zoneId, or networkId, or vpcId in the call");
     }
 
@@ -182,16 +182,16 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
             }
 
             if (networks.size() < 1) {
-                throw new InvalidParameterValueException("Account doesn't have any Isolated networks in the zone");
+                throw new InvalidParameterValueException("Account doesn't have any isolated networks in the zone");
             } else if (networks.size() > 1) {
-                throw new InvalidParameterValueException("Account has more than one Isolated network in the zone");
+                throw new InvalidParameterValueException("Account has more than one isolated network in the zone");
             }
 
             return networks.get(0).getId();
         } else {
             Network defaultGuestNetwork = _networkService.getExclusiveGuestNetwork(zoneId);
             if (defaultGuestNetwork == null) {
-                throw new InvalidParameterValueException("Unable to find a default Guest network for account " + getAccountName() + " in domain id=" + getDomainId());
+                throw new InvalidParameterValueException("Unable to find a default guest network for account " + getAccountName() + " in domain ID=" + getDomainId());
             } else {
                 return defaultGuestNetwork.getId();
             }
@@ -227,7 +227,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
                         " as it's no longer active");
                 }
             } else {
-                throw new InvalidParameterValueException("Unable to find project by id");
+                throw new InvalidParameterValueException("Unable to find project by ID");
             }
         } else if (networkId != null) {
             Network network = _networkService.getNetwork(networkId);
@@ -249,7 +249,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
         } else if (vpcId != null) {
             Vpc vpc = _entityMgr.findById(Vpc.class, getVpcId());
             if (vpc == null) {
-                throw new InvalidParameterValueException("Can't find Enabled vpc by id specified");
+                throw new InvalidParameterValueException("Can't find enabled VPC by ID specified");
             }
             return vpc.getAccountId();
         }
@@ -268,7 +268,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return  "associating ip to network id: " + getNetworkId() + " in zone " + getZoneId();
+        return  "associating IP to network ID: " + getNetworkId() + " in zone " + getZoneId();
     }
 
     /////////////////////////////////////////////////////
@@ -299,7 +299,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
                 setEntityId(ip.getId());
                 setEntityUuid(ip.getUuid());
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to allocate ip address");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to allocate IP address");
             }
         } catch (ConcurrentOperationException ex) {
             s_logger.warn("Exception: ", ex);
@@ -313,7 +313,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
-        CallContext.current().setEventDetails("Ip Id: " + getEntityId());
+        CallContext.current().setEventDetails("IP ID: " + getEntityId());
 
         IpAddress result = null;
 
@@ -328,7 +328,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
             ipResponse.setResponseName(getCommandName());
             setResponseObject(ipResponse);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to assign ip address");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to assign IP address");
         }
     }
 
