@@ -105,9 +105,9 @@
             bypassLoginCheck: function(args) { //determine to show or bypass login screen
                 if (g_loginResponse == null) { //show login screen
                     /*
-                     * Since we no longer store sessionKey in cookie, opening the
-                     * 2nd browser window (of the same domain) will show login screen (i.e. user has to
-                     * enter credentials again) and will cause the 1st browser window session timeout.
+                     * Changing the cookie name to hostname_cookieName allows 
+                     * separate sessions in the same domain to be handled 
+                     * separately without breaking session persistence.
                      */
                     var unBoxCookieValue = function (cookieName) {
                         var cookieValue = $.cookie(cookieName);
@@ -117,22 +117,15 @@
                         }
                         return cookieValue;
                     };
-                    unBoxCookieValue('sessionkey');
-                    // if sessionkey cookie exists use this to set g_sessionKey
-                    // and destroy sessionkey cookie
-                    if ($.cookie('sessionkey')) {
-                        g_sessionKey = $.cookie('sessionkey');
-                        $.cookie('sessionkey', null);
-                    } else {
-                        g_sessionKey = unBoxCookieValue('JSESSIONID');
-                    }
-                    g_role = unBoxCookieValue('role');
-                    g_userid = unBoxCookieValue('userid');
-                    g_domainid = unBoxCookieValue('domainid');
-                    g_account = unBoxCookieValue('account');
-                    g_username = unBoxCookieValue('username');
-                    g_userfullname = unBoxCookieValue('userfullname');
-                    g_timezone = unBoxCookieValue('timezone');
+                    
+                    g_sessionKey = unBoxCookieValue(window.location.hostname+'_sessionKey');
+                    g_role = unBoxCookieValue(window.location.hostname+'_role');
+                    g_userid = unBoxCookieValue(window.location.hostname+'_userid');
+                    g_domainid = unBoxCookieValue(window.location.hostname+'_domainid');
+                    g_account = unBoxCookieValue(window.location.hostname+'_account');
+                    g_username = unBoxCookieValue(window.location.hostname+'_username');
+                    g_userfullname = unBoxCookieValue(window.location.hostname+'_userfullname');
+                    g_timezone = unBoxCookieValue(window.location.hostname+'_timezone');
                 } else { //single-sign-on	(bypass login screen)
                     g_sessionKey = encodeURIComponent(g_loginResponse.sessionkey);
                     g_role = g_loginResponse.type;
@@ -234,25 +227,28 @@
                         g_timezone = loginresponse.timezone;                        
                         g_userfullname = loginresponse.firstname + ' ' + loginresponse.lastname;
 
-                        $.cookie('username', g_username, {
+                        $.cookie(window.location.hostname+'_sessionKey', g_sessionKey, {
                             expires: 1
                         });
-                        $.cookie('account', g_account, {
+                        $.cookie(window.location.hostname+'_username', g_username, {
                             expires: 1
                         });
-                        $.cookie('domainid', g_domainid, {
+                        $.cookie(window.location.hostname+'_account', g_account, {
                             expires: 1
                         });
-                        $.cookie('role', g_role, {
+                        $.cookie(window.location.hostname+'_domainid', g_domainid, {
+                            expires: 1
+                        });
+                        $.cookie(window.location.hostname+'_role', g_role, {
                             expires: 1
                         });                        
-                        $.cookie('timezone', g_timezone, {
+                        $.cookie(window.location.hostname+'_timezone', g_timezone, {
                             expires: 1
                         });
-                        $.cookie('userfullname', g_userfullname, {
+                        $.cookie(window.location.hostname+'_userfullname', g_userfullname, {
                             expires: 1
                         });
-                        $.cookie('userid', g_userid, {
+                        $.cookie(window.location.hostname+'_userid', g_userid, {
                             expires: 1
                         });
 
@@ -329,7 +325,6 @@
                         g_regionsecondaryenabled = null;
                         g_loginCmdText = null;
                         
-                        $.cookie('JSESSIONID', null);
                         $.cookie('sessionkey', null);
                         $.cookie('username', null);
                         $.cookie('account', null);
@@ -353,7 +348,6 @@
             },
 
             samlLoginAction: function(args) {
-                $.cookie('JSESSIONID', null);
                 $.cookie('sessionkey', null);
                 $.cookie('username', null);
                 $.cookie('account', null);
