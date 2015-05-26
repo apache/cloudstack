@@ -3016,22 +3016,24 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                 } else {
 
-                String[] otherVlanIpRange = vlan.getIpRange().split("\\-");
-                String otherVlanStartIP = otherVlanIpRange[0];
-                String otherVlanEndIP = null;
-                if (otherVlanIpRange.length > 1) {
-                    otherVlanEndIP = otherVlanIpRange[1];
-                }
+                    String[] otherVlanIpRange = vlan.getIpRange().split("\\-");
+                    String otherVlanStartIP = otherVlanIpRange[0];
+                    String otherVlanEndIP = null;
+                    if (otherVlanIpRange.length > 1) {
+                        otherVlanEndIP = otherVlanIpRange[1];
+                    }
 
                     // extend IP range
-                if (!vlanGateway.equals(otherVlanGateway) || !vlanNetmask.equals(vlan.getVlanNetmask())) {
+                    if (!vlanGateway.equals(otherVlanGateway) || !vlanNetmask.equals(vlan.getVlanNetmask())) {
                         throw new InvalidParameterValueException("The IP range has already been added with gateway "
-                                + otherVlanGateway + " ,and netmask " + otherVlanNetmask
-                                + ", Please specify the gateway/netmask if you want to extend ip range" );
-                }
-                if (NetUtils.ipRangesOverlap(startIP, endIP, otherVlanStartIP, otherVlanEndIP)) {
-                        throw new InvalidParameterValueException("The IP range already has IPs that overlap with the new range." +
-                                " Please specify a different start IP/end IP.");
+                                    + otherVlanGateway + " ,and netmask " + otherVlanNetmask
+                                    + ", Please specify the gateway/netmask if you want to extend ip range" );
+                    }
+                    if (!NetUtils.is31PrefixCidr(newCidr)) {
+                        if (NetUtils.ipRangesOverlap(startIP, endIP, otherVlanStartIP, otherVlanEndIP)) {
+                            throw new InvalidParameterValueException("The IP range already has IPs that overlap with the new range." +
+                                    " Please specify a different start IP/end IP.");
+                        }
                     }
                 }
             }

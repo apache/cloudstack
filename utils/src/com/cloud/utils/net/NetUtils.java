@@ -52,6 +52,10 @@ import java.util.regex.Pattern;
 
 public class NetUtils {
     protected final static Logger s_logger = Logger.getLogger(NetUtils.class);
+
+    private static final int MAX_CIDR = 32;
+    private static final int RFC_3021_31_BIT_CIDR = 31;
+
     public final static String HTTP_PORT = "80";
     public final static String HTTPS_PORT = "443";
     public final static int VPN_PORT = 500;
@@ -141,7 +145,7 @@ public class NetUtils {
                     for (InterfaceAddress address : ifc.getInterfaceAddresses()) {
                         InetAddress addr = address.getAddress();
                         int prefixLength = address.getNetworkPrefixLength();
-                        if (prefixLength < 32 && prefixLength > 0) {
+                        if (prefixLength < MAX_CIDR && prefixLength > 0) {
                             String ip = ipFromInetAddress(addr);
                             if (ip.equalsIgnoreCase(defaultHostIp))
                                 cidrList.add(ipAndNetMaskToCidr(ip, getCidrNetmask(prefixLength)));
@@ -334,8 +338,14 @@ public class NetUtils {
         return macAddressAsLong;
     }
 
-    public static boolean ipRangesOverlap(String startIp1, String endIp1, String startIp2, String endIp2) {
-        long startIp1Long = ip2Long(startIp1);
+    /**
+     * This method will fail in case we have a 31 Bit prefix network
+     * See RFC 3021.
+     *
+     * In order to avoid calling this method, please check the <code>NetUtils.is31PrefixCidr(cidr)</code> first.
+     */
+    public static boolean ipRangesOverlap(final String startIp1, final String endIp1, final String startIp2, final String endIp2) {
+        final long startIp1Long = ip2Long(startIp1);
         long endIp1Long = startIp1Long;
         if (endIp1 != null) {
             endIp1Long = ip2Long(endIp1);
@@ -534,6 +544,20 @@ public class NetUtils {
         return true;
     }
 
+    public static boolean is31PrefixCidr(final String cidr) {
+        final boolean isValidCird = isValidCIDR(cidr);
+        if (isValidCird){
+            final String[] cidrPair = cidr.split("\\/");
+            final String cidrSize = cidrPair[1];
+
+            final int cidrSizeNum = Integer.parseInt(cidrSize);
+            if (cidrSizeNum == RFC_3021_31_BIT_CIDR) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static boolean isValidCIDR(final String cidr) {
         if (cidr == null || cidr.isEmpty()) {
             return false;
@@ -616,17 +640,17 @@ public class NetUtils {
     }
 
     public static String[] getIpRangeFromCidr(String cidr, long size) {
-        assert (size < 32) : "You do know this is not for ipv6 right?  Keep it smaller than 32 but you have " + size;
+        assert (size < MAX_CIDR) : "You do know this is not for ipv6 right?  Keep it smaller than 32 but you have " + size;
         String[] result = new String[2];
         long ip = ip2Long(cidr);
         long startNetMask = ip2Long(getCidrNetmask(size));
         long start = (ip & startNetMask) + 1;
         long end = start;
 
-        end = end >> (32 - size);
+        end = end >> (MAX_CIDR - size);
 
         end++;
-        end = (end << (32 - size)) - 2;
+        end = (end << (MAX_CIDR - size)) - 2;
 
         result[0] = long2Ip(start);
         result[1] = long2Ip(end);
@@ -635,17 +659,17 @@ public class NetUtils {
     }
 
     public static Set<Long> getAllIpsFromCidr(String cidr, long size, Set<Long> usedIps) {
-        assert (size < 32) : "You do know this is not for ipv6 right?  Keep it smaller than 32 but you have " + size;
+        assert (size < MAX_CIDR) : "You do know this is not for ipv6 right?  Keep it smaller than 32 but you have " + size;
         Set<Long> result = new TreeSet<Long>();
         long ip = ip2Long(cidr);
         long startNetMask = ip2Long(getCidrNetmask(size));
         long start = (ip & startNetMask) + 1;
         long end = start;
 
-        end = end >> (32 - size);
+        end = end >> (MAX_CIDR - size);
 
         end++;
-        end = (end << (32 - size)) - 2;
+        end = (end << (MAX_CIDR - size)) - 2;
         int maxIps = 255; // get 255 ips as maximum
         while (start <= end && maxIps > 0) {
             if (!usedIps.contains(start)) {
@@ -687,7 +711,7 @@ public class NetUtils {
 
         long startNetMask = ip2Long(getCidrNetmask(size));
         long startIp = (cidr & startNetMask) + 1; //exclude the first ip since it isnt valid, e.g., 192.168.10.0
-        int range = 1 << (32 - size); //e.g., /24 = 2^8 = 256
+        int range = 1 << (MAX_CIDR - size); //e.g., /24 = 2^8 = 256
         range = range - 1; //exclude end of the range since that is the broadcast address, e.g., 192.168.10.255
 
         if (avoid.size() >= range) {
@@ -723,10 +747,10 @@ public class NetUtils {
         long startNetMask = ip2Long(getCidrNetmask(size));
         long start = (ip & startNetMask) + 1;
         long end = start;
-        end = end >> (32 - size);
+        end = end >> (MAX_CIDR - size);
 
         end++;
-        end = (end << (32 - size)) - 2;
+        end = (end << (MAX_CIDR - size)) - 2;
         return long2Ip(end);
     }
 
@@ -758,7 +782,7 @@ public class NetUtils {
     }
 
     public static String getCidrSubNet(String ip, long cidrSize) {
-        long numericNetmask = (0xffffffff >> (32 - cidrSize)) << (32 - cidrSize);
+        long numericNetmask = (0xffffffff >> (MAX_CIDR - cidrSize)) << (MAX_CIDR - cidrSize);
         String netmask = NetUtils.long2Ip(numericNetmask);
         return getSubNet(ip, netmask);
     }
@@ -793,10 +817,10 @@ public class NetUtils {
         while ((subnet = (subnet >> 1) & subnet) != 0) {
             bits++;
         }
-        end = end >> (32 - bits);
+        end = end >> (MAX_CIDR - bits);
 
         end++;
-        end = (end << (32 - bits)) - 2;
+        end = (end << (MAX_CIDR - bits)) - 2;
 
         return new String[] {long2Ip(start), long2Ip(end)};
 
@@ -820,9 +844,9 @@ public class NetUtils {
             return supersetOrSubset.errorInCidrFormat;
         }
         if (cidrALong[1] >= cidrBLong[1]) {
-            shift = 32 - cidrBLong[1];
+            shift = MAX_CIDR - cidrBLong[1];
         } else {
-            shift = 32 - cidrALong[1];
+            shift = MAX_CIDR - cidrALong[1];
         }
         long result = (cidrALong[0] >> shift) - (cidrBLong[0] >> shift);
         if (result == 0) {
@@ -846,7 +870,7 @@ public class NetUtils {
         if (cidrALong == null || cidrBLong == null) {
             return false;
         }
-        long shift = 32 - cidrBLong[1];
+        long shift = MAX_CIDR - cidrBLong[1];
         return ((cidrALong[0] >> shift) == (cidrBLong[0] >> shift));
     }
 
@@ -870,7 +894,7 @@ public class NetUtils {
         } catch (Exception e) {
             return null;
         }
-        long numericNetmask = (0xffffffff >> (32 - cidrSizeNum)) << (32 - cidrSizeNum);
+        long numericNetmask = (0xffffffff >> (MAX_CIDR - cidrSizeNum)) << (MAX_CIDR - cidrSizeNum);
         long ipAddr = ip2Long(cidrAddress);
         Long[] cidrlong = {ipAddr & numericNetmask, (long)cidrSizeNum};
         return cidrlong;
@@ -897,13 +921,13 @@ public class NetUtils {
         } catch (Exception e) {
             return null;
         }
-        long numericNetmask = (0xffffffff >> (32 - cidrSizeNum)) << (32 - cidrSizeNum);
+        long numericNetmask = (0xffffffff >> (MAX_CIDR - cidrSizeNum)) << (MAX_CIDR - cidrSizeNum);
         String netmask = NetUtils.long2Ip(numericNetmask);
         return getSubNet(cidrAddress, netmask);
     }
 
     public static String getCidrNetmask(long cidrSize) {
-        long numericNetmask = (0xffffffff >> (32 - cidrSize)) << (32 - cidrSize);
+        long numericNetmask = (0xffffffff >> (MAX_CIDR - cidrSize)) << (MAX_CIDR - cidrSize);
         return long2Ip(numericNetmask);
     }
 
@@ -921,7 +945,7 @@ public class NetUtils {
     public static long getCidrSize(String netmask) {
         long ip = ip2Long(netmask);
         int count = 0;
-        for (int i = 0; i < 32; i++) {
+        for (int i = 0; i < MAX_CIDR; i++) {
             if (((ip >> i) & 0x1) == 0) {
                 count++;
             } else {
@@ -929,7 +953,7 @@ public class NetUtils {
             }
         }
 
-        return 32 - count;
+        return MAX_CIDR - count;
     }
 
     public static boolean isValidPort(String p) {
@@ -991,7 +1015,7 @@ public class NetUtils {
             return null;
         }
         /* reserve gateway */
-        String[] range = getIpRangeFromCidr(getLinkLocalGateway(), 32 - size);
+        String[] range = getIpRangeFromCidr(getLinkLocalGateway(), MAX_CIDR - size);
 
         if (range[0].equalsIgnoreCase(getLinkLocalGateway())) {
             /* remove the gateway */
@@ -1006,7 +1030,7 @@ public class NetUtils {
         String[] cidrPair = getLinkLocalCIDR().split("\\/");
         String cidr = cidrPair[0];
 
-        return getIpRangeEndIpFromCidr(cidr, 32 - Long.parseLong(cidrPair[1]));
+        return getIpRangeEndIpFromCidr(cidr, MAX_CIDR - Long.parseLong(cidrPair[1]));
     }
 
     public static String portRangeToString(int portRange[]) {
@@ -1136,7 +1160,7 @@ public class NetUtils {
         if (cidrALong == null || cidrBLong == null) {
             return false;
         }
-        long shift = 32 - (cidrALong[1] > cidrBLong[1] ? cidrBLong[1] : cidrALong[1]);
+        long shift = MAX_CIDR - (cidrALong[1] > cidrBLong[1] ? cidrBLong[1] : cidrALong[1]);
         return ((cidrALong[0] >> shift) == (cidrBLong[0] >> shift));
     }
 
@@ -1490,12 +1514,23 @@ public class NetUtils {
         if (!isValidCIDR(cidr)) {
             return false;
         }
-        SubnetUtils subnetUtils = new SubnetUtils(cidr);
-        return subnetUtils.getInfo().isInRange(ipAddress);
+
+        // check if the gatewayip is the part of the ip range being added.
+        // RFC 3021 - 31-Bit Prefixes on IPv4 Point-to-Point Links
+        //     GW              Netmask         Stat IP        End IP
+        // 192.168.24.0 - 255.255.255.254 - 192.168.24.0 - 192.168.24.1
+        // https://tools.ietf.org/html/rfc3021
+        // Added by Wilder Rodrigues
+        final SubnetUtils subnetUtils = new SubnetUtils(cidr);
+        subnetUtils.setInclusiveHostCount(true);
+
+        final boolean isInRange = subnetUtils.getInfo().isInRange(ipAddress);
+
+        return isInRange;
     }
 
     public static Boolean IsIpEqualToNetworkOrBroadCastIp(String requestedIp, String cidr, long size) {
-        assert (size < 32) : "You do know this is not for ipv6 right?  Keep it smaller than 32 but you have " + size;
+        assert (size < MAX_CIDR) : "You do know this is not for ipv6 right?  Keep it smaller than 32 but you have " + size;
 
         long ip = ip2Long(cidr);
         long startNetMask = ip2Long(getCidrNetmask(size));
@@ -1503,10 +1538,10 @@ public class NetUtils {
         long start = (ip & startNetMask);
         long end = start;
 
-        end = end >> (32 - size);
+        end = end >> (MAX_CIDR - size);
 
         end++;
-        end = (end << (32 - size)) - 1;
+        end = (end << (MAX_CIDR - size)) - 1;
 
         long reqIp = ip2Long(requestedIp);
         if (reqIp == start || reqIp == end) {

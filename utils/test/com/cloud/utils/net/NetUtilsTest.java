@@ -288,4 +288,119 @@ public class NetUtilsTest {
 
         assertTrue(NetUtils.validateGuestCidr(guestCidr));
     }
+
+    @Test
+    public void testMac2Long() {
+        assertEquals(0l, NetUtils.mac2Long("00:00:00:00:00:00"));
+        assertEquals(1l, NetUtils.mac2Long("00:00:00:00:00:01"));
+        assertEquals(0xFFl, NetUtils.mac2Long("00:00:00:00:00:FF"));
+        assertEquals(0xFFAAl, NetUtils.mac2Long("00:00:00:00:FF:AA"));
+        assertEquals(0x11FFAAl, NetUtils.mac2Long("00:00:00:11:FF:AA"));
+        assertEquals(0x12345678l, NetUtils.mac2Long("00:00:12:34:56:78"));
+        assertEquals(0x123456789Al, NetUtils.mac2Long("00:12:34:56:78:9A"));
+        assertEquals(0x123456789ABCl, NetUtils.mac2Long("12:34:56:78:9A:BC"));
+    }
+
+    @Test
+    public void testLong2Mac() {
+        assertEquals("00:00:00:00:00:00", NetUtils.long2Mac(0l));
+        assertEquals("00:00:00:00:00:01", NetUtils.long2Mac(1l));
+        assertEquals("00:00:00:00:00:ff", NetUtils.long2Mac(0xFFl));
+        assertEquals("00:00:00:00:ff:aa", NetUtils.long2Mac(0xFFAAl));
+        assertEquals("00:00:00:11:ff:aa", NetUtils.long2Mac(0x11FFAAl));
+        assertEquals("00:00:12:34:56:78", NetUtils.long2Mac(0x12345678l));
+        assertEquals("00:12:34:56:78:9a", NetUtils.long2Mac(0x123456789Al));
+        assertEquals("12:34:56:78:9a:bc", NetUtils.long2Mac(0x123456789ABCl));
+    }
+
+    @Test
+    public void testIp2Long() {
+        assertEquals(0x7f000001l, NetUtils.ip2Long("127.0.0.1"));
+        assertEquals(0xc0a80001l, NetUtils.ip2Long("192.168.0.1"));
+        assertEquals(0x08080808l, NetUtils.ip2Long("8.8.8.8"));
+    }
+
+    @Test
+    public void testLong2Ip() {
+        assertEquals("127.0.0.1", NetUtils.long2Ip(0x7f000001l));
+        assertEquals("192.168.0.1", NetUtils.long2Ip(0xc0a80001l));
+        assertEquals("8.8.8.8", NetUtils.long2Ip(0x08080808l));
+    }
+
+    @Test
+    public void test31BitPrefixStart() {
+        final String ipAddress = "192.168.0.0";
+        final String cidr = "192.168.0.0/31";
+
+        final boolean isInRange = NetUtils.isIpWithtInCidrRange(ipAddress, cidr);
+
+        assertTrue("Check if the subnetUtils.setInclusiveHostCount(true) has been called.", isInRange);
+    }
+
+    @Test
+    public void test31BitPrefixEnd() {
+        final String ipAddress = "192.168.0.1";
+        final String cidr = "192.168.0.0/31";
+
+        final boolean isInRange = NetUtils.isIpWithtInCidrRange(ipAddress, cidr);
+
+        assertTrue("Check if the subnetUtils.setInclusiveHostCount(true) has been called.", isInRange);
+    }
+
+    @Test
+    public void test31BitPrefixFail() {
+        final String ipAddress = "192.168.0.2";
+        final String cidr = "192.168.0.0/31";
+
+        final boolean isInRange = NetUtils.isIpWithtInCidrRange(ipAddress, cidr);
+
+        assertFalse("Out of the range. Why did it return true?", isInRange);
+    }
+
+    @Test
+    public void test31BitPrefixIpRangesOverlapd() {
+        final String gw = "192.168.0.0";
+        String ip1;
+        String ip2;
+
+        for (int i = 1, j = 2; i <= 254; i++, j++) {
+            ip1 = "192.168.0." + i;
+            ip2 = "192.168.0." + j;
+
+            final boolean doesOverlap = NetUtils.ipRangesOverlap(ip1, ip2, gw, gw);
+            assertFalse("It should overlap, but it's a 31-bit ip", doesOverlap);
+        }
+    }
+
+    @Test
+    public void test31BitPrefixIpRangesOverlapdFail() {
+        String gw;
+        String ip1;
+        String ip2;
+
+        for (int i = 10, j = 12; i <= 254; i++, j++) {
+            gw = "192.168.0." + i;
+            ip1 = "192.168.0." + i;
+            ip2 = "192.168.0." + j;
+
+            final boolean doesOverlap = NetUtils.ipRangesOverlap(ip1, ip2, gw, gw);
+            assertTrue("It overlaps!", doesOverlap);
+        }
+    }
+
+    @Test
+    public void testIs31PrefixCidrFail() {
+        final String cidr = "10.10.0.0/32";
+        final boolean is31PrefixCidr = NetUtils.is31PrefixCidr(cidr);
+
+        assertFalse("It should fail! 32 bit prefix.", is31PrefixCidr);
+    }
+
+    @Test
+    public void testIs31PrefixCidr() {
+        final String cidr = "10.10.0.0/31";
+        final boolean is31PrefixCidr = NetUtils.is31PrefixCidr(cidr);
+
+        assertTrue("It should pass! 31 bit prefix.", is31PrefixCidr);
+    }
 }
