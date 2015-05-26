@@ -3501,6 +3501,31 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         UserVmVO vm = _vmDao.findById(profile.getId());
         Map<String, String> details = _vmDetailsDao.listDetailsKeyPairs(vm.getId());
         vm.setDetails(details);
+
+
+        // add userdata info into vm profile
+        Nic defaultNic = _networkModel.getDefaultNic(vm.getId());
+        if(defaultNic != null) {
+            Network network = _networkModel.getNetwork(defaultNic.getNetworkId());
+            if (_networkModel.isSharedNetworkWithoutServices(network.getId())) {
+                final String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
+                final String zoneName = _dcDao.findById(vm.getDataCenterId()).getName();
+                boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
+
+                List<String[]> vmData = _networkModel.generateVmData(vm.getUserData(), serviceOffering, zoneName, vm.getInstanceName(), vm.getId(),
+                        (String) profile.getParameter(VirtualMachineProfile.Param.VmSshPubKey), (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows);
+                String vmName = vm.getInstanceName();
+                String configDriveIsoRootFolder = "/tmp";
+                String isoFile = configDriveIsoRootFolder + "/" + vmName + "/configDrive/" + vmName + ".iso";
+                profile.setVmData(vmData);
+                profile.setConfigDriveLabel(VmConfigDriveLabel.value());
+                profile.setConfigDriveIsoRootFolder(configDriveIsoRootFolder);
+                profile.setConfigDriveIsoFile(isoFile);
+            }
+        }
+
+
+
         _templateMgr.prepareIsoForVmProfile(profile);
         return true;
     }
@@ -5268,7 +5293,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {EnableDynamicallyScaleVm, VmIpFetchWaitInterval, VmIpFetchTrialMax, VmIpFetchThreadPoolMax};
+        return new ConfigKey<?>[] {EnableDynamicallyScaleVm, VmIpFetchWaitInterval, VmIpFetchTrialMax, VmIpFetchThreadPoolMax, VmConfigDriveLabel};
     }
 
     @Override

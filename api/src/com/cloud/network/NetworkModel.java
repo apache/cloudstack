@@ -277,4 +277,8 @@ public interface NetworkModel {
     boolean isNetworkReadyForGc(long networkId);
 
     boolean getNetworkEgressDefaultPolicy(Long networkId);
+
+    List<String[]> generateVmData(String userData, String serviceOffering, String zoneName,
+                                  String vmName, long vmId, String publicKey, String password, Boolean isWindows);
+
 }
