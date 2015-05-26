@@ -51,8 +51,6 @@ from marvin.cloudstackAPI import (updateZone,
 
 from marvin.codes import (ENABLED,
                           DISABLED,
-                          STOPPED,
-                          RUNNING,
                           ENABLE,
                           DISABLE,
                           )
@@ -189,12 +187,12 @@ class TestDisableEnableZone(cloudstackTestCase):
                          )
 
         # Both user and admin vms shoul be running
-        self.assertEqual(vm_user.state,
-                         RUNNING,
+        self.assertEqual(vm_user.state.lower(),
+                         "running",
                          "Verify that the user vm is running")
 
-        self.assertEqual(vm_root.state,
-                         RUNNING,
+        self.assertEqual(vm_root.state.lower(),
+                         "running",
                          "Verify that the admin vm is running")
 
         vm_root.stop(self.apiclient)
@@ -208,12 +206,12 @@ class TestDisableEnableZone(cloudstackTestCase):
             "select state from vm_instance where name='%s'" %
             vm_user.name)[0][0]
 
-        self.assertEqual(root_state,
-                         STOPPED,
+        self.assertEqual(root_state.lower(),
+                         "stopped",
                          "verify that vm is Stopped")
 
-        self.assertEqual(user_state,
-                         STOPPED,
+        self.assertEqual(user_state.lower(),
+                         "stopped",
                          "verify that vm is stopped")
 
         root_volume = list_volumes(
@@ -329,8 +327,8 @@ class TestDisableEnableZone(cloudstackTestCase):
             zoneid=self.zone.id
         )
 
-        self.assertNotEqual(root_vm_new.state,
-                            RUNNING,
+        self.assertNotEqual(root_vm_new.state.lower(),
+                            "running",
                             "Verify that admin should create new VM")
 
         Snapshot.create(
@@ -380,8 +378,8 @@ class TestDisableEnableZone(cloudstackTestCase):
             zoneid=self.zone.id
         )
 
-        self.assertNotEqual(user_vm_new.state,
-                            RUNNING,
+        self.assertNotEqual(user_vm_new.state.lower(),
+                            "running",
                             "Verify that admin should create new VM")
 
         Snapshot.create(
@@ -552,12 +550,12 @@ class TestDisableEnablePod(cloudstackTestCase):
                          DISABLED,
                          "Check if the pod is in disabled state"
                          )
-        self.assertEqual(vm_user.state,
-                         RUNNING,
+        self.assertEqual(vm_user.state.lower(),
+                         "running",
                          "Verify that the user vm is running")
 
-        self.assertEqual(vm_root.state,
-                         RUNNING,
+        self.assertEqual(vm_root.state.lower(),
+                         "running",
                          "Verify that the admin vm is running")
 
         VirtualMachine.create(
@@ -684,8 +682,8 @@ class TestDisableEnablePod(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             zoneid=self.zone.id,
         )
-        self.assertNotEqual(root_vm_new.state,
-                            RUNNING,
+        self.assertNotEqual(root_vm_new.state.lower(),
+                            "running",
                             "Verify that admin should be able \
                                     to create new VM")
 
@@ -735,8 +733,8 @@ class TestDisableEnablePod(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             zoneid=self.zone.id,
         )
-        self.assertNotEqual(user_vm_new.state,
-                            RUNNING,
+        self.assertNotEqual(user_vm_new.state.lower(),
+                            "running",
                             "Verify that admin should create new VM")
 
         Snapshot.create(
@@ -849,7 +847,7 @@ class TestDisableEnableCluster(cloudstackTestCase):
                 cmd.allocationstate = ENABLED
                 cls.apiclient.updateCluster(cmd)
 
-            if clusterList[0].managedstate == "Unmanaged":
+            if clusterList[0].managedstate.lower() == "unmanaged":
                 cmd = updateCluster.updateClusterCmd()
                 cmd.id = clusterList[0].id
                 cmd.managedstate = "Managed"
@@ -932,12 +930,12 @@ class TestDisableEnableCluster(cloudstackTestCase):
                          "Check if the cluster is in disabled state"
                          )
         # Verify the exsisting vms should be running
-        self.assertEqual(vm_user.state,
-                         RUNNING,
+        self.assertEqual(vm_user.state.lower(),
+                         "running",
                          "Verify that the user vm is running")
 
-        self.assertEqual(vm_root.state,
-                         RUNNING,
+        self.assertEqual(vm_root.state.lower(),
+                         "running",
                          "Verify that the root vm is running")
 
         VirtualMachine.create(
@@ -1068,8 +1066,8 @@ class TestDisableEnableCluster(cloudstackTestCase):
             zoneid=self.zone.id,
         )
 
-        self.assertNotEqual(root_vm_new.state,
-                            RUNNING,
+        self.assertNotEqual(root_vm_new.state.lower(),
+                            "running",
                             "Verify that admin should create new VM")
 
         Snapshot.create(
@@ -1087,8 +1085,8 @@ class TestDisableEnableCluster(cloudstackTestCase):
             zoneid=self.zone.id,
         )
 
-        self.assertNotEqual(user_vm_new.state,
-                            RUNNING,
+        self.assertNotEqual(user_vm_new.state.lower(),
+                            "running",
                             "Verify that admin should create new VM")
 
         Snapshot.create(
@@ -1103,8 +1101,8 @@ class TestDisableEnableCluster(cloudstackTestCase):
         self.apiclient.updateCluster(cmd)
         clusterList = Cluster.list(self.apiclient, id=self.cluster.id)
 
-        self.assertEqual(clusterList[0].managedstate,
-                         "Unmanaged",
+        self.assertEqual(clusterList[0].managedstate.lower(),
+                         "unmanaged",
                          "Check if the cluster is in unmanaged  state"
                          )
         # Hosts in the cluster takes some time to go into disconnected state
@@ -1208,8 +1206,8 @@ class TestDisableEnableCluster(cloudstackTestCase):
             zoneid=self.zone.id,
         )
 
-        self.assertNotEqual(root_vm_new.state,
-                            RUNNING,
+        self.assertNotEqual(root_vm_new.state.lower(),
+                            "running",
                             "Verify that admin should create new VM")
 
         # Step 5
@@ -1350,12 +1348,12 @@ class TestDisableEnableHost(cloudstackTestCase):
                          "Check if the host is in disabled state"
                          )
         # Verify the exsisting vms should be running
-        self.assertEqual(vm_user.state,
-                         RUNNING,
+        self.assertEqual(vm_user.state.lower(),
+                         "running",
                          "Verify that the user vm is running")
 
-        self.assertEqual(vm_root.state,
-                         RUNNING,
+        self.assertEqual(vm_root.state.lower(),
+                         "running",
                          "Verify that the root vm is running")
 
         vm_root.stop(self.apiclient)
@@ -1367,12 +1365,12 @@ class TestDisableEnableHost(cloudstackTestCase):
             "select state from vm_instance where name='%s'" %
             vm_user.name)[0][0]
 
-        self.assertEqual(root_state,
-                         STOPPED,
+        self.assertEqual(root_state.lower(),
+                         "stopped",
                          "verify that vm should stop")
 
-        self.assertEqual(user_state,
-                         STOPPED,
+        self.assertEqual(user_state.lower(),
+                         "stopped",
                          "verify that vm should stop")
 
         VirtualMachine.create(
@@ -1428,8 +1426,8 @@ class TestDisableEnableHost(cloudstackTestCase):
             hostid=hostid)
 
         self.assertNotEqual(
-            root_vm_new.state,
-            RUNNING,
+            root_vm_new.state.lower(),
+            "running",
             "Verify that admin should create new VM in running state")
 
         Snapshot.create(
@@ -1447,8 +1445,8 @@ class TestDisableEnableHost(cloudstackTestCase):
             zoneid=self.zone.id,
         )
 
-        self.assertNotEqual(user_vm_new.state,
-                            RUNNING,
+        self.assertNotEqual(user_vm_new.state.lower(),
+                            "running",
                             "Verify that admin should create new VM")
 
         Snapshot.create(
