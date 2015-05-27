@@ -46,9 +46,11 @@ class TestVolumes(cloudstackTestCase):
             cls.api_client = cls.testClient.getApiClient()
             cls.services = cls.testClient.getParsedTestDataConfig()
             cls.hypervisor = cls.testClient.getHypervisorInfo()
+            cls.find_storage_pool = True
             if cls.hypervisor.lower() == 'lxc':
-                if not find_storage_pool_type(cls.apiclient, storagetype='rbd'):
-                    raise unittest.SkipTest("RBD storage type is required for data volumes for LXC")
+                if not find_storage_pool_type(cls.api_client, storagetype='rbd'):
+                    cls.find_storage_pool = False
+                    return
             # Get Domain, Zone, Template
             cls.domain = get_domain(cls.api_client)
             cls.zone = get_zone(
@@ -94,6 +96,8 @@ class TestVolumes(cloudstackTestCase):
 
     def setUp(self):
 
+        if not self.find_storage_pool:
+            self.skipTest("Skipping tests since RBD storage type is required for data volumes for LXC")
         self.apiClient = self.testClient.getApiClient()
         self.account = Account.create(
             self.apiClient,
