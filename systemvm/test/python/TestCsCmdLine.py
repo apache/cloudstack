@@ -45,7 +45,6 @@ class TestCsCmdLine(unittest.TestCase):
         self.assertTrue(self.cscmdline.is_redundant() is True)
 
     def test_get_guest_gw(self):
-        self.assertTrue(self.cscmdline.get_guest_gw() == '1.2.3.4')
         tval = "192.168.1.4"
         self.cscmdline.set_guest_gw(tval)
         self.assertTrue(self.cscmdline.get_guest_gw() == tval)
