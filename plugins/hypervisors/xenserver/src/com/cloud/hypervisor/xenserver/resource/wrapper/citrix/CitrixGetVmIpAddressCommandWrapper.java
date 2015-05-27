@@ -17,11 +17,10 @@
 // under the License.
 //
 
-package com.cloud.hypervisor.xenserver.resource.wrapper;
-
+package com.cloud.hypervisor.xenserver.resource.wrapper.citrix;
 import java.util.Map;
-
 import com.cloud.agent.api.GetVmIpAddressCommand;
+import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.net.NetUtils;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.VM;
@@ -34,6 +33,7 @@ import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
 import org.apache.xmlrpc.XmlRpcException;
 
+@ResourceWrapper(handles =  GetVmIpAddressCommand.class)
 public final class CitrixGetVmIpAddressCommandWrapper extends CommandWrapper<GetVmIpAddressCommand, Answer, CitrixResourceBase> {
 
     private static final Logger s_logger = Logger.getLogger(CitrixGetVmIpAddressCommandWrapper.class);
