@@ -609,7 +609,7 @@ class CsForwardingRules(CsDataBag):
         fw_prerout_rule += " -j DNAT --to-destination %s" % rule["internal_ip"]
         if not rule["internal_ports"] == "any":
             fw_prerout_rule += ":" + self.portsToString(rule["internal_ports"], "-")
-        
+
         fw_postrout_rule = "-A POSTROUTING -d %s/32 " % rule["public_ip"]
         if not rule["protocol"] == "any":
             fw_postrout_rule += " -m %s -p %s" % (rule["protocol"], rule["protocol"])
@@ -618,7 +618,7 @@ class CsForwardingRules(CsDataBag):
         fw_postrout_rule += " -j SNAT --to-source %s" % rule["internal_ip"]
         if not rule["internal_ports"] == "any":
             fw_postrout_rule += ":" + self.portsToString(rule["internal_ports"], "-")
-        
+
         fw_output_rule = "-A OUTPUT -d %s/32" % rule["public_ip"]
         if not rule["protocol"] == "any":
             fw_output_rule += " -m %s -p %s" % (rule["protocol"], rule["protocol"])
@@ -627,7 +627,7 @@ class CsForwardingRules(CsDataBag):
         fw_output_rule += " -j DNAT --to-destination %s" % rule["internal_ip"]
         if not rule["internal_ports"] == "any":
             fw_output_rule += ":" + self.portsToString(rule["internal_ports"], "-")
-        
+
         self.fw.append(["nat", "", fw_prerout_rule])
         self.fw.append(["nat", "", fw_postrout_rule])
         self.fw.append(["nat", "", fw_output_rule])
@@ -691,10 +691,10 @@ def main(argv):
 
     mon = CsMonitor("monitorservice", config)
     mon.process()
-    
-    #Save iptables configuration - will be loaded on reboot by the iptables-restore that is configured on /etc/rc.local
+
+    # Save iptables configuration - will be loaded on reboot by the iptables-restore that is configured on /etc/rc.local
     CsHelper.save_iptables("iptables-save", "/etc/iptables/router_rules.v4")
     CsHelper.save_iptables("ip6tables-save", "/etc/iptables/router_rules.v6")
-    
+
 if __name__ == "__main__":
     main(sys.argv)
