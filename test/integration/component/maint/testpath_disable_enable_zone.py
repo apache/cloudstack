@@ -53,6 +53,9 @@ class TestDisableEnableZone(cloudstackTestCase):
         cls.apiclient = testClient.getApiClient()
         cls.testdata = testClient.getParsedTestDataConfig()
         cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.snapshotSupported = True
+        if cls.hypervisor.lower() in ["hyperv", "lxc"]:
+            cls.snapshotSupported = False
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
@@ -208,30 +211,31 @@ class TestDisableEnableZone(cloudstackTestCase):
             listall=True
         )
 
-        snap = Snapshot.create(
-            self.apiclient,
-            root_volume[0].id)
+        if self.snapshotSupported:
+            snap = Snapshot.create(
+                self.apiclient,
+                root_volume[0].id)
 
-        self.assertNotEqual(snap,
+            self.assertNotEqual(snap,
                             None,
                             "Verify that admin should be \
                                     able to create snapshot")
 
-        snapshots = list_snapshots(
-            self.apiclient,
-            volumeid=root_volume[0].id,
-            listall=True)
+            snapshots = list_snapshots(
+                self.apiclient,
+                volumeid=root_volume[0].id,
+                listall=True)
 
-        template_from_snapshot = Template.create_from_snapshot(
-            self.apiclient,
-            snapshots[0],
-            self.testdata["privatetemplate"])
+            template_from_snapshot = Template.create_from_snapshot(
+                self.apiclient,
+                snapshots[0],
+                self.testdata["privatetemplate"])
 
-        self.assertNotEqual(
-            template_from_snapshot,
-            None,
-            "Verify that admin should be able to create template"
-        )
+            self.assertNotEqual(
+                template_from_snapshot,
+                None,
+                "Verify that admin should be able to create template"
+         )
 
         builtin_info = get_builtin_template_info(self.apiclient, self.zone.id)
         self.testdata["privatetemplate"]["url"] = builtin_info[0]
@@ -245,11 +249,6 @@ class TestDisableEnableZone(cloudstackTestCase):
 
         self.assertNotEqual(
             template_regis,
-            None,
-            "Check if template gets created"
-        )
-        self.assertNotEqual(
-            template_from_snapshot,
             None,
             "Check if template gets created"
         )
@@ -299,10 +298,11 @@ class TestDisableEnableZone(cloudstackTestCase):
             listall=True
         )
 
-        with self.assertRaises(Exception):
-            snap = Snapshot.create(
-                self.userapiclient,
-                root_volume[0].id)
+        if self.snapshotSupported:
+            with self.assertRaises(Exception):
+                snap = Snapshot.create(
+                    self.userapiclient,
+                    root_volume[0].id)
 
         with self.assertRaises(Exception):
             Template.register(
@@ -350,29 +350,30 @@ class TestDisableEnableZone(cloudstackTestCase):
                             None,
                             "Verify that admin should create new VM")
 
-        snap = Snapshot.create(
-            self.apiclient,
-            root_volume[0].id)
+        if self.snapshotSupported:
+            snap = Snapshot.create(
+                self.apiclient,
+                root_volume[0].id)
 
-        self.assertNotEqual(snap,
+            self.assertNotEqual(snap,
                             None,
                             "Verify that admin should snashot")
 
-        snapshots = list_snapshots(
-            self.apiclient,
-            volumeid=root_volume[0].id,
-            listall=True)
+            snapshots = list_snapshots(
+                self.apiclient,
+                volumeid=root_volume[0].id,
+                listall=True)
 
-        template_from_snapshot = Template.create_from_snapshot(
-            self.apiclient,
-            snapshots[0],
-            self.testdata["privatetemplate"])
+            template_from_snapshot = Template.create_from_snapshot(
+                self.apiclient,
+                snapshots[0],
+                self.testdata["privatetemplate"])
 
-        self.assertNotEqual(
-            template_from_snapshot,
-            None,
-            "Check if template gets created"
-        )
+            self.assertNotEqual(
+                template_from_snapshot,
+                None,
+                "Check if template gets created"
+            )
 
         template_regis = Template.register(
             self.apiclient,
@@ -381,11 +382,6 @@ class TestDisableEnableZone(cloudstackTestCase):
 
         self.assertNotEqual(
             template_regis,
-            None,
-            "Check if template gets created"
-        )
-        self.assertNotEqual(
-            template_from_snapshot,
             None,
             "Check if template gets created"
         )
@@ -433,18 +429,19 @@ class TestDisableEnableZone(cloudstackTestCase):
                             None,
                             "Verify that admin should create new VM")
 
-        snap = Snapshot.create(
-            self.userapiclient,
-            root_volume[0].id)
+        if self.snapshotSupported:
+            snap = Snapshot.create(
+                self.userapiclient,
+                root_volume[0].id)
 
-        self.assertNotEqual(snap,
+            self.assertNotEqual(snap,
                             None,
                             "Verify that admin should snashot")
 
-        snapshots = list_snapshots(
-            self.userapiclient,
-            volumeid=root_volume[0].id,
-            listall=True)
+            snapshots = list_snapshots(
+                self.userapiclient,
+                volumeid=root_volume[0].id,
+                listall=True)
 
         template_regis = Template.register(
             self.userapiclient,
@@ -453,11 +450,6 @@ class TestDisableEnableZone(cloudstackTestCase):
 
         self.assertNotEqual(
             template_regis,
-            None,
-            "Check if template gets created"
-        )
-        self.assertNotEqual(
-            template_from_snapshot,
             None,
             "Check if template gets created"
         )
