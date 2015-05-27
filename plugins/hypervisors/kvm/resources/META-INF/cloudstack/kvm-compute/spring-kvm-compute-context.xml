@@ -31,7 +31,4 @@
         <property name="name" value="KVMInvestigator" />
     </bean>
     
-    <bean id="libvirtUtilitiesHelper"
-        class="com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper" />
-    
 </beans>
