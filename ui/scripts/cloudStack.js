@@ -118,14 +118,14 @@
                         return cookieValue;
                     };
                     
-                    g_sessionKey = unBoxCookieValue(window.location.hostname+'_sessionKey');
-                    g_role = unBoxCookieValue(window.location.hostname+'_role');
-                    g_userid = unBoxCookieValue(window.location.hostname+'_userid');
-                    g_domainid = unBoxCookieValue(window.location.hostname+'_domainid');
-                    g_account = unBoxCookieValue(window.location.hostname+'_account');
-                    g_username = unBoxCookieValue(window.location.hostname+'_username');
-                    g_userfullname = unBoxCookieValue(window.location.hostname+'_userfullname');
-                    g_timezone = unBoxCookieValue(window.location.hostname+'_timezone');
+                    g_sessionKey = unBoxCookieValue('sessionKey');
+                    g_role = unBoxCookieValue('role');
+                    g_userid = unBoxCookieValue('userid');
+                    g_domainid = unBoxCookieValue('domainid');
+                    g_account = unBoxCookieValue('account');
+                    g_username = unBoxCookieValue('username');
+                    g_userfullname = unBoxCookieValue('userfullname');
+                    g_timezone = unBoxCookieValue('timezone');
                 } else { //single-sign-on	(bypass login screen)
                     g_sessionKey = encodeURIComponent(g_loginResponse.sessionkey);
                     g_role = g_loginResponse.type;
@@ -227,28 +227,25 @@
                         g_timezone = loginresponse.timezone;                        
                         g_userfullname = loginresponse.firstname + ' ' + loginresponse.lastname;
 
-                        $.cookie(window.location.hostname+'_sessionKey', g_sessionKey, {
+                        $.cookie('username', g_username, {
                             expires: 1
                         });
-                        $.cookie(window.location.hostname+'_username', g_username, {
+                        $.cookie('account', g_account, {
                             expires: 1
                         });
-                        $.cookie(window.location.hostname+'_account', g_account, {
+                        $.cookie('domainid', g_domainid, {
                             expires: 1
                         });
-                        $.cookie(window.location.hostname+'_domainid', g_domainid, {
-                            expires: 1
-                        });
-                        $.cookie(window.location.hostname+'_role', g_role, {
+                        $.cookie('role', g_role, {
                             expires: 1
                         });                        
-                        $.cookie(window.location.hostname+'_timezone', g_timezone, {
+                        $.cookie('timezone', g_timezone, {
                             expires: 1
                         });
-                        $.cookie(window.location.hostname+'_userfullname', g_userfullname, {
+                        $.cookie('userfullname', g_userfullname, {
                             expires: 1
                         });
-                        $.cookie(window.location.hostname+'_userid', g_userid, {
+                        $.cookie('userid', g_userid, {
                             expires: 1
                         });
 
@@ -327,14 +324,14 @@
                         g_userfullname = null;
                         g_userid = null;
                         
-                        $.cookie(window.location.hostname+'_sessionkey', null);
-                        $.cookie(window.location.hostname+'_username', null);
-                        $.cookie(window.location.hostname+'_account', null);
-                        $.cookie(window.location.hostname+'_domainid', null);
-                        $.cookie(window.location.hostname+'_role', null);  
-                        $.cookie(window.location.hostname+'_timezone', null);
-                        $.cookie(window.location.hostname+'_userfullname', null);
-                        $.cookie(window.location.hostname+'_userid', null);
+                        $.cookie('sessionkey', null);
+                        $.cookie('username', null);
+                        $.cookie('account', null);
+                        $.cookie('domainid', null);
+                        $.cookie('role', null);  
+                        $.cookie('timezone', null);
+                        $.cookie('userfullname', null);
+                        $.cookie('userid', null);
                         
                         if (onLogoutCallback()) { //onLogoutCallback() will set g_loginResponse(single-sign-on variable) to null, then bypassLoginCheck() will show login screen.
                             document.location.reload(); //when onLogoutCallback() returns true, reload the current document.
@@ -352,12 +349,12 @@
             },
 
             samlLoginAction: function(args) {
-                $.cookie(window.location.hostname+'_sessionkey', null);
-                $.cookie(window.location.hostname+'_username', null);
-                $.cookie(window.location.hostname+'_account', null);
-                $.cookie(window.location.hostname+'_domainid', null);
-                $.cookie(window.location.hostname+'_role', null);
-                $.cookie(window.location.hostname+'_timezone', null);
+                $.cookie('sessionkey', null);
+                $.cookie('username', null);
+                $.cookie('account', null);
+                $.cookie('domainid', null);
+                $.cookie('role', null);
+                $.cookie('timezone', null);
                 window.location.href = createURL('samlSso');
             },
 
