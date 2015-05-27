@@ -19,7 +19,8 @@
 
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.lib.utils import (cleanup_resources)
+from marvin.lib.utils import (cleanup_resources,
+                              validateList)
 from marvin.lib.base import (Account,
                              VirtualMachine,
                              ServiceOffering,
@@ -53,6 +54,7 @@ from marvin.codes import (ENABLED,
                           DISABLED,
                           ENABLE,
                           DISABLE,
+                          PASS
                           )
 import time
 from marvin.sshClient import SshClient
@@ -66,6 +68,9 @@ class TestDisableEnableZone(cloudstackTestCase):
         cls.apiclient = testClient.getApiClient()
         cls.testdata = testClient.getParsedTestDataConfig()
         cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.snapshotSupported = True
+        if cls.hypervisor.lower() in ["hyperv", "lxc"]:
+            cls.snapshotSupported = False
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
@@ -114,7 +119,7 @@ class TestDisableEnableZone(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             zoneList = Zone.list(cls.apiclient, id=cls.zone.id)
-            if zoneList[0].allocationstate == DISABLED:
+            if zoneList[0].allocationstate.lower() == DISABLED.lower():
                 cmd = updateZone.updateZoneCmd()
                 cmd.id = zoneList[0].id
                 cmd.allocationstate = ENABLED
@@ -221,19 +226,20 @@ class TestDisableEnableZone(cloudstackTestCase):
             listall=True
         )
 
-        Snapshot.create(
-            self.apiclient,
-            root_volume[0].id)
+        if self.snapshotSupported:
+            Snapshot.create(
+                self.apiclient,
+                root_volume[0].id)
 
-        snapshots = list_snapshots(
-            self.apiclient,
-            volumeid=root_volume[0].id,
-            listall=True)
+            snapshots = list_snapshots(
+                self.apiclient,
+                volumeid=root_volume[0].id,
+                listall=True)
 
-        Template.create_from_snapshot(
-            self.apiclient,
-            snapshots[0],
-            self.testdata["privatetemplate"])
+            Template.create_from_snapshot(
+                self.apiclient,
+                snapshots[0],
+                self.testdata["privatetemplate"])
 
         builtin_info = get_builtin_template_info(self.apiclient, self.zone.id)
         self.testdata["privatetemplate"]["url"] = builtin_info[0]
@@ -280,10 +286,11 @@ class TestDisableEnableZone(cloudstackTestCase):
             listall=True
         )
 
-        with self.assertRaises(Exception):
-            Snapshot.create(
-                self.userapiclient,
-                root_volume[0].id)
+        if self.snapshotSupported:
+            with self.assertRaises(Exception):
+                Snapshot.create(
+                    self.userapiclient,
+                    root_volume[0].id)
 
         with self.assertRaises(Exception):
             Template.register(
@@ -331,19 +338,20 @@ class TestDisableEnableZone(cloudstackTestCase):
                             "running",
                             "Verify that admin should create new VM")
 
-        Snapshot.create(
-            self.apiclient,
-            root_volume[0].id)
+        if self.snapshotSupported:
+            Snapshot.create(
+                self.apiclient,
+                root_volume[0].id)
 
-        snapshots = list_snapshots(
-            self.apiclient,
-            volumeid=root_volume[0].id,
-            listall=True)
+            snapshots = list_snapshots(
+                self.apiclient,
+                volumeid=root_volume[0].id,
+                listall=True)
 
-        Template.create_from_snapshot(
-            self.apiclient,
-            snapshots[0],
-            self.testdata["privatetemplate"])
+            Template.create_from_snapshot(
+                self.apiclient,
+                snapshots[0],
+                self.testdata["privatetemplate"])
 
         Template.register(
             self.apiclient,
@@ -382,14 +390,15 @@ class TestDisableEnableZone(cloudstackTestCase):
                             "running",
                             "Verify that admin should create new VM")
 
-        Snapshot.create(
-            self.userapiclient,
-            root_volume[0].id)
+        if self.snapshotSupported:
+            Snapshot.create(
+                self.userapiclient,
+                root_volume[0].id)
 
-        snapshots = list_snapshots(
-            self.userapiclient,
-            volumeid=root_volume[0].id,
-            listall=True)
+            snapshots = list_snapshots(
+                self.userapiclient,
+                volumeid=root_volume[0].id,
+                listall=True)
 
         Template.register(
             self.userapiclient,
@@ -479,7 +488,7 @@ class TestDisableEnablePod(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             podList = Pod.list(cls.apiclient, id=cls.pod.id)
-            if podList[0].allocationstate == DISABLED:
+            if podList[0].allocationstate.lower() == DISABLED.lower():
                 cmd = updatePod.updatePodCmd()
                 cmd.id = podList[0].id
                 cmd.allocationstate = ENABLED
@@ -575,19 +584,20 @@ class TestDisableEnablePod(cloudstackTestCase):
             listall=True
         )
 
-        Snapshot.create(
-            self.apiclient,
-            root_volume[0].id)
+        if self.snapshotSupported:
+            Snapshot.create(
+                self.apiclient,
+                root_volume[0].id)
 
-        snapshots = list_snapshots(
-            self.apiclient,
-            volumeid=root_volume[0].id,
-            listall=True)
+            snapshots = list_snapshots(
+                self.apiclient,
+                volumeid=root_volume[0].id,
+                listall=True)
 
-        Template.create_from_snapshot(
-            self.apiclient,
-            snapshots[0],
-            self.testdata["privatetemplate"])
+            Template.create_from_snapshot(
+                self.apiclient,
+                snapshots[0],
+                self.testdata["privatetemplate"])
 
         builtin_info = get_builtin_template_info(self.apiclient, self.zone.id)
         self.testdata["privatetemplate"]["url"] = builtin_info[0]
@@ -633,10 +643,11 @@ class TestDisableEnablePod(cloudstackTestCase):
             listall=True
         )
 
-        with self.assertRaises(Exception):
-            Snapshot.create(
-                self.userapiclient,
-                root_volume[0].id)
+        if self.snapshotSupported:
+            with self.assertRaises(Exception):
+                Snapshot.create(
+                    self.userapiclient,
+                    root_volume[0].id)
 
         with self.assertRaises(Exception):
             Template.register(
@@ -687,19 +698,20 @@ class TestDisableEnablePod(cloudstackTestCase):
                             "Verify that admin should be able \
                                     to create new VM")
 
-        Snapshot.create(
-            self.apiclient,
-            root_volume[0].id)
+        if self.snapshotSupported:
+            Snapshot.create(
+                self.apiclient,
+                root_volume[0].id)
 
-        snapshots = list_snapshots(
-            self.apiclient,
-            volumeid=root_volume[0].id,
-            listall=True)
+            snapshots = list_snapshots(
+                self.apiclient,
+                volumeid=root_volume[0].id,
+                listall=True)
 
-        Template.create_from_snapshot(
-            self.apiclient,
-            snapshots[0],
-            self.testdata["privatetemplate"])
+            Template.create_from_snapshot(
+                self.apiclient,
+                snapshots[0],
+                self.testdata["privatetemplate"])
 
         Template.register(
             self.apiclient,
@@ -737,14 +749,15 @@ class TestDisableEnablePod(cloudstackTestCase):
                             "running",
                             "Verify that admin should create new VM")
 
-        Snapshot.create(
-            self.userapiclient,
-            root_volume[0].id)
+        if self.snapshotSupported:
+            Snapshot.create(
+                self.userapiclient,
+                root_volume[0].id)
 
-        snapshots = list_snapshots(
-            self.userapiclient,
-            volumeid=root_volume[0].id,
-            listall=True)
+            snapshots = list_snapshots(
+                self.userapiclient,
+                volumeid=root_volume[0].id,
+                listall=True)
 
         Template.register(
             self.userapiclient,
@@ -841,7 +854,7 @@ class TestDisableEnableCluster(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             clusterList = Cluster.list(cls.apiclient, id=cls.cluster.id)
-            if clusterList[0].allocationstate == DISABLED:
+            if clusterList[0].allocationstate.lower() == DISABLED.lower():
                 cmd = updateCluster.updateClusterCmd()
                 cmd.id = clusterList[0].id
                 cmd.allocationstate = ENABLED
@@ -955,19 +968,20 @@ class TestDisableEnableCluster(cloudstackTestCase):
             listall=True
         )
 
-        Snapshot.create(
-            self.apiclient,
-            root_volume[0].id)
+        if self.snapshotSupported:
+            Snapshot.create(
+                self.apiclient,
+                root_volume[0].id)
 
-        snapshots = list_snapshots(
-            self.apiclient,
-            volumeid=root_volume[0].id,
-            listall=True)
+            snapshots = list_snapshots(
+                self.apiclient,
+                volumeid=root_volume[0].id,
+                listall=True)
 
-        Template.create_from_snapshot(
-            self.apiclient,
-            snapshots[0],
-            self.testdata["privatetemplate"])
+            Template.create_from_snapshot(
+                self.apiclient,
+                snapshots[0],
+                self.testdata["privatetemplate"])
 
         builtin_info = get_builtin_template_info(self.apiclient, self.zone.id)
         self.testdata["privatetemplate"]["url"] = builtin_info[0]
@@ -1015,10 +1029,11 @@ class TestDisableEnableCluster(cloudstackTestCase):
             listall=True
         )
 
-        with self.assertRaises(Exception):
-            Snapshot.create(
-                self.userapiclient,
-                root_volume[0].id)
+        if self.snapshotSupported:
+            with self.assertRaises(Exception):
+                Snapshot.create(
+                    self.userapiclient,
+                    root_volume[0].id)
 
         with self.assertRaises(Exception):
             Template.register(
@@ -1070,9 +1085,10 @@ class TestDisableEnableCluster(cloudstackTestCase):
                             "running",
                             "Verify that admin should create new VM")
 
-        Snapshot.create(
-            self.apiclient,
-            root_volume[0].id)
+        if self.snapshotSupported:
+            Snapshot.create(
+                self.apiclient,
+                root_volume[0].id)
 
         # Non root user
         user_vm_new = VirtualMachine.create(
@@ -1089,9 +1105,10 @@ class TestDisableEnableCluster(cloudstackTestCase):
                             "running",
                             "Verify that admin should create new VM")
 
-        Snapshot.create(
-            self.userapiclient,
-            root_volume[0].id)
+        if self.snapshotSupported:
+            Snapshot.create(
+                self.userapiclient,
+                root_volume[0].id)
 
         # Step 3
 
@@ -1151,10 +1168,11 @@ class TestDisableEnableCluster(cloudstackTestCase):
             listall=True
         )
 
-        with self.assertRaises(Exception):
-            Snapshot.create(
-                self.userapiclient,
-                root_volume[0].id)
+        if self.snapshotSupported:
+            with self.assertRaises(Exception):
+                Snapshot.create(
+                    self.userapiclient,
+                    root_volume[0].id)
 
         with self.assertRaises(Exception):
             Template.register(
@@ -1244,6 +1262,7 @@ class TestDisableEnableHost(cloudstackTestCase):
             cls.testdata["ostype"])
 
         cls._cleanup = []
+        cls.disabledHosts = []
 
         try:
             cls.service_offering = ServiceOffering.create(
@@ -1280,6 +1299,17 @@ class TestDisableEnableHost(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
+            for hostid in cls.disabledHosts:
+                hosts = Host.list(cls.apiclient,
+                                  id=hostid)
+                assert validateList(hosts)[0] == PASS, "hosts\
+                        list validation failed"
+                if hosts[0].resourcestate.lower() == DISABLED.lower():
+                    cmd = updateHost.updateHostCmd()
+                    cmd.id = hostid
+                    cmd.resourcestate = ENABLED
+                    cmd.allocationstate = ENABLE
+                    cls.apiclient.updateHost(cmd)
             cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -1341,6 +1371,9 @@ class TestDisableEnableHost(cloudstackTestCase):
         cmd.resourcestate = DISABLED
         cmd.allocationstate = DISABLE
         self.apiclient.updateHost(cmd)
+
+        self.disabledHosts.append(hostid)
+
         hostList = Host.list(self.apiclient, id=hostid)
 
         self.assertEqual(hostList[0].resourcestate,
@@ -1390,16 +1423,18 @@ class TestDisableEnableHost(cloudstackTestCase):
             listall=True
         )
 
-        Snapshot.create(
-            self.apiclient,
-            root_volume[0].id)
+        if self.snapshotSupported:
+            Snapshot.create(
+                self.apiclient,
+                root_volume[0].id)
 
         # non-admin user should fail to create vm, snap, temp etc
 
-        with self.assertRaises(Exception):
-            Snapshot.create(
-                self.userapiclient,
-                root_volume[0].id)
+        if self.snapshotSupported:
+            with self.assertRaises(Exception):
+                Snapshot.create(
+                    self.userapiclient,
+                    root_volume[0].id)
 
         # Step 2
         cmd.resourcestate = ENABLED
@@ -1430,9 +1465,10 @@ class TestDisableEnableHost(cloudstackTestCase):
             "running",
             "Verify that admin should create new VM in running state")
 
-        Snapshot.create(
-            self.apiclient,
-            root_volume[0].id)
+        if self.snapshotSupported:
+            Snapshot.create(
+                self.apiclient,
+                root_volume[0].id)
 
         # Non root user
         user_vm_new = VirtualMachine.create(
@@ -1449,9 +1485,10 @@ class TestDisableEnableHost(cloudstackTestCase):
                             "running",
                             "Verify that admin should create new VM")
 
-        Snapshot.create(
-            self.userapiclient,
-            root_volume[0].id)
+        if self.snapshotSupported:
+            Snapshot.create(
+                self.userapiclient,
+                root_volume[0].id)
 
         # Step 4
         # reconnect the host
