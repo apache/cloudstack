@@ -51,6 +51,13 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
 
     VirtualMachine.Type _type;
 
+    List<String[]> vmData = null;
+
+    String configDriveLabel = null;
+    String configDriveIsoBaseLocation = "/tmp/";
+    String configDriveIsoRootFolder = null;
+    String configDriveIsoFile = null;
+
     public VirtualMachineProfileImpl(VirtualMachine vm, VirtualMachineTemplate template, ServiceOffering offering, Account owner, Map<Param, Object> params) {
         _vm = vm;
         _template = template;
@@ -254,5 +261,49 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
     @Override
     public Float getMemoryOvercommitRatio() {
         return memoryOvercommitRatio;
+    }
+
+    @Override
+    public List<String[]> getVmData() {
+        return vmData;
+    }
+
+    @Override
+    public void setVmData(List<String[]> vmData) {
+        this.vmData = vmData;
+    }
+
+    @Override
+    public String getConfigDriveLabel() {
+        return configDriveLabel;
+    }
+
+    @Override
+    public void setConfigDriveLabel(String configDriveLabel) {
+        this.configDriveLabel = configDriveLabel;
+    }
+
+    @Override
+    public String getConfigDriveIsoRootFolder() {
+        return configDriveIsoRootFolder;
+    }
+
+    @Override
+    public void setConfigDriveIsoRootFolder(String configDriveIsoRootFolder) {
+        this.configDriveIsoRootFolder = configDriveIsoRootFolder;
+    }
+
+    public String getConfigDriveIsoBaseLocation() {
+        return configDriveIsoBaseLocation;
+    }
+
+    @Override
+    public String getConfigDriveIsoFile() {
+        return configDriveIsoFile;
+    }
+
+    @Override
+    public void setConfigDriveIsoFile(String isoFile) {
+        this.configDriveIsoFile = isoFile;
     }
 }

@@ -45,6 +45,11 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
         return null;
     }
 
+    @Override
+    public List<NetworkVO> listByGuestType(GuestType type) {
+        return null;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.network.dao.NetworkDao#listBy(long, long, long)
      */

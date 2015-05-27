@@ -88,6 +88,8 @@ public interface NetworkModel {
 
     Map<Capability, String> getNetworkServiceCapabilities(long networkId, Service service);
 
+    boolean isSharedNetworkWithoutServices(long networkId);
+
     boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service... services);
 
     Network getNetworkWithSGWithFreeIPs(Long zoneId);
@@ -275,4 +277,8 @@ public interface NetworkModel {
     boolean isNetworkReadyForGc(long networkId);
 
     boolean getNetworkEgressDefaultPolicy(Long networkId);
+
+    List<String[]> generateVmData(String userData, String serviceOffering, String zoneName,
+                                  String vmName, long vmId, String publicKey, String password, Boolean isWindows);
+
 }

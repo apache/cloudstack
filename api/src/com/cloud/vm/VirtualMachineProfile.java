@@ -34,9 +34,26 @@ import com.cloud.user.Account;
  */
 public interface VirtualMachineProfile {
 
+    List<String[]> getVmData();
+
+    void setVmData(List<String[]> vmData);
+
+    String getConfigDriveLabel();
+
+    void setConfigDriveLabel(String configDriveLabel);
+
+    String getConfigDriveIsoRootFolder();
+
+    void setConfigDriveIsoRootFolder(String configDriveIsoRootFolder);
+
+    String getConfigDriveIsoFile();
+
+    void setConfigDriveIsoFile(String isoFile);
+
     public static class Param {
 
         public static final Param VmPassword = new Param("VmPassword");
+        public static final Param VmSshPubKey = new Param("VmSshPubKey");
         public static final Param ControlNic = new Param("ControlNic");
         public static final Param ReProgramGuestNetworks = new Param("RestartNetwork");
         public static final Param PxeSeverType = new Param("PxeSeverType");

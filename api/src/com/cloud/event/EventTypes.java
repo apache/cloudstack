@@ -523,6 +523,7 @@ public class EventTypes {
     public static final String EVENT_NIC_SECONDARY_IP_ASSIGN = "NIC.SECONDARY.IP.ASSIGN";
     public static final String EVENT_NIC_SECONDARY_IP_UNASSIGN = "NIC.SECONDARY.IP.UNASSIGN";
     public static final String EVENT_NIC_SECONDARY_IP_CONFIGURE = "NIC.SECONDARY.IP.CONFIGURE";
+    public static final String EVENT_NETWORK_EXTERNAL_DHCP_VM_IPFETCH = "EXTERNAL.DHCP.VM.IP.FETCH";
 
     //Usage related events
     public static final String EVENT_USAGE_REMOVE_USAGE_RECORDS = "USAGE.REMOVE.USAGE.RECORDS";

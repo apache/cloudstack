@@ -173,7 +173,11 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setEnableDynamicallyScaleVm(isDynamicallyScalable);
         to.setUuid(vmInstance.getUuid());
 
-        //
+        to.setVmData(vmProfile.getVmData());
+        to.setConfigDriveLabel(vmProfile.getConfigDriveLabel());
+        to.setConfigDriveIsoRootFolder(vmProfile.getConfigDriveIsoRootFolder());
+        to.setConfigDriveIsoFile(vmProfile.getConfigDriveIsoFile());
+
         return to;
     }
 
