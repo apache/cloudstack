@@ -394,7 +394,7 @@ class TestVolumeSnapshot(cloudstackTestCase):
         )
 
         vm_from_temp = VirtualMachine.create(
-            self.apiclient,
+            self.userapiclient,
             self.testdata["small"],
             templateid=templateFromSnapshot.id,
             accountid=self.account.name,
@@ -497,7 +497,7 @@ class TestVolumeSnapshot(cloudstackTestCase):
         # Step 5
         # delete snapshot and deploy vm from snapshot
         vm_from_temp_2 = VirtualMachine.create(
-            self.apiclient,
+            self.userapiclient,
             self.testdata["small"],
             templateid=templateFromSnapshot.id,
             accountid=self.account.name,
@@ -553,7 +553,7 @@ class TestVolumeSnapshot(cloudstackTestCase):
             )
 
             vm_from_temp = VirtualMachine.create(
-                self.apiclient,
+                self.userapiclient,
                 self.testdata["small"],
                 templateid=templateFromSnapshot.id,
                 accountid=self.account.name,
@@ -605,7 +605,7 @@ class TestVolumeSnapshot(cloudstackTestCase):
             )
 
             vm_from_temp = VirtualMachine.create(
-                self.apiclient,
+                self.userapiclient,
                 self.testdata["small"],
                 templateid=templateFromSnapshot.id,
                 accountid=self.account.name,
@@ -683,7 +683,7 @@ class TestVolumeSnapshot(cloudstackTestCase):
         )
 
         vm_from_temp_2 = VirtualMachine.create(
-            self.apiclient,
+            self.userapiclient,
             self.testdata["small"],
             templateid=templateFromSnapshot.id,
             accountid=self.account.name,
