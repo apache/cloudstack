@@ -14,20 +14,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.user.dao;
+package org.apache.cloudstack.saml;
 
-import com.cloud.user.UserAccount;
-import com.cloud.user.UserAccountVO;
 import com.cloud.utils.db.GenericDao;
 
-import java.util.List;
-
-public interface UserAccountDao extends GenericDao<UserAccountVO, Long> {
-    List<UserAccountVO> getAllUsersByNameAndEntity(String username, String entity);
-
-    UserAccount getUserAccount(String username, Long domainId);
-
-    boolean validateUsernameInDomain(String username, Long domainId);
-
-    UserAccount getUserByApiKey(String apiKey);
+public interface SAMLTokenDao extends GenericDao<SAMLTokenVO, Long> {
+    public void expireTokens();
 }

@@ -115,7 +115,7 @@
                             cookieValue = cookieValue.slice(1, cookieValue.length-1);
                             $.cookie(cookieName, cookieValue, { expires: 1 });
                         }
-                        return cookieValue;
+                        return decodeURIComponent(cookieValue);
                     };
                     unBoxCookieValue('sessionkey');
                     // if sessionkey cookie exists use this to set g_sessionKey
@@ -353,6 +353,17 @@
             },
 
             samlLoginAction: function(args) {
+                g_sessionKey = null;
+                g_username = null;
+                g_account = null;
+                g_domainid = null;
+                g_timezoneoffset = null;
+                g_timezone = null;
+                g_supportELB = null;
+                g_kvmsnapshotenabled = null;
+                g_regionsecondaryenabled = null;
+                g_loginCmdText = null;
+
                 $.cookie('JSESSIONID', null);
                 $.cookie('sessionkey', null);
                 $.cookie('username', null);
@@ -360,7 +371,14 @@
                 $.cookie('domainid', null);
                 $.cookie('role', null);
                 $.cookie('timezone', null);
-                window.location.href = createURL('samlSso');
+                var url = 'samlSso';
+                if (args.data.idpid) {
+                    url = url + '&idpid=' + args.data.idpid;
+                }
+                if (args.data.domain) {
+                    url = url + '&domain=' + args.data.domain;
+                }
+                window.location.href = createURL(url);
             },
 
             // Show cloudStack main UI widget
