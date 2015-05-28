@@ -16,15 +16,15 @@
 // under the License.
 package com.cloud.user.dao;
 
-import javax.ejb.Local;
-
-import org.springframework.stereotype.Component;
-
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserAccountVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import org.springframework.stereotype.Component;
+
+import javax.ejb.Local;
+import java.util.List;
 
 @Component
 @Local(value = {UserAccountDao.class})
@@ -36,6 +36,17 @@ public class UserAccountDaoImpl extends GenericDaoBase<UserAccountVO, Long> impl
         userAccountSearch = createSearchBuilder();
         userAccountSearch.and("apiKey", userAccountSearch.entity().getApiKey(), SearchCriteria.Op.EQ);
         userAccountSearch.done();
+    }
+
+    @Override
+    public List<UserAccountVO> getAllUsersByNameAndEntity(String username, String entity) {
+        if (username == null) {
+            return null;
+        }
+        SearchCriteria<UserAccountVO> sc = createSearchCriteria();
+        sc.addAnd("username", SearchCriteria.Op.EQ, username);
+        sc.addAnd("externalEntity", SearchCriteria.Op.EQ, entity);
+        return listBy(sc);
     }
 
     @Override

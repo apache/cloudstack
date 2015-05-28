@@ -51,28 +51,45 @@
                 <form>
                     <div class="logo"></div>
                     <div class="fields">
-                        <!-- User name -->
-                        <div class="field username">
-                            <label for="username"><fmt:message key="label.username"/></label>
-                            <input type="text" name="username" class="required" />
+                        <div id="login-dropdown">
+                            <select id="login-options" style="width: 260px">
+                                <option value="cloudstack-login">Local <fmt:message key="label.login"/></option>
+                            </select>
                         </div>
-                        <!-- Password -->
-                        <div class="field password">
-                            <label for="password"><fmt:message key="label.password"/></label>
-                            <input type="password" name="password" class="required" autocomplete="off" />
+
+                        <div id="cloudstack-login">
+                            <!-- User name -->
+                            <div class="field username">
+                                <label for="username"><fmt:message key="label.username"/></label>
+                                <input type="text" name="username" class="required" />
+                            </div>
+                            <!-- Password -->
+                            <div class="field password">
+                                <label for="password"><fmt:message key="label.password"/></label>
+                                <input type="password" name="password" class="required" autocomplete="off" />
+                            </div>
+                            <!-- Domain -->
+                            <div class="field domain">
+                                <label for="domain"><fmt:message key="label.domain"/></label>
+                                <input type="text" name="domain" />
+                            </div>
                         </div>
-                        <!-- Domain -->
-                        <div class="field domain">
-                            <label for="domain"><fmt:message key="label.domain"/></label>
-                            <input type="text" name="domain" />
+
+                        <div id="saml-login">
+                            <div class="field domain">
+                                <label for="saml-domain"><fmt:message key="label.domain"/></label>
+                                <input id="saml-domain" type="text" name="saml-domain" />
+                            </div>
                         </div>
-                        <!-- Submit (login) -->
-                        <input type="submit" value="<fmt:message key="label.login"/>" />
-                        <div id="saml-login"><input type="samlsubmit" value="<fmt:message key="label.saml.login"/>"/></div>
+
+                        <div id="login-submit">
+                            <!-- Submit (login) -->
+                            <input id="login-submit" type="submit" value="<fmt:message key="label.login"/>" />
+                        </div>
                         <!-- Select language -->
                         <div class="select-language">
                             <select name="language">
-                                <option value=""></option> <!-- when this blank option is selected, browser's default language will be used -->
+                                <option value=""></option> <!-- when this blank option is selected, default language of the browser will be used -->
                                 <option value="en"><fmt:message key="label.lang.english"/></option>
                                 <option value="ja_JP"><fmt:message key="label.lang.japanese"/></option>
                                 <option value="zh_CN"><fmt:message key="label.lang.chinese"/></option>
