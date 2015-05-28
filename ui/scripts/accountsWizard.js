@@ -162,8 +162,34 @@
                 validation: {
                     required: false
                 }
+            },
+            samlEnable: {
+                label: 'label.saml.enable',
+                docID: 'helpSamlEnable',
+                isBoolean: true,
+                validation: {
+                    required: false
+                }
+            },
+            samlEntity: {
+                label: 'label.saml.entity',
+                docID: 'helpSamlEntity',
+                validation: {
+                    required: false
+                },
+                select: function(args) {
+                    var items = [];
+                    $(g_idpList).each(function() {
+                        items.push({
+                            id: this.id,
+                            description: this.orgName
+                        });
+                    });
+                    args.response.success({
+                        data: items
+                    });
+                }
             }
-
         },
 
         action: function(args) {
@@ -218,6 +244,18 @@
                 array1.push("&group=" + args.groupname);
             }
 
+            var authorizeUsersForSamlSSO = function (users, entity) {
+                for (var i = 0; i < users.length; i++) {
+                    $.ajax({
+                        url: createURL('authorizeSamlSso&enable=true&userid=' + users[i].id + "&entityid=" + entity),
+                        error: function(XMLHttpResponse) {
+                            args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                        }
+                    });
+                }
+                return;
+            };
+
             if (ldapStatus) {
                 if (args.groupname) {
                     $.ajax({
@@ -225,6 +263,13 @@
                         dataType: "json",
                         type: "POST",
                         async: false,
+                        success: function (json) {
+                            if (json.ldapuserresponse && args.data.samlEnable && args.data.samlEnable === 'on') {
+                                cloudStack.dialog.notice({
+                                    message: "Unable to find users IDs to enable SAML Single Sign On, kindly enable it manually."
+                                });
+                            }
+                        },
                         error: function(XMLHttpResponse) {
                             args.response.error(parseXMLHttpResponse(XMLHttpResponse));
                         }
@@ -235,6 +280,14 @@
                         dataType: "json",
                         type: "POST",
                         async: false,
+                        success: function(json) {
+                            if (args.data.samlEnable && args.data.samlEnable === 'on') {
+                                var users = json.createaccountresponse.account.user;
+                                var entity = args.data.samlEntity;
+                                if (users && entity)
+                                    authorizeUsersForSamlSSO(users, entity);
+                            }
+                        },
                         error: function(XMLHttpResponse) {
                             args.response.error(parseXMLHttpResponse(XMLHttpResponse));
                         }
@@ -246,6 +299,14 @@
                     dataType: "json",
                     type: "POST",
                     async: false,
+                    success: function(json) {
+                        if (args.data.samlEnable && args.data.samlEnable === 'on') {
+                            var users = json.createaccountresponse.account.user;
+                            var entity = args.data.samlEntity;
+                            if (users && entity)
+                                authorizeUsersForSamlSSO(users, entity);
+                        }
+                    },
                     error: function(XMLHttpResponse) {
                         args.response.error(parseXMLHttpResponse(XMLHttpResponse));
                     }

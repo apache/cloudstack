@@ -63,4 +63,8 @@ public interface UserAccount extends InternalIdentity {
     int getLoginAttempts();
 
     public User.Source getSource();
+
+    public String getExternalEntity();
+
+    public void setExternalEntity(String entity);
 }

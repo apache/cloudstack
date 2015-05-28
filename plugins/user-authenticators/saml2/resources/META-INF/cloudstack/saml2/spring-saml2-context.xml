@@ -33,4 +33,7 @@
         <property name="name" value="SAML2Auth"/>
     </bean>
 
+    <bean id="samlTokenDao" class="org.apache.cloudstack.saml.SAMLTokenDaoImpl">
+    </bean>
+
 </beans>
