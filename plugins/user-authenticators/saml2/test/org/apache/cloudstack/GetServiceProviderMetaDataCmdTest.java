@@ -17,13 +17,15 @@
  * under the License.
  */
 
-package org.apache.cloudstack.api.command;
+package org.apache.cloudstack;
 
 import com.cloud.utils.HttpUtils;
 import org.apache.cloudstack.api.ApiServerService;
 import org.apache.cloudstack.api.auth.APIAuthenticationType;
+import org.apache.cloudstack.api.command.GetServiceProviderMetaDataCmd;
 import org.apache.cloudstack.saml.SAML2AuthManager;
-import org.apache.cloudstack.utils.auth.SAMLUtils;
+import org.apache.cloudstack.saml.SAMLProviderMetadata;
+import org.apache.cloudstack.saml.SAMLUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,6 +38,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.lang.reflect.Field;
 import java.security.InvalidKeyException;
+import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.SignatureException;
@@ -77,20 +80,21 @@ public class GetServiceProviderMetaDataCmdTest {
 
         String spId = "someSPID";
         String url = "someUrl";
-        X509Certificate cert = SAMLUtils.generateRandomX509Certificate(SAMLUtils.generateRandomKeyPair());
-        Mockito.when(samlAuthManager.getServiceProviderId()).thenReturn(spId);
-        Mockito.when(samlAuthManager.getIdpSigningKey()).thenReturn(cert);
-        Mockito.when(samlAuthManager.getIdpSingleLogOutUrl()).thenReturn(url);
-        Mockito.when(samlAuthManager.getSpSingleLogOutUrl()).thenReturn(url);
+        KeyPair kp = SAMLUtils.generateRandomKeyPair();
+        X509Certificate cert = SAMLUtils.generateRandomX509Certificate(kp);
+
+        SAMLProviderMetadata providerMetadata = new SAMLProviderMetadata();
+        providerMetadata.setEntityId("random");
+        providerMetadata.setSigningCertificate(cert);
+        providerMetadata.setEncryptionCertificate(cert);
+        providerMetadata.setKeyPair(kp);
+        providerMetadata.setSsoUrl("http://test.local");
+        providerMetadata.setSloUrl("http://test.local");
+
+        Mockito.when(samlAuthManager.getSPMetadata()).thenReturn(providerMetadata);
 
         String result = cmd.authenticate("command", null, session, InetAddress.getByName("127.0.0.1"), HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), req, resp);
         Assert.assertTrue(result.contains("md:EntityDescriptor"));
-
-        Mockito.verify(samlAuthManager, Mockito.atLeast(1)).getServiceProviderId();
-        Mockito.verify(samlAuthManager, Mockito.atLeast(1)).getSpSingleSignOnUrl();
-        Mockito.verify(samlAuthManager, Mockito.atLeast(1)).getSpSingleLogOutUrl();
-        Mockito.verify(samlAuthManager, Mockito.never()).getIdpSingleSignOnUrl();
-        Mockito.verify(samlAuthManager, Mockito.never()).getIdpSingleLogOutUrl();
     }
 
     @Test

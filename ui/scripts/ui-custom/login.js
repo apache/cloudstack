@@ -94,54 +94,120 @@
         $inputs.filter(':first').addClass('first-input').focus();
 
         // Login action
-        $login.find('input[type=submit]').click(function() {
-            if (!$form.valid()) return false;
+        var selectedLogin = 'cloudstack';
+        $login.find('#login-submit').click(function() {
+            if (selectedLogin === 'cloudstack') {
+                // CloudStack Local Login
+                if (!$form.valid()) return false;
 
-            var data = cloudStack.serializeForm($form);
+                var data = cloudStack.serializeForm($form);
 
-            args.loginAction({
-                data: data,
-                response: {
-                    success: function(args) {
-                        $login.remove();
-                        $('html body').removeClass('login');
-                        complete({
-                            user: args.data.user
-                        });
-                    },
-                    error: function(args) {
-                        cloudStack.dialog.notice({
-                            message: args
-                        });
+                args.loginAction({
+                    data: data,
+                    response: {
+                        success: function(args) {
+                            $login.remove();
+                            $('html body').removeClass('login');
+                            complete({
+                                user: args.data.user
+                            });
+                        },
+                        error: function(args) {
+                            cloudStack.dialog.notice({
+                                message: args
+                            });
+                        }
                     }
-                }
-            });
-
+                });
+            } else if (selectedLogin === 'saml') {
+                // SAML
+                args.samlLoginAction({
+                    data: {'idpid': $login.find('#login-options').find(':selected').val(),
+                          'domain': $login.find('#saml-domain').val()}
+                });
+            }
             return false;
         });
 
-        // SAML Login action
-        $login.find('input[type=samlsubmit]').click(function() {
-            args.samlLoginAction({
-            });
+        // Show SAML button if only SP is configured
+        $login.find('#login-dropdown').hide();
+        $login.find('#saml-login').hide();
+        $login.find('#cloudstack-login').hide();
+
+        var toggleLoginView = function (selectedOption) {
+            $login.find('#login-submit').show();
+            if (selectedOption === '') {
+                    $login.find('#saml-login').hide();
+                    $login.find('#cloudstack-login').hide();
+                    $login.find('#login-submit').hide();
+                    selectedLogin = 'none';
+            } else if (selectedOption === 'cloudstack-login') {
+                    $login.find('#saml-login').hide();
+                    $login.find('#cloudstack-login').show();
+                    selectedLogin = 'cloudstack';
+            } else {
+                    $login.find('#saml-login').show();
+                    $login.find('#cloudstack-login').hide();
+                    selectedLogin = 'saml';
+            }
+        };
+
+        $login.find('#login-options').change(function() {
+            var selectedOption = $login.find('#login-options').find(':selected').val();
+            toggleLoginView(selectedOption);
+            if (selectedOption && selectedOption !== '') {
+                $.cookie('login-option', selectedOption);
+            }
         });
 
-        // Show SAML button if only SP is configured
-        $login.find("#saml-login").hide();
         $.ajax({
-            type: "GET",
-            url: createURL("getSPMetadata"),
-            dataType: "json",
+            type: 'GET',
+            url: createURL('listIdps'),
+            dataType: 'json',
             async: false,
             success: function(data, textStatus, xhr) {
                 if (xhr.status === 200) {
-                    $login.find('#saml-login').show();
+                    $login.find('#login-dropdown').show();
+                    $login.find('#login-submit').hide();
                 } else {
-                    $login.find('#saml-login').hide();
+                    $login.find('#cloudstack-login').show();
+                    $login.find('#login-submit').show();
+                    return;
+                }
+
+                $login.find('#login-options')
+                    .append($('<option>', {
+                        value: '',
+                        text: '--- Select Identity Provider -- ',
+                        selected: true
+                    }));
+
+                if (data.listidpsresponse && data.listidpsresponse.idp) {
+                    var idpList = data.listidpsresponse.idp.sort(function (a, b) {
+                        return a.orgName.localeCompare(b.orgName);
+                    });
+                    g_idpList = idpList;
+                    $.each(idpList, function(index, idp) {
+                        $login.find('#login-options')
+                            .append($('<option>', {
+                                value: idp.id,
+                                text: idp.orgName
+                            }));
+                    });
+                }
+
+                var loginOption = $.cookie('login-option');
+                if (loginOption) {
+                    var option = $login.find('#login-options option[value="' + loginOption + '"]');
+                    if (option.length > 0) {
+                        option.prop('selected', true);
+                        toggleLoginView(loginOption);
+                    }
                 }
             },
             error: function(xhr) {
                 $login.find('#saml-login').hide();
+                $login.find('#cloudstack-login').show();
             }
         });
 

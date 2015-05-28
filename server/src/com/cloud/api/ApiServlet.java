@@ -238,7 +238,7 @@ public class ApiServlet extends HttpServlet {
                 userId = (Long)session.getAttribute("userid");
                 final String account = (String)session.getAttribute("account");
                 final Object accountObj = session.getAttribute("accountobj");
-                final String sessionKey = (String)session.getAttribute("sessionkey");
+                final String sessionKey = (String)session.getAttribute(ApiConstants.SESSIONKEY);
                 final String[] sessionKeyParam = (String[])params.get(ApiConstants.SESSIONKEY);
                 if ((sessionKeyParam == null) || (sessionKey == null) || !sessionKey.equals(sessionKeyParam[0])) {
                     try {

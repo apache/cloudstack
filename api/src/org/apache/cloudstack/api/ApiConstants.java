@@ -375,6 +375,7 @@ public class ApiConstants {
     public static final String ISOLATION_METHODS = "isolationmethods";
     public static final String PHYSICAL_NETWORK_ID = "physicalnetworkid";
     public static final String DEST_PHYSICAL_NETWORK_ID = "destinationphysicalnetworkid";
+    public static final String ENABLE = "enable";
     public static final String ENABLED = "enabled";
     public static final String SERVICE_NAME = "servicename";
     public static final String DHCP_RANGE = "dhcprange";
@@ -518,7 +519,7 @@ public class ApiConstants {
     public static final String VMPROFILE_ID = "vmprofileid";
     public static final String VMGROUP_ID = "vmgroupid";
     public static final String CS_URL = "csurl";
-    public static final String IDP_URL = "idpurl";
+    public static final String IDP_ID = "idpid";
     public static final String SCALEUP_POLICY_IDS = "scaleuppolicyids";
     public static final String SCALEDOWN_POLICY_IDS = "scaledownpolicyids";
     public static final String SCALEUP_POLICIES = "scaleuppolicies";

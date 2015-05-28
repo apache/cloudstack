@@ -1223,6 +1223,102 @@
                                 }
                             },
 
+                            configureSamlAuthorization: {
+                                label: 'label.action.configure.samlauthorization',
+                                messages: {
+                                    notification: function(args) {
+                                        return 'label.action.configure.samlauthorization';
+                                    }
+                                },
+                                action: {
+                                    custom: function(args) {
+                                        var start = args.start;
+                                        var complete = args.complete;
+                                        var context = args.context;
+
+                                        if (g_idpList) {
+                                            $.ajax({
+                                                url: createURL('listSamlAuthorization'),
+                                                data: {
+                                                    userid: context.users[0].id,
+                                                },
+                                                success: function(json) {
+                                                    var authorization = json.listsamlauthorizationsresponse.samlauthorization[0];
+                                                    cloudStack.dialog.createForm({
+                                                        form: {
+                                                            title: 'label.action.configure.samlauthorization',
+                                                            fields: {
+                                                                samlEnable: {
+                                                                    label: 'label.saml.enable',
+                                                                    docID: 'helpSamlEnable',
+                                                                    isBoolean: true,
+                                                                    isChecked: authorization.status,
+                                                                    validation: {
+                                                                        required: false
+                                                                    }
+                                                                },
+                                                                samlEntity: {
+                                                                    label: 'label.saml.entity',
+                                                                    docID: 'helpSamlEntity',
+                                                                    validation: {
+                                                                        required: false
+                                                                    },
+                                                                    select: function(args) {
+                                                                        var items = [];
+                                                                        $(g_idpList).each(function() {
+                                                                            items.push({
+                                                                                id: this.id,
+                                                                                description: this.orgName
+                                                                            });
+                                                                        });
+                                                                        args.response.success({
+                                                                            data: items
+                                                                        });
+                                                                        args.$select.change(function() {
+                                                                            $('select[name="samlEntity"] option[value="' + authorization.idpid  + '"]').attr("selected", "selected");
+                                                                        });
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        after: function(args) {
+                                                            start();
+                                                            var enableSaml = false;
+                                                            var idpId = '';
+                                                            if (args.data.hasOwnProperty('samlEnable')) {
+                                                                enableSaml = (args.data.samlEnable === 'on');
+                                                            }
+                                                            if (args.data.hasOwnProperty('samlEntity')) {
+                                                                idpId = args.data.samlEntity;
+                                                            }
+                                                            $.ajax({
+                                                                url: createURL('authorizeSamlSso'),
+                                                                data: {
+                                                                    userid: context.users[0].id,
+                                                                    enable: enableSaml,
+                                                                    entityid: idpId
+                                                                },
+                                                                type: "POST",
+                                                                success: function(json) {
+                                                                    complete();
+                                                                },
+                                                                error: function(json) {
+                                                                    complete({ error: parseXMLHttpResponse(json) });
+                                                                }
+                                                            });
+                                                        }
+                                                    });
+                                                },
+                                                error: function(json) {
+                                                    complete({ error: parseXMLHttpResponse(json) });
+                                                }
+                                            });
+
+                                        }
+                                    }
+                                }
+                            },
+
                             generateKeys: {
                                 label: 'label.action.generate.keys',
                                 messages: {
@@ -1797,6 +1893,9 @@
             allowedActions.push("edit");
             allowedActions.push("changePassword");
             allowedActions.push("generateKeys");
+            if (g_idpList) {
+                allowedActions.push("configureSamlAuthorization");
+            }
             if (!(jsonObj.domain == "ROOT" && jsonObj.account == "admin" && jsonObj.accounttype == 1)) { //if not system-generated default admin account user
                 if (jsonObj.state == "enabled")
                     allowedActions.push("disable");
@@ -1818,6 +1917,9 @@
                 
                 allowedActions.push("changePassword");
                 allowedActions.push("generateKeys");
+                if (g_idpList) {
+                    allowedActions.push("configureSamlAuthorization");
+                }
         	}        	
         }
         return allowedActions;

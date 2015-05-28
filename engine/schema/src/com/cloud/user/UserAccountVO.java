@@ -105,6 +105,9 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
     @Enumerated(value = EnumType.STRING)
     private User.Source source;
 
+    @Column(name = "external_entity", length = 65535)
+    private String externalEntity = null;
+
     public UserAccountVO() {
     }
 
@@ -295,5 +298,13 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
 
     public void setSource(User.Source source) {
         this.source = source;
+    }
+
+    public String getExternalEntity() {
+        return externalEntity;
+    }
+
+    public void setExternalEntity(String externalEntity) {
+        this.externalEntity = externalEntity;
     }
 }

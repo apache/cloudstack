@@ -271,6 +271,11 @@
                     delete args.informationNotInLdap.ldapGroupName;
                 }
 
+                if (g_idpList == null) {
+                    delete args.informationNotInLdap.samlEnable;
+                    delete args.informationNotInLdap.samlEntity;
+                }
+
                 var informationNotInLdap = cloudStack.dialog.createForm({
                     context: context,
                     noDialog: true,
