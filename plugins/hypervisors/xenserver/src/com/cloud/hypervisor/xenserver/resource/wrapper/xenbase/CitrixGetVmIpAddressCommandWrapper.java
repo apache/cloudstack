@@ -17,7 +17,8 @@
 // under the License.
 //
 
-package com.cloud.hypervisor.xenserver.resource.wrapper.citrix;
+package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
+
 import java.util.Map;
 import com.cloud.agent.api.GetVmIpAddressCommand;
 import com.cloud.resource.ResourceWrapper;
