@@ -27,8 +27,8 @@
         "xenserver": "http://packages.shapeblue.com/systemvmtemplate/4.5/systemvm64template-4.5-xen.vhd.bz2"
       },
       "configuration": "/vagrant/marvin.cfg.erb",
-      "yum_repo": "http://packages.shapeblue.com/cloudstack/testing/centos/4.5/",
-      "apt_repo": "http://packages.shapeblue.com/cloudstack/testing/debian/4.5/",
+      "yum_repo": "http://packages.shapeblue.com/cloudstack/upstream/centos/4.5/",
+      "apt_repo": "http://packages.shapeblue.com/cloudstack/upstream/debian/4.5/",
       "version": "4.5.0"
   }
 }
