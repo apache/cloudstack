@@ -65,7 +65,7 @@ public class RegisterTemplateCmd extends BaseCmd {
     @Parameter(name = ApiConstants.FORMAT,
                type = CommandType.STRING,
                required = true,
-               description = "the format for the template. Possible values include QCOW2, RAW, and VHD.")
+               description = "the format for the template. Possible values include QCOW2, RAW, VHD and OVA.")
     private String format;
 
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = true, description = "the target hypervisor for the template")
