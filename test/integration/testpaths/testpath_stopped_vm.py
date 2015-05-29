@@ -148,9 +148,13 @@ class TestAdvancedZoneStoppedVM(cloudstackTestCase):
             # Create 2 service offerings with different values for
             # for cpunumber, cpuspeed, and memory
 
-            cls.testdata["service_offering"]["cpunumber"] = "1"
-            cls.testdata["service_offering"]["cpuspeed"] = "128"
-            cls.testdata["service_offering"]["memory"] = "256"
+            cls.testdata["service_offering"]["cpunumber"] = 1
+            cls.testdata["service_offering"]["cpuspeed"] = 128
+            cls.testdata["service_offering"]["memory"] = 256
+
+            if cls.hypervisor.lower() == "hyperv":
+                cls.testdata["service_offering"]["cpuspeed"] = 1024
+                cls.testdata["service_offering"]["memory"] = 1024
 
             cls.service_offering = ServiceOffering.create(
                 cls.apiclient,
@@ -158,9 +162,7 @@ class TestAdvancedZoneStoppedVM(cloudstackTestCase):
             )
             cls._cleanup.append(cls.service_offering)
 
-            cls.testdata["service_offering"]["cpunumber"] = "2"
-            cls.testdata["service_offering"]["cpuspeed"] = "256"
-            cls.testdata["service_offering"]["memory"] = "512"
+            cls.testdata["service_offering"]["cpunumber"] = 2
 
             cls.service_offering_2 = ServiceOffering.create(
                 cls.apiclient,
