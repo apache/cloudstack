@@ -56,7 +56,6 @@ override_dh_auto_install:
 	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management/webapps/client
-	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management/webapps7080
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-management/setup
 	mkdir $(DESTDIR)/var/log/$(PACKAGE)/management
 	mkdir $(DESTDIR)/var/cache/$(PACKAGE)/management

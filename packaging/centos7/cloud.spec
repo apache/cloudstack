@@ -362,10 +362,6 @@ if [ "$1" == "1" ] ; then
     /usr/bin/systemctl on cloudstack-management > /dev/null 2>&1 || true
 fi
 
-if [ -d "%{_datadir}/%{name}-management" ] ; then
-   ln -s %{_datadir}/%{name}-bridge/webapps %{_datadir}/%{name}-management/webapps7080
-fi
-
 if [ ! -f %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util ] ; then
     echo Please download vhd-util from http://download.cloud.com.s3.amazonaws.com/tools/vhd-util and put it in 
     echo %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/
