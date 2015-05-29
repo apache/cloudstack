@@ -175,11 +175,3 @@ class configFileOps:
                 self.add_lines(oldLine, False)
             else:
                 self.replace_lines(newLine, oldLine, False)
-            
-if __name__ == '__main__':
-    cfo = configFileOps("./sudoers")
-    #cloud ALL = NOPASSWD : ALL
-    cfo.addEntry("cloud ALL ", "NOPASSWD : ALL")
-    cfo.rmEntry("Defaults", "requiretty", " ")
-    #cfo.addEntry("zone", "test", " ")
-    cfo.save()
