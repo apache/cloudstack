@@ -34,9 +34,6 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.agent.api.GetVmIpAddressCommand;
-import com.xensource.xenapi.VM;
-import com.xensource.xenapi.VMGuestMetrics;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -67,6 +64,7 @@ import com.cloud.agent.api.DeleteVMSnapshotCommand;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
+import com.cloud.agent.api.GetVmIpAddressCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.MaintainCommand;
@@ -141,6 +139,8 @@ import com.xensource.xenapi.PIF;
 import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.VM;
+import com.xensource.xenapi.VMGuestMetrics;
 
 
 @RunWith(MockitoJUnitRunner.class)
@@ -650,7 +650,7 @@ public class CitrixRequestWrapperTest {
 
     @Test
     public void testPingTestCommandRouterPvtIps() {
-        final PingTestCommand pingTestCommand = new PingTestCommand("127.0.0.1", "192.168.0.1");
+        final PingTestCommand pingTestCommand = new PingTestCommand("127.0.0.1", "127.0.0.1");
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -819,7 +819,7 @@ public class CitrixRequestWrapperTest {
         final Network network = Mockito.mock(Network.class);
         final XsHost xsHost = Mockito.mock(XsHost.class);
 
-        final OvsCreateGreTunnelCommand createGreCommand = new OvsCreateGreTunnelCommand("172.0.0.1", "KEY", 1l, 2l);
+        final OvsCreateGreTunnelCommand createGreCommand = new OvsCreateGreTunnelCommand("127.0.0.1", "KEY", 1l, 2l);
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -1841,13 +1841,13 @@ public class CitrixRequestWrapperTest {
         final Connection conn = Mockito.mock(Connection.class);
         final VM vm = Mockito.mock(VM.class);
         final VMGuestMetrics mtr = Mockito.mock(VMGuestMetrics.class);
-        VMGuestMetrics.Record rec = Mockito.mock(VMGuestMetrics.Record.class);
+        final VMGuestMetrics.Record rec = Mockito.mock(VMGuestMetrics.Record.class);
 
-        Map<String, String> vmIpsMap = new HashMap<>();
-        vmIpsMap.put("Test", "10.1.1.121");
+        final Map<String, String> vmIpsMap = new HashMap<>();
+        vmIpsMap.put("Test", "127.0.0.1");
         rec.networks = vmIpsMap;
 
-        final GetVmIpAddressCommand getVmIpAddrCmd = new GetVmIpAddressCommand("Test", "10.1.1.0/24", false);
+        final GetVmIpAddressCommand getVmIpAddrCmd = new GetVmIpAddressCommand("Test", "127.0.0.1/24", false);
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);

@@ -19,6 +19,61 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+import java.util.UUID;
+
+import javax.naming.ConfigurationException;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+
+import org.apache.cloudstack.storage.command.AttachAnswer;
+import org.apache.cloudstack.storage.command.AttachCommand;
+import org.apache.cloudstack.utils.linux.CPUStat;
+import org.apache.cloudstack.utils.linux.MemStat;
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.commons.lang.SystemUtils;
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.libvirt.Connect;
+import org.libvirt.Domain;
+import org.libvirt.DomainBlockStats;
+import org.libvirt.DomainInfo;
+import org.libvirt.DomainInfo.DomainState;
+import org.libvirt.DomainInterfaceStats;
+import org.libvirt.LibvirtException;
+import org.libvirt.NodeInfo;
+import org.libvirt.StorageVol;
+import org.mockito.Matchers;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.runners.MockitoJUnitRunner;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
@@ -116,59 +171,6 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.Type;
-import org.apache.cloudstack.storage.command.AttachAnswer;
-import org.apache.cloudstack.storage.command.AttachCommand;
-import org.apache.cloudstack.utils.linux.CPUStat;
-import org.apache.cloudstack.utils.linux.MemStat;
-import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
-import org.apache.commons.lang.SystemUtils;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.libvirt.Connect;
-import org.libvirt.Domain;
-import org.libvirt.DomainBlockStats;
-import org.libvirt.DomainInfo;
-import org.libvirt.DomainInfo.DomainState;
-import org.libvirt.DomainInterfaceStats;
-import org.libvirt.LibvirtException;
-import org.libvirt.NodeInfo;
-import org.libvirt.StorageVol;
-import org.mockito.Matchers;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.runners.MockitoJUnitRunner;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
-
-import javax.naming.ConfigurationException;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LibvirtComputingResourceTest {
@@ -1213,7 +1215,7 @@ public class LibvirtComputingResourceTest {
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
 
         final String vmName = "Test";
-        final String destIp = "10.1.1.100";
+        final String destIp = "127.0.0.100";
         final boolean isWindows = false;
         final VirtualMachineTO vmTO = Mockito.mock(VirtualMachineTO.class);
         final boolean executeInSequence = false;
@@ -3494,10 +3496,10 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testNetworkUsageCommandNonVpc() {
-        final String privateIP = "169.16.16.16";
+        final String privateIP = "127.0.0.1";
         final String domRName = "domR";
         final boolean forVpc = false;
-        final String gatewayIP = "10.1.1.1";
+        final String gatewayIP = "127.0.0.1";
 
         final NetworkUsageCommand command = new NetworkUsageCommand(privateIP, domRName, forVpc, gatewayIP);
 
@@ -3517,7 +3519,7 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testNetworkUsageCommandNonVpcCreate() {
-        final String privateIP = "169.16.16.16";
+        final String privateIP = "127.0.0.1";
         final String domRName = "domR";
         final boolean forVpc = false;
 
@@ -3538,10 +3540,10 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testNetworkUsageCommandVpcCreate() {
-        final String privateIP = "169.16.16.16";
+        final String privateIP = "127.0.0.1";
         final String domRName = "domR";
         final boolean forVpc = true;
-        final String gatewayIP = "10.1.1.1";
+        final String gatewayIP = "127.0.0.1";
         final String vpcCidr = "10.1.1.0/24";
 
         final NetworkUsageCommand command = new NetworkUsageCommand(privateIP, domRName, forVpc, gatewayIP, vpcCidr);
@@ -3561,10 +3563,10 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testNetworkUsageCommandVpcGet() {
-        final String privateIP = "169.16.16.16";
+        final String privateIP = "127.0.0.1";
         final String domRName = "domR";
         final boolean forVpc = true;
-        final String gatewayIP = "10.1.1.1";
+        final String gatewayIP = "127.0.0.1";
 
         final NetworkUsageCommand command = new NetworkUsageCommand(privateIP, domRName, forVpc, gatewayIP);
 
@@ -3583,10 +3585,10 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testNetworkUsageCommandVpcVpn() {
-        final String privateIP = "169.16.16.16";
+        final String privateIP = "127.0.0.1";
         final String domRName = "domR";
         final boolean forVpc = true;
-        final String gatewayIP = "10.1.1.1";
+        final String gatewayIP = "127.0.0.1";
 
         final NetworkUsageCommand command = new NetworkUsageCommand(privateIP, domRName, "vpn", forVpc, gatewayIP);
 
@@ -3605,10 +3607,10 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testNetworkUsageCommandVpcNoOption() {
-        final String privateIP = "169.16.16.16";
+        final String privateIP = "127.0.0.1";
         final String domRName = "domR";
         final boolean forVpc = true;
-        final String gatewayIP = "10.1.1.1";
+        final String gatewayIP = "127.0.0.1";
 
         final NetworkUsageCommand command = new NetworkUsageCommand(privateIP, domRName, null, forVpc, gatewayIP);
 
@@ -4939,7 +4941,7 @@ public class LibvirtComputingResourceTest {
         final NicTO[] nics = new NicTO[]{nic};
 
         final String vmName = "Test";
-        final String controlIp = "169.122.10.10";
+        final String controlIp = "127.0.0.1";
 
         when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
         when(vmSpec.getNics()).thenReturn(nics);
@@ -5011,7 +5013,7 @@ public class LibvirtComputingResourceTest {
         final NicTO[] nics = new NicTO[]{nic};
 
         final String vmName = "Test";
-        final String controlIp = "169.122.10.10";
+        final String controlIp = "127.0.0.1";
 
         when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
         when(vmSpec.getNics()).thenReturn(nics);
