@@ -148,6 +148,12 @@ class TestConcurrentSnapshots(cloudstackTestCase):
             cls.testdata["ostype"])
 
         cls._cleanup = []
+        cls.vm_pool = []
+        cls.snapshotSupported = True
+
+        if cls.hypervisor.lower() in ["hyperv", "lxc"]:
+            cls.snapshotSupported = False
+            return
 
         # Set sleep time as per Snapshot Recurring Policy - HOURLY
         cls.sleep_time_for_hourly_policy = 60 * 60 * 1
@@ -177,7 +183,6 @@ class TestConcurrentSnapshots(cloudstackTestCase):
             )
             cls._cleanup.append(cls.service_offering)
 
-            cls.vm_pool = []
             for i in range(4):
                 cls.vm = VirtualMachine.create(
                     cls.apiclient,
@@ -235,6 +240,9 @@ class TestConcurrentSnapshots(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
+
+        if not self.snapshotSupported:
+            self.skipTest("Snapshot is not supported on %s" % self.hypervisor)
 
     def tearDown(self):
         try:
