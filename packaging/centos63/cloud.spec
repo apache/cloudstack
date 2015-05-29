@@ -225,6 +225,7 @@ mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/%{name}/management
 mkdir -p ${RPM_BUILD_ROOT}%{_initrddir}
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/sysconfig
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/profile.d
+mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d
 
 # Common
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
@@ -297,6 +298,7 @@ install -D client/target/pythonlibs/jasypt-1.9.2.jar ${RPM_BUILD_ROOT}%{_datadir
 install -D packaging/centos63/cloud-ipallocator.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-ipallocator
 install -D packaging/centos63/cloud-management.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-management
 install -D packaging/centos63/cloud-management.sysconfig ${RPM_BUILD_ROOT}%{_sysconfdir}/sysconfig/%{name}-management
+install -D server/target/conf/cloudstack-sudoers ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d/%{name}-management
 install -D packaging/centos63/tomcat.sh ${RPM_BUILD_ROOT}%{_initrddir}/tomcat.sh
 
 chmod 770 ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina
@@ -532,6 +534,7 @@ fi
 %dir %attr(0770,root,cloud) %{_localstatedir}/cache/%{name}/management/temp
 %dir %attr(0770,root,cloud) %{_localstatedir}/log/%{name}/management
 %config(noreplace) %{_sysconfdir}/sysconfig/%{name}-management
+%config(noreplace) %{_sysconfdir}/sudoers.d/%{name}-management
 %config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/management/db.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j-cloud.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat6-nonssl.conf
