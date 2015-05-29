@@ -34,16 +34,34 @@
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-storage-volume-solidfire</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>javax.servlet</groupId>
+          <artifactId>servlet-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-storage-volume-cloudbyte</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.sun.jersey</groupId>
+          <artifactId>jersey-bundle</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-server</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.mortbay.jetty</groupId>
+          <artifactId>servlet-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
@@ -200,6 +218,12 @@
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-hypervisor-hyperv</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.mortbay.jetty</groupId>
+          <artifactId>servlet-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
@@ -384,22 +408,22 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>com.googlecode.todomap</groupId>
-        <artifactId>maven-jettygzip-plugin</artifactId>
-        <version>0.0.4</version>
-        <configuration>
-          <webappDirectory>${project.build.directory}/generated-webapp</webappDirectory>
-          <outputDirectory>${project.build.directory}/generated-webapp</outputDirectory>
-        </configuration>
-        <executions>
-          <execution>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>process</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
+        <groupId>com.googlecode.todomap</groupId>  
+        <artifactId>maven-jettygzip-plugin</artifactId>  
+        <version>0.0.4</version>  
+        <configuration>  
+          <webappDirectory>${project.build.directory}/generated-webapp</webappDirectory>  
+          <outputDirectory>${project.build.directory}/generated-webapp</outputDirectory>  
+        </configuration>  
+        <executions>  
+          <execution>  
+            <phase>prepare-package</phase>  
+            <goals>  
+              <goal>process</goal>  
+            </goals>  
+          </execution>  
+        </executions>  
+      </plugin>  
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-war-plugin</artifactId>
@@ -444,7 +468,7 @@
           <webAppSourceDirectory>${project.build.directory}/generated-webapp</webAppSourceDirectory>
           <webAppConfig>
             <contextPath>/client</contextPath>
-            <extraClasspath>${project.build.directory}/utilities/scripts/db/;${project.build.directory}/utilities/scripts/db/db/</extraClasspath>
+            <extraClasspath>${project.build.directory}/conf/;${project.build.directory}/utilities/scripts/db/;${project.build.directory}/utilities/scripts/db/db/</extraClasspath>
           </webAppConfig>
           
           <systemProperties>
@@ -493,22 +517,6 @@
                 </copy>
                 <copy todir="${basedir}/target/generated-webapp">
                   <fileset dir="${basedir}/../ui"/>
-                </copy>
-                <copy overwrite="true" todir="${basedir}/target/generated-webapp/WEB-INF/classes">
-                  <fileset dir="${basedir}/tomcatconf">
-                    <include name="*.in"/>
-                  </fileset>
-                  <globmapper from="*.in" to="*"/>
-                  <filterchain>
-                    <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
-                      <param type="propertiesfile" value="${cs.replace.properties}"/>
-                    </filterreader>
-                  </filterchain>
-                </copy>
-                <copy overwrite="true" todir="${basedir}/target/generated-webapp/WEB-INF/classes">
-                  <fileset dir="${basedir}/tomcatconf">
-                    <exclude name="*.in"/>
-                  </fileset>
                 </copy>
                 <copy overwrite="true" todir="${basedir}/target/utilities/bin">
                   <fileset dir="${basedir}/../setup/bindir">
@@ -659,6 +667,12 @@
           <artifactId>cloud-systemvm</artifactId>
           <version>${project.version}</version>
           <type>pom</type>
+          <exclusions>
+            <exclusion>
+              <groupId>org.apache.tomcat.embed</groupId>
+              <artifactId>tomcat-embed-core</artifactId>
+            </exclusion>
+          </exclusions>
         </dependency>
       </dependencies>
       <build>

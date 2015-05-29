@@ -1,0 +1,101 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.apache.cloudstack</groupId>
+  <artifactId>cloudstack-tomcat</artifactId>
+  <version>4.6.0-SNAPSHOT</version>
+
+  <name>Apache CloudStack Custom Tomcat</name>
+  <parent>
+    <groupId>org.apache.cloudstack</groupId>
+    <artifactId>cloudstack</artifactId>
+    <version>4.6.0-SNAPSHOT</version>
+  </parent>
+
+
+  <properties>
+    <cs.jdk.version>1.7</cs.jdk.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+  </properties>
+  <dependencies>
+        <dependency>
+            <groupId>org.apache.tomcat</groupId>
+            <artifactId>tomcat-catalina</artifactId>
+            <version>${cs.tomcat.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.tomcat</groupId>
+            <artifactId>tomcat-catalina-ha</artifactId>
+            <version>${cs.tomcat.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tomcat</groupId>
+            <artifactId>tomcat-coyote</artifactId>
+            <version>${cs.tomcat.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.tomcat</groupId>
+            <artifactId>tomcat-jasper</artifactId>
+            <version>${cs.tomcat.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.tomcat</groupId>
+            <artifactId>tomcat-juli</artifactId>
+            <version>${cs.tomcat.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+  </dependencies>
+  <build>
+    <finalName>${project.artifactId}</finalName>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>cloudstack-checkstyle</id>
+              <phase>none</phase>
+              <inherited>false</inherited>
+            </execution>
+          </executions>
+      </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptors>
+                        <descriptor>tomcat-bootstrap.xml</descriptor>
+                        <descriptor>standalone.xml</descriptor>
+                    </descriptors>
+                    <archive>
+                        <manifest>
+                            <mainClass>org.apache.catalina.startup.Bootstrap</mainClass>
+                        </manifest>
+                        <manifestEntries>
+                            <Class-Path>tomcat-juli.jar /usr/share/java/commons-daemon.jar /usr/share/cloudstack-management/setup /usr/share/java/mysql-connector-java.jar /etc/cloudstack/management /usr/share/cloudstack-common</Class-Path>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+    </plugins>
+   </build>
+</project>
+

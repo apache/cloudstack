@@ -15,8 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# management server compile-time environment parameters
+Cmnd_Alias CLOUDSTACK = /bin/mkdir, /bin/mount, /bin/umount, /bin/cp, /bin/chmod, /usr/bin/keytool, /bin/keytool
 
-paths.script=/usr/share/cloudstack-common
-mount.parent=/var/cloudstack/mnt
-cloud-stack-components-specification=components.xml
+Defaults:cloud !requiretty 
+
+cloud   ALL=(root) NOPASSWD:CLOUDSTACK

@@ -206,12 +206,10 @@ class sysConfigServerRedhat(sysConfigServer):
     def __init__(self, glbEnv):
         super(sysConfigServerRedhat, self).__init__(glbEnv)
         self.svo = serviceOpsRedhat()
-        self.services = [sudoersConfig(self), 
-                         firewallConfigServer(self)]
+        self.services = [firewallConfigServer(self)]
     
 class sysConfigServerUbuntu(sysConfigServer):
     def __init__(self, glbEnv):
         super(sysConfigServerUbuntu, self).__init__(glbEnv)
         self.svo = serviceOpsUbuntu()
-        self.services = [sudoersConfig(self), 
-                         ubuntuFirewallConfigServer(self)]
+        self.services = [ubuntuFirewallConfigServer(self)]

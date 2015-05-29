@@ -70,7 +70,6 @@
     <module>hypervisors/ovm3</module>
     <module>network-elements/elastic-loadbalancer</module>
     <module>network-elements/ovs</module>
-    <module>network-elements/juniper-contrail</module>
     <module>network-elements/palo-alto</module>
     <module>network-elements/netscaler</module>
     <module>network-elements/nicira-nvp</module>
@@ -99,6 +98,7 @@
     <module>alert-handlers/snmp-alerts</module>
     <module>alert-handlers/syslog-alerts</module>
     <module>network-elements/internal-loadbalancer</module>
+    <module>network-elements/juniper-contrail</module>
     <module>network-elements/vxlan</module>
     <module>network-elements/globodns</module>
   </modules>

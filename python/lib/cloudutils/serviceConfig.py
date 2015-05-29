@@ -746,7 +746,7 @@ class firewallConfigServer(firewallConfigBase):
         if self.syscfg.env.svrMode == "myCloud":
             self.ports = "443 8080 8250 8443 9090".split()
         else:
-            self.ports = "8080 7080 8250 9090".split()
+            self.ports = "8080 8250 9090".split()
 
 class ubuntuFirewallConfigServer(firewallConfigServer):
     def allowPort(self, port):

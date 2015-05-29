@@ -15,9 +15,29 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# This file is loaded in /etc/init.d/vmopsmanagement
-# ATM we only do two things here:
+# Required for a tocmat cloned service
+NAME=cloudstack-management
 
-dummy=1 ; export TOMCAT_CFG=/etc/cloudstack/management/tomcat6.conf ; . /etc/cloudstack/management/tomcat6.conf
-#--------------------------
+# Where your java installation lives
+#JAVA_HOME="/usr/lib/jvm/java"
 
+# Where your cloudstack-management installation lives
+CATALINA_BASE="/usr/share/cloudstack-management"
+CATALINA_HOME="/usr/share/cloudstack-management"
+JASPER_HOME="/usr/share/cloudstack-management"
+CATALINA_TMPDIR="/usr/share/cloudstack-management/temp"
+
+JAVA_OPTS="-Djava.awt.headless=true -Dcom.sun.management.jmxremote=false -Xmx2g -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/cloudstack/management/ -XX:PermSize=512M -XX:MaxPermSize=800m -Djava.net.preferIPv4Stack=true -Djavax.net.ssl.trustStore=/etc/cloudstack/management/cloudmanagementserver.keystore -Djavax.net.ssl.trustStorePassword=vmops.com"
+
+TOMCAT_USER="cloud"
+
+SECURITY_MANAGER="false"
+
+SHUTDOWN_WAIT="30"
+
+SHUTDOWN_VERBOSE="false"
+
+# Set the TOMCAT_PID location
+CATALINA_PID="/var/run/cloudstack-management.pid"
+
+CLASSPATH=/etc/cloudstack/management:/usr/share/cloudstack-common:/usr/share/cloudstack-management/setup:/usr/share/java/mysql-connector-java.jar:/usr/share/cloudstack-management/bin:/usr/share/cloudstack-management/bin/tomcat-juli.jar:/usr/share/cloudstack-management/bin/bootstrap.jar:/usr/share/java/commons-daemon.jar
