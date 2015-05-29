@@ -57,6 +57,7 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
             cls).getClsTestClient()
         cls.apiclient = cls.testClient.getApiClient()
         cls.testdata = cls.testClient.getParsedTestDataConfig()
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         # Get Zone, Domain
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
@@ -549,6 +550,8 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
         # 9. Repeat step 6, this time the IP should not be from
              dedicated range, it should be from global pool
         """
+        if self.hypervisor.lower() in ["hyperv"]:
+            self.skipTest("Skipping test as VPC is not supported on HyperV")
         user_domain = Domain.create(
             self.apiclient,
             services=self.testdata["domain"],
