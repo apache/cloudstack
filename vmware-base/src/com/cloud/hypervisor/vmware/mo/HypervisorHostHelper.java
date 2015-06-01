@@ -681,7 +681,7 @@ public class HypervisorHostHelper {
         VmwareDistributedVirtualSwitchVlanSpec vlanSpec = null;
         VmwareDistributedVirtualSwitchPvlanSpec pvlanSpec = null;
         VMwareDVSPortSetting dvsPortSetting = null;
-        DVPortgroupConfigSpec dvPortGroupSpec;
+        DVPortgroupConfigSpec newDvPortGroupSpec;
 
         // Next, create the port group. For this, we need to create a VLAN spec.
         // NOTE - VmwareDistributedVirtualSwitchPvlanSpec extends VmwareDistributedVirtualSwitchVlanSpec.
@@ -701,38 +701,145 @@ public class HypervisorHostHelper {
             dvsPortSetting = createVmwareDVPortSettingSpec(shapingPolicy, secPolicy, pvlanSpec);
         }
 
-        dvPortGroupSpec = createDvPortGroupSpec(networkName, dvsPortSetting, numPorts, autoExpandSupported);
+        newDvPortGroupSpec = createDvPortGroupSpec(networkName, dvsPortSetting, numPorts, autoExpandSupported);
         if (portGroupPolicy != null)
         {
-            dvPortGroupSpec.setPolicy(portGroupPolicy);
+            newDvPortGroupSpec.setPolicy(portGroupPolicy);
         }
 
         if (!dataCenterMo.hasDvPortGroup(networkName)) {
             s_logger.info("Distributed Virtual Port group " + networkName + " not found.");
             // TODO(sateesh): Handle Exceptions
             try {
-                dvSwitchMo.createDVPortGroup(dvPortGroupSpec);
+                dvSwitchMo.createDVPortGroup(newDvPortGroupSpec);
             } catch (Exception e) {
                 String msg = "Failed to create distributed virtual port group " + networkName + " on dvSwitch " + physicalNetwork;
+                msg += ". " + VmwareHelper.getExceptionMessage(e);
                 throw new Exception(msg);
             }
         } else {
             s_logger.info("Found Distributed Virtual Port group " + networkName);
-            // TODO(sateesh): Handle Exceptions
-            DVPortgroupConfigInfo dvPortgroupInfo = dataCenterMo.getDvPortGroupSpec(networkName);
-            if (!isSpecMatch(dvPortgroupInfo, vid, shapingPolicy)) {
+            DVPortgroupConfigInfo currentDvPortgroupInfo = dataCenterMo.getDvPortGroupSpec(networkName);
+            if (!isSpecMatch(currentDvPortgroupInfo, newDvPortGroupSpec)) {
                 s_logger.info("Updating Distributed Virtual Port group " + networkName);
-                dvPortGroupSpec.setDefaultPortConfig(dvsPortSetting);
-                dvPortGroupSpec.setConfigVersion(dvPortgroupInfo.getConfigVersion());
+                newDvPortGroupSpec.setDefaultPortConfig(dvsPortSetting);
+                newDvPortGroupSpec.setConfigVersion(currentDvPortgroupInfo.getConfigVersion());
                 ManagedObjectReference morDvPortGroup = dataCenterMo.getDvPortGroupMor(networkName);
                 try {
-                    dvSwitchMo.updateDvPortGroup(morDvPortGroup, dvPortGroupSpec);
+                    dvSwitchMo.updateDvPortGroup(morDvPortGroup, newDvPortGroupSpec);
                 } catch (Exception e) {
                     String msg = "Failed to update distributed virtual port group " + networkName + " on dvSwitch " + physicalNetwork;
+                    msg += ". " + VmwareHelper.getExceptionMessage(e);
                     throw new Exception(msg);
                 }
             }
         }
+    }
+
+    public static boolean isSpecMatch(DVPortgroupConfigInfo currentDvPortgroupInfo, DVPortgroupConfigSpec newDvPortGroupSpec) {
+        String dvPortGroupName = newDvPortGroupSpec.getName();
+        s_logger.debug("Checking if configuration of dvPortGroup [" + dvPortGroupName + "] has changed.");
+        boolean specMatches = true;
+        DVSTrafficShapingPolicy currentTrafficShapingPolicy;
+        currentTrafficShapingPolicy = currentDvPortgroupInfo.getDefaultPortConfig().getInShapingPolicy();
+
+        assert (currentTrafficShapingPolicy != null);
+
+        LongPolicy oldAverageBandwidthPolicy = currentTrafficShapingPolicy.getAverageBandwidth();
+        LongPolicy oldBurstSizePolicy = currentTrafficShapingPolicy.getBurstSize();
+        LongPolicy oldPeakBandwidthPolicy = currentTrafficShapingPolicy.getPeakBandwidth();
+        BoolPolicy oldIsEnabledPolicy = currentTrafficShapingPolicy.getEnabled();
+        Long oldAverageBandwidth = null;
+        Long oldBurstSize = null;
+        Long oldPeakBandwidth = null;
+        Boolean oldIsEnabled = null;
+
+        if (oldAverageBandwidthPolicy != null) {
+            oldAverageBandwidth = oldAverageBandwidthPolicy.getValue();
+        }
+        if (oldBurstSizePolicy != null) {
+            oldBurstSize = oldBurstSizePolicy.getValue();
+        }
+        if (oldPeakBandwidthPolicy != null) {
+            oldPeakBandwidth = oldPeakBandwidthPolicy.getValue();
+        }
+        if (oldIsEnabledPolicy != null) {
+            oldIsEnabled = oldIsEnabledPolicy.isValue();
+        }
+
+        DVSTrafficShapingPolicy newTrafficShapingPolicyInbound = newDvPortGroupSpec.getDefaultPortConfig().getInShapingPolicy();
+        LongPolicy newAverageBandwidthPolicy = newTrafficShapingPolicyInbound.getAverageBandwidth();
+        LongPolicy newBurstSizePolicy = newTrafficShapingPolicyInbound.getBurstSize();
+        LongPolicy newPeakBandwidthPolicy = newTrafficShapingPolicyInbound.getPeakBandwidth();
+        BoolPolicy newIsEnabledPolicy = newTrafficShapingPolicyInbound.getEnabled();
+        Long newAverageBandwidth = null;
+        Long newBurstSize = null;
+        Long newPeakBandwidth = null;
+        Boolean newIsEnabled = null;
+        if (newAverageBandwidthPolicy != null) {
+            newAverageBandwidth = newAverageBandwidthPolicy.getValue();
+        }
+        if (newBurstSizePolicy != null) {
+            newBurstSize = newBurstSizePolicy.getValue();
+        }
+        if (newPeakBandwidthPolicy != null) {
+            newPeakBandwidth = newPeakBandwidthPolicy.getValue();
+        }
+        if (newIsEnabledPolicy != null) {
+            newIsEnabled = newIsEnabledPolicy.isValue();
+        }
+
+        if (!oldIsEnabled.equals(newIsEnabled)) {
+            s_logger.info("Detected change in state of shaping policy (enabled/disabled) [" + newIsEnabled + "]");
+            specMatches = false;
+        }
+
+        if (oldIsEnabled || newIsEnabled) {
+            if (oldAverageBandwidth != null && !oldAverageBandwidth.equals(newAverageBandwidth)) {
+                s_logger.info("Average bandwidth setting in new shaping policy doesn't match the existing setting.");
+                specMatches = false;
+            } else if (oldBurstSize != null && !oldBurstSize.equals(newBurstSize)) {
+                s_logger.info("Burst size setting in new shaping policy doesn't match the existing setting.");
+                specMatches = false;
+            } else if (oldPeakBandwidth != null && !oldPeakBandwidth.equals(newPeakBandwidth)) {
+                s_logger.info("Peak bandwidth setting in new shaping policy doesn't match the existing setting.");
+                specMatches = false;
+            }
+        }
+
+        boolean oldAutoExpandSetting = currentDvPortgroupInfo.isAutoExpand();
+        boolean autoExpandEnabled = newDvPortGroupSpec.isAutoExpand();
+        if (oldAutoExpandSetting != autoExpandEnabled) {
+            specMatches = false;
+        }
+        if (!autoExpandEnabled) {
+            // Allow update of number of dvports per dvPortGroup is auto expand is not enabled.
+            int oldNumPorts = currentDvPortgroupInfo.getNumPorts();
+            int newNumPorts = newDvPortGroupSpec.getNumPorts();
+            if (oldNumPorts < newNumPorts) {
+                s_logger.info("Need to update the number of dvports for dvPortGroup :[" + dvPortGroupName +
+                            "] from existing number of dvports " + oldNumPorts + " to " + newNumPorts);
+                specMatches = false;
+            } else if (oldNumPorts > newNumPorts) {
+                s_logger.warn("Detected that new number of dvports [" + newNumPorts + "] in dvPortGroup [" + dvPortGroupName +
+                        "] is less than existing number of dvports [" + oldNumPorts + "]. Attempt to update this dvPortGroup may fail!");
+                specMatches = false;
+            }
+        }
+
+        VmwareDistributedVirtualSwitchVlanIdSpec oldVlanSpec = (VmwareDistributedVirtualSwitchVlanIdSpec)((
+                VMwareDVSPortSetting)currentDvPortgroupInfo.getDefaultPortConfig()).getVlan();
+        VmwareDistributedVirtualSwitchVlanIdSpec newVlanSpec = (VmwareDistributedVirtualSwitchVlanIdSpec)((
+                VMwareDVSPortSetting)newDvPortGroupSpec.getDefaultPortConfig()).getVlan();
+        int oldVlanId = oldVlanSpec.getVlanId();
+        int newVlanId = newVlanSpec.getVlanId();
+        if (oldVlanId != newVlanId) {
+            s_logger.info("Detected that new VLAN [" + newVlanId + "] of dvPortGroup [" + dvPortGroupName +
+                        "] is different from current VLAN [" + oldVlanId + "]");
+            specMatches = false;
+        }
+
+        return specMatches;
     }
 
     public static ManagedObjectReference waitForDvPortGroupReady(DatacenterMO dataCenterMo, String dvPortGroupName, long timeOutMs) throws Exception {
@@ -811,11 +918,12 @@ public class HypervisorHostHelper {
 
     public static DVSTrafficShapingPolicy getDVSShapingPolicy(Integer networkRateMbps) {
         DVSTrafficShapingPolicy shapingPolicy = new DVSTrafficShapingPolicy();
+        BoolPolicy isEnabled = new BoolPolicy();
         if (networkRateMbps == null || networkRateMbps.intValue() <= 0) {
+            isEnabled.setValue(false);
+            shapingPolicy.setEnabled(isEnabled);
             return shapingPolicy;
         }
-        shapingPolicy = new DVSTrafficShapingPolicy();
-        BoolPolicy isEnabled = new BoolPolicy();
         LongPolicy averageBandwidth = new LongPolicy();
         LongPolicy peakBandwidth = new LongPolicy();
         LongPolicy burstSize = new LongPolicy();
