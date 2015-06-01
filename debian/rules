@@ -10,9 +10,7 @@
 # Modified to make a template file for a multi-binary package with separated
 # build-arch and build-indep targets  by Bill Allombert 2001
 
-DEBVERS := $(shell dpkg-parsechangelog | sed -n -e 's/^Version: //p')
-VERSION := $(shell echo '$(DEBVERS)' | sed -e 's/^[[:digit:]]*://' -e 's/[~-].*//')
-MVNADD := $(shell if echo '$(DEBVERS)' | grep -q snapshot; then echo ; fi )
+VERSION := $(shell awk 'f{print;f=0} /<artifactId>cloudstack/{f=1}' pom.xml| sed -e 's/<[^>]*>//g'  -e 's/^[ \t]*//')
 PACKAGE = $(shell dh_listpackages|head -n 1|cut -d '-' -f 1)
 SYSCONFDIR = "/etc"
 DESTDIR = "debian/tmp"
@@ -67,8 +65,8 @@ install:
 	mkdir $(DESTDIR)/var/log/$(PACKAGE)/agent
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-agent
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-agent/plugins
-	install -D agent/target/cloud-agent-$(VERSION)$(MVNADD).jar $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/$(PACKAGE)-agent.jar
-	install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-$(VERSION)$(MVNADD).jar $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
+	install -D agent/target/cloud-agent-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/$(PACKAGE)-agent.jar
+	install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
 	install -D plugins/hypervisors/kvm/target/dependencies/* $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
 	install -D packaging/debian/init/cloud-agent $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-agent
 	install -D agent/target/transformed/cloud-setup-agent $(DESTDIR)/usr/bin/cloudstack-setup-agent
@@ -95,7 +93,7 @@ install:
 	mkdir $(DESTDIR)/var/lib/$(PACKAGE)/management
 	mkdir $(DESTDIR)/var/lib/$(PACKAGE)/mnt
 	cp -r client/target/utilities/scripts/db/* $(DESTDIR)/usr/share/$(PACKAGE)-management/setup/
-	cp -r client/target/cloud-client-ui-$(VERSION)$(MVNADD)/* $(DESTDIR)/usr/share/$(PACKAGE)-management/webapps/client/
+	cp -r client/target/cloud-client-ui-$(VERSION)/* $(DESTDIR)/usr/share/$(PACKAGE)-management/webapps/client/
 	cp server/target/conf/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/
 	cp client/target/conf/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/
 
@@ -148,7 +146,7 @@ install:
 	mkdir $(DESTDIR)/var/log/$(PACKAGE)/usage
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-usage
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-usage/plugins
-	install -D usage/target/cloud-usage-$(VERSION)$(MVNADD).jar $(DESTDIR)/usr/share/$(PACKAGE)-usage/lib/$(PACKAGE)-usage.jar
+	install -D usage/target/cloud-usage-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-usage/lib/$(PACKAGE)-usage.jar
 	install -D usage/target/dependencies/* $(DESTDIR)/usr/share/$(PACKAGE)-usage/lib/
 	cp usage/target/transformed/db.properties $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/usage/
 	cp usage/target/transformed/log4j-cloud_usage.xml $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/usage/log4j-cloud.xml
@@ -161,7 +159,7 @@ install:
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-bridge/webapps/awsapi
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-bridge/setup
 	ln -s /usr/share/$(PACKAGE)-bridge/webapps/awsapi $(DESTDIR)/usr/share/$(PACKAGE)-management/webapps7080/awsapi
-	cp -r awsapi/target/cloud-awsapi-$(VERSION)$(MVNADD)/* $(DESTDIR)/usr/share/$(PACKAGE)-bridge/webapps/awsapi
+	cp -r awsapi/target/cloud-awsapi-$(VERSION)/* $(DESTDIR)/usr/share/$(PACKAGE)-bridge/webapps/awsapi
 	install -D awsapi-setup/setup/cloud-setup-bridge $(DESTDIR)/usr/bin/cloudstack-setup-bridge
 	install -D awsapi-setup/setup/cloudstack-aws-api-register $(DESTDIR)/usr/bin/cloudstack-aws-api-register
 	cp -r awsapi-setup/db/mysql/* $(DESTDIR)/usr/share/$(PACKAGE)-bridge/setup
