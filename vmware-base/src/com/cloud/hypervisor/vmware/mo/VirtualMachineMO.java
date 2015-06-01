@@ -1934,6 +1934,20 @@ public class VirtualMachineMO extends BaseMO {
         throw new Exception("SCSI Controller Not Found");
     }
 
+    public int getGenericScsiDeviceControllerKeyNoException() throws Exception {
+        List<VirtualDevice> devices = _context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
+
+        if (devices != null && devices.size() > 0) {
+            for (VirtualDevice device : devices) {
+                if (device instanceof VirtualSCSIController) {
+                    return device.getKey();
+                }
+            }
+        }
+
+        return -1;
+    }
+
     public int getScsiDeviceControllerKeyNoException() throws Exception {
         List<VirtualDevice> devices = _context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
 
@@ -2389,7 +2403,7 @@ public class VirtualMachineMO extends BaseMO {
 
         List<Integer> existingUnitNumbers = new ArrayList<Integer>();
         int deviceNumber = 0;
-        int scsiControllerKey = getScsiDeviceControllerKeyNoException();
+        int scsiControllerKey = getGenericScsiDeviceControllerKeyNoException();
         if (devices != null && devices.size() > 0) {
             for (VirtualDevice device : devices) {
                 if (device.getControllerKey() != null && device.getControllerKey().intValue() == controllerKey) {
