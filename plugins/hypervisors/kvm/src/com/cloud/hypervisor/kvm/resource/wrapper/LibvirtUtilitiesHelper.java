@@ -86,4 +86,8 @@ public class LibvirtUtilitiesHelper {
     public String retrieveBashScriptPath() {
         return LibvirtComputingResource.BASH_SCRIPT_PATH;
     }
+
+    public Connect retrieveQemuConnection(final String qemuURI) throws LibvirtException {
+        return new Connect(qemuURI);
+    }
 }

@@ -86,7 +86,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
              */
             xmlDesc = dm.getXMLDesc(0).replace(libvirtComputingResource.getPrivateIp(), command.getDestinationIp());
 
-            dconn = new Connect("qemu+tcp://" + command.getDestinationIp() + "/system");
+            dconn = libvirtUtilitiesHelper.retrieveQemuConnection("qemu+tcp://" + command.getDestinationIp() + "/system");
 
             //run migration in thread so we can monitor it
             s_logger.info("Live migration of instance " + vmName + " initiated");
