@@ -268,14 +268,6 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
                     throw new InvalidParameterValueException(msg);
                 }
             }
-        } else {
-            // Distributed virtual switch is not supported in Basic zone for now.
-            // Private / Management network traffic is not yet supported over distributed virtual switch.
-            if (guestTrafficLabelObj.getVirtualSwitchType() != VirtualSwitchType.StandardVirtualSwitch) {
-                String msg = "Detected that Guest traffic is over Distributed virtual switch in Basic zone. Only Standard vSwitch is supported in Basic zone.";
-                s_logger.error(msg);
-                throw new DiscoveredWithErrorException(msg);
-            }
         }
 
         privateTrafficLabel = _netmgr.getDefaultManagementTrafficLabel(dcId, HypervisorType.VMware);
@@ -414,7 +406,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
         } catch (DiscoveredWithErrorException e) {
             throw e;
         } catch (Exception e) {
-            s_logger.warn("Unable to connect to Vmware vSphere server. service address: " + url.getHost());
+            s_logger.warn("Unable to connect to Vmware vSphere server. service address: " + url.getHost() + ". " + e);
             return null;
         } finally {
             if (context != null)

@@ -92,13 +92,16 @@ import com.cloud.hypervisor.vmware.mo.HostFirewallSystemMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
+import com.cloud.hypervisor.vmware.mo.VirtualSwitchType;
 import com.cloud.hypervisor.vmware.mo.VmwareHostType;
 import com.cloud.hypervisor.vmware.resource.VmwareContextFactory;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.network.CiscoNexusVSMDeviceVO;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.VmwareTrafficLabel;
 import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
 import com.cloud.org.Cluster.ClusterType;
 import com.cloud.secstorage.CommandExecLogDao;
@@ -350,20 +353,24 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
 
         // prepare at least one network on the vswitch to enable OVF importing
-        String vSwitchName = privateTrafficLabel;
-        String vlanId = null;
-        String vlanToken;
-        String[] tokens = privateTrafficLabel.split(",");
-        if (tokens.length >= 2) {
-            vSwitchName = tokens[0].trim();
-            vlanToken = tokens[1].trim();
-            if (!vlanToken.isEmpty()) {
-                vlanId = vlanToken;
-            }
-        }
+        String vSwitchName;
+        String vlanId;
+        String vSwitchType;
+        VmwareTrafficLabel mgmtTrafficLabelObj = new VmwareTrafficLabel(privateTrafficLabel, TrafficType.Management);
+        vSwitchName = mgmtTrafficLabelObj.getVirtualSwitchName();
+        vlanId = mgmtTrafficLabelObj.getVlanId();
+        vSwitchType = mgmtTrafficLabelObj.getVirtualSwitchType().toString();
+
         s_logger.info("Preparing network on host " + hostMo.getContext().toString() + " for " + privateTrafficLabel);
-        //The management network is probably always going to be a physical network with vlans, so assume BroadcastDomainType VLAN
-        HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false, BroadcastDomainType.Vlan, null);
+        VirtualSwitchType vsType = VirtualSwitchType.getType(vSwitchType);
+        //The management network is probably always going to be a physical network with islation type of vlans, so assume BroadcastDomainType VLAN
+        if (VirtualSwitchType.StandardVirtualSwitch == vsType) {
+            HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false, BroadcastDomainType.Vlan, null);
+        }
+        else {
+            HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, null, null, null, 180000,
+                    vsType, _portsPerDvPortGroup, null, false, BroadcastDomainType.Vlan, null);
+        }
     }
 
     @Override
