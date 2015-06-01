@@ -1205,13 +1205,10 @@ public class LibvirtComputingResourceTest {
         verify(vm, times(1)).getNics();
     }
 
-    @Test(expected = UnsatisfiedLinkError.class)
+    @Test
     public void testMigrateCommand() {
-        // The Connect constructor used inside the LibvirtMigrateCommandWrapper has a call to native methods, which
-        // makes difficult to test it now.
-        // Will keep it expecting the UnsatisfiedLinkError and fix later.
-
         final Connect conn = Mockito.mock(Connect.class);
+        final Connect dconn = Mockito.mock(Connect.class);
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
 
         final String vmName = "Test";
@@ -1225,6 +1222,8 @@ public class LibvirtComputingResourceTest {
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         try {
             when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
+            when(libvirtUtilitiesHelper.retrieveQemuConnection("qemu+tcp://" + command.getDestinationIp() + "/system")).thenReturn(dconn);
+
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
@@ -1259,11 +1258,12 @@ public class LibvirtComputingResourceTest {
         assertNotNull(wrapper);
 
         final Answer answer = wrapper.execute(command, libvirtComputingResource);
-        assertFalse(answer.getResult());
+        assertTrue(answer.getResult());
 
         verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
         try {
             verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(vmName);
+            verify(libvirtUtilitiesHelper, times(1)).retrieveQemuConnection("qemu+tcp://" + command.getDestinationIp() + "/system");
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
