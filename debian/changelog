@@ -1,3 +1,11 @@
+cloudstack (4.4.4) unstable; urgency=low
+
+  * Update the version to 4.4.4
+  * Switch to dpkg-source 3.0 (native) format
+  * Remove dependency on changelog for version
+
+ -- Rafael da Fonseca <rsafonseca@gmail.com>  Mon, 1 Jun 2015 13:44:23 +0100
+
 cloudstack (4.4.3) unstable; urgency=low
 
   * Update the version to 4.4.3
