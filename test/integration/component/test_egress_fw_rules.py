@@ -217,8 +217,7 @@ class TestEgressFWRules(cloudstackTestCase):
         self.debug("Deploying instance in the account: %s" % self.account.name)
 
         project = None
-        try:
-            self.virtual_machine = VirtualMachine.create(self.apiclient,
+        self.virtual_machine = VirtualMachine.create(self.apiclient,
                                                          self.services["virtual_machine"],
                                                          accountid=self.account.name,
                                                          domainid=self.domain.id,
@@ -226,8 +225,6 @@ class TestEgressFWRules(cloudstackTestCase):
                                                          mode=self.zone.networktype if pfrule else 'basic',
                                                          networkids=[str(self.network.id)],
                                                          projectid=project.id if project else None)
-        except Exception as e:
-            self.fail("Virtual machine deployment failed with exception: %s" % e)
         self.debug("Deployed instance %s in account: %s" % (self.virtual_machine.id,self.account.name))
 
         # Checking if VM is running or not, in case it is deployed in error state, test case fails
