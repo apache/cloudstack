@@ -57,6 +57,8 @@ class TestLbStickyPolicy(cloudstackTestCase):
         cls.testdata["configurableData"]["netscaler"]["lbdevicededicated"] = False
 
         try:
+            cls.exception_string = "Connection limit to CFE exceeded"
+            cls.skiptest = False
             cls.netscaler = add_netscaler(
                 cls.api_client,
                 cls.zone.id,
@@ -110,8 +112,12 @@ class TestLbStickyPolicy(cloudstackTestCase):
                 networkid=cls.network.id
             )
         except Exception as e:
-            cls.tearDownClass()
-            raise Exception("Warning: Exception in setUpClass: %s" % e)
+            if cls.exception_string.lower() in e.lower():
+                cls.skiptest = True
+                cls.exception_msg = e
+            else:
+                cls.tearDownClass()
+                raise Exception("Warning: Exception in setUpClass: %s" % e)
         return
 
     @classmethod
@@ -124,6 +130,8 @@ class TestLbStickyPolicy(cloudstackTestCase):
         return
 
     def setUp(self):
+        if self.skiptest:
+            self.skipTest(self.exception_msg)
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []

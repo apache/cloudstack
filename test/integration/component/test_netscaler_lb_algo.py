@@ -58,6 +58,8 @@ class TestLbWithRoundRobin(cloudstackTestCase):
 
         cls._cleanup = []
         try:
+            cls.exception_string = "Connection limit to CFE exceeded"
+            cls.skiptest = False
             cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.testdata["configurableData"]["netscaler"])
             cls._cleanup.append(cls.netscaler)
 
@@ -76,8 +78,12 @@ class TestLbWithRoundRobin(cloudstackTestCase):
                 cls.testdata["service_offering"]
             )
         except Exception as e:
-            cls.tearDownClass()
-            raise Exception("Warning: Exception in setUpClass: %s" % e)
+            if cls.exception_string.lower() in e.lower():
+                cls.skiptest = True
+                cls.exception_msg = e
+            else:
+                cls.tearDownClass()
+                raise Exception("Warning: Exception in setUpClass: %s" % e)
         return
 
     @classmethod
@@ -90,6 +96,9 @@ class TestLbWithRoundRobin(cloudstackTestCase):
         return
 
     def setUp(self):
+        if self.skiptest:
+            self.skipTest(self.exception_msg)
+
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.account = Account.create(
@@ -265,6 +274,8 @@ class TestLbWithLeastConn(cloudstackTestCase):
         cls.testdata["configurableData"]["netscaler"]["lbdevicededicated"] = False
 
         try:
+            cls.exception_string = "Connection limit to CFE exceeded"
+            cls.skiptest = False
             cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.testdata["configurableData"]["netscaler"])
             cls._cleanup.append(cls.netscaler)
             cls.network_offering = NetworkOffering.create(
@@ -285,8 +296,12 @@ class TestLbWithLeastConn(cloudstackTestCase):
             )
             cls._cleanup.append(cls.service_offering)
         except Exception as e:
-            cls.tearDownClass()
-            raise Exception("Warning: Exception in setUpClass: %s" % e)
+            if cls.exception_string.lower() in e.lower():
+                cls.skiptest = True
+                cls.exception_msg = e
+            else:
+                cls.tearDownClass()
+                raise Exception("Warning: Exception in setUpClass: %s" % e)
 
         return
 
@@ -300,6 +315,9 @@ class TestLbWithLeastConn(cloudstackTestCase):
         return
 
     def setUp(self):
+        if self.skiptest:
+            self.skipTest(self.exception_msg)
+
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.account = Account.create(
@@ -483,6 +501,9 @@ class TestLbWithSourceIp(cloudstackTestCase):
 
         cls._cleanup = []
         try:
+            cls.exception_string = "Connection limit to CFE exceeded"
+            cls.skiptest = False
+
             cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.testdata["configurableData"]["netscaler"])
             cls._cleanup.append(cls.netscaler)
             cls.network_offering = NetworkOffering.create(
@@ -502,8 +523,12 @@ class TestLbWithSourceIp(cloudstackTestCase):
             )
             cls._cleanup.append(cls.service_offering)
         except Exception as e:
-            cls.tearDownClass()
-            raise Exception("Warning: Exception in setUpClass: %s" % e)
+            if cls.exception_string.lower() in e.lower():
+                cls.skiptest = True
+                cls.exception_msg = e
+            else:
+                cls.tearDownClass()
+                raise Exception("Warning: Exception in setUpClass: %s" % e)
         return
 
     @classmethod
@@ -516,6 +541,9 @@ class TestLbWithSourceIp(cloudstackTestCase):
         return
 
     def setUp(self):
+        if self.skiptest:
+            self.skipTest(self.exception_msg)
+
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.account = Account.create(
@@ -692,6 +720,9 @@ class TestLbAlgoRrLc(cloudstackTestCase):
         cls.testdata["configurableData"]["netscaler"]["lbdevicededicated"] = False
 
         try:
+            cls.exception_string = "Connection limit to CFE exceeded"
+            cls.skiptest = False
+
             cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.testdata["configurableData"]["netscaler"])
             cls._cleanup.append(cls.netscaler)
             cls.network_offering = NetworkOffering.create(
@@ -743,8 +774,12 @@ class TestLbAlgoRrLc(cloudstackTestCase):
                 networkid=cls.network.id
             )
         except Exception as e:
-            cls.tearDownClass()
-            raise Exception("Warning: Exception in setUpClass: %s" % e)
+            if cls.exception_string.lower() in e.lower():
+                cls.skiptest = True
+                cls.exception_msg = e
+            else:
+                cls.tearDownClass()
+                raise Exception("Warning: Exception in setUpClass: %s" % e)
         return
 
     @classmethod
@@ -757,6 +792,9 @@ class TestLbAlgoRrLc(cloudstackTestCase):
         return
 
     def setUp(self):
+        if self.skiptest:
+            self.skipTest(self.exception_msg)
+
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
@@ -904,6 +942,8 @@ class TestLbAlgoLcRr(cloudstackTestCase):
         cls.testdata["configurableData"]["netscaler"]["lbdevicededicated"] = False
 
         try:
+            cls.exception_string = "Connection limit to CFE exceeded"
+            cls.skiptest = False
             cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.testdata["configurableData"]["netscaler"])
             cls._cleanup.append(cls.netscaler)
             cls.network_offering = NetworkOffering.create(
@@ -955,8 +995,13 @@ class TestLbAlgoLcRr(cloudstackTestCase):
                 networkid=cls.network.id
             )
         except Exception as e:
-            cls.tearDownClass()
-            raise Exception("Warning: Exception in setUpClass: %s" % e)
+            if cls.exception_string.lower() in e.lower():
+                cls.skiptest = True
+                cls.exception_msg = e
+            else:
+                cls.tearDownClass()
+                raise Exception("Warning: Exception in setUpClass: %s" % e)
+
         return
 
     @classmethod
@@ -969,6 +1014,9 @@ class TestLbAlgoLcRr(cloudstackTestCase):
         return
 
     def setUp(self):
+        if self.skiptest:
+            self.skipTest(self.exception_msg)
+
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
@@ -1112,6 +1160,8 @@ class TestLbAlgoRrSb(cloudstackTestCase):
         cls.testdata["configurableData"]["netscaler"]["lbdevicededicated"] = False
 
         try:
+            cls.exception_string = "Connection limit to CFE exceeded"
+            cls.skiptest = False
             cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.testdata["configurableData"]["netscaler"])
             cls._cleanup.append(cls.netscaler)
             cls.network_offering = NetworkOffering.create(
@@ -1164,8 +1214,13 @@ class TestLbAlgoRrSb(cloudstackTestCase):
                 networkid=cls.network.id
             )
         except Exception as e:
-            cls.tearDownClass()
-            raise Exception("Warning: Exception in setUpClass: %s" % e)
+            if cls.exception_string.lower() in e.lower():
+                cls.skiptest = True
+                cls.exception_msg = e
+            else:
+                cls.tearDownClass()
+                raise Exception("Warning: Exception in setUpClass: %s" % e)
+
         return
 
     @classmethod
@@ -1178,6 +1233,8 @@ class TestLbAlgoRrSb(cloudstackTestCase):
         return
 
     def setUp(self):
+        if self.skiptest:
+            self.skipTest(self.exception_msg)
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
@@ -1325,6 +1382,8 @@ class TestLbAlgoSbRr(cloudstackTestCase):
         cls.testdata["configurableData"]["netscaler"]["lbdevicededicated"] = False
 
         try:
+            cls.exception_string = "Connection limit to CFE exceeded"
+            cls.skiptest = False
             cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.testdata["configurableData"]["netscaler"])
             cls._cleanup.append(cls.netscaler)
             cls.network_offering = NetworkOffering.create(
@@ -1378,8 +1437,12 @@ class TestLbAlgoSbRr(cloudstackTestCase):
                 networkid=cls.network.id
             )
         except Exception as e:
-            cls.tearDownClass()
-            raise Exception("Warning: Exception in setUpClass: %s" % e)
+            if cls.exception_string.lower() in e.lower():
+                cls.skiptest = True
+                cls.exception_msg = e
+            else:
+                cls.tearDownClass()
+                raise Exception("Warning: Exception in setUpClass: %s" % e)
         return
 
     @classmethod
@@ -1392,6 +1455,9 @@ class TestLbAlgoSbRr(cloudstackTestCase):
         return
 
     def setUp(self):
+        if self.skiptest:
+            self.skipTest(self.exception_msg)
+
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
@@ -1539,6 +1605,9 @@ class TestLbAlgoSbLc(cloudstackTestCase):
         cls.testdata["configurableData"]["netscaler"]["lbdevicededicated"] = False
 
         try:
+            cls.exception_string = "Connection limit to CFE exceeded"
+            cls.skiptest = False
+
             cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.testdata["configurableData"]["netscaler"])
             cls._cleanup.append(cls.netscaler)
             cls.network_offering = NetworkOffering.create(
@@ -1592,8 +1661,12 @@ class TestLbAlgoSbLc(cloudstackTestCase):
                 networkid=cls.network.id
             )
         except Exception as e:
-            cls.tearDownClass()
-            raise Exception("Warning: Exception in setUpClass: %s" % e)
+            if cls.exception_string.lower() in e.lower():
+                cls.skiptest = True
+                cls.exception_msg =e 
+            else:
+                cls.tearDownClass()
+                raise Exception("Warning: Exception in setUpClass: %s" % e)
         return
 
     @classmethod
@@ -1606,6 +1679,9 @@ class TestLbAlgoSbLc(cloudstackTestCase):
         return
 
     def setUp(self):
+        if self.skiptest:
+            self.skipTest(self.exception_msg)
+
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
@@ -1754,6 +1830,8 @@ class TestLbAlgoLcSb(cloudstackTestCase):
         cls.testdata["configurableData"]["netscaler"]["lbdevicededicated"] = False
 
         try:
+            cls.exception_string = "Connection limit to CFE exceeded"
+            cls.skiptest = False
             cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.testdata["configurableData"]["netscaler"])
             cls._cleanup.append(cls.netscaler)
             cls.network_offering = NetworkOffering.create(
@@ -1806,8 +1884,12 @@ class TestLbAlgoLcSb(cloudstackTestCase):
                 networkid=cls.network.id
             )
         except Exception as e:
-            cls.tearDownClass()
-            raise Exception("Warning: Exception in setUpClass: %s" % e)
+            if cls.exception_string.lower() in e.lower():
+                cls.skiptest = True
+                cls.exception_msg = e
+            else:
+                cls.tearDownClass()
+                raise Exception("Warning: Exception in setUpClass: %s" % e)
         return
 
     @classmethod
@@ -1820,6 +1902,9 @@ class TestLbAlgoLcSb(cloudstackTestCase):
         return
 
     def setUp(self):
+        if self.skiptest:
+            self.skipTest(self.exception_msg)
+
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
