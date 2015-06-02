@@ -41,8 +41,7 @@ from marvin.lib.common import (get_zone,
                                            list_volumes,
                                            list_network_offerings,
                                            list_lb_rules,
-                                           get_free_vlan,
-                                           wait_for_cleanup)
+                                           get_free_vlan)
 
 from marvin.lib.utils import cleanup_resources
 import random
@@ -787,8 +786,10 @@ class TestSnapshots(cloudstackTestCase):
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.hypervisor = cls.testClient.getHypervisorInfo()
-        if cls.hypervisor.lower() in ['lxc']:
-            raise unittest.SkipTest("snapshots are not supported on %s" % cls.hypervisor.lower())
+        cls._cleanup = []
+        cls.snapshotSupported = True
+        if cls.hypervisor.lower() in ['hyperv', 'lxc']:
+            cls.snapshotSupported = False
 
         cls.template = get_template(
                             cls.api_client,
@@ -862,6 +863,9 @@ class TestSnapshots(cloudstackTestCase):
         # 2. Add some snapshots to the project
         # 3. Verify snapshot created inside project can only be used in inside
         #    the project
+
+        if not self.snapshotSupported:
+            self.skipTest("Snapshot is not supported on %s" % self.hypervisor)
 
         self.debug("Deploying VM for Project: %s" % self.project.id)
         virtual_machine_1 = VirtualMachine.create(
