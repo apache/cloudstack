@@ -82,6 +82,12 @@ public class EngineDataCenterVO implements EngineDataCenter, Identity {
     @Column(name = "guest_network_cidr")
     private String guestNetworkCidr = null;
 
+    @Column(name = "ip6_super_network_cidr")
+    private String ip6SuperNetworkCidr = null;
+
+    @Column(name = "as_number")
+    private String asNumber  = null;
+
     @Column(name = "domain_id")
     private Long domainId = null;
 
@@ -210,14 +216,14 @@ public class EngineDataCenterVO implements EngineDataCenter, Identity {
 
     public EngineDataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain,
             Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix) {
-        this(name, description, dns1, dns2, dns3, dns4, guestCidr, domain, domainId, zoneType, zoneToken, domainSuffix, false, false, null, null);
+        this(name, description, dns1, dns2, dns3, dns4, guestCidr, domain, domainId, zoneType, zoneToken, domainSuffix, false, false, null, null, null, null);
         this.id = id;
         this.allocationState = Grouping.AllocationState.Enabled;
         this.uuid = UUID.randomUUID().toString();
     }
 
     public EngineDataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId,
-            NetworkType zoneType, String zoneToken, String domainSuffix, boolean securityGroupEnabled, boolean localStorageEnabled, String ip6Dns1, String ip6Dns2) {
+            NetworkType zoneType, String zoneToken, String domainSuffix, boolean securityGroupEnabled, boolean localStorageEnabled, String ip6Dns1, String ip6Dns2, String ip6SuperNetworkCidr, String asNumber) {
         this.name = name;
         this.description = description;
         this.dns1 = dns1;
@@ -225,6 +231,8 @@ public class EngineDataCenterVO implements EngineDataCenter, Identity {
         this.internalDns1 = dns3;
         this.internalDns2 = dns4;
         this.guestNetworkCidr = guestCidr;
+        this.ip6SuperNetworkCidr = ip6SuperNetworkCidr;
+        this.asNumber = asNumber;
         this.domain = domain;
         this.domainId = domainId;
         this.networkType = zoneType;
@@ -502,5 +510,23 @@ public class EngineDataCenterVO implements EngineDataCenter, Identity {
 
     public void setIp6Dns2(String ip6Dns2) {
         this.ip6Dns2 = ip6Dns2;
+    }
+
+    @Override
+    public String getIp6SuperNetworkCidr() {
+        return ip6SuperNetworkCidr;
+    }
+
+    public void setIp6SuperNetworkCidr(String ip6GuestNetworkCidr) {
+        this.ip6SuperNetworkCidr = ip6GuestNetworkCidr;
+    }
+
+    @Override
+    public String getAsNumber() {
+        return asNumber;
+    }
+
+    public void setAsNumber(String asNumber) {
+        this.asNumber = asNumber;
     }
 }
