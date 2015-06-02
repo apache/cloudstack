@@ -1984,7 +1984,7 @@ class TestExternalLoadBalancer(cloudstackTestCase):
         defaultEthernetDevice = str(response[2].split()[0])
 
         cmd = "ip addr add {0}/24 broadcast {0} dev {1}".format(
-            self.secondaryip.ipaddress, defaultEthernetDevice)
+            secondaryip.ipaddress, defaultEthernetDevice)
         sshClient.execute(cmd)
         sshClient.execute("ip addr show")
 
