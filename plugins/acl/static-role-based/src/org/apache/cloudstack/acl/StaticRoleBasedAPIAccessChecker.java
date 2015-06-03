@@ -45,6 +45,7 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIC
 
     protected static final Logger s_logger = Logger.getLogger(StaticRoleBasedAPIAccessChecker.class);
 
+    Set<String> commandPropertyFiles = new HashSet<String>();
     Set<String> commandsPropertiesOverrides = new HashSet<String>();
     Map<RoleType, Set<String>> commandsPropertiesRoleBasedApisMap = new HashMap<RoleType, Set<String>>();
     Map<RoleType, Set<String>> annotationRoleBasedApisMap = new HashMap<RoleType, Set<String>>();
@@ -84,7 +85,9 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIC
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
 
-        processMapping(PropertiesUtil.processConfigFile(new String[] {"commands.properties"}));
+        for (String commandPropertyFile : commandPropertyFiles) {
+            processMapping(PropertiesUtil.processConfigFile(new String[] { commandPropertyFile }));
+        }
         return true;
     }
 
@@ -127,6 +130,14 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIC
     @Inject
     public void setServices(List<PluggableService> services) {
         this._services = services;
+    }
+
+    public Set<String> getCommandPropertyFiles() {
+        return commandPropertyFiles;
+    }
+
+    public void setCommandPropertyFiles(Set<String> commandPropertyFiles) {
+        this.commandPropertyFiles = commandPropertyFiles;
     }
 
 }
