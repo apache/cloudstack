@@ -40,7 +40,7 @@ import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.user.Account;
 
-@APICommand(name = "createLBStickinessPolicy", description = "Creates a Load Balancer stickiness policy ", responseObject = LBStickinessResponse.class, since = "3.0.0",
+@APICommand(name = "createLBStickinessPolicy", description = "Creates a load balancer stickiness policy ", responseObject = LBStickinessResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 @SuppressWarnings("rawtypes")
 public class CreateLBStickinessPolicyCmd extends BaseAsyncCreateCmd {
@@ -59,16 +59,16 @@ public class CreateLBStickinessPolicyCmd extends BaseAsyncCreateCmd {
                description = "the ID of the load balancer rule")
     private Long lbRuleId;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "the description of the LB Stickiness policy")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "the description of the load balancer stickiness policy")
     private String description;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the LB Stickiness policy")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the load balancer stickiness policy")
     private String lbStickinessPolicyName;
 
     @Parameter(name = ApiConstants.METHOD_NAME,
                type = CommandType.STRING,
                required = true,
-               description = "name of the LB Stickiness policy method, possible values can be obtained from ListNetworks API ")
+               description = "name of the load balancer stickiness policy method, possible values can be obtained from listNetworks API")
     private String stickinessMethodName;
 
     @Parameter(name = ApiConstants.PARAM_LIST, type = CommandType.MAP, description = "param list. Example: param[0].name=cookiename&param[0].value=LBCookie ")
@@ -152,7 +152,7 @@ public class CreateLBStickinessPolicyCmd extends BaseAsyncCreateCmd {
             }
         } finally {
             if (!success || (policy == null)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create stickiness policy ");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create stickiness policy");
             }
         }
     }
@@ -176,7 +176,7 @@ public class CreateLBStickinessPolicyCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "creating a Load Balancer Stickiness policy: " + getLBStickinessPolicyName();
+        return "creating a load balancer stickiness policy: " + getLBStickinessPolicyName();
     }
 
     @Override

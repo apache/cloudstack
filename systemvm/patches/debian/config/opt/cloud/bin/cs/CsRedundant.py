@@ -169,12 +169,12 @@ class CsRedundant(object):
         for iter in range(0, iterations):
             try:
                 s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-                s.bind( '\0master_lock')
+                s.bind('\0master_lock')
                 return s
             except socket.error, e:
                 error_code = e.args[0]
                 error_string = e.args[1]
-                print "Process already running (%d:%s ). Exiting" % ( error_code, error_string)
+                print "Process already running (%d:%s). Exiting" % (error_code, error_string)
                 logging.info("Master is already running, waiting")
                 sleep(1)
 

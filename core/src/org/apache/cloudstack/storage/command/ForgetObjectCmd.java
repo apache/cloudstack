@@ -19,13 +19,12 @@
 
 package org.apache.cloudstack.storage.command;
 
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataTO;
 
-public class ForgetObjectCmd extends Command implements StorageSubSystemCommand {
-    private DataTO dataTO;
+public class ForgetObjectCmd extends StorageSubSystemCommand {
+    private final DataTO dataTO;
 
-    public ForgetObjectCmd(DataTO data) {
+    public ForgetObjectCmd(final DataTO data) {
         dataTO = data;
     }
 
@@ -39,7 +38,7 @@ public class ForgetObjectCmd extends Command implements StorageSubSystemCommand 
     }
 
     @Override
-    public void setExecuteInSequence(boolean inSeq) {
+    public void setExecuteInSequence(final boolean inSeq) {
 
     }
 }

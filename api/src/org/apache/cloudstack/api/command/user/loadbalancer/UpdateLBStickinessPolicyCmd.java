@@ -26,7 +26,7 @@ import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateLBStickinessPolicy", description = "Updates LB Stickiness policy", responseObject = LBStickinessResponse.class, since = "4.4",
+@APICommand(name = "updateLBStickinessPolicy", description = "Updates load balancer stickiness policy", responseObject = LBStickinessResponse.class, since = "4.4",
 requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateLBStickinessPolicyCmd extends BaseAsyncCustomIdCmd{
     public static final Logger s_logger = Logger.getLogger(UpdateLBStickinessPolicyCmd.class.getName());
@@ -70,7 +70,7 @@ public class UpdateLBStickinessPolicyCmd extends BaseAsyncCustomIdCmd{
 
     @Override
     public String getEventDescription() {
-        return "Update LB stickiness policy id= " + id;
+        return "Update load balancer stickiness policy ID= " + id;
     }
 
     @Override

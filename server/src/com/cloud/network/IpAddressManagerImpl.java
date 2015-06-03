@@ -1910,6 +1910,80 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         });
     }
 
+
+
+
+    @Override
+    @DB
+    public void allocateNicValues(final NicProfile nic, final DataCenter dc, final VirtualMachineProfile vm, final Network network, final String requestedIpv4,
+                                  final String requestedIpv6) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
+        Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientAddressCapacityException>() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientAddressCapacityException {
+                //This method allocates direct ip for the Shared network in Advance zones
+                boolean ipv4 = false;
+
+                if (network.getGateway() != null) {
+                    if (nic.getIp4Address() == null) {
+                        ipv4 = true;
+                        // PublicIp ip = null;
+
+                        //Get ip address from the placeholder and don't allocate a new one
+                        if (requestedIpv4 != null && vm.getType() == VirtualMachine.Type.DomainRouter) {
+                            s_logger.debug("There won't be nic assignment for VR id " + vm.getId() +"  in this network " + network);
+
+                        }
+
+                        // nic ip address isn ot set here. Because the DHCP is external to cloudstack
+                        nic.setGateway(network.getGateway());
+                        nic.setNetmask(network.getCidr());
+
+                        List<VlanVO> vlan = _vlanDao.listVlansByNetworkId(network.getId());
+
+                        //TODO: get vlan tag for the ntwork
+                        if (vlan != null && ! vlan.isEmpty()) {
+                            nic.setIsolationUri(IsolationType.Vlan.toUri(vlan.get(0).getVlanTag()));
+                        }
+
+                        nic.setBroadcastType(BroadcastDomainType.Vlan);
+                        nic.setBroadcastType(network.getBroadcastDomainType());
+
+                        nic.setBroadcastUri(network.getBroadcastUri());
+                        nic.setFormat(AddressFormat.Ip4);
+
+                        nic.setMacAddress(_networkModel.getNextAvailableMacAddressInNetwork(network.getId()));
+                    }
+                    nic.setDns1(dc.getDns1());
+                    nic.setDns2(dc.getDns2());
+                }
+
+                // TODO: the IPv6 logic is not changed.
+                //FIXME - get ipv6 address from the placeholder if it's stored there
+                if (network.getIp6Gateway() != null) {
+                    if (nic.getIp6Address() == null) {
+                        UserIpv6Address ip = _ipv6Mgr.assignDirectIp6Address(dc.getId(), vm.getOwner(), network.getId(), requestedIpv6);
+                        Vlan vlan = _vlanDao.findById(ip.getVlanId());
+                        nic.setIp6Address(ip.getAddress().toString());
+                        nic.setIp6Gateway(vlan.getIp6Gateway());
+                        nic.setIp6Cidr(vlan.getIp6Cidr());
+                        if (ipv4) {
+                            nic.setFormat(AddressFormat.DualStack);
+                        } else {
+                            nic.setIsolationUri(IsolationType.Vlan.toUri(vlan.getVlanTag()));
+                            nic.setBroadcastType(BroadcastDomainType.Vlan);
+                            nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlan.getVlanTag()));
+                            nic.setFormat(AddressFormat.Ip6);
+                            nic.setReservationId(String.valueOf(vlan.getVlanTag()));
+                            nic.setMacAddress(ip.getMacAddress());
+                        }
+                    }
+                    nic.setIp6Dns1(dc.getIp6Dns1());
+                    nic.setIp6Dns2(dc.getIp6Dns2());
+                }
+            }
+        });
+    }
+
     @Override
     public int getRuleCountForIp(Long addressId, FirewallRule.Purpose purpose, FirewallRule.State state) {
         List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurposeWithState(addressId, purpose, state);

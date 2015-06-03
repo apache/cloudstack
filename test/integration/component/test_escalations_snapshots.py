@@ -40,9 +40,11 @@ class TestSnapshots(cloudstackTestCase):
             cls.testClient = super(TestSnapshots, cls).getClsTestClient()
             cls.api_client = cls.testClient.getApiClient()
             cls.services = cls.testClient.getParsedTestDataConfig()
+            cls.unsupportedHypervisor = False
             cls.hypervisor = cls.testClient.getHypervisorInfo()
-            if cls.hypervisor.lower() == 'lxc':
-                raise unittest.SkipTest("snapshots are not supported on %s" % cls.hypervisor.lower())
+            if cls.hypervisor.lower() in ("lxc", "hyperv"):
+                cls.unsupportedHypervisor = True
+                return
             # Get Domain, Zone, Template
             cls.domain = get_domain(cls.api_client)
             cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -102,6 +104,8 @@ class TestSnapshots(cloudstackTestCase):
 
         self.apiClient = self.testClient.getApiClient()
         self.cleanup = []
+        if self.unsupportedHypervisor:
+            self.skipTest("Snapshots are not supported on %s" %self.hypervisor)
 
     def tearDown(self):
         # Clean up, terminate the created resources

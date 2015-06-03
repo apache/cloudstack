@@ -70,6 +70,10 @@ function configure_services() {
 
   chkconfig xl2tpd off
 
+  # Disable services that slow down boot and are not used anyway
+  chkconfig x11-common off
+  chkconfig console-setup off
+
   # Hyperv kvp daemon - 64bit only
   local arch=`dpkg --print-architecture`
   if [ "${arch}" == "amd64" ]; then

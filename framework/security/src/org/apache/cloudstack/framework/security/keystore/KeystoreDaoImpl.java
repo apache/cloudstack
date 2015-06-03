@@ -16,23 +16,17 @@
 // under the License.
 package org.apache.cloudstack.framework.security.keystore;
 
-import java.sql.PreparedStatement;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-
-import javax.ejb.Local;
-
-import org.springframework.stereotype.Component;
-
-import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.exception.CloudRuntimeException;
+import org.springframework.stereotype.Component;
+
+import javax.ejb.Local;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 @Component
 @Local(value = {KeystoreDao.class})
@@ -96,26 +90,19 @@ public class KeystoreDaoImpl extends GenericDaoBase<KeystoreVO, Long> implements
     @Override
     @DB
     public void save(String name, String certificate, String key, String domainSuffix) {
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
-        try {
-            txn.start();
-
-            String sql =
-                "INSERT INTO keystore (`name`, `certificate`, `key`, `domain_suffix`) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE `certificate`=?, `key`=?, `domain_suffix`=?";
-            PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.setString(1, name);
-            pstmt.setString(2, certificate);
-            pstmt.setString(3, DBEncryptionUtil.encrypt(key));
-            pstmt.setString(4, domainSuffix);
-            pstmt.setString(5, certificate);
-            pstmt.setString(6, DBEncryptionUtil.encrypt(key));
-            pstmt.setString(7, domainSuffix);
-
-            pstmt.executeUpdate();
-            txn.commit();
-        } catch (Exception e) {
-            txn.rollback();
-            throw new CloudRuntimeException("Unable to save certificate under name " + name + " due to exception", e);
+        KeystoreVO keystore = findByName(name);
+        if (keystore != null) {
+            keystore.setCertificate(certificate);
+            keystore.setKey(key);
+            keystore.setDomainSuffix(domainSuffix);
+            this.update(keystore.getId(), keystore);
+        } else {
+            keystore = new KeystoreVO();
+            keystore.setName(name);
+            keystore.setCertificate(certificate);
+            keystore.setKey(key);
+            keystore.setDomainSuffix(domainSuffix);
+            this.persist(keystore);
         }
     }
 
@@ -130,12 +117,12 @@ public class KeystoreDaoImpl extends GenericDaoBase<KeystoreVO, Long> implements
             ks.setDomainSuffix(domainSuffix);
             this.update(ks.getId(), ks);
         } else {
-            KeystoreVO newks = new KeystoreVO();
-            newks.setCertificate(certificate);
-            newks.setName(alias);
-            newks.setIndex(index);
-            newks.setDomainSuffix(domainSuffix);
-            persist(newks);
+            ks = new KeystoreVO();
+            ks.setCertificate(certificate);
+            ks.setName(alias);
+            ks.setIndex(index);
+            ks.setDomainSuffix(domainSuffix);
+            this.persist(ks);
         }
     }
 }

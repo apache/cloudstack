@@ -87,4 +87,10 @@ public interface Vpc extends ControlledEntity, Identity, InternalIdentity {
      * @return true if VPC spans multiple zones in the region
      */
     boolean isRegionLevelVpc();
+
+    /**
+     *
+     * @return IPv6 CIDR of the VPC
+     */
+    String getIp6Cidr();
 }

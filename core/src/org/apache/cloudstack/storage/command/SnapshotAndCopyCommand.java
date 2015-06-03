@@ -19,18 +19,16 @@
 
 package org.apache.cloudstack.storage.command;
 
-import com.cloud.agent.api.Command;
-
 import java.util.Map;
 
-public final class SnapshotAndCopyCommand extends Command implements StorageSubSystemCommand {
-    private String _uuidOfSourceVdi;
-    private Map<String, String> _sourceDetails;
-    private Map<String, String> _destDetails;
+public final class SnapshotAndCopyCommand extends StorageSubSystemCommand {
+    private final String _uuidOfSourceVdi;
+    private final Map<String, String> _sourceDetails;
+    private final Map<String, String> _destDetails;
 
     private boolean _executeInSequence = true;
 
-    public SnapshotAndCopyCommand(String uuidOfSourceVdi, Map<String, String> sourceDetails, Map<String, String> destDetails) {
+    public SnapshotAndCopyCommand(final String uuidOfSourceVdi, final Map<String, String> sourceDetails, final Map<String, String> destDetails) {
         _uuidOfSourceVdi = uuidOfSourceVdi;
         _sourceDetails = sourceDetails;
         _destDetails = destDetails;
@@ -49,7 +47,7 @@ public final class SnapshotAndCopyCommand extends Command implements StorageSubS
     }
 
     @Override
-    public void setExecuteInSequence(boolean executeInSequence) {
+    public void setExecuteInSequence(final boolean executeInSequence) {
         _executeInSequence = executeInSequence;
     }
 

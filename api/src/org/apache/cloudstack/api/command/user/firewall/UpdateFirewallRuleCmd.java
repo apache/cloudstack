@@ -78,7 +78,7 @@ public class UpdateFirewallRuleCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        CallContext.current().setEventDetails("Rule Id: " + id);
+        CallContext.current().setEventDetails("Rule ID: " + id);
         FirewallRule rule = _firewallService.updateIngressFirewallRule(id, this.getCustomId(), getDisplay());
 
         FirewallResponse fwResponse = new FirewallResponse();
@@ -113,7 +113,7 @@ public class UpdateFirewallRuleCmd extends BaseAsyncCustomIdCmd {
         if (ownerId == null) {
             FirewallRule rule = _entityMgr.findById(FirewallRule.class, id);
             if (rule == null || rule.getTrafficType() != TrafficType.Ingress) {
-                throw new InvalidParameterValueException("Unable to find firewall rule by id");
+                throw new InvalidParameterValueException("Unable to find firewall rule by ID");
             } else {
                 ownerId = _entityMgr.findById(FirewallRule.class, id).getAccountId();
             }

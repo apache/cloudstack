@@ -26,7 +26,7 @@ class TestCsRule(unittest.TestCase):
         merge.DataBag.DPATH = "."
 
     def test_init(self):
-        csrule = CsRule(["one", "two", "three", "four"])
+        csrule = CsRule("eth1")
         self.assertTrue(csrule is not None)
 
 if __name__ == '__main__':

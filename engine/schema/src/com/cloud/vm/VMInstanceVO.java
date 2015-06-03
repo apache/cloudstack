@@ -210,7 +210,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
             SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
             byte[] randomBytes = new byte[16];
             random.nextBytes(randomBytes);
-            vncPassword = Base64.encodeBase64String(randomBytes);
+            vncPassword = Base64.encodeBase64URLSafeString(randomBytes);
         } catch (NoSuchAlgorithmException e) {
             s_logger.error("Unexpected exception in SecureRandom Algorithm selection ", e);
         }

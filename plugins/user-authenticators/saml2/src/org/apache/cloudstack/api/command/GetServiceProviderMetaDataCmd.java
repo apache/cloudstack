@@ -58,6 +58,7 @@ import org.opensaml.xml.security.x509.X509KeyInfoGeneratorFactory;
 import org.w3c.dom.Document;
 
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.xml.parsers.DocumentBuilder;
@@ -105,7 +106,7 @@ public class GetServiceProviderMetaDataCmd extends BaseCmd implements APIAuthent
     }
 
     @Override
-    public String authenticate(String command, Map<String, Object[]> params, HttpSession session, InetAddress remoteAddress, String responseType, StringBuilder auditTrailSb, HttpServletResponse resp) throws ServerApiException {
+    public String authenticate(String command, Map<String, Object[]> params, HttpSession session, InetAddress remoteAddress, String responseType, StringBuilder auditTrailSb, final HttpServletRequest req, final HttpServletResponse resp) throws ServerApiException {
         SAMLMetaDataResponse response = new SAMLMetaDataResponse();
         response.setResponseName(getCommandName());
 

@@ -66,7 +66,7 @@ public class RegisterIsoCmd extends BaseCmd {
                description = "true if you want to register the ISO to be publicly available to all users, false otherwise.")
     private Boolean publicIso;
 
-    @Parameter(name = ApiConstants.IS_EXTRACTABLE, type = CommandType.BOOLEAN, description = "true if the iso or its derivatives are extractable; default is false")
+    @Parameter(name = ApiConstants.IS_EXTRACTABLE, type = CommandType.BOOLEAN, description = "true if the ISO or its derivatives are extractable; default is false")
     private Boolean extractable;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the ISO")
@@ -75,7 +75,7 @@ public class RegisterIsoCmd extends BaseCmd {
     @Parameter(name = ApiConstants.OS_TYPE_ID,
                type = CommandType.UUID,
                entityType = GuestOSResponse.class,
-               description = "the ID of the OS Type that best represents the OS of this ISO. If the iso is bootable this parameter needs to be passed")
+               description = "the ID of the OS type that best represents the OS of this ISO. If the ISO is bootable this parameter needs to be passed")
     private Long osTypeId;
 
     @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "the URL to where the ISO is currently being hosted")
@@ -97,15 +97,15 @@ public class RegisterIsoCmd extends BaseCmd {
     @Parameter(name = ApiConstants.CHECKSUM, type = CommandType.STRING, description = "the MD5 checksum value of this ISO")
     private String checksum;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Register iso for the project")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Register ISO for the project")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.IMAGE_STORE_UUID, type = CommandType.STRING, description = "Image store uuid")
+    @Parameter(name = ApiConstants.IMAGE_STORE_UUID, type = CommandType.STRING, description = "Image store UUID")
     private String imageStoreUuid;
 
     @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE,
                type = CommandType.BOOLEAN,
-               description = "true if iso contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
+               description = "true if ISO contains XS/VMWare tools inorder to support dynamic scaling of VM CPU/memory")
     protected Boolean isDynamicallyScalable;
 
     /////////////////////////////////////////////////////
@@ -197,7 +197,7 @@ public class RegisterIsoCmd extends BaseCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to register iso");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to register ISO");
         }
 
     }

@@ -41,7 +41,7 @@ import com.cloud.network.Network;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.utils.net.NetUtils;
 
-@APICommand(name = "createLoadBalancer", description = "Creates a Load Balancer", responseObject = ApplicationLoadBalancerResponse.class, since = "4.2.0",
+@APICommand(name = "createLoadBalancer", description = "Creates a load balancer", responseObject = ApplicationLoadBalancerResponse.class, since = "4.2.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateApplicationLoadBalancerCmd.class.getName());
@@ -51,17 +51,17 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the Load Balancer")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the load balancer")
     private String loadBalancerName;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "the description of the Load Balancer", length = 4096)
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "the description of the load balancer", length = 4096)
     private String description;
 
     @Parameter(name = ApiConstants.NETWORK_ID,
                type = CommandType.UUID,
                required = true,
                entityType = NetworkResponse.class,
-               description = "The guest network the Load Balancer will be created for")
+               description = "The guest network the load balancer will be created for")
     private Long networkId;
 
     @Parameter(name = ApiConstants.SOURCE_PORT,
@@ -79,7 +79,7 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
                description = "the TCP port of the virtual machine where the network traffic will be load balanced to")
     private Integer instancePort;
 
-    @Parameter(name = ApiConstants.SOURCE_IP, type = CommandType.STRING, description = "the source ip address the network traffic will be load balanced from")
+    @Parameter(name = ApiConstants.SOURCE_IP, type = CommandType.STRING, description = "the source IP address the network traffic will be load balanced from")
     private String sourceIp;
 
     @Parameter(name = ApiConstants.SOURCE_IP_NETWORK_ID,
@@ -141,7 +141,7 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
         //get account info from the network object
         Network ntwk = _networkService.getNetwork(networkId);
         if (ntwk == null) {
-            throw new InvalidParameterValueException("Invalid network id specified");
+            throw new InvalidParameterValueException("Invalid network ID specified");
         }
 
         return ntwk.getAccountId();
@@ -180,7 +180,7 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
         if (scheme.equalsIgnoreCase(Scheme.Internal.toString())) {
             return Scheme.Internal;
         } else {
-            throw new InvalidParameterValueException("Invalid value for scheme. Supported value is Internal");
+            throw new InvalidParameterValueException("Invalid value for scheme. Supported value is internal");
         }
     }
 
@@ -208,10 +208,10 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
             setResponseObject(lbResponse);
             lbResponse.setResponseName(getCommandName());
         } catch (Exception ex) {
-            s_logger.warn("Failed to create Load Balancer due to exception ", ex);
+            s_logger.warn("Failed to create load balancer due to exception ", ex);
         } finally {
             if (rule == null) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Load Balancer");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create load balancer");
             }
         }
     }

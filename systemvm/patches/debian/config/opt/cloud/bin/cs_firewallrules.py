@@ -18,6 +18,7 @@
 from pprint import pprint
 import copy
 
+
 def merge(dbag, data):
     dbagc = copy.deepcopy(dbag)
     if "rules" not in data:

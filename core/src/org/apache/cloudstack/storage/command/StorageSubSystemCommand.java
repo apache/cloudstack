@@ -19,6 +19,8 @@
 
 package org.apache.cloudstack.storage.command;
 
-public interface StorageSubSystemCommand {
-    void setExecuteInSequence(boolean inSeq);
+import com.cloud.agent.api.Command;
+
+public abstract class StorageSubSystemCommand extends Command {
+    public abstract void setExecuteInSequence(boolean inSeq);
 }

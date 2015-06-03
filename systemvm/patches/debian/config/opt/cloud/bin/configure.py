@@ -529,7 +529,8 @@ class CsForwardingRules(CsDataBag):
 
     def forward_vr(self, rule):
         fw1 = "-A PREROUTING -d %s/32 -i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s" % \
-              ( rule['public_ip'],
+              (
+                rule['public_ip'],
                 self.getDeviceByIp(rule['public_ip']),
                 rule['protocol'],
                 rule['protocol'],
@@ -538,7 +539,8 @@ class CsForwardingRules(CsDataBag):
                 self.portsToString(rule['internal_ports'], '-')
               )
         fw2 = "-A PREROUTING -d %s/32 -i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s" % \
-              ( rule['public_ip'],
+              (
+                rule['public_ip'],
                 self.getDeviceByIp(rule['internal_ip']),
                 rule['protocol'],
                 rule['protocol'],
@@ -547,7 +549,8 @@ class CsForwardingRules(CsDataBag):
                 self.portsToString(rule['internal_ports'], '-')
               )
         fw3 = "-A OUTPUT -d %s/32 -p %s -m %s --dport %s -j DNAT --to-destination %s:%s" % \
-              ( rule['public_ip'],
+              (
+                rule['public_ip'],
                 rule['protocol'],
                 rule['protocol'],
                 self.portsToString(rule['public_ports'], ':'),
@@ -555,35 +558,47 @@ class CsForwardingRules(CsDataBag):
                 self.portsToString(rule['internal_ports'], '-')
               )
         fw4 = "-j SNAT --to-source %s -A POSTROUTING -s %s -d %s/32 -o %s -p %s -m %s --dport %s" % \
-              ( self.getGatewayByIp(rule['internal_ip']),
+              (
+                self.getGatewayByIp(rule['internal_ip']),
                 self.getNetworkByIp(rule['internal_ip']),
                 rule['internal_ip'],
                 self.getDeviceByIp(rule['internal_ip']),
                 rule['protocol'],
                 rule['protocol'],
                 self.portsToString(rule['internal_ports'], ':')
-              )  
+              )
         fw5 = "-A PREROUTING -d %s/32 -i %s -p %s -m %s --dport %s -j MARK --set-xmark %s/0xffffffff" % \
-              ( rule['public_ip'],
+              (
+                rule['public_ip'],
                 self.getDeviceByIp(rule['public_ip']),
                 rule['protocol'],
                 rule['protocol'],
                 self.portsToString(rule['public_ports'], ':'),
                 hex(int(self.getDeviceByIp(rule['public_ip'])[3:]))
-              )  
+              )
         fw6 = "-A PREROUTING -d %s/32 -i %s -p %s -m %s --dport %s -m state --state NEW -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff" % \
-              ( rule['public_ip'],
+              (
+                rule['public_ip'],
                 self.getDeviceByIp(rule['public_ip']),
                 rule['protocol'],
                 rule['protocol'],
                 self.portsToString(rule['public_ports'], ':'),
-              )  
+              )
+        fw7 = "-A FORWARD -i %s -o %s -p %s -m %s --dport %s -m state --state NEW -j ACCEPT" % \
+              (
+                self.getDeviceByIp(rule['public_ip']),
+                self.getDeviceByIp(rule['internal_ip']),
+                rule['protocol'],
+                rule['protocol'],
+                self.portsToString(rule['internal_ports'], ':')
+              )
         self.fw.append(["nat", "", fw1])
         self.fw.append(["nat", "", fw2])
         self.fw.append(["nat", "", fw3])
         self.fw.append(["nat", "", fw4])
         self.fw.append(["nat", "", fw5])
         self.fw.append(["nat", "", fw6])
+        self.fw.append(["", "", fw7])
 
     def forward_vpc(self, rule):
         fw_prerout_rule = "-A PREROUTING -d %s/32 -i %s" % (rule["public_ip"], self.getDeviceByIp(rule['public_ip']))
@@ -594,7 +609,7 @@ class CsForwardingRules(CsDataBag):
         fw_prerout_rule += " -j DNAT --to-destination %s" % rule["internal_ip"]
         if not rule["internal_ports"] == "any":
             fw_prerout_rule += ":" + self.portsToString(rule["internal_ports"], "-")
-        
+
         fw_postrout_rule = "-A POSTROUTING -d %s/32 " % rule["public_ip"]
         if not rule["protocol"] == "any":
             fw_postrout_rule += " -m %s -p %s" % (rule["protocol"], rule["protocol"])
@@ -603,7 +618,7 @@ class CsForwardingRules(CsDataBag):
         fw_postrout_rule += " -j SNAT --to-source %s" % rule["internal_ip"]
         if not rule["internal_ports"] == "any":
             fw_postrout_rule += ":" + self.portsToString(rule["internal_ports"], "-")
-        
+
         fw_output_rule = "-A OUTPUT -d %s/32" % rule["public_ip"]
         if not rule["protocol"] == "any":
             fw_output_rule += " -m %s -p %s" % (rule["protocol"], rule["protocol"])
@@ -612,7 +627,7 @@ class CsForwardingRules(CsDataBag):
         fw_output_rule += " -j DNAT --to-destination %s" % rule["internal_ip"]
         if not rule["internal_ports"] == "any":
             fw_output_rule += ":" + self.portsToString(rule["internal_ports"], "-")
-        
+
         self.fw.append(["nat", "", fw_prerout_rule])
         self.fw.append(["nat", "", fw_postrout_rule])
         self.fw.append(["nat", "", fw_output_rule])
@@ -676,10 +691,10 @@ def main(argv):
 
     mon = CsMonitor("monitorservice", config)
     mon.process()
-    
-    #Save iptables configuration - will be loaded on reboot by the iptables-restore that is configured on /etc/rc.local
+
+    # Save iptables configuration - will be loaded on reboot by the iptables-restore that is configured on /etc/rc.local
     CsHelper.save_iptables("iptables-save", "/etc/iptables/router_rules.v4")
     CsHelper.save_iptables("ip6tables-save", "/etc/iptables/router_rules.v6")
-    
+
 if __name__ == "__main__":
     main(sys.argv)

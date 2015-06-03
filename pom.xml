@@ -744,6 +744,7 @@
               <exclude>debian/control</exclude>
               <exclude>debian/dirs</exclude>
               <exclude>debian/rules</exclude>
+              <exclude>debian/source/format</exclude>
               <exclude>dist/console-proxy/js/jquery.js</exclude>
               <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/ServerResource.sln</exclude>
               <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/packages/**</exclude>

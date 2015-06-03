@@ -36,8 +36,10 @@ from marvin.lib.common import (get_domain,
                                get_template
                                )
 from marvin.lib.utils import (cleanup_resources,
-                              random_gen)
+                              random_gen,
+                              verifyRouterState)
 from marvin.cloudstackAPI import createLBStickinessPolicy
+from marvin.codes import PASS
 from marvin.sshClient import SshClient
 
 
@@ -753,6 +755,11 @@ class TestHAProxyStickyness(cloudstackTestCase):
 
         self.debug("Starting the router: %s" % router.name)
         Router.start(self.apiclient, id=router.id)
+
+        response = verifyRouterState(self.apiclient,
+                                     router.id,
+                                     "running")
+        self.assertEqual(response[0], PASS, response[1])
 
         self.debug("Policy: %s" % str(policy))
         self.debug("Validating the stickiness policy")

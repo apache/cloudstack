@@ -42,7 +42,6 @@ from marvin.lib.common import (get_domain,
                                setSharedNetworkParams,
                                get_free_vlan)
 from marvin.codes import (PASS,
-                          ERROR_NO_HOST_FOR_MIGRATION,
                           ISOLATED_NETWORK,
                           SHARED_NETWORK,
                           VPC_NETWORK)
@@ -194,9 +193,13 @@ class TestPathVMLC(cloudstackTestCase):
             # Create 3 service offerings with different values for
             # for cpunumber, cpuspeed, and memory
 
-            cls.testdata["service_offering"]["cpunumber"] = "1"
-            cls.testdata["service_offering"]["cpuspeed"] = "128"
-            cls.testdata["service_offering"]["memory"] = "256"
+            cls.testdata["service_offering"]["cpuspeed"] = 128
+            cls.testdata["service_offering"]["memory"] = 256
+
+            cls.testdata["service_offering"]["cpunumber"] = 1
+            if cls.hypervisor.lower() == "hyperv":
+                cls.testdata["service_offering"]["cpuspeed"] = 2048
+                cls.testdata["service_offering"]["memory"] = 2048
 
             cls.service_offering_1 = ServiceOffering.create(
                 cls.apiclient,
@@ -204,10 +207,7 @@ class TestPathVMLC(cloudstackTestCase):
             )
             cls._cleanup.append(cls.service_offering_1)
 
-            cls.testdata["service_offering"]["cpunumber"] = "2"
-            cls.testdata["service_offering"]["cpuspeed"] = "256"
-            cls.testdata["service_offering"]["memory"] = "512"
-
+            cls.testdata["service_offering"]["cpunumber"] = 2
             cls.service_offering_2 = ServiceOffering.create(
                 cls.apiclient,
                 cls.testdata["service_offering"]
@@ -491,21 +491,22 @@ class TestPathVMLC(cloudstackTestCase):
         except Exception as e:
             self.fail("Exception while SSHing to VM: %s" % e)
 
-        # Find suitable host for VM to migrate and migrate the VM
-        # Verify that it is accessible on the new host
-        host = findSuitableHostForMigration(self.apiclient,
-                                            self.virtual_machine.id)
-        if host is None:
-            self.fail(ERROR_NO_HOST_FOR_MIGRATION)
-        self.virtual_machine.migrate(self.apiclient, host.id)
 
-        try:
-            SshClient(host=publicip.ipaddress.ipaddress,
-                      port=22,
-                      user=self.virtual_machine.username,
-                      passwd=self.virtual_machine.password)
-        except Exception as e:
-            self.fail("Exception while SSHing to VM: %s" % e)
+        if not self.hypervisor.lower() == "lxc":
+            # Find suitable host for VM to migrate and migrate the VM
+            # Verify that it is accessible on the new host
+            host = findSuitableHostForMigration(self.apiclient,
+                                            self.virtual_machine.id)
+            if host is not None:
+                self.virtual_machine.migrate(self.apiclient, host.id)
+
+                try:
+                    SshClient(host=publicip.ipaddress.ipaddress,
+                        port=22,
+                        user=self.virtual_machine.username,
+                        passwd=self.virtual_machine.password)
+                except Exception as e:
+                    self.fail("Exception while SSHing to VM: %s" % e)
         return
 
     @attr(tags=["advanced"], required_hardware="True")
@@ -705,21 +706,21 @@ class TestPathVMLC(cloudstackTestCase):
         except Exception as e:
             self.fail("Exception while SSHing to VM: %s" % e)
 
-        # Find suitable host for VM to migrate and migrate the VM
-        # Verify that it is accessible on the new host
-        host = findSuitableHostForMigration(self.apiclient,
+        if not self.hypervisor.lower() == "lxc":
+            # Find suitable host for VM to migrate and migrate the VM
+            # Verify that it is accessible on the new host
+            host = findSuitableHostForMigration(self.apiclient,
                                             self.virtual_machine.id)
-        if host is None:
-            self.fail(ERROR_NO_HOST_FOR_MIGRATION)
-        self.virtual_machine.migrate(self.apiclient, host.id)
+            if host is not None:
+                self.virtual_machine.migrate(self.apiclient, host.id)
 
-        try:
-            SshClient(host=self.virtual_machine.ssh_ip,
-                      port=22,
-                      user=self.virtual_machine.username,
-                      passwd=self.virtual_machine.password)
-        except Exception as e:
-            self.fail("Exception while SSHing to VM: %s" % e)
+                try:
+                    SshClient(host=self.virtual_machine.ssh_ip,
+                        port=22,
+                        user=self.virtual_machine.username,
+                        passwd=self.virtual_machine.password)
+                except Exception as e:
+                    self.fail("Exception while SSHing to VM: %s" % e)
         return
 
     @attr(tags=["advanced"], required_hardware="True")

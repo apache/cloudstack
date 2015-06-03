@@ -60,6 +60,7 @@ import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.manager.Commands;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
+import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.configuration.ZoneConfig;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -225,7 +226,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private int _capacityPerProxy = ConsoleProxyManager.DEFAULT_PROXY_CAPACITY;
     private int _standbyCapacity = ConsoleProxyManager.DEFAULT_STANDBY_CAPACITY;
 
-    private boolean _useLvm;
     private boolean _useStorageVm;
     private boolean _disableRpFilter = false;
     private String _instance;
@@ -716,13 +716,17 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             networks.put(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false).get(0), new ArrayList<NicProfile>());
         }
 
+        ServiceOfferingVO serviceOffering = _serviceOffering;
+        if (serviceOffering == null) {
+            serviceOffering = _offeringDao.findDefaultSystemOffering(ServiceOffering.consoleProxyDefaultOffUniqueName, ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenterId));
+        }
         ConsoleProxyVO proxy =
-            new ConsoleProxyVO(id, _serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,
-                systemAcct.getDomainId(), systemAcct.getId(), _accountMgr.getSystemUser().getId(), 0, _serviceOffering.getOfferHA());
+            new ConsoleProxyVO(id, serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,
+                systemAcct.getDomainId(), systemAcct.getId(), _accountMgr.getSystemUser().getId(), 0, serviceOffering.getOfferHA());
         proxy.setDynamicallyScalable(template.isDynamicallyScalable());
         proxy = _consoleProxyDao.persist(proxy);
         try {
-            _itMgr.allocate(name, template, _serviceOffering, networks, plan, null);
+            _itMgr.allocate(name, template, serviceOffering, networks, plan, null);
         } catch (InsufficientCapacityException e) {
             s_logger.warn("InsufficientCapacity", e);
             throw new CloudRuntimeException("Insufficient capacity exception", e);
@@ -951,7 +955,12 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             TemplateDataStoreVO templateHostRef = _vmTemplateStoreDao.findByTemplateZoneDownloadStatus(template.getId(), dataCenterId, Status.DOWNLOADED);
 
             if (templateHostRef != null) {
-                List<Pair<Long, Integer>> l = _consoleProxyDao.getDatacenterStoragePoolHostInfo(dataCenterId, _useLvm);
+                boolean useLocalStorage = false;
+                Boolean useLocal = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenterId);
+                if (useLocal != null) {
+                    useLocalStorage = useLocal.booleanValue();
+                }
+                List<Pair<Long, Integer>> l = _consoleProxyDao.getDatacenterStoragePoolHostInfo(dataCenterId, useLocalStorage);
                 if (l != null && l.size() > 0 && l.get(0).second().intValue() > 0) {
                     return true;
                 } else {
@@ -1208,11 +1217,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             _disableRpFilter = true;
         }
 
-        value = configs.get(DataCenter.SystemVMUseLocalStorageCK);
-        if (value != null && value.equalsIgnoreCase("true")) {
-            _useLvm = true;
-        }
-
         value = configs.get("secondary.storage.vm");
         if (value != null && value.equalsIgnoreCase("true")) {
             _useStorageVm = true;
@@ -1238,8 +1242,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
         _itMgr.registerGuru(VirtualMachine.Type.ConsoleProxy, this);
 
-        boolean useLocalStorage = Boolean.parseBoolean(configs.get(DataCenter.SystemVMUseLocalStorageCK));
-
         //check if there is a default service offering configured
         String cpvmSrvcOffIdStr = configs.get(Config.ConsoleProxyServiceOffering.key());
         if (cpvmSrvcOffIdStr != null) {
@@ -1259,15 +1261,11 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         if (_serviceOffering == null || !_serviceOffering.getSystemUse()) {
             int ramSize = NumbersUtil.parseInt(_configDao.getValue("console.ram.size"), DEFAULT_PROXY_VM_RAMSIZE);
             int cpuFreq = NumbersUtil.parseInt(_configDao.getValue("console.cpu.mhz"), DEFAULT_PROXY_VM_CPUMHZ);
-            _serviceOffering =
-                new ServiceOfferingVO("System Offering For Console Proxy", 1, ramSize, cpuFreq, 0, 0, false, null,
-                    Storage.ProvisioningType.THIN, useLocalStorage, true, null, true,
-                    VirtualMachine.Type.ConsoleProxy, true);
-            _serviceOffering.setUniqueName(ServiceOffering.consoleProxyDefaultOffUniqueName);
-            _serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
-
+            List<ServiceOfferingVO> offerings = _offeringDao.createSystemServiceOfferings("System Offering For Console Proxy",
+                    ServiceOffering.consoleProxyDefaultOffUniqueName, 1, ramSize, cpuFreq, 0, 0, false, null,
+                    Storage.ProvisioningType.THIN, true, null, true, VirtualMachine.Type.ConsoleProxy, true);
             // this can sometimes happen, if DB is manually or programmatically manipulated
-            if (_serviceOffering == null) {
+            if (offerings == null || offerings.size() < 2) {
                 String msg = "Data integrity problem : System Offering For Console Proxy has been removed?";
                 s_logger.error(msg);
                 throw new ConfigurationException(msg);

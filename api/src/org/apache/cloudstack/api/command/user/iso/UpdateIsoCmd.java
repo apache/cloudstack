@@ -80,7 +80,7 @@ public class UpdateIsoCmd extends BaseUpdateTemplateOrIsoCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update iso");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update ISO");
         }
     }
 }

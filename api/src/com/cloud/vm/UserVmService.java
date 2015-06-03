@@ -55,8 +55,13 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.ExecutionException;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface UserVmService {
+
+    static final ConfigKey<String> VmConfigDriveLabel = new ConfigKey<String>("Hidden", String.class, "vm.configdrive.label", "config",
+            "The default lable name for the config drive", false);
+
     /**
      * Destroys one virtual machine
      *

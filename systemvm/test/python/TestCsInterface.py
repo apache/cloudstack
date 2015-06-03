@@ -31,9 +31,6 @@ class TestCsInterface(unittest.TestCase):
         csconfig.cl = self.cmdline
         self.csinterface = CsInterface({}, csconfig)
 
-    def test_get_gateway(self):
-        self.assertTrue(self.csinterface.get_gateway() == "1.2.3.4")
-
     def test_is_public(self):
         self.assertTrue(self.csinterface.is_public() is False)
 

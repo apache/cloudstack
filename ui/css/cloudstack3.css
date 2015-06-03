@@ -3530,7 +3530,7 @@ div.toolbar div.filters select {
 }
 
 #breadcrumbs div.home {
-  width: 71px;
+  width: auto;
   height: 23px;
   float: left;
   /*+placement:shift -1px 0px;*/
@@ -3556,7 +3556,7 @@ div.toolbar div.filters select {
   float: left;
   font-size: 13px;
   color: #FFFFFF;
-  padding: 9px 5px 0px 8px;
+  padding: 9px 5px 0px 0px;
   cursor: pointer;
   /*+placement:shift -13px 0px;*/
   position: relative;
@@ -3589,6 +3589,7 @@ div.toolbar div.filters select {
   left: 0px;
   top: 0px;
   color: #63A9F1;
+  padding: 9px 5px 0px 8px;
 }
 
 #breadcrumbs ul li:hover,
@@ -3614,11 +3615,7 @@ div.toolbar div.filters select {
 #breadcrumbs ul li {
   position: relative;
   /*+placement:shift -36px 0px;*/
-  position: relative;
-  left: -36px;
   top: 0px;
-  margin-left: -10px;
-  text-indent: 13px;
   font-size: 13px;
 }
 

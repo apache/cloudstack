@@ -80,60 +80,62 @@ import com.cloud.exception.PermissionDeniedException;
  */
 public interface QueryService {
 
-    public ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException;
+    ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException;
 
-    public ListResponse<EventResponse> searchForEvents(ListEventsCmd cmd);
+    ListResponse<EventResponse> searchForEvents(ListEventsCmd cmd);
 
-    public ListResponse<ResourceTagResponse> listTags(ListTagsCmd cmd);
+    ListResponse<ResourceTagResponse> listTags(ListTagsCmd cmd);
 
-    public ListResponse<InstanceGroupResponse> searchForVmGroups(ListVMGroupsCmd cmd);
+    ListResponse<InstanceGroupResponse> searchForVmGroups(ListVMGroupsCmd cmd);
 
-    public ListResponse<UserVmResponse> searchForUserVMs(ListVMsCmd cmd);
+    ListResponse<UserVmResponse> searchForUserVMs(ListVMsCmd cmd);
 
-    public ListResponse<SecurityGroupResponse> searchForSecurityGroups(ListSecurityGroupsCmd cmd);
+    ListResponse<SecurityGroupResponse> searchForSecurityGroups(ListSecurityGroupsCmd cmd);
 
-    public ListResponse<DomainRouterResponse> searchForRouters(ListRoutersCmd cmd);
+    ListResponse<DomainRouterResponse> searchForRouters(ListRoutersCmd cmd);
 
-    public ListResponse<ProjectInvitationResponse> listProjectInvitations(ListProjectInvitationsCmd cmd);
+    ListResponse<ProjectInvitationResponse> listProjectInvitations(ListProjectInvitationsCmd cmd);
 
-    public ListResponse<ProjectResponse> listProjects(ListProjectsCmd cmd);
+    ListResponse<ProjectResponse> listProjects(ListProjectsCmd cmd);
 
-    public ListResponse<ProjectAccountResponse> listProjectAccounts(ListProjectAccountsCmd cmd);
+    ListResponse<ProjectAccountResponse> listProjectAccounts(ListProjectAccountsCmd cmd);
 
-    public ListResponse<HostResponse> searchForServers(ListHostsCmd cmd);
+    ListResponse<HostResponse> searchForServers(ListHostsCmd cmd);
 
-    public ListResponse<VolumeResponse> searchForVolumes(ListVolumesCmd cmd);
+    ListResponse<VolumeResponse> searchForVolumes(ListVolumesCmd cmd);
 
-    public ListResponse<StoragePoolResponse> searchForStoragePools(ListStoragePoolsCmd cmd);
+    ListResponse<StoragePoolResponse> searchForStoragePools(ListStoragePoolsCmd cmd);
 
-    public ListResponse<ImageStoreResponse> searchForImageStores(ListImageStoresCmd cmd);
+    ListResponse<ImageStoreResponse> searchForImageStores(ListImageStoresCmd cmd);
 
-    public ListResponse<ImageStoreResponse> searchForSecondaryStagingStores(ListSecondaryStagingStoresCmd cmd);
+    ListResponse<ImageStoreResponse> searchForSecondaryStagingStores(ListSecondaryStagingStoresCmd cmd);
 
-    public ListResponse<DomainResponse> searchForDomains(ListDomainsCmd cmd);
+    ListResponse<DomainResponse> searchForDomains(ListDomainsCmd cmd);
 
-    public ListResponse<AccountResponse> searchForAccounts(ListAccountsCmd cmd);
+    ListResponse<AccountResponse> searchForAccounts(ListAccountsCmd cmd);
 
-    public ListResponse<AsyncJobResponse>  searchForAsyncJobs(ListAsyncJobsCmd cmd);
+    ListResponse<AsyncJobResponse>  searchForAsyncJobs(ListAsyncJobsCmd cmd);
 
-    public ListResponse<DiskOfferingResponse>  searchForDiskOfferings(ListDiskOfferingsCmd cmd);
+    ListResponse<DiskOfferingResponse>  searchForDiskOfferings(ListDiskOfferingsCmd cmd);
 
-    public ListResponse<ServiceOfferingResponse>  searchForServiceOfferings(ListServiceOfferingsCmd cmd);
+    ListResponse<ServiceOfferingResponse>  searchForServiceOfferings(ListServiceOfferingsCmd cmd);
 
-    public ListResponse<ZoneResponse>  listDataCenters(ListZonesCmd cmd);
+    ListResponse<ZoneResponse>  listDataCenters(ListZonesCmd cmd);
 
-    public ListResponse<TemplateResponse> listTemplates(ListTemplatesCmd cmd);
+    ListResponse<TemplateResponse> listTemplates(ListTemplatesCmd cmd);
 
-    public ListResponse<TemplateResponse> listIsos(ListIsosCmd cmd);
+    ListResponse<TemplateResponse> listIsos(ListIsosCmd cmd);
 
-    public ListResponse<AffinityGroupResponse> listAffinityGroups(Long affinityGroupId, String affinityGroupName,
+    ListResponse<AffinityGroupResponse> listAffinityGroups(Long affinityGroupId, String affinityGroupName,
             String affinityGroupType, Long vmId, String accountName, Long domainId, boolean isRecursive,
             boolean listAll, Long startIndex, Long pageSize, String keyword);
 
-    public List<ResourceDetailResponse> listResourceDetails(ListResourceDetailsCmd cmd);
+    List<ResourceDetailResponse> listResourceDetails(ListResourceDetailsCmd cmd);
 
     ListResponse<DomainRouterResponse> searchForInternalLbVms(ListInternalLBVMsCmd cmd);
-    public ListResponse<StorageTagResponse> searchForStorageTags(ListStorageTagsCmd cmd);
-    public ListResponse<HostTagResponse> searchForHostTags(ListHostTagsCmd cmd);
+
+    ListResponse<StorageTagResponse> searchForStorageTags(ListStorageTagsCmd cmd);
+
+    ListResponse<HostTagResponse> searchForHostTags(ListHostTagsCmd cmd);
 
 }

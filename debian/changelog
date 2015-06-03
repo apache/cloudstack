@@ -1,8 +1,12 @@
-cloudstack (4.6.0-snapshot) unstable; urgency=low
+cloudstack (4.6.0-SNAPSHOT) unstable; urgency=low
 
+  [ Hugo Trippaers ]
   * Update the version to 4.6.0.snapshot
 
- -- Hugo Trippaers <hugo@apache.org>  Thu, 3 Nov 2014 12:00:00 -0400
+  [ Rafael da Fonseca ]
+  * Switch to dpkg-source 3.0 (native) format
+
+ -- Rafael da Fonseca <rsafonseca@gmail.com>  Fri, 22 May 2015 16:03:55 +0200
 
 cloudstack (4.5.0-snapshot) unstable; urgency=low
 

@@ -40,7 +40,6 @@ Vagrant::Config.run do |config|
   config.vm.forward_port 8787, 8787
   config.vm.forward_port 8250, 8250
   config.vm.forward_port 8096, 8096
-  config.vm.forward_port 7080, 7080
   # Ensure the VM has the right virtual resources
   #config.vm.
   config.vm.customize ["modifyvm", :id, "--memory", 2048]

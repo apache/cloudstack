@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.response.LoginCmdResponse;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.util.List;
@@ -104,8 +105,11 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
     }
 
     @Override
-    public String authenticate(String command, Map<String, Object[]> params, HttpSession session, InetAddress remoteAddress, String responseType, StringBuilder auditTrailSb, final HttpServletResponse resp) throws ServerApiException {
-
+    public String authenticate(String command, Map<String, Object[]> params, HttpSession session, InetAddress remoteAddress, String responseType, StringBuilder auditTrailSb, final HttpServletRequest req, final HttpServletResponse resp) throws ServerApiException {
+        // Disallow non POST requests
+        if (HTTPMethod.valueOf(req.getMethod()) != HTTPMethod.POST) {
+            throw new ServerApiException(ApiErrorCode.METHOD_NOT_ALLOWED, "Please use HTTP POST to authenticate using this API");
+        }
         // FIXME: ported from ApiServlet, refactor and cleanup
         final String[] username = (String[])params.get(ApiConstants.USERNAME);
         final String[] password = (String[])params.get(ApiConstants.PASSWORD);

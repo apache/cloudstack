@@ -184,7 +184,7 @@ fi
 _uuid=$(uuidgen)
 localfile=$_uuid.$ext
 
-_res=(`mysql -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "update cloud.vm_template set uuid=\"$_uuid\" where id=\"$templateId\""`)
+_res=(`mysql -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "update cloud.vm_template set uuid=\"$_uuid\", url=\"$url\" where id=\"$templateId\""`)
 
 mntpoint=`echo "$mntpoint" | sed 's|/*$||'`
 

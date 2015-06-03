@@ -22,10 +22,9 @@ package org.apache.cloudstack.storage.command;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataTO;
 
-public final class CopyCommand extends Command implements StorageSubSystemCommand {
+public final class CopyCommand extends StorageSubSystemCommand {
     private DataTO srcTO;
     private DataTO destTO;
     private DataTO cacheTO;
@@ -33,28 +32,28 @@ public final class CopyCommand extends Command implements StorageSubSystemComman
     private Map<String, String> options = new HashMap<String, String>();
     private Map<String, String> options2 = new HashMap<String, String>();
 
-    public CopyCommand(DataTO srcData, DataTO destData, int timeout, boolean executeInSequence) {
+    public CopyCommand(final DataTO srcData, final DataTO destData, final int timeout, final boolean executeInSequence) {
         super();
-        this.srcTO = srcData;
-        this.destTO = destData;
-        this.setWait(timeout);
+        srcTO = srcData;
+        destTO = destData;
+        setWait(timeout);
         this.executeInSequence = executeInSequence;
     }
 
     public DataTO getDestTO() {
-        return this.destTO;
+        return destTO;
     }
 
-    public void setSrcTO(DataTO srcTO) {
+    public void setSrcTO(final DataTO srcTO) {
         this.srcTO = srcTO;
     }
 
-    public void setDestTO(DataTO destTO) {
+    public void setDestTO(final DataTO destTO) {
         this.destTO = destTO;
     }
 
     public DataTO getSrcTO() {
-        return this.srcTO;
+        return srcTO;
     }
 
     @Override
@@ -66,15 +65,15 @@ public final class CopyCommand extends Command implements StorageSubSystemComman
         return cacheTO;
     }
 
-    public void setCacheTO(DataTO cacheTO) {
+    public void setCacheTO(final DataTO cacheTO) {
         this.cacheTO = cacheTO;
     }
 
     public int getWaitInMillSeconds() {
-        return this.getWait() * 1000;
+        return getWait() * 1000;
     }
 
-    public void setOptions(Map<String, String> options) {
+    public void setOptions(final Map<String, String> options) {
         this.options = options;
     }
 
@@ -82,7 +81,7 @@ public final class CopyCommand extends Command implements StorageSubSystemComman
         return options;
     }
 
-    public void setOptions2(Map<String, String> options2) {
+    public void setOptions2(final Map<String, String> options2) {
         this.options2 = options2;
     }
 
@@ -91,7 +90,7 @@ public final class CopyCommand extends Command implements StorageSubSystemComman
     }
 
     @Override
-    public void setExecuteInSequence(boolean inSeq) {
-        this.executeInSequence = inSeq;
+    public void setExecuteInSequence(final boolean inSeq) {
+        executeInSequence = inSeq;
     }
 }

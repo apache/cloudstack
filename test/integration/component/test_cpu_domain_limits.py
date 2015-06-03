@@ -483,7 +483,9 @@ class TestDomainCPULimitsUpdateResources(cloudstackTestCase):
 
             self.assertEqual(resource_count_after_delete, expected_resource_count,
                 "Resource count should match with the expected count")
-
+            #vm migration is not supported in LXC. So don't need to execute below vm migration code
+            if self.hypervisor.lower() in ['lxc']:
+                continue
             host = findSuitableHostForMigration(self.apiclient, vm_2.id)
             if host is None:
                 self.skipTest(ERROR_NO_HOST_FOR_MIGRATION)

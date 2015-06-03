@@ -35,7 +35,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listIpForwardingRules", description = "List the ip forwarding rules", responseObject = FirewallRuleResponse.class,
+@APICommand(name = "listIpForwardingRules", description = "List the IP forwarding rules", responseObject = FirewallRuleResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListIpForwardingRulesCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListIpForwardingRulesCmd.class.getName());
@@ -49,7 +49,7 @@ public class ListIpForwardingRulesCmd extends BaseListProjectAndAccountResources
     @Parameter(name = ApiConstants.IP_ADDRESS_ID,
                type = CommandType.UUID,
                entityType = IPAddressResponse.class,
-               description = "list the rule belonging to this public ip address")
+               description = "list the rule belonging to this public IP address")
     private Long publicIpAddressId;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, description = "Lists rule with the specified ID.")
@@ -58,7 +58,7 @@ public class ListIpForwardingRulesCmd extends BaseListProjectAndAccountResources
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
                type = CommandType.UUID,
                entityType = UserVmResponse.class,
-               description = "Lists all rules applied to the specified Vm.")
+               description = "Lists all rules applied to the specified VM.")
     private Long vmId;
 
     /////////////////////////////////////////////////////

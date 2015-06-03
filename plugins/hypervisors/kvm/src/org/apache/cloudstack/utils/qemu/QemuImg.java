@@ -236,6 +236,7 @@ public class QemuImg {
             for (Map.Entry<String, String> option : options.entrySet()) {
                 optionsStr += option.getKey() + "=" + option.getValue() + ",";
             }
+            optionsStr = optionsStr.replaceAll(",$", "");
             s.add(optionsStr);
         }
 

@@ -34,7 +34,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.HealthCheckPolicy;
 import com.cloud.network.rules.LoadBalancer;
 
-@APICommand(name = "listLBHealthCheckPolicies", description = "Lists load balancer HealthCheck policies.", responseObject = LBHealthCheckResponse.class, since = "4.2.0",
+@APICommand(name = "listLBHealthCheckPolicies", description = "Lists load balancer health check policies.", responseObject = LBHealthCheckResponse.class, since = "4.2.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListLBHealthCheckPoliciesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListLBHealthCheckPoliciesCmd.class.getName());
@@ -53,7 +53,7 @@ public class ListLBHealthCheckPoliciesCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = LBHealthCheckResponse.class, description = "the ID of the healthcheck policy", since = "4.4")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = LBHealthCheckResponse.class, description = "the ID of the health check policy", since = "4.4")
     private Long id;
 
     // ///////////////////////////////////////////////////
@@ -93,7 +93,7 @@ public class ListLBHealthCheckPoliciesCmd extends BaseListCmd {
             if(hId != null) {
                 lbRuleId = _lbService.findLBIdByHealtCheckPolicyId(hId);
             } else {
-                throw new InvalidParameterValueException("Either LB Ruleid or HealthCheckpolicy Id should be specified");
+                throw new InvalidParameterValueException("Either load balancer rule ID or health check policy ID should be specified");
             }
         }
 

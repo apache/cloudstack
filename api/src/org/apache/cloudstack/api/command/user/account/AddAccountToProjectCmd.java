@@ -32,7 +32,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
 
-@APICommand(name = "addAccountToProject", description = "Adds acoount to a project", responseObject = SuccessResponse.class, since = "3.0.0",
+@APICommand(name = "addAccountToProject", description = "Adds account to a project", responseObject = SuccessResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddAccountToProjectCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AddAccountToProjectCmd.class.getName());
@@ -47,7 +47,7 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = ProjectResponse.class,
                required = true,
-               description = "id of the project to add the account to")
+               description = "ID of the project to add the account to")
     private Long projectId;
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "name of the account to be added to the project")
@@ -87,7 +87,7 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
             throw new InvalidParameterValueException("Either accountName or email is required");
         }
 
-        CallContext.current().setEventDetails("Project id: " + projectId + "; accountName " + accountName);
+        CallContext.current().setEventDetails("Project ID: " + projectId + "; accountName " + accountName);
         boolean result = _projectService.addAccountToProject(getProjectId(), getAccountName(), getEmail());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
@@ -102,7 +102,7 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
         Project project = _projectService.getProject(getProjectId());
         //verify input parameters
         if (project == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id");
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified ID");
             ex.addProxyObject(getProjectId().toString(), "projectId");
             throw ex;
         }

@@ -66,13 +66,13 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.NETWORK_DOMAIN, type = CommandType.STRING, description = "network domain")
     private String networkDomain;
 
-    @Parameter(name = ApiConstants.CHANGE_CIDR, type = CommandType.BOOLEAN, description = "Force update even if cidr type is different")
+    @Parameter(name = ApiConstants.CHANGE_CIDR, type = CommandType.BOOLEAN, description = "Force update even if CIDR type is different")
     private Boolean changeCidr;
 
     @Parameter(name = ApiConstants.NETWORK_OFFERING_ID, type = CommandType.UUID, entityType = NetworkOfferingResponse.class, description = "network offering ID")
     private Long networkOfferingId;
 
-    @Parameter(name = ApiConstants.GUEST_VM_CIDR, type = CommandType.STRING, description = "CIDR for Guest VMs,Cloudstack allocates IPs to Guest VMs only from this CIDR")
+    @Parameter(name = ApiConstants.GUEST_VM_CIDR, type = CommandType.STRING, description = "CIDR for guest VMs, CloudStack allocates IPs to guest VMs only from this CIDR")
     private String guestVmCidr;
 
     @Parameter(name = ApiConstants.DISPLAY_NETWORK,
@@ -132,7 +132,7 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd {
     public long getEntityOwnerId() {
         Network network = _networkService.getNetwork(id);
         if (network == null) {
-            throw new InvalidParameterValueException("Networkd id=" + id + " doesn't exist");
+            throw new InvalidParameterValueException("Networkd ID=" + id + " doesn't exist");
         } else {
             return _networkService.getNetwork(id).getAccountId();
         }
@@ -144,7 +144,7 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd {
         Account callerAccount = _accountService.getActiveAccountById(callerUser.getAccountId());
         Network network = _networkService.getNetwork(id);
         if (network == null) {
-            throw new InvalidParameterValueException("Couldn't find network by id");
+            throw new InvalidParameterValueException("Couldn't find network by ID");
         }
 
         Network result =
@@ -166,16 +166,16 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd {
         if (getNetworkOfferingId() != null) {
             Network network = _networkService.getNetwork(getId());
             if (network == null) {
-                throw new InvalidParameterValueException("Networkd id=" + id + " doesn't exist");
+                throw new InvalidParameterValueException("Networkd ID=" + id + " doesn't exist");
             }
             if (network.getNetworkOfferingId() != getNetworkOfferingId()) {
                 NetworkOffering oldOff = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
                 NetworkOffering newOff = _entityMgr.findById(NetworkOffering.class, getNetworkOfferingId());
                 if (newOff == null) {
-                    throw new InvalidParameterValueException("Networkd offering id supplied is invalid");
+                    throw new InvalidParameterValueException("Networkd offering ID supplied is invalid");
                 }
 
-                eventMsg.append(". Original network offering id: " + oldOff.getUuid() + ", new network offering id: " + newOff.getUuid());
+                eventMsg.append(". Original network offering ID: " + oldOff.getUuid() + ", new network offering ID: " + newOff.getUuid());
             }
         }
 

@@ -51,13 +51,13 @@ public class ListPortForwardingRulesCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.IP_ADDRESS_ID,
                type = CommandType.UUID,
                entityType = IPAddressResponse.class,
-               description = "the id of IP address of the port forwarding services")
+               description = "the ID of IP address of the port forwarding services")
     private Long ipAddressId;
 
     @Parameter(name = ApiConstants.NETWORK_ID,
                type = CommandType.UUID,
                entityType = NetworkResponse.class,
-               description = "list port forwarding rules for ceratin network",
+               description = "list port forwarding rules for certain network",
                since = "4.3")
     private Long networkId;
 

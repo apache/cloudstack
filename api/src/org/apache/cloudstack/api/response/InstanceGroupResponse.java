@@ -30,8 +30,9 @@ import com.cloud.vm.InstanceGroup;
 @SuppressWarnings("unused")
 @EntityReference(value = InstanceGroup.class)
 public class InstanceGroupResponse extends BaseResponse implements ControlledViewEntityResponse {
+
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the id of the instance group")
+    @Param(description = "the ID of the instance group")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
@@ -47,11 +48,11 @@ public class InstanceGroupResponse extends BaseResponse implements ControlledVie
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the group")
+    @Param(description = "the project ID of the instance group")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the group")
+    @Param(description = "the project name of the instance group")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
