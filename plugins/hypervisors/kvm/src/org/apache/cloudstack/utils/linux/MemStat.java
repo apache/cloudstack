@@ -16,11 +16,10 @@
 // under the License.
 package org.apache.cloudstack.utils.linux;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 public class MemStat {
@@ -29,7 +28,7 @@ public class MemStat {
     protected final static String CACHE_KEY = "Cached";
     protected final static String TOTAL_KEY = "MemTotal";
 
-    private Map<String, Double> _memStats = new HashMap<String, Double>();
+    private final Map<String, Double> _memStats = new HashMap<String, Double>();
 
     public MemStat() {
     }
@@ -51,9 +50,9 @@ public class MemStat {
     }
 
     public void refresh() {
-        try {
-            Scanner fileScanner = new Scanner(new File(MEMINFO_FILE));
-            parseFromScanner(fileScanner);
+        File f = new File(MEMINFO_FILE);
+        try (Scanner scanner = new Scanner(f)) {
+            parseFromScanner(scanner);
         } catch (FileNotFoundException ex) {
             throw new RuntimeException("File " + MEMINFO_FILE + " not found:" + ex.toString());
         }
