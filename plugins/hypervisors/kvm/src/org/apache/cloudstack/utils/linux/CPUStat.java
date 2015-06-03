@@ -17,11 +17,11 @@
 
 package org.apache.cloudstack.utils.linux;
 
-import org.apache.log4j.Logger;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
+
+import org.apache.log4j.Logger;
 
 public class CPUStat {
     private static final Logger s_logger = Logger.getLogger(CPUStat.class);
@@ -52,8 +52,9 @@ public class CPUStat {
 
     private UptimeStats getUptimeAndCpuIdleTime() {
         UptimeStats uptime = new UptimeStats(0d, 0d);
-        try {
-            String[] stats =  new Scanner(new File(_uptimeFile)).useDelimiter("\\Z").next().split("\\s+");
+        File f = new File(_uptimeFile);
+        try (Scanner scanner = new Scanner(f);) {
+            String[] stats = scanner.useDelimiter("\\Z").next().split("\\s+");
             uptime = new UptimeStats(Double.parseDouble(stats[0]), Double.parseDouble(stats[1]));
         } catch (FileNotFoundException ex) {
             s_logger.warn("File " + _uptimeFile + " not found:" + ex.toString());
