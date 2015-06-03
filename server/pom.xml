@@ -174,7 +174,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <argLine>-Xmx1024m</argLine>
+          <argLine>-Xmx1024m -Djava.security.egd=file:/dev/./urandom</argLine>
           <excludes>
             <exclude>%regex[.*[0-9]*To[0-9]*.*Test.*]</exclude>
             <exclude>com/cloud/upgrade/AdvanceZone223To224UpgradeTest</exclude>
