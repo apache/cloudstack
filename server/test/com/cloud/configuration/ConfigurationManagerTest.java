@@ -241,7 +241,7 @@ public class ConfigurationManagerTest {
 
         DataCenterVO dc =
             new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Advanced, null, null, true,
-                true, null, null);
+                true, null, null, null, null);
         when(configurationMgr._zoneDao.findById(anyLong())).thenReturn(dc);
 
         List<IPAddressVO> ipAddressList = new ArrayList<IPAddressVO>();
@@ -285,7 +285,7 @@ public class ConfigurationManagerTest {
 
         DataCenterVO dc =
             new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Advanced, null, null, true,
-                true, null, null);
+                true, null, null, null, null);
         when(configurationMgr._zoneDao.findById(anyLong())).thenReturn(dc);
 
         List<IPAddressVO> ipAddressList = new ArrayList<IPAddressVO>();
@@ -312,7 +312,7 @@ public class ConfigurationManagerTest {
         // public ip range belongs to zone of type basic
         DataCenterVO dc =
             new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true,
-                true, null, null);
+                true, null, null, null, null);
         when(configurationMgr._zoneDao.findById(anyLong())).thenReturn(dc);
 
         List<IPAddressVO> ipAddressList = new ArrayList<IPAddressVO>();
@@ -338,7 +338,7 @@ public class ConfigurationManagerTest {
 
         DataCenterVO dc =
             new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Advanced, null, null, true,
-                true, null, null);
+                true, null, null, null, null);
         when(configurationMgr._zoneDao.findById(anyLong())).thenReturn(dc);
 
         // one of the ip addresses of the range is allocated to different account

@@ -1826,7 +1826,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Create the new zone in the database
         final DataCenterVO zoneFinal = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, guestCidr, domain, domainId, zoneType, zoneToken, networkDomain,
-                isSecurityGroupEnabled, isLocalStorageEnabled, ip6Dns1, ip6Dns2);
+                isSecurityGroupEnabled, isLocalStorageEnabled, ip6Dns1, ip6Dns2, null, null);
         if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
             final Grouping.AllocationState allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
             zoneFinal.setAllocationState(allocationState);
