@@ -108,7 +108,7 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
                         rs.close();
                         pstmt.close();
                         pstmt = conn.prepareStatement("SELECT is_static_nat from firewall_rules");
-                        pstmt.executeQuery();
+                        rs = pstmt.executeQuery();
                         return "2.2.1";
                     } catch (final SQLException e) {
                         s_logger.debug("Assuming the exception means static_nat field doesn't exist in firewall_rules table, returning version 2.2.2");
