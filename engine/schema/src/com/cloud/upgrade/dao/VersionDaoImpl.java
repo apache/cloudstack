@@ -64,8 +64,8 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
     }
 
     @Override
-    public VersionVO findByVersion(String version, Step step) {
-        SearchCriteria<VersionVO> sc = AllFieldsSearch.create();
+    public VersionVO findByVersion(final String version, final Step step) {
+        final SearchCriteria<VersionVO> sc = AllFieldsSearch.create();
         sc.setParameters("version", version);
         sc.setParameters("step", step);
 
@@ -96,7 +96,7 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
                     try {
                         pstmt.executeQuery();
                         return "2.1.8";
-                    } catch (SQLException e) {
+                    } catch (final SQLException e) {
                         s_logger.debug("Assuming the exception means domain_id is not there.");
                         s_logger.debug("No version table and no nics table, returning 2.1.7");
                         return "2.1.7";
@@ -110,7 +110,7 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
                         pstmt = conn.prepareStatement("SELECT is_static_nat from firewall_rules");
                         pstmt.executeQuery();
                         return "2.2.1";
-                    } catch (SQLException e) {
+                    } catch (final SQLException e) {
                         s_logger.debug("Assuming the exception means static_nat field doesn't exist in firewall_rules table, returning version 2.2.2");
                         return "2.2.2";
                     } finally {
@@ -124,14 +124,14 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
 
             sc.setParameters("step", Step.Complete);
             Filter filter = new Filter(VersionVO.class, "id", false, 0l, 1l);
-            List<String> upgradedVersions = customSearch(sc, filter);
+            final List<String> upgradedVersions = customSearch(sc, filter);
 
             if (upgradedVersions.isEmpty()) {
 
                 // Check if there are records in Version table
                 filter = new Filter(VersionVO.class, "id", false, 0l, 1l);
                 sc = CurrentVersionSearch.create();
-                List<String> vers = customSearch(sc, filter);
+                final List<String> vers = customSearch(sc, filter);
                 if (!vers.isEmpty()) {
                     throw new CloudRuntimeException("Version table contains records for which upgrade wasn't completed");
                 }
@@ -147,9 +147,9 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
                         pstmt = conn.prepareStatement("SELECT is_static_nat from firewall_rules");
                         pstmt.executeQuery();
                         throw new CloudRuntimeException("Unable to determine the current version, version table exists and empty, " +
-                            "nics table doesn't exist, is_static_nat field exists in firewall_rules table");
+                                "nics table doesn't exist, is_static_nat field exists in firewall_rules table");
                     }
-                } catch (SQLException e) {
+                } catch (final SQLException e) {
                     s_logger.debug("Assuming the exception means static_nat field doesn't exist in firewall_rules table, returning version 2.2.2");
                     return "2.2.2";
                 } finally {
@@ -160,12 +160,12 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
                 return upgradedVersions.get(0);
             }
 
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             throw new CloudRuntimeException("Unable to get the current version", e);
         } finally {
             try {
                 conn.close();
-            } catch (SQLException e) {
+            } catch (final SQLException e) {
             }
         }
 
