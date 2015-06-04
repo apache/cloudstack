@@ -649,6 +649,7 @@ class TestDisableEnablePod(cloudstackTestCase):
                     self.userapiclient,
                     root_volume[0].id)
 
+        with self.assertRaises(Exception):
             Template.register(
                 self.userapiclient,
                 self.testdata["privatetemplate"],
@@ -1404,15 +1405,16 @@ class TestDisableEnableHost(cloudstackTestCase):
                          "stopped",
                          "verify that vm should stop")
 
-        VirtualMachine.create(
-            self.apiclient,
-            self.testdata["small"],
-            templateid=self.template.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid,
-            serviceofferingid=self.service_offering.id,
-            zoneid=self.zone.id,
-            hostid=hostid)
+        with self.assertRaises(Exception):
+            VirtualMachine.create(
+                self.apiclient,
+                self.testdata["small"],
+                templateid=self.template.id,
+                accountid=self.account.name,
+                domainid=self.account.domainid,
+                serviceofferingid=self.service_offering.id,
+                zoneid=self.zone.id,
+                hostid=hostid)
 
         root_volume = list_volumes(
             self.apiclient,
