@@ -85,8 +85,12 @@ public class Test {
             //System.out.println(vm.toJson());
             final Connection c = new Connection("192.168.189.12", "oracle", "password");
             //System.out.println(Coder.toJson(OvmHost.getDetails(c)));
-            final String txt =
-                    "{\"MasterIp\": \"192.168.189.12\", \"dom0Memory\": 790626304, \"freeMemory\": 16378757120, \"totalMemory\": 17169383424, \"cpuNum\": 4, \"agentVersion\": \"2.3-38\", \"cpuSpeed\": 2261}";
+
+            /* This is not being used at the moment.
+             * Coverity issue: 1012179
+             */
+            //final String txt =
+            //        "{\"MasterIp\": \"192.168.189.12\", \"dom0Memory\": 790626304, \"freeMemory\": 16378757120, \"totalMemory\": 17169383424, \"cpuNum\": 4, \"agentVersion\": \"2.3-38\", \"cpuSpeed\": 2261}";
 
             //OvmHost.Details d = new GsonBuilder().create().fromJson(txt, OvmHost.Details.class);
             //OvmHost.Details d = Coder.fromJson(txt, OvmHost.Details.class);
