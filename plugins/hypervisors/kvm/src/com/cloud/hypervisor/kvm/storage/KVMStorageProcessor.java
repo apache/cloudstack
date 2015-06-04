@@ -59,6 +59,7 @@ import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
@@ -525,8 +526,10 @@ public class KVMStorageProcessor implements StorageProcessor {
                 try {
                     q.convert(srcFile, destFile);
                 } catch (final QemuImgException e) {
-                    s_logger.error("Failed to create new template while converting " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " +
-                            e.getMessage());
+                    final String message = "Failed to create new template while converting " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " +
+                            e.getMessage();
+
+                    throw new QemuImgException(message);
                 }
 
                 final File templateProp = new File(tmpltPath + "/template.properties");
@@ -541,9 +544,14 @@ public class KVMStorageProcessor implements StorageProcessor {
                 templateContent += "snapshot.name=" + dateFormat.format(date) + System.getProperty("line.separator");
 
                 final FileOutputStream templFo = new FileOutputStream(templateProp);
-                templFo.write(templateContent.getBytes());
-                templFo.flush();
-                templFo.close();
+                try {
+                    templFo.write(templateContent.getBytes());
+                    templFo.flush();
+                } catch (final IOException e) {
+                    throw e;
+                } finally {
+                    IOUtils.closeQuietly(templFo);
+                }
             }
 
             final Map<String, Object> params = new HashMap<String, Object>();
@@ -566,6 +574,13 @@ public class KVMStorageProcessor implements StorageProcessor {
             newTemplate.setFormat(ImageFormat.QCOW2);
             newTemplate.setName(templateName);
             return new CopyCmdAnswer(newTemplate);
+
+        } catch (final QemuImgException e) {
+            s_logger.error(e.getMessage());
+            return new CopyCmdAnswer(e.toString());
+        } catch (final IOException e) {
+            s_logger.debug("Failed to createTemplateFromVolume: ", e);
+            return new CopyCmdAnswer(e.toString());
         } catch (final Exception e) {
             s_logger.debug("Failed to createTemplateFromVolume: ", e);
             return new CopyCmdAnswer(e.toString());
