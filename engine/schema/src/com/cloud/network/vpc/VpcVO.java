@@ -51,6 +51,9 @@ public class VpcVO implements Vpc {
     @Column(name = "cidr")
     private String cidr = null;
 
+    @Column(name = "ip6_cidr")
+    private String ip6Cidr = null;
+
     @Column(name = "domain_id")
     Long domainId = null;
 
@@ -94,13 +97,14 @@ public class VpcVO implements Vpc {
 
     public VpcVO(final long zoneId, final String name, final String displayText, final long accountId, final long domainId,
             final long vpcOffId, final String cidr, final String networkDomain, final boolean useDistributedRouter,
-            final boolean regionLevelVpc, final boolean isRedundant) {
+            final boolean regionLevelVpc, final boolean isRedundant, String ip6Cidr) {
         this.zoneId = zoneId;
         this.name = name;
         this.displayText = displayText;
         this.accountId = accountId;
         this.domainId = domainId;
         this.cidr = cidr;
+        this.ip6Cidr = ip6Cidr;
         uuid = UUID.randomUUID().toString();
         state = State.Enabled;
         this.networkDomain = networkDomain;
@@ -236,5 +240,10 @@ public class VpcVO implements Vpc {
     @Override
     public boolean usesDistributedRouter() {
         return usesDistributedRouter;
+    }
+
+    @Override
+    public String getIp6Cidr() {
+        return ip6Cidr;
     }
 }
