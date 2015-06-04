@@ -81,4 +81,9 @@ public interface DataCenter extends InfrastructureEntity, Grouping, Identity, In
     String getZoneToken();
 
     boolean isLocalStorageEnabled();
+
+    String getIp6SuperNetworkCidr();
+
+    String getAsNumber();
+
 }
