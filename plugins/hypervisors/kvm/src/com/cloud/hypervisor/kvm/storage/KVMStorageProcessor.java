@@ -59,7 +59,6 @@ import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
@@ -543,14 +542,12 @@ public class KVMStorageProcessor implements StorageProcessor {
                 final Date date = new Date();
                 templateContent += "snapshot.name=" + dateFormat.format(date) + System.getProperty("line.separator");
 
-                final FileOutputStream templFo = new FileOutputStream(templateProp);
-                try {
+
+                try(FileOutputStream templFo = new FileOutputStream(templateProp);){
                     templFo.write(templateContent.getBytes());
                     templFo.flush();
                 } catch (final IOException e) {
                     throw e;
-                } finally {
-                    IOUtils.closeQuietly(templFo);
                 }
             }
 
