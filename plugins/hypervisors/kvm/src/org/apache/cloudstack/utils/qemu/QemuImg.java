@@ -224,29 +224,29 @@ public class QemuImg {
      * @return void
      */
     public void convert(final QemuImgFile srcFile, final QemuImgFile destFile, final Map<String, String> options) throws QemuImgException {
-        final Script s = new Script(_qemuImgPath, timeout);
-        s.add("convert");
+        final Script script = new Script(_qemuImgPath, timeout);
+        script.add("convert");
         // autodetect source format. Sometime int he future we may teach KVMPhysicalDisk about more formats, then we can explicitly pass them if necessary
         //s.add("-f");
         //s.add(srcFile.getFormat().toString());
-        s.add("-O");
-        s.add(destFile.getFormat().toString());
+        script.add("-O");
+        script.add(destFile.getFormat().toString());
 
         if (options != null && !options.isEmpty()) {
-            s.add("-o");
+            script.add("-o");
             final StringBuffer optionsBuffer = new StringBuffer();
             for (final Map.Entry<String, String> option : options.entrySet()) {
                 optionsBuffer.append(option.getKey()).append('=').append(option.getValue()).append(',');
             }
             String optionsStr = optionsBuffer.toString();
             optionsStr = optionsStr.replaceAll(",$", "");
-            s.add(optionsStr);
+            script.add(optionsStr);
         }
 
-        s.add(srcFile.getFileName());
-        s.add(destFile.getFileName());
+        script.add(srcFile.getFileName());
+        script.add(destFile.getFileName());
 
-        final String result = s.execute();
+        final String result = script.execute();
         if (result != null) {
             throw new QemuImgException(result);
         }
