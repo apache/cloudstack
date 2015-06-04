@@ -167,7 +167,7 @@ public class VmwareDatacenterApiUnitTest {
 
         DataCenterVO zone =
             new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true,
-                true, null, null);
+                true, null, null, null, null);
         zoneId = 1L;
 
         HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), zoneId, "192.168.56.1", "192.168.56.0/24", 8, "test");

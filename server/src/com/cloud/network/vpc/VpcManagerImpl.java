@@ -816,7 +816,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         final boolean useDistributedRouter = vpcOff.supportsDistributedRouter();
         final VpcVO vpc = new VpcVO(zoneId, vpcName, displayText, owner.getId(), owner.getDomainId(), vpcOffId,
-                cidr, networkDomain, useDistributedRouter, isRegionLevelVpcOff, vpcOff.getRedundantRouter());
+                cidr, networkDomain, useDistributedRouter, isRegionLevelVpcOff, vpcOff.getRedundantRouter(), null);
 
         return createVpc(displayVpc, vpc);
     }
