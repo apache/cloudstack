@@ -24,56 +24,8 @@ from marvin.lib.base import (Account,
                              VpcOffering)
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template,
-                               list_configurations)
+                               get_template)
 import time
-
-
-class Services:
-
-    """Test VPC services
-    """
-
-    def __init__(self):
-        self.services = {
-            "account": {
-                "email": "test@test.com",
-                "firstname": "Test",
-                "lastname": "User",
-                "username": "test",
-                # Random characters are appended for unique
-                # username
-                "password": "password",
-            },
-            "vpc_offering": {
-                "name": 'VPC off',
-                "displaytext": 'VPC off',
-                "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,\
-UserData,StaticNat,NetworkACL',
-            },
-            "vpc": {
-                "name": "TestVPC",
-                "displaytext": "TestVPC",
-                "cidr": '10.0.0.1/24'
-            },
-            "virtual_machine": {
-                "displayname": "Test VM",
-                "username": "root",
-                "password": "password",
-                "ssh_port": 22,
-                "hypervisor": 'XenServer',
-                # Hypervisor type should be same as
-                # hypervisor type of cluster
-                "privateport": 22,
-                "publicport": 22,
-                "protocol": 'TCP',
-            },
-            "ostype": 'CentOS 5.3 (64-bit)',
-            # Cent OS 5.3 (64 bit)
-            "sleep": 60,
-            "timeout": 10
-        }
-
 
 class TestVPCHostMaintenance(cloudstackTestCase):
 
@@ -81,8 +33,10 @@ class TestVPCHostMaintenance(cloudstackTestCase):
     def setUpClass(cls):
         cls.testClient = super(TestVPCHostMaintenance, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
-
-        cls.services = Services().services
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() in ['hyperv']:
+            raise unittest.SkipTest("VPC is not supported on Hyper-V")
+        cls.services = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -255,53 +209,5 @@ class TestVPCHostMaintenance(cloudstackTestCase):
             domainid=self.account.domainid,
             start=False
         )
-        self.validate_vpc_network(vpc, state='inactive')
-        return
-
-    @attr(tags=["advanced", "intervlan"])
-    def test_02_create_vpc_wait_gc(self):
-        """ Test VPC when host is in maintenance mode and wait till nw gc
-        """
-
-        # Validate the following
-        # 1. Put the host in maintenance mode.
-        # 2. Attempt to Create a VPC with cidr - 10.1.1.1/16
-        # 3. Wait for the VPC GC thread to run.
-        # 3. VPC will be created but will be in "Disabled" state and should
-        #    get deleted
-
-        self.debug("creating a VPC network in the account: %s" %
-                   self.account.name)
-        self.services["vpc"]["cidr"] = '10.1.1.1/16'
-        vpc = VPC.create(
-            self.apiclient,
-            self.services["vpc"],
-            vpcofferingid=self.vpc_off.id,
-            zoneid=self.zone.id,
-            account=self.account.name,
-            domainid=self.account.domainid,
-            start=False
-        )
-        self.validate_vpc_network(vpc, state='inactive')
-        interval = list_configurations(
-            self.apiclient,
-            name='network.gc.interval'
-        )
-        wait = list_configurations(
-            self.apiclient,
-            name='network.gc.wait'
-        )
-        self.debug("Sleep till network gc thread runs..")
-        # Sleep to ensure that all resources are deleted
-        time.sleep(int(interval[0].value) + int(wait[0].value))
-        vpcs = VPC.list(
-            self.apiclient,
-            id=vpc.id,
-            listall=True
-        )
-        self.assertEqual(
-            vpcs,
-            None,
-            "List VPC should not return anything after network gc"
-        )
+        self.validate_vpc_network(vpc, state='enabled')
         return
