@@ -1371,7 +1371,6 @@ class TestDisableEnableHost(cloudstackTestCase):
         cmd.resourcestate = DISABLED
         cmd.allocationstate = DISABLE
         self.apiclient.updateHost(cmd)
-
         self.disabledHosts.append(hostid)
 
         hostList = Host.list(self.apiclient, id=hostid)
@@ -1406,15 +1405,16 @@ class TestDisableEnableHost(cloudstackTestCase):
                          "stopped",
                          "verify that vm should stop")
 
-        VirtualMachine.create(
-            self.apiclient,
-            self.testdata["small"],
-            templateid=self.template.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid,
-            serviceofferingid=self.service_offering.id,
-            zoneid=self.zone.id,
-            hostid=hostid)
+        with self.assertRaises(Exception):
+            VirtualMachine.create(
+                self.apiclient,
+                self.testdata["small"],
+                templateid=self.template.id,
+                accountid=self.account.name,
+                domainid=self.account.domainid,
+                serviceofferingid=self.service_offering.id,
+                zoneid=self.zone.id,
+                hostid=hostid)
 
         root_volume = list_volumes(
             self.apiclient,
