@@ -649,7 +649,6 @@ class TestDisableEnablePod(cloudstackTestCase):
                     self.userapiclient,
                     root_volume[0].id)
 
-        with self.assertRaises(Exception):
             Template.register(
                 self.userapiclient,
                 self.testdata["privatetemplate"],
@@ -1371,7 +1370,6 @@ class TestDisableEnableHost(cloudstackTestCase):
         cmd.resourcestate = DISABLED
         cmd.allocationstate = DISABLE
         self.apiclient.updateHost(cmd)
-
         self.disabledHosts.append(hostid)
 
         hostList = Host.list(self.apiclient, id=hostid)
