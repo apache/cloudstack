@@ -5,8 +5,7 @@ LABEL Vendor="Apache.org"
 LABEL License=ApacheV2
 LABEL Version=4.6.0
 
-ENV PKG_URL=http://jenkins.buildacloud.org/job/package-rhel63-master-noredist/lastSuccessfulBuild/artifact/dist/rpmbuild/RPMS/x86_64
-
+ENV PKG_URL=http://jenkins.buildacloud.org/job/build-dockerfile-centos6/lastSuccessfulBuild/artifact/dist/rpmbuild/RPMS/x86_64
 
 # MySQLd
 RUN yum install mysql-server -y
