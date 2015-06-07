@@ -1277,8 +1277,8 @@ public class JuniperSrxResource implements ServerResource {
         for (String[] destNatRule : destNatRules) {
             String publicIp = destNatRule[0];
             String privateIp = destNatRule[1];
-            int srcPort = Integer.valueOf(destNatRule[2]);
-            int destPort = Integer.valueOf(destNatRule[3]);
+            int srcPort = Integer.parseInt(destNatRule[2]);
+            int destPort = Integer.parseInt(destNatRule[3]);
 
             Long publicVlanTag = null;
             if (publicVlanTags.containsKey(publicIp)) {
