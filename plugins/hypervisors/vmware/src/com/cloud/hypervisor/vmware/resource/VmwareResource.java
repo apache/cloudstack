@@ -690,8 +690,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 String[] splitResult = result.split(":");
                 int i = 0;
                 while (i < splitResult.length - 1) {
-                    stats[0] += (new Long(splitResult[i++])).longValue();
-                    stats[1] += (new Long(splitResult[i++])).longValue();
+                    stats[0] += Long.parseLong(splitResult[i++]);
+                    stats[1] += Long.parseLong(splitResult[i++]);
                 }
                 return new NetworkUsageAnswer(cmd, "success", stats[0], stats[1]);
             }
@@ -4766,8 +4766,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 String[] splitResult = result.split(":");
                 int i = 0;
                 while (i < splitResult.length - 1) {
-                    stats[0] += (new Long(splitResult[i++])).longValue();
-                    stats[1] += (new Long(splitResult[i++])).longValue();
+                    stats[0] += Long.parseLong(splitResult[i++]);
+                    stats[1] += Long.parseLong(splitResult[i++]);
                 }
             } catch (Throwable e) {
                 s_logger.warn("Unable to parse return from script return of network usage command: " + e.toString(), e);
