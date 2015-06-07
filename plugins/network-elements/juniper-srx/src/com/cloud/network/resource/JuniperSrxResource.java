@@ -2614,7 +2614,7 @@ public class JuniperSrxResource implements ServerResource {
                 xml = SrxXml.APPLICATION_ADD.getXml();
                 xml = replaceXmlValue(xml, "name", applicationName);
                 xml = replaceXmlValue(xml, "protocol", protocol.toString());
-                if (protocol.toString() == Protocol.icmp.toString()) {
+                if (protocol.toString().equals(Protocol.icmp.toString())) {
                     icmpOrDestPort = "<icmp-type>" + startPort + "</icmp-type>";
                     icmpOrDestPort += "<icmp-code>" + endPort + "</icmp-code>";
                 } else {
