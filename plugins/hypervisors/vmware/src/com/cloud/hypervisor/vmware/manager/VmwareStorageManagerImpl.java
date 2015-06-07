@@ -1019,7 +1019,6 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
     private String getVolumePathInDatastore(DatastoreMO dsMo, String volumeFileName) throws Exception {
         String datastoreVolumePath = dsMo.searchFileInSubFolders(volumeFileName, true);
-        assert (datastoreVolumePath != null) : "Virtual disk file missing from datastore.";
         if (datastoreVolumePath == null) {
             throw new CloudRuntimeException("Unable to find file " + volumeFileName + " in datastore " + dsMo.getName());
         }
