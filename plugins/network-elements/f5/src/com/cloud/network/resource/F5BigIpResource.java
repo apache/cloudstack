@@ -294,7 +294,7 @@ public class F5BigIpResource implements ServerResource {
             for (IpAddressTO ip : ips) {
                 // is it saver to use Long.valueOf(BroadcastDomain.getValue(ip.getBroadcastUri())) ???
                 // i.o.w. can this contain vlan:// then change !!!
-                long guestVlanTag = Long.valueOf(ip.getBroadcastUri());
+                long guestVlanTag = Long.parseLong(ip.getBroadcastUri());
                 // It's a hack, using isOneToOneNat field for indicate if it's inline or not
                 boolean inline = ip.isOneToOneNat();
                 String vlanSelfIp = inline ? tagAddressWithRouteDomain(ip.getVlanGateway(), guestVlanTag) : ip.getVlanGateway();
@@ -700,7 +700,7 @@ public class F5BigIpResource implements ServerResource {
                 List<String> poolMembers = getMembers(virtualServerName);
                 for (String poolMember : poolMembers) {
                     String[] destIpAndPort = getIpAndPort(poolMember);
-                    deletePoolMember(virtualServerName, destIpAndPort[0], Integer.valueOf(destIpAndPort[1]));
+                    deletePoolMember(virtualServerName, destIpAndPort[0], Integer.parseInt(destIpAndPort[1]));
                 }
 
                 // Delete the virtual server
@@ -886,7 +886,7 @@ public class F5BigIpResource implements ServerResource {
         for (String member : allPoolMembers) {
             if (!activePoolMembers.contains(member)) {
                 String[] ipAndPort = member.split("-");
-                deletePoolMember(virtualServerName, ipAndPort[0], Integer.valueOf(ipAndPort[1]));
+                deletePoolMember(virtualServerName, ipAndPort[0], Integer.parseInt(ipAndPort[1]));
             }
         }
     }
