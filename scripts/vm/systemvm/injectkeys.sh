@@ -85,10 +85,12 @@ systemvmpath=$3
 
 command -v mkisofs > /dev/null   || (echo "$(basename $0): mkisofs not found, please install or ensure PATH is accurate" ; exit 4)
 
-inject_into_iso systemvm.iso $newpubkey
-
-[ $? -ne 0 ] && exit 5
-
-copy_priv_key $newprivkey
+if [ -e /dev/loop0 ]; then
+  inject_into_iso systemvm.iso $newpubkey
+  [ $? -ne 0 ] && exit 5
+  copy_priv_key $newprivkey
+else
+  echo "No loop device found, skipping ssh key insertion in systemvm.iso"
+fi
 
 exit $?
