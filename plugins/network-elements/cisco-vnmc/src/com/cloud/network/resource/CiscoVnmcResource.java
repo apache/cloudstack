@@ -263,7 +263,7 @@ public class CiscoVnmcResource implements ServerResource {
         String[] result = new String[2];
         String[] cidrData = cidr.split("\\/");
         assert (cidrData.length == 2) : "Something is wrong with source cidr " + cidr;
-        long size = Long.valueOf(cidrData[1]);
+        long size = Long.parseLong(cidrData[1]);
         result[0] = cidrData[0];
         result[1] = cidrData[0];
         if (size < 32) {
