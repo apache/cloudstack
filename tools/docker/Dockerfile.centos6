@@ -30,7 +30,7 @@ COPY cloud.sudoer /etc/sudoers.d/cloud
 COPY init.sh /root/init.sh
 
 # temporary tests
-COPY injectkeys.sh /usr/share/cloudstack-common/scripts/vm/systemvm/injectkeys.sh
+#COPY injectkeys.sh /usr/share/cloudstack-common/scripts/vm/systemvm/injectkeys.sh
 
 # pre init the database and generage system.iso
 #RUN (mysqld_safe &); \
