@@ -1,22 +1,23 @@
-Docker Files
-============
+# Docker Files
 
 Dockerfiles used to build CloudStack images available on Docker hub.
 
 
-Use images from docker.io
--------------------------
+## Use images from docker.io
+
 
 ```
 docker pull docker.io/cloudstack/management_centos6
 docker run --name cloudstack -d -p 8080:8080 docker.io/cloudstack/management_centos6
 ```
 
-How to build images
--------------------
 
-CentOS 6
-^^^^^^^^
+## How to build images
+
+Image provide by docker.io/cloudstack are automatically build by Jenkins performing following tasks:
+
+
+### CentOS 6
 
 CentOS 6 image use RPM's from jenkins.buildacloud.org
 tag:latest = master branch
