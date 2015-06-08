@@ -398,3 +398,7 @@ CREATE TABLE `cloud`.`external_bigswitch_bcf_devices` (
   CONSTRAINT `fk_external_bigswitch_bcf_devices__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_external_bigswitch_bcf_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`data_center` ADD COLUMN `ip6_super_network_cidr` varchar(50);
+ALTER TABLE `cloud`.`data_center` ADD COLUMN `as_number` varchar(15);
+ALTER TABLE `cloud`.`vpc` ADD COLUMN `ip6_cidr` varchar(50);
