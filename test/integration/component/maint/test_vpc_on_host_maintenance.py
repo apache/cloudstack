@@ -33,9 +33,13 @@ class TestVPCHostMaintenance(cloudstackTestCase):
     def setUpClass(cls):
         cls.testClient = super(TestVPCHostMaintenance, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
+        cls._cleanup = []
+        cls.hosts = []
+        cls.vpcSupported = True
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         if cls.hypervisor.lower() in ['hyperv']:
-            raise unittest.SkipTest("VPC is not supported on Hyper-V")
+            cls.vpcSupported = False
+            return
         cls.services = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
@@ -89,9 +93,7 @@ class TestVPCHostMaintenance(cloudstackTestCase):
                             host.name)
                     timeout = timeout - 1
 
-        cls._cleanup = [
-            cls.vpc_off
-        ]
+        cls._cleanup.append(cls.vpc_off)
         return
 
     @classmethod
@@ -120,13 +122,18 @@ class TestVPCHostMaintenance(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+
+        if not self.vpcSupported:
+            self.skipTest("VPC is not supported on %s" % self.hypervisor)
+
         self.account = Account.create(
             self.apiclient,
             self.services["account"],
             admin=True,
             domainid=self.domain.id
         )
-        self.cleanup = [self.account]
+        self.cleanup.append(self.account)
         return
 
     def tearDown(self):
