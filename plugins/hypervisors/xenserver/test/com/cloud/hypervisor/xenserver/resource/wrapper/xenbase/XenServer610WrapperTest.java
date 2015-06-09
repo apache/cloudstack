@@ -170,7 +170,7 @@ public class XenServer610WrapperTest {
         verify(xenServer610Resource, times(1)).getConnection();
 
         try {
-            verify(xenServer610Resource, times(1)).prepareISO(conn, vmName);
+            verify(xenServer610Resource, times(1)).prepareISO(conn, vmName, null, null);
             verify(xenServer610Resource, times(1)).getNetwork(conn, nicTO1);
             verify(xenServer610Resource, times(1)).getNetwork(conn, nicTO2);
             verify(xenServer610Resource, times(1)).getNetwork(conn, nicTO3);

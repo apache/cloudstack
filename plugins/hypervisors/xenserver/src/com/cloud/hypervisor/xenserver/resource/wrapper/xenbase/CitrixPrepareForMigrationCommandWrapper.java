@@ -31,6 +31,8 @@ import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.xensource.xenapi.Connection;
 
+import java.util.List;
+
 @ResourceWrapper(handles =  PrepareForMigrationCommand.class)
 public final class CitrixPrepareForMigrationCommandWrapper extends CommandWrapper<PrepareForMigrationCommand, Answer, CitrixResourceBase> {
 
@@ -41,13 +43,20 @@ public final class CitrixPrepareForMigrationCommandWrapper extends CommandWrappe
         final Connection conn = citrixResourceBase.getConnection();
 
         final VirtualMachineTO vm = command.getVirtualMachine();
+        List<String[]> vmDataList = vm.getVmData();
+        String configDriveLabel = vm.getConfigDriveLabel();
+
+        if (configDriveLabel == null)  {
+            configDriveLabel = "config";
+        }
+
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Preparing host for migrating " + vm);
         }
 
         final NicTO[] nics = vm.getNics();
         try {
-            citrixResourceBase.prepareISO(conn, vm.getName());
+            citrixResourceBase.prepareISO(conn, vm.getName(), vmDataList, configDriveLabel);
 
             for (final NicTO nic : nics) {
                 citrixResourceBase.getNetwork(conn, nic);
