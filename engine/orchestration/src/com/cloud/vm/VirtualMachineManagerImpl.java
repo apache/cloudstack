@@ -38,6 +38,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.AttachOrDettachConfigDriveCommand;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -273,6 +274,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected VGPUTypesDao _vgpuTypesDao;
     @Inject
     protected EntityManager _entityMgr;
+    @Inject
+    protected GuestOSCategoryDao _guestOSCategoryDao;
+    @Inject
+    protected GuestOSDao _guestOSDao = null;
+    @Inject
+    protected UserVmDetailsDao _vmDetailsDao;
+    @Inject
+    ServiceOfferingDao _serviceOfferingDao = null;
 
     @Inject
     ConfigDepot _configDepot;
@@ -315,6 +324,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected VmWorkJobDao _workJobDao;
     @Inject
     protected AsyncJobManager _jobMgr;
+    @Inject
+    protected UserVmService _userVmSrv;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -351,6 +362,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     static final ConfigKey<Integer> VmJobStateReportInterval = new ConfigKey<Integer>("Advanced",
             Integer.class, "vm.job.report.interval", "60",
             "Interval to send application level pings to make sure the connection is still working", false);
+
+    static final ConfigKey<String> VmConfigDriveLabel = new ConfigKey<String>("Hidden", String.class, "vm.configdrive.label", "config",
+            "The default lable name for the config drive", false);
 
     ScheduledExecutorService _executor = null;
 
@@ -1916,6 +1930,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm, null, _offeringDao.findById(vm.getId(), vm.getServiceOfferingId()), null, null);
         _networkMgr.prepareNicForMigration(profile, dest);
         volumeMgr.prepareForMigration(profile, dest);
+        profile.setConfigDriveLabel( _userVmSrv.VmConfigDriveLabel.value());
 
         final VirtualMachineTO to = toVmTO(profile);
         final PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(to);
@@ -2215,6 +2230,48 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         boolean migrated = false;
         try {
+
+            // config drive: Detach the config drive at source host
+            // After migration successful attach the config drive in destination host
+            // On migration failure VM will be stopped, So configIso will be deleted
+
+            Nic defaultNic = _networkModel.getDefaultNic(vm.getId());
+
+            List<String[]> vmData = null;
+            if (defaultNic != null) {
+                UserVmVO userVm = _userVmDao.findById(vm.getId());
+                Map<String, String> details = _vmDetailsDao.listDetailsKeyPairs(vm.getId());
+                vm.setDetails(details);
+
+                Network network = _networkModel.getNetwork(defaultNic.getNetworkId());
+                if (_networkModel.isSharedNetworkWithoutServices(network.getId())) {
+                    final String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
+                    final String zoneName = _dcDao.findById(vm.getDataCenterId()).getName();
+                    boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
+
+                    vmData = _networkModel.generateVmData(userVm.getUserData(), serviceOffering, zoneName, vm.getInstanceName(), vm.getId(),
+                            (String) profile.getParameter(VirtualMachineProfile.Param.VmSshPubKey), (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows);
+                    String vmName = vm.getInstanceName();
+                    String configDriveIsoRootFolder = "/tmp";
+                    String isoFile = configDriveIsoRootFolder + "/" + vmName + "/configDrive/" + vmName + ".iso";
+                    profile.setVmData(vmData);
+                    profile.setConfigDriveLabel(VmConfigDriveLabel.value());
+                    profile.setConfigDriveIsoRootFolder(configDriveIsoRootFolder);
+                    profile.setConfigDriveIsoFile(isoFile);
+
+                    // At source host detach the config drive iso.
+                    AttachOrDettachConfigDriveCommand dettachCommand = new AttachOrDettachConfigDriveCommand(vm.getInstanceName(), vmData, VmConfigDriveLabel.value(), false);
+                    try {
+                        _agentMgr.send(srcHost.getId(), dettachCommand);
+                        s_logger.debug("Deleted config drive ISO for  vm " + vm.getInstanceName() + " In host " + srcHost);
+                    } catch (OperationTimedoutException e) {
+                        s_logger.debug("TIme out occured while exeuting command AttachOrDettachConfigDrive " + e.getMessage());
+
+                    }
+
+                }
+            }
+
             // Migrate the vm and its volume.
             volumeMgr.migrateVolumes(vm, to, srcHost, destHost, volumeToPoolMap);
 
@@ -3614,7 +3671,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {ClusterDeltaSyncInterval, StartRetry, VmDestroyForcestop, VmOpCancelInterval, VmOpCleanupInterval, VmOpCleanupWait,
                 VmOpLockStateRetry,
-                VmOpWaitInterval, ExecuteInSequence, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval};
+                VmOpWaitInterval, ExecuteInSequence, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval, VmConfigDriveLabel};
     }
 
     public List<StoragePoolAllocator> getStoragePoolAllocators() {
