@@ -1,0 +1,19 @@
+# build for cloudstack_home_dir not this folder
+# 
+FROM python:2
+
+MAINTAINER "Apache CloudStack" <dev@cloudstack.apache.org>
+LABEL Vendor="Apache.org"
+LABEL License=ApacheV2
+LABEL Version=4.6.0
+
+ENV PKG_URL=http://jenkins.buildacloud.org/job/cloudstack-marvin-master/lastSuccessfulBuild/artifact/tools/marvin/dist/Marvin-4.6.0-SNAPSHOT.tar.gz
+
+RUN pip install --allow-external mysql-connector-python mysql-connector-python
+RUN pip install ${PKG_URL}
+
+RUN mkdir -p /marvin
+COPY setup/dev /marvin/dev
+COPY test/integration /marvin/integration
+
+WORKDIR /marvin

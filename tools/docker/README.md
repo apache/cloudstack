@@ -5,10 +5,21 @@ Dockerfiles used to build CloudStack images available on Docker hub.
 
 ## Use images from docker.io
 
+### CloudStack Management-server 
 
 ```
 docker pull docker.io/cloudstack/management_centos6
 docker run --name cloudstack -d -p 8080:8080 docker.io/cloudstack/management_centos6
+```
+
+### Marvin
+
+Use marvin to deploy or test your CloudStack environment.
+Use Marvin with cloudstack connection thru the API port (8096)
+
+```
+docker pull docker.io/cloudstack/marvin
+docker run -ti --name marvin --link cloudstack:8096 docker.io/cloudstack/marvin /bin/bash
 ```
 
 
@@ -38,4 +49,13 @@ tag:latest = master branch
    docker commit -m "init system.iso" -a "Apache CloudStack" cloudstack docker.io/cloudstack/management_centos6
    ```
 
+### Marvin
 
+Build Marvin container usable to deploy cloud in the CloudStack management server container.
+
+
+1. to build the image
+
+   ```
+   docker build -f tools/docker/Dockerfile.marvin -t docker.io/cloudstack/marvin ../..
+   ```
