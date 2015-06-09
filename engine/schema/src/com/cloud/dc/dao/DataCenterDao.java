@@ -96,4 +96,8 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
     List<DataCenterVO> findByKeyword(String keyword);
 
     List<DataCenterVO> listAllZones();
+
+    DataCenterVO findByIp6SuperCidr(String ip6SuperCidr);
+
+    DataCenterVO findByAsn(String asNumber);
 }

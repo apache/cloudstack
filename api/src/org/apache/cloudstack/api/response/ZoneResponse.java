@@ -29,7 +29,6 @@ import com.cloud.dc.DataCenter;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-@SuppressWarnings("unused")
 @EntityReference(value = DataCenter.class)
 public class ZoneResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
@@ -71,6 +70,14 @@ public class ZoneResponse extends BaseResponse {
     @SerializedName(ApiConstants.GUEST_CIDR_ADDRESS)
     @Param(description = "the guest CIDR address for the Zone")
     private String guestCidrAddress;
+
+    @SerializedName(ApiConstants.IP6_SUPER_CIDR_ADDRESS)
+    @Param(description = "the IPv6 super CIDR address for the Zone. IPv6 CIDR of all the VPCs in this zone should be within this CIDR")
+    private String ip6SuperCidrAddress;
+
+    @SerializedName(ApiConstants.AUTONOMOUS_NUMBER)
+    @Param(description = "private autonomous system number for the Zone")
+    private String asNumber;
 
     //TODO - generate description
     @SerializedName("status")
@@ -162,6 +169,14 @@ public class ZoneResponse extends BaseResponse {
 
     public void setGuestCidrAddress(String guestCidrAddress) {
         this.guestCidrAddress = guestCidrAddress;
+    }
+
+    public void setIp6SuperCidrAddress(String ip6SuperCidrAddress) {
+        this.ip6SuperCidrAddress = ip6SuperCidrAddress;
+    }
+
+    public void setAsNumber(String asNumber) {
+        this.asNumber = asNumber;
     }
 
     public void setStatus(String status) {
