@@ -58,6 +58,12 @@ public class CreateZoneCmd extends BaseCmd {
     @Parameter(name = ApiConstants.GUEST_CIDR_ADDRESS, type = CommandType.STRING, description = "the guest CIDR address for the Zone")
     private String guestCidrAddress;
 
+    @Parameter(name = ApiConstants.IP6_SUPER_CIDR_ADDRESS, type = CommandType.STRING, description = "the IPv6 super CIDR address for the Zone. IPv6 CIDR of all the VPCs in this zone should be within this CIDR")
+    private String ip6SuperCidrAddress;
+
+    @Parameter(name = ApiConstants.AUTONOMOUS_NUMBER, type = CommandType.STRING, description = "private autonomous system number for the Zone")
+    private String asNumber;
+
     @Parameter(name = ApiConstants.INTERNAL_DNS1, type = CommandType.STRING, required = true, description = "the first internal DNS for the Zone")
     private String internalDns1;
 
@@ -110,6 +116,14 @@ public class CreateZoneCmd extends BaseCmd {
 
     public String getGuestCidrAddress() {
         return guestCidrAddress;
+    }
+
+    public String getIp6SuperCidrAddress() {
+        return ip6SuperCidrAddress;
+    }
+
+    public String getAsNumber() {
+        return asNumber;
     }
 
     public String getInternalDns1() {

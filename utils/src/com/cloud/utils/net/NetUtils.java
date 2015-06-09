@@ -31,6 +31,7 @@ import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Formatter;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -40,6 +41,7 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.commons.validator.routines.InetAddressValidator;
@@ -51,6 +53,7 @@ import com.cloud.utils.script.Script;
 import com.googlecode.ipv6.IPv6Address;
 import com.googlecode.ipv6.IPv6AddressRange;
 import com.googlecode.ipv6.IPv6Network;
+import com.googlecode.ipv6.IPv6NetworkMask;
 
 public class NetUtils {
     protected final static Logger s_logger = Logger.getLogger(NetUtils.class);
@@ -1399,6 +1402,16 @@ public class NetUtils {
         return resultIp;
     }
 
+    /**
+     * Split a given IPv6 CIDR into multiple subnets based on the given prefix length
+     * @param ip6SuperNetworkCidr
+     * @param prefixLength
+     * @return Iterator<IPv6Network>
+     */
+    public static Iterator<IPv6Network> splitIp6Network(String ip6NetworkCidr, int prefixLength) {
+        return IPv6Network.fromString(ip6NetworkCidr).split(IPv6NetworkMask.fromPrefixLength(prefixLength));
+    }
+
     public static String standardizeIp6Address(final String ip6Addr) {
         try {
             return IPv6Address.fromString(ip6Addr).toString();
@@ -1413,6 +1426,23 @@ public class NetUtils {
         } catch (final IllegalArgumentException ex) {
             throw new IllegalArgumentException("Invalid IPv6 CIDR: " + ex.getMessage());
         }
+    }
+
+    /**
+     * Validate if asNumber is in valid private ASN range as defined in rfc6996
+     * @param asNumber
+     * @return true if valid
+     */
+    public static boolean isValidPrivateAsn(String asNumber) {
+        if (StringUtils.isNotBlank(asNumber)) {
+            try {
+                Long asNumberLong = Long.parseLong(asNumber);
+                return ((asNumberLong >= 64512 && asNumberLong <= 65534) || (asNumberLong >= 4200000000l && asNumberLong <= 4294967294l));
+            } catch (NumberFormatException nfe) {
+                return false;
+            }
+        }
+        return false;
     }
 
     static final String VLAN_PREFIX = "vlan://";

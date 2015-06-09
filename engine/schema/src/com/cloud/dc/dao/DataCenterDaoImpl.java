@@ -61,6 +61,8 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     private static final Logger s_logger = Logger.getLogger(DataCenterDaoImpl.class);
 
     protected SearchBuilder<DataCenterVO> NameSearch;
+    protected SearchBuilder<DataCenterVO> Ip6SuperCidrSearch;
+    protected SearchBuilder<DataCenterVO> AsnSearch;
     protected SearchBuilder<DataCenterVO> ListZonesByDomainIdSearch;
     protected SearchBuilder<DataCenterVO> PublicZonesSearch;
     protected SearchBuilder<DataCenterVO> ChildZonesSearch;
@@ -88,6 +90,20 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     public DataCenterVO findByName(String name) {
         SearchCriteria<DataCenterVO> sc = NameSearch.create();
         sc.setParameters("name", name);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public DataCenterVO findByIp6SuperCidr(String ip6SuperCidr) {
+        SearchCriteria<DataCenterVO> sc = Ip6SuperCidrSearch.create();
+        sc.setParameters("ip6SuperNetworkCidr", ip6SuperCidr);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public DataCenterVO findByAsn(String asNumber) {
+        SearchCriteria<DataCenterVO> sc = AsnSearch.create();
+        sc.setParameters("asNumber", asNumber);
         return findOneBy(sc);
     }
 
@@ -322,6 +338,15 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         NameSearch = createSearchBuilder();
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
         NameSearch.done();
+
+        Ip6SuperCidrSearch = createSearchBuilder();
+        Ip6SuperCidrSearch.and("ip6SuperNetworkCidr", Ip6SuperCidrSearch.entity().getIp6SuperNetworkCidr(), SearchCriteria.Op.EQ);
+        Ip6SuperCidrSearch.done();
+
+
+        AsnSearch = createSearchBuilder();
+        AsnSearch.and("asNumber", AsnSearch.entity().getAsNumber(), SearchCriteria.Op.EQ);
+        AsnSearch.done();
 
         ListZonesByDomainIdSearch = createSearchBuilder();
         ListZonesByDomainIdSearch.and("domainId", ListZonesByDomainIdSearch.entity().getDomainId(), SearchCriteria.Op.EQ);

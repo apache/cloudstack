@@ -19,8 +19,6 @@ package org.apache.cloudstack.api.command.admin.zone;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -30,6 +28,7 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.user.Account;
@@ -59,6 +58,12 @@ public class UpdateZoneCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.GUEST_CIDR_ADDRESS, type = CommandType.STRING, description = "the guest CIDR address for the Zone")
     private String guestCidrAddress;
+
+    @Parameter(name = ApiConstants.IP6_SUPER_CIDR_ADDRESS, type = CommandType.STRING, description = "the IPv6 super CIDR address for the Zone. IPv6 CIDR of all the VPCs in this zone should be within this CIDR")
+    private String ip6SuperCidrAddress;
+
+    @Parameter(name = ApiConstants.AUTONOMOUS_NUMBER, type = CommandType.STRING, description = "private autonomous system number for the Zone")
+    private String asNumber;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of the Zone")
     private Long id;
@@ -109,6 +114,14 @@ public class UpdateZoneCmd extends BaseCmd {
 
     public String getGuestCidrAddress() {
         return guestCidrAddress;
+    }
+
+    public String getIp6SuperCidrAddress() {
+        return ip6SuperCidrAddress;
+    }
+
+    public String getAsNumber() {
+        return asNumber;
     }
 
     public Long getId() {

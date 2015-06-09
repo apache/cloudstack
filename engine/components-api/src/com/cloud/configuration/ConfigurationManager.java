@@ -149,19 +149,19 @@ public interface ConfigurationManager {
      * @param guestCidr
      * @param zoneType
      * @param allocationState
-     * @param networkDomain
-     *            TODO
+     * @param networkDomainTODO
      * @param isSecurityGroupEnabled
-     *            TODO
-     * @param ip6Dns1 TODO
-     * @param ip6Dns2 TODO
+     * @param ip6Dns1
+     * @param ip6Dns2
+     * @param ip6SuperCidr
+     * @param asNumber
      * @return
      * @throws
      * @throws
      */
-    DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain,
-        Long domainId, NetworkType zoneType, String allocationState, String networkDomain, boolean isSecurityGroupEnabled, boolean isLocalStorageEnabled, String ip6Dns1,
-        String ip6Dns2);
+    DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain, Long domainId,
+        NetworkType zoneType, String allocationState, String networkDomain, boolean isSecurityGroupEnabled, boolean isLocalStorageEnabled, String ip6Dns1, String ip6Dns2,
+        String ip6SuperCidr, String asNumber);
 
     /**
      * Deletes a VLAN from the database, along with all of its IP addresses. Will not delete VLANs that have allocated

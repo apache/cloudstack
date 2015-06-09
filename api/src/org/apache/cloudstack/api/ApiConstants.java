@@ -115,6 +115,8 @@ public class ApiConstants {
     public static final String GSLB_STICKY_SESSION_METHOD = "gslbstickysessionmethodname";
     public static final String GSLB_LBRULE_WEIGHT_MAP = "gslblbruleweightsmap";
     public static final String GUEST_CIDR_ADDRESS = "guestcidraddress";
+    public static final String IP6_SUPER_CIDR_ADDRESS = "ip6supercidraddress";
+    public static final String AUTONOMOUS_NUMBER = "asnumber";
     public static final String GUEST_VLAN_RANGE = "guestvlanrange";
     public static final String HA_ENABLE = "haenable";
     public static final String HOST_ID = "hostid";
