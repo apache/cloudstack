@@ -67,7 +67,7 @@ public final class XenServer610MigrateWithStorageCommandWrapper extends CommandW
         final XsHost xsHost = xenServer610Resource.getHost();
         final String uuid = xsHost.getUuid();
         try {
-            xenServer610Resource.prepareISO(connection, vmName);
+            xenServer610Resource.prepareISO(connection, vmName, null, null);
 
             // Get the list of networks and recreate VLAN, if required.
             for (final NicTO nicTo : vmSpec.getNics()) {

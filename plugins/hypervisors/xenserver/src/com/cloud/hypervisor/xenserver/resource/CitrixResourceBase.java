@@ -258,7 +258,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     protected  String _configDriveIsopath = "/opt/xensource/packages/configdrive_iso/";
     protected  String _configDriveSRName = "ConfigDriveISOs";
-    protected  String _attachIsoDeviceNum = "3";
+    public String _attachIsoDeviceNum = "3";
 
     protected XenServerUtilitiesHelper xenServerUtilitiesHelper = new XenServerUtilitiesHelper();
 
@@ -3908,17 +3908,29 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return new ExecutionResult(true, null);
     }
 
-    public void prepareISO(final Connection conn, final String vmName) throws XmlRpcException, XenAPIException {
+    public void prepareISO(final Connection conn, final String vmName,  List<String[]> vmDataList, String configDriveLabel) throws XmlRpcException, XenAPIException {
 
         final Set<VM> vms = VM.getByNameLabel(conn, vmName);
         if (vms == null || vms.size() != 1) {
             throw new CloudRuntimeException("There are " + (vms == null ? "0" : vms.size()) + " VMs named " + vmName);
         }
         final VM vm = vms.iterator().next();
+
+        if (vmDataList != null) {
+            // create SR
+            SR sr =  createLocalIsoSR(conn, _configDriveSRName+getHost().getIp());
+
+            // 1. create vm data files
+            createVmdataFiles(vmName, vmDataList, configDriveLabel);
+
+            // 2. copy config drive iso to host
+            copyConfigDriveIsoToHost(conn, sr, vmName);
+        }
+
         final Set<VBD> vbds = vm.getVBDs(conn);
         for (final VBD vbd : vbds) {
             final VBD.Record vbdr = vbd.getRecord(conn);
-            if (vbdr.type == Types.VbdType.CD && vbdr.empty == false) {
+            if (vbdr.type == Types.VbdType.CD && vbdr.empty == false && vbdr.userdevice.equals(_attachIsoDeviceNum)) {
                 final VDI vdi = vbdr.VDI;
                 final SR sr = vdi.getSR(conn);
                 final Set<PBD> pbds = sr.getPBDs(conn);
@@ -5286,6 +5298,88 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             // let the caller handle with appropriate contextual log message.
             throw e;
         }
+    }
+
+    protected SR getSRByNameLabel(Connection conn, String name) throws BadServerResponse, XenAPIException, XmlRpcException {
+        Set<SR> srs = SR.getByNameLabel(conn, name);
+        SR ressr = null;
+        for (SR sr : srs) {
+            Set<PBD> pbds;
+            pbds = sr.getPBDs(conn);
+            for (PBD pbd : pbds) {
+                PBD.Record pbdr = pbd.getRecord(conn);
+                if (pbdr.host != null) {
+                    ressr = sr;
+                    break;
+                }
+            }
+        }
+        return ressr;
+    }
+
+
+    public boolean AttachConfigDriveToMigratedVm(Connection conn, String vmName, String ipAddr) {
+
+        // attach the config drive in destination host
+
+        try {
+            s_logger.debug("Attaching config drive iso device for the VM "+ vmName + " In host "+ ipAddr);
+            Set<VM> vms = VM.getByNameLabel(conn, vmName);
+
+            SR sr = getSRByNameLabel(conn, _configDriveSRName + ipAddr);
+            //Here you will find only two vdis with the <vmname>.iso.
+            //one is from source host and second from dest host
+            Set<VDI> vdis = VDI.getByNameLabel(conn, vmName + ".iso");
+            if (vdis.isEmpty()) {
+                s_logger.debug("Could not find config drive ISO: " + vmName);
+                return false;
+            }
+
+            VDI configdriveVdi = null;
+            for (VDI vdi : vdis) {
+                SR vdiSr = vdi.getSR(conn);
+                if (vdiSr.getUuid(conn).equals(sr.getUuid(conn))) {
+                    //get this vdi to attach to vbd
+                    configdriveVdi = vdi;
+                    s_logger.debug("VDI for the config drive ISO  " + vdi);
+                } else {
+                    // delete the vdi in source host so that the <vmname>.iso file is get removed
+                    s_logger.debug("Removing the source host VDI for the config drive ISO  " + vdi);
+                    vdi.destroy(conn);
+                }
+            }
+
+            if (configdriveVdi == null) {
+                s_logger.debug("Config drive ISO VDI is not found ");
+                return false;
+            }
+
+            for (VM vm : vms) {
+
+                //create vbd
+                VBD.Record cfgDriveVbdr = new VBD.Record();
+                cfgDriveVbdr.VM = vm;
+                cfgDriveVbdr.empty = true;
+                cfgDriveVbdr.bootable = false;
+                cfgDriveVbdr.userdevice = "autodetect";
+                cfgDriveVbdr.mode = Types.VbdMode.RO;
+                cfgDriveVbdr.type = Types.VbdType.CD;
+
+                VBD cfgDriveVBD = VBD.create(conn, cfgDriveVbdr);
+
+                s_logger.debug("Inserting vbd " + configdriveVdi);
+                cfgDriveVBD.insert(conn, configdriveVdi);
+                break;
+
+            }
+
+            return true;
+
+        }catch (Exception ex) {
+            s_logger.debug("Failed to attach config drive ISO to the VM  "+ vmName + " In host " + ipAddr );
+            return false;
+        }
+
     }
 
 }
