@@ -21,7 +21,6 @@ package com.cloud.utils;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -44,6 +43,7 @@ public class PropertiesUtil {
     public static File findConfigFile(String path) {
         ClassLoader cl = PropertiesUtil.class.getClassLoader();
         URL url = cl.getResource(path);
+
         if (url != null && "file".equals(url.getProtocol())) {
             return new File(url.getFile());
         }
@@ -124,6 +124,15 @@ public class PropertiesUtil {
         return null;
     }
 
+    public static void loadFromJar(Properties properties, String configFile) throws IOException {
+        InputStream stream = PropertiesUtil.openStreamFromURL(configFile);
+        if (stream != null) {
+            properties.load(stream);
+        } else {
+            s_logger.error("Unable to find properties file: " + configFile);
+        }
+    }
+
     // Returns key=value pairs by parsing a commands.properties/config file
     // with syntax; key=cmd;value (with this syntax cmd is stripped) and key=value
     public static Map<String, String> processConfigFile(String[] configFiles) {
@@ -134,20 +143,16 @@ public class PropertiesUtil {
             if (commandsFile != null) {
                 try {
                     loadFromFile(preProcessedCommands, commandsFile);
-                } catch (FileNotFoundException fnfex) {
-                    // in case of a file within a jar in classpath, try to open stream using url
-                    InputStream stream = PropertiesUtil.openStreamFromURL(configFile);
-                    if (stream != null) {
-                        try {
-                            preProcessedCommands.load(stream);
-                        } catch (IOException e) {
-                            s_logger.error("IO Exception, unable to find properties file:", fnfex);
-                        }
-                    } else {
-                        s_logger.error("Unable to find properites file", fnfex);
-                    }
                 } catch (IOException ioe) {
                     s_logger.error("IO Exception loading properties file", ioe);
+                }
+            }
+            else {
+                // in case of a file within a jar in classpath, try to open stream using url
+                try {
+                    loadFromJar(preProcessedCommands, configFile);
+                } catch (IOException e) {
+                    s_logger.error("IO Exception loading properties file from jar", e);
                 }
             }
         }
@@ -158,6 +163,7 @@ public class PropertiesUtil {
             String value = preProcessedCommand.substring(splitIndex + 1);
             configMap.put((String)key, value);
         }
+
         return configMap;
     }
 

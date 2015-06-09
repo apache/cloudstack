@@ -1277,8 +1277,8 @@ public class JuniperSrxResource implements ServerResource {
         for (String[] destNatRule : destNatRules) {
             String publicIp = destNatRule[0];
             String privateIp = destNatRule[1];
-            int srcPort = Integer.valueOf(destNatRule[2]);
-            int destPort = Integer.valueOf(destNatRule[3]);
+            int srcPort = Integer.parseInt(destNatRule[2]);
+            int destPort = Integer.parseInt(destNatRule[3]);
 
             Long publicVlanTag = null;
             if (publicVlanTags.containsKey(publicIp)) {
@@ -2614,7 +2614,7 @@ public class JuniperSrxResource implements ServerResource {
                 xml = SrxXml.APPLICATION_ADD.getXml();
                 xml = replaceXmlValue(xml, "name", applicationName);
                 xml = replaceXmlValue(xml, "protocol", protocol.toString());
-                if (protocol.toString() == Protocol.icmp.toString()) {
+                if (protocol.toString().equals(Protocol.icmp.toString())) {
                     icmpOrDestPort = "<icmp-type>" + startPort + "</icmp-type>";
                     icmpOrDestPort += "<icmp-code>" + endPort + "</icmp-code>";
                 } else {
