@@ -56,6 +56,11 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
             cls.testdata["ostype"])
 
         cls._cleanup = []
+        cls.snapshotSupported = True
+
+        if cls.hypervisor.lower() in ["hyperv", "lxc"]:
+            cls.snapshotSupported = False
+            return
 
         try:
 
@@ -113,6 +118,9 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
+
+        if not self.snapshotSupported:
+            self.skipTest("Snapshots are not supported on %s" % self.hypervisor)
 
     def tearDown(self):
         try:
