@@ -704,6 +704,10 @@ class DeployDataCenters(object):
                 zonecmd.domain = zone.domain
                 if zone.securitygroupenabled != "true":
                     zonecmd.guestcidraddress = zone.guestcidraddress
+                if zone.asNumber != "":
+                    zonecmd.asNumber = zone.asNumber
+                if zone.ip6supercidraddress != "":
+                    zonecmd.ip6supercidraddress = zone.ip6supercidraddress
                 zoneId = self.createZone(zonecmd)
                 if zoneId == FAILED:
                     self.__tcRunLogger.\

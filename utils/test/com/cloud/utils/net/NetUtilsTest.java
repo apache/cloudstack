@@ -32,6 +32,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.math.BigInteger;
+import java.util.Iterator;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -39,6 +40,7 @@ import org.apache.log4j.Logger;
 import org.junit.Test;
 
 import com.googlecode.ipv6.IPv6Address;
+import com.googlecode.ipv6.IPv6Network;
 
 public class NetUtilsTest {
 
@@ -417,5 +419,22 @@ public class NetUtilsTest {
         final boolean is31PrefixCidr = NetUtils.is31PrefixCidr(cidr);
 
         assertTrue("It should pass! 31 bit prefix.", is31PrefixCidr);
+    }
+
+    @Test
+    public void testIp6NetworkSplit() {
+        Iterator<IPv6Network> ipv6networks = NetUtils.splitIp6Network("2001:67c:2834:0:0:0:0:0/50", 60);
+        assertTrue("IPv6 address should be split with out error", ipv6networks.hasNext());
+    }
+
+    @Test
+    public void testValidAsn() {
+        assertTrue("65000 is a valid private ASN", NetUtils.isValidPrivateAsn("65000"));
+        assertTrue("4200000000l is a valid private ASN", NetUtils.isValidPrivateAsn("4200000000"));
+
+        assertFalse("6500 is an invalid ASN", NetUtils.isValidPrivateAsn("6500"));
+        assertFalse("null is an invalid ASN", NetUtils.isValidPrivateAsn(null));
+        assertFalse("empty string is an invalid ASN", NetUtils.isValidPrivateAsn(""));
+        assertFalse("abc string is an invalid ASN", NetUtils.isValidPrivateAsn("abc"));
     }
 }

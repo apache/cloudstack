@@ -38,11 +38,11 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
@@ -1422,9 +1422,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     }
 
-    private void checkZoneParameters(final String zoneName, final String dns1, final String dns2, final String internalDns1, final String internalDns2, final boolean checkForDuplicates, final Long domainId,
-            final String allocationStateStr, final String ip6Dns1, final String ip6Dns2) {
-        if (checkForDuplicates) {
+    private void checkZoneParameters(final boolean checkForDuplicateName, final String zoneName, final String dns1, final String dns2, final String internalDns1, final String internalDns2, final Long domainId,
+            final String allocationStateStr, final String ip6Dns1, final String ip6Dns2, boolean checkForDuplicateIp6SuperCidr, String ip6SuperCidr, boolean checkForDuplicateAsn, String asNumber) {
+
+        if (checkForDuplicateName) {
             // Check if a zone with the specified name already exists
             if (validZone(zoneName)) {
                 throw new InvalidParameterValueException("A zone with that name already exists. Please specify a unique zone name.");
@@ -1458,13 +1459,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Please enter a valid IP address for internal DNS2");
         }
 
-        if (ip6Dns1 != null && ip6Dns1.length() > 0 && !NetUtils.isValidIpv6(ip6Dns1)) {
-            throw new InvalidParameterValueException("Please enter a valid IPv6 address for IP6 DNS1");
-        }
-
-        if (ip6Dns2 != null && ip6Dns2.length() > 0 && !NetUtils.isValidIpv6(ip6Dns2)) {
-            throw new InvalidParameterValueException("Please enter a valid IPv6 address for IP6 DNS2");
-        }
+        //Check all the IPv6 parameters
+        validateIp6Parameters(ip6Dns1, ip6Dns2, ip6SuperCidr, asNumber, checkForDuplicateName, checkForDuplicateIp6SuperCidr, checkForDuplicateAsn);
 
         if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
             try {
@@ -1589,6 +1585,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String internalDns1 = cmd.getInternalDns1();
         String internalDns2 = cmd.getInternalDns2();
         String guestCidr = cmd.getGuestCidrAddress();
+        String ip6SuperCidr = cmd.getIp6SuperCidrAddress();
+        String asNumber = cmd.getAsNumber();
         final List<String> dnsSearchOrder = cmd.getDnsSearchOrder();
         final Boolean isPublic = cmd.isPublic();
         final String allocationStateStr = cmd.getAllocationState();
@@ -1683,6 +1681,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             guestCidr = zone.getGuestNetworkCidr();
         }
 
+        final String oldIp6SuperCidr = zone.getIp6SuperNetworkCidr();
+        if (ip6SuperCidr == null) {
+            ip6SuperCidr = oldIp6SuperCidr;
+        }
+
+        final String oldAsNumber = zone.getAsNumber();
+        if (asNumber == null) {
+            asNumber = oldAsNumber;
+        }
+
         // validate network domain
         if (networkDomain != null && !networkDomain.isEmpty()) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
@@ -1692,8 +1700,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        final boolean checkForDuplicates = !zoneName.equals(oldZoneName);
-        checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2, checkForDuplicates, null, allocationStateStr, ip6Dns1, ip6Dns2);// not allowing updating
+        final boolean checkForDuplicateName = !zoneName.equals(oldZoneName);
+        final boolean checkForDuplicateIp6SuperCidr = !org.apache.commons.lang.StringUtils.equals(ip6SuperCidr, oldIp6SuperCidr);
+        final boolean checkForDuplicateAsn = !org.apache.commons.lang.StringUtils.equals(asNumber, oldAsNumber);
+        checkZoneParameters(checkForDuplicateName, zoneName, dns1, dns2, internalDns1, internalDns2, null, allocationStateStr, ip6Dns1, ip6Dns2, checkForDuplicateIp6SuperCidr,
+                ip6SuperCidr, checkForDuplicateAsn, asNumber);
+        // not allowing updating
         // domain associated with
         // a zone, once created
 
@@ -1705,6 +1717,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         zone.setInternalDns1(internalDns1);
         zone.setInternalDns2(internalDns2);
         zone.setGuestNetworkCidr(guestCidr);
+        zone.setIp6SuperNetworkCidr(ip6SuperCidr);
+        zone.setAsNumber(asNumber);
         if (localStorageEnabled != null) {
             zone.setLocalStorageEnabled(localStorageEnabled.booleanValue());
         }
@@ -1799,9 +1813,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     @DB
-    public DataCenterVO createZone(final long userId, final String zoneName, final String dns1, final String dns2, final String internalDns1, final String internalDns2, final String guestCidr, final String domain,
-            final Long domainId, final NetworkType zoneType, final String allocationStateStr, final String networkDomain, final boolean isSecurityGroupEnabled, final boolean isLocalStorageEnabled,
-            final String ip6Dns1, final String ip6Dns2) {
+    public DataCenterVO createZone(final long userId, final String zoneName, final String dns1, final String dns2, final String internalDns1, final String internalDns2, final String guestCidr, final String domain, final Long domainId,
+            final NetworkType zoneType, final String allocationStateStr, final String networkDomain, final boolean isSecurityGroupEnabled, final boolean isLocalStorageEnabled, final String ip6Dns1,
+            final String ip6Dns2, final String ip6SuperCidr, String asNumber) {
 
         // checking the following params outside checkzoneparams method as we do
         // not use these params for updatezone
@@ -1819,14 +1833,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2, true, domainId, allocationStateStr, ip6Dns1, ip6Dns2);
+        checkZoneParameters(true, zoneName, dns1, dns2, internalDns1, internalDns2, domainId, allocationStateStr, ip6Dns1, ip6Dns2, true, ip6SuperCidr, true, asNumber);
 
         final byte[] bytes = (zoneName + System.currentTimeMillis()).getBytes();
         final String zoneToken = UUID.nameUUIDFromBytes(bytes).toString();
 
         // Create the new zone in the database
         final DataCenterVO zoneFinal = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, guestCidr, domain, domainId, zoneType, zoneToken, networkDomain,
-                isSecurityGroupEnabled, isLocalStorageEnabled, ip6Dns1, ip6Dns2, null, null);
+                isSecurityGroupEnabled, isLocalStorageEnabled, ip6Dns1, ip6Dns2, ip6SuperCidr, asNumber);
         if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
             final Grouping.AllocationState allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
             zoneFinal.setAllocationState(allocationState);
@@ -1854,6 +1868,36 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 return zone;
             }
         });
+    }
+
+    void validateIp6Parameters(String ip6Dns1, String ip6Dns2, String ip6SuperCidr, String asNumber, boolean checkDuplicateName, boolean checkDuplicateIp6SuperCidr, boolean checkDuplicateAsn) {
+        if (StringUtils.isNotBlank(ip6Dns1) && !NetUtils.isValidIpv6(ip6Dns1)) {
+            throw new InvalidParameterValueException("Please enter a valid IPv6 address for IP6 DNS1");
+        }
+
+        if (StringUtils.isNotBlank(ip6Dns2) && !NetUtils.isValidIpv6(ip6Dns2)) {
+            throw new InvalidParameterValueException("Please enter a valid IPv6 address for IP6 DNS2");
+        }
+
+        if (StringUtils.isNotBlank(ip6SuperCidr)) {
+            if (!NetUtils.isValidIp6Cidr(ip6SuperCidr)) {
+                throw new InvalidParameterValueException("Please enter a valid IPv6 cidr");
+            }
+
+            if (!NetUtils.isValidPrivateAsn(asNumber)) {
+                throw new InvalidParameterValueException(String.format("Please specify a valid private autonomous system number", ApiConstants.AUTONOMOUS_NUMBER));
+            }
+
+            // If IPv6 guest CIDR is configured, make sure that the CIDR/Private ASN is not duplicate.
+            if (checkDuplicateIp6SuperCidr && !isIp6SuperCidrAvailable(ip6SuperCidr)) {
+                    throw new InvalidParameterValueException(String.format("A zone with %s already exists. Please specify a unique IPv6 Guest CIDR.", ip6SuperCidr));
+            }
+            if (checkDuplicateAsn && !isAsnAvailable(asNumber)) {
+                    throw new InvalidParameterValueException(String.format("A zone with %s already exists. Please specify a unique private ASN.", asNumber));
+            }
+        } else if (StringUtils.isNotBlank(asNumber)) {
+            throw new InvalidParameterValueException(String.format("%s parameter can not be set if IPv6 super CIDR is not configured", ApiConstants.AUTONOMOUS_NUMBER));
+        }
     }
 
     private AffinityGroup createDedicatedAffinityGroup(String affinityGroupName, final Long domainId, final Long accountId) {
@@ -1937,6 +1981,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final String internalDns1 = cmd.getInternalDns1();
         final String internalDns2 = cmd.getInternalDns2();
         final String guestCidr = cmd.getGuestCidrAddress();
+        final String ip6SuperCidr = cmd.getIp6SuperCidrAddress();
+        final String asNumber = cmd.getAsNumber();
         final Long domainId = cmd.getDomainId();
         final String type = cmd.getNetworkType();
         Boolean isBasic = false;
@@ -1958,8 +2004,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final NetworkType zoneType = isBasic ? NetworkType.Basic : NetworkType.Advanced;
 
         // error out when the parameter specified for Basic zone
-        if (zoneType == NetworkType.Basic && guestCidr != null) {
-            throw new InvalidParameterValueException("guestCidrAddress parameter is not supported for Basic zone");
+        if (zoneType == NetworkType.Basic) {
+            if (StringUtils.isNotBlank(guestCidr)) {
+                throw new InvalidParameterValueException(String.format("%s parameter is not supported for Basic zone", ApiConstants.GUEST_CIDR_ADDRESS));
+            }
+            if (StringUtils.isNotBlank(ip6SuperCidr)) {
+                throw new InvalidParameterValueException(String.format("%s parameter is not supported for Basic zone", ApiConstants.IP6_SUPER_CIDR_ADDRESS));
+            }
+            if (StringUtils.isNotBlank(asNumber)) {
+                throw new InvalidParameterValueException(String.format("%s parameter is not supported for Basic zone", ApiConstants.AUTONOMOUS_NUMBER));
+            }
         }
 
         DomainVO domainVO = null;
@@ -1972,8 +2026,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             isSecurityGroupEnabled = true;
         }
 
-        return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, guestCidr, domainVO != null ? domainVO.getName() : null, domainId, zoneType, allocationState,
-                networkDomain, isSecurityGroupEnabled, isLocalStorageEnabled, ip6Dns1, ip6Dns2);
+        return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, guestCidr, domainVO != null ? domainVO.getName() : null, domainId, zoneType, allocationState, networkDomain,
+                isSecurityGroupEnabled, isLocalStorageEnabled, ip6Dns1, ip6Dns2, ip6SuperCidr, asNumber);
     }
 
     @Override
@@ -3740,6 +3794,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     private boolean validZone(final long zoneId) {
         return _zoneDao.findById(zoneId) != null;
+    }
+
+    private boolean isIp6SuperCidrAvailable(String ip6SuperCidr) {
+        return (_zoneDao.findByIp6SuperCidr(ip6SuperCidr) == null);
+    }
+
+    private boolean isAsnAvailable(String asNumber) {
+        return (_zoneDao.findByAsn(asNumber) == null);
     }
 
     private String getZoneName(final long zoneId) {

@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.cloud.user.User;
+
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
@@ -532,5 +533,83 @@ public class ConfigurationManagerTest {
         Mockito.when(network.getAccountId()).thenReturn(1l);
         Mockito.when(_accountMgr.getAccount(1l)).thenReturn(account);
         Assert.assertNotNull(configurationMgr.getVlanAccount(42l));
+    }
+
+    @Test
+    public void validateIp6Parameters() {
+
+        //Validate Zone create
+            //** with no IPv6
+            validateIp6ParameterTest(false, null, null, null, null, true, true, true, "Zone create with no IPv6 parameters should be accepted");
+
+            //** with invalid IPv6 DNS1 and invalid IPv6 DNS2
+            validateIp6ParameterTest(true, "8.8.8.8", "8.8.4.4", null, null, true, true, true, "Zone create with invalid IPv6 DNS1/DNS1 parameters should not be accepted");
+
+            //** with valid IPv6 DNS1 and DNS2
+            validateIp6ParameterTest(false, "2620:0:ccc::2", "2620:0:ccd::2", null, null, true, true, true, "Zone create with valid IPv6 DNS1/DNS1 parameters should be accepted");
+
+            //** with valid IPv6 DNS and invalid IPv6 Super Cidr
+            validateIp6ParameterTest(true, "2620:0:ccc::2", "2620:0:ccd::2", "8.8.8.8", null, true, true, true, "Zone create with valid IPv6 DNS1/DNS1 and invalid IPv6 Super CIDR parameters should not be accepted");
+
+            //** with valid IPv6 DNS, valid IPv6 Super Cidr and invalid asNumber
+            validateIp6ParameterTest(true, "2620:0:ccc::2", "2620:0:ccd::2", "2001:67c:2834:0:0:0:0:0/50", "6500", true, true, true, "Zone create with valid IPv6 DNS1/DNS1, IPv6 Super CIDR and invalid asNumber parameters should not be accepted");
+
+            //** with valid IPv6 DNS, valid IPv6 Super Cidr and no asNumber
+            validateIp6ParameterTest(true, "2620:0:ccc::2", "2620:0:ccd::2", "2001:67c:2834:0:0:0:0:0/50", null, true, true, true, "Zone create with valid IPv6 DNS1/DNS1, IPv6 Super CIDR and no asNumber parameters should not be accepted");
+
+            //** with valid IPv6 DNS, invalid IPv6 Super Cidr and valid asNumber
+            validateIp6ParameterTest(true, "2620:0:ccc::2", "2620:0:ccd::2", "2001:67c:2834:0:0:0:0:0:0/50", "65000", true, true, true, "Zone create with valid IPv6 DNS1/DNS1, invalid IPv6 Super CIDR and valid asNumber parameters should not be accepted");
+
+            //** with valid IPv6 DNS, no IPv6 Super Cidr and valid asNumber
+            validateIp6ParameterTest(true, "2620:0:ccc::2", "2620:0:ccd::2", "", "65000", true, true, true, "Zone create with valid IPv6 DNS1/DNS1, no IPv6 Super CIDR and valid asNumber parameters should not be accepted");
+
+            when(configurationMgr._zoneDao.findByIp6SuperCidr(anyString())).thenReturn(null);
+            when(configurationMgr._zoneDao.findByAsn(anyString())).thenReturn(null);
+            //** with valid IPv6 DNS, Unique valid IPv6 Super Cidr and Unique valid asNumber
+            validateIp6ParameterTest(false, "2620:0:ccc::2", "2620:0:ccd::2", "2001:67c:2834:0:0:0:0:0/50", "65000", true, true, true, "Zone create with valid IPv6 DNS1/DNS1, unique IPv6 Super CIDR and asNumber parameters should be accepted");
+
+            when(configurationMgr._zoneDao.findByIp6SuperCidr(anyString())).thenReturn(new DataCenterVO(0l, null, null, null, null, null, null, null, null, null, null, null, null));
+            when(configurationMgr._zoneDao.findByAsn(anyString())).thenReturn(null);
+            //** with valid IPv6 DNS, duplicate valid IPv6 Super Cidr and Unique valid asNumber
+            validateIp6ParameterTest(true, "2620:0:ccc::2", "2620:0:ccd::2", "2001:67c:2834:0:0:0:0:0/50", "65000", true, true, true, "Zone create with valid IPv6 DNS1/DNS1, with duplicate IPv6 Super CIDR and unique asNumber parameters should not be accepted");
+
+            when(configurationMgr._zoneDao.findByIp6SuperCidr(anyString())).thenReturn(null);
+            when(configurationMgr._zoneDao.findByAsn(anyString())).thenReturn(new DataCenterVO(0l, null, null, null, null, null, null, null, null, null, null, null, null));
+            //** with valid IPv6 DNS, Unique valid IPv6 Super Cidr and duplicate valid asNumber
+            validateIp6ParameterTest(true, "2620:0:ccc::2", "2620:0:ccd::2", "2001:67c:2834:0:0:0:0:0/50", "65000", true, true, true, "Zone create with valid IPv6 DNS1/DNS1, with unique IPv6 Super CIDR and duplicate asNumber parameters should not be accepted");
+
+        //Validate Zone Edit which check no duplicate
+
+            when(configurationMgr._zoneDao.findByIp6SuperCidr(anyString())).thenReturn(null);
+            when(configurationMgr._zoneDao.findByAsn(anyString())).thenReturn(null);
+            //** with valid IPv6 DNS, Unique valid IPv6 Super Cidr and Unique valid asNumber
+            validateIp6ParameterTest(false, "2620:0:ccc::2", "2620:0:ccd::2", "2001:67c:2834:0:0:0:0:0/50", "65000", false, false, false, "Zone create with valid IPv6 DNS1/DNS1, unique IPv6 Super CIDR and asNumber parameters should be accepted with no duplicate checks");
+
+            when(configurationMgr._zoneDao.findByIp6SuperCidr(anyString())).thenReturn(new DataCenterVO(0l, null, null, null, null, null, null, null, null, null, null, null, null));
+            when(configurationMgr._zoneDao.findByAsn(anyString())).thenReturn(new DataCenterVO(0l, null, null, null, null, null, null, null, null, null, null, null, null));
+            //** with valid IPv6 DNS, duplicate valid IPv6 Super Cidr and duplicate valid asNumber, with no duplicate checks.
+            validateIp6ParameterTest(false, "2620:0:ccc::2", "2620:0:ccd::2", "2001:67c:2834:0:0:0:0:0/50", "65000", false, false, false, "Zone create with valid IPv6 DNS1/DNS1, duplicate IPv6 Super CIDR and asNumber parameters should be accepted with no duplicate checks");
+
+            when(configurationMgr._zoneDao.findByIp6SuperCidr(anyString())).thenReturn(new DataCenterVO(0l, null, null, null, null, null, null, null, null, null, null, null, null));
+            when(configurationMgr._zoneDao.findByAsn(anyString())).thenReturn(null);
+            //** with valid IPv6 DNS, duplicate valid IPv6 Super Cidr and Unique valid asNumber
+            validateIp6ParameterTest(true, "2620:0:ccc::2", "2620:0:ccd::2", "2001:67c:2834:0:0:0:0:0/50", "65000", false, true, false, "Zone create with valid IPv6 DNS1/DNS1, duplicate IPv6 Super CIDR and unique asNumber parameters should not be accepted with no duplicate checks");
+
+            when(configurationMgr._zoneDao.findByIp6SuperCidr(anyString())).thenReturn(null);
+            when(configurationMgr._zoneDao.findByAsn(anyString())).thenReturn(new DataCenterVO(0l, null, null, null, null, null, null, null, null, null, null, null, null));
+            //** with valid IPv6 DNS, Unique valid IPv6 Super Cidr and duplicate valid asNumber
+            validateIp6ParameterTest(true, "2620:0:ccc::2", "2620:0:ccd::2", "2001:67c:2834:0:0:0:0:0/50", "65000", false, false, true, "Zone create with valid IPv6 DNS1/DNS1, unique IPv6 Super CIDR and duplicate asNumber parameters should not be accepted");
+
+    }
+
+    private void validateIp6ParameterTest(boolean shouldConditionFail, String ip6Dns1, String ip6Dns2, String ip6SuperCidr, String asNumber, boolean checkDuplicateName,
+            boolean checkDuplicateIp6SuperCidr, boolean checkDuplicateAsn, String message) {
+        boolean validationCheck = shouldConditionFail;
+        try {
+            configurationMgr.validateIp6Parameters(ip6Dns1, ip6Dns2, ip6SuperCidr, asNumber, checkDuplicateName, checkDuplicateIp6SuperCidr, checkDuplicateAsn);
+        } catch (InvalidParameterValueException e) {
+            validationCheck = !shouldConditionFail;
+        }
+        Assert.assertFalse(message, validationCheck);
     }
 }
