@@ -1386,15 +1386,14 @@ class TestHardening(cloudstackTestCase):
 
         clusterid_tag_mapping = {}
         cwps_no = 0
-
+        cls.unsupportedHypervisor = False
         if cls.hypervisor.lower() not in [
                 "vmware",
                 "kvm",
                 "xenserver",
                 "hyper-v"]:
-            raise unittest.SkipTest(
-                "Storage migration not supported on %s" %
-                cls.hypervisor)
+            cls.unsupportedHypervisor = True
+            return
 
         try:
             cls.pools = StoragePool.list(
@@ -1510,6 +1509,8 @@ class TestHardening(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
+        if self.unsupportedHypervisor:
+            self.skipTest("VM migration is not supported on %s" % self.hypervisor)
 
     def tearDown(self):
         try:

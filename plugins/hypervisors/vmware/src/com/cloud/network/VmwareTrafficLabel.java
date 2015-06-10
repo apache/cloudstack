@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network;
 
+import com.cloud.dc.Vlan;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.vmware.mo.VirtualSwitchType;
 import com.cloud.network.Networks.TrafficType;
@@ -32,7 +33,7 @@ public class VmwareTrafficLabel implements TrafficLabel {
     TrafficType _trafficType = TrafficType.None;
     VirtualSwitchType _vSwitchType = VirtualSwitchType.StandardVirtualSwitch;
     String _vSwitchName = DEFAULT_VSWITCH_NAME;
-    String _vlanId = null;
+    String _vlanId = Vlan.UNTAGGED;
 
     public VmwareTrafficLabel(String networkLabel, TrafficType trafficType, VirtualSwitchType defVswitchType) {
         _trafficType = trafficType;
