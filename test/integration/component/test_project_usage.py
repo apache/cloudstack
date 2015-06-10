@@ -511,9 +511,12 @@ class TestVolumeUsage(cloudstackTestCase):
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.rbdStorageFound = True
         if cls.hypervisor.lower() == 'lxc':
             if not find_storage_pool_type(cls.api_client, storagetype='rbd'):
-                raise unittest.SkipTest("RBD storage type is required for data volumes for LXC")
+                cls.rbdStorageFound = False
+                return
+                #raise unittest.SkipTest("RBD storage type is required for data volumes for LXC")
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
                                     cls.services["disk_offering"]
@@ -575,6 +578,8 @@ class TestVolumeUsage(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
+        if not self.rbdStorageFound:
+            self.skipTest("")
         return
 
     def tearDown(self):
@@ -1258,16 +1263,17 @@ class TestSnapshotUsage(cloudstackTestCase):
     def setUpClass(cls):
         cls.testClient = super(TestSnapshotUsage, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
-
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.snapshotSupported = True
+        if cls.hypervisor.lower() in ['hyperv', 'lxc']:
+            cls.snapshotSupported = False
+            return
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.hypervisor = cls.testClient.getHypervisorInfo()
-        if cls.hypervisor.lower() in ['lxc']:
-            raise unittest.SkipTest("snapshots are not supported on %s" % cls.hypervisor.lower())
-
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -1324,6 +1330,8 @@ class TestSnapshotUsage(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
+        if not self.snapshotSupported:
+            self.skipTest("Snapshots are not supported on %s" % self.hypervisor)
         return
 
     def tearDown(self):
