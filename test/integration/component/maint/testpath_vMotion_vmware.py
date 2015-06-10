@@ -19,8 +19,6 @@
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.lib.utils import (cleanup_resources,
-                              random_gen,
-                              format_volume_to_ext3,
                               validateList,
                               is_server_ssh_ready
                               )
@@ -36,10 +34,7 @@ from marvin.lib.base import (Account,
                              Configurations,
                              Host,
                              NATRule,
-                             PublicIPAddress,
-                             StaticNATRule,
-                             FireWallRule,
-                             Network
+                             FireWallRule
                              )
 from marvin.lib.common import (get_domain,
                                get_zone,
@@ -55,11 +50,9 @@ from marvin.lib.common import (get_domain,
                                list_ssvms
                                )
 
-from marvin.cloudstackAPI import (deleteVolume,
-                                  enableStorageMaintenance,
+from marvin.cloudstackAPI import (enableStorageMaintenance,
                                   cancelStorageMaintenance
                                   )
-import hashlib
 from marvin.sshClient import SshClient
 from marvin.codes import FAILED, PASS, FAIL
 from ddt import ddt, data, unpack
