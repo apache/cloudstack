@@ -2543,3 +2543,258 @@ class TestResourceTags(cloudstackTestCase):
             "List tags should return empty response"
         )
         return
+    @attr(tags=["advanced"], required_hardware="false")
+    def test_25_IP_Address_tag(self):
+        """ Testcreation, adding and removing tag on public IP address
+        """
+        # Validate the following
+        # 1. Create a domain and 2 user accounts under that domain
+        # 2. Create network in both accounts and acquire public IP address
+        # 3. Create a tag on acquired public IP address using createTags API
+        # 4. Delete above created both tag using deleteTags API
+
+        self.debug("Creating a sub-domain under: %s" % self.domain.name)
+        self.child_domain = Domain.create(
+            self.apiclient,
+            services=self.services["domain"],
+            parentdomainid=self.domain.id
+        )
+        self.admin_acc_1 = Account.create(
+            self.apiclient,
+            self.services["account"],
+            admin=False,
+            domainid=self.child_domain.id
+        )
+        # Cleanup the resources created at end of test
+        self.cleanup.append(self.admin_acc_1)
+        self.dom_admin_api_client1 = self.testClient.getUserApiClient(
+            UserName=self.admin_acc_1.name,
+            DomainName=self.admin_acc_1.domain
+        )
+        result = createEnabledNetworkOffering(
+            self.apiclient,
+            self.services["network_offering"]
+        )
+        assert result[0] == PASS, \
+            "Network offering create/enable failed with error %s" % result[2]
+        self.network_offering = result[1]
+        self.network = Network.create(
+            self.dom_admin_api_client1,
+            self.services["network"],
+            networkofferingid=self.network_offering.id,
+            accountid=self.admin_acc_1.name,
+            domainid=self.admin_acc_1.domainid,
+            zoneid=self.zone.id
+        )
+        self.debug("Fetching the network details for account: %s" %
+                   self.admin_acc_1.name
+                   )
+        networks = Network.list(
+            self.dom_admin_api_client1,
+            account=self.admin_acc_1.name,
+            domainid=self.admin_acc_1.domainid,
+            listall=True
+        )
+        self.assertEqual(
+            isinstance(networks, list),
+            True,
+            "List networks should not return an empty response"
+        )
+        network = networks[0]
+        self.debug("Network for the account: %s is %s" %
+                   (self.admin_acc_1.name, network.name)
+                   )
+        self.debug("Associating public IP for network: %s" % network.id)
+        public_ip1 = PublicIPAddress.create(
+            self.dom_admin_api_client1,
+            accountid=self.admin_acc_1.name,
+            zoneid=self.zone.id,
+            domainid=self.admin_acc_1.domainid,
+            networkid=network.id
+        )
+        self.debug("Creating a tag for Public IP")
+        tag1 = Tag.create(
+            self.dom_admin_api_client1,
+            resourceIds=public_ip1.ipaddress.id,
+            resourceType='PublicIpAddress',
+            tags={'region': 'India'}
+        )
+        self.debug("Tag created: %s" % tag1.__dict__)
+
+        tags = Tag.list(
+            self.dom_admin_api_client1,
+            listall=True,
+            resourceType='PublicIpAddress',
+            account=self.admin_acc_1.name,
+            domainid=self.admin_acc_1.domainid,
+            key='region',
+            value='India'
+        )
+        self.assertEqual(
+            isinstance(tags, list),
+            True,
+            "List tags should not return empty response"
+        )
+        self.assertEqual(
+            tags[0].value,
+            'India',
+            'The tag should have original value'
+        )
+        publicIps = PublicIPAddress.list(
+            self.dom_admin_api_client1,
+            account=self.admin_acc_1.name,
+            domainid=self.admin_acc_1.domainid,
+            listall=True,
+            key='region',
+            value='India'
+        )
+        self.assertEqual(
+            isinstance(publicIps, list),
+            True,
+            "List Public IPs should not return an empty response"
+        )
+
+        # Setting up second user account.
+        self.admin_acc_2 = Account.create(
+            self.apiclient,
+            self.services["account"],
+            admin=False,
+            domainid=self.child_domain.id
+        )
+        # Cleanup the resources created at end of test
+        self.cleanup.append(self.admin_acc_2)
+        self.cleanup.append(self.child_domain)
+        self.dom_admin_api_client2 = self.testClient.getUserApiClient(
+            UserName=self.admin_acc_2.name,
+            DomainName=self.admin_acc_2.domain
+        )
+        result = createEnabledNetworkOffering(
+            self.apiclient,
+            self.services["network_offering"]
+        )
+        assert result[0] == PASS, \
+            "Network offering create/enable failed with error %s" % result[2]
+        self.network_offering = result[1]
+        self.network = Network.create(
+            self.dom_admin_api_client2,
+            self.services["network"],
+            networkofferingid=self.network_offering.id,
+            accountid=self.admin_acc_2.name,
+            domainid=self.admin_acc_2.domainid,
+            zoneid=self.zone.id
+        )
+        self.debug("Fetching the network details for account: %s" %
+                   self.admin_acc_2.name
+                   )
+        networks = Network.list(
+            self.dom_admin_api_client2,
+            account=self.admin_acc_2.name,
+            domainid=self.admin_acc_2.domainid,
+            listall=True
+        )
+        self.assertEqual(
+            isinstance(networks, list),
+            True,
+            "List networks should not return an empty response"
+        )
+        network = networks[0]
+        self.debug("Network for the account: %s is %s" %
+                   (self.admin_acc_2.name, network.name)
+                   )
+        self.debug("Associating public IP for network: %s" % network.id)
+        public_ip2 = PublicIPAddress.create(
+            self.dom_admin_api_client2,
+            accountid=self.admin_acc_2.name,
+            zoneid=self.zone.id,
+            domainid=self.admin_acc_2.domainid,
+            networkid=network.id
+        )
+        self.debug("Creating a tag for Public IP")
+        tag2 = Tag.create(
+            self.dom_admin_api_client2,
+            resourceIds=public_ip2.ipaddress.id,
+            resourceType='PublicIpAddress',
+            tags={'region': 'Pune'}
+        )
+        self.debug("Tag created: %s" % tag2.__dict__)
+
+        tags = Tag.list(
+            self.dom_admin_api_client2,
+            listall=True,
+            resourceType='PublicIpAddress',
+            account=self.admin_acc_2.name,
+            domainid=self.admin_acc_2.domainid,
+            key='region',
+            value='Pune'
+        )
+        self.assertEqual(
+            isinstance(tags, list),
+            True,
+            "List tags should not return empty response"
+        )
+        self.assertEqual(
+            tags[0].value,
+            'Pune',
+            'The tag should have original value'
+        )
+        publicIps = PublicIPAddress.list(
+            self.dom_admin_api_client2,
+            account=self.admin_acc_2.name,
+            domainid=self.admin_acc_2.domainid,
+            listall=True,
+            key='region',
+            value='Pune'
+        )
+        self.assertEqual(
+            isinstance(publicIps, list),
+            True,
+            "List Public IPs should not return an empty response"
+        )
+
+        idset = self.dbclient.execute( "SELECT resource_uuid from resource_tags WHERE `key` = 'region' AND `value` = 'India'");
+        self.assertNotEqual(
+            len(idset),
+            0,
+            "Check DB Query result set"
+        )
+        iresult = idset[0]
+        rid = iresult[0]
+
+        self.dbclient.execute( "UPDATE resource_tags SET resource_id = CAST( '%s' AS SIGNED) WHERE `key` = 'region' AND `value` = 'Pune'" % rid);
+
+        try:
+            tag1.delete(
+                self.dom_admin_api_client1,
+                resourceIds=public_ip1.ipaddress.id,
+                resourceType='PublicIpAddress',
+                tags={'region': 'India'}
+            )
+        except Exception as e:
+            self.fail("Failed to delete the tag - %s" % e)
+
+        self.debug("Verifying if tag is actually deleted!")
+        tags = Tag.list(
+            self.dom_admin_api_client1,
+            listall=True,
+            resourceType='PublicIpAddress',
+            account=self.admin_acc_1.name,
+            domainid=self.admin_acc_1.domainid,
+            key='region',
+            value='India'
+        )
+        self.assertEqual(
+            tags,
+            None,
+            "List tags should return empty response"
+        )
+        try:
+            tag2.delete(
+                self.dom_admin_api_client2,
+                resourceIds=public_ip2.ipaddress.id,
+                resourceType='PublicIpAddress',
+                tags={'region': 'Pune'}
+            )
+        except Exception as e:
+            self.fail("Failed to delete the tag - %s" % e)
+        return
+

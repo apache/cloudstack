@@ -91,6 +91,7 @@ env:
              smoke/test_staticroles
              smoke/test_templates
              smoke/test_usage
+             smoke/test_tags
              smoke/test_usage_events
              smoke/test_vm_life_cycle
              smoke/test_vm_snapshots
@@ -144,8 +145,6 @@ env:
              component/test_stopped_vm"
 
     - TESTS="component/test_resource_limits"
-
-    - TESTS="component/test_tags
              component/test_templates
              component/test_update_vm
              component/test_volumes"
