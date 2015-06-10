@@ -31,6 +31,7 @@ RUN pip install ${PKG_URL}
 
 RUN mkdir -p /marvin
 COPY setup/dev /marvin/dev
+COPY tools/marvin/marvin /marvin/marvin
 COPY test/integration /marvin/integration
 
 WORKDIR /marvin
