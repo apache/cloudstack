@@ -167,15 +167,15 @@ class TestConcurrentSnapshotLimit(cloudstackTestCase):
             self.apiclient,
             name="concurrent.snapshots.threshold.perhost"
         )
-        self.assertEqual(
-            isinstance(
-                config,
-                list),
-            True,
-            "concurrent.snapshots.threshold.perhost should be present\
-                    in global config")
         if config[0].value:
-            concurrentSnapshots = int(config[0].value)
+		self.assertEqual(
+				isinstance(
+					config,
+					list),
+				True,
+				"concurrent.snapshots.threshold.perhost should be present\
+				in global config")
+		concurrentSnapshots = int(config[0].value)
         self.debug("concurrent Snapshots: %s" % concurrentSnapshots)
 
         threads = []
@@ -227,15 +227,15 @@ class TestConcurrentSnapshotLimit(cloudstackTestCase):
             self.apiclient,
             name="concurrent.snapshots.threshold.perhost"
         )
-        self.assertEqual(
-            isinstance(
-                config,
-                list),
-            True,
-            "concurrent.snapshots.threshold.perhost should be present\
-                    in global config")
         if config[0].value:
-            concurrentSnapshots = int(config[0].value)
+		self.assertEqual(
+				isinstance(
+					config,
+					list),
+				True,
+				"concurrent.snapshots.threshold.perhost should be present\
+				in global config")
+		concurrentSnapshots = int(config[0].value)
         else:
             self.skipTest("Skipping tests as the config value \
                     concurrent.snapshots.threshold.perhost is Null")
