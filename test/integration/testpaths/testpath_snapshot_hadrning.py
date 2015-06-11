@@ -356,8 +356,6 @@ class TestSnapshotsHardning(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.vm.delete(cls.apiclient)
-            cls.vm_ha.delete(cls.apiclient)
             cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
