@@ -17,7 +17,7 @@
 package com.cloud.network.resource;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -191,7 +191,7 @@ public class JuniperSrxResource implements ServerResource {
                     throw new Exception("Failed to find Juniper SRX XML file: " + filename);
                 }
 
-                try(FileReader fr = new FileReader(xmlFilePath);
+                try(InputStreamReader fr = new InputStreamReader(new FileInputStream(xmlFilePath),"UTF-8");
                 BufferedReader br = new BufferedReader(fr);) {
                     String xml = "";
                     String line;
