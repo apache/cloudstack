@@ -2028,6 +2028,10 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         """
         Test Browser_volume_Life_cycle - This includes upload volume,attach to a VM, write data ,Stop ,Start, Reboot,Reset  of a VM, detach,attach back to the VM, delete volumes  
         """
+        if self.hypervisor.lower() == 'hyperv':
+            self.skipTest("cann't be run for % hypervisor as it doesn't support volume resize operation" % self.hypervisor)
+
+
         try:
 
             self.debug("========================= Test 1: Upload Browser based volume and validate ========================= ")
@@ -2473,6 +2477,9 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         """
         Test Browser_Upload_Volume_migrate_upload_volume
         """
+        if self.hypervisor.lower() == 'hyperv':
+            self.skipTest("cann't be run for % hypervisor as it doesn't support volume resize operation" % self.hypervisor)
+
         self.debug("========================= Test 40 Test Browser_Upload_Volume_Migration=========================")
 
         browseup_vol=self.browse_upload_volume()
