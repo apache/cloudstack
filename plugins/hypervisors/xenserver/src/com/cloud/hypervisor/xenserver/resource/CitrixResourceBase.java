@@ -5048,10 +5048,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             Process p = Runtime.getRuntime().exec(cmd);
 
             BufferedReader stdInput = new BufferedReader(new
-                    InputStreamReader(p.getInputStream()));
+                    InputStreamReader(p.getInputStream(),Charset.defaultCharset()));
 
             BufferedReader stdError = new BufferedReader(new
-                    InputStreamReader(p.getErrorStream()));
+                    InputStreamReader(p.getErrorStream(),Charset.defaultCharset()));
 
             // read the output from the command
             while ((s = stdInput.readLine()) != null) {
