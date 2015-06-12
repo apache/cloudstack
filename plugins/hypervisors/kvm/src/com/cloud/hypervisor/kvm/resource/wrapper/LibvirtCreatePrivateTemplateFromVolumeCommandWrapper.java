@@ -137,7 +137,7 @@ public final class LibvirtCreatePrivateTemplateFromVolumeCommandWrapper extends 
                 templateContent += "snapshot.name=" + dateFormat.format(date) + System.getProperty("line.separator");
 
                 try(FileOutputStream templFo = new FileOutputStream(templateProp);) {
-                    templFo.write(templateContent.getBytes());
+                    templFo.write(templateContent.getBytes("UTF-8"));
                     templFo.flush();
                 }catch(final IOException ex)
                 {
