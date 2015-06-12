@@ -121,7 +121,7 @@ public class HttpNfcLeaseMO extends BaseMO {
 
     public static String readOvfContent(String ovfFilePath) throws IOException {
         StringBuffer strContent = new StringBuffer();
-        BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(ovfFilePath)));
+        BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(ovfFilePath),"UTF-8"));
         String lineStr;
         while ((lineStr = in.readLine()) != null) {
             strContent.append(lineStr);
