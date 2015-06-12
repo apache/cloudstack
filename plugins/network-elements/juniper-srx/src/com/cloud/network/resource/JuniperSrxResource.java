@@ -20,7 +20,8 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.OutputStreamWriter;
+import java.io.BufferedWriter;
 import java.io.StringReader;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
@@ -83,9 +84,9 @@ public class JuniperSrxResource implements ServerResource {
     private String _password;
     private String _guid;
     private String _objectNameWordSep;
-    private PrintWriter _toSrx;
+    private BufferedWriter _toSrx;
     private BufferedReader _fromSrx;
-    private PrintWriter _UsagetoSrx;
+    private BufferedWriter _UsagetoSrx;
     private BufferedReader _UsagefromSrx;
     private Integer _numRetries;
     private Integer _timeoutInSeconds;
@@ -538,8 +539,8 @@ public class JuniperSrxResource implements ServerResource {
             Socket s = new Socket(_ip, 3221);
             s.setKeepAlive(true);
             s.setSoTimeout(_timeoutInSeconds * 1000);
-            _toSrx = new PrintWriter(s.getOutputStream(), true);
-            _fromSrx = new BufferedReader(new InputStreamReader(s.getInputStream()));
+            _toSrx = new BufferedWriter(new OutputStreamWriter(s.getOutputStream(),"UTF-8"));
+            _fromSrx = new BufferedReader(new InputStreamReader(s.getInputStream(),"UTF-8"));
             return true;
         } catch (IOException e) {
             s_logger.error(e);
@@ -580,8 +581,8 @@ public class JuniperSrxResource implements ServerResource {
             Socket s = new Socket(_ip, 3221);
             s.setKeepAlive(true);
             s.setSoTimeout(_timeoutInSeconds * 1000);
-            _UsagetoSrx = new PrintWriter(s.getOutputStream(), true);
-            _UsagefromSrx = new BufferedReader(new InputStreamReader(s.getInputStream()));
+            _UsagetoSrx = new BufferedWriter(new OutputStreamWriter(s.getOutputStream(),"UTF-8"));
+            _UsagefromSrx = new BufferedReader(new InputStreamReader(s.getInputStream(),"UTF-8"));
             return usageLogin();
         } catch (IOException e) {
             s_logger.error(e);
@@ -3383,7 +3384,7 @@ public class JuniperSrxResource implements ServerResource {
      * XML API commands
      */
 
-    private String sendRequestPrim(PrintWriter sendStream, BufferedReader recvStream, String xmlRequest) throws ExecutionException {
+    private String sendRequestPrim(BufferedWriter sendStream, BufferedReader recvStream, String xmlRequest) throws ExecutionException {
         if (!xmlRequest.contains("request-login")) {
             s_logger.debug("Sending request: " + xmlRequest);
         } else {
