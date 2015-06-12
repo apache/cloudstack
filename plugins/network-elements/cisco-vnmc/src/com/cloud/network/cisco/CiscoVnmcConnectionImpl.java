@@ -1229,7 +1229,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
 
     private String sendRequest(String service, String xmlRequest) throws ExecutionException {
         HttpClient client = new HttpClient();
-        byte[] response = null;
+        String response = null;
         PostMethod method = new PostMethod("/xmlIM/" + service);
         method.setRequestBody(xmlRequest);
 
@@ -1241,13 +1241,13 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
             if (statusCode != HttpStatus.SC_OK) {
                 throw new Exception("Error code : " + statusCode);
             }
-            response = method.getResponseBody();
+            response = method.getResponseBodyAsString();
         } catch (Exception e) {
             System.out.println(e.getMessage());
             throw new ExecutionException(e.getMessage());
         }
-        System.out.println(new String(response));
-        return new String(response);
+        System.out.println(response);
+        return response;
     }
 
     private Map<String, String> checkResponse(String xmlResponse, String... keys) throws ExecutionException {
