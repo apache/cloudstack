@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command;
 
+import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -228,9 +229,8 @@ public class LdapImportUsersCmd extends BaseListCmd {
             final SecureRandom randomGen = SecureRandom.getInstance("SHA1PRNG");
             final byte bytes[] = new byte[20];
             randomGen.nextBytes(bytes);
-            String encodedPassword = new String(Base64.encode(bytes));
-            return encodedPassword;
-        } catch (final NoSuchAlgorithmException e) {
+            return new String(Base64.encode(bytes), "UTF-8");
+        } catch ( NoSuchAlgorithmException | UnsupportedEncodingException e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to generate random password");
         }
     }
