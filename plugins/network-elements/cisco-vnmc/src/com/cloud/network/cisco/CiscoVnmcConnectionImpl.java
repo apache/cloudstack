@@ -129,7 +129,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
                     throw new Exception("Failed to find Cisco VNMC XML file: " + filename);
                 }
 
-                FileReader fr = new FileReader(xmlFilePath);
+                InputStreamReader fr = new InputStreamReader(new FileInputStream(xmlFilePath),"UTF-8");
                 BufferedReader br = new BufferedReader(fr);
 
                 String xml = "";
