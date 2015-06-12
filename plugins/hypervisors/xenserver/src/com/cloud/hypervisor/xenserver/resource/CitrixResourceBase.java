@@ -19,7 +19,8 @@ package com.cloud.hypervisor.xenserver.resource;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
@@ -5024,7 +5025,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         if (result && content != null && !content.isEmpty()) {
                             try {
                                 File file = new File(folder+"/"+fileName+".txt");
-                                FileWriter fw = new FileWriter(file.getAbsoluteFile());
+                                OutputStreamWriter fw = new OutputStreamWriter(new FileOutputStream(file.getAbsoluteFile()),"UTF-8");
                                 BufferedWriter bw = new BufferedWriter(fw);
                                 bw.write(content);
                                 bw.close();
