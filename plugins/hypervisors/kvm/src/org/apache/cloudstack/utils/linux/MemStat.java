@@ -51,7 +51,7 @@ public class MemStat {
 
     public void refresh() {
         File f = new File(MEMINFO_FILE);
-        try (Scanner scanner = new Scanner(f)) {
+        try (Scanner scanner = new Scanner(f,"UTF-8")) {
             parseFromScanner(scanner);
         } catch (FileNotFoundException ex) {
             throw new RuntimeException("File " + MEMINFO_FILE + " not found:" + ex.toString());
