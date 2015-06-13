@@ -742,8 +742,10 @@ class TestTemplates(cloudstackTestCase):
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        cls.templateSupported = True
         if cls.hypervisor.lower() in ['lxc']:
-            raise unittest.SkipTest("Template creation from root volume is not supported in LXC")
+            cls.templateSupported = False
+            return
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls._cleanup = []
         try:
@@ -802,6 +804,8 @@ class TestTemplates(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
+        if not self.templateSupported:
+            self.skipTest("Template creation from root volume is not supported in LXC")
         return
 
     def tearDown(self):
@@ -1019,6 +1023,7 @@ class TestDataPersistency(cloudstackTestCase):
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.domain = get_domain(cls.api_client)
         cls.services['mode'] = cls.zone.networktype
+        cls.templateSupported = True
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -1026,7 +1031,8 @@ class TestDataPersistency(cloudstackTestCase):
                             )
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         if cls.hypervisor.lower() in ['lxc']:
-            raise unittest.SkipTest("Template creation from root volume is not supported in LXC")
+            cls.templateSupported = False
+            return
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
         #Create an account, network, VM and IP addresses
@@ -1071,6 +1077,8 @@ class TestDataPersistency(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
+        if not self.templateSupported:
+            self.skipTest("Template creation from root volume is not supported in LXC")
         return
 
     def tearDown(self):

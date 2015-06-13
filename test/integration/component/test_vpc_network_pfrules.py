@@ -39,6 +39,7 @@ from marvin.lib.common import (get_domain,
 from marvin.lib.utils import cleanup_resources
 import socket
 import time
+import sys
 
 
 class Services:
@@ -163,7 +164,7 @@ class Services:
                 "username": "root",
                 "password": "password",
                 "ssh_port": 22,
-                "hypervisor": 'XenServer',
+                # "hypervisor": 'XenServer',
                 # Hypervisor type should be same as
                 # hypervisor type of cluster
                 "privateport": 22,
@@ -333,21 +334,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         try:
                 if not isVmAccessible:
                     self.create_natrule(vm, public_ip, network)
-                # Start httpd service on VM first
-                sshClient = vm.get_ssh_client()
-                sshClient.execute("service httpd start")
-                time.sleep(5)
-                ssh_response = str(sshClient.execute("service httpd status")).lower()
-                self.debug("httpd service status is: %s" % ssh_response)
-                if "httpd: unrecognized service" in ssh_response or "inactive" in ssh_response:
-                    ssh_res = sshClient.execute("yum install httpd -y")
-                    if "Complete!" not in ssh_res:
-                        raise Exception("Failed to install http server")
-                    sshClient.execute("service httpd start")
-                    time.sleep(5)
-                    ssh_response = str(sshClient.execute("service httpd status")).lower()
-                if not "running" in ssh_response:
-                    raise Exception("Failed to start httpd service")
+		self.setup_webserver(vm)
 
                 urllib.urlretrieve("http://%s/test.html" % public_ip.ipaddress.ipaddress, filename="test.html")
                 if not testnegative:
@@ -359,6 +346,38 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                     self.fail("Failed to wget from VM=%s http server on public_ip=%s: %s" % (vm.name, public_ip.ipaddress.ipaddress, e))
                 else:
                     self.debug("Failed to wget from VM=%s http server on public_ip=%s: %s" % (vm.name, public_ip.ipaddress.ipaddress, e))
+
+    def setup_webserver(self, vm):
+        # Start httpd service on VM first
+	sshClient = vm.get_ssh_client()
+	# Test to see if we are on a tiny linux box (using busybox)
+	res = str(sshClient.execute("busybox")).lower()
+        if "hexdump" in res:
+            self.setup_busybox(sshClient)
+        else:
+            self.setup_apache(sshClient)
+
+    def setup_busybox(self, sshClient):
+        """ Create a dummy test.html file and fire up the busybox web server """
+	sshClient.execute('echo test > test.html')
+	sshClient.execute("/usr/sbin/httpd")
+	self.debug("Setup webserver using busybox")
+
+    def setup_apache(self, sshClient):
+	sshClient.execute("service httpd start")
+	time.sleep(5)
+	ssh_response = str(sshClient.execute("service httpd status")).lower()
+	self.debug("httpd service status is: %s" % ssh_response)
+	if "httpd: unrecognized service" in ssh_response or "inactive" in ssh_response:
+	    ssh_res = sshClient.execute("yum install httpd -y")
+	    if "Complete!" not in ssh_res:
+		raise Exception("Failed to install http server")
+	    sshClient.execute("service httpd start")
+	    time.sleep(5)
+	    ssh_response = str(sshClient.execute("service httpd status")).lower()
+	if not "running" in ssh_response:
+	    raise Exception("Failed to start httpd service")
+	self.debug("Setup webserver using apache")
 
     def create_natrule(self, vm, public_ip, network, services=None):
         self.debug("Creating NAT rule in network for vm with public IP")

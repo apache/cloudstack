@@ -2463,6 +2463,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         } else if (nicTo.getBroadcastType() == BroadcastDomainType.Lswitch) {
             // We don't need to set any VLAN id for an NVP logical switch
             return null;
+        } else if (nicTo.getBroadcastType() == BroadcastDomainType.Storage) {
+            URI broadcastUri = nicTo.getBroadcastUri();
+            if (broadcastUri != null) {
+                String vlanId = BroadcastDomainType.getValue(broadcastUri);
+                s_logger.debug("Using VLAN [" + vlanId + "] from broadcast uri [" + broadcastUri + "]");
+                return vlanId;
+            }
         }
 
         s_logger.warn("Unrecognized broadcast type in VmwareResource, type: " + nicTo.getBroadcastType().toString() + ". Use vlan info from labeling: " + defaultVlan);
@@ -2525,24 +2532,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         String switchName = null;
         VirtualSwitchType switchType = VirtualSwitchType.StandardVirtualSwitch;
-        String vlanToken = Vlan.UNTAGGED;
+        String vlanId = Vlan.UNTAGGED;
 
-        // Get switch details from the nicTO object
         if(nicTo.getName() != null && !nicTo.getName().isEmpty()) {
-            String[] tokens = nicTo.getName().split(",");
             // Format of network traffic label is <VSWITCH>,<VLANID>,<VSWITCHTYPE>
             // If all 3 fields are mentioned then number of tokens would be 3.
             // If only <VSWITCH>,<VLANID> are mentioned then number of tokens would be 2.
-            switchName = tokens[0];
-            if(tokens.length == 2 || tokens.length == 3) {
-                vlanToken = tokens[1];
-                if (vlanToken.isEmpty()) {
-                    vlanToken = Vlan.UNTAGGED;
-                }
-                if (tokens.length == 3) {
-                    switchType = VirtualSwitchType.getType(tokens[2]);
-                }
-            }
+            // Get switch details from the nicTO object
+            String networkName = nicTo.getName();
+            VmwareTrafficLabel mgmtTrafficLabelObj = new VmwareTrafficLabel(networkName, trafficType);
+            switchName = mgmtTrafficLabelObj.getVirtualSwitchName();
+            vlanId = mgmtTrafficLabelObj.getVlanId();
+            switchType = mgmtTrafficLabelObj.getVirtualSwitchType();
         } else {
             if (trafficType == TrafficType.Guest && _guestTrafficInfo != null) {
                 switchType = _guestTrafficInfo.getVirtualSwitchType();
@@ -2558,7 +2559,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             switchName = _privateNetworkVSwitchName;
         }
 
-        return new Ternary<String,String,String>(switchName, switchType.toString(), vlanToken);
+        if (switchType == VirtualSwitchType.NexusDistributedVirtualSwitch) {
+            if (trafficType == TrafficType.Management || trafficType == TrafficType.Storage) {
+                throw new CloudException("Unable to configure NIC " + nicTo.toString() + " as traffic type " + trafficType.toString() +
+                        " is not supported over virtual switch type " + switchType +
+                        ". Please specify only supported type of virtual switches i.e. {vmwaresvs, vmwaredvs} in physical network traffic label.");
+            }
+        }
+
+        return new Ternary<String, String, String>(switchName, switchType.toString(), vlanId);
     }
 
     private String getNetworkNamePrefix(NicTO nicTo) throws Exception {

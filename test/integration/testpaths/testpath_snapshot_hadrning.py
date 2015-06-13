@@ -356,8 +356,6 @@ class TestSnapshotsHardning(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.vm.delete(cls.apiclient)
-            cls.vm_ha.delete(cls.apiclient)
             cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -476,8 +474,8 @@ class TestSnapshotsHardning(cloudstackTestCase):
                 in progress attach the volume to A VM verify that volume
                 gets attached successfully also check integrity of snapshot
         """
-        if self.hypervisor == "xenserver":
-            self.skipTest("Skip test for XenServer")
+        if self.hypervisor.lower() != "kvm":
+            self.skipTest("Skip test for Hypervisor other than KVM")
 
         # Step 1
 
@@ -1384,17 +1382,21 @@ class TestHardening(cloudstackTestCase):
 
         cls._cleanup = []
 
+        configs = Configurations.list(
+            cls.apiclient,
+            name="snapshot.delta.max")
+        cls.delta_max = configs[0].value
+
         clusterid_tag_mapping = {}
         cwps_no = 0
-
+        cls.unsupportedHypervisor = False
         if cls.hypervisor.lower() not in [
                 "vmware",
                 "kvm",
                 "xenserver",
                 "hyper-v"]:
-            raise unittest.SkipTest(
-                "Storage migration not supported on %s" %
-                cls.hypervisor)
+            cls.unsupportedHypervisor = True
+            return
 
         try:
             cls.pools = StoragePool.list(
@@ -1474,6 +1476,12 @@ class TestHardening(cloudstackTestCase):
 
             cls._cleanup.append(cls.service_offering_cluster1)
 
+            cls.service_offering = ServiceOffering.create(
+                cls.apiclient,
+                cls.testdata["service_offering"]
+            )
+            cls._cleanup.append(cls.service_offering)
+
             # Create Disk offering
             cls.disk_offering_cluster1 = DiskOffering.create(
                 cls.apiclient,
@@ -1510,6 +1518,8 @@ class TestHardening(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
+        if self.unsupportedHypervisor:
+            self.skipTest("VM migration is not supported on %s" % self.hypervisor)
 
     def tearDown(self):
         try:
@@ -1573,6 +1583,13 @@ class TestHardening(cloudstackTestCase):
         except Exception as e:
             self.exceptionList = []
             self.exceptionList.append(e)
+        return
+
+    def CreateDeltaSnapshot(self, volume):
+        for i in range(int(self.delta_max)):
+            Snapshot.create(
+                self.apiclient,
+                volume.id)
         return
 
     def GetUpdatedRootVolume(self):
@@ -1682,7 +1699,7 @@ class TestHardening(cloudstackTestCase):
         """
 
         # Get ROOT Volume
-        root_volume = self.GetUpdatedRootVolume(self)
+        root_volume = self.GetUpdatedRootVolume()
 
         checksum_root = createChecksum(
             service=self.testdata,
@@ -1698,8 +1715,6 @@ class TestHardening(cloudstackTestCase):
             domainid=self.account.domainid,
             diskofferingid=self.disk_offering_cluster1.id
         )
-
-        self.cleanup.append(data_volume_created)
 
         self.vm.attach_volume(
             self.apiclient,
@@ -1729,7 +1744,7 @@ class TestHardening(cloudstackTestCase):
 
         self.vm.reboot(self.apiclient)
 
-        current_storagepool_tag = self.GetStoragePoolTag(self, root_volume)
+        current_storagepool_tag = self.GetStoragePoolTag(root_volume)
 
         # Create VM on CWPS
         vm_in_cluster2 = VirtualMachine.create(
@@ -1745,28 +1760,9 @@ class TestHardening(cloudstackTestCase):
 
         # Step 1
 
-        try:
-            create_snapshot_thread = Thread(
-                target=self.CreateSnapshot,
-                args=(
-                    data_volume,
-                    False))
+        self.CreateSnapshot(data_volume, False)
 
-            attach_volume_thread = Thread(
-                target=vm_in_cluster2.attach_volume,
-                args=(
-                    self.apiclient,
-                    data_volume))
-
-            create_snapshot_thread.start()
-            attach_volume_thread.start()
-            create_snapshot_thread.join()
-            attach_volume_thread.join()
-
-        except Exception as e:
-            raise Exception(
-                "Warning: Exception unable to start thread : %s" %
-                e)
+        vm_in_cluster2.attach_volume(self.apiclient, data_volume)
 
         vm_in_cluster2.reboot(self.apiclient)
 
@@ -1788,13 +1784,14 @@ class TestHardening(cloudstackTestCase):
             "check if volume is detached"
         )
 
-        self.CreateSnapshot(self,
-                            data_volume,
+        self.CreateDeltaSnapshot(data_volume)
+
+        self.CreateSnapshot(data_volume,
                             False)
 
         snapshots_list = list_snapshots(
             self.apiclient,
-            volumeid=data_volume.id,
+            volumeid=data_volume_list[0].id,
             listall=True)
 
         status = validateList(snapshots_list)
@@ -1815,6 +1812,14 @@ class TestHardening(cloudstackTestCase):
             snapshots_list[0],
             checksum_data,
             disk_type="data")
+
+        # Detach DATA Volume
+        vm_in_cluster2.detach_volume(
+            self.apiclient,
+            data_volume_list[0]
+        )
+
+        vm_in_cluster2.reboot(self.apiclient)
 
         # Step 2
         self.CreateSnapshot(self,
@@ -2097,4 +2102,5 @@ class TestHardening(cloudstackTestCase):
             checksum_root,
             disk_type="root")
 
+        data_volume_created.delete(self.apiclient)
         return

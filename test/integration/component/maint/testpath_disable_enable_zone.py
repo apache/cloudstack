@@ -225,6 +225,19 @@ class TestDisableEnableZone(cloudstackTestCase):
             type='ROOT',
             listall=True
         )
+        root_vm_new = VirtualMachine.create(
+            self.apiclient,
+            self.testdata["small"],
+            templateid=self.template.id,
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            zoneid=self.zone.id
+        )
+
+        self.assertEqual(root_vm_new.state.lower(),
+                         "running",
+                         "Verify that admin should create new VM")
 
         if self.snapshotSupported:
             Snapshot.create(
@@ -334,9 +347,9 @@ class TestDisableEnableZone(cloudstackTestCase):
             zoneid=self.zone.id
         )
 
-        self.assertNotEqual(root_vm_new.state.lower(),
-                            "running",
-                            "Verify that admin should create new VM")
+        self.assertEqual(root_vm_new.state.lower(),
+                         "running",
+                         "Verify that admin should create new VM")
 
         if self.snapshotSupported:
             Snapshot.create(
@@ -386,9 +399,9 @@ class TestDisableEnableZone(cloudstackTestCase):
             zoneid=self.zone.id
         )
 
-        self.assertNotEqual(user_vm_new.state.lower(),
-                            "running",
-                            "Verify that admin should create new VM")
+        self.assertEqual(user_vm_new.state.lower(),
+                         "running",
+                         "Verify that admin should create new VM")
 
         if self.snapshotSupported:
             Snapshot.create(
@@ -693,9 +706,9 @@ class TestDisableEnablePod(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             zoneid=self.zone.id,
         )
-        self.assertNotEqual(root_vm_new.state.lower(),
-                            "running",
-                            "Verify that admin should be able \
+        self.assertEqual(root_vm_new.state.lower(),
+                         "running",
+                         "Verify that admin should be able \
                                     to create new VM")
 
         if self.snapshotSupported:
@@ -745,9 +758,9 @@ class TestDisableEnablePod(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             zoneid=self.zone.id,
         )
-        self.assertNotEqual(user_vm_new.state.lower(),
-                            "running",
-                            "Verify that admin should create new VM")
+        self.assertEqual(user_vm_new.state.lower(),
+                         "running",
+                         "Verify that admin should create new VM")
 
         if self.snapshotSupported:
             Snapshot.create(
@@ -1081,9 +1094,9 @@ class TestDisableEnableCluster(cloudstackTestCase):
             zoneid=self.zone.id,
         )
 
-        self.assertNotEqual(root_vm_new.state.lower(),
-                            "running",
-                            "Verify that admin should create new VM")
+        self.assertEqual(root_vm_new.state.lower(),
+                         "running",
+                         "Verify that admin should create new VM")
 
         if self.snapshotSupported:
             Snapshot.create(
@@ -1101,9 +1114,9 @@ class TestDisableEnableCluster(cloudstackTestCase):
             zoneid=self.zone.id,
         )
 
-        self.assertNotEqual(user_vm_new.state.lower(),
-                            "running",
-                            "Verify that admin should create new VM")
+        self.assertEqual(user_vm_new.state.lower(),
+                         "running",
+                         "Verify that admin should create new VM")
 
         if self.snapshotSupported:
             Snapshot.create(
@@ -1224,9 +1237,9 @@ class TestDisableEnableCluster(cloudstackTestCase):
             zoneid=self.zone.id,
         )
 
-        self.assertNotEqual(root_vm_new.state.lower(),
-                            "running",
-                            "Verify that admin should create new VM")
+        self.assertEqual(root_vm_new.state.lower(),
+                         "running",
+                         "Verify that admin should create new VM")
 
         # Step 5
         # Deletion of zone should fail if resources are running on the zone
@@ -1460,7 +1473,7 @@ class TestDisableEnableHost(cloudstackTestCase):
             zoneid=self.zone.id,
             hostid=hostid)
 
-        self.assertNotEqual(
+        self.assertEqual(
             root_vm_new.state.lower(),
             "running",
             "Verify that admin should create new VM in running state")
@@ -1481,9 +1494,9 @@ class TestDisableEnableHost(cloudstackTestCase):
             zoneid=self.zone.id,
         )
 
-        self.assertNotEqual(user_vm_new.state.lower(),
-                            "running",
-                            "Verify that admin should create new VM")
+        self.assertEqual(user_vm_new.state.lower(),
+                         "running",
+                         "Verify that admin should create new VM")
 
         if self.snapshotSupported:
             Snapshot.create(
