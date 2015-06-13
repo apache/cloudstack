@@ -25,27 +25,27 @@ LABEL Version=4.6.0
 ENV PKG_URL=http://jenkins.buildacloud.org/job/build-dockerfile-centos6/lastSuccessfulBuild/artifact/dist/rpmbuild/RPMS/x86_64
 
 # MySQLd
-RUN yum install mysql-server -y
-RUN /usr/bin/mysql_install_db --user=mysql
-RUN /usr/bin/mysqld_safe --user=mysql  >/dev/null 2>&1 &
-RUN (mysqld_safe &); sleep 5; mysqladmin -u root -p password 'password'
+#RUN yum install mysql-server -y
+#RUN /usr/bin/mysql_install_db --user=mysql
+#RUN /usr/bin/mysqld_safe --user=mysql  >/dev/null 2>&1 &
+#RUN (mysqld_safe &); sleep 5; mysqladmin -u root -p password 'password'
 
 
 # install CloudStack
-RUN yum install java-1.7.0-openjdk-devel.x86_64 -y
+#RUN yum install java-1.7.0-openjdk-devel.x86_64 -y
 RUN yum install -y \
     ${PKG_URL}/cloudstack-common-4.6.0-SNAPSHOT.el6.x86_64.rpm \
     ${PKG_URL}/cloudstack-awsapi-4.6.0-SNAPSHOT.el6.x86_64.rpm \
     ${PKG_URL}/cloudstack-management-4.6.0-SNAPSHOT.el6.x86_64.rpm
 RUN yum clean all
 
-RUN (mysqld_safe &); sleep 5; cloudstack-setup-databases cloud:password@localhost --deploy-as=root:password
+#RUN (mysqld_safe &); sleep 5; cloudstack-setup-databases cloud:password@localhost --deploy-as=root:password
 RUN cd /etc/cloudstack/management; \
     ln -s tomcat6-nonssl.conf tomcat6.conf; \
     ln -s server-nonssl.xml server.xml; \
     ln -s log4j-cloud.xml log4j.xml
 COPY cloud.sudoer /etc/sudoers.d/cloud
-COPY init.sh /root/init.sh
+COPY init.sh_centos6 /root/init.sh
 
 
 
