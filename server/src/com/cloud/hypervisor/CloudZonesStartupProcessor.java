@@ -178,7 +178,7 @@ public class CloudZonesStartupProcessor extends AdapterBase implements StartupCo
         long zoneId = zone.getId();
         ResourceDetail maxHostsInZone = _zoneDetailsDao.findDetail(zoneId, ZoneConfig.MaxHosts.key());
         if (maxHostsInZone != null) {
-            long maxHosts = new Long(maxHostsInZone.getValue()).longValue();
+            long maxHosts = Long.parseLong(maxHostsInZone.getValue());
             long currentCountOfHosts = _hostDao.countRoutingHostsByDataCenter(zoneId);
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Number of hosts in Zone:" + currentCountOfHosts + ", max hosts limit: " + maxHosts);
