@@ -64,4 +64,8 @@ public class Ip4Address {
             return false;
         }
     }
+    @Override
+    public int hashCode(){
+        return (int)(_mac.hashCode()*_addr.hashCode());
+    }~
 }
