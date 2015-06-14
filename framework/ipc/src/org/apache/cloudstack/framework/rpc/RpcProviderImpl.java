@@ -85,7 +85,6 @@ public class RpcProviderImpl implements RpcProvider {
 
     @Override
     public boolean initialize() {
-        assert (_transportProvider != null);
         if (_transportProvider == null)
             return false;
 
