@@ -67,5 +67,5 @@ public class Ip4Address {
     @Override
     public int hashCode(){
         return (int)(_mac.hashCode()*_addr.hashCode());
-    }~
+    }
 }
