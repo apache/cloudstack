@@ -457,7 +457,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     protected AgentAttache getAttache(final Long hostId) throws AgentUnavailableException {
-        assert (hostId != null) : "Who didn't check their id value?";
         if (hostId == null) {
             return null;
         }
