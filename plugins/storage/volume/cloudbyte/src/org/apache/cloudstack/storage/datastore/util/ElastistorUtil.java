@@ -2486,7 +2486,7 @@ public class ElastistorUtil {
      // update the TSM storage
      public static UpdateTsmStorageCmdResponse updateElastistorTsmStorage(String capacityBytes,String uuid) throws Throwable{
 
-         Long size = (Long.valueOf(capacityBytes)/(1024 * 1024 * 1024));
+         Long size = (Long.parseLong(capacityBytes)/(1024 * 1024 * 1024));
 
          String quotasize = null;
 
@@ -2564,7 +2564,7 @@ public class ElastistorUtil {
 
          s_logger.info("elastistor tsm IOPS is updating to " + capacityIOPs);
          UpdateTsmCmd updateTsmCmd = new UpdateTsmCmd();
-         String throughput = String.valueOf(Long.valueOf(capacityIOPs)*4);
+         String throughput = String.valueOf(Long.parseLong(capacityIOPs)*4);
 
          updateTsmCmd.putCommandParameter("id", uuid);
          updateTsmCmd.putCommandParameter("iops", capacityIOPs);
