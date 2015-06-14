@@ -506,7 +506,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
 
         try {
             if (minIops != null) {
-                lMinIops = Long.valueOf(minIops);
+                lMinIops = Long.parseLong(minIops);
             }
             else {
                 lMinIops = 0;
