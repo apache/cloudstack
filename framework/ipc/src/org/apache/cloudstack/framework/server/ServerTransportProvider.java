@@ -20,7 +20,7 @@ package org.apache.cloudstack.framework.server;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
+import java.security.SecureRandom;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -47,12 +47,14 @@ public class ServerTransportProvider implements TransportProvider {
     private Map<String, TransportEndpointSite> _endpointMap = new HashMap<String, TransportEndpointSite>();
     private int _poolSize = DEFAULT_WORKER_POOL_SIZE;
     private ExecutorService _executor;
-
-    private int _nextEndpointId = new Random().nextInt();
+    private final SecureRandom randomGenerator;
+    private int _nextEndpointId;
 
     private MessageSerializer _messageSerializer;
 
     public ServerTransportProvider() {
+       randomGenerator=new SecureRandom();
+       _nextEndpointId=randomGenerator.nextInt();
     }
 
     public String getNodeId() {
