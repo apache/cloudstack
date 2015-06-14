@@ -108,7 +108,7 @@ public class ApiDispatcher {
 
             final BaseAsyncCmd asyncCmd = (BaseAsyncCmd)cmd;
             final String startEventId = params.get(ApiConstants.CTX_START_EVENT_ID);
-            ctx.setStartEventId(Long.valueOf(startEventId));
+            ctx.setStartEventId(Long.parseLong(startEventId));
 
             // Synchronise job on the object if needed
             if (asyncCmd.getJob() != null && asyncCmd.getSyncObjId() != null && asyncCmd.getSyncObjType() != null) {
