@@ -71,7 +71,6 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
             }
 
             work = VmWorkSerializer.deserialize(workClz, job.getCmdInfo());
-            assert(work != null);
             if(work == null) {
                 s_logger.error("Unable to deserialize VM work " + job.getCmd() + ", job info: " + job.getCmdInfo() + ", job origin: " + job.getRelated());
                 _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, "Unable to deserialize VM work");
