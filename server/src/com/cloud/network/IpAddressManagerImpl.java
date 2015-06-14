@@ -580,7 +580,6 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         IPAddressVO ip = markIpAsUnavailable(addrId);
 
-        assert (ip != null) : "Unable to mark the ip address id=" + addrId + " as unavailable.";
         if (ip == null) {
             return true;
         }
