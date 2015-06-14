@@ -786,7 +786,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         // TODO a bit ugly here
         BufferedWriter out = null;
         try {
-            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(installFullPath + "/template.properties")));
+            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(installFullPath + "/template.properties"),"UTF-8"));
             out.write("filename=" + templateName + ".ova");
             out.newLine();
             out.write("description=");
@@ -826,7 +826,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         // TODO a bit ugly here
         BufferedWriter out = null;
         try {
-            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(installFullPath + "/" + templateName + ".ova.meta")));
+            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(installFullPath + "/" + templateName + ".ova.meta"),"UTF-8"));
             out.write("ova.filename=" + templateName + ".ova");
             out.newLine();
             out.write("version=1.0");
