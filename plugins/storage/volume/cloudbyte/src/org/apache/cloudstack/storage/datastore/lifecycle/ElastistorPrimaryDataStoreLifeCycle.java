@@ -555,7 +555,7 @@ public class ElastistorPrimaryDataStoreLifeCycle implements PrimaryDataStoreLife
                 if(capacityBytes != null){
                     long usedBytes = _capacityMgr.getUsedBytes(storagePoolVO);
 
-                    if (Long.valueOf(capacityBytes) < usedBytes) {
+                    if (Long.parseLong(capacityBytes) < usedBytes) {
                         throw new CloudRuntimeException("Cannot reduce the number of bytes for this storage pool as it would lead to an insufficient number of bytes");
                     }
 
