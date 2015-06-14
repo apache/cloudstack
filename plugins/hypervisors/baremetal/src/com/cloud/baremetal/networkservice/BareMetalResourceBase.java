@@ -181,7 +181,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
         }
 
         try {
-            ipmiRetryTimes = Integer.valueOf(configDao.getValue(Config.BaremetalIpmiRetryTimes.key()));
+            ipmiRetryTimes = Integer.parseInt(configDao.getValue(Config.BaremetalIpmiRetryTimes.key()));
         } catch (Exception e) {
             s_logger.debug(e.getMessage(), e);
         }
