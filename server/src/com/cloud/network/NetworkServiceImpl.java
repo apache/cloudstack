@@ -3152,7 +3152,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         // For every guest vlan set the corresponding account guest vlan map id
         List<Integer> finaVlanTokens = getVlanFromRange(accountGuestVlanMapVO.getGuestVlanRange());
         for (int i = finaVlanTokens.get(0).intValue(); i <= finaVlanTokens.get(1).intValue(); i++) {
-            List<DataCenterVnetVO> dataCenterVnet = _datacneterVnet.findVnet(physicalNetwork.getDataCenterId(), physicalNetworkId, ((Integer)i).toString());
+            List<DataCenterVnetVO> dataCenterVnet = _datacneterVnet.findVnet(physicalNetwork.getDataCenterId(), physicalNetworkId, Integer.toString(i));
             dataCenterVnet.get(0).setAccountGuestVlanMapId(accountGuestVlanMapVO.getId());
             _datacneterVnet.update(dataCenterVnet.get(0).getId(), dataCenterVnet.get(0));
         }
