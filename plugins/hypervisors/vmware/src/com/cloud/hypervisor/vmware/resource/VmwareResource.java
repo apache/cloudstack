@@ -38,6 +38,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.io.UnsupportedEncodingException;
 
 import javax.naming.ConfigurationException;
 
@@ -3573,7 +3574,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private static String getSecondaryDatastoreUUID(String storeUrl) {
-        return UUID.nameUUIDFromBytes(storeUrl.getBytes()).toString();
+        String uuid = null;
+        try{
+            uuid=UUID.nameUUIDFromBytes(storeUrl.getBytes("UTF-8")).toString();
+        }catch(UnsupportedEncodingException e){
+            s_logger.warn("Failed to create UUID from string " + storeUrl + ". Bad storeUrl or UTF-8 encoding error." );
+        }
+        return uuid;
     }
 
     protected Answer execute(ValidateSnapshotCommand cmd) {
