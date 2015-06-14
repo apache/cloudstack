@@ -296,8 +296,6 @@ public class EngineHostVO implements EngineHost, Identity {
     }
 
     public String getDetail(String name) {
-        assert (details != null) : "Did you forget to load the details?";
-
         return details != null ? details.get(name) : null;
     }
 
