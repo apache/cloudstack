@@ -2773,8 +2773,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             final String[] splitResult = result.split(":");
             int i = 0;
             while (i < splitResult.length - 1) {
-                stats[0] += new Long(splitResult[i++]).longValue();
-                stats[1] += new Long(splitResult[i++]).longValue();
+                stats[0] += Long.parseLong(splitResult[i++]);
+                stats[1] += Long.parseLong(splitResult[i++]);
             }
         }
         return stats;
@@ -4045,7 +4045,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         throw new InternalErrorException("There were no more available slots for a new VIF on router: " + router.getNameLabel(conn));
                     }
 
-                    nic.setDeviceId(Integer.valueOf(vifDeviceNum));
+                    nic.setDeviceId(Integer.parseInt(vifDeviceNum));
 
                     correctVif = createVif(conn, routerName, router, null, nic);
                     correctVif.plug(conn);
@@ -4105,7 +4105,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     s_logger.error(msg);
                     return new ExecutionResult(false, msg);
                 }
-                nic.setDeviceId(Integer.valueOf(vif.getDevice(conn)));
+                nic.setDeviceId(Integer.parseInt(vif.getDevice(conn)));
             } else {
                 final String msg = "Prepare SetNetworkACL failed due to nic is null for : " + routerName;
                 s_logger.error(msg);
@@ -4166,7 +4166,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 return new ExecutionResult(false, "Can not find vif with mac " + mac + " for VM " + domrName);
             }
 
-            nic.setDeviceId(Integer.valueOf(domrVif.getDevice(conn)));
+            nic.setDeviceId(Integer.parseInt(domrVif.getDevice(conn)));
         } catch (final Exception e) {
             final String msg = "Creating guest network failed due to " + e.toString();
             s_logger.warn(msg, e);
