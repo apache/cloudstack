@@ -175,7 +175,7 @@ public class UcsManagerImpl implements UcsManager {
     @Override
     public boolean start() {
         try {
-            syncBladeInterval = Integer.valueOf(configDao.getValue(Config.UCSSyncBladeInterval.key()));
+            syncBladeInterval = Integer.parseInt(configDao.getValue(Config.UCSSyncBladeInterval.key()));
         } catch (NumberFormatException e) {
             syncBladeInterval = 600;
         }
