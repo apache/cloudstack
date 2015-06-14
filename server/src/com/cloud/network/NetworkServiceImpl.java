@@ -3127,7 +3127,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 if (i != (guestVlanMaps.size() - 1)) {
                     List<Integer> vlanTokens2 = getVlanFromRange(guestVlanMaps.get(i + 1).getGuestVlanRange());
                     // Range extends 2 vlan ranges, both to the right and left
-                    if (endVlan == (vlanTokens2.get(0).intValue() - 1) & guestVlanMaps.get(i + 1).getAccountId() == vlanOwnerId) {
+                    if (endVlan == (vlanTokens2.get(0).intValue() - 1) && guestVlanMaps.get(i + 1).getAccountId() == vlanOwnerId) {
                         _datacneterVnet.releaseDedicatedGuestVlans(guestVlanMaps.get(i + 1).getId());
                         _accountGuestVlanMapDao.remove(guestVlanMaps.get(i + 1).getId());
                         updatedVlanRange = vlanTokens1.get(0).intValue() + "-" + vlanTokens2.get(1).intValue();
