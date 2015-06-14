@@ -250,8 +250,10 @@ public class Upgrade410to420 implements DbUpgrade {
 
     private String getConfigurationParameter(Connection conn, String category, String paramName) {
         try (PreparedStatement pstmt =
-                     conn.prepareStatement("select value from `cloud`.`configuration` where category='" + category + "' and value is not NULL and name = '" + paramName + "';");)
+                     conn.prepareStatement("select value from `cloud`.`configuration` where category=? and value is not NULL and name = ?;");)
         {
+            pstmt.setString(1, category);
+            pstmt.setString(2, paramName);
             try(ResultSet rs = pstmt.executeQuery();) {
                 while (rs.next()) {
                     return rs.getString("value");
@@ -266,8 +268,10 @@ public class Upgrade410to420 implements DbUpgrade {
     }
 
     private void setConfigurationParameter(Connection conn, String category, String paramName, String paramVal) {
-        try (PreparedStatement pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value = '" + paramVal + "' WHERE name = '" + paramName + "';");)
+        try (PreparedStatement pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value = ? WHERE name = ?;");)
         {
+            pstmt.setString(1, paramVal);
+            pstmt.setString(2, paramName);
             s_logger.debug("Updating global configuration parameter " + paramName + " with value " + paramVal + ". Update SQL statement is " + pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -683,8 +687,8 @@ public class Upgrade410to420 implements DbUpgrade {
                         trafficType = "Guest";
                     }
                     try(PreparedStatement sel_pstmt =
-                            conn.prepareStatement("select physical_network_id, traffic_type, vmware_network_label from physical_network_traffic_types where vmware_network_label is not NULL and traffic_type='" +
-                                    trafficType + "';");) {
+                            conn.prepareStatement("select physical_network_id, traffic_type, vmware_network_label from physical_network_traffic_types where vmware_network_label is not NULL and traffic_type=?;");) {
+                        pstmt.setString(1, trafficType);
                         try(ResultSet rsLabel = sel_pstmt.executeQuery();) {
                             newLabel = getNewLabel(rsLabel, trafficTypeVswitchParamValue);
                             try(PreparedStatement update_pstmt =
