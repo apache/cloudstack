@@ -457,7 +457,7 @@ public class NetscalerResource implements ServerResource {
         try {
             IpAddressTO[] ips = cmd.getIpAddresses();
             for (IpAddressTO ip : ips) {
-                long guestVlanTag = Long.valueOf(ip.getBroadcastUri());
+                long guestVlanTag = Long.parseLong(ip.getBroadcastUri());
                 String vlanSelfIp = ip.getVlanGateway();
                 String vlanNetmask = ip.getVlanNetmask();
 
