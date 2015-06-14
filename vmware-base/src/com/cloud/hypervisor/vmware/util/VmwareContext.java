@@ -357,7 +357,7 @@ public class VmwareContext {
             }
             out.flush();
 
-            br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            br = new BufferedReader(new InputStreamReader(conn.getInputStream(),conn.getContentEncoding()));
             String line;
             while ((line = br.readLine()) != null) {
                 if (s_logger.isTraceEnabled())
@@ -483,7 +483,7 @@ public class VmwareContext {
         out.write(content);
         out.flush();
 
-        BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream(),conn.getContentEncoding()));
         String line;
         while ((line = in.readLine()) != null) {
             if (s_logger.isTraceEnabled())
