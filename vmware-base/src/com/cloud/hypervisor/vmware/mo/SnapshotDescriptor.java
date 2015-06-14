@@ -39,7 +39,7 @@ public class SnapshotDescriptor {
     public void parse(byte[] vmsdFileContent) throws IOException {
         BufferedReader in = null;
         try {
-            in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(vmsdFileContent)));
+            in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(vmsdFileContent),"UTF-8"));
             String line;
             while ((line = in.readLine()) != null) {
                 // TODO, remember to remove this log, temporarily added for debugging purpose
