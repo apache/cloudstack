@@ -398,7 +398,11 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
             }
 
             // place a place holder guid derived from cluster ID
-            cluster.setGuid(UUID.nameUUIDFromBytes(String.valueOf(clusterId).getBytes()).toString());
+            try{
+                cluster.setGuid(UUID.nameUUIDFromBytes(String.valueOf(clusterId).getBytes("UTF-8")).toString());
+            }catch(UnsupportedEncodingException e){
+                throw new DiscoveredWithErrorException("Unable to create UUID based on string " + String.valueOf(clusterId) + ". Bad clusterId or UTF-8 encoding error.");
+            }
             _clusterDao.update(clusterId, cluster);
             // Flag cluster discovery success
             failureInClusterDiscovery = false;
