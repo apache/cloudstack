@@ -32,12 +32,13 @@ public abstract class Upgrade30xBase implements DbUpgrade {
     final static Logger s_logger = Logger.getLogger(Upgrade30xBase.class);
 
     protected String getNetworkLabelFromConfig(Connection conn, String name) {
-        String sql = "SELECT value FROM `cloud`.`configuration` where name = '" + name + "'";
+        String sql = "SELECT value FROM `cloud`.`configuration` where name = ?";
         String networkLabel = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1,name);
             rs = pstmt.executeQuery();
             if (rs.next()) {
                 networkLabel = rs.getString(1);
