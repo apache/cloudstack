@@ -16,9 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.systemvm;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
