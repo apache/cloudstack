@@ -402,8 +402,6 @@ public class EngineDataCenterVO implements EngineDataCenter, Identity {
     }
 
     public String getDetail(String name) {
-        assert (details != null) : "Did you forget to load the details?";
-
         return details != null ? details.get(name) : null;
     }
 
