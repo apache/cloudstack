@@ -550,7 +550,7 @@ public class VmwareContext {
      */
     public String[] listDatastoreDirContent(String urlString) throws Exception {
         List<String> fileList = new ArrayList<String>();
-        String content = new String(getResourceContent(urlString));
+        String content = new String(getResourceContent(urlString),"UTF-8");
         String marker = "</a></td><td ";
         int parsePos = -1;
         do {
