@@ -80,18 +80,7 @@ public class UpgradeVMCmd extends BaseCmd {
     }
 
     public Map<String, String> getDetails() {
-        Map<String, String> customparameterMap = new HashMap<String, String>();
-        if (details != null && details.size() != 0) {
-            Collection parameterCollection = details.values();
-            Iterator iter = parameterCollection.iterator();
-            while (iter.hasNext()) {
-                HashMap<String, String> value = (HashMap<String, String>)iter.next();
-                for (String key : value.keySet()) {
-                    customparameterMap.put(key, value.get(key));
-                }
-            }
-        }
-        return customparameterMap;
+        return details;
     }
 
     /////////////////////////////////////////////////////
