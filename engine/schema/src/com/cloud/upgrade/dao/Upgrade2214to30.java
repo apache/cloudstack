@@ -272,7 +272,8 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                         addDefaultSGProvider(conn, physicalNetworkId, zoneId, networkType, false);
                         //for all networks with this tag, add physical_network_id
 
-                        PreparedStatement pstmt3 = conn.prepareStatement("SELECT network_id FROM `cloud`.`network_tags` where tag = '" + guestNetworkTag + "'");
+                        PreparedStatement pstmt3 = conn.prepareStatement("SELECT network_id FROM `cloud`.`network_tags` where tag= ?");
+                        pstmt3.setString(1,guestNetworkTag);
                         ResultSet rsNet = pstmt3.executeQuery();
                         s_logger.debug("Adding PhysicalNetwork to VLAN");
                         s_logger.debug("Adding PhysicalNetwork to user_ip_address");
