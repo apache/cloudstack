@@ -1248,7 +1248,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             if (!_accountMgr.isRootAdmin(caller.getId()) && cidr != null) {
 
                 String[] cidrPair = cidr.split("\\/");
-                int cidrSize = Integer.valueOf(cidrPair[1]);
+                int cidrSize = Integer.parseInt(cidrPair[1]);
 
                 if (cidrSize < _cidrLimit) {
                     throw new InvalidParameterValueException("Cidr size can't be less than " + _cidrLimit);
@@ -2806,7 +2806,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         String startvnet = vnetList.get(0);
         String endvnet = "";
         for (i = 0; i < vnetList.size() - 1; i++) {
-            if (Integer.valueOf(vnetList.get(i + 1)) - Integer.valueOf(vnetList.get(i)) > 1) {
+            if (Integer.parseInt(vnetList.get(i + 1)) - Integer.parseInt(vnetList.get(i)) > 1) {
                 endvnet = vnetList.get(i);
                 vnetRange = vnetRange + startvnet + "-" + endvnet + ",";
                 startvnet = vnetList.get(i + 1);
