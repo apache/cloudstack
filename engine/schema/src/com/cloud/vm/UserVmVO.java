@@ -106,7 +106,7 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
 
     @Override
     public String getDetail(String name) {
-        return details != null ? details.get(name) : null;
+        return details != null ? details.get(name) : null ;
     }
 
     @Override
