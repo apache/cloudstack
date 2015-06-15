@@ -256,7 +256,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         try {
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
 
-            String templateUuidName = UUID.nameUUIDFromBytes((templateName + "@" + cmd.getPoolUuid() + "-" + hyperHost.getMor().getValue()).getBytes()).toString();
+            String templateUuidName = UUID.nameUUIDFromBytes((templateName + "@" + cmd.getPoolUuid() + "-" + hyperHost.getMor().getValue()).getBytes("UTF-8")).toString();
             // truncate template name to 32 chars to ensure they work well with vSphere API's.
             templateUuidName = templateUuidName.replace("-", "");
 
