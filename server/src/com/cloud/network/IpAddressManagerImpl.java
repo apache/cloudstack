@@ -579,7 +579,6 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         }
 
         IPAddressVO ip = markIpAsUnavailable(addrId);
-
         if (ip == null) {
             return true;
         }
