@@ -193,7 +193,12 @@ class TestVPCRoutersBasic(cloudstackTestCase):
     def setUpClass(cls):
         cls.testClient = super(TestVPCRoutersBasic, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
-
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.vpcSupported = True
+        cls._cleanup = []
+        if cls.hypervisor.lower() == 'hyperv':
+            cls.vpcSupported = False
+            return
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
@@ -252,7 +257,8 @@ class TestVPCRoutersBasic(cloudstackTestCase):
 
     def setUp(self):
         self.api_client = self.testClient.getApiClient()
-
+        if not self.vpcSupported:
+            self.skipTest("VPC is not supported on %s" % self.hypervisor)
         return
 
     def tearDown(self):
@@ -627,7 +633,12 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         cls._cleanup = []
         cls.testClient = super(TestVPCRouterOneNetwork, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
-
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.vpcSupported = True
+        cls._cleanup = []
+        if cls.hypervisor.lower() == 'hyperv':
+            cls.vpcSupported = False
+	    return
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
@@ -851,6 +862,8 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
     def setUp(self):
         self.api_client = self.testClient.getApiClient()
         self.cleanup = []
+        if not self.vpcSupported:
+            self.skipTest("VPC is not supported on %s" % self.hypervisor)
         return
 
     def tearDown(self):
