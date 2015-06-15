@@ -2265,7 +2265,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     private static String deriveTemplateUuidOnHost(VmwareHypervisorHost hyperHost, String storeIdentifier, String templateName) {
-        String templateUuid = UUID.nameUUIDFromBytes((templateName + "@" + storeIdentifier + "-" + hyperHost.getMor().getValue()).getBytes()).toString();
+        String templateUuid = UUID.nameUUIDFromBytes((templateName + "@" + storeIdentifier + "-" + hyperHost.getMor().getValue()).getBytes("UTF-8")).toString();
         templateUuid = templateUuid.replaceAll("-", "");
         return templateUuid;
     }
