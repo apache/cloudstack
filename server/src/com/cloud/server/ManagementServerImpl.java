@@ -745,7 +745,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private InstanceGroupDao _vmGroupDao;
     @Inject
-    private SSHKeyPairDao _sshKeyPairDao;
+    protected SSHKeyPairDao _sshKeyPairDao;
     @Inject
     private LoadBalancerDao _loadbalancerDao;
     @Inject
@@ -3645,7 +3645,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      * @param owner
      * @throws InvalidParameterValueException
      */
-    private void checkForKeyByName(RegisterSSHKeyPairCmd cmd, Account owner) throws InvalidParameterValueException {
+    protected void checkForKeyByName(RegisterSSHKeyPairCmd cmd, Account owner) throws InvalidParameterValueException {
         SSHKeyPairVO existingPair = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
         if (existingPair != null) {
             throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' already exists for this account.");
@@ -3679,7 +3679,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      * @param cmd
      * @return
      */
-    private Account getOwner(RegisterSSHKeyPairCmd cmd) {
+    protected Account getOwner(RegisterSSHKeyPairCmd cmd) {
         Account caller = getCaller();
 
         Account owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
@@ -3689,7 +3689,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     /**
      * @return
      */
-    private Account getCaller() {
+    protected Account getCaller() {
         Account caller = CallContext.current().getCallingAccount();
         return caller;
     }
