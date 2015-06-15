@@ -375,7 +375,7 @@ public class DataCenterVO implements DataCenter {
     }
 
     public String getDetail(String name) {
-        return details != null ? details.get(name) : null;
+        return details != null ? details.get(name) : null ;
     }
 
     public void setDetail(String name, String value) {
