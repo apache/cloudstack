@@ -2028,10 +2028,6 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         """
         Test Browser_volume_Life_cycle - This includes upload volume,attach to a VM, write data ,Stop ,Start, Reboot,Reset  of a VM, detach,attach back to the VM, delete volumes  
         """
-        if self.hypervisor.lower() == 'hyperv':
-            self.skipTest("cann't be run for % hypervisor as it doesn't support volume resize operation" % self.hypervisor)
-
-
         try:
 
             self.debug("========================= Test 1: Upload Browser based volume and validate ========================= ")
@@ -2069,7 +2065,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
             self.detach_volume(vm2details,browseup_vol.id)
 
-            self.resize_volume(browseup_vol.id)
+            if self.hypervisor.lower() != "hyperv":
+                self.resize_volume(browseup_vol.id)
 
             self.debug("========================= Test 7: Attach resized uploaded volume and validate VM operations========================= ")
 
@@ -2477,9 +2474,6 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         """
         Test Browser_Upload_Volume_migrate_upload_volume
         """
-        if self.hypervisor.lower() == 'hyperv':
-            self.skipTest("cann't be run for % hypervisor as it doesn't support volume resize operation" % self.hypervisor)
-
         self.debug("========================= Test 40 Test Browser_Upload_Volume_Migration=========================")
 
         browseup_vol=self.browse_upload_volume()
@@ -2508,7 +2502,10 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         self.debug("========================= Test 45 Detach  ,Resize,Attach  Browser_Upload_Volume after Migration =========================")
 
         self.detach_volume(vm2details,browseup_vol.id)
-        self.resize_volume(browseup_vol.id)
+
+        if self.hypervisor.lower() != "hyperv":
+            self.resize_volume(browseup_vol.id)
+
         self.attach_volume(vm2details,browseup_vol.id)
         self.vmoperations(vm2details)
 
