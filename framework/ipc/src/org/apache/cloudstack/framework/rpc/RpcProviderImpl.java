@@ -87,7 +87,6 @@ public class RpcProviderImpl implements RpcProvider {
     public boolean initialize() {
         if (_transportProvider == null)
             return false;
-
         TransportEndpointSite endpointSite = _transportProvider.attach(_transportEndpoint, "RpcProvider");
         endpointSite.registerMultiplexier(RPC_MULTIPLEXIER, this);
         return true;
