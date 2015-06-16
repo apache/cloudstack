@@ -20,7 +20,9 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,7 +32,6 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.io.UnsupportedEncodingException;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -108,11 +109,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(VmwareStorageProcessor.class);
     private static final int DEFAULT_NFS_PORT = 2049;
 
-    private VmwareHostService hostService;
-    private boolean _fullCloneFlag;
-    private VmwareStorageMount mountService;
-    private VmwareResource resource;
-    private Integer _timeout;
+    private final VmwareHostService hostService;
+    private final boolean _fullCloneFlag;
+    private final VmwareStorageMount mountService;
+    private final VmwareResource resource;
+    private final Integer _timeout;
     protected Integer _shutdownWaitMs;
     private final Gson _gson;
     private final StorageLayer _storage = new JavaStorageLayer();
@@ -2265,10 +2266,13 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     private static String deriveTemplateUuidOnHost(VmwareHypervisorHost hyperHost, String storeIdentifier, String templateName) {
+        String templateUuid;
         try{
-            String templateUuid = UUID.nameUUIDFromBytes((templateName + "@" + storeIdentifier + "-" + hyperHost.getMor().getValue()).getBytes("UTF-8")).toString();
+            templateUuid = UUID.nameUUIDFromBytes((templateName + "@" + storeIdentifier + "-" + hyperHost.getMor().getValue()).getBytes("UTF-8")).toString();
         }catch(UnsupportedEncodingException e){
-            s_logger.warn("Unable to generate UUID due to unexpected encoding error."+e);
+            s_logger.warn("unexpected encoding error, using default Charset: " + e.getLocalizedMessage());
+            templateUuid = UUID.nameUUIDFromBytes((templateName + "@" + storeIdentifier + "-" + hyperHost.getMor().getValue()).getBytes(Charset.defaultCharset()))
+                    .toString();
         }
         templateUuid = templateUuid.replaceAll("-", "");
         return templateUuid;
