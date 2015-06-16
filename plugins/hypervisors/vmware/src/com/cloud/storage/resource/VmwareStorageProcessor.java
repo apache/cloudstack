@@ -2268,7 +2268,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         try{
             String templateUuid = UUID.nameUUIDFromBytes((templateName + "@" + storeIdentifier + "-" + hyperHost.getMor().getValue()).getBytes("UTF-8")).toString();
         }catch(UnsupportedEncodingException e){
-            s_logger.warn("Unable to generate UUID due to unexpected encoding error."+e);
+            s_logger.warn("Unable to generate UUID due to unexpected encoding error."+e.getLocalizedMessage());
         }
         templateUuid = templateUuid.replaceAll("-", "");
         return templateUuid;
