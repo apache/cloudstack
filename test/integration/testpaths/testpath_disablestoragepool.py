@@ -558,15 +558,17 @@ class TestPathDisableStorage_Basic(cloudstackTestCase):
             self.virtual_machine_2.attach_volume(self.userapiclient, self.volume_2)
 
         # Step 6: Resize DATA disk to a higher value for attached disk
-        try:
-            self.volume_1.resize(self.userapiclient, diskofferingid=self.resized_disk_offering.id)
-            list_volume_1 = Volume.list(self.userapiclient, id=self.volume_1.id)
-            self.assertEqual(list_volume_1[0].diskofferingid,
-                             self.resized_disk_offering.id,
-                             'check list volume response for volume id:  %s' % self.volume_1.id)
-            self.debug('Step 6: volume id %s got resized successfully' % list_volume_1[0].id)
-        except Exception as e:
-            self.fail('Step 6: Volume resize on disabled pool failed: % s' % e)
+
+        if self.hypervisor.lower() not in ('hyperv'):
+            try:
+                self.volume_1.resize(self.userapiclient, diskofferingid=self.resized_disk_offering.id)
+                list_volume_1 = Volume.list(self.userapiclient, id=self.volume_1.id)
+                self.assertEqual(list_volume_1[0].diskofferingid,
+                                 self.resized_disk_offering.id,
+                                 'check list volume response for volume id:  %s' % self.volume_1.id)
+                self.debug('Step 6: volume id %s got resized successfully' % list_volume_1[0].id)
+            except Exception as e:
+                self.fail('Step 6: Volume resize on disabled pool failed: % s' % e)
 
         # Step 7: Take VM Snapshot
         if self.hypervisor.lower() not in ('kvm', 'hyperv', 'lxc'):
@@ -632,14 +634,16 @@ class TestPathDisableStorage_Basic(cloudstackTestCase):
         self.debug('Step 12: volume id:% s successfully attached to vm id % s' % (self.volume_2.id, self.virtual_machine_1.id))
 
         # Step 13: Re-size Volume to higher disk offering
-        try:
-            self.virtual_machine_1.stop(self.userapiclient)
-            self.volume_2.resize(self.userapiclient, diskofferingid=self.resized_disk_offering.id)
-            list_volume_2 = Volume.list(self.userapiclient, id=self.volume_2.id)
-            self.assertEqual(list_volume_2[0].diskofferingid, self.resized_disk_offering.id, 'check list volume response for volume id:  %s' % self.volume_2.id)
-            self.debug('Step 13: volume id %s got resized successfully' % list_volume_2[0].id)
-        except Exception as e:
-            self.fail('Step 13: Failed to resize volume % s ' % e)
+        if self.hypervisor.lower() not in ('hyperv'):
+            try:
+                self.virtual_machine_1.stop(self.userapiclient)
+                self.volume_2.resize(self.userapiclient, diskofferingid=self.resized_disk_offering.id)
+                list_volume_2 = Volume.list(self.userapiclient, id=self.volume_2.id)
+                self.assertEqual(list_volume_2[0].diskofferingid, self.resized_disk_offering.id, 'check list volume response for volume id:  %s' % self.volume_2.id)
+                self.debug('Step 13: volume id %s got resized successfully' % list_volume_2[0].id)
+            except Exception as e:
+                self.fail('Step 13: Failed to resize volume % s ' % e)
+
         self.virtual_machine_1.start(self.userapiclient)
 
         # Step 14: Reboot VM
