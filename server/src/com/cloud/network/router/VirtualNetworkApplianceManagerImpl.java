@@ -673,13 +673,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         }
     }
 
-    static final ConfigKey<Boolean> UseExternalDnsServers = new ConfigKey<Boolean>(Boolean.class, "use.external.dns", "Advanced", "false",
-            "Bypass internal dns, use external dns1 and dns2", true, ConfigKey.Scope.Zone, null);
-
-    static final ConfigKey<Boolean> routerVersionCheckEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "router.version.check", "true",
-            "If true, router minimum required version is checked before sending command", false);
-
-
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
 
@@ -4394,7 +4387,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {UseExternalDnsServers, routerVersionCheckEnabled, SetServiceMonitor, RouterAlertsCheckInterval};
+        return new ConfigKey<?>[] {UseExternalDnsServers, routerVersionCheckEnabled, SetServiceMonitor, RouterAlertsCheckInterval, RouterReprovisionOnOutOfBandMigration};
     }
 
     @Override
@@ -4404,25 +4397,34 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     @Override
     public boolean postStateTransitionEvent(State oldState, VirtualMachine.Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
-        if (event == VirtualMachine.Event.FollowAgentPowerOnReport && newState == State.Running) {
-            if (vo.getType() == VirtualMachine.Type.DomainRouter) {
-                if (opaque != null && opaque instanceof Pair<?, ?>) {
-                    Pair<?, ?> pair = (Pair<?, ?>)opaque;
-                    Object first = pair.first();
-                    Object second = pair.second();
-                    if (first != null && second != null && first instanceof Long && second instanceof Long) {
-                        Long hostId = (Long)first;
-                        Long powerHostId = (Long)second;
-                        // If VM host known to CS is different from 'PowerOn' report host, then it is out-of-band movement
-                        if (hostId.longValue() != powerHostId.longValue()) {
-                            s_logger.info("Schedule a router reboot task as router " + vo.getId() + " is powered-on out-of-band. we need to reboot to refresh network rules");
-                            _executor.schedule(new RebootTask(vo.getId()), 1000, TimeUnit.MICROSECONDS);
-                        }
-                    }
+        // if (vm is a router) and ((vm was stopped before) or (reprovision on out of band migration is true)) and (vm is running)
+        boolean reprovision_out_of_band = RouterReprovisionOnOutOfBandMigration.value();
+        if (
+            (vo.getType() == VirtualMachine.Type.DomainRouter) &&
+            ((oldState == State.Stopped) || (reprovision_out_of_band && isOutOfBandMigrated(opaque))) &&
+            (event == VirtualMachine.Event.FollowAgentPowerOnReport) &&
+            (newState == State.Running)) {
+                s_logger.info("Schedule a router reboot task as router " + vo.getId() + " is powered-on out-of-band. we need to reboot to refresh network rules");
+                _executor.schedule(new RebootTask(vo.getId()), 1000, TimeUnit.MICROSECONDS);
+        }
+        return true;
+    }
+
+    private boolean isOutOfBandMigrated(Object opaque) {
+        if (opaque != null && opaque instanceof Pair<?, ?>) {
+            Pair<?, ?> pair = (Pair<?, ?>)opaque;
+            Object first = pair.first();
+            Object second = pair.second();
+            if (first != null && second != null && first instanceof Long && second instanceof Long) {
+                Long hostId = (Long)first;
+                Long powerHostId = (Long)second;
+                // If VM host known to CS is different from 'PowerOn' report host, then it is out-of-band movement
+                if (hostId.longValue() != powerHostId.longValue()) {
+                    return true;
                 }
             }
         }
-        return true;
+        return false;
     }
 
     protected class RebootTask extends ManagedContextRunnable {
