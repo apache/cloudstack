@@ -307,6 +307,7 @@ class TestPathVMLC(cloudstackTestCase):
         # cleaned up properly, continue if VM deletion fails,
         # because in that case VM is already deleted from the test case
         try:
+
             self.virtual_machine.delete(self.apiclient, expunge=True)
         except Exception:
             self.debug("Exception while destroying VM")
@@ -337,7 +338,7 @@ class TestPathVMLC(cloudstackTestCase):
         # 13. Find suitable host for VM to migrate and migrate the VM
         # 14. Verify VM accessibility on new host
         """
-        if self.hypervisor.lower() == 'hyperv' and value == VPC_NETWORK:
+        if self.hypervisor.lower() in ['hyperv', 'lxc']  and value == VPC_NETWORK:
             self.skipTest("cann't be run for {} hypervisor".format(self.hypervisor))
 
         # List created service offering in setUpClass by name
@@ -737,7 +738,7 @@ class TestPathVMLC(cloudstackTestCase):
         # 4. Try to stop the VM in destroyed state, operation should fail
         # 5. Try to reboot the VM in destroyed state, operation should fail
         """
-        if self.hypervisor.lower() == 'hyperv' and value == VPC_NETWORK:
+        if self.hypervisor.lower() in ['hyperv', 'lxc'] and value == VPC_NETWORK:
             self.skipTest("cann't be run for {} hypervisor".format(self.hypervisor))
         network = CreateNetwork(self, value)
         networkid = network.id
@@ -834,7 +835,7 @@ class TestPathVMLC(cloudstackTestCase):
         # 7. Try to recover the VM in expunging state, operation should fail
         """
 
-        if self.hypervisor.lower() == 'hyperv' and value == VPC_NETWORK:
+        if self.hypervisor.lower() in ['hyperv', 'lxc'] and value == VPC_NETWORK:
             self.skipTest("cann't be run for {} hypervisor".format(self.hypervisor))
         network = CreateNetwork(self, value)
         networkid = network.id
