@@ -693,12 +693,11 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             TransactionLegacy txn = TransactionLegacy.currentTxn();
             try {
                 String rpassword = PasswordGenerator.generatePresharedKey(8);
-                String wSql =
-                        "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) " +
-                                "VALUES ('Secure','DEFAULT', 'management-server','system.vm.password', '" + DBEncryptionUtil.encrypt(rpassword) +
-                                "','randmon password generated each management server starts for system vm')";
+                String wSql = "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) "
+                + "VALUES ('Secure','DEFAULT', 'management-server','system.vm.password', ?,'randmon password generated each management server starts for system vm')";
                 PreparedStatement stmt = txn.prepareAutoCloseStatement(wSql);
-                stmt.executeUpdate(wSql);
+                stmt.setString(1, DBEncryptionUtil.encrypt(rpassword));
+                stmt.executeUpdate();
                 s_logger.info("Updated systemvm password in database");
             } catch (SQLException e) {
                 s_logger.error("Cannot retrieve systemvm password", e);
