@@ -392,20 +392,21 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
 
             StringBuilder sql = new StringBuilder(ZoneWideDetailsSqlPrefix);
 
-            for (Map.Entry<String, String> detail : details.entrySet()) {
-                sql.append("((storage_pool_details.name='")
-                    .append(detail.getKey())
-                    .append("') AND (storage_pool_details.value='")
-                    .append(detail.getValue())
-                    .append("')) OR ");
+            for (int i=0;i<details.size();i++){
+                sql.append("((storage_pool_details.name=?) AND (storage_pool_details.value=?)) OR ");
             }
             sql.delete(sql.length() - 4, sql.length());
             sql.append(ZoneWideDetailsSqlSuffix);
             TransactionLegacy txn = TransactionLegacy.currentTxn();
             try (PreparedStatement pstmt = txn.prepareStatement(sql.toString());){
+                int i=0;
+                for (Map.Entry<String, String> detail : details.entrySet()) {
+                    pstmt.setString(++i,detail.getKey());
+                    pstmt.setString(++i,detail.getValue());
+                }
                 List<StoragePoolVO> pools = new ArrayList<StoragePoolVO>();
                 if (pstmt != null) {
-                    int i = 1;
+                    i = 1;
                     pstmt.setLong(i++, dcId);
                     pstmt.setString(i++, ScopeType.ZONE.toString());
                     pstmt.setInt(i++, details.size());
