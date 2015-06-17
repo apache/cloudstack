@@ -1858,6 +1858,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private void loadVmDetailsInMapForExternalDhcpIp() {
 
         List<NetworkVO> networks = _networkDao.listByGuestType(Network.GuestType.Shared);
+        if(networks == null){
+            return;
+        }
 
         for (NetworkVO network: networks) {
             if(_networkModel.isSharedNetworkWithoutServices(network.getId())) {
