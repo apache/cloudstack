@@ -1157,10 +1157,15 @@ public class XenServerStorageProcessor implements StorageProcessor {
             if (volume == null) {
                 throw new InternalErrorException("Could not destroy snapshot on volume " + volumeUuid + " due to can not find it");
             }
+            // To avoid deleting snapshots which are still waiting in queue to get backed up.
+            VDI avoidSnapshot = getVDIbyUuid(conn, avoidSnapshotUuid);
+            if (avoidSnapshot == null) {
+                throw new InternalErrorException("Could not find current snapshot " + avoidSnapshotUuid);
+            }
             final Set<VDI> snapshots = volume.getSnapshots(conn);
             for (final VDI snapshot : snapshots) {
                 try {
-                    if (!snapshot.getUuid(conn).equals(avoidSnapshotUuid)) {
+                    if (!snapshot.getUuid(conn).equals(avoidSnapshotUuid) && snapshot.getSnapshotTime(conn).before(avoidSnapshot.getSnapshotTime(conn))) {
                         snapshot.destroy(conn);
                     }
                 } catch (final Exception e) {
