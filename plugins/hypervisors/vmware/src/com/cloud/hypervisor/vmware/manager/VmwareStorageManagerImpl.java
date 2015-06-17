@@ -1040,11 +1040,9 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     private String createOVAFromMetafile(String metafileName) throws Exception {
         File ova_metafile = new File(metafileName);
         Properties props = null;
-        FileInputStream strm = null;
         String ovaFileName = "";
         s_logger.info("Creating OVA using MetaFile: " + metafileName);
-        try {
-            strm = new FileInputStream(ova_metafile);
+        try (FileInputStream strm = new FileInputStream(ova_metafile);) {
 
             s_logger.info("loading properties from ova meta file: " + metafileName);
             props = new Properties();
@@ -1094,13 +1092,6 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         } catch (Exception e) {
             s_logger.error("Exception while creating OVA using Metafile", e);
             throw e;
-        } finally {
-            if (strm != null) {
-                try {
-                    strm.close();
-                } catch (Exception e) {
-                }
-            }
         }
 
     }
