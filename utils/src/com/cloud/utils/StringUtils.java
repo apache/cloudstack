@@ -19,6 +19,7 @@
 
 package com.cloud.utils;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -31,6 +32,21 @@ import org.owasp.esapi.StringUtilities;
 
 public class StringUtils {
     private static final char[] hexChar = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+
+    private static Charset preferredACSCharset;
+
+    {
+        String preferredCharset = "UTF-8";
+        if (Charset.isSupported(preferredCharset)) {
+            preferredACSCharset = Charset.forName(preferredCharset);
+        } else {
+            preferredACSCharset = Charset.defaultCharset();
+        }
+    }
+
+    public static Charset getPreferredCharset() {
+        return preferredACSCharset;
+    }
 
     public static String join(Iterable<? extends Object> iterable, String delim) {
         StringBuilder sb = new StringBuilder();
