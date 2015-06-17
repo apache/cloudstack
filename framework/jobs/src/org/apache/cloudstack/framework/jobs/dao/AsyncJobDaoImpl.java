@@ -179,16 +179,17 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
     @Override
     @DB
     public void resetJobProcess(long msid, int jobResultCode, String jobResultMessage) {
-        String sql =
-            "UPDATE async_job SET job_status=" + JobInfo.Status.FAILED.ordinal() + ", job_result_code=" + jobResultCode + ", job_result='" + jobResultMessage +
-                "' where job_status=" + JobInfo.Status.IN_PROGRESS.ordinal() + " AND (job_executing_msid=? OR (job_executing_msid IS NULL AND job_init_msid=?))";
-
+        String sql = "UPDATE async_job SET job_status=?, job_result_code=?, job_result=? where job_status=? AND (job_executing_msid=? OR (job_executing_msid IS NULL AND job_init_msid=?))";
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         try {
             pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.setLong(1, msid);
-            pstmt.setLong(2, msid);
+            pstmt.setInt(1, JobInfo.Status.FAILED.ordinal());
+            pstmt.setInt(2, jobResultCode);
+            pstmt.setString(3, jobResultMessage);
+            pstmt.setInt(4, JobInfo.Status.IN_PROGRESS.ordinal());
+            pstmt.setLong(5, msid);
+            pstmt.setLong(6, msid);
             pstmt.execute();
         } catch (SQLException e) {
             s_logger.warn("Unable to reset job status for management server " + msid, e);
