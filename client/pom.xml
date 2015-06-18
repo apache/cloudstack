@@ -20,6 +20,11 @@
     <version>4.6.0-SNAPSHOT</version>
   </parent>
   <dependencies>
+      <dependency>
+        <groupId>mysql</groupId>
+        <artifactId>mysql-connector-java</artifactId>
+        <scope>runtime</scope>
+      </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-framework-spring-module</artifactId>
@@ -34,16 +39,34 @@
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-storage-volume-solidfire</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>javax.servlet</groupId>
+          <artifactId>servlet-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-storage-volume-cloudbyte</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.sun.jersey</groupId>
+          <artifactId>jersey-bundle</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-server</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
@@ -191,8 +214,8 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
-          <groupId>org.mortbay.jetty</groupId>
-          <artifactId>servlet-api</artifactId>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -200,6 +223,12 @@
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-hypervisor-hyperv</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
@@ -419,9 +448,9 @@
         </configuration>
       </plugin>
       <plugin>
-         <groupId>org.mortbay.jetty</groupId>
-         <artifactId>maven-jetty-plugin</artifactId>
-         <version>6.1.26</version>
+         <groupId>org.eclipse.jetty</groupId>
+         <artifactId>jetty-maven-plugin</artifactId>
+         <version>${cs.jetty.version}</version>
          <dependencies>
           <!-- specify the dependent jdbc driver here -->
           <dependency>
@@ -435,7 +464,7 @@
           <stopPort>9966</stopPort>
           <stopKey>stop-jetty</stopKey>
           <connectors>
-            <connector implementation="org.mortbay.jetty.nio.SelectChannelConnector">
+            <connector implementation="org.eclipse.jetty.nio.SelectChannelConnector">
               <port>8080</port>
               <maxIdleTime>60000</maxIdleTime>
             </connector>
@@ -444,7 +473,7 @@
           <webAppSourceDirectory>${project.build.directory}/generated-webapp</webAppSourceDirectory>
           <webAppConfig>
             <contextPath>/client</contextPath>
-            <extraClasspath>${project.build.directory}/utilities/scripts/db/;${project.build.directory}/utilities/scripts/db/db/</extraClasspath>
+            <extraClasspath>${project.build.directory}/conf/;../setup/db/</extraClasspath>
           </webAppConfig>
           
           <systemProperties>
@@ -494,22 +523,6 @@
                 <copy todir="${basedir}/target/generated-webapp">
                   <fileset dir="${basedir}/../ui"/>
                 </copy>
-                <copy overwrite="true" todir="${basedir}/target/generated-webapp/WEB-INF/classes">
-                  <fileset dir="${basedir}/tomcatconf">
-                    <include name="*.in"/>
-                  </fileset>
-                  <globmapper from="*.in" to="*"/>
-                  <filterchain>
-                    <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
-                      <param type="propertiesfile" value="${cs.replace.properties}"/>
-                    </filterreader>
-                  </filterchain>
-                </copy>
-                <copy overwrite="true" todir="${basedir}/target/generated-webapp/WEB-INF/classes">
-                  <fileset dir="${basedir}/tomcatconf">
-                    <exclude name="*.in"/>
-                  </fileset>
-                </copy>
                 <copy overwrite="true" todir="${basedir}/target/utilities/bin">
                   <fileset dir="${basedir}/../setup/bindir">
                     <include name="*.in"/>
@@ -532,8 +545,8 @@
                     </filterreader>
                   </filterchain>
                 </copy>
-                <copy overwrite="true" todir="${basedir}/target/utilities/scripts/db">
-                  <fileset dir="${basedir}/../setup/db">
+                <copy overwrite="true" todir="${basedir}/target/generated-webapp/WEB-INF/classes/db">
+                  <fileset dir="${basedir}/../setup/db/db">
                     <include name="**/*"/>
                   </fileset>
                   <filterchain>
@@ -659,6 +672,12 @@
           <artifactId>cloud-systemvm</artifactId>
           <version>${project.version}</version>
           <type>pom</type>
+          <exclusions>
+            <exclusion>
+              <groupId>org.apache.tomcat.embed</groupId>
+              <artifactId>tomcat-embed-core</artifactId>
+            </exclusion>
+          </exclusions>
         </dependency>
       </dependencies>
       <build>
@@ -725,7 +744,7 @@
                       </fileset>
                     </copy>
                     <copy todir="./target/setup">
-                      <fileset dir="./target/utilities/scripts/db">
+                      <fileset dir="../db">
                         <include name="**/*" />
                       </fileset>
                     </copy>

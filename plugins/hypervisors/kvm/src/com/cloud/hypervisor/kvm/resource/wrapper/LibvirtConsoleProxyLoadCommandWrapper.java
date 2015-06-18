@@ -49,6 +49,11 @@ public abstract class LibvirtConsoleProxyLoadCommandWrapper<T extends Command, A
             final URL url = new URL(sb.toString());
             final URLConnection conn = url.openConnection();
 
+            // setting TIMEOUTs to avoid possible waiting until death situations
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
+
+
             final InputStream is = conn.getInputStream();
             final BufferedReader reader = new BufferedReader(new InputStreamReader(is,"UTF-8"));
             final StringBuilder sb2 = new StringBuilder();

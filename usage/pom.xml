@@ -43,7 +43,7 @@
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
       <version>${cs.mysql.version}</version>
-      <scope>provided</scope>
+      <scope>runtime</scope>
     </dependency>
      <dependency>
         <groupId>org.slf4j</groupId>

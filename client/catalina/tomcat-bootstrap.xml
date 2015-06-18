@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<assembly>
+    <id>bootstrap</id>
+    <formats>
+        <format>jar</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>/</outputDirectory>
+            <useProjectArtifact>true</useProjectArtifact>
+            <scope>runtime</scope>
+            <includes>
+                <include>org.apache.tomcat:tomcat-catalina:*</include>
+            </includes>
+            <unpack>true</unpack>
+            <unpackOptions>
+                <includes>
+                    <include>**/Reloader.class</include>
+                    <include>**/StandardClassLoader.class</include>
+                    <include>**/StandardClassLoaderMBean.class</include>
+                    <include>**/SecurityClassLoad.class</include>
+                    <include>**/Bootstrap.class</include>
+                    <include>**/CatalinaProperties.class</include>
+                    <include>**/ClassLoaderFactory*.class</include>
+                    <include>**/Tool.class</include>
+                    <include>**/JndiPermission.class</include>
+                </includes>
+            </unpackOptions>
+        </dependencySet>
+    </dependencySets>
+</assembly>

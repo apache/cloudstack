@@ -25,7 +25,7 @@ CLASS="com.cloud.usage.UsageServer"
 USER=cloud
 
 UCP=`ls /usr/share/cloudstack-usage/cloud-usage-*.jar`":"`ls /usr/share/cloudstack-usage/lib/*.jar | tr '\n' ':'`
-JCP="/usr/share/java/commons-daemon.jar":"/usr/share/java/mysql-connector-java.jar"
+JCP="/usr/share/java/commons-daemon.jar"
 
 CLASSPATH="$UCP:$JCP:/etc/cloudstack/usage"
 
