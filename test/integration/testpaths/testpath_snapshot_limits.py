@@ -115,32 +115,51 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
     def setUp(self):
+
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
-
         if not self.snapshotSupported:
-            self.skipTest("Snapshots are not supported on %s" % self.hypervisor)
+            self.skipTest(
+                "Snapshots are not supported on %s" %
+                self.hypervisor)
+
 
     def tearDown(self):
         try:
+            data_volumes_list = Volume.list(
+                self.userapiclient,
+                id=self.data_volume_created.id,
+                virtualmachineid=self.vm.id
+            )
+            status = validateList(data_volumes_list)
+            self.assertEqual(
+                status[0],
+                PASS,
+                "DATA Volume List Validation Failed")
+
+            self.vm.detach_volume(
+                self.userapiclient,
+                data_volumes_list[0]
+            )
+
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     @attr(tags=["basic", "advanced"], required_hardware="true")
-    def test_05_storage_snapshots_limits(self):
+    def test_01_storage_snapshots_limits(self):
         """ Storage and Snapshot Limit
             1.   Create Snapshot of ROOT disk.
-            2.   Verify the Secondary Storage value\
+            2.   Verify the Secondary Storage value
                  is increased by the size of snapshot.
             3.   Delete Snaphshot.
-            4.   Verify the Secondary\
+            4.   Verify the Secondary
                  Storage value is decreased by the size of snapshot.
             5.   Set the Snapshot limit of Account.
             6.   Create Snasphots till limit is reached.
-            7.   Create Snapshot of ROOT Volume.\
+            7.   Create Snapshot of ROOT Volume.
                  Creation should fail.
             8.   Delete few Snapshots.
             9.   Create Snapshot again.
@@ -159,7 +178,7 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
 
         root_volume = root_volumes_list[0]
 
-        data_volume_created = Volume.create(
+        self.data_volume_created = Volume.create(
             self.userapiclient,
             self.testdata["volume"],
             zoneid=self.zone.id,
@@ -168,19 +187,22 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
             diskofferingid=self.disk_offering.id
         )
 
-        self.cleanup.append(data_volume_created)
-
-        self.vm.attach_volume(
-            self.userapiclient,
-            data_volume_created
-        )
+        self.cleanup.append(self.data_volume_created)
 
         data_volumes_list = Volume.list(
             self.userapiclient,
-            id=data_volume_created.id
+            id=self.data_volume_created.id
         )
 
-        data_volume = data_volumes_list[0]
+        status = validateList(data_volumes_list)
+        self.assertEqual(status[0], PASS, "DATA Volume List Validation Failed")
+
+        self.data_volume = data_volumes_list[0]
+
+        self.vm.attach_volume(
+            self.userapiclient,
+            self.data_volume
+        )
 
         # Get Secondary Storage Value from Database
         qryresult_before_snapshot = self.dbclient.execute(
@@ -304,7 +326,7 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
         with self.assertRaises(Exception):
             Snapshot.create(
                 self.userapiclient,
-                data_volume.id)
+                self.data_volume.id)
 
         # Step 8
         snapshot.delete(self.userapiclient)
@@ -334,11 +356,6 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
             True,
             "Snapshot state is not as expected. It is %s" %
             snapshots_list[0].state
-        )
-
-        self.vm.detach_volume(
-            self.userapiclient,
-            data_volumes_list[0]
         )
 
         return
