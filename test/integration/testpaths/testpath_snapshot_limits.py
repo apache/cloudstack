@@ -168,8 +168,6 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
             diskofferingid=self.disk_offering.id
         )
 
-        self.cleanup.append(data_volume_created)
-
         self.vm.attach_volume(
             self.userapiclient,
             data_volume_created
@@ -340,5 +338,9 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
             self.userapiclient,
             data_volumes_list[0]
         )
+
+	self.vm.reboot(self.apiclient)
+
+	data_volume_created.delete(self.apiclient)
 
         return
