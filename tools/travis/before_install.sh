@@ -99,7 +99,7 @@ do
  fi
  echo -e "\nDependency download failed"
  #Test DNS record
- host repo1.maven.org
+ getent hosts repo1.maven.org
  while ! nc -vzw 5 repo1.maven.org 80; do echo -e "\nFailed to connect to repo1.maven.org:80 will retry in 10 seconds"; sleep 10; done
 done
 
@@ -111,14 +111,15 @@ echo -e "$(cat pom.xml |wc -l) lines in dummy pom.xml"
 
 for ((i=0;i<$RETRY_COUNT;i++))
 do
- mvn org.apache.maven.plugins:maven-dependency-plugin:resolve > /dev/null
+ mvn org.apache.maven.plugins:maven-dependency-plugin:resolve > /tmp/phase2
  if [[ $? -eq 0 ]]; then
    echo -e "\nProject dependencies downloaded successfully"
    break;
  fi
  echo -e "\nDependency download failed"
+ cat /tmp/phase2
  #Test DNS record
- host repo1.maven.org
+ getent hosts repo1.maven.org
  while ! nc -vzw 5 repo1.maven.org 80; do echo -e "\nFailed to connect to repo1.maven.org:80 will retry in 10 seconds"; sleep 10; done
 done
 cd ../..

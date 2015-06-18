@@ -42,6 +42,6 @@ export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=500m"
 echo -e "\nStarting simulator"
 mvn -Dsimulator -pl :cloud-client-ui jetty:run 2>&1 > /tmp/jetty-log &
 
-while ! nc -vz localhost 8096 2>&1 > /dev/null; do grep Exception /tmp/jetty-log; sleep 10; done
+while ! nc -vzw 5 localhost 8096 2>&1 > /dev/null; do grep Exception /tmp/jetty-log; sleep 10; done
 echo -e "\nStarting simulator"
 python -m marvin.deployDataCenter -i setup/dev/advanced.cfg 2>&1 || true
