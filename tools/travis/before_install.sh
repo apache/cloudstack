@@ -89,9 +89,10 @@ sudo pip install texttable > /dev/null
 RETRY_COUNT=3
 
 #Resolve plugins first
+echo -e "\nDownloading Plugin dependencies"
 for ((i=0;i<$RETRY_COUNT;i++))
 do
- mvn org.apache.maven.plugins:maven-dependency-plugin:resolve-plugins
+ mvn org.apache.maven.plugins:maven-dependency-plugin:resolve-plugins > /dev/null
  if [[ $? -eq 0 ]]; then
    break;
  fi
@@ -100,10 +101,11 @@ done
 #Resolve remaining deps
 cd tools/travis
 ./downloadDeps.sh 2> /dev/null
+echo -e "\nDownloading Project dependencies"
 
 for ((i=0;i<$RETRY_COUNT;i++))
 do
- mvn org.apache.maven.plugins:maven-dependency-plugin:resolve
+ mvn org.apache.maven.plugins:maven-dependency-plugin:resolve > /dev/null
  if [[ $? -eq 0 ]]; then
    break;
  fi
