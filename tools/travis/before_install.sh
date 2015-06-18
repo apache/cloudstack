@@ -94,8 +94,11 @@ for ((i=0;i<$RETRY_COUNT;i++))
 do
  mvn org.apache.maven.plugins:maven-dependency-plugin:resolve-plugins > /dev/null
  if [[ $? -eq 0 ]]; then
+   echo -e "\nPlugin dependencies downloaded successfully"
    break;
  fi
+ echo -e "\nRetrying in 10 seconds..."
+ sleep 10
 done
 
 #Resolve remaining deps
@@ -108,7 +111,10 @@ for ((i=0;i<$RETRY_COUNT;i++))
 do
  mvn org.apache.maven.plugins:maven-dependency-plugin:resolve > /dev/null
  if [[ $? -eq 0 ]]; then
+   echo -e "\nProject dependencies downloaded successfully"
    break;
  fi
+ echo -e "\nRetrying in 10 seconds..."
+ sleep 10
 done
 cd ../..
