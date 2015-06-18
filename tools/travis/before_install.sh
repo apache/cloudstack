@@ -102,6 +102,7 @@ done
 cd tools/travis
 ./downloadDeps.sh 2> /dev/null
 echo -e "\nDownloading Project dependencies"
+echo -e "$(cat pom.xml |wc -l) lines in dummy pom.xml"
 
 for ((i=0;i<$RETRY_COUNT;i++))
 do

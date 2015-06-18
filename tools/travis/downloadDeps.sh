@@ -2,7 +2,7 @@
 echo '<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"><modelVersion>4.0.0</modelVersion><groupId>org.apache.cloudstack</groupId><artifactId>travis-build-deps</artifactId><name>Download Deps for Travis CI</name><version>1</version><dependencies>' > pom.xml
 
 #Get all dependency blocks
-for line in $(find . -name pom.xml -exec sed -n '/<dependencies>/{:a;n;/<\/dependencies>/b;p;ba}' {} \; | grep -e "artifactId" -e "groupId" -e "version" -e "dependency\>" -e "exclusion\>" -e "exclusions\>"); do
+for line in $(find ../../ -name pom.xml -exec sed -n '/<dependencies>/{:a;n;/<\/dependencies>/b;p;ba}' {} \; | grep -e "artifactId" -e "groupId" -e "version" -e "dependency\>" -e "exclusion\>" -e "exclusions\>"); do
 
   #Tokenize values
   set -- $(echo $line | awk -v FS="(>|<)" '{print $2, $3}')
