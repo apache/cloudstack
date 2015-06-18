@@ -176,6 +176,19 @@ class TestPathVMLC(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient)
         cls._cleanup = []
 
+        cls.skiptest = False
+        cls.skiptest_reason = ""
+
+        cls.pools = StoragePool.list(cls.apiclient, zoneid=cls.zone.id)
+        if not cls.pools:
+            cls.skiptest = True
+            cls.skiptest_reason = "No Storage Pools available in setup."
+        else:
+            for storagePool in cls.pools:
+                if storagePool.state.lower() != UP:
+                    cls.skiptest = True
+                    cls.skiptest_reason = "No Storage Pools available in UP State in setup."
+
         try:
             # Create an account
             cls.account = Account.create(
@@ -299,6 +312,10 @@ class TestPathVMLC(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
     def setUp(self):
+        if self.skiptest:
+            self.skipTest(
+                    "Skipping Test : %s" % self.skiptest_reason)
+
         self.apiclient = self.testClient.getApiClient()
         self.cleanup = []
 
