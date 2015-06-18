@@ -97,8 +97,10 @@ do
    echo -e "\nPlugin dependencies downloaded successfully"
    break;
  fi
- echo -e "\nRetrying in 10 seconds..."
- sleep 10
+ echo -e "\nDependency download failed"
+ #Test DNS record
+ host repo1.maven.org
+ while ! nc -vzw 5 repo1.maven.org 80; do echo -e "\nFailed to connect to repo1.maven.org:80 will retry in 10 seconds"; sleep 10; done
 done
 
 #Resolve remaining deps
@@ -114,7 +116,9 @@ do
    echo -e "\nProject dependencies downloaded successfully"
    break;
  fi
- echo -e "\nRetrying in 10 seconds..."
- sleep 10
+ echo -e "\nDependency download failed"
+ #Test DNS record
+ host repo1.maven.org
+ while ! nc -vzw 5 repo1.maven.org 80; do echo -e "\nFailed to connect to repo1.maven.org:80 will retry in 10 seconds"; sleep 10; done
 done
 cd ../..
