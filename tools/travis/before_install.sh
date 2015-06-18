@@ -84,3 +84,28 @@ echo -e "\nInstalling some python packages: "
 
 sudo pip install lxml > /dev/null
 sudo pip install texttable > /dev/null
+
+#Download project dependencies in a way we can retry if there's a failure, without failing the whole build
+RETRY_COUNT=3
+
+#Resolve plugins first
+for ((i=0;i<$RETRY_COUNT;i++))
+do
+ mvn org.apache.maven.plugins:maven-dependency-plugin:resolve-plugins
+ if [[ $? -eq 0 ]]; then
+   break;
+ fi
+done
+
+#Resolve remaining deps
+cd tools/travis
+./downloadDeps.sh 2> /dev/null
+
+for ((i=0;i<$RETRY_COUNT;i++))
+do
+ mvn org.apache.maven.plugins:maven-dependency-plugin:resolve
+ if [[ $? -eq 0 ]]; then
+   break;
+ fi
+done
+cd ../..
