@@ -13,6 +13,10 @@ for line in $(find ../../ -name pom.xml -exec sed -n '/<dependencies>/{:a;n;/<\/
     #Create new artifact dep
     ARTIFACT=$line
   elif [ $1 == "/dependency" ]; then
+    #Check if version is empty to fix maven 3.2.5 run
+    if [[ $ARTIFACT != *version* ]]; then
+      ARTIFACT="$ARTIFACT<version>LATEST</version>"
+    fi
     #Filter out project modules interdependencies and noredist artifacts
     if [[ $ARTIFACT != *org.apache.cloudstack* ]] && [[ $ARTIFACT != *com.cloud* ]] && [[ $ARTIFACT != *org.midonet* ]] && [[ $ARTIFACT != *net.juniper* ]] ; then
 	echo $ARTIFACT$line >> pom.xml
