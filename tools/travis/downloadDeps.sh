@@ -15,7 +15,7 @@ for line in $(find ../../ -name pom.xml -exec sed -n '/<dependencies>/{:a;n;/<\/
   elif [ $1 == "/dependency" ]; then
     #Check if version is empty to fix maven 3.2.5 run
     if [[ $ARTIFACT != *version* ]]; then
-      ARTIFACT="$ARTIFACT<version>LATEST</version>"
+      continue;
     fi
     #Filter out project modules interdependencies and noredist artifacts
     if [[ $ARTIFACT != *org.apache.cloudstack* ]] && [[ $ARTIFACT != *com.cloud* ]] && [[ $ARTIFACT != *org.midonet* ]] && [[ $ARTIFACT != *net.juniper* ]] ; then
@@ -42,6 +42,8 @@ for line in $(find ../../ -name pom.xml -exec sed -n '/<dependencies>/{:a;n;/<\/
 
 done
 
+#For some reason, travis seems to be using surefire plugin 2.14.2
+echo "<dependency><groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><version>2.12.4</version></dependency>"  >> pom.xml
 
 #Finish dummy pom
 echo "</dependencies></project>" >> pom.xml

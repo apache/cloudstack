@@ -66,9 +66,12 @@ sudo mkdir -p /opt/tomcat
 sudo tar xfv tomcat.tar.gz -C /opt/tomcat --strip 1 > /dev/null
 
 echo -e "\nInstalling Development tools: "
+RETRY_COUNT=3
 
 sudo apt-get -q -y install uuid-runtime genisoimage python-setuptools python-pip netcat > /dev/null
-
+if [[ $? -ne 0 ]]; then
+  echo "\napt-get packages failed to install"
+fi
 echo "<settings>
   <mirrors>
     <mirror>
@@ -82,11 +85,18 @@ echo "<settings>
 
 echo -e "\nInstalling some python packages: "
 
-sudo pip install lxml > /dev/null
-sudo pip install texttable > /dev/null
+for ((i=0;i<$RETRY_COUNT;i++))
+do
+  sudo pip install lxml texttable > /tmp/piplog
+  if [[ $? -eq 0 ]]; then
+    echo "\npython packages installed successfully"
+    break;
+  fi
+  echo -e "\npython packages failed to install"
+  cat /tmp/piplog
+done
 
 #Download project dependencies in a way we can retry if there's a failure, without failing the whole build
-RETRY_COUNT=3
 
 #Resolve plugins first
 echo -e "\nDownloading Plugin dependencies"
