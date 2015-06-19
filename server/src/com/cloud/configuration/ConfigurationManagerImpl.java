@@ -929,7 +929,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             String selectSql = "SELECT * FROM `?`.`?` WHERE ? = ?";
 
             if(tableName.equals("vm_instance")) {
-                selectSql += " AND state != '" + VirtualMachine.State.Expunging.toString() + "' AND removed IS NULL";
+                selectSql += " AND state != ? AND removed IS NULL";
             }
 
             if (tableName.equals("host") || tableName.equals("cluster") || tableName.equals("volumes")) {
@@ -943,6 +943,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 stmt.setString(2,tableName);
                 stmt.setString(3,column);
                 stmt.setLong(4, podId);
+                if(tableName.equals("vm_instance")) {
+                    stmt.setString(5, VirtualMachine.State.Expunging.toString());
+                }
                 final ResultSet rs = stmt.executeQuery();
                 if (rs != null && rs.next()) {
                     throw new CloudRuntimeException("The pod cannot be deleted because " + errorMsg);
@@ -1407,7 +1410,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
 
             if (tableName.equals("vm_instance")) {
-                selectSql += " AND state != '" + VirtualMachine.State.Expunging.toString() + "' AND removed IS NULL";
+                selectSql += " AND state != ? AND removed IS NULL";
             }
 
             final TransactionLegacy txn = TransactionLegacy.currentTxn();
@@ -1417,6 +1420,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 stmt.setString(2,tableName);
                 stmt.setString(3,column);
                 stmt.setLong(4, zoneId);
+                if (tableName.equals("vm_instance")) {
+                    stmt.setString(5, VirtualMachine.State.Expunging.toString());
+                }
                 final ResultSet rs = stmt.executeQuery();
                 if (rs != null && rs.next()) {
                     throw new CloudRuntimeException("The zone is not deletable because " + errorMsg);
