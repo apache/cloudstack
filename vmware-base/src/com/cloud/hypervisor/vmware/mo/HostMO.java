@@ -908,13 +908,20 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 
         if (getHostType() == VmwareHostType.ESXi) {
             List<VirtualNicManagerNetConfig> netConfigs =
- _context.getVimClient().getDynamicProperty(_mor, "config.virtualNicManagerInfo.netConfig");
+                    _context.getVimClient().getDynamicProperty(_mor, "config.virtualNicManagerInfo.netConfig");
             assert (netConfigs != null);
 
+            String dvPortGroupKey;
+            String portGroup;
             for (VirtualNicManagerNetConfig netConfig : netConfigs) {
                 if (netConfig.getNicType().equals("management")) {
                     for (HostVirtualNic nic : netConfig.getCandidateVnic()) {
-                        if (nic.getPortgroup().equals(managementPortGroup)) {
+                        portGroup = nic.getPortgroup();
+                        if (portGroup == null || portGroup.isEmpty()) {
+                            dvPortGroupKey = nic.getSpec().getDistributedVirtualPort().getPortgroupKey();
+                            portGroup = getNetworkName(dvPortGroupKey);
+                        }
+                        if (portGroup.equalsIgnoreCase(managementPortGroup)) {
                             summary.setHostIp(nic.getSpec().getIp().getIpAddress());
                             summary.setHostNetmask(nic.getSpec().getIp().getSubnetMask());
                             summary.setHostMacAddress(nic.getSpec().getMac());
@@ -1058,5 +1065,21 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
         }
 
         return null;
+    }
+
+    public List<ManagedObjectReference> getHostNetworks() throws Exception {
+        return _context.getVimClient().getDynamicProperty(_mor, "network");
+    }
+
+    public String getNetworkName(String netMorVal) throws Exception {
+        String networkName = "";
+        List<ManagedObjectReference> hostNetworks = getHostNetworks();
+        for (ManagedObjectReference hostNetwork : hostNetworks) {
+            if (hostNetwork.getValue().equals(netMorVal)) {
+                networkName = _context.getVimClient().getDynamicProperty(hostNetwork, "name");
+                break;
+            }
+        }
+        return networkName;
     }
 }

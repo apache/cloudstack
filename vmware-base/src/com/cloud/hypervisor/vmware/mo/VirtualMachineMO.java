@@ -21,7 +21,7 @@ import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.URLEncoder;
@@ -1523,7 +1523,7 @@ public class VirtualMachineMO extends BaseMO {
                         String ovfPath = exportDir + File.separator + exportName + ".ovf";
                         fileNames.add(ovfPath);
 
-                        FileWriter out = new FileWriter(ovfPath);
+                        OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(ovfPath),"UTF-8");
                         out.write(ovfCreateDescriptorResult.getOvfDescriptor());
                         out.close();
 
@@ -1592,8 +1592,8 @@ public class VirtualMachineMO extends BaseMO {
 
         boolean replaced = false;
         try {
-            in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(vmxContent)));
-            out = new BufferedWriter(new OutputStreamWriter(bos));
+            in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(vmxContent),"UTF-8"));
+            out = new BufferedWriter(new OutputStreamWriter(bos,"UTF-8"));
             String line;
             while ((line = in.readLine()) != null) {
                 if (line.startsWith("workingDir")) {

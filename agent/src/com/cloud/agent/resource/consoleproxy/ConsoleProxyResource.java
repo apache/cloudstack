@@ -149,7 +149,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
             final URLConnection conn = url.openConnection();
 
             final InputStream is = conn.getInputStream();
-            final BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+            final BufferedReader reader = new BufferedReader(new InputStreamReader(is,"UTF-8"));
             final StringBuilder sb2 = new StringBuilder();
             String line = null;
             try {

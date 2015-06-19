@@ -1080,7 +1080,7 @@ public class NetUtils {
 
     public static String getDhcpRange(final String cidr) {
         final String[] splitResult = cidr.split("\\/");
-        final long size = Long.valueOf(splitResult[1]);
+        final long size = Long.parseLong(splitResult[1]);
         return NetUtils.getIpRangeStartIpFromCidr(splitResult[0], size);
     }
 

@@ -2317,6 +2317,8 @@ class TestResourceTags(cloudstackTestCase):
         4.list hosts for migration for the above deployed vm
         5.All untagged hosts in the cluster must be listed as available hosts for vm migration
         """
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("Unsupported Hypervisor Type for User VM migration")
         tag = "tag1"
         clusters = list_clusters(self.apiclient, zoneid=self.zone.id)
         self.assertEqual(

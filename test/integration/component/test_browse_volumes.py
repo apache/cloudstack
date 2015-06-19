@@ -2065,7 +2065,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
             self.detach_volume(vm2details,browseup_vol.id)
 
-            self.resize_volume(browseup_vol.id)
+            if self.hypervisor.lower() != "hyperv":
+                self.resize_volume(browseup_vol.id)
 
             self.debug("========================= Test 7: Attach resized uploaded volume and validate VM operations========================= ")
 
@@ -2501,7 +2502,10 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         self.debug("========================= Test 45 Detach  ,Resize,Attach  Browser_Upload_Volume after Migration =========================")
 
         self.detach_volume(vm2details,browseup_vol.id)
-        self.resize_volume(browseup_vol.id)
+
+        if self.hypervisor.lower() != "hyperv":
+            self.resize_volume(browseup_vol.id)
+
         self.attach_volume(vm2details,browseup_vol.id)
         self.vmoperations(vm2details)
 

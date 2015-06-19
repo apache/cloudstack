@@ -256,7 +256,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         try {
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
 
-            String templateUuidName = UUID.nameUUIDFromBytes((templateName + "@" + cmd.getPoolUuid() + "-" + hyperHost.getMor().getValue()).getBytes()).toString();
+            String templateUuidName = UUID.nameUUIDFromBytes((templateName + "@" + cmd.getPoolUuid() + "-" + hyperHost.getMor().getValue()).getBytes("UTF-8")).toString();
             // truncate template name to 32 chars to ensure they work well with vSphere API's.
             templateUuidName = templateUuidName.replace("-", "");
 
@@ -786,7 +786,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         // TODO a bit ugly here
         BufferedWriter out = null;
         try {
-            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(installFullPath + "/template.properties")));
+            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(installFullPath + "/template.properties"),"UTF-8"));
             out.write("filename=" + templateName + ".ova");
             out.newLine();
             out.write("description=");
@@ -826,7 +826,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         // TODO a bit ugly here
         BufferedWriter out = null;
         try {
-            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(installFullPath + "/" + templateName + ".ova.meta")));
+            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(installFullPath + "/" + templateName + ".ova.meta"),"UTF-8"));
             out.write("ova.filename=" + templateName + ".ova");
             out.newLine();
             out.write("version=1.0");
@@ -1040,11 +1040,9 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     private String createOVAFromMetafile(String metafileName) throws Exception {
         File ova_metafile = new File(metafileName);
         Properties props = null;
-        FileInputStream strm = null;
         String ovaFileName = "";
         s_logger.info("Creating OVA using MetaFile: " + metafileName);
-        try {
-            strm = new FileInputStream(ova_metafile);
+        try (FileInputStream strm = new FileInputStream(ova_metafile);) {
 
             s_logger.info("loading properties from ova meta file: " + metafileName);
             props = new Properties();
@@ -1094,13 +1092,6 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         } catch (Exception e) {
             s_logger.error("Exception while creating OVA using Metafile", e);
             throw e;
-        } finally {
-            if (strm != null) {
-                try {
-                    strm.close();
-                } catch (Exception e) {
-                }
-            }
         }
 
     }

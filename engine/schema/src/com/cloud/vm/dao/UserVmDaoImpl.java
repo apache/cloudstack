@@ -105,9 +105,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             + "left join networks on nics.network_id=networks.id " + "left join user_ip_address on user_ip_address.vm_id=vm_instance.id " + "where vm_instance.id in (";
 
     private static final String VMS_DETAIL_BY_NAME = "select vm_instance.instance_name, vm_instance.vm_type, vm_instance.id , user_vm_details.value, user_vm_details.name from vm_instance "
-            + "left join user_vm_details on vm_instance.id = user_vm_details.vm_id where (user_vm_details.name is null or user_vm_details.name = '";
-
-    private static final String VMS_DETAIL_BY_NAME2 = "') and vm_instance.instance_name in (";
+            + "left join user_vm_details on vm_instance.id = user_vm_details.vm_id where (user_vm_details.name is null or user_vm_details.name = ? ) and vm_instance.instance_name in (";
 
     private static final int VM_DETAILS_BATCH_SIZE = 100;
 
@@ -645,8 +643,9 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
         PreparedStatement pstmt = null;
         try {
-            pstmt = txn.prepareStatement(VMS_DETAIL_BY_NAME + detail + VMS_DETAIL_BY_NAME2 + getQueryBatchAppender(vmNames.size()));
-            int i = 1;
+            pstmt = txn.prepareStatement(VMS_DETAIL_BY_NAME + getQueryBatchAppender(vmNames.size()));
+            pstmt.setString(1, detail);
+            int i = 2;
             for(String name : vmNames) {
                 pstmt.setString(i, name);
                 i++;

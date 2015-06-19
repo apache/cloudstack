@@ -16,6 +16,25 @@
 // under the License.
 package com.cloud.hypervisor.vmware;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URLDecoder;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+
+import com.vmware.vim25.ClusterDasConfigInfo;
+import com.vmware.vim25.ManagedObjectReference;
+
+import org.apache.cloudstack.api.ApiConstants;
+
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.alert.AlertManager;
@@ -60,21 +79,6 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
-import com.vmware.vim25.ClusterDasConfigInfo;
-import com.vmware.vim25.ManagedObjectReference;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.log4j.Logger;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URLDecoder;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 @Local(value = Discoverer.class)
 public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer, ResourceStateAdapter {
@@ -268,14 +272,6 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
                     throw new InvalidParameterValueException(msg);
                 }
             }
-        } else {
-            // Distributed virtual switch is not supported in Basic zone for now.
-            // Private / Management network traffic is not yet supported over distributed virtual switch.
-            if (guestTrafficLabelObj.getVirtualSwitchType() != VirtualSwitchType.StandardVirtualSwitch) {
-                String msg = "Detected that Guest traffic is over Distributed virtual switch in Basic zone. Only Standard vSwitch is supported in Basic zone.";
-                s_logger.error(msg);
-                throw new DiscoveredWithErrorException(msg);
-            }
         }
 
         privateTrafficLabel = _netmgr.getDefaultManagementTrafficLabel(dcId, HypervisorType.VMware);
@@ -406,7 +402,11 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
             }
 
             // place a place holder guid derived from cluster ID
-            cluster.setGuid(UUID.nameUUIDFromBytes(String.valueOf(clusterId).getBytes()).toString());
+            try{
+                cluster.setGuid(UUID.nameUUIDFromBytes(String.valueOf(clusterId).getBytes("UTF-8")).toString());
+            }catch(UnsupportedEncodingException e){
+                throw new DiscoveredWithErrorException("Unable to create UUID based on string " + String.valueOf(clusterId) + ". Bad clusterId or UTF-8 encoding error.");
+            }
             _clusterDao.update(clusterId, cluster);
             // Flag cluster discovery success
             failureInClusterDiscovery = false;
@@ -414,7 +414,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
         } catch (DiscoveredWithErrorException e) {
             throw e;
         } catch (Exception e) {
-            s_logger.warn("Unable to connect to Vmware vSphere server. service address: " + url.getHost());
+            s_logger.warn("Unable to connect to Vmware vSphere server. service address: " + url.getHost() + ". " + e);
             return null;
         } finally {
             if (context != null)
@@ -424,6 +424,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
                     s_logger.debug("Deleting Nexus 1000v VSM " + vsmIp + " because cluster discovery and addition to zone has failed.");
                     _nexusElement.deleteCiscoNexusVSM(vsmInfo.second().longValue());
                 } catch (Exception e) {
+                    s_logger.warn("Deleting Nexus 1000v VSM " + vsmIp + " failed.");
                 }
             }
         }

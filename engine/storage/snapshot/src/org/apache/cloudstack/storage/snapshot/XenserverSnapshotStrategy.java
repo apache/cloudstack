@@ -111,8 +111,9 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
 
         boolean fullBackup = true;
         SnapshotDataStoreVO parentSnapshotOnBackupStore = snapshotStoreDao.findLatestSnapshotForVolume(snapshot.getVolumeId(), DataStoreRole.Image);
+        SnapshotDataStoreVO parentSnapshotOnPrimaryStore = snapshotStoreDao.findLatestSnapshotForVolume(snapshot.getVolumeId(), DataStoreRole.Primary);
         HypervisorType hypervisorType = snapshot.getBaseVolume().getHypervisorType();
-        if (parentSnapshotOnBackupStore != null && hypervisorType == Hypervisor.HypervisorType.XenServer) { // CS does incremental backup only for XenServer
+        if (parentSnapshotOnPrimaryStore != null && parentSnapshotOnBackupStore != null && hypervisorType == Hypervisor.HypervisorType.XenServer) { // CS does incremental backup only for XenServer
 
             // In case of volume migration from one pool to other pool, CS should take full snapshot to avoid any issues with delta chain,
             // to check if this is a migrated volume, compare the current pool id of volume and store_id of oldest snapshot on primary for this volume.

@@ -469,7 +469,7 @@ public class VmwareHelper {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
         try {
-            out = new BufferedWriter(new OutputStreamWriter(bos));
+            out = new BufferedWriter(new OutputStreamWriter(bos,"UTF-8"));
 
             out.write("disksInChain=" + disksInChain);
             out.newLine();

@@ -130,6 +130,7 @@ def CreateNetwork(self, networktype):
                          account=self.account.name,
                          domainid=self.account.domainid
                          )
+        self.cleanup.append(vpc)
         self.vpcid = vpc.id
         vpcs = VPC.list(self.apiclient, id=vpc.id)
         self.assertEqual(
@@ -148,7 +149,6 @@ def CreateNetwork(self, networktype):
             gateway="10.1.1.1",
             netmask="255.255.255.0")
         self.cleanup.append(network)
-        self.cleanup.append(vpc)
     return network
 
 
@@ -306,11 +306,12 @@ class TestPathVMLC(cloudstackTestCase):
         # Cleanup VM before proceeding the cleanup as networks will be
         # cleaned up properly, continue if VM deletion fails,
         # because in that case VM is already deleted from the test case
+        # try:
+        #     self.virtual_machine.delete(self.apiclient, expunge=True)
+        # except Exception:
+        #     self.debug("Exception while destroying VM")
         try:
-            self.virtual_machine.delete(self.apiclient, expunge=True)
-        except Exception:
-            self.debug("Exception while destroying VM")
-        try:
+            self.cleanup = self.cleanup[::-1]
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -337,7 +338,7 @@ class TestPathVMLC(cloudstackTestCase):
         # 13. Find suitable host for VM to migrate and migrate the VM
         # 14. Verify VM accessibility on new host
         """
-        if self.hypervisor.lower() == 'hyperv' and value == VPC_NETWORK:
+        if self.hypervisor.lower() in ['hyperv', 'lxc']  and value == VPC_NETWORK:
             self.skipTest("cann't be run for {} hypervisor".format(self.hypervisor))
 
         # List created service offering in setUpClass by name
@@ -381,7 +382,7 @@ class TestPathVMLC(cloudstackTestCase):
             networkids=[network.id, ],
             zoneid=self.zone.id
         )
-
+        self.cleanup.append(self.virtual_machine)
         publicip = PublicIPAddress.create(
             self.userapiclient, accountid=self.account.name,
             zoneid=self.zone.id, domainid=self.account.domainid,
@@ -559,6 +560,7 @@ class TestPathVMLC(cloudstackTestCase):
             networkids=[network.id, ],
             zoneid=self.zone.id
         )
+        self.cleanup.append(self.virtual_machine)
         return
 
     @attr(tags=["basic"], required_hardware="True")
@@ -638,7 +640,7 @@ class TestPathVMLC(cloudstackTestCase):
             zoneid=self.zone.id,
             securitygroupids=[security_group.id, ]
         )
-
+        self.cleanup.append(self.virtual_machine)
         # Check VM accessibility
         try:
             SshClient(host=self.virtual_machine.ssh_ip,
@@ -737,7 +739,7 @@ class TestPathVMLC(cloudstackTestCase):
         # 4. Try to stop the VM in destroyed state, operation should fail
         # 5. Try to reboot the VM in destroyed state, operation should fail
         """
-        if self.hypervisor.lower() == 'hyperv' and value == VPC_NETWORK:
+        if self.hypervisor.lower() in ['hyperv', 'lxc'] and value == VPC_NETWORK:
             self.skipTest("cann't be run for {} hypervisor".format(self.hypervisor))
         network = CreateNetwork(self, value)
         networkid = network.id
@@ -753,6 +755,7 @@ class TestPathVMLC(cloudstackTestCase):
             networkids=[networkid, ],
             zoneid=self.zone.id
         )
+        self.cleanup.append(self.virtual_machine)
         # Stop the VM and try to reboot it, it should fail
         self.virtual_machine.stop(self.userapiclient)
         with self.assertRaises(Exception):
@@ -796,6 +799,7 @@ class TestPathVMLC(cloudstackTestCase):
             serviceofferingid=self.service_offering_1.id,
             zoneid=self.zone.id
         )
+        self.cleanup.append(self.virtual_machine)
         # Stop the VM and try to reboot it, it should fail
         self.virtual_machine.stop(self.userapiclient)
         with self.assertRaises(Exception):
@@ -834,7 +838,7 @@ class TestPathVMLC(cloudstackTestCase):
         # 7. Try to recover the VM in expunging state, operation should fail
         """
 
-        if self.hypervisor.lower() == 'hyperv' and value == VPC_NETWORK:
+        if self.hypervisor.lower() in ['hyperv', 'lxc'] and value == VPC_NETWORK:
             self.skipTest("cann't be run for {} hypervisor".format(self.hypervisor))
         network = CreateNetwork(self, value)
         networkid = network.id

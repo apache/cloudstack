@@ -1612,7 +1612,7 @@ public class PaloAltoResource implements ServerResource {
     }
 
     private String getPrivateSubnet(String vlan) throws ExecutionException {
-        String _interfaceName = genPrivateInterfaceName(Long.valueOf(vlan).longValue());
+        String _interfaceName = genPrivateInterfaceName(Long.parseLong(vlan));
         Map<String, String> params = new HashMap<String, String>();
         params.put("type", "config");
         params.put("action", "get");

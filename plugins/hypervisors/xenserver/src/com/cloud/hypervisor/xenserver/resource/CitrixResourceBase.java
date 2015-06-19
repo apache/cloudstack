@@ -19,7 +19,8 @@ package com.cloud.hypervisor.xenserver.resource;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
@@ -2772,8 +2773,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             final String[] splitResult = result.split(":");
             int i = 0;
             while (i < splitResult.length - 1) {
-                stats[0] += new Long(splitResult[i++]).longValue();
-                stats[1] += new Long(splitResult[i++]).longValue();
+                stats[0] += Long.parseLong(splitResult[i++]);
+                stats[1] += Long.parseLong(splitResult[i++]);
             }
         }
         return stats;
@@ -3161,6 +3162,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     public long getVMSnapshotChainSize(final Connection conn, final VolumeObjectTO volumeTo, final String vmName) throws BadServerResponse, XenAPIException, XmlRpcException {
+        if (volumeTo.getVolumeType() == Volume.Type.DATADISK) {
+            VDI dataDisk = VDI.getByUuid(conn, volumeTo.getPath());
+            if (dataDisk != null) {
+                String dataDiskName = dataDisk.getNameLabel(conn);
+                if (dataDiskName != null && !dataDiskName.isEmpty()) {
+                    volumeTo.setName(dataDiskName);
+                }
+            }
+        }
         final Set<VDI> allvolumeVDIs = VDI.getByNameLabel(conn, volumeTo.getName());
         long size = 0;
         for (final VDI vdi : allvolumeVDIs) {
@@ -4044,7 +4054,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         throw new InternalErrorException("There were no more available slots for a new VIF on router: " + router.getNameLabel(conn));
                     }
 
-                    nic.setDeviceId(Integer.valueOf(vifDeviceNum));
+                    nic.setDeviceId(Integer.parseInt(vifDeviceNum));
 
                     correctVif = createVif(conn, routerName, router, null, nic);
                     correctVif.plug(conn);
@@ -4104,7 +4114,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     s_logger.error(msg);
                     return new ExecutionResult(false, msg);
                 }
-                nic.setDeviceId(Integer.valueOf(vif.getDevice(conn)));
+                nic.setDeviceId(Integer.parseInt(vif.getDevice(conn)));
             } else {
                 final String msg = "Prepare SetNetworkACL failed due to nic is null for : " + routerName;
                 s_logger.error(msg);
@@ -4165,7 +4175,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 return new ExecutionResult(false, "Can not find vif with mac " + mac + " for VM " + domrName);
             }
 
-            nic.setDeviceId(Integer.valueOf(domrVif.getDevice(conn)));
+            nic.setDeviceId(Integer.parseInt(domrVif.getDevice(conn)));
         } catch (final Exception e) {
             final String msg = "Creating guest network failed due to " + e.toString();
             s_logger.warn(msg, e);
@@ -5024,7 +5034,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         if (result && content != null && !content.isEmpty()) {
                             try {
                                 File file = new File(folder+"/"+fileName+".txt");
-                                FileWriter fw = new FileWriter(file.getAbsoluteFile());
+                                OutputStreamWriter fw = new OutputStreamWriter(new FileOutputStream(file.getAbsoluteFile()),"UTF-8");
                                 BufferedWriter bw = new BufferedWriter(fw);
                                 bw.write(content);
                                 bw.close();
@@ -5047,10 +5057,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             Process p = Runtime.getRuntime().exec(cmd);
 
             BufferedReader stdInput = new BufferedReader(new
-                    InputStreamReader(p.getInputStream()));
+                    InputStreamReader(p.getInputStream(),Charset.defaultCharset()));
 
             BufferedReader stdError = new BufferedReader(new
-                    InputStreamReader(p.getErrorStream()));
+                    InputStreamReader(p.getErrorStream(),Charset.defaultCharset()));
 
             // read the output from the command
             while ((s = stdInput.readLine()) != null) {

@@ -19,8 +19,6 @@
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.lib.utils import (cleanup_resources,
-                              random_gen,
-                              format_volume_to_ext3,
                               validateList,
                               is_server_ssh_ready
                               )
@@ -36,10 +34,7 @@ from marvin.lib.base import (Account,
                              Configurations,
                              Host,
                              NATRule,
-                             PublicIPAddress,
-                             StaticNATRule,
-                             FireWallRule,
-                             Network
+                             FireWallRule
                              )
 from marvin.lib.common import (get_domain,
                                get_zone,
@@ -55,11 +50,9 @@ from marvin.lib.common import (get_domain,
                                list_ssvms
                                )
 
-from marvin.cloudstackAPI import (deleteVolume,
-                                  enableStorageMaintenance,
+from marvin.cloudstackAPI import (enableStorageMaintenance,
                                   cancelStorageMaintenance
                                   )
-import hashlib
 from marvin.sshClient import SshClient
 from marvin.codes import FAILED, PASS, FAIL
 from ddt import ddt, data, unpack
@@ -523,36 +516,39 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
             cls.testdata["ostype"])
 
         cls._cleanup = []
+        cls.skiptest = False
+        cls.skipReason = ""
 
         if cls.hypervisor.lower() not in [
                 "vmware",
                 "kvm",
                 "xenserver",
                 "hyper-v"]:
-            raise cls.skipTest(
-                "Storage migration not supported on %s" %
-                cls.hypervisor)
+            cls.skiptest = True
+            cls.skipReason = "Storage Migration not supported on %s" % cls.hypervisor
+            return
         # Get Hosts in the cluster and iscsi/vmfs storages for that cluster
         iscsi_pools = []
         nfs_pools = []
         try:
             cls.list_vmware_clusters = list_clusters(cls.apiclient, hypervisor="vmware")
         except Exception as e:
-            raise cls.skipTest(e)
+            raise unittest.SkipTest(e)
 
         if len(cls.list_vmware_clusters) < 1:
-            raise cls.skipTest("There is no cluster available in the setup")
+            cls.skiptest = True
+            cls.skipReason = "There is no cluster available in the setup"
         else:
             for cluster in cls.list_vmware_clusters:
                 try:
                     list_esx_hosts = list_hosts(cls.apiclient, clusterid=cluster.id)
                 except Exception as e:
-                    raise cls.skipTest(e)
+                    raise unittest.SkipTest(e)
                 if len(list_esx_hosts) > 1:
                     try:
                         list_storage = list_storage_pools(cls.apiclient, clusterid=cluster.id)
                     except Exception as e:
-                        raise cls.skipTest(e)
+                        raise unittest.SkipTest(e)
                     for storage in list_storage:
                         if storage.type == "VMFS":
                             iscsi_pools.append(storage)
@@ -568,7 +564,9 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
                     else:
                         nfs_pools = []
         if len(iscsi_pools) < 2 and len(nfs_pools) < 2:
-            raise unittest.SkipTest("Not enough storage pools available in the setup")
+            cls.skiptest = True
+            cls.skipReason = "Not enough storage pools available in the setup"
+
         cls.hosts = list_esx_hosts
         cls.pools = list_storage
 
@@ -633,8 +631,8 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         if cls.windows_template == FAILED:
             if "http://pleaseupdateURL/dummy.vhd" in cls.testdata[
                     "vgpu"]["Windows Server 2012 (64-bit)"]["url"]:
-                raise unittest.SkipTest(
-                    "Check Test Data file if it has the valid template URL")
+                cls.skiptest = True
+                cls.skipReason = "Check Test Data file if it has the valid template URL"
             cls.windows_template = Template.register(
                 cls.apiclient,
                 cls.testdata["vgpu"]["Windows Server 2012 (64-bit)"],
@@ -678,6 +676,9 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
+
+        if self.skiptest:
+            self.skipTest(self.skipReason)
 
     def tearDown(self):
 

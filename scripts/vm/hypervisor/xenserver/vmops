@@ -927,10 +927,9 @@ def network_rules_for_rebooted_vm(session, vmName):
         for cmd in [delcmd, delcmd2, inscmd, inscmd2, inscmd3, inscmd4]:
             cmds = util.pread2(['/bin/bash', '-c', cmd]).split('\n')
             cmds.pop()
-            for c in cmds:
+            for c in filter(None,cmds):
                     ipt = c.split(' ')
                     ipt.insert(0, 'iptables')
-                    ipt.pop()
                     ipts.append(ipt)
 
         for ipt in ipts:

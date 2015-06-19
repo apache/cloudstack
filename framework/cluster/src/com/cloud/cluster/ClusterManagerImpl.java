@@ -413,7 +413,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
     @Override
     public ManagementServerHostVO getPeer(String mgmtServerId) {
-        return _mshostDao.findByMsid(Long.valueOf(mgmtServerId));
+        return _mshostDao.findByMsid(Long.parseLong(mgmtServerId));
     }
 
     @Override

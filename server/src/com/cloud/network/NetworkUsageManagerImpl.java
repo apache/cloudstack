@@ -310,7 +310,7 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
                 s_logger.warn("Last collection time not available. Skipping direct usage collection for Traffic Monitor: " + host.getId());
                 return false;
             }
-            Date lastCollection = new Date(new Long(lastCollectDetail.getValue()));
+            Date lastCollection = new Date(Long.parseLong(lastCollectDetail.getValue()));
 
             //Get list of IPs currently allocated
             List<IPAddressVO> allocatedIps = listAllocatedDirectIps(zoneId);

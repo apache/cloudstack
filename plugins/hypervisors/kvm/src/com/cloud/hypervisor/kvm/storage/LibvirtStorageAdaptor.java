@@ -39,6 +39,7 @@ import com.ceph.rados.RadosException;
 import com.ceph.rbd.Rbd;
 import com.ceph.rbd.RbdException;
 import com.ceph.rbd.RbdImage;
+import com.ceph.rbd.jna.RbdImageInfo;
 import com.ceph.rbd.jna.RbdSnapInfo;
 
 import org.apache.cloudstack.utils.qemu.QemuImg;
@@ -1239,6 +1240,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                         destFile = new QemuImgFile(destPath, destFormat);
                         try {
                             qemu.convert(srcFile, destFile);
+                            Map<String, String> destInfo = qemu.info(destFile);
+                            Long virtualSize = Long.parseLong(destInfo.get(new String("virtual_size")));
+                            newDisk.setVirtualSize(virtualSize);
+                            newDisk.setSize(virtualSize);
                         } catch (QemuImgException e) {
                             s_logger.error("Failed to convert " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + e.getMessage());
                             newDisk = null;
@@ -1257,18 +1262,19 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             s_logger.debug("The source image is not RBD, but the destination is. We will convert into RBD format 2");
             try {
                 srcFile = new QemuImgFile(sourcePath, sourceFormat);
+                String rbdDestPath = destPool.getSourceDir() + "/" + name;
                 String rbdDestFile = KVMPhysicalDisk.RBDStringBuilder(destPool.getSourceHost(),
                         destPool.getSourcePort(),
                         destPool.getAuthUserName(),
                         destPool.getAuthSecret(),
-                        destPool.getSourceDir() + "/" + name);
+                        rbdDestPath);
                 destFile = new QemuImgFile(rbdDestFile, destFormat);
 
-                s_logger.debug("Starting copy from source image " + srcFile.getFileName() + " to RBD image " + destPool.getSourceDir() + "/" + name);
+                s_logger.debug("Starting copy from source image " + srcFile.getFileName() + " to RBD image " + rbdDestPath);
                 qemu.convert(srcFile, destFile);
-                s_logger.debug("Succesfully converted source image " + srcFile.getFileName() + " to RBD image " + destPool.getSourceDir() + "/" + name);
+                s_logger.debug("Succesfully converted source image " + srcFile.getFileName() + " to RBD image " + rbdDestPath);
 
-                /* We still have to create and protect a RBD snapshot in order to do cloning */
+                /* We have to stat the RBD image to see how big it became afterwards */
                 Rados r = new Rados(destPool.getAuthUserName());
                 r.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
                 r.confSet("key", destPool.getAuthSecret());
@@ -1280,8 +1286,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 Rbd rbd = new Rbd(io);
 
                 RbdImage image = rbd.open(name);
-
+                RbdImageInfo rbdInfo = image.stat();
+                newDisk.setSize(rbdInfo.size);
+                newDisk.setVirtualSize(rbdInfo.size);
+                s_logger.debug("After copy the resulting RBD image " + rbdDestPath + " is " + rbdInfo.size + " bytes long");
                 rbd.close(image);
+
                 r.ioCtxDestroy(io);
             } catch (QemuImgException e) {
                 s_logger.error("Failed to convert from " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + e.getMessage());

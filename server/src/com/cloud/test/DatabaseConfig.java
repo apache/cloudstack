@@ -1189,10 +1189,12 @@ public class DatabaseConfig {
         sb.append(pwStr);
 
         // create an account for the admin user first
-        insertSql = "INSERT INTO `cloud`.`account` (id, account_name, type, domain_id) VALUES (" + id + ", '" + username + "', '1', '1')";
+        insertSql = "INSERT INTO `cloud`.`account` (id, account_name, type, domain_id) VALUES (?, ?, '1', '1')";
         txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+            stmt.setLong(1, id);
+            stmt.setString(2, username);
             stmt.executeUpdate();
         } catch (SQLException ex) {
             s_logger.error("error creating account", ex);
@@ -1258,11 +1260,12 @@ public class DatabaseConfig {
             "INSERT INTO `cloud`.`configuration` (instance, component, name, value, description, category) " + "VALUES ('" + instance + "','" + component + "','" + name +
                 "','" + value + "','" + description + "','" + category + "')";
 
-        String selectSql = "SELECT name FROM cloud.configuration WHERE name = '" + name + "'";
+        String selectSql = "SELECT name FROM cloud.configuration WHERE name = ?";
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(selectSql);
+            stmt.setString(1, name);
             ResultSet result = stmt.executeQuery();
             Boolean hasRow = result.next();
             if (!hasRow) {

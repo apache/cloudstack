@@ -20,7 +20,9 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -107,11 +109,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(VmwareStorageProcessor.class);
     private static final int DEFAULT_NFS_PORT = 2049;
 
-    private VmwareHostService hostService;
-    private boolean _fullCloneFlag;
-    private VmwareStorageMount mountService;
-    private VmwareResource resource;
-    private Integer _timeout;
+    private final VmwareHostService hostService;
+    private final boolean _fullCloneFlag;
+    private final VmwareStorageMount mountService;
+    private final VmwareResource resource;
+    private final Integer _timeout;
     protected Integer _shutdownWaitMs;
     private final Gson _gson;
     private final StorageLayer _storage = new JavaStorageLayer();
@@ -680,7 +682,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         // TODO a bit ugly here
         BufferedWriter out = null;
         try {
-            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(installFullPath + "/template.properties")));
+            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(installFullPath + "/template.properties"),"UTF-8"));
             out.write("filename=" + templateName + ".ova");
             out.newLine();
             out.write("description=");
@@ -859,7 +861,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         // TODO a bit ugly here
         BufferedWriter out = null;
         try {
-            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(installFullPath + "/" + templateName + ".ova.meta")));
+            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(installFullPath + "/" + templateName + ".ova.meta"),"UTF-8"));
             out.write("ova.filename=" + templateName + ".ova");
             out.newLine();
             out.write("version=1.0");
@@ -1388,7 +1390,13 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     private static String getSecondaryDatastoreUUID(String storeUrl) {
-        return UUID.nameUUIDFromBytes(storeUrl.getBytes()).toString();
+        String uuid = null;
+        try{
+            uuid=UUID.nameUUIDFromBytes(storeUrl.getBytes("UTF-8")).toString();
+        }catch(UnsupportedEncodingException e){
+            s_logger.warn("Failed to create UUID from string " + storeUrl + ". Bad storeUrl or UTF-8 encoding error." );
+        }
+        return uuid;
     }
 
     public synchronized ManagedObjectReference prepareSecondaryDatastoreOnHost(String storeUrl) throws Exception {
@@ -2258,7 +2266,14 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     private static String deriveTemplateUuidOnHost(VmwareHypervisorHost hyperHost, String storeIdentifier, String templateName) {
-        String templateUuid = UUID.nameUUIDFromBytes((templateName + "@" + storeIdentifier + "-" + hyperHost.getMor().getValue()).getBytes()).toString();
+        String templateUuid;
+        try{
+            templateUuid = UUID.nameUUIDFromBytes((templateName + "@" + storeIdentifier + "-" + hyperHost.getMor().getValue()).getBytes("UTF-8")).toString();
+        }catch(UnsupportedEncodingException e){
+            s_logger.warn("unexpected encoding error, using default Charset: " + e.getLocalizedMessage());
+            templateUuid = UUID.nameUUIDFromBytes((templateName + "@" + storeIdentifier + "-" + hyperHost.getMor().getValue()).getBytes(Charset.defaultCharset()))
+                    .toString();
+        }
         templateUuid = templateUuid.replaceAll("-", "");
         return templateUuid;
     }
