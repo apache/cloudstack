@@ -3162,6 +3162,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     public long getVMSnapshotChainSize(final Connection conn, final VolumeObjectTO volumeTo, final String vmName) throws BadServerResponse, XenAPIException, XmlRpcException {
+        if (volumeTo.getVolumeType() == Volume.Type.DATADISK) {
+            VDI dataDisk = VDI.getByUuid(conn, volumeTo.getPath());
+            if (dataDisk != null) {
+                String dataDiskName = dataDisk.getNameLabel(conn);
+                if (dataDiskName != null && !dataDiskName.isEmpty()) {
+                    volumeTo.setName(dataDiskName);
+                }
+            }
+        }
         final Set<VDI> allvolumeVDIs = VDI.getByNameLabel(conn, volumeTo.getName());
         long size = 0;
         for (final VDI vdi : allvolumeVDIs) {
