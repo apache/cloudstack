@@ -709,7 +709,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             return userVm;
         } catch (Exception e) {
             s_logger.debug("Failed to revert vmsnapshot: " + vmSnapshotId, e);
-            return null;
+            throw new CloudRuntimeException(e.getMessage());
         }
     }
 
