@@ -35,10 +35,7 @@ if [ $MOD -ne 0 ]; then
 fi
 
 
-#export CATALINA_BASE=/opt/tomcat
-#export CATALINA_HOME=/opt/tomcat
-#export M2_HOME="/usr/local/maven-3.2.1/"
-export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=500m"
+export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=500m -Djava.security.egd=file:/dev/./urandom"
 echo -e "\nStarting simulator"
 mvn -Dsimulator -pl :cloud-client-ui jetty:run 2>&1 > /tmp/jetty-log &
 
