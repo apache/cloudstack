@@ -19,7 +19,7 @@
 """
 # Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackTestCase import cloudstackTestCase,unittest
 from marvin.lib.utils import cleanup_resources
 from marvin.lib.base import (Account,
                              VirtualMachine,
@@ -36,7 +36,8 @@ from marvin.lib.common import (get_zone,
                                get_domain,
                                get_template,
                                get_builtin_template_info,
-                               update_resource_limit)
+                               update_resource_limit,
+                               find_storage_pool_type)
 from marvin.codes import PASS
 
 
@@ -52,6 +53,13 @@ class TestDeployVM(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+
+        if cls.hypervisor.lower() == 'lxc':
+            if not find_storage_pool_type(cls.apiclient, storagetype='rbd'):
+                raise unittest.SkipTest("RBD storage type is required for data volumes for LXC")
+
 
         cls.template = get_template(
             cls.api_client,
@@ -743,6 +751,12 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
 
         cls.testdata = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+
+        if cls.hypervisor.lower() == 'lxc':
+            if not find_storage_pool_type(cls.apiclient, storagetype='rbd'):
+                raise unittest.SkipTest("RBD storage type is required for data volumes for LXC")
+
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
@@ -946,6 +960,12 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
 
         cls.testdata = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+
+        if cls.hypervisor.lower() == 'lxc':
+            if not find_storage_pool_type(cls.apiclient, storagetype='rbd'):
+                raise unittest.SkipTest("RBD storage type is required for data volumes for LXC")
+
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
@@ -1102,6 +1122,12 @@ class TestDeployVMBasicZone(cloudstackTestCase):
 
         cls.testdata = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+
+        if cls.hypervisor.lower() == 'lxc':
+            if not find_storage_pool_type(cls.apiclient, storagetype='rbd'):
+                raise unittest.SkipTest("RBD storage type is required for data volumes for LXC")
+
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
@@ -1169,6 +1195,7 @@ class TestDeployVMFromTemplate(cloudstackTestCase):
         cls.api_client = cls.testClient.getApiClient()
 
         cls.testdata = cls.testClient.getParsedTestDataConfig()
+
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -1297,6 +1324,7 @@ class TestVMAccountLimit(cloudstackTestCase):
         cls.api_client = cls.testClient.getApiClient()
 
         cls.testdata = cls.testClient.getParsedTestDataConfig()
+
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -1419,6 +1447,12 @@ class TestUploadAttachVolume(cloudstackTestCase):
         cls.api_client = cls.testClient.getApiClient()
 
         cls.testdata = cls.testClient.getParsedTestDataConfig()
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+
+        if cls.hypervisor.lower() == 'lxc':
+            if not find_storage_pool_type(cls.apiclient, storagetype='rbd'):
+                raise unittest.SkipTest("RBD storage type is required for data volumes for LXC")
+
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -1537,6 +1571,7 @@ class TestDeployOnSpecificHost(cloudstackTestCase):
         cls.api_client = cls.testClient.getApiClient()
 
         cls.testdata = cls.testClient.getParsedTestDataConfig()
+
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
