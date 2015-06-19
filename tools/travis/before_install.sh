@@ -58,7 +58,7 @@ sudo debconf-set-selections <<< 'mysql-server mysql-server/root_password passwor
 sudo debconf-set-selections <<< 'mysql-server mysql-server/root_password_again password your_password'
 sudo apt-get -q -y install mysql-server > /dev/null
 
-sudo /etc/init.d/mysql start
+sudo start mysql
 
 echo -e "\nInstalling Development tools: "
 RETRY_COUNT=3
