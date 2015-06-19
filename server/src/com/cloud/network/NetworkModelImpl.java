@@ -2292,7 +2292,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         final List<String[]> vmData = new ArrayList<String[]>();
 
         if (userData != null) {
-            vmData.add(new String[]{"userdata", "user-data", new String(Base64.decodeBase64(userData))});
+            vmData.add(new String[]{"userdata", "user-data", new String(Base64.decodeBase64(userData),StringUtils.getPreferredCharset())});
         }
         vmData.add(new String[]{"metadata", "service-offering", StringUtils.unicodeEscape(serviceOffering)});
         vmData.add(new String[]{"metadata", "availability-zone", StringUtils.unicodeEscape(zoneName)});
