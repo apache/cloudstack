@@ -43,5 +43,5 @@ echo -e "\nStarting simulator"
 mvn -Dsimulator -pl :cloud-client-ui jetty:run 2>&1 > /tmp/jetty-log &
 
 while ! nc -vzw 5 localhost 8096 2>&1 > /dev/null; do grep Exception /tmp/jetty-log; sleep 10; done
-echo -e "\nStarting simulator"
+echo -e "\nStarting DataCenter deployment"
 python -m marvin.deployDataCenter -i setup/dev/advanced.cfg 2>&1 || true

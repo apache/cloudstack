@@ -60,11 +60,6 @@ sudo apt-get -q -y install mysql-server > /dev/null
 
 sudo /etc/init.d/mysql start
 
-echo -e "\nInstalling Tomcat: "
-wget -q -O tomcat.tar.gz http://archive.apache.org/dist/tomcat/tomcat-6/v6.0.33/bin/apache-tomcat-6.0.33.tar.gz
-sudo mkdir -p /opt/tomcat
-sudo tar xfv tomcat.tar.gz -C /opt/tomcat --strip 1 > /dev/null
-
 echo -e "\nInstalling Development tools: "
 RETRY_COUNT=3
 
