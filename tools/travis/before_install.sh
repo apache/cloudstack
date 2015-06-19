@@ -84,7 +84,7 @@ for ((i=0;i<$RETRY_COUNT;i++))
 do
   sudo pip install lxml texttable > /tmp/piplog
   if [[ $? -eq 0 ]]; then
-    echo "\npython packages installed successfully"
+    echo -e "\npython packages installed successfully"
     break;
   fi
   echo -e "\npython packages failed to install"
