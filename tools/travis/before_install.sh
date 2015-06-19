@@ -83,6 +83,7 @@ echo -e "\nInstalling some python packages: "
 for ((i=0;i<$RETRY_COUNT;i++))
 do
   sudo pip install lxml texttable > /tmp/piplog
+  sudo pip install --upgrade paramiko >> /tmp/piplog
   if [[ $? -eq 0 ]]; then
     echo -e "\npython packages installed successfully"
     break;
