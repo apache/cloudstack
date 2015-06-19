@@ -2323,7 +2323,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                     throw new CloudRuntimeException("Unable to get MD5 MessageDigest", e);
                 }
                 md5.reset();
-                md5.update(password.getBytes());
+                md5.update(password.getBytes(StringUtils.getPreferredCharset()));
                 byte[] digest = md5.digest();
                 BigInteger bigInt = new BigInteger(1, digest);
                 String hashtext = bigInt.toString(16);
