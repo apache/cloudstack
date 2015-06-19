@@ -247,8 +247,17 @@ public class PodZoneConfig {
             saveVlan(zoneId, podId, vlanId, vlanGateway, vlanNetmask, vlanType, ipRange, networkId, physicalNetworkDbId);
             if (podId != null) {
                 long vlanDbId = getVlanDbId(zone, vlanId);
-                String sql = "INSERT INTO `cloud`.`pod_vlan_map` (pod_id, vlan_db_id) " + "VALUES ('" + podId + "','" + vlanDbId + "')";
-                DatabaseConfig.saveSQL(sql, "Failed to save pod_vlan_map due to exception vlanDbId=" + vlanDbId + ", podId=" + podId + ". Please contact Cloud Support.");
+                String sql = "INSERT INTO `cloud`.`pod_vlan_map` (pod_id, vlan_db_id) " + "VALUES (?,?)";
+                String errorMsg =  "Failed to save pod_vlan_map due to exception vlanDbId=" + vlanDbId + ", podId=" + podId + ". Please contact Cloud Support.";
+                TransactionLegacy txn = TransactionLegacy.open("saveSQL");
+                try ( PreparedStatement stmt = txn.prepareAutoCloseStatement(sql); ) {
+                        stmt.setString(1, podId.toString());
+                        stmt.setString(2, String.valueOf(vlanDbId));
+                        stmt.executeUpdate();
+                    } catch (SQLException ex) {
+                        System.out.println("SQL Exception: " + ex.getMessage());
+                        printError(errorMsg);
+                    }
             }
 
             return genReturnList("true", "Successfully added VLAN.");
