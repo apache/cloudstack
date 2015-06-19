@@ -38,14 +38,32 @@ from marvin.lib.common import (get_domain,
                                compareChecksum
                                )
 from marvin.sshClient import SshClient
-from marvin.codes import (FAIL)
+from marvin.codes import (PASS, FAIL, BACKED_UP, ROOT, DATA)
 import time
 
 
 def checkIntegrityOfSnapshot(
-        self, snapshotsToRestore, checksumToCompare, disk_type="root"):
+        self, snapshotsToRestore, checksumToCompare, disk_type=ROOT):
+    """
+    Check integrity of snapshot created of ROOT or DATA Disk:
 
-    if disk_type == "root":
+    If ROOT Disk: Deploy a Vm from a template created from the snapshot
+                  and checking the contents of the ROOT disk.
+    If DATA Disk: Users can create a volume from the snapshot.
+                  The volume can then be mounted to a VM and files
+                  recovered as needed.
+
+    Inputs:
+    1. snapshotsToRestore: Snapshots whose integrity is
+                           to be checked.
+
+    2. checksumToCompare:  The contents of ROOT Disk to be compared.
+
+    3. disk_type:          The type of disk - ROOT or DATA Disk
+                           of which snapshot was created.
+
+    """
+    if disk_type == ROOT:
         # Create template from snapshot
         template_from_snapshot = Template.create_from_snapshot(
             self.apiclient,
@@ -57,8 +75,6 @@ def checkIntegrityOfSnapshot(
             None,
             "Check if result exists in list item call"
         )
-
-        time.sleep(60)
 
         # Deploy VM
         vm_from_temp = VirtualMachine.create(
@@ -77,7 +93,7 @@ def checkIntegrityOfSnapshot(
             None,
             "Check if result exists in list item call"
         )
-        time.sleep(60)
+
         # Verify contents of ROOT disk match with snapshot
 
         compareChecksum(
@@ -153,6 +169,10 @@ class TestDeltaSnapshots(cloudstackTestCase):
         cls._cleanup = []
 
         cls.mgtSvrDetails = cls.config.__dict__["mgtSvr"][0].__dict__
+        cls.skiptest = False
+
+        if cls.hypervisor.lower() not in ["xenserver"]:
+            cls.skiptest = True
 
         try:
 
@@ -218,6 +238,10 @@ class TestDeltaSnapshots(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
     def setUp(self):
+        if self.skiptest:
+            self.skipTest(
+                "Delta snapshot not supported on %s" %
+                self.hypervisor)
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
@@ -247,7 +271,7 @@ class TestDeltaSnapshots(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "basic"], required_hardware="true")
-    def test_02_delta_snapshots(self):
+    def test_01_delta_snapshots(self):
         """ Delta Snapshots
             1. Create file on ROOT disk of deployed VM.
             2. Create Snapshot of ROOT disk.
@@ -258,7 +282,6 @@ class TestDeltaSnapshots(cloudstackTestCase):
             6. Delete full snapshot and verify it is deleted from\
                secondary storage.
         """
-
         checksum_created = []
         full_snapshot_count = 0
         delta_snapshot_count = 0
@@ -271,14 +294,14 @@ class TestDeltaSnapshots(cloudstackTestCase):
         root_volumes_list = list_volumes(
             self.apiclient,
             virtualmachineid=self.vm.id,
-            type='ROOT',
+            type=ROOT,
             listall=True
         )
 
         status = validateList(root_volumes_list)
         self.assertEqual(
             status[0],
-            FAIL,
+            PASS,
             "Check listVolumes response for ROOT Disk")
 
         root_volume = root_volumes_list[0]
@@ -322,12 +345,12 @@ class TestDeltaSnapshots(cloudstackTestCase):
                                            id=root_vol_snapshot.id)
 
             status = validateList(snapshots_list)
-            self.assertEqual(status[0], FAIL, "Check listSnapshots response")
+            self.assertEqual(status[0], PASS, "Check listSnapshots response")
 
             # Verify Snapshot state
             self.assertEqual(
-                snapshots_list[0].state in [
-                    'BackedUp',
+                snapshots_list[0].state.lower() in [
+                    BACKED_UP,
                 ],
                 True,
                 "Snapshot state is not as expected. It is %s" %
@@ -380,7 +403,7 @@ class TestDeltaSnapshots(cloudstackTestCase):
                     self,
                     snapshots_list[0],
                     checksum_root,
-                    disk_type="data")
+                    disk_type=DATA)
 
             else:
 
@@ -389,7 +412,6 @@ class TestDeltaSnapshots(cloudstackTestCase):
                 delta_snapshot_size = snapshot_size
 
                 # Check secondary storage count for Delta Snapshots
-
                 self.assertTrue(delta_snapshot_size < full_snapshot_size,
                                 "Delta Snapshot size should be less than\
                                 Full Snapshot.")
@@ -430,12 +452,13 @@ class TestDeltaSnapshots(cloudstackTestCase):
             self,
             self.snapshots_created[0],
             checksum_created[0],
-            disk_type="data")
+            disk_type=DATA)
+
         checkIntegrityOfSnapshot(
             self,
             self.snapshots_created[2],
             checksum_created[2],
-            disk_type="data")
+            disk_type=DATA)
 
         # Delete S3
 
@@ -471,7 +494,7 @@ class TestDeltaSnapshots(cloudstackTestCase):
             self,
             self.snapshots_created[0],
             checksum_created[0],
-            disk_type="data")
+            disk_type=DATA)
 
         # Step 6
         # Delete S1
