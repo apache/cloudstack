@@ -130,7 +130,7 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
         return
 
     @attr(tags=["basic", "advanced"], required_hardware="true")
-    def test_05_storage_snapshots_limits(self):
+    def test_01_storage_snapshots_limits(self):
         """ Storage and Snapshot Limit
             1.   Create Snapshot of ROOT disk.
             2.   Verify the Secondary Storage value\
@@ -339,8 +339,6 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
             data_volumes_list[0]
         )
 
-	self.vm.reboot(self.apiclient)
-
-	data_volume_created.delete(self.apiclient)
+	data_volume_created.delete(self.userapiclient)
 
         return
