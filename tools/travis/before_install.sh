@@ -65,7 +65,7 @@ RETRY_COUNT=3
 
 sudo apt-get -q -y install uuid-runtime genisoimage python-setuptools python-pip netcat > /dev/null
 if [[ $? -ne 0 ]]; then
-  echo "\napt-get packages failed to install"
+  echo -e "\napt-get packages failed to install"
 fi
 echo "<settings>
   <mirrors>
