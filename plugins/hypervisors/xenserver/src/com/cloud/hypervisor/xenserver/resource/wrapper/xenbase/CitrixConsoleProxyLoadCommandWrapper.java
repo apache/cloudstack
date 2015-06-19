@@ -25,7 +25,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
-import java.nio.charset.Charset;
 
 import org.apache.log4j.Logger;
 
@@ -55,7 +54,7 @@ public abstract class CitrixConsoleProxyLoadCommandWrapper<T extends Command, A 
             conn.setReadTimeout(5000);
 
             final InputStream is = conn.getInputStream();
-            final BufferedReader reader = new BufferedReader(new InputStreamReader(is, Charset.defaultCharset()));
+            final BufferedReader reader = new BufferedReader(new InputStreamReader(is,"UTF-8"));
             final StringBuilder sb2 = new StringBuilder();
             String line = null;
             try {

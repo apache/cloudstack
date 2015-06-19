@@ -492,7 +492,7 @@ public class Script implements Callable<String> {
             return -1;
         else {
             try {
-                return Integer.valueOf(result.trim());
+                return Integer.parseInt(result.trim());
             } catch (NumberFormatException e) {
                 return -1;
             }

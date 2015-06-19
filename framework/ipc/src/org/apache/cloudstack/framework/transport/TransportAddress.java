@@ -19,7 +19,7 @@
 
 package org.apache.cloudstack.framework.transport;
 
-import java.util.Random;
+import java.security.SecureRandom;
 
 public class TransportAddress {
     public final static String LOCAL_SERVICE_NODE = "";
@@ -29,6 +29,7 @@ public class TransportAddress {
     private int _connectionId = LOCAL_SERVICE_CONNECTION;
     private String _endpointId;
     private int _magic;
+    private final SecureRandom randomGenerator=new SecureRandom();
 
     public TransportAddress(String nodeId, int connectionId, String endpointId) {
         assert (nodeId != null);
@@ -39,7 +40,7 @@ public class TransportAddress {
         _nodeId = nodeId;
         _connectionId = connectionId;
         _endpointId = endpointId;
-        _magic = new Random().nextInt();
+        _magic = randomGenerator.nextInt();
     }
 
     public TransportAddress(String nodeId, int connectionId, String endpointId, int magic) {

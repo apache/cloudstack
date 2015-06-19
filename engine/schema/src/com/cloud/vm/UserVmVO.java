@@ -106,9 +106,7 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
 
     @Override
     public String getDetail(String name) {
-        assert (details != null) : "Did you forget to load the details?";
-
-        return details != null ? details.get(name) : null;
+        return details != null ? details.get(name) : null ;
     }
 
     @Override

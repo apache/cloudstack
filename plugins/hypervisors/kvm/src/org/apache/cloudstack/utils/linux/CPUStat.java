@@ -53,7 +53,7 @@ public class CPUStat {
     private UptimeStats getUptimeAndCpuIdleTime() {
         UptimeStats uptime = new UptimeStats(0d, 0d);
         File f = new File(_uptimeFile);
-        try (Scanner scanner = new Scanner(f);) {
+        try (Scanner scanner = new Scanner(f,"UTF-8");) {
             String[] stats = scanner.useDelimiter("\\Z").next().split("\\s+");
             uptime = new UptimeStats(Double.parseDouble(stats[0]), Double.parseDouble(stats[1]));
         } catch (FileNotFoundException ex) {

@@ -2604,7 +2604,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { UseExternalDnsServers, routerVersionCheckEnabled, SetServiceMonitor, RouterAlertsCheckInterval };
+        return new ConfigKey<?>[] { UseExternalDnsServers, routerVersionCheckEnabled, SetServiceMonitor, RouterAlertsCheckInterval, RouterReprovisionOnOutOfBandMigration };
     }
 
     @Override
@@ -2615,34 +2615,50 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
     @Override
     public boolean postStateTransitionEvent(final StateMachine2.Transition<State, VirtualMachine.Event> transition, final VirtualMachine vo, final boolean status, final Object opaque) {
+        final State oldState = transition.getCurrentState();
         final State newState = transition.getToState();
         final VirtualMachine.Event event = transition.getEvent();
-        if (event == VirtualMachine.Event.FollowAgentPowerOnReport && newState == State.Running) {
-            if (vo.getType() == VirtualMachine.Type.DomainRouter) {
-                // opaque -> <hostId, powerHostId>
-                if (opaque != null && opaque instanceof Pair<?, ?>) {
-                    final Pair<?, ?> pair = (Pair<?, ?>)opaque;
-                    final Object first = pair.first();
-                    final Object second = pair.second();
-                    // powerHostId cannot be null in case of out-of-band VM movement
-                    if (second != null && second instanceof Long) {
-                        final Long powerHostId = (Long)second;
-                        Long hostId = null;
-                        if (first != null && first instanceof Long) {
-                            hostId = (Long)first;
-                        }
-                        // The following scenarios are due to out-of-band VM movement
-                        // 1. If VM is in stopped state in CS due to 'PowerMissing' report from old host (hostId is null) and then there is a 'PowerOn' report from new host
-                        // 2. If VM is in running state in CS and there is a 'PowerOn' report from new host
-                        if (hostId == null || hostId.longValue() != powerHostId.longValue()) {
-                            s_logger.info("Schedule a router reboot task as router " + vo.getId() + " is powered-on out-of-band, need to reboot to refresh network rules");
-                            _rebootRouterExecutor.execute(new RebootTask(vo.getId()));
-                        }
-                    }
+        boolean reprovision_out_of_band = RouterReprovisionOnOutOfBandMigration.value();
+        if (
+            (vo.getType() == VirtualMachine.Type.DomainRouter) &&
+            ((oldState == State.Stopped) || (reprovision_out_of_band && isOutOfBandMigrated(opaque))) &&
+            (event == VirtualMachine.Event.FollowAgentPowerOnReport) &&
+            (newState == State.Running)) {
+                s_logger.info("Schedule a router reboot task as router " + vo.getId() + " is powered-on out-of-band. we need to reboot to refresh network rules");
+                _rebootRouterExecutor.execute(new RebootTask(vo.getId()));
+        } else {
+            if (isOutOfBandMigrated(opaque)) {
+                final String title = "Router has been migrated out of band: " + vo.getInstanceName();
+                final String context =
+                        "An out of band migration of router " + vo.getInstanceName() + "(" + vo.getUuid() + ") was detected. No automated action was performed.";
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, vo.getDataCenterId(), vo.getPodIdToDeployIn(), title, context);
+            }
+        }
+
+        return true;
+    }
+
+    private boolean isOutOfBandMigrated(final Object opaque) {
+        if (opaque != null && opaque instanceof Pair<?, ?>) {
+            final Pair<?, ?> pair = (Pair<?, ?>)opaque;
+            final Object first = pair.first();
+            final Object second = pair.second();
+            // powerHostId cannot be null in case of out-of-band VM movement
+            if (second != null && second instanceof Long) {
+                final Long powerHostId = (Long)second;
+                Long hostId = null;
+                if (first != null && first instanceof Long) {
+                    hostId = (Long)first;
+                }
+                // The following scenarios are due to out-of-band VM movement
+                // 1. If VM is in stopped state in CS due to 'PowerMissing' report from old host (hostId is null) and then there is a 'PowerOn' report from new host
+                // 2. If VM is in running state in CS and there is a 'PowerOn' report from new host
+                if (hostId == null || hostId.longValue() != powerHostId.longValue()) {
+                    return true;
                 }
             }
         }
-        return true;
+        return false;
     }
 
     protected class RebootTask extends ManagedContextRunnable {

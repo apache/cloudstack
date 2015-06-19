@@ -16,9 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.systemvm;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -75,18 +72,7 @@ public class UpgradeSystemVMCmd extends BaseCmd {
     }
 
     public Map<String, String> getDetails() {
-        Map<String, String> customparameterMap = new HashMap<String, String>();
-        if (details != null && details.size() != 0) {
-            Collection parameterCollection = details.values();
-            Iterator iter = parameterCollection.iterator();
-            while (iter.hasNext()) {
-                HashMap<String, String> value = (HashMap<String, String>)iter.next();
-                for (Map.Entry<String,String>entry : value.entrySet()) {
-                    customparameterMap.put(entry.getKey(), entry.getValue());
-                }
-            }
-        }
-        return customparameterMap;
+        return details;
     }
 
     /////////////////////////////////////////////////////

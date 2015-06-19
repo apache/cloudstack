@@ -1266,8 +1266,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 if (gpuDevice != null) {
                     _resourceMgr.updateGPUDetails(vm.getHostId(), gpuDevice.getGroupDetails());
                 }
-                if (answer == null || !answer.getResult()) {
-                    final String details = answer != null ? answer.getDetails() : "null answer returned";
+                if (!answer.getResult()) {
+                    final String details = answer.getDetails();
                     s_logger.debug("Unable to stop VM due to " + details);
                     return false;
                 }

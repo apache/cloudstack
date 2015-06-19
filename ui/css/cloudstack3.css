@@ -11453,7 +11453,8 @@ div.ui-dialog div.health-check div.health-check-description {
 }
 
 div.ui-dialog div.health-check div.form-container form div.form-item {
-  width: 58% margin-left:116px;
+  width: 58%;
+  margin-left:116px;
   margin-top: -16px;
   margin-bottom: 30px;
 }

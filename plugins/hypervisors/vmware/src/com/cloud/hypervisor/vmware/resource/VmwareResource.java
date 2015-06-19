@@ -38,6 +38,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.io.UnsupportedEncodingException;
 
 import javax.naming.ConfigurationException;
 
@@ -312,7 +313,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected DiskControllerType _rootDiskController = DiskControllerType.ide;
 
     protected ManagedObjectReference _morHyperHost;
-    protected static ThreadLocal<VmwareContext> s_serviceContext = new ThreadLocal<VmwareContext>();
+    protected final static ThreadLocal<VmwareContext> s_serviceContext = new ThreadLocal<VmwareContext>();
     protected String _hostName;
 
     protected List<PropertyMapDynamicBean> _cmdMBeans = new ArrayList<PropertyMapDynamicBean>();
@@ -326,9 +327,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected VirtualRoutingResource _vrResource;
 
-    protected static HashMap<VirtualMachinePowerState, PowerState> s_powerStatesTable;
+    protected final static HashMap<VirtualMachinePowerState, PowerState> s_powerStatesTable = new HashMap<VirtualMachinePowerState, PowerState>();
     static {
-        s_powerStatesTable = new HashMap<VirtualMachinePowerState, PowerState>();
         s_powerStatesTable.put(VirtualMachinePowerState.POWERED_ON, PowerState.PowerOn);
         s_powerStatesTable.put(VirtualMachinePowerState.POWERED_OFF, PowerState.PowerOff);
         s_powerStatesTable.put(VirtualMachinePowerState.SUSPENDED, PowerState.PowerOn);
@@ -704,7 +704,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
         File keyFile = mgr.getSystemVMKeyFile();
         try {
-            SshHelper.scpTo(routerIp, 3922, "root", keyFile, null, filePath, content.getBytes(), fileName, null);
+            SshHelper.scpTo(routerIp, 3922, "root", keyFile, null, filePath, content.getBytes("UTF-8"), fileName, null);
         } catch (Exception e) {
             s_logger.warn("Fail to create file " + filePath + fileName + " in VR " + routerIp, e);
             return new ExecutionResult(false, e.getMessage());
@@ -3573,7 +3573,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private static String getSecondaryDatastoreUUID(String storeUrl) {
-        return UUID.nameUUIDFromBytes(storeUrl.getBytes()).toString();
+        String uuid = null;
+        try{
+            uuid=UUID.nameUUIDFromBytes(storeUrl.getBytes("UTF-8")).toString();
+        }catch(UnsupportedEncodingException e){
+            s_logger.warn("Failed to create UUID from string " + storeUrl + ". Bad storeUrl or UTF-8 encoding error." );
+        }
+        return uuid;
     }
 
     protected Answer execute(ValidateSnapshotCommand cmd) {
@@ -3896,7 +3902,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         if (hostInCluster.isHyperHostConnected())
                             return new Answer(cmd);
                         else
-                            new Answer(cmd, false, "PingTestCommand failed");
+                            return new Answer(cmd, false, "PingTestCommand failed");
                     }
                 }
             } catch (Exception e) {

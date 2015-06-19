@@ -157,7 +157,7 @@ public class Upgrade421to430 implements DbUpgrade {
             if (resultSet.next()) {
                 port = DBEncryptionUtil.decrypt(resultSet.getString(1));
                 if (StringUtils.isNotBlank(port)) {
-                    portNumber = Integer.valueOf(port);
+                    portNumber = Integer.parseInt(port);
                 }
             }
             pstmt.close();

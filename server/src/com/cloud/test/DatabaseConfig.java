@@ -1138,22 +1138,22 @@ public class DatabaseConfig {
     @DB
     protected void saveUser() {
         // insert system account
-        String insertSql = "INSERT INTO `cloud`.`account` (id, account_name, type, domain_id) VALUES (1, 'system', '1', '1')";
+        final String insertSystemAccount = "INSERT INTO `cloud`.`account` (id, account_name, type, domain_id) VALUES (1, 'system', '1', '1')";
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
-            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSystemAccount);
             stmt.executeUpdate();
         } catch (SQLException ex) {
             s_logger.error("error creating system account", ex);
         }
 
         // insert system user
-        insertSql =
+        final String insertSystemUser =
             "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created)"
                 + " VALUES (1, 'system', RAND(), 1, 'system', 'cloud', now())";
         txn = TransactionLegacy.currentTxn();
         try {
-            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSystemUser);
             stmt.executeUpdate();
         } catch (SQLException ex) {
             s_logger.error("error creating system user", ex);
@@ -1189,23 +1189,29 @@ public class DatabaseConfig {
         sb.append(pwStr);
 
         // create an account for the admin user first
-        insertSql = "INSERT INTO `cloud`.`account` (id, account_name, type, domain_id) VALUES (" + id + ", '" + username + "', '1', '1')";
+        final String insertAdminAccount = "INSERT INTO `cloud`.`account` (id, account_name, type, domain_id) VALUES (?, ?, '1', '1')";
         txn = TransactionLegacy.currentTxn();
         try {
-            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertAdminAccount);
+            stmt.setLong(1, id);
+            stmt.setString(2, username);
             stmt.executeUpdate();
         } catch (SQLException ex) {
             s_logger.error("error creating account", ex);
         }
 
         // now insert the user
-        insertSql =
-            "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, email, created) " + "VALUES (" + id + ",'" + username + "','" +
-                sb.toString() + "', 2, '" + firstname + "','" + lastname + "','" + email + "',now())";
-
+        final String insertUser =
+                "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, email, created) " + "VALUES (?,?,?, 2, ?,?,?,now())";
         txn = TransactionLegacy.currentTxn();
         try {
-            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertUser);
+            stmt.setLong(1, id);
+            stmt.setString(2, username);
+            stmt.setString(3, sb.toString());
+            stmt.setString(4, firstname);
+            stmt.setString(5, lastname);
+            stmt.setString(6, email);
             stmt.executeUpdate();
         } catch (SQLException ex) {
             s_logger.error("error creating user", ex);
@@ -1255,18 +1261,24 @@ public class DatabaseConfig {
         }
 
         String insertSql =
-            "INSERT INTO `cloud`.`configuration` (instance, component, name, value, description, category) " + "VALUES ('" + instance + "','" + component + "','" + name +
-                "','" + value + "','" + description + "','" + category + "')";
-
-        String selectSql = "SELECT name FROM cloud.configuration WHERE name = '" + name + "'";
+                "INSERT INTO `cloud`.`configuration` (instance, component, name, value, description, category) " +
+                "VALUES (?,?,?,?,?,?)";
+        String selectSql = "SELECT name FROM cloud.configuration WHERE name = ?";
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(selectSql);
+            stmt.setString(1, name);
             ResultSet result = stmt.executeQuery();
             Boolean hasRow = result.next();
             if (!hasRow) {
                 stmt = txn.prepareAutoCloseStatement(insertSql);
+                stmt.setString(1, instance);
+                stmt.setString(2, component);
+                stmt.setString(3, name);
+                stmt.setString(4, value);
+                stmt.setString(5, description);
+                stmt.setString(6, category);
                 stmt.executeUpdate();
             }
         } catch (SQLException ex) {
