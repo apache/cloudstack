@@ -313,7 +313,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected DiskControllerType _rootDiskController = DiskControllerType.ide;
 
     protected ManagedObjectReference _morHyperHost;
-    protected static ThreadLocal<VmwareContext> s_serviceContext = new ThreadLocal<VmwareContext>();
+    protected final static ThreadLocal<VmwareContext> s_serviceContext = new ThreadLocal<VmwareContext>();
     protected String _hostName;
 
     protected List<PropertyMapDynamicBean> _cmdMBeans = new ArrayList<PropertyMapDynamicBean>();
@@ -327,9 +327,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected VirtualRoutingResource _vrResource;
 
-    protected static HashMap<VirtualMachinePowerState, PowerState> s_powerStatesTable;
+    protected final static HashMap<VirtualMachinePowerState, PowerState> s_powerStatesTable = new HashMap<VirtualMachinePowerState, PowerState>();
     static {
-        s_powerStatesTable = new HashMap<VirtualMachinePowerState, PowerState>();
         s_powerStatesTable.put(VirtualMachinePowerState.POWERED_ON, PowerState.PowerOn);
         s_powerStatesTable.put(VirtualMachinePowerState.POWERED_OFF, PowerState.PowerOff);
         s_powerStatesTable.put(VirtualMachinePowerState.SUSPENDED, PowerState.PowerOn);
