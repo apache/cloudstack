@@ -1,3 +1,4 @@
+
 # Docker Files
 
 Dockerfiles used to build CloudStack images available on Docker hub.
@@ -8,8 +9,10 @@ Dockerfiles used to build CloudStack images available on Docker hub.
 ### CloudStack Management-server 
 
 ```
+docker pull docker.io/mysql:5.5
 docker pull docker.io/cloudstack/management_centos6
-docker run --name cloudstack -d -p 8080:8080 docker.io/cloudstack/management_centos6
+docker run --name cloudstack-mysql -e MYSQL_ROOT_PASSWORD=password -d docker.io/mysql:5.5
+docker run -ti --name cloudstack --link cloudstack-mysql:mysql -d -p 8080:8080 -p 8250:8250 docker.io/cloudstack/management_centos6
 ```
 
 ### Marvin
@@ -43,8 +46,10 @@ tag:latest = master branch
    mount systemvm.iso and copy ssh_rsa.pub into it.
 
    ```
+   docker run --name cloudstack-mysql -e MYSQL_ROOT_PASSWORD=password -d docker.io/mysql:5.5
    docker run --privileged -d --name cloudstack docker.io/cloudstack/management_centos6
    sleep 300
+   docker exec cloudstack /etc/init.d/cloudstack-management stop
    docker stop cloudstack
    docker commit -m "init system.iso" -a "Apache CloudStack" cloudstack docker.io/cloudstack/management_centos6
    ```
@@ -57,5 +62,5 @@ Build Marvin container usable to deploy cloud in the CloudStack management serve
 1. to build the image
 
    ```
-   docker build -f tools/docker/Dockerfile.marvin -t docker.io/cloudstack/marvin ../..
+   docker build -f Dockerfile.marvin -t docker.io/cloudstack/marvin ../..
    ```
