@@ -134,7 +134,7 @@ class TestSecStorageServices(cloudstackTestCase):
                         'Up',
                         "Check state of primary storage pools is Up or not"
                         )
-        for _ in range(4):
+        for _ in range(2):
             list_ssvm_response = list_ssvms(
                                     self.apiclient,
                                     systemvmtype='secondarystoragevm',
@@ -154,10 +154,10 @@ class TestSecStorageServices(cloudstackTestCase):
 
             for ssvm in list_ssvm_response:
                 if ssvm.state == 'Starting':
-                    time.sleep(15)
+                    time.sleep(30)
                     continue
-            for ssvm in list_ssvm_response:
-                self.assertEqual(
+        for ssvm in list_ssvm_response:
+            self.assertEqual(
                             ssvm.state,
                             'Running',
                             "Check whether state of SSVM is running"
