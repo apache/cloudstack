@@ -34,9 +34,9 @@ if [ $MOD -ne 0 ]; then
  fi
 fi
 
-export CATALINA_BASE=/opt/tomcat
-export CATALINA_HOME=/opt/tomcat
-export M2_HOME="/usr/local/maven-3.2.1/"
+#export CATALINA_BASE=/opt/tomcat
+#export CATALINA_HOME=/opt/tomcat
+#export M2_HOME="/usr/local/maven-3.2.1/"
 export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=500m"
 
 if [ $TEST_SEQUENCE_NUMBER -eq 1 ]; then
