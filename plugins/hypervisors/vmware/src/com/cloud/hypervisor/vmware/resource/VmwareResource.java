@@ -3903,7 +3903,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         if (hostInCluster.isHyperHostConnected())
                             return new Answer(cmd);
                         else
-                            new Answer(cmd, false, "PingTestCommand failed");
+                            return new Answer(cmd, false, "PingTestCommand failed");
                     }
                 }
             } catch (Exception e) {
