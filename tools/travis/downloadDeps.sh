@@ -44,6 +44,7 @@ done
 
 #For some reason, travis seems to be using surefire plugin 2.14.2
 echo "<dependency><groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><version>2.12.4</version></dependency>"  >> pom.xml
+echo "<dependency><groupId>com.google.guava</groupId><artifactId>guava</artifactId><version>10.0.1</version></dependency>"  >> pom.xml
 
 #Finish dummy pom
 echo "</dependencies></project>" >> pom.xml
