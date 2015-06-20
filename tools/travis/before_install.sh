@@ -97,7 +97,7 @@ done
 echo -e "\nDownloading Plugin dependencies"
 for ((i=0;i<$RETRY_COUNT;i++))
 do
- mvn org.apache.maven.plugins:maven-dependency-plugin:resolve-plugins > /dev/null
+ mvn org.apache.maven.plugins:maven-dependency-plugin:resolve-plugins | grep "Plugin Resolved:" | sort -u | awk '{print $4}' | tee /tmp/resolvedPlugins
  if [[ $? -eq 0 ]]; then
    echo -e "\nPlugin dependencies downloaded successfully"
    break;

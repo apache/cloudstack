@@ -42,9 +42,15 @@ for line in $(find ../../ -name pom.xml -exec sed -n '/<dependencies>/{:a;n;/<\/
 
 done
 
-#For some reason, travis seems to be using surefire plugin 2.14.2
-echo "<dependency><groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><version>2.12.4</version></dependency>"  >> pom.xml
-echo "<dependency><groupId>com.google.guava</groupId><artifactId>guava</artifactId><version>10.0.1</version></dependency>"  >> pom.xml
+#Add the resolved plugins to properly download their dependencies
+while read line ; do
+    NAME=$(echo $line | sed -e 's/.jar$//')
+    VERSION=${NAME##*-}
+    ARTIFACT=${NAME%-*}
+    GROUP=$(find ~/.m2/repository -name ${NAME}.pom -exec sed -n "1,/${ARTIFACT}/p" {} \; | tac | grep -m 1 -e "<groupId>"  | sed -e 's/^[[:space:]]*//' | tr -d '\r')
+    DATA="<dependency>${GROUP}<artifactId>${ARTIFACT}</artifactId><version>${VERSION}</version></dependency>"
+    echo $DATA >> pom.xml
+done < /tmp/resolvedPlugins
 
 #Finish dummy pom
 echo "</dependencies></project>" >> pom.xml
