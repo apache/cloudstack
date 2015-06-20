@@ -28,19 +28,23 @@ fi
 sleep 5
 
 mysql -p"$MYSQL_ENV_MYSQL_ROOT_PASSWORD" -h"$MYSQL_PORT_3306_TCP_ADDR" \
-   -e "show databases;"|grep cloud
+   -e "show databases;"|grep -q cloud
 
-if   [ $? -eq 1 ]; then
+case $? in
+  1)
 	echo "deploying new cloud databases"
 	cloudstack-setup-databases cloud:password@${MYSQL_PORT_3306_TCP_ADDR} \
 	--deploy-as=root:${MYSQL_ENV_MYSQL_ROOT_PASSWORD} -i localhost
-elif [ $? -eq 0 ]; then
+    ;;
+  0)
 	echo "using existing databases"
 	cloudstack-setup-databases cloud:password@${MYSQL_PORT_3306_TCP_ADDR}
-else
+    ;;
+  *)
 	echo "cannot access database"
 	exit 12
-fi
+    ;;
+esac
 
 service cloudstack-management start
 tail -f /var/log/cloudstack/management/catalina.out
