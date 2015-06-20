@@ -99,7 +99,7 @@ public final class LibvirtModifySshKeysCommandWrapper extends CommandWrapper<Mod
             final String prvKey = command.getPrvKey();
             try (FileOutputStream prvKStream = new FileOutputStream(prvKeyFile);){
                 if ( prvKStream != null) {
-                    prvKStream.write(prvKey.getBytes());
+                    prvKStream.write(prvKey.getBytes(StringUtils.getPreferredCharset()));
                 }
             } catch (final FileNotFoundException e) {
                 result = "File" + sshprvkeypath + "is not found:" + e.toString();
