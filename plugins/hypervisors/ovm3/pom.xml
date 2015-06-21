@@ -55,6 +55,11 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.3</version>
         <configuration>
+        <showDeprecation>true</showDeprecation>
+        <showWarnings>true</showWarnings>
+        <debug>true</debug>
+        <debuglevel>lines,vars,source</debuglevel>
+        <verbose>true</verbose>
         <useIncrementalCompilation>true</useIncrementalCompilation>
         <forceJavacCompilerUse>true</forceJavacCompilerUse>
         <compilerArgs>

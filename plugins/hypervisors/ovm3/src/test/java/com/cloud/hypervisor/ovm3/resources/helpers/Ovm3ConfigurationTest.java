@@ -55,7 +55,7 @@ public class Ovm3ConfigurationTest {
         params.put("max.template.iso.size", "50");
         params.put("host", "ovm-1");
         params.put("com.cloud.network.Networks.RouterPrivateIpStrategy",
-            "DcGlobal");
+                "DcGlobal");
         params.put("agentport", "8899");
         params.put("Host.OS.Kernel.Version", "2.6.39-300.22.2.el5uek");
         params.put("migratewait", "3600");

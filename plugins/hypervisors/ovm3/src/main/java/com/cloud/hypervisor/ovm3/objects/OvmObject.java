@@ -93,7 +93,6 @@ public class OvmObject {
     }
 
     /* nice try but doesn't work like that .. */
-    @SafeVarargs
     public final <T> Object callWrapper(String call, T... args)
             throws Ovm3ResourceException {
         List<T> params = new ArrayList<T>();
@@ -109,7 +108,6 @@ public class OvmObject {
     }
 
     /* should check on nil ? */
-    @SafeVarargs
     public final <T> Boolean nullCallWrapper(String call, Boolean nullReturn, T... args) throws Ovm3ResourceException {
         Object x = callWrapper(call, args);
         if (x == null) {
@@ -120,11 +118,9 @@ public class OvmObject {
         return false;
     }
 
-    @SafeVarargs
     public final <T> Boolean nullIsFalseCallWrapper(String call, T... args) throws Ovm3ResourceException {
         return nullCallWrapper(call, false, args);
     }
-    @SafeVarargs
     public final <T> Boolean nullIsTrueCallWrapper(String call, T... args) throws Ovm3ResourceException {
         return nullCallWrapper(call, true, args);
     }
