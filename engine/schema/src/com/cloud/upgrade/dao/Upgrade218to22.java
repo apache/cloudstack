@@ -1388,8 +1388,8 @@ public class Upgrade218to22 implements DbUpgrade {
                     pstmt = conn.prepareStatement("INSERT INTO load_balancing_rules VALUES (?,      ?,      NULL,      ?,       ?,      ?)");
                     pstmt.setLong(1, newLbId);
                     pstmt.setString(2, name);
-                    pstmt.setInt(3, Integer.valueOf(destPort));
-                    pstmt.setInt(4, Integer.valueOf(destPort));
+                    pstmt.setInt(3, Integer.parseInt(destPort));
+                    pstmt.setInt(4, Integer.parseInt(destPort));
                     pstmt.setString(5, algorithm);
                     pstmt.executeUpdate();
                     pstmt.close();
