@@ -97,6 +97,7 @@ done
 echo -e "\nDownloading Plugin dependencies"
 for ((i=0;i<$RETRY_COUNT;i++))
 do
+ #The output file is used on the next phase by the downloadDeps.sh script
  mvn org.apache.maven.plugins:maven-dependency-plugin:resolve-plugins | grep "Plugin Resolved:" | sort -u | awk '{print $4}' | tee /tmp/resolvedPlugins
  if [[ $? -eq 0 ]]; then
    echo -e "\nPlugin dependencies downloaded successfully"
@@ -120,9 +121,11 @@ do
    break;
  fi
  echo -e "\nDependency download failed"
+ #Print out errors from failed run
  cat /tmp/phase2 | grep -i -e "fail" -e "error" -e "exception"
  #Test DNS record
  getent hosts repo1.maven.org
  while ! nc -vzw 5 repo1.maven.org 80; do echo -e "\nFailed to connect to repo1.maven.org:80 will retry in 10 seconds"; sleep 10; done
+ echo -e "\nRetrying download"
 done
 cd ../..

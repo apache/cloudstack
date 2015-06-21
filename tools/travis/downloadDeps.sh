@@ -1,4 +1,26 @@
 #!/bin/bash
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# This script should be used to install additional dependencies
+# This includes: installing ubuntu packages, custom services
+# or internet downloads.
+
+# Authored by Rafael da Fonseca <rsafonseca@gmail.com>
 
 #Get all dependency blocks from all pom.xml files in the project
 for line in $(find ../../ -name pom.xml -exec sed -n '/<dependencies>/{:a;n;/<\/dependencies>/b;p;ba}' {} \; | grep -e "artifactId" -e "groupId" -e "version" -e "dependency\>" -e "exclusion\>" -e "exclusions\>"| sed -e 's/\^M//'); do
@@ -7,7 +29,6 @@ for line in $(find ../../ -name pom.xml -exec sed -n '/<dependencies>/{:a;n;/<\/
   set -- $(echo $line | awk -v FS="(>|<)" '{print $2, $3}')
 
   #Start processing data
-
   if [[ $1 == "dependency" ]]; then
     #Create new artifact dep
     unset ARTIFACT
@@ -18,10 +39,12 @@ for line in $(find ../../ -name pom.xml -exec sed -n '/<dependencies>/{:a;n;/<\/
     if [[ $GROUP != *org.apache.cloudstack* ]] && [[ $GROUP != *com.cloud* ]] && [[ $ARTIFACT != cloudstack-service-console-proxy-rdpclient ]]; then
             if [[ -z $VERSION ]] ; then
                VERSION=LATEST
+               #These dependencies don't support the LATEST keywork for some reason, and would cause mvn runs to file on dummy poms
                if [[ $GROUP == jstl ]] || [[ $ARTIFACT == mysql-connector-java ]] || [[ $GROUP == org.apache.axis ]]; then
                  continue
                fi
             fi
+            #Output resolved dependency to a file, to be picked up later
             echo "$GROUP $ARTIFACT $VERSION" >> deps.out
     fi
   elif [[ $1 == "version" ]]; then
@@ -89,7 +112,6 @@ do
   if [[ $? -ne 0 ]]; then
     RETURN_CODE=1
   fi
-
 done
 
 #Run a few plugin goals to download some more deps
@@ -113,6 +135,7 @@ do
     done < <(grep $PLUGIN cleandeps.out)
 done
 echo "Running $JOBS"
+#Call all the constructed plugin goals
 mvn $JOBS -f pom0.xml
 if [[ $? -ne 0 ]]; then
   RETURN_CODE=1
