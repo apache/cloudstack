@@ -563,7 +563,7 @@ public class ElastistorPrimaryDataStoreLifeCycle implements PrimaryDataStoreLife
 
                    if(updateTsmStorageCmdResponse.getStorage().getId() != null){
                     // update the cloudstack db
-                    _storagePoolDao.updateCapacityBytes(storagePool.getId(), Long.valueOf(capacityBytes));
+                    _storagePoolDao.updateCapacityBytes(storagePool.getId(), Long.parseLong(capacityBytes));
 
                     s_logger.info("elastistor TSM storage successfully updated");
                    }else{
