@@ -85,25 +85,7 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.3</version>
         <configuration>
-        <optimize>true</optimize>
-        <proc>none</proc>
-        <showDeprecation>true</showDeprecation>
-        <showWarnings>true</showWarnings>
-        <debug>true</debug>
-        <debuglevel>lines,vars,source</debuglevel>
-        <verbose>true</verbose>
-        <useIncrementalCompilation>false</useIncrementalCompilation>
         <failOnError>false</failOnError>
-        <forceJavacCompilerUse>true</forceJavacCompilerUse>
-        <compilerReuseStrategy>alwaysNew</compilerReuseStrategy>
-        <compilerArgs>
-            <arg>-verbose</arg>
-            <arg>-Xlint:all</arg>
-            <arg>-version</arg>
-            <arg>-deprecation</arg>
-            <arg>-Xprefer:source</arg>
-            <arg>-XprintProcessorInfo</arg>
-          </compilerArgs>
         </configuration>
       </plugin>
     </plugins>
