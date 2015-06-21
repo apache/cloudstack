@@ -1,3 +1,6 @@
+#!/bin/bash
+
+#Get all dependency blocks from all pom.xml files in the project
 for line in $(find ../../ -name pom.xml -exec sed -n '/<dependencies>/{:a;n;/<\/dependencies>/b;p;ba}' {} \; | grep -e "artifactId" -e "groupId" -e "version" -e "dependency\>" -e "exclusion\>" -e "exclusions\>"| sed -e 's/\^M//'); do
 
   #Tokenize values
@@ -11,7 +14,7 @@ for line in $(find ../../ -name pom.xml -exec sed -n '/<dependencies>/{:a;n;/<\/
     unset VERSION
     unset GROUP
   elif [[ $1 == "/dependency" ]]; then
-    #Filter out project modules interdependencies and noredist artifacts
+    #Filter out project modules interdependencies
     if [[ $GROUP != *org.apache.cloudstack* ]] && [[ $GROUP != *com.cloud* ]] && [[ $ARTIFACT != cloudstack-service-console-proxy-rdpclient ]]; then
             if [[ -z $VERSION ]] ; then
                VERSION=LATEST
@@ -25,21 +28,23 @@ for line in $(find ../../ -name pom.xml -exec sed -n '/<dependencies>/{:a;n;/<\/
     #If version is a maven var, get the value from parent pom
     if [[ $2 == \$\{* ]]; then
       VERSION=$(grep \<$(echo $2 | awk -v FS="(}|{)" '{print $2 }') ../../pom.xml | awk -v FS="(>|<)" '{print $3}')
+    #If version tag is empty, add LATEST to avoid maven errors
     elif [[ "$2" == "" ]]; then
       VERSION="LATEST"
     else
       VERSION=$2
     fi
   elif [[ $1 == "artifactId" ]]; then
+    #This avoids exclusions inside dependency block to overwrite original dependency
     if [[ -z $ARTIFACT ]]; then
       ARTIFACT=$2
     fi
   elif [[ $1 == "groupId" ]]; then
+    #This avoids exclusions inside dependency block to overwrite original dependency
      if [[ -z $GROUP ]]; then
        GROUP=$2
      fi
   fi
-
 done
 
 #Add the resolved plugins to properly download their dependencies
@@ -52,17 +57,21 @@ while read line ; do
     echo $DATA >> deps.out
 done < /tmp/resolvedPlugins
 
+#Remove duplicates and sort them, LANG export is needed to fix some sorting issue, sorting is needed for later function that relies on sorted input
 cat deps.out | LANG=C sort -u > cleandeps.out
 
+#Define index of pomfiles, to avoid duplicate deps with different versions in pom.xml, several poms are created in case of more than one version of same artifact
 LASTPOM=0
 echo '<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"><modelVersion>4.0.0</modelVersion><groupId>org.apache.cloudstack</groupId><artifactId>travis-build-deps</artifactId><name>Download Deps for Travis CI</name><version>1</version><repositories><repository><id>mido-maven-public-releases</id><name>mido-maven-public-releases</name><url>http://cs-maven.midokura.com/releases</url></repository><repository><id>juniper-contrail</id><url>http://juniper.github.io/contrail-maven/snapshots</url></repository></repositories><dependencies>' > pom${LASTPOM}.xml
 while read line ; do
   set -- $line
-
+  #This relies on correct sorting, and distributes different versions of same dependency througout different pom files
   if [[ $2 == $LASTARTIFACT ]]; then
     POMID=$(($POMID+1))
+    #If value is greater than current number of poms, create a new one
     if [[ $POMID -gt $LASTPOM ]]; then
        LASTPOM=$POMID
+       #This outputs the necessary structure to start a pom and also defines the extra repositories
        echo '<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"><modelVersion>4.0.0</modelVersion><groupId>org.apache.cloudstack</groupId><artifactId>travis-build-deps</artifactId><name>Download Deps for Travis CI</name><version>1</version><repositories><repository><id>mido-maven-public-releases</id><name>mido-maven-public-releases</name><url>http://cs-maven.midokura.com/releases</url></repository><repository><id>juniper-contrail</id><url>http://juniper.github.io/contrail-maven/snapshots</url></repository></repositories><dependencies>' > pom${LASTPOM}.xml
     fi
   else
@@ -70,7 +79,6 @@ while read line ; do
   fi
   LASTARTIFACT=$2
   echo "<dependency><groupId>$1</groupId><artifactId>$2</artifactId><version>$3</version></dependency>" >> pom${POMID}.xml
-
 done < cleandeps.out
 
 RETURN_CODE=0
@@ -90,7 +98,7 @@ done
 mkdir -p src/main/resources
 echo '<?xml version="1.0" encoding="utf-8" ?><xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"></xs:schema>' > src/main/resources/test.xsd
 
-
+#Declare plugin tests to run
 declare -a arr=("maven-surefire-plugin test" "maven-pmd-plugin pmd" "maven-compiler-plugin compile" "maven-resources-plugin resources" "maven-checkstyle-plugin check" "maven-site-plugin attach-descriptor" "maven-surefire-plugin test" "maven-jar-plugin jar" "license-maven-plugin check" "maven-jgit-buildnumber-plugin extract-buildnumber" "maven-jaxb2-plugin generate" "maven-war-plugin war -DfailOnMissingWebXml=false" "gmaven-plugin compile")
 for i in "${arr[@]}"
 do
@@ -98,6 +106,7 @@ do
     PLUGIN=$1
     MOJO=$2
     OPTION=$3
+    #Get every listed version of the plugin and make a run for each version
     while read line ; do
        set -- $line
        JOBS="${JOBS} ${1}:${2}:${3}:${MOJO} $OPTION"
@@ -105,8 +114,11 @@ do
 done
 echo "Running $JOBS"
 mvn $JOBS -f pom0.xml
+if [[ $? -ne 0 ]]; then
+  RETURN_CODE=1
+fi
 
-
+#Cleanup some files created in the run
 rm -rf deps.out src target
 
 exit $RETURN_CODE
