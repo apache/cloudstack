@@ -1286,8 +1286,8 @@ public class Upgrade218to22 implements DbUpgrade {
                         pstmt.setLong(1, id);
                         pstmt.setLong(2, instanceId);
                         pstmt.setString(3, privateIp);
-                        pstmt.setInt(4, Integer.valueOf(privatePort.trim()));
-                        pstmt.setInt(5, Integer.valueOf(privatePort.trim()));
+                        pstmt.setInt(4, Integer.parseInt(privatePort.trim()));
+                        pstmt.setInt(5, Integer.parseInt(privatePort.trim()));
                         pstmt.executeUpdate();
                         pstmt.close();
                         s_logger.trace("port_forwarding_rules table is updated");
