@@ -43,7 +43,7 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
         )
 
         if cls.template == FAILED:
-            assert false, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["template"] = cls.template.id

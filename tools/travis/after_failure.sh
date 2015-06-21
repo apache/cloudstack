@@ -19,4 +19,4 @@
 # As the filename suggests, this is executed on build failure
 # failure.
 #
-
+find /tmp//MarvinLogs -type f -exec echo -e "Printing logfile {} :\n" \; -exec cat {} \;
