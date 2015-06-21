@@ -692,9 +692,10 @@ public class Upgrade410to420 implements DbUpgrade {
                         try(ResultSet rsLabel = sel_pstmt.executeQuery();) {
                             newLabel = getNewLabel(rsLabel, trafficTypeVswitchParamValue);
                             try(PreparedStatement update_pstmt =
-                                    conn.prepareStatement("update physical_network_traffic_types set vmware_network_label = " + newLabel + " where traffic_type = '" + trafficType +
-                                            "' and vmware_network_label is not NULL;");) {
+                                    conn.prepareStatement("update physical_network_traffic_types set vmware_network_label = ? where traffic_type = ? and vmware_network_label is not NULL;");) {
                                 s_logger.debug("Updating vmware label for " + trafficType + " traffic. Update SQL statement is " + pstmt);
+                                pstmt.setString(1, newLabel);
+                                pstmt.setString(2, trafficType);
                                 update_pstmt.executeUpdate();
                             }catch (SQLException e) {
                                 throw new CloudRuntimeException("Unable to set vmware traffic labels ", e);
