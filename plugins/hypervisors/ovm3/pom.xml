@@ -49,6 +49,21 @@
         <directory>${basedir}/src/test/resources</directory>
       </testResource>
     </testResources>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.3</version>
+        <configuration>
+        <useIncrementalCompilation>true</useIncrementalCompilation>
+        <forceJavacCompilerUse>true</forceJavacCompilerUse>
+        <compilerArgs>
+            <arg>-verbose</arg>
+            <arg>-Xlint:all,-options,-path</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+    </plugins>
   </build>
   <profiles>
     <profile>
