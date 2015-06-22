@@ -104,6 +104,16 @@ class TestDisableEnableZone(cloudstackTestCase):
             )
             cls._cleanup.append(cls.account)
 
+            # Create root admin account
+
+            cls.admin_account = Account.create(
+                cls.apiclient,
+                cls.testdata["account2"],
+                admin=True
+
+            )
+            cls._cleanup.append(cls.admin_account)
+
             # Create user api client of the account
             cls.userapiclient = testClient.getUserApiClient(
                 UserName=cls.account.name,
@@ -174,7 +184,7 @@ class TestDisableEnableZone(cloudstackTestCase):
             self.apiclient,
             self.testdata["small"],
             templateid=self.template.id,
-            accountid=self.account.name,
+            accountid=self.admin_account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
             zoneid=self.zone.id
@@ -220,17 +230,22 @@ class TestDisableEnableZone(cloudstackTestCase):
                          "verify that vm is stopped")
 
         root_volume = list_volumes(
-            self.userapiclient,
+            self.apiclient,
             virtualmachineid=vm_root.id,
             type='ROOT',
             listall=True
         )
+
+        self.assertEqual(validateList(root_volume)[0],
+                         PASS,
+                         "list volume  is empty for vmid %s" % vm_root.id
+                         )
         root_vm_new = VirtualMachine.create(
             self.apiclient,
             self.testdata["small"],
             templateid=self.template.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid,
+            accountid=self.admin_account.name,
+            domainid=self.admin_account.domainid,
             serviceofferingid=self.service_offering.id,
             zoneid=self.zone.id
         )
@@ -249,6 +264,12 @@ class TestDisableEnableZone(cloudstackTestCase):
                 volumeid=root_volume[0].id,
                 listall=True)
 
+            self.assertEqual(validateList(snapshots)[0],
+                             PASS,
+                             "list snapshot  is empty for volume id %s"
+                             % root_volume[0].id
+                             )
+
             Template.create_from_snapshot(
                 self.apiclient,
                 snapshots[0],
@@ -258,29 +279,29 @@ class TestDisableEnableZone(cloudstackTestCase):
         self.testdata["privatetemplate"]["url"] = builtin_info[0]
         self.testdata["privatetemplate"]["hypervisor"] = builtin_info[1]
         self.testdata["privatetemplate"]["format"] = builtin_info[2]
-
+        """
         Template.register(
             self.apiclient,
             self.testdata["privatetemplate"],
             zoneid=self.zone.id)
-
+        """
         Volume.create(
             self.apiclient,
             self.testdata["volume"],
             zoneid=self.zone.id,
-            account=self.account.name,
-            domainid=self.account.domainid,
+            account=self.admin_account.name,
+            domainid=self.admin_account.domainid,
             diskofferingid=self.disk_offering.id
         )
-
+        """
         Iso.create(
             self.apiclient,
             self.testdata["iso2"],
             zoneid=self.zone.id,
-            account=self.account.name,
-            domainid=self.account.domainid,
+            account=self.admin_account.name,
+            domainid=self.admin_account.domainid,
         )
-
+        """
         # non-admin user should fail to create vm, snap, temp etc
         with self.assertRaises(Exception):
             VirtualMachine.create(self.userapiclient,
@@ -298,6 +319,10 @@ class TestDisableEnableZone(cloudstackTestCase):
             type='ROOT',
             listall=True
         )
+        self.assertEqual(validateList(root_volume)[0],
+                         PASS,
+                         "list volume  is empty for vmid id %s" % vm_user.id
+                         )
 
         if self.snapshotSupported:
             with self.assertRaises(Exception):
@@ -341,8 +366,8 @@ class TestDisableEnableZone(cloudstackTestCase):
             self.apiclient,
             self.testdata["small"],
             templateid=self.template.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid,
+            accountid=self.admin_account.name,
+            domainid=self.admin_account.domainid,
             serviceofferingid=self.service_offering.id,
             zoneid=self.zone.id
         )
@@ -361,6 +386,12 @@ class TestDisableEnableZone(cloudstackTestCase):
                 volumeid=root_volume[0].id,
                 listall=True)
 
+            self.assertEqual(validateList(snapshots)[0],
+                             PASS,
+                             "list snapshot  is empty for volume id %s"
+                             % root_volume[0].id
+                             )
+
             Template.create_from_snapshot(
                 self.apiclient,
                 snapshots[0],
@@ -375,8 +406,8 @@ class TestDisableEnableZone(cloudstackTestCase):
             self.apiclient,
             self.testdata["volume"],
             zoneid=self.zone.id,
-            account=self.account.name,
-            domainid=self.account.domainid,
+            account=self.admin_account.name,
+            domainid=self.admin_account.domainid,
             diskofferingid=self.disk_offering.id
         )
 
@@ -384,8 +415,8 @@ class TestDisableEnableZone(cloudstackTestCase):
             self.apiclient,
             self.testdata["iso2"],
             zoneid=self.zone.id,
-            account=self.account.name,
-            domainid=self.account.domainid,
+            account=self.admin_account.name,
+            domainid=self.admin_account.domainid,
         )
 
         # Non root user
@@ -412,6 +443,12 @@ class TestDisableEnableZone(cloudstackTestCase):
                 self.userapiclient,
                 volumeid=root_volume[0].id,
                 listall=True)
+
+            self.assertEqual(validateList(snapshots)[0],
+                             PASS,
+                             "list snapshot  is empty for volume id %s"
+                             % root_volume[0].id
+                             )
 
         Template.register(
             self.userapiclient,
@@ -451,6 +488,10 @@ class TestDisableEnablePod(cloudstackTestCase):
         cls.testdata = testClient.getParsedTestDataConfig()
         cls.hypervisor = cls.testClient.getHypervisorInfo()
 
+        cls.snapshotSupported = True
+        if cls.hypervisor.lower() in ["hyperv", "lxc"]:
+            cls.snapshotSupported = False
+
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
@@ -485,6 +526,16 @@ class TestDisableEnablePod(cloudstackTestCase):
                 domainid=cls.domain.id
             )
             cls._cleanup.append(cls.account)
+
+            # Create root admin account
+
+            cls.admin_account = Account.create(
+                cls.apiclient,
+                cls.testdata["account2"],
+                admin=True
+
+            )
+            cls._cleanup.append(cls.admin_account)
 
             # Create user api client of the account
             cls.userapiclient = testClient.getUserApiClient(
@@ -556,8 +607,8 @@ class TestDisableEnablePod(cloudstackTestCase):
             self.apiclient,
             self.testdata["small"],
             templateid=self.template.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid,
+            accountid=self.admin_account.name,
+            domainid=self.admin_account.domainid,
             serviceofferingid=self.service_offering.id,
             zoneid=self.zone.id
         )
@@ -584,18 +635,23 @@ class TestDisableEnablePod(cloudstackTestCase):
             self.apiclient,
             self.testdata["small"],
             templateid=self.template.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid,
+            accountid=self.admin_account.name,
+            domainid=self.admin_account.domainid,
             serviceofferingid=self.service_offering.id,
             zoneid=self.zone.id,
         )
 
         root_volume = list_volumes(
-            self.userapiclient,
+            self.apiclient,
             virtualmachineid=vm_root.id,
             type='ROOT',
             listall=True
         )
+        self.assertEqual(
+            validateList(root_volume)[0],
+            PASS,
+            "list snapshot  is empty for volume id %s" %
+            vm_root.id)
 
         if self.snapshotSupported:
             Snapshot.create(
@@ -606,6 +662,11 @@ class TestDisableEnablePod(cloudstackTestCase):
                 self.apiclient,
                 volumeid=root_volume[0].id,
                 listall=True)
+            self.assertEqual(
+                validateList(snapshots)[0],
+                PASS,
+                "list snapshot  is empty for volume id %s" %
+                root_volume[0].id)
 
             Template.create_from_snapshot(
                 self.apiclient,
@@ -626,8 +687,8 @@ class TestDisableEnablePod(cloudstackTestCase):
             self.apiclient,
             self.testdata["volume"],
             zoneid=self.zone.id,
-            account=self.account.name,
-            domainid=self.account.domainid,
+            account=self.admin_account.name,
+            domainid=self.admin_account.domainid,
             diskofferingid=self.disk_offering.id
         )
 
@@ -635,8 +696,8 @@ class TestDisableEnablePod(cloudstackTestCase):
             self.apiclient,
             self.testdata["iso2"],
             zoneid=self.zone.id,
-            account=self.account.name,
-            domainid=self.account.domainid,
+            account=self.admin_account.name,
+            domainid=self.admin_account.domainid,
         )
 
         with self.assertRaises(Exception):
@@ -656,36 +717,36 @@ class TestDisableEnablePod(cloudstackTestCase):
             listall=True
         )
 
+        self.assertEqual(validateList(root_volume)[0],
+                         PASS,
+                         "list volume  is empty for volume id %s" % vm_user.id
+                         )
         if self.snapshotSupported:
-            with self.assertRaises(Exception):
-                Snapshot.create(
-                    self.userapiclient,
-                    root_volume[0].id)
-
-        with self.assertRaises(Exception):
-            Template.register(
+            Snapshot.create(
                 self.userapiclient,
-                self.testdata["privatetemplate"],
-                zoneid=self.zone.id)
+                root_volume[0].id)
 
-        with self.assertRaises(Exception):
-            Volume.create(
-                self.userapiclient,
-                self.testdata["volume"],
-                zoneid=self.zone.id,
-                account=self.account.name,
-                domainid=self.account.domainid,
-                diskofferingid=self.disk_offering.id
-            )
+        Template.register(
+            self.userapiclient,
+            self.testdata["privatetemplate"],
+            zoneid=self.zone.id)
 
-        with self.assertRaises(Exception):
-            Iso.create(
-                self.userapiclient,
-                self.testdata["iso2"],
-                zoneid=self.zone.id,
-                account=self.account.name,
-                domainid=self.account.domainid,
-            )
+        Volume.create(
+            self.userapiclient,
+            self.testdata["volume"],
+            zoneid=self.zone.id,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            diskofferingid=self.disk_offering.id
+        )
+
+        Iso.create(
+            self.userapiclient,
+            self.testdata["iso2"],
+            zoneid=self.zone.id,
+            account=self.account.name,
+            domainid=self.account.domainid,
+        )
 
         # Step 2
         cmd.allocationstate = ENABLED
@@ -701,8 +762,8 @@ class TestDisableEnablePod(cloudstackTestCase):
             self.apiclient,
             self.testdata["small"],
             templateid=self.template.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid,
+            accountid=self.admin_account.name,
+            domainid=self.admin_account.domainid,
             serviceofferingid=self.service_offering.id,
             zoneid=self.zone.id,
         )
@@ -721,6 +782,12 @@ class TestDisableEnablePod(cloudstackTestCase):
                 volumeid=root_volume[0].id,
                 listall=True)
 
+            self.assertEqual(
+                validateList(snapshots)[0],
+                PASS,
+                "list snapshot  is empty for volume id %s" %
+                root_volume[0].id)
+
             Template.create_from_snapshot(
                 self.apiclient,
                 snapshots[0],
@@ -735,8 +802,8 @@ class TestDisableEnablePod(cloudstackTestCase):
             self.apiclient,
             self.testdata["volume"],
             zoneid=self.zone.id,
-            account=self.account.name,
-            domainid=self.account.domainid,
+            account=self.admin_account.name,
+            domainid=self.admin_account.domainid,
             diskofferingid=self.disk_offering.id
         )
 
@@ -744,8 +811,8 @@ class TestDisableEnablePod(cloudstackTestCase):
             self.apiclient,
             self.testdata["iso2"],
             zoneid=self.zone.id,
-            account=self.account.name,
-            domainid=self.account.domainid,
+            account=self.admin_account.name,
+            domainid=self.admin_account.domainid,
         )
 
         # Non root user
@@ -771,6 +838,11 @@ class TestDisableEnablePod(cloudstackTestCase):
                 self.userapiclient,
                 volumeid=root_volume[0].id,
                 listall=True)
+            self.assertEqual(
+                validateList(snapshots)[0],
+                PASS,
+                "list snapshot  is empty for volume id %s" %
+                root_volume[0].id)
 
         Template.register(
             self.userapiclient,
@@ -811,6 +883,9 @@ class TestDisableEnableCluster(cloudstackTestCase):
         cls.apiclient = testClient.getApiClient()
         cls.testdata = testClient.getParsedTestDataConfig()
         cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.snapshotSupported = True
+        if cls.hypervisor.lower() in ["hyperv", "lxc"]:
+            cls.snapshotSupported = False
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
@@ -850,6 +925,17 @@ class TestDisableEnableCluster(cloudstackTestCase):
                 domainid=cls.domain.id
             )
             cls._cleanup.append(cls.account)
+
+            # Create root admin account
+
+            cls.admin_account = Account.create(
+                cls.apiclient,
+                cls.testdata["account2"],
+                admin=True
+
+            )
+
+            cls._cleanup.append(cls.admin_account)
 
             # Create user api client of the account
             cls.userapiclient = testClient.getUserApiClient(
@@ -929,6 +1015,7 @@ class TestDisableEnableCluster(cloudstackTestCase):
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
             zoneid=self.zone.id,
+            mode=self.zone.networktype
         )
 
         self.vm_list.append(vm_user)
@@ -937,10 +1024,11 @@ class TestDisableEnableCluster(cloudstackTestCase):
             self.apiclient,
             self.testdata["small"],
             templateid=self.template.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid,
+            accountid=self.admin_account.name,
+            domainid=self.admin_account.domainid,
             serviceofferingid=self.service_offering.id,
             zoneid=self.zone.id,
+            mode=self.zone.networktype
         )
 
         self.vm_list.append(vm_root)
@@ -955,7 +1043,8 @@ class TestDisableEnableCluster(cloudstackTestCase):
                          DISABLED,
                          "Check if the cluster is in disabled state"
                          )
-        # Verify the exsisting vms should be running
+
+        # Verify the existing vms should be running
         self.assertEqual(vm_user.state.lower(),
                          "running",
                          "Verify that the user vm is running")
@@ -968,18 +1057,24 @@ class TestDisableEnableCluster(cloudstackTestCase):
             self.apiclient,
             self.testdata["small"],
             templateid=self.template.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid,
+            accountid=self.admin_account.name,
+            domainid=self.admin_account.domainid,
             serviceofferingid=self.service_offering.id,
             zoneid=self.zone.id,
         )
 
         root_volume = list_volumes(
-            self.userapiclient,
+            self.apiclient,
             virtualmachineid=vm_root.id,
             type='ROOT',
             listall=True
         )
+
+        self.assertEqual(
+            validateList(root_volume)[0],
+            PASS,
+            "list root volume response is empty for volume id %s" %
+            vm_root.id)
 
         if self.snapshotSupported:
             Snapshot.create(
@@ -990,6 +1085,11 @@ class TestDisableEnableCluster(cloudstackTestCase):
                 self.apiclient,
                 volumeid=root_volume[0].id,
                 listall=True)
+            self.assertEqual(
+                validateList(snapshots)[0],
+                PASS,
+                "list snapshot  is empty for volume id %s" %
+                root_volume[0].id)
 
             Template.create_from_snapshot(
                 self.apiclient,
@@ -1010,8 +1110,8 @@ class TestDisableEnableCluster(cloudstackTestCase):
             self.apiclient,
             self.testdata["volume"],
             zoneid=self.zone.id,
-            account=self.account.name,
-            domainid=self.account.domainid,
+            account=self.admin_account.name,
+            domainid=self.admin_account.domainid,
             diskofferingid=self.disk_offering.id
         )
 
@@ -1019,8 +1119,8 @@ class TestDisableEnableCluster(cloudstackTestCase):
             self.apiclient,
             self.testdata["iso2"],
             zoneid=self.zone.id,
-            account=self.account.name,
-            domainid=self.account.domainid,
+            account=self.admin_account.name,
+            domainid=self.admin_account.domainid,
         )
 
         # non-admin user should fail to create vm, snap, temp etc
@@ -1042,17 +1142,21 @@ class TestDisableEnableCluster(cloudstackTestCase):
             listall=True
         )
 
-        if self.snapshotSupported:
-            with self.assertRaises(Exception):
-                Snapshot.create(
-                    self.userapiclient,
-                    root_volume[0].id)
+        self.assertEqual(
+            validateList(root_volume)[0],
+            PASS,
+            "list root volume response is empty for volume id %s" %
+            vm_user.id)
 
-        with self.assertRaises(Exception):
-            Template.register(
+        if self.snapshotSupported:
+            Snapshot.create(
                 self.userapiclient,
-                self.testdata["privatetemplate"],
-                zoneid=self.zone.id)
+                root_volume[0].id)
+
+        Template.register(
+            self.userapiclient,
+            self.testdata["privatetemplate"],
+            zoneid=self.zone.id)
 
         Volume.create(
             self.userapiclient,
@@ -1063,14 +1167,13 @@ class TestDisableEnableCluster(cloudstackTestCase):
             diskofferingid=self.disk_offering.id
         )
 
-        with self.assertRaises(Exception):
-            Iso.create(
-                self.userapiclient,
-                self.testdata["iso2"],
-                zoneid=self.zone.id,
-                account=self.account.name,
-                domainid=self.account.domainid,
-            )
+        Iso.create(
+            self.userapiclient,
+            self.testdata["iso2"],
+            zoneid=self.zone.id,
+            account=self.account.name,
+            domainid=self.account.domainid,
+        )
 
         # Step 2
         cmd.allocationstate = ENABLED
@@ -1088,8 +1191,8 @@ class TestDisableEnableCluster(cloudstackTestCase):
             self.apiclient,
             self.testdata["small"],
             templateid=self.template.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid,
+            accountid=self.admin_account.name,
+            domainid=self.admin_account.domainid,
             serviceofferingid=self.service_offering.id,
             zoneid=self.zone.id,
         )
@@ -1145,7 +1248,7 @@ class TestDisableEnableCluster(cloudstackTestCase):
                              "disconnected",
                              "Check if host in the cluster gets disconnected"
                              )
-
+        exception_list = []
         for vm in self.vm_list:
             try:
                 SshClient(
@@ -1154,11 +1257,12 @@ class TestDisableEnableCluster(cloudstackTestCase):
                     vm.username,
                     vm.password
                 )
-            except Exception as e:
-                self.exception_list.append(e)
 
-        self.assertEqual(self.exception_list,
-                         [],
+            except Exception as e:
+                exception_list.append(e)
+
+        self.assertEqual(len(exception_list),
+                         0,
                          "Check if vm's are accesible"
                          )
 
@@ -1187,19 +1291,18 @@ class TestDisableEnableCluster(cloudstackTestCase):
                     self.userapiclient,
                     root_volume[0].id)
 
-        with self.assertRaises(Exception):
-            Template.register(
-                self.userapiclient,
-                self.testdata["privatetemplate"],
-                zoneid=self.zone.id)
+        Template.register(
+            self.userapiclient,
+            self.testdata["privatetemplate"],
+            zoneid=self.zone.id)
 
         # Step 4
         cmd.managedstate = "Managed"
         self.apiclient.updateCluster(cmd)
         # After changing the cluster's managestate to Managed hosts in the
         # cluster takes some time to come back to Up state
-        time.sleep(60)
-        hostList = Host.list(self.apiclinet,
+        time.sleep(120)
+        hostList = Host.list(self.apiclient,
                              clusterid=self.cluster.id)
         for host in hostList:
             self.assertEqual(host.state.lower(),
@@ -1231,8 +1334,8 @@ class TestDisableEnableCluster(cloudstackTestCase):
             self.apiclient,
             self.testdata["small"],
             templateid=self.template.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid,
+            accountid=self.admin_account.name,
+            domainid=self.admin_account.domainid,
             serviceofferingid=self.service_offering.id,
             zoneid=self.zone.id,
         )
@@ -1245,6 +1348,7 @@ class TestDisableEnableCluster(cloudstackTestCase):
         # Deletion of zone should fail if resources are running on the zone
         with self.assertRaises(Exception):
             self.pod.delete(self.apiclient)
+
         return
 
 
@@ -1256,6 +1360,10 @@ class TestDisableEnableHost(cloudstackTestCase):
         cls.apiclient = testClient.getApiClient()
         cls.testdata = testClient.getParsedTestDataConfig()
         cls.hypervisor = cls.testClient.getHypervisorInfo()
+
+        cls.snapshotSupported = True
+        if cls.hypervisor.lower() in ["hyperv", "lxc"]:
+            cls.snapshotSupported = False
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
@@ -1297,6 +1405,16 @@ class TestDisableEnableHost(cloudstackTestCase):
                 domainid=cls.domain.id
             )
             cls._cleanup.append(cls.account)
+
+            # Create root admin account
+
+            cls.admin_account = Account.create(
+                cls.apiclient,
+                cls.testdata["account2"],
+                admin=True
+
+            )
+            cls._cleanup.append(cls.admin_account)
 
             # Create user api client of the account
             cls.userapiclient = testClient.getUserApiClient(
@@ -1344,11 +1462,12 @@ class TestDisableEnableHost(cloudstackTestCase):
         """disable enable host
             1. Disable host and verify following things:
                 For admin user:
-                    1. Should be create to start/stop exsiting vms
-                    2. Should be create to deploy new vm,
-                    snapshot on the same host
+                    1. Should be able to  stop exsiting vms but can not start.
+                    2. Should not be able to  deploy new vm,
+                       and create snapshot on the same host
                 For Non-admin user:
-                    1. Should be create to start/stop exsiting vms
+                    1. Should not be able to stop exsiting vms but
+                       cant not start
                     2. Should not be create to deploy new vm,
                     snapshot on the same host
             2. Enable the above disabled host and verify that:
@@ -1362,8 +1481,8 @@ class TestDisableEnableHost(cloudstackTestCase):
             self.apiclient,
             self.testdata["small"],
             templateid=self.template.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid,
+            accountid=self.admin_account.name,
+            domainid=self.admin_account.domainid,
             serviceofferingid=self.service_offering.id,
             zoneid=self.zone.id,
         )
@@ -1423,8 +1542,8 @@ class TestDisableEnableHost(cloudstackTestCase):
                 self.apiclient,
                 self.testdata["small"],
                 templateid=self.template.id,
-                accountid=self.account.name,
-                domainid=self.account.domainid,
+                accountid=self.admin_account.name,
+                domainid=self.admin_account.domainid,
                 serviceofferingid=self.service_offering.id,
                 zoneid=self.zone.id,
                 hostid=hostid)
@@ -1436,13 +1555,40 @@ class TestDisableEnableHost(cloudstackTestCase):
             listall=True
         )
 
+        self.assertEqual(
+            validateList(root_volume)[0],
+            PASS,
+            "list root volume response is empty for volume id %s" %
+            vm_root.id)
+
         if self.snapshotSupported:
-            Snapshot.create(
-                self.apiclient,
-                root_volume[0].id)
+            with self.assertRaises(Exception):
+                Snapshot.create(
+                    self.apiclient,
+                    root_volume[0].id)
 
         # non-admin user should fail to create vm, snap, temp etc
-
+        with self.assertRaises(Exception):
+            VirtualMachine.create(
+                self.apiclient,
+                self.testdata["small"],
+                templateid=self.template.id,
+                accountid=self.account.name,
+                domainid=self.account.domainid,
+                serviceofferingid=self.service_offering.id,
+                zoneid=self.zone.id,
+                hostid=hostid)
+        root_volume = list_volumes(
+            self.apiclient,
+            virtualmachineid=vm_user.id,
+            type='ROOT',
+            listall=True
+        )
+        self.assertEqual(
+            validateList(root_volume)[0],
+            PASS,
+            "list root volume response is empty for volume id %s" %
+            vm_user.id)
         if self.snapshotSupported:
             with self.assertRaises(Exception):
                 Snapshot.create(
@@ -1467,8 +1613,8 @@ class TestDisableEnableHost(cloudstackTestCase):
             self.apiclient,
             self.testdata["small"],
             templateid=self.template.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid,
+            accountid=self.admin_account.name,
+            domainid=self.admin_account.domainid,
             serviceofferingid=self.service_offering.id,
             zoneid=self.zone.id,
             hostid=hostid)
@@ -1477,6 +1623,19 @@ class TestDisableEnableHost(cloudstackTestCase):
             root_vm_new.state.lower(),
             "running",
             "Verify that admin should create new VM in running state")
+
+        root_volume = list_volumes(
+            self.apiclient,
+            virtualmachineid=vm_root.id,
+            type='ROOT',
+            listall=True
+        )
+
+        self.assertEqual(
+            validateList(root_volume)[0],
+            PASS,
+            "list root volume response is empty for volume id %s" %
+            vm_root.id)
 
         if self.snapshotSupported:
             Snapshot.create(
@@ -1498,6 +1657,18 @@ class TestDisableEnableHost(cloudstackTestCase):
                          "running",
                          "Verify that admin should create new VM")
 
+        root_volume = list_volumes(
+            self.apiclient,
+            virtualmachineid=vm_user.id,
+            type='ROOT',
+            listall=True
+        )
+
+        self.assertEqual(
+            validateList(root_volume)[0],
+            PASS,
+            "list root volume response is empty for volume id %s" %
+            vm_user.id)
         if self.snapshotSupported:
             Snapshot.create(
                 self.userapiclient,
