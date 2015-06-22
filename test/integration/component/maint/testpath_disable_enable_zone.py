@@ -185,7 +185,7 @@ class TestDisableEnableZone(cloudstackTestCase):
             self.testdata["small"],
             templateid=self.template.id,
             accountid=self.admin_account.name,
-            domainid=self.account.domainid,
+            domainid=self.admin_account.domainid,
             serviceofferingid=self.service_offering.id,
             zoneid=self.zone.id
         )
@@ -280,6 +280,7 @@ class TestDisableEnableZone(cloudstackTestCase):
         self.testdata["privatetemplate"]["hypervisor"] = builtin_info[1]
         self.testdata["privatetemplate"]["format"] = builtin_info[2]
         """
+        //commenting it for now will uncomment  once expected behaviour is known
         Template.register(
             self.apiclient,
             self.testdata["privatetemplate"],
@@ -294,6 +295,7 @@ class TestDisableEnableZone(cloudstackTestCase):
             diskofferingid=self.disk_offering.id
         )
         """
+        //commenting it for now will uncomment  once expected behaviour is known
         Iso.create(
             self.apiclient,
             self.testdata["iso2"],
