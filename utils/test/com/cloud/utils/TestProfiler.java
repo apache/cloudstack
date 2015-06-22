@@ -32,11 +32,11 @@ public class TestProfiler extends Log4jEnabledTestCase {
     public void testProfiler() {
         s_logger.info("testProfiler() started");
 
-        Profiler pf = new Profiler();
+        final Profiler pf = new Profiler();
         pf.start();
         try {
             Thread.sleep(1000);
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
         }
         pf.stop();
 
@@ -45,5 +45,31 @@ public class TestProfiler extends Log4jEnabledTestCase {
         Assert.assertTrue(pf.getDuration() >= 1000);
 
         s_logger.info("testProfiler() stopped");
+    }
+
+    @Test
+    public void testProfilerNoStart() {
+        final Profiler pf = new Profiler();
+        try {
+            Thread.sleep(20);
+        } catch (final InterruptedException e) {
+        }
+        pf.stop();
+
+        Assert.assertTrue(pf.getDuration() == -1);
+        Assert.assertFalse(pf.isStarted());
+    }
+
+    @Test
+    public void testProfilerNoStop() {
+        final Profiler pf = new Profiler();
+        pf.start();
+        try {
+            Thread.sleep(20);
+        } catch (final InterruptedException e) {
+        }
+
+        Assert.assertTrue(pf.getDuration() == -1);
+        Assert.assertFalse(pf.isStopped());
     }
 }
