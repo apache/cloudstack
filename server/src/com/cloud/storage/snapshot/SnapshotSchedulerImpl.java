@@ -254,7 +254,8 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                 if (s_logger.isDebugEnabled()) {
                     final Date scheduledTimestamp = snapshotToBeExecuted.getScheduledTimestamp();
                     displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, scheduledTimestamp);
-                    s_logger.debug("Scheduling 1 snapshot for volume " + volumeId + " for schedule id: " + snapshotToBeExecuted.getId() + " at " + displayTime);
+                    s_logger.debug("Scheduling 1 snapshot for volume id " + volumeId + " (volume name:" +
+                            volume.getName() + ") for schedule id: " + snapshotToBeExecuted.getId() + " at " + displayTime);
                 }
 
                 tmpSnapshotScheduleVO = _snapshotScheduleDao.acquireInLockTable(snapshotScheId);
