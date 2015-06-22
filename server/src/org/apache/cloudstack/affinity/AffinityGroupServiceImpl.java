@@ -55,8 +55,6 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;

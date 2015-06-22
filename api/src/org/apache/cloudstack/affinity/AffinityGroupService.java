@@ -19,7 +19,6 @@ package org.apache.cloudstack.affinity;
 import java.util.List;
 
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.Pair;
 
 public interface AffinityGroupService {
 

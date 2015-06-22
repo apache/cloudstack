@@ -33,7 +33,6 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.user.Account;
 
 @APICommand(name = "createAffinityGroup", responseObject = AffinityGroupResponse.class, description = "Creates an affinity/anti-affinity group", entityType = {AffinityGroup.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)

@@ -33,7 +33,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
