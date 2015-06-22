@@ -86,6 +86,7 @@
     <cs.powermock.version>1.5.3</cs.powermock.version>
     <cs.aws.sdk.version>1.9.8</cs.aws.sdk.version>
     <cs.lang.version>2.6</cs.lang.version>
+    <cs.lang3.version>3.4</cs.lang3.version>
     <cs.commons-io.version>2.4</cs.commons-io.version>
     <cs.commons-validator.version>1.4.0</cs.commons-validator.version>
     <cs.reflections.version>0.9.9</cs.reflections.version>
@@ -101,6 +102,7 @@
     <cs.findbugs.version>3.0.1</cs.findbugs.version>
     <cs.javadoc.version>2.10.1</cs.javadoc.version>
     <cs.opensaml.version>2.6.1</cs.opensaml.version>
+    <cs.xml-apis.version>1.4.01</cs.xml-apis.version>
   </properties>
 
   <distributionManagement>
