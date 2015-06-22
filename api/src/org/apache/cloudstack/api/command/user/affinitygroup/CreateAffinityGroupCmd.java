@@ -54,6 +54,12 @@ public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
                entityType = DomainResponse.class)
     private Long domainId;
 
+    @Parameter(name = ApiConstants.PROJECT_ID,
+               type = CommandType.UUID,
+               entityType = ProjectResponse.class,
+               description = "create affinity group for project")
+    private Long projectId;
+
     @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "optional description of the affinity group")
     private String description;
 
@@ -88,6 +94,10 @@ public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
 
     public String getAffinityGroupType() {
         return affinityGroupType;
+    }
+
+    public Long getProjectId() {
+        return projectId;
     }
 
     // ///////////////////////////////////////////////////
