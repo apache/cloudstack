@@ -80,13 +80,9 @@ public class ListAffinityGroupsCmd extends BaseListProjectAndAccountResourcesCmd
 
     @Override
     public void execute() {
-
-        ListResponse<AffinityGroupResponse> response = _queryService.listAffinityGroups(id, affinityGroupName,
-                affinityGroupType, virtualMachineId, getAccountName(), getDomainId(), isRecursive(),
-                listAll(), getStartIndex(), getPageSizeVal(), getKeyword());
+        ListResponse<AffinityGroupResponse> response = _queryService.searchForAffinityGroups(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);
-
     }
 
     @Override

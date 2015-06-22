@@ -314,59 +314,6 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
     }
 
     @Override
-    public Pair<List<? extends AffinityGroup>, Integer> listAffinityGroups(Long affinityGroupId, String affinityGroupName, String affinityGroupType, Long vmId,
-        Long startIndex, Long pageSize) {
-        Filter searchFilter = new Filter(AffinityGroupVO.class, "id", Boolean.TRUE, startIndex, pageSize);
-
-        Account caller = CallContext.current().getCallingAccount();
-
-        Long accountId = caller.getAccountId();
-        Long domainId = caller.getDomainId();
-
-        SearchBuilder<AffinityGroupVMMapVO> vmInstanceSearch = _affinityGroupVMMapDao.createSearchBuilder();
-        vmInstanceSearch.and("instanceId", vmInstanceSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
-
-        SearchBuilder<AffinityGroupVO> groupSearch = _affinityGroupDao.createSearchBuilder();
-
-        SearchCriteria<AffinityGroupVO> sc = groupSearch.create();
-
-        if (accountId != null) {
-            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-        }
-
-        if (domainId != null) {
-            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-        }
-
-        if (affinityGroupId != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, affinityGroupId);
-        }
-
-        if (affinityGroupName != null) {
-            sc.addAnd("name", SearchCriteria.Op.EQ, affinityGroupName);
-        }
-
-        if (affinityGroupType != null) {
-            sc.addAnd("type", SearchCriteria.Op.EQ, affinityGroupType);
-        }
-
-        if (vmId != null) {
-            UserVmVO userVM = _userVmDao.findById(vmId);
-            if (userVM == null) {
-                throw new InvalidParameterValueException("Unable to list affinity groups for virtual machine instance " + vmId + "; instance not found.");
-            }
-            _accountMgr.checkAccess(caller, null, true, userVM);
-            // add join to affinity_groups_vm_map
-            groupSearch.join("vmInstanceSearch", vmInstanceSearch, groupSearch.entity().getId(), vmInstanceSearch.entity().getAffinityGroupId(),
-                JoinBuilder.JoinType.INNER);
-            sc.setJoinParameters("vmInstanceSearch", "instanceId", vmId);
-        }
-
-        Pair<List<AffinityGroupVO>, Integer> result =  _affinityGroupDao.searchAndCount(sc, searchFilter);
-        return new Pair<List<? extends AffinityGroup>, Integer>(result.first(), result.second());
-    }
-
-    @Override
     public List<String> listAffinityGroupTypes() {
         List<String> types = new ArrayList<String>();
 

@@ -46,20 +46,6 @@ public interface AffinityGroupService {
      */
     boolean deleteAffinityGroup(Long affinityGroupId, String account, Long domainId, String affinityGroupName);
 
-    /** Lists Affinity Groups in your account
-     * @param account
-     * @param domainId
-     * @param affinityGroupId
-     * @param affinityGroupName
-     * @param affinityGroupType
-     * @param vmId
-     * @param startIndex
-     * @param pageSize
-     * @return
-     */
-    Pair<List<? extends AffinityGroup>, Integer> listAffinityGroups(Long affinityGroupId, String affinityGroupName, String affinityGroupType, Long vmId, Long startIndex,
-        Long pageSize);
-
     /**
      * List group types available in deployment
      *
