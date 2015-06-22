@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
@@ -111,23 +112,12 @@ public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = CallContext.current().getCallingAccount();
-        if ((account == null) || _accountService.isAdmin(account.getId())) {
-            if ((domainId != null) && (accountName != null)) {
-                Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
-                if (userAccount != null) {
-                    return userAccount.getId();
-                }
-            }
+        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        if (accountId == null) {
+            return CallContext.current().getCallingAccount().getId();
         }
 
-        if (account != null) {
-            return account.getId();
-        }
-
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this
-                                          // command to SYSTEM so ERROR events
-                                          // are tracked
+        return accountId;
     }
 
     @Override
@@ -144,7 +134,7 @@ public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        AffinityGroup result = _affinityGroupService.createAffinityGroup(accountName, domainId, affinityGroupName, affinityGroupType, description);
+        AffinityGroup result = _affinityGroupService.createAffinityGroup(accountName, projectId, domainId, affinityGroupName, affinityGroupType, description);
         if (result != null) {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());

@@ -113,9 +113,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_AFFINITY_GROUP_CREATE, eventDescription = "Creating Affinity Group", create = true)
-    public AffinityGroup createAffinityGroup(String account, Long domainId, String affinityGroupName, String affinityGroupType, String description) {
-
-        Account caller = CallContext.current().getCallingAccount();
+    public AffinityGroup createAffinityGroup(String account, Long projectId, Long domainId, String affinityGroupName, String affinityGroupType, String description) {
 
         //validate the affinityGroupType
         Map<String, AffinityGroupProcessor> typeProcessorMap = getAffinityTypeToProcessorMap();
@@ -133,12 +131,12 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
             throw new PermissionDeniedException("Cannot create the affinity group");
         }
 
-        return createAffinityGroupInternal(account, domainId, affinityGroupName, affinityGroupType, description);
+        return createAffinityGroupInternal(account, projectId, domainId, affinityGroupName, affinityGroupType, description);
     }
 
     @DB
     @Override
-    public AffinityGroup createAffinityGroupInternal(String account, final Long domainId, final String affinityGroupName, final String affinityGroupType,
+    public AffinityGroup createAffinityGroupInternal(String account, final Long projectId, final Long domainId, final String affinityGroupName, final String affinityGroupType,
         final String description) {
 
         Account caller = CallContext.current().getCallingAccount();
@@ -238,12 +236,11 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
     }
 
     @DB
-    @Override
     @ActionEvent(eventType = EventTypes.EVENT_AFFINITY_GROUP_DELETE, eventDescription = "Deleting affinity group")
-    public boolean deleteAffinityGroup(Long affinityGroupId, String account, Long domainId, String affinityGroupName) {
+    public boolean deleteAffinityGroup(Long affinityGroupId, String account, Long projectId, Long domainId, String affinityGroupName) {
 
         Account caller = CallContext.current().getCallingAccount();
-        Account owner = _accountMgr.finalizeOwner(caller, account, domainId, null);
+        Long accountId = _accountMgr.finalyzeAccountId(account, domainId, projectId, true);
 
         AffinityGroupVO group = null;
         if (affinityGroupId != null) {
@@ -252,7 +249,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
                 throw new InvalidParameterValueException("Unable to find affinity group: " + affinityGroupId + "; failed to delete group.");
             }
         } else if (affinityGroupName != null) {
-            group = _affinityGroupDao.findByAccountAndName(owner.getAccountId(), affinityGroupName);
+            group = _affinityGroupDao.findByAccountAndName(accountId, affinityGroupName);
             if (group == null) {
                 throw new InvalidParameterValueException("Unable to find affinity group: " + affinityGroupName + "; failed to delete group.");
             }

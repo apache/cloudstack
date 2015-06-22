@@ -27,14 +27,15 @@ public interface AffinityGroupService {
      * Creates an affinity/anti-affinity group for the given account/domain.
      *
      * @param account
+     * @param projectId
      * @param domainId
-     * @param name
-     * @param type
+     * @param affinityGroupName
+     * @param affinityGroupType
      * @param description
      * @return AffinityGroup
      */
 
-    AffinityGroup createAffinityGroup(String account, Long domainId, String affinityGroupName, String affinityGroupType, String description);
+    AffinityGroup createAffinityGroup(String account, Long projectId, Long domainId, String affinityGroupName, String affinityGroupType, String description);
 
     /**
      * Creates an affinity/anti-affinity group.
@@ -44,7 +45,7 @@ public interface AffinityGroupService {
      * @param domainId
      * @param affinityGroupName
      */
-    boolean deleteAffinityGroup(Long affinityGroupId, String account, Long domainId, String affinityGroupName);
+    boolean deleteAffinityGroup(Long affinityGroupId, String account, Long projectId, Long domainId, String affinityGroupName);
 
     /**
      * List group types available in deployment
@@ -63,6 +64,6 @@ public interface AffinityGroupService {
 
     boolean isAffinityGroupAvailableInDomain(long affinityGroupId, long domainId);
 
-    AffinityGroup createAffinityGroupInternal(String account, Long domainId, String affinityGroupName, String affinityGroupType, String description);
+    AffinityGroup createAffinityGroupInternal(String account, Long projectId, Long domainId, String affinityGroupName, String affinityGroupType, String description);
 
 }
