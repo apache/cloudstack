@@ -23,24 +23,20 @@ public class Profiler {
     private Long startTickInMs;
     private Long stopTickInMs;
 
-    public Profiler() {
-        startTickInMs = null;
-        stopTickInMs = null;
-    }
-
     public long start() {
-        startTickInMs = System.currentTimeMillis();
+        startTickInMs = System.nanoTime();
         return startTickInMs.longValue();
     }
 
     public long stop() {
-        stopTickInMs = System.currentTimeMillis();
+        stopTickInMs = System.nanoTime();
         return stopTickInMs.longValue();
     }
 
     public long getDuration() {
-        if (startTickInMs != null && stopTickInMs != null)
+        if (startTickInMs != null && stopTickInMs != null) {
             return stopTickInMs.longValue() - startTickInMs.longValue();
+        }
 
         return -1;
     }
@@ -55,11 +51,13 @@ public class Profiler {
 
     @Override
     public String toString() {
-        if (startTickInMs == null)
+        if (startTickInMs == null) {
             return "Not Started";
+        }
 
-        if (stopTickInMs == null)
+        if (stopTickInMs == null) {
             return "Started but not stopped";
+        }
 
         return "Done. Duration: " + getDuration() + "ms";
     }
