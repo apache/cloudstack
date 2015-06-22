@@ -574,8 +574,9 @@ public class ElastistorPrimaryDataStoreLifeCycle implements PrimaryDataStoreLife
                 if(capacityIops != null){
 
                     long usedIops = _capacityMgr.getUsedIops(storagePoolVO);
+                long capacity = Long.parseLong(capacityIops);
 
-                    if (Long.valueOf(capacityIops) < usedIops) {
+                if (capacity < usedIops) {
                         throw new CloudRuntimeException("Cannot reduce the number of IOPS for this storage pool as it would lead to an insufficient number of IOPS");
                     }
 
@@ -583,7 +584,7 @@ public class ElastistorPrimaryDataStoreLifeCycle implements PrimaryDataStoreLife
 
                    if(updateTsmCmdResponse.getTsm(0).getUuid() != null){
                    // update the cloudstack db
-                    _storagePoolDao.updateCapacityIops(storagePool.getId(), Long.valueOf(capacityIops));
+                    _storagePoolDao.updateCapacityIops(storagePool.getId(), capacity);
 
                     s_logger.info("elastistor TSM IOPS successfully updated");
 
