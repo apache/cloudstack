@@ -982,10 +982,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         if (zoneId != null) {
             sc.setParameters("dataCenterId", zoneId);
-
-            if (state == null) {
-                sc.setParameters("stateNEQ", "Destroyed");
-            }
         }
 
         if (affinityGroupId != null) {
