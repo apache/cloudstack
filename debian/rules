@@ -71,8 +71,8 @@ override_dh_auto_install:
 
 	# nast hack for a couple of configuration files
 	mv $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/cloudstack-limits.conf $(DESTDIR)/$(SYSCONFDIR)/security/limits.d/
-	mv $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/cloudstack-sudoers $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/cloudstack
-	chmod 0440 $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/cloudstack
+	mv $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/cloudstack-sudoers $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/$(PACKAGE)
+	chmod 0440 $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/$(PACKAGE)
 
 	ln -s tomcat6-nonssl.conf $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/tomcat6.conf
 	ln -s server-nonssl.xml $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/server.xml

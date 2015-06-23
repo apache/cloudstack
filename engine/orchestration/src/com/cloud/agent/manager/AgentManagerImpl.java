@@ -391,6 +391,32 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
     }
 
+    /**
+     * @param commands
+     * @return
+     */
+    private Command[] checkForCommandsAndTag(Commands commands) {
+        Command[] cmds = commands.toCommands();
+
+        assert cmds.length > 0 : "Ask yourself this about a hundred times.  Why am I  sending zero length commands?";
+
+        setEmptyAnswers(commands, cmds);
+
+        for (Command cmd : cmds)
+            tagCommand(cmd);
+        return cmds;
+    }
+
+    /**
+     * @param commands
+     * @param cmds
+     */
+    private void setEmptyAnswers(Commands commands, Command[] cmds) {
+        if (cmds.length == 0) {
+            commands.setAnswers(new Answer[0]);
+        }
+    }
+
     @Override
     public Answer[] send(Long hostId, Commands commands, int timeout) throws AgentUnavailableException, OperationTimedoutException {
         assert hostId != null : "Who's not checking the agent id before sending?  ... (finger wagging)";
@@ -412,16 +438,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             assert noDbTxn() : "I know, I know.  Why are we so strict as to not allow txn across an agent call?  ...  Why are we so cruel ... Why are we such a dictator .... Too bad... Sorry...but NO AGENT COMMANDS WRAPPED WITHIN DB TRANSACTIONS!";
         }
 
-        Command[] cmds = commands.toCommands();
-
-        assert cmds.length > 0 : "Ask yourself this about a hundred times.  Why am I  sending zero length commands?";
-
-        if (cmds.length == 0) {
-            commands.setAnswers(new Answer[0]);
-        }
-
-        for (Command cmd : cmds)
-            tagCommand(cmd);
+        Command[] cmds = checkForCommandsAndTag(commands);
 
         final AgentAttache agent = getAttache(hostId);
         if (agent == null || agent.isClosed()) {
@@ -476,15 +493,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             throw new AgentUnavailableException("Agent " + agent.getId() + " is closed", agent.getId());
         }
 
-        Command[] cmds = commands.toCommands();
-
-        assert cmds.length > 0 : "Why are you sending zero length commands?";
-        if (cmds.length == 0) {
-            throw new AgentUnavailableException("Empty command set for agent " + agent.getId(), agent.getId());
-        }
-
-        for (Command cmd : cmds)
-            tagCommand(cmd);
+        Command[] cmds = checkForCommandsAndTag(commands);
 
         Request req = new Request(hostId, agent.getName(), _nodeId, cmds, commands.stopOnError(), true);
         req.setSequence(agent.getNextSequence());

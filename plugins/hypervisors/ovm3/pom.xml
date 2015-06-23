@@ -27,11 +27,31 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <dependencies>
-<dependency>
-    <groupId>org.apache.xmlrpc</groupId>
-    <artifactId>xmlrpc-client</artifactId>
-    <version>3.1.3</version>
-</dependency>
+    <dependency>
+      <groupId>xml-apis</groupId>
+      <artifactId>xml-apis</artifactId>
+      <version>${cs.xml-apis.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.xmlrpc</groupId>
+      <artifactId>xmlrpc-client</artifactId>
+      <version>${cs.xmlrpc.version}</version>
+    </dependency>
+    <dependency>
+	<groupId>org.apache.xmlrpc</groupId>
+	<artifactId>xmlrpc-common</artifactId>
+	<version>${cs.xmlrpc.version}</version>
+    </dependency>
+    <dependency>
+	<groupId>org.apache.commons</groupId>
+	<artifactId>commons-lang3</artifactId>
+	<version>${cs.lang3.version}</version>
+    </dependency>
+    <dependency>
+	<groupId>log4j</groupId>
+	<artifactId>log4j</artifactId>
+	<version>${cs.log4j.version}</version>
+    </dependency>
   </dependencies>
    <build>
     <sourceDirectory>${basedir}/src/main/java</sourceDirectory>

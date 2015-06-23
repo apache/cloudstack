@@ -2292,7 +2292,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         final List<String[]> vmData = new ArrayList<String[]>();
 
         if (userData != null) {
-            vmData.add(new String[]{"userdata", "user-data", new String(Base64.decodeBase64(userData))});
+            vmData.add(new String[]{"userdata", "user-data", new String(Base64.decodeBase64(userData),StringUtils.getPreferredCharset())});
         }
         vmData.add(new String[]{"metadata", "service-offering", StringUtils.unicodeEscape(serviceOffering)});
         vmData.add(new String[]{"metadata", "availability-zone", StringUtils.unicodeEscape(zoneName)});
@@ -2323,7 +2323,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                     throw new CloudRuntimeException("Unable to get MD5 MessageDigest", e);
                 }
                 md5.reset();
-                md5.update(password.getBytes());
+                md5.update(password.getBytes(StringUtils.getPreferredCharset()));
                 byte[] digest = md5.digest();
                 BigInteger bigInt = new BigInteger(1, digest);
                 String hashtext = bigInt.toString(16);

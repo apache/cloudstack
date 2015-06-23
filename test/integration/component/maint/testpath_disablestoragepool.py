@@ -65,10 +65,11 @@ def verify_vm_storage_pool(self, vmid, storageid):
 @ddt
 class TestPathDisableStorage_Basic(cloudstackTestCase):
     """
-        # Tests in this path requires to be run independently (not to be run in parallel  with any other tests since it involves disabling/enabling storage pools and may cause unexpected failures in other tests
+        # Tests in this path requires to be run independently
+        # ( not to be run in parallel  with any other tests since it involves disabling/enabling storage pools and may cause unexpected failures in other tests
         # The test also requires to have 2 Cluster-wide and 2 zone-wide storage pools available in the setup.
         # For running the tests on local storage, ensure there are 2 local storage pools set up on each host
-
+    
         """
 
 
@@ -170,7 +171,7 @@ class TestPathDisableStorage_Basic(cloudstackTestCase):
     @attr(tags=['advanced', 'advancedsg', 'basic'], required_hardware='false')
     def test_01_disable_enable_pool(self, value):
         """
-
+        
                 Test Steps:
                 =========
                 1. Deploy 2 VMs
@@ -199,16 +200,23 @@ class TestPathDisableStorage_Basic(cloudstackTestCase):
             other_scope = 'CLUSTER'
             self.service_offering = self.service_offering_shared
             self.disk_offering = self.disk_offering_shared
-        else:
+        elif value == 'host':
             # local storage
             other_scope = None
-            self.service_offering = self.service_offering_local
-            self.disk_offering = self.disk_offering_local
+            if self.zone.localstorageenabled:
+                self.service_offering = self.service_offering_local
+                self.disk_offering = self.disk_offering_local
+            else:
+                self.skipTest("Local storage not enabled")
 
         # Keep only one pool active and disable the rest
         try:
             self.list_storage = StoragePool.list(self.userapiclient, scope=value)
-            count_st_pools = len(self.list_storage)
+            if self.list_storage:
+                count_st_pools = len(self.list_storage)
+            else:
+                count_st_pools = 0
+            self.disabled_pool_1 = None
             if count_st_pools > 1:
                 self.debug('Found % s storage pools, keeping one and disabling rest' % count_st_pools)
                 for pool in self.list_storage[1:]:
@@ -224,7 +232,7 @@ class TestPathDisableStorage_Basic(cloudstackTestCase):
             elif count_st_pools == 1:
                 self.debug('Only one % s wide storage found - will not be able to complete all tests' % value)
             else:
-                self.fail('No % s  storage pools found' % value)
+                self.skipTest('No % s  storage pools found' % value)
         except Exception as e:
             raise e
 
@@ -328,6 +336,9 @@ class TestPathDisableStorage_Basic(cloudstackTestCase):
                                                        zoneid=self.zone.id)
         verify_vm_state(self, self.virtual_machine_3.id, 'Running')
 
+        if self.hypervisor.lower() == 'lxc':
+            self.skipTest("Not running rest of tests in lxc")
+
         # Step 9: Create and attach new disk to VM
         self.volume = Volume.create(self.userapiclient,
                                     services=self.testdata['volume'],
@@ -351,7 +362,7 @@ class TestPathDisableStorage_Basic(cloudstackTestCase):
         if self.disabled_pool_1:
             newpoolid = self.disabled_pool_1.id
         else:
-            self.fail('Step 9: Could not find a second storage pool to complete the remaining tests')
+            self.skipTest('Step 9: Could not find a second storage pool to complete the remaining tests')
 
         # Step 10: Disable storage pool SP1 again and enable new pool
         try:
@@ -403,7 +414,7 @@ class TestPathDisableStorage_Basic(cloudstackTestCase):
 
 
     @data('host', 'CLUSTER', 'ZONE')
-    @attr(tags=['advanced', 'advancedsg', 'basic', 'debug'], required_hardware='false')
+    @attr(tags=['advanced', 'advancedsg', 'basic'], required_hardware='false')
     def test_02_vm_operations_on_disabled_pool(self, value):
 
         """
@@ -411,21 +422,20 @@ class TestPathDisableStorage_Basic(cloudstackTestCase):
         =========
 
         1. Deploy a VM and attach volume
-        2. Create Template from root volume of the VM
-        3. Deploy a VM using the template
-        4. Disable the storage pool
-        5. Attach a new volume - should fail
-        6. Resize DATA disk to a higher value
-        7. Take VM Snapshot of the VM (for supported hypervisors)
-        8. Destroy the VM and immediately restore the VM
-        9. Enable a new storage pool
-        10. Re-install the VM with same template
-        11. Re-install the VM with the new template created earlier
-        12. Repeat tests with enabled pool, Attach new Volume to VM2
-        13. Resize disk to a higher value
-        14. Reboot the VM
-        15. Take VM Snapshot of the VM
-        16. Destroy the VM and immediately restore the VM
+        2. Disable Storage
+        3. Create Template from root volume of the VM
+        4. Attach a new volume - should fail
+        5. Resize DATA disk to a higher value
+        6. Take VM Snapshot of the VM (for supported hypervisors)
+        7. Destroy the VM and immediately restore the VM
+        8. Enable a new storage pool
+        9. Re-install the VM with same template
+        10. Re-install the VM with the new template created earlier
+        11. Repeat tests with enabled pool, Attach new Volume to VM2
+        12. Resize disk to a higher value
+        13. Reboot the VM
+        14. Take VM Snapshot of the VM
+        15. Destroy the VM and immediately restore the VM
 
         """
 
@@ -439,16 +449,26 @@ class TestPathDisableStorage_Basic(cloudstackTestCase):
             other_scope = 'CLUSTER'
             self.service_offering = self.service_offering_shared
             self.disk_offering = self.disk_offering_shared
-        else:
+        elif value == 'host':
             # local storage
             other_scope = None
-            self.service_offering = self.service_offering_local
-            self.disk_offering = self.disk_offering_local
+            if self.zone.localstorageenabled:
+                self.service_offering = self.service_offering_local
+                self.disk_offering = self.disk_offering_local
+            else:
+                self.skipTest("Local storage not enabled")
+
+        if self.hypervisor.lower() == 'lxc':
+            self.skipTest("Not running rest of tests in lxc")
 
         # Keep one storage pool active and disable the rest
         try:
             self.list_storage = StoragePool.list(self.userapiclient, scope=value)
-            count_st_pools = len(self.list_storage)
+            if self.list_storage:
+                count_st_pools = len(self.list_storage)
+            else:
+                count_st_pools = 0
+            self.disabled_pool_1 = None
             if count_st_pools > 1:
                 self.debug('Found % s storage pools, keeping one and disabling rest' % count_st_pools)
                 for pool in self.list_storage[1:]:
@@ -464,11 +484,11 @@ class TestPathDisableStorage_Basic(cloudstackTestCase):
             elif count_st_pools == 1:
                 self.debug('Only one % s wide storage found - will not be able to complete all tests' % value)
             else:
-                self.fail('No % s wide storage pools found' % value)
+                self.skipTest('No % s wide storage pools found' % value)
         except Exception as e:
             raise e
 
-         # Disable the other scope shared storage pools while we are testing on one - applicable for only shared storage
+         # Disable the other scope storage pools while we are testing on one scope - applicable for only shared storage
         if value != 'host':
             try:
                 self.list_storage = StoragePool.list(self.userapiclient, scope=other_scope)
@@ -508,7 +528,21 @@ class TestPathDisableStorage_Basic(cloudstackTestCase):
                                                     'Check if volume state (attached) is reflected')
         self.debug('Step 1: volume id:%s successfully attached to vm id%s' % (self.volume_1.id, self.virtual_machine_1.id))
 
-        # Step 2: Create Template from root volume of  VM1
+        # Step 2: Disable the storage pool
+
+        self.storage_pools_list = StoragePool.list(self.userapiclient, scope=value, state='Up')
+        self.storage_pool_1 = self.storage_pools_list[0]
+
+        try:
+            self.debug('Step 2: Disabling Storage Pool: %s' % self.storage_pool_1.id)
+            StoragePool.update(self.userapiclient, id=self.storage_pool_1.id, enabled=False)
+            self.disabled_list.append(self.storage_pool_1.id)
+        except Exception as e:
+            self.debug("Step 2: Couldn't disable pool %s" % e)
+        verify_pool_state(self, self.storage_pool_1.id, 'Disabled')
+        verify_vm_state(self, self.virtual_machine_1.id, 'Running')
+
+        # Step 3: Create Template from root volume of the VM
         root_volume_1 = Volume.list(self.userapiclient, virtualmachineid=self.virtual_machine_1.id, type='ROOT')[0]
         self.virtual_machine_1.stop(self.userapiclient)
         try:
@@ -518,62 +552,35 @@ class TestPathDisableStorage_Basic(cloudstackTestCase):
                                          account=self.account.name,
                                          domainid=self.account.domainid)
             self.cleanup.append(template_2)
-            self.debug('Step 2: Created template with ID: %s' % template_2.id)
+            self.debug('Step 3: Created template with ID: %s' % template_2.id)
             list_template = Template.list(self.userapiclient, templatefilter='self', id=template_2.id)
         except Exception as e:
-            self.fail('Step 2: Template from volume failed')
+            self.fail('Step 3: Template from volume failed')
 
-        # Step 3: Deploy a VM using the template
-        self.debug("Step 3: Deploying VM using template created")
-        self.virtual_machine_2 = VirtualMachine.create(self.userapiclient,
-                                                       self.testdata['small'],
-                                                       templateid=template_2.id,
-                                                       accountid=self.account.name,
-                                                       domainid=self.account.domainid,
-                                                       serviceofferingid=self.service_offering.id,
-                                                       zoneid=self.zone.id)
-
-        verify_vm_state(self, self.virtual_machine_2.id, 'Running')
-
-        # Step 4: Disable the storage pool
-        self.storage_pools_list = StoragePool.list(self.userapiclient, scope=value, state='Up')
-        self.storage_pool_1 = self.storage_pools_list[0]
-        try:
-            self.debug('Step 4: Disabling Storage Pool: %s' % self.storage_pool_1.id)
-            StoragePool.update(self.userapiclient, id=self.storage_pool_1.id, enabled=False)
-            self.disabled_list.append(self.storage_pool_1.id)
-        except Exception as e:
-            self.debug("Step 4: Couldn't disable pool %s" % e)
-        verify_pool_state(self, self.storage_pool_1.id, 'Disabled')
-        verify_vm_state(self, self.virtual_machine_1.id, 'Stopped')
-        verify_vm_state(self, self.virtual_machine_2.id, 'Running')
-
-        # Step 5: Attach a new volume - should fail
+        # Step 4: Attach a new volume - should fail
         self.volume_2 = Volume.create(self.userapiclient,
                                       services=self.testdata['volume'],
                                       diskofferingid=self.disk_offering.id,
                                       zoneid=self.zone.id)
-        self.debug('Step 5: Trying to attach new volume to VM on disabled storage - should fail')
+        self.debug('Step 4: Trying to attach new volume to VM on disabled storage - should fail')
         with self.assertRaises(Exception):
-            self.virtual_machine_2.attach_volume(self.userapiclient, self.volume_2)
+            self.virtual_machine_1.attach_volume(self.userapiclient, self.volume_2)
 
-        # Step 6: Resize DATA disk to a higher value for attached disk
+        # Step 5: Resize DATA disk to a higher value for attached disk
+        try:
+            self.volume_1.resize(self.userapiclient, diskofferingid=self.resized_disk_offering.id)
+            list_volume_1 = Volume.list(self.userapiclient, id=self.volume_1.id)
+            self.assertEqual(list_volume_1[0].diskofferingid,
+                             self.resized_disk_offering.id,
+                             'check list volume response for volume id:  %s' % self.volume_1.id)
+            self.debug('Step 5: volume id %s got resized successfully' % list_volume_1[0].id)
+        except Exception as e:
+            self.fail('Step 5: Volume resize on disabled pool failed: % s' % e)
 
-        if self.hypervisor.lower() not in ('hyperv'):
-            try:
-                self.volume_1.resize(self.userapiclient, diskofferingid=self.resized_disk_offering.id)
-                list_volume_1 = Volume.list(self.userapiclient, id=self.volume_1.id)
-                self.assertEqual(list_volume_1[0].diskofferingid,
-                                 self.resized_disk_offering.id,
-                                 'check list volume response for volume id:  %s' % self.volume_1.id)
-                self.debug('Step 6: volume id %s got resized successfully' % list_volume_1[0].id)
-            except Exception as e:
-                self.fail('Step 6: Volume resize on disabled pool failed: % s' % e)
-
-        # Step 7: Take VM Snapshot
+        # Step 6: Take VM Snapshot
         if self.hypervisor.lower() not in ('kvm', 'hyperv', 'lxc'):
             try:
-                self.debug("Step 7: Taking VM Snapshot for vm id % s" % self.virtual_machine_1.id)
+                self.debug("Step 6: Taking VM Snapshot for vm id % s" % self.virtual_machine_1.id)
                 vm_snapshot = VmSnapshot.create(self.userapiclient,
                                                 self.virtual_machine_1.id,
                                                 'false',
@@ -581,10 +588,14 @@ class TestPathDisableStorage_Basic(cloudstackTestCase):
                                                 'Display Text')
                 self.assertEqual(vm_snapshot.state, 'Ready', 'Check VM snapshot is ready')
             except Exception as e:
-                self.fail('Step 7: VM Snapshot on disabled pool failed: % s' % e)
+                self.fail('Step 6: VM Snapshot on disabled pool failed: % s' % e)
+	
+        if vm_snapshot:
+          self.debug('Step 6: Deleting Vm Snapshot')
+          VmSnapshot.deleteVMSnapshot(self.userapiclient, vm_snapshot.id)
 
-        # Step 8: Destroy VM and immediately restore the VM
-        self.debug("Step 8: Deleting and restoring the VM, should continue to run from same storage pool")
+        # Step 7: Destroy VM and immediately restore the VM
+        self.debug("Step 7: Deleting and restoring the VM, should continue to run from same storage pool")
         self.virtual_machine_1.delete(self.userapiclient, expunge=False)
         self.virtual_machine_1.recover(self.userapiclient)
         verify_vm_state(self, self.virtual_machine_1.id, 'Stopped')
@@ -592,81 +603,80 @@ class TestPathDisableStorage_Basic(cloudstackTestCase):
         verify_vm_state(self, self.virtual_machine_1.id, 'Running')
         verify_vm_storage_pool(self, self.virtual_machine_1.id, self.storage_pool_1.id)
 
-        # Step 9: Enable new pool
+        # Step 8: Enable new pool
         if self.disabled_pool_1:
             try:
                 newpoolid = self.disabled_pool_1.id
                 StoragePool.update(self.userapiclient, id=newpoolid, enabled=True)
-                self.debug("Step 9: Enabling new pool % s " % newpoolid)
+                self.debug("Step 8: Enabling new pool % s " % newpoolid)
                 if newpoolid in self.disabled_list:
                     self.disabled_list.remove(newpoolid)
             except Exception as e:
-                self.fail('Step 9: Enable storage pool %s' % e, 'failed')
+                self.fail('Step 8: Enable storage pool %s' % e, 'failed')
         else:
-            self.debug('Step 9: Could not find a second storage pool, so enabling the first storage pool and running the tests')
+            self.debug('Step 8: Could not find a second storage pool, so enabling the first storage pool and running the tests')
             try:
-                self.debug('Step 9: Enabling Storage Pool: %s' % self.storage_pool_1.id)
+                self.debug('Step 8: Enabling Storage Pool: %s' % self.storage_pool_1.id)
                 StoragePool.update(self.userapiclient, id=self.storage_pool_1.id, enabled=True)
                 if self.storage_pool_1.id in self.disabled_list:
                     self.disabled_list.remove(self.storage_pool_1.id)
                 newpoolid = self.storage_pool_1.id
             except Exception as e:
-                self.fail("Step 9: Couldn't enable pool %s" % e)
+                self.fail("Step 8: Couldn't enable pool %s" % e)
         verify_pool_state(self, newpoolid, 'Up')
 
-        # Step 10: Re-install the VM with same template
-        self.debug("Step 10: Re-installing VM 1")
-        vm_restore = self.virtual_machine_1.restore(self.userapiclient, templateid=self.template.id)
-        verify_vm_storage_pool(self, self.virtual_machine_1.id, newpoolid)
+        # Step 9: Re-install the VM with same template
 
-        # Step 11 : Re-install VM with different template
-        self.debug("Step 11: re-installing VM with different template")
-        vm_restore = self.virtual_machine_1.restore(self.userapiclient, templateid=template_2.id)
-        verify_vm_storage_pool(self, self.virtual_machine_1.id, newpoolid)
+        if value != 'host':
+            self.debug("Step 9: Re-installing VM 1")
+            vm_restore = self.virtual_machine_1.restore(self.userapiclient, templateid=self.template.id)
+            verify_vm_storage_pool(self, self.virtual_machine_1.id, newpoolid)
 
-        # Step 12, Repeat tests with enabled pool. Start with attach VM
-        self.debug("Step 12: Attach volume to VM")
-        self.virtual_machine_1.attach_volume(self.userapiclient, self.volume_2)
-        list_volume_2 = Volume.list(self.userapiclient, id=self.volume_2.id)
-        self.assertEqual(list_volume_2[0].virtualmachineid,
-                         self.virtual_machine_1.id,
-        'Check if volume state (attached) is reflected')
-        self.debug('Step 12: volume id:% s successfully attached to vm id % s' % (self.volume_2.id, self.virtual_machine_1.id))
+            # Step 10 : Re-install VM with different template
+            self.debug("Step 10: re-installing VM with different template")
+            vm_restore = self.virtual_machine_1.restore(self.userapiclient, templateid=template_2.id)
+            verify_vm_storage_pool(self, self.virtual_machine_1.id, newpoolid)
 
-        # Step 13: Re-size Volume to higher disk offering
-        if self.hypervisor.lower() not in ('hyperv'):
+        # Step 11: Repeat tests with enabled pool. Start with attach VM
+        if value != 'host':
+            self.debug("Step 11: Attach volume to VM")
+            self.virtual_machine_1.attach_volume(self.userapiclient, self.volume_2)
+            list_volume_2 = Volume.list(self.userapiclient, id=self.volume_2.id)
+            self.assertEqual(list_volume_2[0].virtualmachineid,
+                             self.virtual_machine_1.id,
+            'Check if volume state (attached) is reflected')
+            self.debug('Step 11: volume id:% s successfully attached to vm id % s' % (self.volume_2.id, self.virtual_machine_1.id))
+
+            # Step 12: Re-size Volume to higher disk offering
             try:
                 self.virtual_machine_1.stop(self.userapiclient)
                 self.volume_2.resize(self.userapiclient, diskofferingid=self.resized_disk_offering.id)
                 list_volume_2 = Volume.list(self.userapiclient, id=self.volume_2.id)
                 self.assertEqual(list_volume_2[0].diskofferingid, self.resized_disk_offering.id, 'check list volume response for volume id:  %s' % self.volume_2.id)
-                self.debug('Step 13: volume id %s got resized successfully' % list_volume_2[0].id)
+                self.debug('Step 12: volume id %s got resized successfully' % list_volume_2[0].id)
             except Exception as e:
-                self.fail('Step 13: Failed to resize volume % s ' % e)
+                self.fail('Step 12: Failed to resize volume % s ' % e)
+            self.virtual_machine_1.start(self.userapiclient)
 
-        self.virtual_machine_1.start(self.userapiclient)
-
-        # Step 14: Reboot VM
+        # Step 13: Reboot VM
         self.virtual_machine_1.reboot(self.userapiclient)
-        verify_vm_storage_pool(self, self.virtual_machine_1.id, newpoolid)
+        verify_vm_state(self, self.virtual_machine_1.id, 'Running')
 
-        # Step 15: Take Snapshot of VM
+        # Step 14: Take Snapshot of VM
         if self.hypervisor.lower() not in ('kvm', 'hyperv', 'lxc'):
             try:
                 vm_snapshot = VmSnapshot.create(self.userapiclient, self.virtual_machine_1.id, 'false', 'TestSnapshot2', 'Display Text')
                 self.assertEqual(vm_snapshot.state, 'Ready', 'Check the snapshot of vm is ready!')
             except Exception as e:
-                self.fail('Step 15: Snapshot failed post enabling new storage pool')
-        verify_vm_storage_pool(self, self.virtual_machine_1.id, newpoolid)
+                self.fail('Step 14: Snapshot failed post enabling new storage pool')
 
-        # Step 16: Delete and recover VM
-        self.debug("Step 16: Deleting and recovering VM")
+        # Step 15: Delete and recover VM
+        self.debug("Step 15: Deleting and recovering VM")
         self.virtual_machine_1.delete(self.userapiclient, expunge=False)
         self.virtual_machine_1.recover(self.userapiclient)
         verify_vm_state(self, self.virtual_machine_1.id, 'Stopped')
         self.virtual_machine_1.start(self.userapiclient)
         verify_vm_state(self, self.virtual_machine_1.id, 'Running')
-        verify_vm_storage_pool(self, self.virtual_machine_1.id, newpoolid)
 
 
 @ddt
@@ -783,10 +793,10 @@ class TestPathDisableStorage_Maint_Tags(cloudstackTestCase):
 
 
     @data('host','CLUSTER', 'ZONE')
-    @attr(tags=['advanced', 'advancedsg', 'debug', 'basic'], required_hardware='false')
+    @attr(tags=['advanced', 'advancedsg', 'basic'], required_hardware='false')
     def test_01_maint_capacity_tags(self, value):
         """
-
+        
         Test Steps:
         ========
 
@@ -818,11 +828,14 @@ class TestPathDisableStorage_Maint_Tags(cloudstackTestCase):
             other_scope = 'CLUSTER'
             self.service_offering = self.service_offering_shared
             self.disk_offering = self.disk_offering_shared
-        else:
+        elif value == 'host':
             # local storage
-            other_scope = None
-            self.service_offering = self.service_offering_local
-            self.disk_offering = self.disk_offering_local
+            if self.zone.localstorageenabled:
+                other_scope = None
+                self.service_offering = self.service_offering_local
+                self.disk_offering = self.disk_offering_local
+            else:
+                self.skipTest("Local storage not enabled")
 
         # Keep 2 storage pools active and disable the rest. If only one storage pool is present, then skip the test
         try:
@@ -921,16 +934,6 @@ class TestPathDisableStorage_Maint_Tags(cloudstackTestCase):
         self.virtual_machine_1.reboot(self.userapiclient)
         verify_vm_storage_pool(self, self.virtual_machine_1.id, storage_id)
 
-        # TO BE REMOVED
-        try:
-            self.list_storage = StoragePool.list(self.userapiclient, id=storage_id)
-            if self.list_storage[0].state == 'Disabled':
-                StoragePool.update(self.userapiclient, id=storage_id, enabled=True)
-                self.disabled_list.remove(storage_id)
-        except Exception as e:
-            raise e
-
-
         # Step 6: Add tags to the storage pool
         self.debug("Step 6: Adding tags to storage pool")
         StoragePool.update(self.userapiclient, id=storage_id, tags='disable_prov')
@@ -1019,7 +1022,7 @@ class TestPathDisableStorage_Cross_Cluster(cloudstackTestCase):
         since it involves disabling/enabling storage pools and may cause unexpected failures in other tests
         # This test atleast 2 Clusters in the set up wiht suitable hosts for migration.
         # For running the tests on local storage, ensure there are 2 local storage pools set up on each host
-
+    
         """
 
 
@@ -1113,6 +1116,9 @@ class TestPathDisableStorage_Cross_Cluster(cloudstackTestCase):
             12. Attach disk should now pass
 
             """
+        if self.hypervisor.lower() == 'lxc':
+            self.skipTest("Not running rest of tests in lxc")
+
         cluster_id_list = []
         clusters = list_clusters(self.userapiclient, listall='true')
         if len(clusters) == 1:
@@ -1287,3 +1293,4 @@ class TestPathDisableStorage_Cross_Cluster(cloudstackTestCase):
                          self.virtual_machine_1.id,
                          'Step 12: Check if volume state (attached) is reflected')
         self.debug('Step 12: volume id:%s successfully attached to vm id%s' % (self.volume_1.id, self.virtual_machine_1.id))
+

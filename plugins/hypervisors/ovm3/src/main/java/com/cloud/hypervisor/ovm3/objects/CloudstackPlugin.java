@@ -56,6 +56,7 @@ public class CloudstackPlugin extends OvmObject {
                 put("err", null);
                 put("out", null);
             }
+            private static final long serialVersionUID = 5L;
         };
         public ReturnCode() {
         }
@@ -120,7 +121,7 @@ public class CloudstackPlugin extends OvmObject {
         Integer sleep = interval;
         try {
             while (!x && retries > 0) {
-                x = (Boolean) nullIsFalseCallWrapper("check_dom0_port", ip, port, interval);
+                x = nullIsFalseCallWrapper("check_dom0_port", ip, port, interval);
                 retries--;
                 Thread.sleep(sleep * 1000);
             }
@@ -177,9 +178,9 @@ public class CloudstackPlugin extends OvmObject {
         return (Boolean) callWrapper("check_dom0_storage_health", path, script, guid, timeout);
     }
     public boolean ovsMkdirs(String dir) throws Ovm3ResourceException{
-        return (Boolean) nullIsTrueCallWrapper("ovs_mkdirs", dir);
+        return nullIsTrueCallWrapper("ovs_mkdirs", dir);
     }
     public boolean ovsMkdirs(String dir, Integer mode) throws Ovm3ResourceException{
-        return (Boolean) nullIsTrueCallWrapper("ovs_mkdirs", dir, mode);
+        return nullIsTrueCallWrapper("ovs_mkdirs", dir, mode);
     }
 }

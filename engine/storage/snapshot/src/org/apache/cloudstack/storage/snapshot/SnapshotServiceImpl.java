@@ -237,7 +237,10 @@ public class SnapshotServiceImpl implements SnapshotService {
             // Note that DataStore information in parentSnapshot is for primary
             // data store here, we need to
             // find the image store where the parent snapshot backup is located
-            SnapshotDataStoreVO parentSnapshotOnBackupStore = _snapshotStoreDao.findBySnapshot(parentSnapshot.getId(), DataStoreRole.Image);
+            SnapshotDataStoreVO parentSnapshotOnBackupStore = null;
+            if (parentSnapshot != null) {
+                parentSnapshotOnBackupStore = _snapshotStoreDao.findBySnapshot(parentSnapshot.getId(), DataStoreRole.Image);
+            }
             if (parentSnapshotOnBackupStore == null) {
                 return dataStoreMgr.getImageStore(snapshot.getDataCenterId());
             }

@@ -118,8 +118,13 @@ git clean -f
 
 #create a RC branch
 RELEASE_BRANCH="RC"`date +%Y%m%dT%H%M`
-git branch $branch-$RELEASE_BRANCH
-git checkout $branch-$RELEASE_BRANCH
+if [ "$branch" = "master" ]; then
+  BRANCHNAME=$version-$RELEASE_BRANCH
+else
+  BRANCHNAME=$branch-$RELEASE_BRANCH
+fi
+git branch $BRANCHNAME
+git checkout $BRANCHNAME
 
 
 echo 'commit changes'
@@ -129,7 +134,7 @@ export commitsh=`git show HEAD | head -n 1 | cut -d ' ' -f 2`
 echo "committed as $commitsh"
 
 echo 'archiving'
-git archive --format=tar --prefix=apache-cloudstack-$version-src/ $branch-$RELEASE_BRANCH > $outputdir/apache-cloudstack-$version-src.tar
+git archive --format=tar --prefix=apache-cloudstack-$version-src/ $BRANCHNAME > $outputdir/apache-cloudstack-$version-src.tar
 bzip2 $outputdir/apache-cloudstack-$version-src.tar
 
 cd $outputdir

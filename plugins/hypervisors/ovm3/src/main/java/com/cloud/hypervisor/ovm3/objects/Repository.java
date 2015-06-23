@@ -63,6 +63,7 @@ public class Repository extends OvmObject {
     }
 
     public static class RepoDbDetails {
+        private static final long serialVersionUID = 2L;
         private final Map<String, String> dbEntry = new HashMap<String, String>() {
             {
                 put("Uuid", null);
@@ -74,6 +75,7 @@ public class Repository extends OvmObject {
                 put("Manager_uuid", null);
                 put("Status", null);
             }
+            private static final long serialVersionUID = 1L;
         };
 
         public RepoDbDetails() {
@@ -127,6 +129,7 @@ public class Repository extends OvmObject {
         private List<String> virtualDisks = new ArrayList<String>();
         private List<String> isos = new ArrayList<String>();
         private final Map<String, String> dbEntry = new HashMap<String, String>() {
+        private static final long serialVersionUID = 1L;
             {
                 put("Repository_UUID", null);
                 put(VERSION, null);
