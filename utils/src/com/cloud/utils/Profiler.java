@@ -46,8 +46,8 @@ public class Profiler {
      */
     public long getDuration() {
         if (startTickNanoSeconds != null && stopTickNanoSeconds != null) {
-            final long timeInMicroSeconds = stopTickNanoSeconds - startTickNanoSeconds;
-            return timeInMicroSeconds;
+            final long timeInNanoSeconds = stopTickNanoSeconds - startTickNanoSeconds;
+            return timeInNanoSeconds;
         }
 
         return -1;
