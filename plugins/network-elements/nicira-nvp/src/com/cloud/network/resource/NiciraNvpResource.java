@@ -38,8 +38,6 @@ import com.cloud.agent.api.ConfigureStaticNatRulesOnLogicalRouterAnswer;
 import com.cloud.agent.api.ConfigureStaticNatRulesOnLogicalRouterCommand;
 import com.cloud.agent.api.CreateLogicalRouterAnswer;
 import com.cloud.agent.api.CreateLogicalRouterCommand;
-import com.cloud.agent.api.CreateLogicalSwitchAnswer;
-import com.cloud.agent.api.CreateLogicalSwitchCommand;
 import com.cloud.agent.api.CreateLogicalSwitchPortAnswer;
 import com.cloud.agent.api.CreateLogicalSwitchPortCommand;
 import com.cloud.agent.api.DeleteLogicalRouterAnswer;
@@ -64,7 +62,6 @@ import com.cloud.network.nicira.DestinationNatRule;
 import com.cloud.network.nicira.L3GatewayAttachment;
 import com.cloud.network.nicira.LogicalRouter;
 import com.cloud.network.nicira.LogicalRouterPort;
-import com.cloud.network.nicira.LogicalSwitch;
 import com.cloud.network.nicira.LogicalSwitchPort;
 import com.cloud.network.nicira.Match;
 import com.cloud.network.nicira.NatRule;
@@ -76,14 +73,14 @@ import com.cloud.network.nicira.PatchAttachment;
 import com.cloud.network.nicira.RouterNextHop;
 import com.cloud.network.nicira.SingleDefaultRouteImplicitRoutingConfig;
 import com.cloud.network.nicira.SourceNatRule;
-import com.cloud.network.nicira.TransportZoneBinding;
 import com.cloud.network.nicira.VifAttachment;
 import com.cloud.resource.ServerResource;
 
 public class NiciraNvpResource implements ServerResource {
-    private static final int NAME_MAX_LEN = 40;
 
     private static final Logger s_logger = Logger.getLogger(NiciraNvpResource.class);
+
+    public static final int NAME_MAX_LEN = 40;
 
     private String name;
     private String guid;
@@ -91,6 +88,7 @@ public class NiciraNvpResource implements ServerResource {
     private int numRetries;
 
     private NiciraNvpApi niciraNvpApi;
+    private NiciraNvpUtilities niciraNvpUtilities;
 
     protected NiciraNvpApi createNiciraNvpApi() {
         return new NiciraNvpApi();
@@ -131,11 +129,25 @@ public class NiciraNvpResource implements ServerResource {
             throw new ConfigurationException("Unable to find admin password");
         }
 
+        niciraNvpUtilities = NiciraNvpUtilities.getInstance();
+
         niciraNvpApi = createNiciraNvpApi();
         niciraNvpApi.setControllerAddress(ip);
         niciraNvpApi.setAdminCredentials(adminuser, adminpass);
 
         return true;
+    }
+
+    public NiciraNvpApi getNiciraNvpApi() {
+        return niciraNvpApi;
+    }
+
+    public NiciraNvpUtilities getNiciraNvpUtilities() {
+        return niciraNvpUtilities;
+    }
+
+    public int getNumRetries() {
+        return numRetries;
     }
 
     @Override
@@ -202,9 +214,7 @@ public class NiciraNvpResource implements ServerResource {
             // [TODO] Remove when all the commands are refactored.
         }
 
-        if (cmd instanceof CreateLogicalSwitchCommand) {
-            return executeRequest((CreateLogicalSwitchCommand)cmd, numRetries);
-        } else if (cmd instanceof DeleteLogicalSwitchCommand) {
+        if (cmd instanceof DeleteLogicalSwitchCommand) {
             return executeRequest((DeleteLogicalSwitchCommand)cmd, numRetries);
         } else if (cmd instanceof CreateLogicalSwitchPortCommand) {
             return executeRequest((CreateLogicalSwitchPortCommand)cmd, numRetries);
@@ -240,34 +250,6 @@ public class NiciraNvpResource implements ServerResource {
 
     @Override
     public void setAgentControl(final IAgentControl agentControl) {
-    }
-
-    private Answer executeRequest(final CreateLogicalSwitchCommand cmd, int numRetries) {
-        LogicalSwitch logicalSwitch = new LogicalSwitch();
-        logicalSwitch.setDisplayName(truncate("lswitch-" + cmd.getName(), NAME_MAX_LEN));
-        logicalSwitch.setPortIsolationEnabled(false);
-
-        // Set transport binding
-        final List<TransportZoneBinding> ltzb = new ArrayList<TransportZoneBinding>();
-        ltzb.add(new TransportZoneBinding(cmd.getTransportUuid(), cmd.getTransportType()));
-        logicalSwitch.setTransportZones(ltzb);
-
-        // Tags set to scope cs_account and account name
-        final List<NiciraNvpTag> tags = new ArrayList<NiciraNvpTag>();
-        tags.add(new NiciraNvpTag("cs_account", cmd.getOwnerName()));
-        logicalSwitch.setTags(tags);
-
-        try {
-            logicalSwitch = niciraNvpApi.createLogicalSwitch(logicalSwitch);
-            return new CreateLogicalSwitchAnswer(cmd, true, "Logicalswitch " + logicalSwitch.getUuid() + " created", logicalSwitch.getUuid());
-        } catch (final NiciraNvpApiException e) {
-            if (numRetries > 0) {
-                return retry(cmd, --numRetries);
-            } else {
-                return new CreateLogicalSwitchAnswer(cmd, e);
-            }
-        }
-
     }
 
     private Answer executeRequest(final DeleteLogicalSwitchCommand cmd, int numRetries) {
@@ -646,7 +628,7 @@ public class NiciraNvpResource implements ServerResource {
 
     }
 
-    private Answer retry(final Command cmd, final int numRetries) {
+    public Answer retry(final Command cmd, final int numRetries) {
         s_logger.warn("Retrying " + cmd.getClass().getSimpleName() + ". Number of retries remaining: " + numRetries);
         return executeRequest(cmd, numRetries);
     }
@@ -687,7 +669,7 @@ public class NiciraNvpResource implements ServerResource {
         return natRuleStr.toString();
     }
 
-    private String truncate(final String string, final int length) {
+    public String truncate(final String string, final int length) {
         if (string.length() <= length) {
             return string;
         } else {
