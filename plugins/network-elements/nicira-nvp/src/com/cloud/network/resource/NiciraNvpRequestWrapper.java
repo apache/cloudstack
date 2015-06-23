@@ -48,9 +48,9 @@ public class NiciraNvpRequestWrapper extends RequestWrapper {
     @SuppressWarnings("rawtypes")
     private void init() {
         // NiciraNvpResource commands
-        final Hashtable<Class<? extends Command>, CommandWrapper> libvirtCommands = processAnnotations(baseSet);
+        final Hashtable<Class<? extends Command>, CommandWrapper> niciraCommands = processAnnotations(baseSet);
 
-        resources.put(NiciraNvpResource.class, libvirtCommands);
+        resources.put(NiciraNvpResource.class, niciraCommands);
     }
 
     public static NiciraNvpRequestWrapper getInstance() {
