@@ -127,10 +127,10 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
         }
 
         VMInstanceVO vo = _vmDao.findById(vm.getId());
+        assert vo != null : "Where ths nic " + nic.getId() + " going???";
         if (vo.getLastHostId() == null) {
             nic.setMacAddress(dest.getHost().getPrivateMacAddress());
             NicVO nicVo = _nicDao.findById(nic.getId());
-            assert vo != null : "Where ths nic " + nic.getId() + " going???";
             nicVo.setMacAddress(nic.getMacAddress());
             _nicDao.update(nicVo.getId(), nicVo);
 
