@@ -78,7 +78,7 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "the pod ID")
     private Long podId;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "state of the virtual machine")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "state of the virtual machine. Possible values are: Running, Stopped, Present, Destroyed, Expunged. Present is used for the state equal not destroyed.")
     private String state;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the availability zone ID")
