@@ -19,7 +19,7 @@
 """
 # Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase,unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import cleanup_resources
 from marvin.lib.base import (Account,
                              VirtualMachine,
@@ -55,11 +55,12 @@ class TestDeployVM(cloudstackTestCase):
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.skip = False
 
         if cls.hypervisor.lower() == 'lxc':
             if not find_storage_pool_type(cls.apiclient, storagetype='rbd'):
-                raise unittest.SkipTest("RBD storage type is required for data volumes for LXC")
-
+                cls.skip = True
+                return
 
         cls.template = get_template(
             cls.api_client,
@@ -91,6 +92,9 @@ class TestDeployVM(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
     def setUp(self):
+
+        if self.skip:
+            self.skipTest("RBD storage type is required for data volumes for LXC")
 
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
@@ -635,11 +639,11 @@ class TestDeployVM(cloudstackTestCase):
         # 4. Stop the vm
         # 5.list primary storages in the cluster , should be more than one
         # 6.Migrate voluem to another available primary storage
-        self.hypervisor = self.testClient.getHypervisorInfo()
         if self.hypervisor.lower() in ['lxc']:
             self.skipTest(
                 "vm migrate is not supported in %s" %
                 self.hypervisor)
+
         clusters = Cluster.list(
             self.apiclient,
             zoneid=self.zone.id
@@ -752,10 +756,12 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
         cls.testdata = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.hypervisor = cls.testClient.getHypervisorInfo()
-
+        cls.skip = False
+        
         if cls.hypervisor.lower() == 'lxc':
             if not find_storage_pool_type(cls.apiclient, storagetype='rbd'):
-                raise unittest.SkipTest("RBD storage type is required for data volumes for LXC")
+                cls.skip = True 
+                return
 
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -791,6 +797,9 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
     def setUp(self):
+
+        if self.skip:
+            self.skipTest("RBD storage type is required for data volumes for LXC ")
 
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
@@ -865,7 +874,6 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
         # 1. deployHA enabled Vm using ISO with the startvm parameter=true
         # 2. listVM command should return the deployed VM. State of this VM
         #    should be "Running".
-        self.hypervisor = self.testClient.getHypervisorInfo()
         if self.hypervisor.lower() in ['lxc']:
             self.skipTest(
                 "vm deploy from ISO feature is not supported on %s" %
@@ -923,10 +931,8 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
         # 1. deployHA enabled Vm using ISO with the startvm parameter=false
         # 2. listVM command should return the deployed VM. State of this VM
         #    should be "Stopped".
-        self.hypervisor = self.testClient.getHypervisorInfo()
         if self.hypervisor.lower() in ['lxc']:
-            self.skipTest(
-                "vm deploy from ISO feature is not supported on %s" %
+            self.skipTest("vm deploy from ISO feature is not supported on %s" %
                 self.hypervisor.lower())
 
         self.debug("Deploying instance in the account: %s" %
@@ -961,10 +967,12 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
         cls.testdata = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.skip = False
 
         if cls.hypervisor.lower() == 'lxc':
             if not find_storage_pool_type(cls.apiclient, storagetype='rbd'):
-                raise unittest.SkipTest("RBD storage type is required for data volumes for LXC")
+                cls.skip = True
+                return
 
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -999,6 +1007,9 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
     def setUp(self):
+
+        if self.skip:
+            self.skipTest("RBD storage type is required for data volumes for LXC")
 
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
@@ -1123,10 +1134,12 @@ class TestDeployVMBasicZone(cloudstackTestCase):
         cls.testdata = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.skip = False
 
         if cls.hypervisor.lower() == 'lxc':
             if not find_storage_pool_type(cls.apiclient, storagetype='rbd'):
-                raise unittest.SkipTest("RBD storage type is required for data volumes for LXC")
+                cls.skip = True
+                return
 
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -1161,6 +1174,9 @@ class TestDeployVMBasicZone(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
     def setUp(self):
+
+        if self.skip:
+            self.skipTest("RBD storage type is required for data volumes for LXC")
 
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
@@ -1448,10 +1464,11 @@ class TestUploadAttachVolume(cloudstackTestCase):
 
         cls.testdata = cls.testClient.getParsedTestDataConfig()
         cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.skip = False
 
         if cls.hypervisor.lower() == 'lxc':
             if not find_storage_pool_type(cls.apiclient, storagetype='rbd'):
-                raise unittest.SkipTest("RBD storage type is required for data volumes for LXC")
+                cls.skip = True
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
@@ -1491,6 +1508,9 @@ class TestUploadAttachVolume(cloudstackTestCase):
         return
 
     def setUp(self):
+        if self.skip:
+            self.skipTest("RBD storage type is required for data volumes for LXC")
+
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
