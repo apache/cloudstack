@@ -153,7 +153,7 @@ class TestSecStorageServices(cloudstackTestCase):
                         )
 
             for ssvm in list_ssvm_response:
-                if ssvm.state == 'Starting':
+                if ssvm.state != 'Running':
                     time.sleep(30)
                     continue
         for ssvm in list_ssvm_response:
