@@ -39,7 +39,7 @@ import com.cloud.utils.Pair;
  */
 public class SerializerHelper {
     public static final Logger s_logger = Logger.getLogger(SerializerHelper.class.getName());
-    public static String token = "/";
+    public static final String token = "/";
 
     public static String toSerializedStringOld(Object result) {
         if (result != null) {
