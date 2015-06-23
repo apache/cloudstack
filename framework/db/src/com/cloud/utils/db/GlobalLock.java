@@ -139,7 +139,7 @@ public class GlobalLock {
                         }
                         profiler.stop();
 
-                        remainingMilliSeconds -= profiler.getDuration();
+                        remainingMilliSeconds -= profiler.getDurationInMillis();
                         if (remainingMilliSeconds < 0)
                             return false;
 

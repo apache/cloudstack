@@ -125,7 +125,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
         p.stop();
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Security Group Mgr v2: done scheduling ruleset updates for " + workItems.size() + " vms: num new jobs=" + newJobs +
-                " num rows insert or updated=" + updated + " time taken=" + p.getDuration());
+                " num rows insert or updated=" + updated + " time taken=" + p.getDurationInMillis());
         }
     }
 
