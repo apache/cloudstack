@@ -27,6 +27,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.ReadyCommand;
 
 public class NiciraNvpRequestWrapperTest {
@@ -37,6 +38,18 @@ public class NiciraNvpRequestWrapperTest {
     @Test
     public void testReadyCommandWrapper() {
         final ReadyCommand command = new ReadyCommand();
+
+        final NiciraNvpRequestWrapper wrapper = NiciraNvpRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, niciraNvpResource);
+
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testMaintainCommandWrapper() {
+        final MaintainCommand command = new MaintainCommand();
 
         final NiciraNvpRequestWrapper wrapper = NiciraNvpRequestWrapper.getInstance();
         assertNotNull(wrapper);

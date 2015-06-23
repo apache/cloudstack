@@ -50,8 +50,6 @@ import com.cloud.agent.api.DeleteLogicalSwitchPortAnswer;
 import com.cloud.agent.api.DeleteLogicalSwitchPortCommand;
 import com.cloud.agent.api.FindLogicalSwitchPortAnswer;
 import com.cloud.agent.api.FindLogicalSwitchPortCommand;
-import com.cloud.agent.api.MaintainAnswer;
-import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupNiciraNvpCommand;
@@ -204,9 +202,7 @@ public class NiciraNvpResource implements ServerResource {
             // [TODO] Remove when all the commands are refactored.
         }
 
-        if (cmd instanceof MaintainCommand) {
-            return executeRequest((MaintainCommand)cmd);
-        } else if (cmd instanceof CreateLogicalSwitchCommand) {
+        if (cmd instanceof CreateLogicalSwitchCommand) {
             return executeRequest((CreateLogicalSwitchCommand)cmd, numRetries);
         } else if (cmd instanceof DeleteLogicalSwitchCommand) {
             return executeRequest((DeleteLogicalSwitchCommand)cmd, numRetries);
@@ -648,10 +644,6 @@ public class NiciraNvpResource implements ServerResource {
             }
         }
 
-    }
-
-    private Answer executeRequest(final MaintainCommand cmd) {
-        return new MaintainAnswer(cmd);
     }
 
     private Answer retry(final Command cmd, final int numRetries) {
