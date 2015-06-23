@@ -66,7 +66,7 @@ public class Link {
     private boolean _gotFollowingPacket;
 
     private SSLEngine _sslEngine;
-    public static String keystoreFile = "/cloudmanagementserver.keystore";
+    public static final String keystoreFile = "/cloudmanagementserver.keystore";
 
     public Link(InetSocketAddress addr, NioConnection connection) {
         _addr = addr;
