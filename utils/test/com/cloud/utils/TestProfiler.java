@@ -28,6 +28,7 @@ import com.cloud.utils.testcase.Log4jEnabledTestCase;
 public class TestProfiler extends Log4jEnabledTestCase {
     protected final static Logger s_logger = Logger.getLogger(TestProfiler.class);
 
+    private static final long ONE_SECOND = 1000l;
     private static final long MILLIS_FACTOR = 1000l;
     private static final int MARGIN = 100;
     private static final double EXPONENT = 3d;
@@ -39,13 +40,13 @@ public class TestProfiler extends Log4jEnabledTestCase {
         final Profiler pf = new Profiler();
         pf.start();
         try {
-            Thread.sleep(MILLIS_FACTOR);
+            Thread.sleep(ONE_SECOND);
         } catch (final InterruptedException e) {
         }
         pf.stop();
 
         final long durationInMillis = pf.getDurationInMillis();
-        s_logger.info("Duration : " + durationInMillis);
+        s_logger.info("Duration in Millis: " + durationInMillis);
 
         // An error margin in order to cover the time taken by the star/stop calls.
         // 100 milliseconds margin seems too much, but it will avoid assertion error
@@ -56,16 +57,17 @@ public class TestProfiler extends Log4jEnabledTestCase {
     }
 
     @Test
-    public void testProfilerInMicro() {
+    public void testProfilerInNano() {
         final Profiler pf = new Profiler();
         pf.start();
         try {
-            Thread.sleep(MILLIS_FACTOR);
+            Thread.sleep(ONE_SECOND);
         } catch (final InterruptedException e) {
         }
         pf.stop();
 
         final long duration = pf.getDuration();
+        s_logger.info("Duration in Nano: " + duration);
         Assert.assertTrue(duration >= Math.pow(MILLIS_FACTOR, EXPONENT));
     }
 
@@ -101,6 +103,9 @@ public class TestProfiler extends Log4jEnabledTestCase {
         long nanoTime2 = 0l;
         nanoTime1 = System.nanoTime();
         nanoTime2 = System.nanoTime();
+
+        // Using sysout here because is faster than the logger and we don't want to
+        // waste time.
         System.out.println("Nano time 1: " + nanoTime1);
         System.out.println("Nano time 2: " + nanoTime2);
 
