@@ -20,45 +20,72 @@
 package com.cloud.utils;
 
 public class Profiler {
-    private Long startTickInMs;
-    private Long stopTickInMs;
+
+    private static final long MILLIS_FACTOR = 1000l;
+    private static final double EXPONENT = 2d;
+
+
+    private Long startTickNanoSeconds;
+    private Long stopTickNanoSeconds;
 
     public long start() {
-        startTickInMs = System.nanoTime();
-        return startTickInMs.longValue();
+        startTickNanoSeconds = System.nanoTime();
+        return startTickNanoSeconds;
     }
 
     public long stop() {
-        stopTickInMs = System.nanoTime();
-        return stopTickInMs.longValue();
+        stopTickNanoSeconds = System.nanoTime();
+        return stopTickNanoSeconds;
     }
 
+    /**
+     * 1 millisecond = 1e+6 nanoseconds
+     * 1 second = 1000 milliseconds = 1e+9 nanoseconds
+     *
+     * @return the duration in nanoseconds.
+     */
     public long getDuration() {
-        if (startTickInMs != null && stopTickInMs != null) {
-            return stopTickInMs.longValue() - startTickInMs.longValue();
+        if (startTickNanoSeconds != null && stopTickNanoSeconds != null) {
+            final long timeInMicroSeconds = stopTickNanoSeconds - startTickNanoSeconds;
+            return timeInMicroSeconds;
+        }
+
+        return -1;
+    }
+
+    /**
+     * 1 millisecond = 1e+6 nanoseconds
+     * 1 second = 1000 millisecond = 1e+9 nanoseconds
+     *
+     * @return the duration in milliseconds.
+     */
+    public long getDurationInMillis() {
+        if (startTickNanoSeconds != null && stopTickNanoSeconds != null) {
+            final long timeInMillis = (stopTickNanoSeconds - startTickNanoSeconds) / (long)Math.pow(MILLIS_FACTOR, EXPONENT);
+            return timeInMillis;
         }
 
         return -1;
     }
 
     public boolean isStarted() {
-        return startTickInMs != null;
+        return startTickNanoSeconds != null;
     }
 
     public boolean isStopped() {
-        return stopTickInMs != null;
+        return stopTickNanoSeconds != null;
     }
 
     @Override
     public String toString() {
-        if (startTickInMs == null) {
+        if (startTickNanoSeconds == null) {
             return "Not Started";
         }
 
-        if (stopTickInMs == null) {
+        if (stopTickNanoSeconds == null) {
             return "Started but not stopped";
         }
 
-        return "Done. Duration: " + getDuration() + "ms";
+        return "Done. Duration: " + getDurationInMillis() + "ms";
     }
 }

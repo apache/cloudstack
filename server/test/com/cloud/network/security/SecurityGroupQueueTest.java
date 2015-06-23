@@ -131,7 +131,7 @@ public class SecurityGroupQueueTest extends TestCase {
             }
         }
         p.stop();
-        System.out.println("Num Vms= " + maxVmId + " Queue size = " + queue.size() + " time=" + p.getDuration() + " ms");
+        System.out.println("Num Vms= " + maxVmId + " Queue size = " + queue.size() + " time=" + p.getDurationInMillis() + " ms");
         assertEquals(maxVmId, queue.size());
     }
 

@@ -28,23 +28,45 @@ import com.cloud.utils.testcase.Log4jEnabledTestCase;
 public class TestProfiler extends Log4jEnabledTestCase {
     protected final static Logger s_logger = Logger.getLogger(TestProfiler.class);
 
+    private static final long MILLIS_FACTOR = 1000l;
+    private static final int MARGIN = 100;
+    private static final double EXPONENT = 3d;
+
     @Test
-    public void testProfiler() {
+    public void testProfilerInMillis() {
         s_logger.info("testProfiler() started");
 
         final Profiler pf = new Profiler();
         pf.start();
         try {
-            Thread.sleep(1000);
+            Thread.sleep(MILLIS_FACTOR);
         } catch (final InterruptedException e) {
         }
         pf.stop();
 
-        s_logger.info("Duration : " + pf.getDuration());
+        final long durationInMillis = pf.getDurationInMillis();
+        s_logger.info("Duration : " + durationInMillis);
 
-        Assert.assertTrue(pf.getDuration() >= 1000);
+        // An error margin in order to cover the time taken by the star/stop calls.
+        // 100 milliseconds margin seems too much, but it will avoid assertion error
+        // and also fail in case a duration in nanoseconds is used instead.
+        Assert.assertTrue(durationInMillis >= MILLIS_FACTOR  &&  durationInMillis <= MILLIS_FACTOR + MARGIN);
 
         s_logger.info("testProfiler() stopped");
+    }
+
+    @Test
+    public void testProfilerInMicro() {
+        final Profiler pf = new Profiler();
+        pf.start();
+        try {
+            Thread.sleep(MILLIS_FACTOR);
+        } catch (final InterruptedException e) {
+        }
+        pf.stop();
+
+        final long duration = pf.getDuration();
+        Assert.assertTrue(duration >= Math.pow(MILLIS_FACTOR, EXPONENT));
     }
 
     @Test
@@ -56,7 +78,7 @@ public class TestProfiler extends Log4jEnabledTestCase {
         }
         pf.stop();
 
-        Assert.assertTrue(pf.getDuration() == -1);
+        Assert.assertTrue(pf.getDurationInMillis() == -1);
         Assert.assertFalse(pf.isStarted());
     }
 
@@ -69,7 +91,7 @@ public class TestProfiler extends Log4jEnabledTestCase {
         } catch (final InterruptedException e) {
         }
 
-        Assert.assertTrue(pf.getDuration() == -1);
+        Assert.assertTrue(pf.getDurationInMillis() == -1);
         Assert.assertFalse(pf.isStopped());
     }
 }
