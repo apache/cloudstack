@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.host;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -25,11 +23,12 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
 @APICommand(name = "updateHostPassword", description = "Update password of a host/pool on management server.", responseObject = SuccessResponse.class,
-        requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
+requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public class UpdateHostPasswordCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateHostPasswordCmd.class.getName());
 
@@ -89,6 +88,6 @@ public class UpdateHostPasswordCmd extends BaseCmd {
     public void execute() {
         _mgr.updateHostPassword(this);
         _resourceService.updateHostPassword(this);
-        this.setResponseObject(new SuccessResponse(getCommandName()));
+        setResponseObject(new SuccessResponse(getCommandName()));
     }
 }
