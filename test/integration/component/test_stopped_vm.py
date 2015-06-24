@@ -53,6 +53,11 @@ class TestDeployVM(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.unsupportedStorageType = False
+        if cls.hypervisor.lower() == 'lxc':
+            if not find_storage_pool_type(cls.api_client, storagetype='rbd'):
+                cls.unsupportedStorageType = True
 
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.skip = False
@@ -148,11 +153,11 @@ class TestDeployVM(cloudstackTestCase):
 
     @attr(
         tags=[
-            "advanced",
-            "eip",
-            "advancedns",
-            "basic",
-            "sg"],
+              "advanced",
+              "eip",
+              "advancedns",
+              "basic",
+              "sg"],
         required_hardware="false")
     def test_02_deploy_vm_startvm_true(self):
         """Test Deploy Virtual Machine with startVM=true parameter
@@ -173,7 +178,6 @@ class TestDeployVM(cloudstackTestCase):
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
             startvm=True,
-            diskofferingid=self.disk_offering.id,
             mode=self.zone.networktype
         )
 
@@ -504,14 +508,15 @@ class TestDeployVM(cloudstackTestCase):
 
     @attr(
         tags=[
-            "advanced",
-            "eip",
-            "advancedns",
-            "basic",
-            "sg"],
+              "advanced",
+              "eip",
+              "advancedns",
+              "basic",
+              "sg"],
         required_hardware="false")
     def test_08_deploy_attached_volume(self):
-        """Test Deploy Virtual Machine with startVM=false and attach volume already attached to different machine
+        """Test Deploy Virtual Machine with startVM=false and attach volume
+           already attached to different machine
         """
 
         # Validate the following:
@@ -520,6 +525,10 @@ class TestDeployVM(cloudstackTestCase):
         #    should be "Stopped".
         # 3. Create an instance with datadisk attached to it. Detach DATADISK
         # 4. Attach the volume to first virtual machine.
+
+        if self.unsupportedStorageType:
+            self.skipTest(
+                "unsupported storage type")
 
         self.debug("Deploying instance in the account: %s" %
                    self.account.name)
@@ -665,7 +674,8 @@ class TestDeployVM(cloudstackTestCase):
                 break
         if i == 0:
             self.skipTest(
-                "No cluster with more than one primary storage pool to perform migrate volume test")
+                "No cluster with more than one primary storage pool to "
+                "perform migrate volume test")
 
         hosts = Host.list(
             self.apiclient,
@@ -1105,7 +1115,8 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
             self.assertEqual(
                 router.state,
                 "Running",
-                "Router should be in running state when instance is running in the account")
+                "Router should be in running state when "
+                "instance is running in the account")
         self.debug("Destroying the running VM:%s" %
                    self.virtual_machine_2.name)
         self.virtual_machine_2.delete(self.apiclient, expunge=True)
@@ -1288,11 +1299,11 @@ class TestDeployVMFromTemplate(cloudstackTestCase):
 
     @attr(
         tags=[
-            "advanced",
-            "eip",
-            "advancedns",
-            "basic",
-            "sg"],
+              "advanced",
+              "eip",
+              "advancedns",
+              "basic",
+              "sg"],
         required_hardware="true")
     def test_deploy_vm_password_enabled(self):
         """Test Deploy Virtual Machine with startVM=false & enabledpassword in
