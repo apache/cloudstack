@@ -419,7 +419,7 @@ class TestDeployVM(cloudstackTestCase):
             "advancedns",
             "basic",
             "sg"],
-        required_hardware="false")
+        required_hardware="true")
     def test_07_deploy_startvm_attach_iso(self):
         """Test Deploy Virtual Machine with startVM=false and attach ISO
         """
