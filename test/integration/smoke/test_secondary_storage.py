@@ -134,30 +134,35 @@ class TestSecStorageServices(cloudstackTestCase):
                         'Up',
                         "Check state of primary storage pools is Up or not"
                         )
-
-        list_ssvm_response = list_ssvms(
+        for _ in range(2):
+            list_ssvm_response = list_ssvms(
                                     self.apiclient,
                                     systemvmtype='secondarystoragevm',
                                     )
 
-        self.assertEqual(
+            self.assertEqual(
                             isinstance(list_ssvm_response, list),
                             True,
                             "Check list response returns a valid list"
                         )
-        #Verify SSVM response
-        self.assertNotEqual(
+            #Verify SSVM response
+            self.assertNotEqual(
                             len(list_ssvm_response),
                             0,
                             "Check list System VMs response"
                         )
 
+            for ssvm in list_ssvm_response:
+                if ssvm.state != 'Running':
+                    time.sleep(30)
+                    continue
         for ssvm in list_ssvm_response:
             self.assertEqual(
                             ssvm.state,
                             'Running',
                             "Check whether state of SSVM is running"
                         )
+
         return
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg"], required_hardware="false")

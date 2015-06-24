@@ -85,6 +85,7 @@ public class StoragePlugin extends OvmObject {
                 put(NAME, EMPTY_STRING);
                 put(MOUNTOPTIONS, new ArrayList<String>());
             }
+            private static final long serialVersionUID = 3L;
         };
         public Map<String, Object> getDetails() {
             return storageDetails;
@@ -180,6 +181,7 @@ public class StoragePlugin extends OvmObject {
                 put(USEDSIZE, 0);
                 put(NAME, EMPTY_STRING);
             }
+            private static final long serialVersionUID = 4L;
         };
         public Map<String, Object> getDetails() {
             return storageSource;
@@ -285,6 +287,7 @@ public class StoragePlugin extends OvmObject {
                 put(FILEPATH, EMPTY_STRING);
                 put(FILESIZE, EMPTY_STRING);
             }
+            private static final long serialVersionUID = 1234L;
         };
         public Map<String, Object> getProperties() {
             return fileProperties;

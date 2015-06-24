@@ -39,6 +39,7 @@ from marvin.codes import PASS
 import time
 import subprocess
 import socket
+import platform
 
 
 class TestDefaultSecurityGroup(cloudstackTestCase):
@@ -1338,9 +1339,13 @@ class TestIngressRule(cloudstackTestCase):
         # User should be able to ping VM
         try:
             self.debug("Trying to ping VM %s" % self.virtual_machine.ssh_ip)
-            result = subprocess.call(
-                ['ping', '-c 1', self.virtual_machine.ssh_ip])
-
+            platform_type = platform.system().lower()
+            if platform_type == 'windows':
+                result = subprocess.call(
+                    ['ping', '-n', '1', self.virtual_machine.ssh_ip])
+            else:
+                result = subprocess.call(
+                    ['ping', '-c 1', self.virtual_machine.ssh_ip])
             self.debug("Ping result: %s" % result)
             # if ping successful, then result should be 0
             self.assertEqual(
@@ -1462,9 +1467,13 @@ class TestIngressRule(cloudstackTestCase):
         # User should be able to ping VM
         try:
             self.debug("Trying to ping VM %s" % self.virtual_machine.ssh_ip)
-            result = subprocess.call(
-                ['ping', '-c 1', self.virtual_machine.ssh_ip])
-
+            platform_type = platform.system().lower()
+            if platform_type == 'windows':
+                result = subprocess.call(
+                    ['ping', '-n', '1', self.virtual_machine.ssh_ip])
+            else:
+                result = subprocess.call(
+                    ['ping', '-c 1', self.virtual_machine.ssh_ip])
             self.debug("Ping result: %s" % result)
             # if ping successful, then result should be 0
             self.assertEqual(
@@ -1472,30 +1481,30 @@ class TestIngressRule(cloudstackTestCase):
                 0,
                 "Check if ping is successful or not"
             )
-
         except Exception as e:
             self.fail("Ping failed for ingress rule ID: %s, %s"
                       % (icmp_rule["ruleid"], e))
-
         self.debug(
             "Revoke Ingress Rule for Security Group %s for account: %s"
             % (
                 security_group.id,
                 self.account.name
             ))
-
         result = security_group.revoke(
             self.apiclient,
             id=icmp_rule["ruleid"]
         )
         self.debug("Revoke ingress rule result: %s" % result)
-
         time.sleep(self.testdata["sleep"])
         # User should not be able to ping VM
         try:
             self.debug("Trying to ping VM %s" % self.virtual_machine.ssh_ip)
-            result = subprocess.call(
-                ['ping', '-c 1', self.virtual_machine.ssh_ip])
+            if platform_type == 'windows':
+                result = subprocess.call(
+                    ['ping', '-n', '1', self.virtual_machine.ssh_ip])
+            else:
+                result = subprocess.call(
+                    ['ping', '-c 1', self.virtual_machine.ssh_ip])
 
             self.debug("Ping result: %s" % result)
             # if ping successful, then result should be 0
@@ -1504,7 +1513,6 @@ class TestIngressRule(cloudstackTestCase):
                 0,
                 "Check if ping is successful or not"
             )
-
         except Exception as e:
             self.fail("Ping failed for ingress rule ID: %s, %s"
                       % (icmp_rule["ruleid"], e))
@@ -1816,7 +1824,7 @@ class TestIngressRuleSpecificIpSet(cloudstackTestCase):
             )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" %
-                      (self.virtual_machine.ipaddress, e)
+                      (virtual_machine_1.ipaddress, e)
                       )
 
         try:
@@ -1828,7 +1836,7 @@ class TestIngressRuleSpecificIpSet(cloudstackTestCase):
             )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" %
-                      (self.virtual_machine.ipaddress, e)
+                      (virtual_machine_2.ipaddress, e)
                       )
 
         sshClient = SshClient(
@@ -1991,7 +1999,7 @@ class TestIngressRuleSpecificIpSet(cloudstackTestCase):
             )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" %
-                      (self.virtual_machine.ipaddress, e)
+                      (virtual_machine_1.ipaddress, e)
                       )
 
         try:
@@ -2003,7 +2011,7 @@ class TestIngressRuleSpecificIpSet(cloudstackTestCase):
             )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" %
-                      (self.virtual_machine.ipaddress, e)
+                      (virtual_machine_2.ipaddress, e)
                       )
 
         sshClient = SshClient(

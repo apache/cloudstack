@@ -512,6 +512,7 @@ class TestVolumeUsage(cloudstackTestCase):
         cls.services['mode'] = cls.zone.networktype
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.rbdStorageFound = True
+        cls._cleanup = []
         if cls.hypervisor.lower() == 'lxc':
             if not find_storage_pool_type(cls.api_client, storagetype='rbd'):
                 cls.rbdStorageFound = False
@@ -1265,6 +1266,7 @@ class TestSnapshotUsage(cloudstackTestCase):
         cls.api_client = cls.testClient.getApiClient()
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.snapshotSupported = True
+        cls._cleanup = []
         if cls.hypervisor.lower() in ['hyperv', 'lxc']:
             cls.snapshotSupported = False
             return

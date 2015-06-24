@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 public class Xen extends OvmObject {
@@ -48,6 +48,7 @@ public class Xen extends OvmObject {
      */
     public class Vm {
         /* 'vfb': [ 'type=vnc,vncunused=1,vnclisten=127.0.0.1,keymap=en-us'] */
+        private static final long serialVersionUID = 1L;
         private final List<String> vmVncElement = new ArrayList<String>();
         private Map<String, String> vmVnc = new HashMap<String, String>() {
             {
@@ -56,6 +57,7 @@ public class Xen extends OvmObject {
                 put(VNCLISTEN, "127.0.0.1");
                 put("keymap", "en-us");
             }
+            private static final long serialVersionUID = 1L;
         };
 
         /*
@@ -75,6 +77,7 @@ public class Xen extends OvmObject {
                 put("protocol", "x86_32-abi");
                 put("uname", "");
             }
+            private static final long serialVersionUID = 1L;
         };
 
         /* 'vif': [ 'mac=00:21:f6:00:00:00,bridge=c0a80100'] */
@@ -141,6 +144,7 @@ public class Xen extends OvmObject {
                 put(DOMTYPE, vmDomainType);
                 put(EXTRA, vmExtra);
             }
+            private static final long serialVersionUID = 1L;
         };
 
         public boolean isControlDomain() {

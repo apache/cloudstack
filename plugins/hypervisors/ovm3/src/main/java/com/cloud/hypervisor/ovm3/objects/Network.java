@@ -57,6 +57,7 @@ public class Network extends OvmObject {
                 put("MAC", null);
                 put("Vlan", null);
             }
+            private static final long serialVersionUID = 6L;
         };
 
         public Interface() {
@@ -294,7 +295,7 @@ public class Network extends OvmObject {
 
     public Object ovsBrConfig(String action, String br, String net)
             throws Ovm3ResourceException {
-        return (Object) callWrapper("ovs_br_config", action, br, net);
+        return callWrapper("ovs_br_config", action, br, net);
     }
 
     /* 1 is untagged, goes till 4095 */
@@ -319,7 +320,7 @@ public class Network extends OvmObject {
 
     private Object ovsVlanBridge(String action, String br, String net, int vlan)
             throws Ovm3ResourceException {
-        return (Object) callWrapper("ovs_vlan_bridge", action, br, net, vlan);
+        return callWrapper("ovs_vlan_bridge", action, br, net, vlan);
     }
 
     /*

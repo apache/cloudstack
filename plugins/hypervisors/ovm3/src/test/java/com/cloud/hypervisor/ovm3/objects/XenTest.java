@@ -66,1285 +66,577 @@ public class XenTest {
     String VMROOTDISKPATH = REPOPATH + "/" + REPOID + "/Disks/" + VMROOTDISK;
     String VMISOPATH = REPOPATH + "/" + REPOID + "/ISOs/" + VMISO;
     String MULTIPLEVMSLISTXML = results
-            .simpleResponseWrapWrapper("<array><data>\n"
-                    + "<value><struct>\n"
-                    + "<member>\n"
-                    + "<name>on_xend_stop</name>\n"
-                    + "<value><string>ignore</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>features</name>\n"
-                    + "<value><string></string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>image</name>\n"
-                    + "<value><struct>\n"
-                    + "<member>\n"
-                    + "<name>tsc_mode</name>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>kernel</name>\n"
-                    + "<value><string></string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>superpages</name>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>nomigrate</name>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>expose_host_uuid</name>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "</struct></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>cpus</name>\n"
-                    + "<value><array><data>\n"
-                    + "<value><array><data>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "<value><string>10</string></value>\n"
-                    + "<value><string>11</string></value>\n"
-                    + "<value><string>12</string></value>\n"
-                    + "<value><string>13</string></value>\n"
-                    + "<value><string>14</string></value>\n"
-                    + "<value><string>15</string></value>\n"
-                    + "<value><string>16</string></value>\n"
-                    + "<value><string>17</string></value>\n"
-                    + "<value><string>18</string></value>\n"
-                    + "<value><string>19</string></value>\n"
-                    + "<value><string>20</string></value>\n"
-                    + "<value><string>21</string></value>\n"
-                    + "<value><string>22</string></value>\n"
-                    + "<value><string>23</string></value>\n"
-                    + "<value><string>24</string></value>\n"
-                    + "<value><string>25</string></value>\n"
-                    + "<value><string>26</string></value>\n"
-                    + "<value><string>27</string></value>\n"
-                    + "<value><string>28</string></value>\n"
-                    + "<value><string>29</string></value>\n"
-                    + "<value><string>30</string></value>\n"
-                    + "<value><string>31</string></value>\n"
-                    + "<value><string>32</string></value>\n"
-                    + "<value><string>33</string></value>\n"
-                    + "<value><string>34</string></value>\n"
-                    + "<value><string>35</string></value>\n"
-                    + "<value><string>36</string></value>\n"
-                    + "<value><string>37</string></value>\n"
-                    + "<value><string>38</string></value>\n"
-                    + "<value><string>39</string></value>\n"
-                    + "<value><string>40</string></value>\n"
-                    + "<value><string>41</string></value>\n"
-                    + "<value><string>42</string></value>\n"
-                    + "<value><string>43</string></value>\n"
-                    + "<value><string>44</string></value>\n"
-                    + "<value><string>45</string></value>\n"
-                    + "<value><string>46</string></value>\n"
-                    + "<value><string>47</string></value>\n"
-                    + "<value><string>48</string></value>\n"
-                    + "<value><string>49</string></value>\n"
-                    + "<value><string>50</string></value>\n"
-                    + "<value><string>51</string></value>\n"
-                    + "<value><string>52</string></value>\n"
-                    + "<value><string>53</string></value>\n"
-                    + "<value><string>54</string></value>\n"
-                    + "<value><string>55</string></value>\n"
-                    + "<value><string>56</string></value>\n"
-                    + "<value><string>57</string></value>\n"
-                    + "<value><string>58</string></value>\n"
-                    + "<value><string>59</string></value>\n"
-                    + "<value><string>60</string></value>\n"
-                    + "<value><string>61</string></value>\n"
-                    + "<value><string>62</string></value>\n"
-                    + "<value><string>63</string></value>\n"
-                    + "<value><string>64</string></value>\n"
-                    + "<value><string>65</string></value>\n"
-                    + "<value><string>66</string></value>\n"
-                    + "<value><string>67</string></value>\n"
-                    + "<value><string>68</string></value>\n"
-                    + "<value><string>69</string></value>\n"
-                    + "<value><string>70</string></value>\n"
-                    + "<value><string>71</string></value>\n"
-                    + "<value><string>72</string></value>\n"
-                    + "<value><string>73</string></value>\n"
-                    + "<value><string>74</string></value>\n"
-                    + "<value><string>75</string></value>\n"
-                    + "<value><string>76</string></value>\n"
-                    + "<value><string>77</string></value>\n"
-                    + "<value><string>78</string></value>\n"
-                    + "<value><string>79</string></value>\n"
-                    + "<value><string>80</string></value>\n"
-                    + "<value><string>81</string></value>\n"
-                    + "<value><string>82</string></value>\n"
-                    + "<value><string>83</string></value>\n"
-                    + "<value><string>84</string></value>\n"
-                    + "<value><string>85</string></value>\n"
-                    + "<value><string>86</string></value>\n"
-                    + "<value><string>87</string></value>\n"
-                    + "<value><string>88</string></value>\n"
-                    + "<value><string>89</string></value>\n"
-                    + "<value><string>90</string></value>\n"
-                    + "<value><string>91</string></value>\n"
-                    + "<value><string>92</string></value>\n"
-                    + "<value><string>93</string></value>\n"
-                    + "<value><string>94</string></value>\n"
-                    + "<value><string>95</string></value>\n"
-                    + "<value><string>96</string></value>\n"
-                    + "<value><string>97</string></value>\n"
-                    + "<value><string>98</string></value>\n"
-                    + "<value><string>99</string></value>\n"
-                    + "<value><string>100</string></value>\n"
-                    + "<value><string>101</string></value>\n"
-                    + "<value><string>102</string></value>\n"
-                    + "<value><string>103</string></value>\n"
-                    + "<value><string>104</string></value>\n"
-                    + "<value><string>105</string></value>\n"
-                    + "<value><string>106</string></value>\n"
-                    + "<value><string>107</string></value>\n"
-                    + "<value><string>108</string></value>\n"
-                    + "<value><string>109</string></value>\n"
-                    + "<value><string>110</string></value>\n"
-                    + "<value><string>111</string></value>\n"
-                    + "<value><string>112</string></value>\n"
-                    + "<value><string>113</string></value>\n"
-                    + "<value><string>114</string></value>\n"
-                    + "<value><string>115</string></value>\n"
-                    + "<value><string>116</string></value>\n"
-                    + "<value><string>117</string></value>\n"
-                    + "<value><string>118</string></value>\n"
-                    + "<value><string>119</string></value>\n"
-                    + "<value><string>120</string></value>\n"
-                    + "<value><string>121</string></value>\n"
-                    + "<value><string>122</string></value>\n"
-                    + "<value><string>123</string></value>\n"
-                    + "<value><string>124</string></value>\n"
-                    + "<value><string>125</string></value>\n"
-                    + "<value><string>126</string></value>\n"
-                    + "<value><string>127</string></value>\n"
-                    + "<value><string>128</string></value>\n"
-                    + "<value><string>129</string></value>\n"
-                    + "<value><string>130</string></value>\n"
-                    + "<value><string>131</string></value>\n"
-                    + "<value><string>132</string></value>\n"
-                    + "<value><string>133</string></value>\n"
-                    + "<value><string>134</string></value>\n"
-                    + "<value><string>135</string></value>\n"
-                    + "<value><string>136</string></value>\n"
-                    + "<value><string>137</string></value>\n"
-                    + "<value><string>138</string></value>\n"
-                    + "<value><string>139</string></value>\n"
-                    + "<value><string>140</string></value>\n"
-                    + "<value><string>141</string></value>\n"
-                    + "<value><string>142</string></value>\n"
-                    + "<value><string>143</string></value>\n"
-                    + "<value><string>144</string></value>\n"
-                    + "<value><string>145</string></value>\n"
-                    + "<value><string>146</string></value>\n"
-                    + "<value><string>147</string></value>\n"
-                    + "<value><string>148</string></value>\n"
-                    + "<value><string>149</string></value>\n"
-                    + "<value><string>150</string></value>\n"
-                    + "<value><string>151</string></value>\n"
-                    + "<value><string>152</string></value>\n"
-                    + "<value><string>153</string></value>\n"
-                    + "<value><string>154</string></value>\n"
-                    + "<value><string>155</string></value>\n"
-                    + "<value><string>156</string></value>\n"
-                    + "<value><string>157</string></value>\n"
-                    + "<value><string>158</string></value>\n"
-                    + "<value><string>159</string></value>\n"
-                    + "</data></array></value>\n"
-                    + "<value><array><data>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "<value><string>10</string></value>\n"
-                    + "<value><string>11</string></value>\n"
-                    + "<value><string>12</string></value>\n"
-                    + "<value><string>13</string></value>\n"
-                    + "<value><string>14</string></value>\n"
-                    + "<value><string>15</string></value>\n"
-                    + "<value><string>16</string></value>\n"
-                    + "<value><string>17</string></value>\n"
-                    + "<value><string>18</string></value>\n"
-                    + "<value><string>19</string></value>\n"
-                    + "<value><string>20</string></value>\n"
-                    + "<value><string>21</string></value>\n"
-                    + "<value><string>22</string></value>\n"
-                    + "<value><string>23</string></value>\n"
-                    + "<value><string>24</string></value>\n"
-                    + "<value><string>25</string></value>\n"
-                    + "<value><string>26</string></value>\n"
-                    + "<value><string>27</string></value>\n"
-                    + "<value><string>28</string></value>\n"
-                    + "<value><string>29</string></value>\n"
-                    + "<value><string>30</string></value>\n"
-                    + "<value><string>31</string></value>\n"
-                    + "<value><string>32</string></value>\n"
-                    + "<value><string>33</string></value>\n"
-                    + "<value><string>34</string></value>\n"
-                    + "<value><string>35</string></value>\n"
-                    + "<value><string>36</string></value>\n"
-                    + "<value><string>37</string></value>\n"
-                    + "<value><string>38</string></value>\n"
-                    + "<value><string>39</string></value>\n"
-                    + "<value><string>40</string></value>\n"
-                    + "<value><string>41</string></value>\n"
-                    + "<value><string>42</string></value>\n"
-                    + "<value><string>43</string></value>\n"
-                    + "<value><string>44</string></value>\n"
-                    + "<value><string>45</string></value>\n"
-                    + "<value><string>46</string></value>\n"
-                    + "<value><string>47</string></value>\n"
-                    + "<value><string>48</string></value>\n"
-                    + "<value><string>49</string></value>\n"
-                    + "<value><string>50</string></value>\n"
-                    + "<value><string>51</string></value>\n"
-                    + "<value><string>52</string></value>\n"
-                    + "<value><string>53</string></value>\n"
-                    + "<value><string>54</string></value>\n"
-                    + "<value><string>55</string></value>\n"
-                    + "<value><string>56</string></value>\n"
-                    + "<value><string>57</string></value>\n"
-                    + "<value><string>58</string></value>\n"
-                    + "<value><string>59</string></value>\n"
-                    + "<value><string>60</string></value>\n"
-                    + "<value><string>61</string></value>\n"
-                    + "<value><string>62</string></value>\n"
-                    + "<value><string>63</string></value>\n"
-                    + "<value><string>64</string></value>\n"
-                    + "<value><string>65</string></value>\n"
-                    + "<value><string>66</string></value>\n"
-                    + "<value><string>67</string></value>\n"
-                    + "<value><string>68</string></value>\n"
-                    + "<value><string>69</string></value>\n"
-                    + "<value><string>70</string></value>\n"
-                    + "<value><string>71</string></value>\n"
-                    + "<value><string>72</string></value>\n"
-                    + "<value><string>73</string></value>\n"
-                    + "<value><string>74</string></value>\n"
-                    + "<value><string>75</string></value>\n"
-                    + "<value><string>76</string></value>\n"
-                    + "<value><string>77</string></value>\n"
-                    + "<value><string>78</string></value>\n"
-                    + "<value><string>79</string></value>\n"
-                    + "<value><string>80</string></value>\n"
-                    + "<value><string>81</string></value>\n"
-                    + "<value><string>82</string></value>\n"
-                    + "<value><string>83</string></value>\n"
-                    + "<value><string>84</string></value>\n"
-                    + "<value><string>85</string></value>\n"
-                    + "<value><string>86</string></value>\n"
-                    + "<value><string>87</string></value>\n"
-                    + "<value><string>88</string></value>\n"
-                    + "<value><string>89</string></value>\n"
-                    + "<value><string>90</string></value>\n"
-                    + "<value><string>91</string></value>\n"
-                    + "<value><string>92</string></value>\n"
-                    + "<value><string>93</string></value>\n"
-                    + "<value><string>94</string></value>\n"
-                    + "<value><string>95</string></value>\n"
-                    + "<value><string>96</string></value>\n"
-                    + "<value><string>97</string></value>\n"
-                    + "<value><string>98</string></value>\n"
-                    + "<value><string>99</string></value>\n"
-                    + "<value><string>100</string></value>\n"
-                    + "<value><string>101</string></value>\n"
-                    + "<value><string>102</string></value>\n"
-                    + "<value><string>103</string></value>\n"
-                    + "<value><string>104</string></value>\n"
-                    + "<value><string>105</string></value>\n"
-                    + "<value><string>106</string></value>\n"
-                    + "<value><string>107</string></value>\n"
-                    + "<value><string>108</string></value>\n"
-                    + "<value><string>109</string></value>\n"
-                    + "<value><string>110</string></value>\n"
-                    + "<value><string>111</string></value>\n"
-                    + "<value><string>112</string></value>\n"
-                    + "<value><string>113</string></value>\n"
-                    + "<value><string>114</string></value>\n"
-                    + "<value><string>115</string></value>\n"
-                    + "<value><string>116</string></value>\n"
-                    + "<value><string>117</string></value>\n"
-                    + "<value><string>118</string></value>\n"
-                    + "<value><string>119</string></value>\n"
-                    + "<value><string>120</string></value>\n"
-                    + "<value><string>121</string></value>\n"
-                    + "<value><string>122</string></value>\n"
-                    + "<value><string>123</string></value>\n"
-                    + "<value><string>124</string></value>\n"
-                    + "<value><string>125</string></value>\n"
-                    + "<value><string>126</string></value>\n"
-                    + "<value><string>127</string></value>\n"
-                    + "<value><string>128</string></value>\n"
-                    + "<value><string>129</string></value>\n"
-                    + "<value><string>130</string></value>\n"
-                    + "<value><string>131</string></value>\n"
-                    + "<value><string>132</string></value>\n"
-                    + "<value><string>133</string></value>\n"
-                    + "<value><string>134</string></value>\n"
-                    + "<value><string>135</string></value>\n"
-                    + "<value><string>136</string></value>\n"
-                    + "<value><string>137</string></value>\n"
-                    + "<value><string>138</string></value>\n"
-                    + "<value><string>139</string></value>\n"
-                    + "<value><string>140</string></value>\n"
-                    + "<value><string>141</string></value>\n"
-                    + "<value><string>142</string></value>\n"
-                    + "<value><string>143</string></value>\n"
-                    + "<value><string>144</string></value>\n"
-                    + "<value><string>145</string></value>\n"
-                    + "<value><string>146</string></value>\n"
-                    + "<value><string>147</string></value>\n"
-                    + "<value><string>148</string></value>\n"
-                    + "<value><string>149</string></value>\n"
-                    + "<value><string>150</string></value>\n"
-                    + "<value><string>151</string></value>\n"
-                    + "<value><string>152</string></value>\n"
-                    + "<value><string>153</string></value>\n"
-                    + "<value><string>154</string></value>\n"
-                    + "<value><string>155</string></value>\n"
-                    + "<value><string>156</string></value>\n"
-                    + "<value><string>157</string></value>\n"
-                    + "<value><string>158</string></value>\n"
-                    + "<value><string>159</string></value>\n"
-                    + "</data></array></value>\n"
-                    + "</data></array></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>uuid</name>\n"
-                    + "<value><string>00000000-0000-0000-0000-000000000000</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>on_reboot</name>\n"
-                    + "<value><string>restart</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>state</name>\n"
-                    + "<value><string>r-----</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>cpu_weight</name>\n"
-                    + "<value><string>65535</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>online_vcpus</name>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>memory</name>\n"
-                    + "<value><string>672</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>cpu_cap</name>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>status</name>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>pool_name</name>\n"
-                    + "<value><string>Pool-0</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>on_poweroff</name>\n"
-                    + "<value><string>destroy</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>on_xend_start</name>\n"
-                    + "<value><string>ignore</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>on_crash</name>\n"
-                    + "<value><string>restart</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>device</name>\n"
-                    + "<value><struct>\n"
-                    + "</struct></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>bootloader</name>\n"
-                    + "<value><string></string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>maxmem</name>\n"
-                    + "<value><string>672</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>cpu_time</name>\n"
-                    + "<value><string>6608.51291287</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>shadow_memory</name>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>name</name>\n"
-                    + "<value><string>Domain-0</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>builder</name>\n"
-                    + "<value><string>linux</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>bootloader_args</name>\n"
-                    + "<value><string></string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>domid</name>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>vcpus</name>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "</struct></value>\n"
-                    + "<value><struct>\n"
-                    + "<member>\n"
-                    + "<name>on_xend_stop</name>\n"
-                    + "<value><string>ignore</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>console_mfn</name>\n"
-                    + "<value><string>873706</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>features</name>\n"
-                    + "<value><string></string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>image</name>\n"
-                    + "<value><struct>\n"
-                    + "<member>\n"
-                    + "<name>tsc_mode</name>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>kernel</name>\n"
-                    + "<value><string></string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>videoram</name>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>device_model</name>\n"
-                    + "<value><string>/usr/lib/xen/bin/qemu-dm</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>notes</name>"
-                    + "<value><array><data>"
-                    + "<value><array><data>"
-                    + "<value><string>HV_START_LOW</string></value>"
-                    + "<value><string>4118806528</string></value>"
-                    + "</data></array></value>"
-                    + "<value><array><data>"
-                    + "<value><string>FEATURES</string></value>"
-                    + "<value><string>!writable_page_tables|pae_pgdir_above_4gb</string></value>"
-                    + "</data></array></value>" + "<value><array><data>"
-                    + "<value><string>VIRT_BASE</string></value>"
-                    + "<value><string>3221225472</string></value>"
-                    + "</data></array></value>" + "<value><array><data>"
-                    + "<value><string>GUEST_VERSION</string></value>"
-                    + "<value><string>2.6</string></value>"
-                    + "</data></array></value>" + "<value><array><data>"
-                    + "<value><string>PADDR_OFFSET</string></value>"
-                    + "<value><string>" + "</string></value>"
-                    + "</data></array></value>" + "<value><array><data>"
-                    + "<value><string>GUEST_OS</string></value>"
-                    + "<value><string>linux</string></value>"
-                    + "</data></array></value>" + "<value><array><data>"
-                    + "<value><string>HYPERCALL_PAGE</string></value>"
-                    + "<value><string>3238010880</string></value>"
-                    + "</data></array></value>" + "<value><array><data>"
-                    + "<value><string>LOADER</string></value>"
-                    + "<value><string>generic</string></value>"
-                    + "</data></array></value>" + "<value><array><data>"
-                    + "<value><string>SUSPEND_CANCEL</string></value>"
-                    + "<value><string>" + "</string></value>"
-                    + "</data></array></value>" + "<value><array><data>"
-                    + "<value><string>PAE_MODE</string></value>"
-                    + "<value><string>yes</string></value>"
-                    + "</data></array></value>" + "<value><array><data>"
-                    + "<value><string>ENTRY</string></value>"
-                    + "<value><string>3242303488</string></value>"
-                    + "</data></array></value>" + "<value><array><data>"
-                    + "<value><string>XEN_VERSION</string></value>"
-                    + "<value><string>xen-3.0</string></value>"
-                    + "</data></array></value>" + "</data></array></value>"
-                    + "</member>" + "<member>"
-                    + "<name>expose_host_uuid</name>" + "<value><string>"
-                    + "</string></value>" + "</member>" + "<member>"
-                    + "<name>pci</name>" + "<value><array><data>"
-                    + "</data></array></value>" + "</member>" + "<member>"
-                    + "<name>superpages</name>\n" + "<value><string>\n"
-                    + "</string></value>\n" + "</member>\n" + "<member>\n"
-                    + "<name>nomigrate</name>\n" + "<value><string>\n"
-                    + "</string></value>\n" + "</member>\n"
-                    + "</struct></value>\n" + "</member>\n" + "<member>\n"
-                    + "<name>cpus</name>\n" + "<value><array><data>\n"
-                    + "<value><array><data>\n" + "</data></array></value>\n"
-                    + "</data></array></value>\n" + "</member>\n"
-                    + "<member>\n" + "<name>store_mfn</name>\n"
-                    + "<value><string>873707</string></value>\n"
-                    + "</member>\n" + "<member>\n" + "<name>uuid</name>\n"
-                    + "<value><string>"
-                    + VMID
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>on_reboot</name>\n"
-                    + "<value><string>restart</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>state</name>\n"
-                    + "<value><string>-b----</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>cpu_weight</name>\n"
-                    + "<value><string>27500</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>online_vcpus</name>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>memory</name>\n"
-                    + "<value><string>512</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>cpu_cap</name>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>status</name>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>pool_name</name>\n"
-                    + "<value><string>Pool-0</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>description</name>\n"
-                    + "<value><string></string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>start_time</name>\n"
-                    + "<value><string>1408105444.17</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>on_poweroff</name>\n"
-                    + "<value><string>destroy</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>on_xend_start</name>\n"
-                    + "<value><string>ignore</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>on_crash</name>\n"
-                    + "<value><string>restart</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>device</name>\n"
-                    + "<value><struct>\n"
-                    + "<member>\n"
-                    + "<name>vif</name>\n"
-                    + "<value><array><data>\n"
-                    + "<value><struct>\n"
-                    + "<member>\n"
-                    + "<name>bridge</name>\n"
-                    + "<value><string>"+VMNICBR+"</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>mac</name>\n"
-                    + "<value><string>" + VMNICMAC + "</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>script</name>\n"
-                    + "<value><string>/etc/xen/scripts/vif-bridge</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>uuid</name>\n"
-                    + "<value><string>"+VMNICUUID+"</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>backend</name>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "</struct></value>\n"
-                    + "</data></array></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>vkbd</name>\n"
-                    + "<value><array><data>\n"
-                    + "<value><struct>\n"
-                    + "<member>\n"
-                    + "<name>backend</name>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "</struct></value>\n"
-                    + "</data></array></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>console</name>\n"
-                    + "<value><array><data>\n"
-                    + "<value><struct>\n"
-                    + "<member>\n"
-                    + "<name>protocol</name>\n"
-                    + "<value><string>vt100</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>location</name>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>uuid</name>\n"
-                    + "<value><string>9beb5016-dde7-8526-491f-e972f262a634</string></value>\n"
-                    + "</member>\n"
-                    + "</struct></value>\n"
-                    + "</data></array></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>vfb</name>\n"
-                    + "<value><array><data>\n"
-                    + "<value><struct>\n"
-                    + "<member>\n"
-                    + "<name>vncunused</name>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>vnc</name>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>xauthority</name>\n"
-                    + "<value><string>/root/.Xauthority</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>vnclisten</name>\n"
-                    + "<value><string>0.0.0.0</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>vncpasswd</name>\n"
-                    + "<value><string>7693f834ca67912e</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>keymap</name>\n"
-                    + "<value><string>en-us</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>location</name>\n"
-                    + "<value><string>0.0.0.0:5900</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>uuid</name>\n"
-                    + "<value><string>78edf954-e375-b142-9c76-791ce805b6ef</string></value>\n"
-                    + "</member>\n"
-                    + "</struct></value>\n"
-                    + "</data></array></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>vbd</name>\n"
-                    + "<value><array><data>\n"
-                    + "<value><struct>\n"
-                    + "<member>\n"
-                    + "<name>protocol</name>\n"
-                    + "<value><string>x86_32-abi</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>uuid</name>\n"
-                    + "<value><string>bda35954-2596-025e-168c-b82e1cf92369</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>bootable</name>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>dev</name>\n"
-                    + "<value><string>xvda:disk</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>uname</name>\n"
-                    + "<value><string>file:/OVS/Repositories/"
-                    + REPOID
-                    + "/VirtualDisks/"
-                    + VMROOTDISK
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>mode</name>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>VDI</name>\n"
-                    + "<value><string></string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>backend</name>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "</struct></value>\n"
-                    + "</data></array></value>\n"
-                    + "</member>\n"
-                    + "</struct></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>bootloader</name>\n"
-                    + "<value><string>/usr/bin/pygrub</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>maxmem</name>\n"
-                    + "<value><string>512</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>cpu_time</name>\n"
-                    + "<value><string>0.152510481</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>shadow_memory</name>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>name</name>\n"
-                    + "<value><string>"
-                    + VMNAME
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>builder</name>\n"
-                    + "<value><string>linux</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>bootloader_args</name>\n"
-                    + "<value><string>-q</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>domid</name>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "</member>\n"
-                    + "<member>\n"
-                    + "<name>vcpus</name>\n"
-                    + "<value><string>\n"
-                    + "</string></value>\n"
-                    + "</member>\n" + "</struct></value>\n" + "</data></array>");
+            .simpleResponseWrapWrapper(new StringBuilder("<array><data>\n")
+                    .append("<value><struct>\n<member>\n<name>on_xend_stop</name>\n<value><string>ignore</string></value>\n</member>\n<member>\n<name>features</name>\n<value><string></string></value>\n</member>\n<member>\n<name>image</name>\n")
+                    .append("<value><struct>\n<member>\n<name>tsc_mode</name>\n<value><string>\n</string></value>\n</member>\n<member>\n<name>kernel</name>\n<value><string></string></value>\n</member>\n<member>\n<name>superpages</name>\n")
+                    .append("<value><string>\n</string></value>\n</member>\n<member>\n<name>nomigrate</name>\n<value><string>\n</string></value>\n</member>\n<member>\n<name>expose_host_uuid</name>\n<value><string>\n</string></value>\n</member>\n")
+                    .append("</struct></value>\n</member>\n<member>\n<name>cpus</name>\n<value><array><data>\n<value><array><data>\n<value><string>\n</string></value>\n<value><string>\n</string></value>\n<value><string>\n</string></value>\n")
+                    .append("<value><string>\n</string></value>\n<value><string>\n</string></value>\n<value><string>\n</string></value>\n<value><string>\n</string></value>\n<value><string>\n</string></value>\n<value><string>\n")
+                    .append("</string></value>\n<value><string>\n</string></value>\n<value><string>10</string></value>\n<value><string>11</string></value>\n<value><string>12</string></value>\n<value><string>13</string></value>\n")
+                    .append("<value><string>14</string></value>\n<value><string>15</string></value>\n<value><string>16</string></value>\n<value><string>17</string></value>\n<value><string>18</string></value>\n")
+                    .append("<value><string>19</string></value>\n<value><string>20</string></value>\n<value><string>21</string></value>\n<value><string>22</string></value>\n<value><string>23</string></value>\n")
+                    .append("<value><string>24</string></value>\n<value><string>25</string></value>\n<value><string>26</string></value>\n<value><string>27</string></value>\n<value><string>28</string></value>\n")
+                    .append("<value><string>29</string></value>\n<value><string>30</string></value>\n<value><string>31</string></value>\n<value><string>32</string></value>\n<value><string>33</string></value>\n")
+                    .append("<value><string>34</string></value>\n<value><string>35</string></value>\n<value><string>36</string></value>\n<value><string>37</string></value>\n<value><string>38</string></value>\n")
+                    .append("<value><string>39</string></value>\n<value><string>40</string></value>\n<value><string>41</string></value>\n<value><string>42</string></value>\n<value><string>43</string></value>\n")
+                    .append("<value><string>44</string></value>\n<value><string>45</string></value>\n<value><string>46</string></value>\n<value><string>47</string></value>\n<value><string>48</string></value>\n")
+                    .append("<value><string>49</string></value>\n<value><string>50</string></value>\n<value><string>51</string></value>\n<value><string>52</string></value>\n<value><string>53</string></value>\n")
+                    .append("<value><string>54</string></value>\n<value><string>55</string></value>\n<value><string>56</string></value>\n<value><string>57</string></value>\n<value><string>58</string></value>\n")
+                    .append("<value><string>59</string></value>\n<value><string>60</string></value>\n<value><string>61</string></value>\n<value><string>62</string></value>\n<value><string>63</string></value>\n")
+                    .append("<value><string>64</string></value>\n<value><string>65</string></value>\n<value><string>66</string></value>\n<value><string>67</string></value>\n<value><string>68</string></value>\n")
+                    .append("<value><string>69</string></value>\n<value><string>70</string></value>\n<value><string>71</string></value>\n<value><string>72</string></value>\n<value><string>73</string></value>\n")
+                    .append("<value><string>74</string></value>\n<value><string>75</string></value>\n<value><string>76</string></value>\n<value><string>77</string></value>\n<value><string>78</string></value>\n")
+                    .append("<value><string>79</string></value>\n<value><string>80</string></value>\n<value><string>81</string></value>\n<value><string>82</string></value>\n<value><string>83</string></value>\n")
+                    .append("<value><string>84</string></value>\n<value><string>85</string></value>\n<value><string>86</string></value>\n<value><string>87</string></value>\n<value><string>88</string></value>\n")
+                    .append("<value><string>89</string></value>\n<value><string>90</string></value>\n<value><string>91</string></value>\n<value><string>92</string></value>\n<value><string>93</string></value>\n")
+                    .append("<value><string>94</string></value>\n<value><string>95</string></value>\n<value><string>96</string></value>\n<value><string>97</string></value>\n<value><string>98</string></value>\n")
+                    .append("<value><string>99</string></value>\n<value><string>100</string></value>\n<value><string>101</string></value>\n<value><string>102</string></value>\n<value><string>103</string></value>\n")
+                    .append("<value><string>104</string></value>\n<value><string>105</string></value>\n<value><string>106</string></value>\n<value><string>107</string></value>\n<value><string>108</string></value>\n")
+                    .append("<value><string>109</string></value>\n<value><string>110</string></value>\n<value><string>111</string></value>\n<value><string>112</string></value>\n<value><string>113</string></value>\n")
+                    .append("<value><string>114</string></value>\n<value><string>115</string></value>\n<value><string>116</string></value>\n<value><string>117</string></value>\n<value><string>118</string></value>\n")
+                    .append("<value><string>119</string></value>\n<value><string>120</string></value>\n<value><string>121</string></value>\n<value><string>122</string></value>\n<value><string>123</string></value>\n")
+                    .append("<value><string>124</string></value>\n<value><string>125</string></value>\n<value><string>126</string></value>\n<value><string>127</string></value>\n<value><string>128</string></value>\n")
+                    .append("<value><string>129</string></value>\n<value><string>130</string></value>\n<value><string>131</string></value>\n<value><string>132</string></value>\n<value><string>133</string></value>\n")
+                    .append("<value><string>134</string></value>\n<value><string>135</string></value>\n<value><string>136</string></value>\n<value><string>137</string></value>\n<value><string>138</string></value>\n")
+                    .append("<value><string>139</string></value>\n<value><string>140</string></value>\n<value><string>141</string></value>\n<value><string>142</string></value>\n<value><string>143</string></value>\n")
+                    .append("<value><string>144</string></value>\n<value><string>145</string></value>\n<value><string>146</string></value>\n<value><string>147</string></value>\n<value><string>148</string></value>\n")
+                    .append("<value><string>149</string></value>\n<value><string>150</string></value>\n<value><string>151</string></value>\n<value><string>152</string></value>\n<value><string>153</string></value>\n")
+                    .append("<value><string>154</string></value>\n<value><string>155</string></value>\n<value><string>156</string></value>\n<value><string>157</string></value>\n<value><string>158</string></value>\n")
+                    .append("<value><string>159</string></value>\n</data></array></value>\n<value><array><data>\n<value><string>\n</string></value>\n<value><string>\n</string></value>\n<value><string>\n</string></value>\n")
+                    .append("<value><string>\n</string></value>\n<value><string>\n</string></value>\n<value><string>\n</string></value>\n<value><string>\n</string></value>\n<value><string>\n</string></value>\n")
+                    .append("<value><string>\n</string></value>\n<value><string>\n</string></value>\n<value><string>10</string></value>\n<value><string>11</string></value>\n<value><string>12</string></value>\n")
+                    .append("<value><string>13</string></value>\n<value><string>14</string></value>\n<value><string>15</string></value>\n<value><string>16</string></value>\n<value><string>17</string></value>\n")
+                    .append("<value><string>18</string></value>\n<value><string>19</string></value>\n<value><string>20</string></value>\n<value><string>21</string></value>\n<value><string>22</string></value>\n")
+                    .append("<value><string>23</string></value>\n<value><string>24</string></value>\n<value><string>25</string></value>\n<value><string>26</string></value>\n<value><string>27</string></value>\n")
+                    .append("<value><string>28</string></value>\n<value><string>29</string></value>\n<value><string>30</string></value>\n<value><string>31</string></value>\n<value><string>32</string></value>\n")
+                    .append("<value><string>33</string></value>\n<value><string>34</string></value>\n<value><string>35</string></value>\n<value><string>36</string></value>\n<value><string>37</string></value>\n")
+                    .append("<value><string>38</string></value>\n<value><string>39</string></value>\n<value><string>40</string></value>\n<value><string>41</string></value>\n<value><string>42</string></value>\n")
+                    .append("<value><string>43</string></value>\n<value><string>44</string></value>\n<value><string>45</string></value>\n<value><string>46</string></value>\n<value><string>47</string></value>\n")
+                    .append("<value><string>48</string></value>\n<value><string>49</string></value>\n<value><string>50</string></value>\n<value><string>51</string></value>\n<value><string>52</string></value>\n")
+                    .append("<value><string>53</string></value>\n<value><string>54</string></value>\n<value><string>55</string></value>\n<value><string>56</string></value>\n<value><string>57</string></value>\n")
+                    .append("<value><string>58</string></value>\n<value><string>59</string></value>\n<value><string>60</string></value>\n<value><string>61</string></value>\n<value><string>62</string></value>\n")
+                    .append("<value><string>63</string></value>\n<value><string>64</string></value>\n<value><string>65</string></value>\n<value><string>66</string></value>\n<value><string>67</string></value>\n")
+                    .append("<value><string>68</string></value>\n<value><string>69</string></value>\n<value><string>70</string></value>\n<value><string>71</string></value>\n<value><string>72</string></value>\n")
+                    .append("<value><string>73</string></value>\n<value><string>74</string></value>\n<value><string>75</string></value>\n<value><string>76</string></value>\n<value><string>77</string></value>\n")
+                    .append("<value><string>78</string></value>\n<value><string>79</string></value>\n<value><string>80</string></value>\n<value><string>81</string></value>\n<value><string>82</string></value>\n")
+                    .append("<value><string>83</string></value>\n<value><string>84</string></value>\n<value><string>85</string></value>\n<value><string>86</string></value>\n<value><string>87</string></value>\n")
+                    .append("<value><string>88</string></value>\n<value><string>89</string></value>\n<value><string>90</string></value>\n<value><string>91</string></value>\n<value><string>92</string></value>\n")
+                    .append("<value><string>93</string></value>\n<value><string>94</string></value>\n<value><string>95</string></value>\n<value><string>96</string></value>\n<value><string>97</string></value>\n")
+                    .append("<value><string>98</string></value>\n<value><string>99</string></value>\n<value><string>100</string></value>\n<value><string>101</string></value>\n<value><string>102</string></value>\n")
+                    .append("<value><string>103</string></value>\n<value><string>104</string></value>\n<value><string>105</string></value>\n<value><string>106</string></value>\n<value><string>107</string></value>\n")
+                    .append("<value><string>108</string></value>\n<value><string>109</string></value>\n<value><string>110</string></value>\n<value><string>111</string></value>\n<value><string>112</string></value>\n")
+                    .append("<value><string>113</string></value>\n<value><string>114</string></value>\n<value><string>115</string></value>\n<value><string>116</string></value>\n<value><string>117</string></value>\n")
+                    .append("<value><string>118</string></value>\n<value><string>119</string></value>\n<value><string>120</string></value>\n<value><string>121</string></value>\n<value><string>122</string></value>\n")
+                    .append("<value><string>123</string></value>\n<value><string>124</string></value>\n<value><string>125</string></value>\n<value><string>126</string></value>\n<value><string>127</string></value>\n")
+                    .append("<value><string>128</string></value>\n<value><string>129</string></value>\n<value><string>130</string></value>\n<value><string>131</string></value>\n<value><string>132</string></value>\n")
+                    .append("<value><string>133</string></value>\n<value><string>134</string></value>\n<value><string>135</string></value>\n<value><string>136</string></value>\n<value><string>137</string></value>\n")
+                    .append("<value><string>138</string></value>\n<value><string>139</string></value>\n<value><string>140</string></value>\n<value><string>141</string></value>\n<value><string>142</string></value>\n")
+                    .append("<value><string>143</string></value>\n<value><string>144</string></value>\n<value><string>145</string></value>\n<value><string>146</string></value>\n<value><string>147</string></value>\n")
+                    .append("<value><string>148</string></value>\n<value><string>149</string></value>\n<value><string>150</string></value>\n<value><string>151</string></value>\n<value><string>152</string></value>\n")
+                    .append("<value><string>153</string></value>\n<value><string>154</string></value>\n<value><string>155</string></value>\n<value><string>156</string></value>\n<value><string>157</string></value>\n")
+                    .append("<value><string>158</string></value>\n<value><string>159</string></value>\n</data></array></value>\n</data></array></value>\n</member>\n<member>\n<name>uuid</name>\n<value><string>00000000-0000-0000-0000-000000000000</string></value>\n")
+                    .append("</member>\n<member>\n<name>on_reboot</name>\n<value><string>restart</string></value>\n</member>\n<member>\n<name>state</name>\n<value><string>r-----</string></value>\n</member>\n")
+                    .append("<member>\n<name>cpu_weight</name>\n<value><string>65535</string></value>\n</member>\n<member>\n<name>online_vcpus</name>\n<value><string>\n</string></value>\n</member>\n")
+                    .append("<member>\n<name>memory</name>\n<value><string>672</string></value>\n</member>\n<member>\n<name>cpu_cap</name>\n<value><string>\n</string></value>\n</member>\n<member>\n<name>status</name>\n")
+                    .append("<value><string>\n</string></value>\n</member>\n<member>\n<name>pool_name</name>\n<value><string>Pool-0</string></value>\n</member>\n<member>\n<name>on_poweroff</name>\n<value><string>destroy</string></value>\n")
+                    .append("</member>\n<member>\n<name>on_xend_start</name>\n<value><string>ignore</string></value>\n</member>\n<member>\n<name>on_crash</name>\n<value><string>restart</string></value>\n</member>\n")
+                    .append("<member>\n<name>device</name>\n<value><struct>\n</struct></value>\n</member>\n<member>\n<name>bootloader</name>\n<value><string></string></value>\n</member>\n<member>\n<name>maxmem</name>\n")
+                    .append("<value><string>672</string></value>\n</member>\n<member>\n<name>cpu_time</name>\n<value><string>6608.51291287</string></value>\n</member>\n<member>\n<name>shadow_memory</name>\n<value><string>\n")
+                    .append("</string></value>\n</member>\n<member>\n<name>name</name>\n<value><string>Domain-0</string></value>\n</member>\n<member>\n<name>builder</name>\n<value><string>linux</string></value>\n</member>\n")
+                    .append("<member>\n<name>bootloader_args</name>\n<value><string></string></value>\n</member>\n<member>\n<name>domid</name>\n<value><string>\n</string></value>\n</member>\n<member>\n<name>vcpus</name>\n")
+                    .append("<value><string>\n</string></value>\n</member>\n</struct></value>\n<value><struct>\n<member>\n<name>on_xend_stop</name>\n<value><string>ignore</string></value>\n</member>\n<member>\n")
+                    .append("<name>console_mfn</name>\n<value><string>873706</string></value>\n</member>\n<member>\n<name>features</name>\n<value><string></string></value>\n</member>\n<member>\n<name>image</name>\n")
+                    .append("<value><struct>\n<member>\n<name>tsc_mode</name>\n<value><string>\n</string></value>\n</member>\n<member>\n<name>kernel</name>\n<value><string></string></value>\n</member>\n")
+                    .append("<member>\n<name>videoram</name>\n<value><string>\n</string></value>\n</member>\n<member>\n<name>device_model</name>\n<value><string>/usr/lib/xen/bin/qemu-dm</string></value>\n</member>\n")
+                    .append("<member>\n<name>notes</name><value><array><data><value><array><data><value><string>HV_START_LOW</string></value><value><string>4118806528</string></value></data></array></value>")
+                    .append("<value><array><data><value><string>FEATURES</string></value><value><string>!writable_page_tables|pae_pgdir_above_4gb</string></value></data></array></value><value><array><data>")
+                    .append("<value><string>VIRT_BASE</string></value><value><string>3221225472</string></value></data></array></value><value><array><data><value><string>GUEST_VERSION</string></value><value><string>2.6</string></value>")
+                    .append("</data></array></value><value><array><data><value><string>PADDR_OFFSET</string></value><value><string></string></value></data></array></value><value><array><data><value><string>GUEST_OS</string></value>")
+                    .append("<value><string>linux</string></value></data></array></value><value><array><data><value><string>HYPERCALL_PAGE</string></value><value><string>3238010880</string></value></data></array></value><value><array><data>")
+                    .append("<value><string>LOADER</string></value><value><string>generic</string></value></data></array></value><value><array><data><value><string>SUSPEND_CANCEL</string></value><value><string></string></value>")
+                    .append("</data></array></value><value><array><data><value><string>PAE_MODE</string></value><value><string>yes</string></value></data></array></value><value><array><data><value><string>ENTRY</string></value>")
+                    .append("<value><string>3242303488</string></value></data></array></value><value><array><data><value><string>XEN_VERSION</string></value><value><string>xen-3.0</string></value></data></array></value>")
+                    .append("</data></array></value></member><member><name>expose_host_uuid</name><value><string></string></value></member><member><name>pci</name><value><array><data></data></array></value></member>")
+                    .append("<member><name>superpages</name>\n<value><string>\n</string></value>\n</member>\n<member>\n<name>nomigrate</name>\n<value><string>\n</string></value>\n</member>\n</struct></value>\n</member>\n")
+                    .append("<member>\n<name>cpus</name>\n<value><array><data>\n<value><array><data>\n</data></array></value>\n</data></array></value>\n</member>\n<member>\n<name>store_mfn</name>\n<value><string>873707</string></value>\n")
+                    .append("</member>\n<member>\n<name>uuid</name>\n<value><string>").append(VMID).append("</string></value>\n</member>\n<member>\n<name>on_reboot</name>\n<value><string>restart</string></value>\n</member>\n")
+                    .append("<member>\n<name>state</name>\n<value><string>-b----</string></value>\n</member>\n<member>\n<name>cpu_weight</name>\n<value><string>27500</string></value>\n</member>\n<member>\n<name>online_vcpus</name>\n")
+                    .append("<value><string>\n</string></value>\n</member>\n<member>\n<name>memory</name>\n<value><string>512</string></value>\n</member>\n<member>\n<name>cpu_cap</name>\n<value><string>\n</string></value>\n")
+                    .append("</member>\n<member>\n<name>status</name>\n<value><string>\n</string></value>\n</member>\n<member>\n<name>pool_name</name>\n<value><string>Pool-0</string></value>\n</member>\n<member>\n<name>description</name>\n")
+                    .append("<value><string></string></value>\n</member>\n<member>\n<name>start_time</name>\n<value><string>1408105444.17</string></value>\n</member>\n<member>\n<name>on_poweroff</name>\n<value><string>destroy</string></value>\n")
+                    .append("</member>\n<member>\n<name>on_xend_start</name>\n<value><string>ignore</string></value>\n</member>\n<member>\n<name>on_crash</name>\n<value><string>restart</string></value>\n</member>\n")
+                    .append("<member>\n<name>device</name>\n<value><struct>\n<member>\n<name>vif</name>\n<value><array><data>\n<value><struct>\n<member>\n<name>bridge</name>\n<value><string>").append(VMNICBR)
+                    .append("</string></value>\n</member>\n<member>\n<name>mac</name>\n<value><string>").append(VMNICMAC).append("</string></value>\n</member>\n<member>\n<name>script</name>\n<value><string>/etc/xen/scripts/vif-bridge</string></value>\n")
+                    .append("</member>\n<member>\n<name>uuid</name>\n<value><string>").append(VMNICUUID).append("</string></value>\n</member>\n<member>\n<name>backend</name>\n<value><string>\n</string></value>\n</member>\n")
+                    .append("</struct></value>\n</data></array></value>\n</member>\n<member>\n<name>vkbd</name>\n<value><array><data>\n<value><struct>\n<member>\n<name>backend</name>\n<value><string>\n</string></value>\n")
+                    .append("</member>\n</struct></value>\n</data></array></value>\n</member>\n<member>\n<name>console</name>\n<value><array><data>\n<value><struct>\n<member>\n<name>protocol</name>\n<value><string>vt100</string></value>\n")
+                    .append("</member>\n<member>\n<name>location</name>\n<value><string>\n</string></value>\n</member>\n<member>\n<name>uuid</name>\n<value><string>9beb5016-dde7-8526-491f-e972f262a634</string></value>\n")
+                    .append("</member>\n</struct></value>\n</data></array></value>\n</member>\n<member>\n<name>vfb</name>\n<value><array><data>\n<value><struct>\n<member>\n<name>vncunused</name>\n<value><string>\n")
+                    .append("</string></value>\n</member>\n<member>\n<name>vnc</name>\n<value><string>\n</string></value>\n</member>\n<member>\n<name>xauthority</name>\n<value><string>/root/.Xauthority</string></value>\n")
+                    .append("</member>\n<member>\n<name>vnclisten</name>\n<value><string>0.0.0.0</string></value>\n</member>\n<member>\n<name>vncpasswd</name>\n<value><string>7693f834ca67912e</string></value>\n")
+                    .append("</member>\n<member>\n<name>keymap</name>\n<value><string>en-us</string></value>\n</member>\n<member>\n<name>location</name>\n<value><string>0.0.0.0:5900</string></value>\n</member>\n")
+                    .append("<member>\n<name>uuid</name>\n<value><string>78edf954-e375-b142-9c76-791ce805b6ef</string></value>\n</member>\n</struct></value>\n</data></array></value>\n</member>\n<member>\n<name>vbd</name>\n")
+                    .append("<value><array><data>\n<value><struct>\n<member>\n<name>protocol</name>\n<value><string>x86_32-abi</string></value>\n</member>\n<member>\n<name>uuid</name>\n<value><string>bda35954-2596-025e-168c-b82e1cf92369</string></value>\n")
+                    .append("</member>\n<member>\n<name>bootable</name>\n<value><string>\n</string></value>\n</member>\n<member>\n<name>dev</name>\n<value><string>xvda:disk</string></value>\n</member>\n<member>\n<name>uname</name>\n")
+                    .append("<value><string>file:/OVS/Repositories/").append(REPOID).append("/VirtualDisks/").append(VMROOTDISK).append("</string></value>\n</member>\n<member>\n<name>mode</name>\n<value><string>\n")
+                    .append("</string></value>\n</member>\n<member>\n<name>VDI</name>\n<value><string></string></value>\n</member>\n<member>\n<name>backend</name>\n<value><string>\n</string></value>\n</member>\n</struct></value>\n")
+                    .append("</data></array></value>\n</member>\n</struct></value>\n</member>\n<member>\n<name>bootloader</name>\n<value><string>/usr/bin/pygrub</string></value>\n</member>\n<member>\n<name>maxmem</name>\n")
+                    .append("<value><string>512</string></value>\n</member>\n<member>\n<name>cpu_time</name>\n<value><string>0.152510481</string></value>\n</member>\n<member>\n<name>shadow_memory</name>\n<value><string>\n")
+                    .append("</string></value>\n</member>\n<member>\n<name>name</name>\n<value><string>").append(VMNAME).append("</string></value>\n</member>\n<member>\n<name>builder</name>\n<value><string>linux</string></value>\n")
+                    .append("</member>\n<member>\n<name>bootloader_args</name>\n<value><string>-q</string></value>\n</member>\n<member>\n<name>domid</name>\n<value><string>\n</string></value>\n</member>\n<member>\n")
+                    .append("<name>vcpus</name>\n<value><string>\n</string></value>\n</member>\n</struct></value>\n</data></array>").toString());
 
     public String getSingleVmListXML() {
         return SINGLEVMLISTXML;
     }
     String SINGLEVMLISTXML = results
-            .simpleResponseWrapWrapper("<struct>"
-                    + "<member>"
-                    + "<name>on_xend_stop</name>"
-                    + "<value><string>ignore</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>console_mfn</name>"
-                    + "<value><string>873706</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>features</name>"
-                    + "<value><string></string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>image</name>"
-                    + "<value><struct>"
-                    + "<member>"
-                    + "<name>tsc_mode</name>"
-                    + "<value><string>"
-                    + "</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>kernel</name>"
-                    + "<value><string></string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>videoram</name>"
-                    + "<value><string>"
-                    + "</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>device_model</name>"
-                    + "<value><string>/usr/lib/xen/bin/qemu-dm</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>notes</name>"
-                    + "<value><array><data>"
-                    + "<value><array><data>"
-                    + "<value><string>HV_START_LOW</string></value>"
-                    + "<value><string>4118806528</string></value>"
-                    + "</data></array></value>"
-                    + "<value><array><data>"
-                    + "<value><string>FEATURES</string></value>"
-                    + "<value><string>!writable_page_tables|pae_pgdir_above_4gb</string></value>"
-                    + "</data></array></value>" + "<value><array><data>"
-                    + "<value><string>VIRT_BASE</string></value>"
-                    + "<value><string>3221225472</string></value>"
-                    + "</data></array></value>" + "<value><array><data>"
-                    + "<value><string>GUEST_VERSION</string></value>"
-                    + "<value><string>2.6</string></value>"
-                    + "</data></array></value>" + "<value><array><data>"
-                    + "<value><string>PADDR_OFFSET</string></value>"
-                    + "<value><string>" + "</string></value>"
-                    + "</data></array></value>" + "<value><array><data>"
-                    + "<value><string>GUEST_OS</string></value>"
-                    + "<value><string>linux</string></value>"
-                    + "</data></array></value>" + "<value><array><data>"
-                    + "<value><string>HYPERCALL_PAGE</string></value>"
-                    + "<value><string>3238010880</string></value>"
-                    + "</data></array></value>" + "<value><array><data>"
-                    + "<value><string>LOADER</string></value>"
-                    + "<value><string>generic</string></value>"
-                    + "</data></array></value>" + "<value><array><data>"
-                    + "<value><string>SUSPEND_CANCEL</string></value>"
-                    + "<value><string>" + "</string></value>"
-                    + "</data></array></value>" + "<value><array><data>"
-                    + "<value><string>PAE_MODE</string></value>"
-                    + "<value><string>yes</string></value>"
-                    + "</data></array></value>" + "<value><array><data>"
-                    + "<value><string>ENTRY</string></value>"
-                    + "<value><string>3242303488</string></value>"
-                    + "</data></array></value>" + "<value><array><data>"
-                    + "<value><string>XEN_VERSION</string></value>"
-                    + "<value><string>xen-3.0</string></value>"
-                    + "</data></array></value>" + "</data></array></value>"
-                    + "</member>" + "<member>"
-                    + "<name>expose_host_uuid</name>" + "<value><string>"
-                    + "</string></value>" + "</member>" + "<member>"
-                    + "<name>pci</name>" + "<value><array><data>"
-                    + "</data></array></value>" + "</member>" + "<member>"
-                    + "<name>superpages</name>" + "<value><string>"
-                    + "</string></value>" + "</member>" + "<member>"
-                    + "<name>nomigrate</name>" + "<value><string>"
-                    + "</string></value>" + "</member>" + "</struct></value>"
-                    + "</member>" + "<member>" + "<name>cpus</name>"
-                    + "<value><array><data>" + "<value><array><data>"
-                    + "</data></array></value>" + "</data></array></value>"
-                    + "</member>" + "<member>" + "<name>store_mfn</name>"
-                    + "<value><string>873707</string></value>" + "</member>"
-                    + "<member>" + "<name>uuid</name>" + "<value><string>"
-                    + VMID
-                    + "</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>on_reboot</name>"
-                    + "<value><string>restart</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>state</name>"
-                    + "<value><string>-b----</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>cpu_weight</name>"
-                    + "<value><string>27500</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>online_vcpus</name>"
-                    + "<value><string>"
-                    + "</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>memory</name>"
-                    + "<value><string>512</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>cpu_cap</name>"
-                    + "<value><string>"
-                    + "</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>status</name>"
-                    + "<value><string>"
-                    + "</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>pool_name</name>"
-                    + "<value><string>Pool-0</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>description</name>"
-                    + "<value><string></string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>start_time</name>"
-                    + "<value><string>1408105444.17</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>on_poweroff</name>"
-                    + "<value><string>destroy</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>on_xend_start</name>"
-                    + "<value><string>ignore</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>on_crash</name>"
-                    + "<value><string>restart</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>device</name>"
-                    + "<value><struct>"
-                    + "<member>"
-                    + "<name>vif</name>"
-                    + "<value><array><data>"
-                    + "<value><struct>"
-                    + "<member>"
-                    + "<name>bridge</name>"
-                    + "<value><string>"+VMNICBR+"</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>mac</name>"
-                    + "<value><string>"+VMNICMAC+"</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>script</name>"
-                    + "<value><string>/etc/xen/scripts/vif-bridge</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>uuid</name>"
-                    + "<value><string>"+VMNICUUID+"</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>backend</name>"
-                    + "<value><string>"
-                    + "</string></value>"
-                    + "</member>"
-                    + "</struct></value>"
-                    + "</data></array></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>vkbd</name>"
-                    + "<value><array><data>"
-                    + "<value><struct>"
-                    + "<member>"
-                    + "<name>backend</name>"
-                    + "<value><string>"
-                    + "</string></value>"
-                    + "</member>"
-                    + "</struct></value>"
-                    + "</data></array></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>console</name>"
-                    + "<value><array><data>"
-                    + "<value><struct>"
-                    + "<member>"
-                    + "<name>protocol</name>"
-                    + "<value><string>vt100</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>location</name>"
-                    + "<value><string>"
-                    + "</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>uuid</name>"
-                    + "<value><string>9beb5016-dde7-8526-491f-e972f262a634</string></value>"
-                    + "</member>"
-                    + "</struct></value>"
-                    + "</data></array></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>vfb</name>"
-                    + "<value><array><data>"
-                    + "<value><struct>"
-                    + "<member>"
-                    + "<name>vncunused</name>"
-                    + "<value><string>"
-                    + "</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>vnc</name>"
-                    + "<value><string>"
-                    + "</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>xauthority</name>"
-                    + "<value><string>/root/.Xauthority</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>vnclisten</name>"
-                    + "<value><string>0.0.0.0</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>vncpasswd</name>"
-                    + "<value><string>7693f834ca67912e</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>keymap</name>"
-                    + "<value><string>en-us</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>location</name>"
-                    + "<value><string>0.0.0.0:5900</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>uuid</name>"
-                    + "<value><string>78edf954-e375-b142-9c76-791ce805b6ef</string></value>"
-                    + "</member>"
-                    + "</struct></value>"
-                    + "</data></array></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>vbd</name>"
-                    + "<value><array><data>"
-                    + "<value><struct>"
-                    + "<member>"
-                    + "<name>protocol</name>"
-                    + "<value><string>x86_32-abi</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>uuid</name>"
-                    + "<value><string>bda35954-2596-025e-168c-b82e1cf92369</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>bootable</name>"
-                    + "<value><string>"
-                    + "</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>dev</name>"
-                    + "<value><string>xvda:disk</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>uname</name>"
-                    + "<value><string>file:/OVS/Repositories/"
-                    + REPOID
-                    + "/VirtualDisks/"
-                    + VMROOTDISK
-                    + "</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>mode</name>"
-                    + "<value><string>"
-                    + "</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>VDI</name>"
-                    + "<value><string></string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>backend</name>"
-                    + "<value><string>"
-                    + "</string></value>"
-                    + "</member>"
-                    + "</struct></value>"
-                    + "</data></array></value>"
-                    + "</member>"
-                    + "</struct></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>bootloader</name>"
-                    + "<value><string>/usr/bin/pygrub</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>maxmem</name>"
-                    + "<value><string>512</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>cpu_time</name>"
-                    + "<value><string>5.627111952</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>shadow_memory</name>"
-                    + "<value><string>"
-                    + "</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>name</name>"
-                    + "<value><string>"
-                    + VMNAME
-                    + "</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>builder</name>"
-                    + "<value><string>linux</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>bootloader_args</name>"
-                    + "<value><string>-q</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>domid</name>"
-                    + "<value><string>"
-                    + "</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>vcpus</name>"
-                    + "<value><string>"
-                    + "</string></value>" + "</member>" + "</struct>");
+            .simpleResponseWrapWrapper(new StringBuilder("<struct>")
+                    .append("<member>")
+                    .append("<name>on_xend_stop</name>")
+                    .append("<value><string>ignore</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>console_mfn</name>")
+                    .append("<value><string>873706</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>features</name>")
+                    .append("<value><string></string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>image</name>")
+                    .append("<value><struct>")
+                    .append("<member>")
+                    .append("<name>tsc_mode</name>")
+                    .append("<value><string>")
+                    .append("</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>kernel</name>")
+                    .append("<value><string></string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>videoram</name>")
+                    .append("<value><string>")
+                    .append("</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>device_model</name>")
+                    .append("<value><string>/usr/lib/xen/bin/qemu-dm</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>notes</name>")
+                    .append("<value><array><data>")
+                    .append("<value><array><data>")
+                    .append("<value><string>HV_START_LOW</string></value>")
+                    .append("<value><string>4118806528</string></value>")
+                    .append("</data></array></value>")
+                    .append("<value><array><data>")
+                    .append("<value><string>FEATURES</string></value>")
+                    .append("<value><string>!writable_page_tables|pae_pgdir_above_4gb</string></value>")
+                    .append("</data></array></value>") .append("<value><array><data>")
+                    .append("<value><string>VIRT_BASE</string></value>")
+                    .append("<value><string>3221225472</string></value>")
+                    .append("</data></array></value>") .append("<value><array><data>")
+                    .append("<value><string>GUEST_VERSION</string></value>")
+                    .append("<value><string>2.6</string></value>")
+                    .append("</data></array></value>") .append("<value><array><data>")
+                    .append("<value><string>PADDR_OFFSET</string></value>")
+                    .append("<value><string>") .append("</string></value>")
+                    .append("</data></array></value>") .append("<value><array><data>")
+                    .append("<value><string>GUEST_OS</string></value>")
+                    .append("<value><string>linux</string></value>")
+                    .append("</data></array></value>") .append("<value><array><data>")
+                    .append("<value><string>HYPERCALL_PAGE</string></value>")
+                    .append("<value><string>3238010880</string></value>")
+                    .append("</data></array></value>") .append("<value><array><data>")
+                    .append("<value><string>LOADER</string></value>")
+                    .append("<value><string>generic</string></value>")
+                    .append("</data></array></value>") .append("<value><array><data>")
+                    .append("<value><string>SUSPEND_CANCEL</string></value>")
+                    .append("<value><string>") .append("</string></value>")
+                    .append("</data></array></value>") .append("<value><array><data>")
+                    .append("<value><string>PAE_MODE</string></value>")
+                    .append("<value><string>yes</string></value>")
+                    .append("</data></array></value>") .append("<value><array><data>")
+                    .append("<value><string>ENTRY</string></value>")
+                    .append("<value><string>3242303488</string></value>")
+                    .append("</data></array></value>") .append("<value><array><data>")
+                    .append("<value><string>XEN_VERSION</string></value>")
+                    .append("<value><string>xen-3.0</string></value>")
+                    .append("</data></array></value>") .append("</data></array></value>")
+                    .append("</member>") .append("<member>")
+                    .append("<name>expose_host_uuid</name>") .append("<value><string>")
+                    .append("</string></value>") .append("</member>") .append("<member>")
+                    .append("<name>pci</name>") .append("<value><array><data>")
+                    .append("</data></array></value>") .append("</member>") .append("<member>")
+                    .append("<name>superpages</name>") .append("<value><string>")
+                    .append("</string></value>") .append("</member>") .append("<member>")
+                    .append("<name>nomigrate</name>") .append("<value><string>")
+                    .append("</string></value>") .append("</member>") .append("</struct></value>")
+                    .append("</member>") .append("<member>") .append("<name>cpus</name>")
+                    .append("<value><array><data>") .append("<value><array><data>")
+                    .append("</data></array></value>") .append("</data></array></value>")
+                    .append("</member>") .append("<member>") .append("<name>store_mfn</name>")
+                    .append("<value><string>873707</string></value>") .append("</member>")
+                    .append("<member>") .append("<name>uuid</name>") .append("<value><string>")
+                    .append(VMID)
+                    .append("</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>on_reboot</name>")
+                    .append("<value><string>restart</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>state</name>")
+                    .append("<value><string>-b----</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>cpu_weight</name>")
+                    .append("<value><string>27500</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>online_vcpus</name>")
+                    .append("<value><string>")
+                    .append("</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>memory</name>")
+                    .append("<value><string>512</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>cpu_cap</name>")
+                    .append("<value><string>")
+                    .append("</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>status</name>")
+                    .append("<value><string>")
+                    .append("</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>pool_name</name>")
+                    .append("<value><string>Pool-0</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>description</name>")
+                    .append("<value><string></string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>start_time</name>")
+                    .append("<value><string>1408105444.17</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>on_poweroff</name>")
+                    .append("<value><string>destroy</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>on_xend_start</name>")
+                    .append("<value><string>ignore</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>on_crash</name>")
+                    .append("<value><string>restart</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>device</name>")
+                    .append("<value><struct>")
+                    .append("<member>")
+                    .append("<name>vif</name>")
+                    .append("<value><array><data>")
+                    .append("<value><struct>")
+                    .append("<member>")
+                    .append("<name>bridge</name>")
+                    .append("<value><string>").append(VMNICBR).append("</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>mac</name>")
+                    .append("<value><string>").append(VMNICMAC).append("</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>script</name>")
+                    .append("<value><string>/etc/xen/scripts/vif-bridge</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>uuid</name>")
+                    .append("<value><string>").append(VMNICUUID).append("</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>backend</name>")
+                    .append("<value><string>")
+                    .append("</string></value>")
+                    .append("</member>")
+                    .append("</struct></value>")
+                    .append("</data></array></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>vkbd</name>")
+                    .append("<value><array><data>")
+                    .append("<value><struct>")
+                    .append("<member>")
+                    .append("<name>backend</name>")
+                    .append("<value><string>")
+                    .append("</string></value>")
+                    .append("</member>")
+                    .append("</struct></value>")
+                    .append("</data></array></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>console</name>")
+                    .append("<value><array><data>")
+                    .append("<value><struct>")
+                    .append("<member>")
+                    .append("<name>protocol</name>")
+                    .append("<value><string>vt100</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>location</name>")
+                    .append("<value><string>")
+                    .append("</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>uuid</name>")
+                    .append("<value><string>9beb5016-dde7-8526-491f-e972f262a634</string></value>")
+                    .append("</member>")
+                    .append("</struct></value>")
+                    .append("</data></array></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>vfb</name>")
+                    .append("<value><array><data>")
+                    .append("<value><struct>")
+                    .append("<member>")
+                    .append("<name>vncunused</name>")
+                    .append("<value><string>")
+                    .append("</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>vnc</name>")
+                    .append("<value><string>")
+                    .append("</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>xauthority</name>")
+                    .append("<value><string>/root/.Xauthority</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>vnclisten</name>")
+                    .append("<value><string>0.0.0.0</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>vncpasswd</name>")
+                    .append("<value><string>7693f834ca67912e</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>keymap</name>")
+                    .append("<value><string>en-us</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>location</name>")
+                    .append("<value><string>0.0.0.0:5900</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>uuid</name>")
+                    .append("<value><string>78edf954-e375-b142-9c76-791ce805b6ef</string></value>")
+                    .append("</member>")
+                    .append("</struct></value>")
+                    .append("</data></array></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>vbd</name>")
+                    .append("<value><array><data>")
+                    .append("<value><struct>")
+                    .append("<member>")
+                    .append("<name>protocol</name>")
+                    .append("<value><string>x86_32-abi</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>uuid</name>")
+                    .append("<value><string>bda35954-2596-025e-168c-b82e1cf92369</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>bootable</name>")
+                    .append("<value><string>")
+                    .append("</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>dev</name>")
+                    .append("<value><string>xvda:disk</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>uname</name>")
+                    .append("<value><string>file:/OVS/Repositories/")
+                    .append(REPOID)
+                    .append("/VirtualDisks/")
+                    .append(VMROOTDISK)
+                    .append("</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>mode</name>")
+                    .append("<value><string>")
+                    .append("</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>VDI</name>")
+                    .append("<value><string></string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>backend</name>")
+                    .append("<value><string>")
+                    .append("</string></value>")
+                    .append("</member>")
+                    .append("</struct></value>")
+                    .append("</data></array></value>")
+                    .append("</member>")
+                    .append("</struct></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>bootloader</name>")
+                    .append("<value><string>/usr/bin/pygrub</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>maxmem</name>")
+                    .append("<value><string>512</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>cpu_time</name>")
+                    .append("<value><string>5.627111952</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>shadow_memory</name>")
+                    .append("<value><string>")
+                    .append("</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>name</name>")
+                    .append("<value><string>")
+                    .append(VMNAME)
+                    .append("</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>builder</name>")
+                    .append("<value><string>linux</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>bootloader_args</name>")
+                    .append("<value><string>-q</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>domid</name>")
+                    .append("<value><string>")
+                    .append("</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>vcpus</name>")
+                    .append("<value><string>")
+                    .append("</string></value>") .append("</member>") .append("</struct>").toString());
 
     public String getSingleVmConfigXML() {
         return this.SINGLEVMCONFIGXML;
     }
     String SINGLEVMCONFIGXML = results
-            .simpleResponseWrapWrapper("<struct>"
-                    + "<member>"
-                    + "<name>vif</name>"
-                    + "<value><array><data>"
-                    + "<value><string>mac="+VMNICMAC+",bridge="+VMNICBR+"</string></value>"
-                    + "<value><string>mac=02:00:50:9a:00:02,bridge=xenbr0.240</string></value>"
-                    + "</data></array></value>" + "</member>" + "<member>"
-                    + "<name>extra</name>" + "<value><string></string></value>"
-                    + "</member>" + "<member>" + "<name>OVM_simple_name</name>"
-                    + "<value><string>"
-                    + VMNAME
-                    + "</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>disk</name>"
-                    + "<value><array><data>"
-                    + "<value><string>file:/OVS/Repositories/"
-                    + REPOID
-                    + "/VirtualDisks/"
-                    + VMROOTDISK
-                    + ",xvda,w</string></value>"
-                    + "</data></array></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>bootargs</name>"
-                    + "<value><string></string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>uuid</name>"
-                    + "<value><string>"
-                    + VMID
-                    + "</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>on_reboot</name>"
-                    + "<value><string>restart</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>cpu_weight</name>"
-                    + "<value><int>27500</int></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>memory</name>"
-                    + "<value><int>512</int></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>cpu_cap</name>"
-                    + "<value><int>0</int></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>maxvcpus</name>"
-                    + "<value><int>1</int></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>OVM_high_availability</name>"
-                    + "<value><boolean>0</boolean></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>OVM_description</name>"
-                    + "<value><string></string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>on_poweroff</name>"
-                    + "<value><string>destroy</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>on_crash</name>"
-                    + "<value><string>restart</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>bootloader</name>"
-                    + "<value><string>/usr/bin/pygrub</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>guest_os_type</name>"
-                    + "<value><string>Other.Linux</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>name</name>"
-                    + "<value><string>"
-                    + VMNAME
-                    + "</string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>vfb</name>"
-                    + "<value><array><data>"
-                    + "<value><string>vncunused=1,vncpasswd=7693f834ca67912e,keymap=en-us,type=vnc,vnclisten=0.0.0.0</string></value>"
-                    + "</data></array></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>vcpus</name>"
-                    + "<value><int>1</int></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>OVM_cpu_compat_group</name>"
-                    + "<value><string></string></value>"
-                    + "</member>"
-                    + "<member>"
-                    + "<name>OVM_domain_type</name>"
-                    + "<value><string>xen_pvm</string></value>"
-                    + "</member>"
-                    + "</struct>");
+            .simpleResponseWrapWrapper(new StringBuilder("<struct>")
+                    .append("<member>")
+                    .append("<name>vif</name>")
+                    .append("<value><array><data>")
+                    .append("<value><string>mac=").append(VMNICMAC).append(",bridge=").append(VMNICBR).append("</string></value>")
+                    .append("<value><string>mac=02:00:50:9a:00:02,bridge=xenbr0.240</string></value>")
+                    .append("</data></array></value>") .append("</member>") .append("<member>")
+                    .append("<name>extra</name>") .append("<value><string></string></value>")
+                    .append("</member>") .append("<member>") .append("<name>OVM_simple_name</name>")
+                    .append("<value><string>")
+                    .append(VMNAME)
+                    .append("</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>disk</name>")
+                    .append("<value><array><data>")
+                    .append("<value><string>file:/OVS/Repositories/")
+                    .append(REPOID)
+                    .append("/VirtualDisks/")
+                    .append(VMROOTDISK)
+                    .append(",xvda,w</string></value>")
+                    .append("</data></array></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>bootargs</name>")
+                    .append("<value><string></string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>uuid</name>")
+                    .append("<value><string>")
+                    .append(VMID)
+                    .append("</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>on_reboot</name>")
+                    .append("<value><string>restart</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>cpu_weight</name>")
+                    .append("<value><int>27500</int></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>memory</name>")
+                    .append("<value><int>512</int></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>cpu_cap</name>")
+                    .append("<value><int>0</int></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>maxvcpus</name>")
+                    .append("<value><int>1</int></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>OVM_high_availability</name>")
+                    .append("<value><boolean>0</boolean></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>OVM_description</name>")
+                    .append("<value><string></string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>on_poweroff</name>")
+                    .append("<value><string>destroy</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>on_crash</name>")
+                    .append("<value><string>restart</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>bootloader</name>")
+                    .append("<value><string>/usr/bin/pygrub</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>guest_os_type</name>")
+                    .append("<value><string>Other.Linux</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>name</name>")
+                    .append("<value><string>")
+                    .append(VMNAME)
+                    .append("</string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>vfb</name>")
+                    .append("<value><array><data>")
+                    .append("<value><string>vncunused=1,vncpasswd=7693f834ca67912e,keymap=en-us,type=vnc,vnclisten=0.0.0.0</string></value>")
+                    .append("</data></array></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>vcpus</name>")
+                    .append("<value><int>1</int></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>OVM_cpu_compat_group</name>")
+                    .append("<value><string></string></value>")
+                    .append("</member>")
+                    .append("<member>")
+                    .append("<name>OVM_domain_type</name>")
+                    .append("<value><string>xen_pvm</string></value>")
+                    .append("</member>")
+                    .append("</struct>").toString());
 
     /* fix */
     @Test

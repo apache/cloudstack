@@ -235,8 +235,8 @@ public class ElastistorPrimaryDataStoreDriver extends CloudStackPrimaryDataStore
                 long usedBytes = storagePool.getUsedBytes();
                 long capacityIops = storagePool.getCapacityIops();
 
-                usedBytes -= volumeInfo != null ? volumeInfo.getSize() : 0;
-                capacityIops += volumeInfo != null ? volumeInfo.getMaxIops() : 0;
+                usedBytes -= volumeInfo.getSize();
+                capacityIops += volumeInfo.getMaxIops();
 
                 storagePool.setUsedBytes(usedBytes < 0 ? 0 : usedBytes);
                 storagePool.setCapacityIops(capacityIops < 0 ? 0 : capacityIops);

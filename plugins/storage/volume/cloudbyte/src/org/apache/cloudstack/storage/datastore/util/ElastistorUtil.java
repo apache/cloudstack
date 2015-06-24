@@ -2491,7 +2491,7 @@ public class ElastistorUtil {
          String quotasize = null;
 
          if(size > 1024){
-            quotasize = (String.valueOf(Long.valueOf(capacityBytes)/(1024)) + "T");
+            quotasize = (String.valueOf(Long.parseLong(capacityBytes)/(1024)) + "T");
          }else{
             quotasize = String.valueOf(quotasize) + "G";
          }

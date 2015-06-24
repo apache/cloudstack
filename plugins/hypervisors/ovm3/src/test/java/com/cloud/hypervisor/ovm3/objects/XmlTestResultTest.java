@@ -22,7 +22,7 @@ import static org.junit.Assert.assertNotNull;
 
 import java.util.List;
 
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 
 public class XmlTestResultTest {
     private static final String NULL = "<nil/>";
@@ -33,7 +33,7 @@ public class XmlTestResultTest {
 
     public String escapeOrNot(String s) {
         if (s.startsWith("<")) {
-            return StringEscapeUtils.escapeXml(s);
+            return StringEscapeUtils.escapeXml10(s);
         }
         return s;
     }

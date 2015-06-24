@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 
@@ -38,6 +38,7 @@ public class Pool extends OvmObject {
             add("xen");
             add("utility");
         }
+        private static final long serialVersionUID = 1L;
     };
     private List<String> poolHosts = new ArrayList<String>();
     private final List<String> poolRoles = new ArrayList<String>();
@@ -155,6 +156,7 @@ public class Pool extends OvmObject {
                 put("manager_certificate", managerCert);
                 put("signed_server_certificate", signedCert);
             }
+            private static final long serialVersionUID = 1L;
         };
         Boolean rc = nullIsTrueCallWrapper("take_ownership", mgrConfig);
         /* because it restarts when it's done.... 2000? -sigh- */

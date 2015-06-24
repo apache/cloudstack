@@ -29,7 +29,7 @@ import com.cloud.hypervisor.ovm3.objects.XmlTestResultTest;
 public class Ovm3ConfigurationTest {
     XmlTestResultTest results = new XmlTestResultTest();
     private Ovm3Configuration ovm3config;
-    private static Map<String, Object> params;
+    private static HashMap<String, Object> params;
     static {
         params = new HashMap<String, Object>();
         params.put("agentusername", "oracle");
@@ -83,13 +83,13 @@ public class Ovm3ConfigurationTest {
 
     @Test(expected = ConfigurationException.class)
     public void testFailedParams() throws ConfigurationException {
-        Map<String, Object> par = new HashMap(params);
+        HashMap<String, Object> par = new HashMap<String,Object>(params);
         par.put("pod", null);
         ovm3config = new Ovm3Configuration(par);
     }
     @Test
     public void testValidatePool() throws ConfigurationException {
-        Map<String, Object> par = new HashMap(params);
+        HashMap<String, Object> par = new HashMap<String,Object>(params);
         par.put("cluster", "1");
         par.put("ovm3vip", "this is not an IP!");
         ovm3config = new Ovm3Configuration(par);
@@ -99,7 +99,7 @@ public class Ovm3ConfigurationTest {
     }
     @Test
     public void testAgentPort() throws ConfigurationException {
-        Map<String, Object> par = new HashMap(params);
+        HashMap<String, Object> par = new HashMap<String,Object>(params);
         String altPort="6333";
         par.put("agentport", altPort);
         ovm3config = new Ovm3Configuration(par);

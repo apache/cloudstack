@@ -26,6 +26,7 @@ import java.io.IOException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.utils.StringUtils;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
@@ -73,7 +74,7 @@ public final class LibvirtModifySshKeysCommandWrapper extends CommandWrapper<Mod
 
         if (pubKeyFile.exists()) {
             try (FileOutputStream pubkStream = new FileOutputStream(pubKeyFile)) {
-                pubkStream.write(command.getPubKey().getBytes());
+                pubkStream.write(command.getPubKey().getBytes(StringUtils.getPreferredCharset()));
             } catch (final FileNotFoundException e) {
                 result = "File" + sshpubkeypath + "is not found:"
                         + e.toString();
@@ -98,7 +99,7 @@ public final class LibvirtModifySshKeysCommandWrapper extends CommandWrapper<Mod
             final String prvKey = command.getPrvKey();
             try (FileOutputStream prvKStream = new FileOutputStream(prvKeyFile);){
                 if ( prvKStream != null) {
-                    prvKStream.write(prvKey.getBytes());
+                    prvKStream.write(prvKey.getBytes(StringUtils.getPreferredCharset()));
                 }
             } catch (final FileNotFoundException e) {
                 result = "File" + sshprvkeypath + "is not found:" + e.toString();
