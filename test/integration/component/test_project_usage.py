@@ -790,7 +790,7 @@ class TestTemplateUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"], required_hardware="false")
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"], required_hardware="true")
     def test_01_template_usage(self):
         """Test Upload/ delete a template and verify correct usage is generated
             for the template uploaded
@@ -998,7 +998,7 @@ class TestISOUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"], required_hardware="false")
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"], required_hardware="true")
     def test_01_ISO_usage(self):
         """Test Create/Delete a ISO and verify its usage is generated correctly
         """
