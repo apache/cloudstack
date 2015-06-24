@@ -300,6 +300,8 @@ public interface ManagementService {
 
     boolean updateHostPassword(UpdateHostPasswordCmd cmd);
 
+    boolean updateClusterPassword(UpdateHostPasswordCmd cmd);
+
     InstanceGroup updateVmGroup(UpdateVMGroupCmd cmd);
 
     Map<String, Object> listCapabilities(ListCapabilitiesCmd cmd);
