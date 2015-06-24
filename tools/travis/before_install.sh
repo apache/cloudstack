@@ -49,6 +49,9 @@ javac -version
 echo -e "\nMaven Version: "
 mvn -v
 
+echo -e "\nCheck Git status"
+git status
+
 echo -e "\nUpdating the system: "
 sudo apt-get -q -y update > /dev/null
 
