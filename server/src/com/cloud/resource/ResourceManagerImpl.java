@@ -2239,39 +2239,41 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public boolean updateHostPassword(final UpdateHostPasswordCmd cmd) {
-        if (cmd.getClusterId() == null) {
-            // update agent attache password
+    public boolean updateClusterPassword(final UpdateHostPasswordCmd command) {
+        // get agents for the cluster
+        final List<HostVO> hosts = listAllHostsInCluster(command.getClusterId());
+        for (final HostVO h : hosts) {
             try {
-                final Boolean result = propagateResourceEvent(cmd.getHostId(), ResourceState.Event.UpdatePassword);
+                /*
+                 * FIXME: this is a buggy logic, check with alex. Shouldn't
+                 * return if propagation return non null
+                 */
+                final Boolean result = propagateResourceEvent(h.getId(), ResourceState.Event.UpdatePassword);
                 if (result != null) {
                     return result;
                 }
             } catch (final AgentUnavailableException e) {
+                s_logger.error("Agent is not availbale!", e);
             }
-
-            return doUpdateHostPassword(cmd.getHostId());
-        } else {
-            // get agents for the cluster
-            final List<HostVO> hosts = listAllHostsInCluster(cmd.getClusterId());
-            for (final HostVO h : hosts) {
-                try {
-                    /*
-                     * FIXME: this is a buggy logic, check with alex. Shouldn't
-                     * return if propagation return non null
-                     */
-                    final Boolean result = propagateResourceEvent(h.getId(), ResourceState.Event.UpdatePassword);
-                    if (result != null) {
-                        return result;
-                    }
-
-                    doUpdateHostPassword(h.getId());
-                } catch (final AgentUnavailableException e) {
-                }
-            }
-
-            return true;
+            doUpdateHostPassword(h.getId());
         }
+
+        return true;
+    }
+
+    @Override
+    public boolean updateHostPassword(final UpdateHostPasswordCmd cmd) {
+        // update agent attache password
+        try {
+            final Boolean result = propagateResourceEvent(cmd.getHostId(), ResourceState.Event.UpdatePassword);
+            if (result != null) {
+                return result;
+            }
+        } catch (final AgentUnavailableException e) {
+            s_logger.error("Agent is not availbale!", e);
+        }
+
+        return doUpdateHostPassword(cmd.getHostId());
     }
 
     public String getPeerName(final long agentHostId) {

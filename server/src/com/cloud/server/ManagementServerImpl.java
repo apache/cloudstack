@@ -3739,49 +3739,83 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return password;
     }
 
+    private boolean updateHostsInCluster(final UpdateHostPasswordCmd command) {
+        // get all the hosts in this cluster
+        final List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(command.getClusterId());
+
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(final TransactionStatus status) {
+                for (final HostVO h : hosts) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Changing password for host name = " + h.getName());
+                    }
+                    // update password for this host
+                    final DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
+                    if (nv.getValue().equals(command.getUsername())) {
+                        final DetailVO nvp = _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
+                        nvp.setValue(DBEncryptionUtil.encrypt(command.getPassword()));
+                        _detailsDao.persist(nvp);
+                    } else {
+                        // if one host in the cluster has diff username then
+                        // rollback to maintain consistency
+                        throw new InvalidParameterValueException("The username is not same for all hosts, please modify passwords for individual hosts.");
+                    }
+                }
+            }
+        });
+        return true;
+    }
+
+    /**
+     * This method updates the password of all hosts in a given cluster.
+     */
+    @Override
+    @DB
+    public boolean updateClusterPassword(final UpdateHostPasswordCmd command) {
+        if (command.getClusterId() == null) {
+            throw new InvalidParameterValueException("You should provide a cluster id.");
+        }
+
+        final ClusterVO cluster = ApiDBUtils.findClusterById(command.getClusterId());
+        if (cluster == null || cluster.getHypervisorType() != HypervisorType.XenServer || cluster.getHypervisorType() != HypervisorType.KVM) {
+            throw new InvalidParameterValueException("This operation is not supported for this hypervisor type");
+        }
+        return updateHostsInCluster(command);
+    }
+
     @Override
     @DB
     public boolean updateHostPassword(final UpdateHostPasswordCmd cmd) {
-        if (cmd.getClusterId() == null && cmd.getHostId() == null) {
-            throw new InvalidParameterValueException("You should provide one of cluster id or a host id.");
-        } else if (cmd.getClusterId() == null) {
-            final HostVO host = _hostDao.findById(cmd.getHostId());
-            if (host != null && host.getHypervisorType() == HypervisorType.XenServer) {
-                throw new InvalidParameterValueException("You should provide cluster id for Xenserver cluster.");
-            } else {
-                throw new InvalidParameterValueException("This operation is not supported for this hypervisor type");
-            }
-        } else {
-
-            final ClusterVO cluster = ApiDBUtils.findClusterById(cmd.getClusterId());
-            if (cluster == null || cluster.getHypervisorType() != HypervisorType.XenServer) {
-                throw new InvalidParameterValueException("This operation is not supported for this hypervisor type");
-            }
-            // get all the hosts in this cluster
-            final List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(cmd.getClusterId());
-
-            Transaction.execute(new TransactionCallbackNoReturn() {
-                @Override
-                public void doInTransactionWithoutResult(final TransactionStatus status) {
-                    for (final HostVO h : hosts) {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Changing password for host name = " + h.getName());
-                        }
-                        // update password for this host
-                        final DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
-                        if (nv.getValue().equals(cmd.getUsername())) {
-                            final DetailVO nvp = _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
-                            nvp.setValue(DBEncryptionUtil.encrypt(cmd.getPassword()));
-                            _detailsDao.persist(nvp);
-                        } else {
-                            // if one host in the cluster has diff username then
-                            // rollback to maintain consistency
-                            throw new InvalidParameterValueException("The username is not same for all hosts, please modify passwords for individual hosts.");
-                        }
-                    }
-                }
-            });
+        if (cmd.getHostId() == null) {
+            throw new InvalidParameterValueException("You should provide an host id.");
         }
+
+        final HostVO host = _hostDao.findById(cmd.getHostId());
+
+        if (host.getHypervisorType() != HypervisorType.XenServer || host.getHypervisorType() != HypervisorType.KVM) {
+            throw new InvalidParameterValueException("This operation is not supported for this hypervisor type");
+        }
+
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(final TransactionStatus status) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Changing password for host name = " + host.getName());
+                }
+                // update password for this host
+                final DetailVO nv = _detailsDao.findDetail(host.getId(), ApiConstants.USERNAME);
+                if (nv.getValue().equals(cmd.getUsername())) {
+                    final DetailVO nvp = _detailsDao.findDetail(host.getId(), ApiConstants.PASSWORD);
+                    nvp.setValue(DBEncryptionUtil.encrypt(cmd.getPassword()));
+                    _detailsDao.persist(nvp);
+                } else {
+                    // if one host in the cluster has diff username then
+                    // rollback to maintain consistency
+                    throw new InvalidParameterValueException("The username is not same for the hosts..");
+                }
+            }
+        });
 
         return true;
     }

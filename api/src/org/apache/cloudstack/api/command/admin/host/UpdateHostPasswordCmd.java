@@ -86,8 +86,14 @@ public class UpdateHostPasswordCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        _mgr.updateHostPassword(this);
-        _resourceService.updateHostPassword(this);
+        if (getClusterId() == null) {
+            _mgr.updateHostPassword(this);
+            _resourceService.updateHostPassword(this);
+        } else {
+            _mgr.updateClusterPassword(this);
+            _resourceService.updateClusterPassword(this);
+        }
+
         setResponseObject(new SuccessResponse(getCommandName()));
     }
 }
