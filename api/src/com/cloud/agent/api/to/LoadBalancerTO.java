@@ -481,6 +481,7 @@ public class LoadBalancerTO {
     }
 
     public static class AutoScaleVmGroupTO implements Serializable {
+        private static final long serialVersionUID = 2L;
         private final String uuid;
         private final int minMembers;
         private final int maxMembers;
