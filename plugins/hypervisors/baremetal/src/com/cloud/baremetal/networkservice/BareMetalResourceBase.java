@@ -84,7 +84,6 @@ import java.util.concurrent.TimeUnit;
 @Local(value = ServerResource.class)
 public class BareMetalResourceBase extends ManagerBase implements ServerResource {
     private static final Logger s_logger = Logger.getLogger(BareMetalResourceBase.class);
-    protected String _name;
     protected String _uuid;
     protected String _zone;
     protected String _pod;
@@ -119,7 +118,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
+        setName(name);
         _uuid = (String) params.get("guid");
         try {
             _memCapacity = Long.parseLong((String) params.get(ApiConstants.MEMORY)) * 1024L * 1024L;
@@ -325,11 +324,6 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
     @Override
     public boolean stop() {
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override
@@ -550,7 +544,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
             OutputInterpreter.AllLinesParser interpreter = new OutputInterpreter.AllLinesParser();
             if (!doScript(_getStatusCommand, interpreter)) {
                 success = true;
-                s_logger.warn("Cannot get power status of " + _name + ", assume VM state changed successfully");
+                s_logger.warn("Cannot get power status of " + getName() + ", assume VM state changed successfully");
                 break;
             }
 
@@ -572,7 +566,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 
         OutputInterpreter.AllLinesParser interpreter = new OutputInterpreter.AllLinesParser();
         if (!doScript(_getStatusCommand, interpreter)) {
-            return new StartAnswer(cmd, "Cannot get current power status of " + _name);
+            return new StartAnswer(cmd, "Cannot get current power status of " + getName());
         }
 
         if (isPowerOn(interpreter.getLines())) {
@@ -633,7 +627,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 
     protected ReadyAnswer execute(ReadyCommand cmd) {
         // derived resource should check if the PXE server is ready
-        s_logger.debug("Bare metal resource " + _name + " is ready");
+        s_logger.debug("Bare metal resource " + getName() + " is ready");
         return new ReadyAnswer(cmd);
     }
 
