@@ -2235,7 +2235,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         final String password = nv.getValue();
         final UpdateHostPasswordCommand cmd = new UpdateHostPasswordCommand(username, password);
         final Answer answer = _agentMgr.easySend(hostId, cmd);
-        return answer != null;
+        return answer.getResult();
     }
 
     @Override
