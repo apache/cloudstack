@@ -70,6 +70,8 @@ sudo debconf-set-selections <<< 'mysql-server mysql-server/root_password passwor
 sudo debconf-set-selections <<< 'mysql-server mysql-server/root_password_again password your_password'
 sudo apt-get -q -y install mysql-server > /dev/null
 
+#Restart mysql if running to release deleted file locks on filesystem, if aready running
+sudo status mysql | grep start && sudo stop mysql
 sudo start mysql
 
 echo -e "\nInstalling Development tools: "
