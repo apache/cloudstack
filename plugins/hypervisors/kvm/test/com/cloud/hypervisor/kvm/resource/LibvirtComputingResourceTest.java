@@ -127,6 +127,7 @@ import com.cloud.agent.api.SecurityGroupRulesCmd.IpPortAndProto;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.UnPlugNicCommand;
+import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.check.CheckSshCommand;
@@ -5071,5 +5072,19 @@ public class LibvirtComputingResourceTest {
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
+    }
+
+    @Test
+    public void testUpdateHostPasswordCommand() {
+        final String username = "root";
+        final String newPassword = "password";
+        final UpdateHostPasswordCommand command = new UpdateHostPasswordCommand(username, newPassword);
+
+        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, libvirtComputingResource);
+
+        assertTrue(answer.getResult());
     }
 }
