@@ -85,7 +85,10 @@ cat deps.out | LANG=C sort -u > cleandeps.out
 
 #Define index of pomfiles, to avoid duplicate deps with different versions in pom.xml, several poms are created in case of more than one version of same artifact
 LASTPOM=0
-echo '<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"><modelVersion>4.0.0</modelVersion><groupId>org.apache.cloudstack</groupId><artifactId>travis-build-deps</artifactId><name>Download Deps for Travis CI</name><version>1</version><repositories><repository><id>mido-maven-public-releases</id><name>mido-maven-public-releases</name><url>http://cs-maven.midokura.com/releases</url></repository><repository><id>juniper-contrail</id><url>http://juniper.github.io/contrail-maven/snapshots</url></repository></repositories><dependencies>' > pom${LASTPOM}.xml
+#Create first pom
+echo '<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"><modelVersion>4.0.0</modelVersion><groupId>org.apache.cloudstack</groupId><artifactId>travis-build-deps</artifactId><name>Download Deps for Travis CI</name><version>1</version><dependencies>' > pom${LASTPOM}.xml
+#Create pom for dependencies not on central repo, this is done separately to not adversely impact performance on downloading the majority of deps
+echo '<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"><modelVersion>4.0.0</modelVersion><groupId>org.apache.cloudstack</groupId><artifactId>travis-build-deps</artifactId><name>Download Deps for Travis CI</name><version>1</version><repositories><repository><id>mido-maven-public-releases</id><name>mido-maven-public-releases</name><url>http://cs-maven.midokura.com/releases</url></repository><repository><id>juniper-contrail</id><url>http://juniper.github.io/contrail-maven/snapshots</url></repository></repositories><dependencies>' > pomX.xml
 while read line ; do
   set -- $line
   #This relies on correct sorting, and distributes different versions of same dependency througout different pom files
@@ -95,16 +98,21 @@ while read line ; do
     if [[ $POMID -gt $LASTPOM ]]; then
        LASTPOM=$POMID
        #This outputs the necessary structure to start a pom and also defines the extra repositories
-       echo '<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"><modelVersion>4.0.0</modelVersion><groupId>org.apache.cloudstack</groupId><artifactId>travis-build-deps</artifactId><name>Download Deps for Travis CI</name><version>1</version><repositories><repository><id>mido-maven-public-releases</id><name>mido-maven-public-releases</name><url>http://cs-maven.midokura.com/releases</url></repository><repository><id>juniper-contrail</id><url>http://juniper.github.io/contrail-maven/snapshots</url></repository></repositories><dependencies>' > pom${LASTPOM}.xml
+       echo '<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"><modelVersion>4.0.0</modelVersion><groupId>org.apache.cloudstack</groupId><artifactId>travis-build-deps</artifactId><name>Download Deps for Travis CI</name><version>1</version><dependencies>' > pom${LASTPOM}.xml
     fi
   else
     POMID=0
   fi
   LASTARTIFACT=$2
-  echo "<dependency><groupId>$1</groupId><artifactId>$2</artifactId><version>$3</version></dependency>" >> pom${POMID}.xml
+  if [[ $1 == org.midonet ]] || [[ $1 == net.juniper* ]]; then
+    echo "<dependency><groupId>$1</groupId><artifactId>$2</artifactId><version>$3</version></dependency>" >> pomX.xml
+  else
+    echo "<dependency><groupId>$1</groupId><artifactId>$2</artifactId><version>$3</version></dependency>" >> pom${POMID}.xml
+  fi
 done < cleandeps.out
 
 RETURN_CODE=0
+#Close and resolve all pom files
 for ((i=0;i<=$LASTPOM;i++))
 do
   echo "</dependencies></project>" >> pom${i}.xml
@@ -113,6 +121,9 @@ do
     RETURN_CODE=1
   fi
 done
+#Close and resolve external deps pom file
+echo "</dependencies></project>" >> pomX.xml
+mvn org.apache.maven.plugins:maven-dependency-plugin:resolve -f pomX.xml
 
 #Run a few plugin goals to download some more deps
 
