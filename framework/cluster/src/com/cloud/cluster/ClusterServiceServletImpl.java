@@ -38,18 +38,18 @@ public class ClusterServiceServletImpl implements ClusterService {
     public ClusterServiceServletImpl() {
     }
 
-    public ClusterServiceServletImpl(String serviceUrl) {
+    public ClusterServiceServletImpl(final String serviceUrl) {
         s_logger.info("Setup cluster service servlet. service url: " + serviceUrl + ", request timeout: " + ClusterServiceAdapter.ClusterMessageTimeOut.value() +
-            " seconds");
+                " seconds");
 
         _serviceUrl = serviceUrl;
     }
 
     @Override
-    public String execute(ClusterServicePdu pdu) throws RemoteException {
+    public String execute(final ClusterServicePdu pdu) throws RemoteException {
 
-        HttpClient client = getHttpClient();
-        PostMethod method = new PostMethod(_serviceUrl);
+        final HttpClient client = getHttpClient();
+        final PostMethod method = new PostMethod(_serviceUrl);
 
         method.addParameter("method", Integer.toString(RemoteMethodConstants.METHOD_DELIVER_PDU));
         method.addParameter("sourcePeer", pdu.getSourcePeer());
@@ -65,29 +65,29 @@ public class ClusterServiceServletImpl implements ClusterService {
     }
 
     @Override
-    public boolean ping(String callingPeer) throws RemoteException {
+    public boolean ping(final String callingPeer) throws RemoteException {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Ping at " + _serviceUrl);
         }
 
-        HttpClient client = getHttpClient();
-        PostMethod method = new PostMethod(_serviceUrl);
+        final HttpClient client = getHttpClient();
+        final PostMethod method = new PostMethod(_serviceUrl);
 
         method.addParameter("method", Integer.toString(RemoteMethodConstants.METHOD_PING));
         method.addParameter("callingPeer", callingPeer);
 
-        String returnVal = executePostMethod(client, method);
+        final String returnVal = executePostMethod(client, method);
         if ("true".equalsIgnoreCase(returnVal)) {
             return true;
         }
         return false;
     }
 
-    private String executePostMethod(HttpClient client, PostMethod method) {
+    private String executePostMethod(final HttpClient client, final PostMethod method) {
         int response = 0;
         String result = null;
         try {
-            long startTick = System.currentTimeMillis();
+            final long startTick = System.currentTimeMillis();
             response = client.executeMethod(method);
             if (response == HttpStatus.SC_OK) {
                 result = method.getResponseBodyAsString();
@@ -96,13 +96,13 @@ public class ClusterServiceServletImpl implements ClusterService {
                 }
             } else {
                 s_logger.error("Invalid response code : " + response + ", from : " + _serviceUrl + ", method : " + method.getParameter("method") + " responding time: " +
-                    (System.currentTimeMillis() - startTick));
+                        (System.currentTimeMillis() - startTick));
             }
-        } catch (HttpException e) {
+        } catch (final HttpException e) {
             s_logger.error("HttpException from : " + _serviceUrl + ", method : " + method.getParameter("method"));
-        } catch (IOException e) {
+        } catch (final IOException e) {
             s_logger.error("IOException from : " + _serviceUrl + ", method : " + method.getParameter("method"));
-        } catch (Throwable e) {
+        } catch (final Throwable e) {
             s_logger.error("Exception from : " + _serviceUrl + ", method : " + method.getParameter("method") + ", exception :", e);
         } finally {
             method.releaseConnection();
@@ -114,14 +114,14 @@ public class ClusterServiceServletImpl implements ClusterService {
     private HttpClient getHttpClient() {
 
         if (s_client == null) {
-            MultiThreadedHttpConnectionManager mgr = new MultiThreadedHttpConnectionManager();
+            final MultiThreadedHttpConnectionManager mgr = new MultiThreadedHttpConnectionManager();
             mgr.getParams().setDefaultMaxConnectionsPerHost(4);
 
             // TODO make it configurable
             mgr.getParams().setMaxTotalConnections(1000);
 
             s_client = new HttpClient(mgr);
-            HttpClientParams clientParams = new HttpClientParams();
+            final HttpClientParams clientParams = new HttpClientParams();
             clientParams.setSoTimeout(ClusterServiceAdapter.ClusterMessageTimeOut.value() * 1000);
 
             s_client.setParams(clientParams);
@@ -130,7 +130,7 @@ public class ClusterServiceServletImpl implements ClusterService {
     }
 
     // for test purpose only
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         /*
                 ClusterServiceServletImpl service = new ClusterServiceServletImpl("http://localhost:9090/clusterservice", 300);
                 try {
@@ -138,6 +138,6 @@ public class ClusterServiceServletImpl implements ClusterService {
                     System.out.println(result);
                 } catch (RemoteException e) {
                 }
-        */
+         */
     }
 }
