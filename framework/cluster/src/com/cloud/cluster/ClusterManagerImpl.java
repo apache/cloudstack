@@ -261,11 +261,15 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                                         pdu.getSequenceId() + ", pdu ack seq: " + pdu.getAckSequenceId() + ", json: " + pdu.getJsonPackage());
                             }
 
-                            final long startTick = System.currentTimeMillis();
+                            final Profiler profiler = new Profiler();
+                            profiler.start();
+
                             final String strResult = peerService.execute(pdu);
+                            profiler.stop();
+
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Cluster PDU " + getSelfPeerName() + " -> " + pdu.getDestPeer() + " completed. time: " +
-                                        (System.currentTimeMillis() - startTick) + "ms. agent: " + pdu.getAgentId() + ", pdu seq: " + pdu.getSequenceId() +
+                                        profiler.getDurationInMillis() + "ms. agent: " + pdu.getAgentId() + ", pdu seq: " + pdu.getSequenceId() +
                                         ", pdu ack seq: " + pdu.getAckSequenceId() + ", json: " + pdu.getJsonPackage());
                             }
 
