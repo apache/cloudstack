@@ -2225,7 +2225,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     private boolean doUpdateHostPassword(final long hostId) {
-        if (_agentMgr.isAgentAttached(hostId)) {
+        if (!_agentMgr.isAgentAttached(hostId)) {
             return false;
         }
 
