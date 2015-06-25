@@ -578,6 +578,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostTagsDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
@@ -762,8 +763,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private ImageStoreDao _imgStoreDao;
     @Inject
     private ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
-
-
     @Inject
     private ProjectManager _projectMgr;
     @Inject
@@ -800,6 +799,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     protected boolean _executeInSequence;
 
     protected List<DeploymentPlanner> _planners;
+
+    private final List<HypervisorType> supportedHypervisors = new ArrayList<Hypervisor.HypervisorType>();
 
     public List<DeploymentPlanner> getPlanners() {
         return _planners;
@@ -878,6 +879,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         for (final String id : availableIds) {
             _availableIdsMap.put(id, true);
         }
+
+        supportedHypervisors.add(HypervisorType.KVM);
+        supportedHypervisors.add(HypervisorType.XenServer);
 
         return true;
     }
@@ -3778,7 +3782,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         final ClusterVO cluster = ApiDBUtils.findClusterById(command.getClusterId());
-        if (cluster == null || cluster.getHypervisorType() != HypervisorType.XenServer || cluster.getHypervisorType() != HypervisorType.KVM) {
+        if (cluster == null || !supportedHypervisors.contains(cluster.getHypervisorType())) {
             throw new InvalidParameterValueException("This operation is not supported for this hypervisor type");
         }
         return updateHostsInCluster(command);
@@ -3793,10 +3797,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final HostVO host = _hostDao.findById(cmd.getHostId());
 
-        if (host.getHypervisorType() != HypervisorType.XenServer || host.getHypervisorType() != HypervisorType.KVM) {
+        if (!supportedHypervisors.contains(host.getHypervisorType())) {
             throw new InvalidParameterValueException("This operation is not supported for this hypervisor type");
         }
-
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(final TransactionStatus status) {
@@ -3816,7 +3819,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 }
             }
         });
-
         return true;
     }
 
