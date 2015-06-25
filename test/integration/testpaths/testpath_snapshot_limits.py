@@ -124,6 +124,7 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
 
+
     def tearDown(self):
         try:
             data_volumes_list = Volume.list(
@@ -131,11 +132,16 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
                 id=self.data_volume_created.id,
                 virtualmachineid=self.vm.id
             )
-            if data_volumes_list:
-                self.vm.detach_volume(
-                    self.userapiclient,
-                    data_volumes_list[0]
-                )
+            status = validateList(data_volumes_list)
+            self.assertEqual(
+                status[0],
+                PASS,
+                "DATA Volume List Validation Failed")
+
+            self.vm.detach_volume(
+                self.userapiclient,
+                data_volumes_list[0]
+            )
 
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
