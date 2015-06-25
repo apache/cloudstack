@@ -1009,7 +1009,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     @Override
     public boolean isAgentAttached(final long hostId) {
-        return findAttache(hostId) != null;
+        final AgentAttache agentAttache = findAttache(hostId);
+        return agentAttache != null;
     }
 
     protected AgentAttache createAttacheForConnect(final HostVO host, final Link link) throws ConnectionException {
