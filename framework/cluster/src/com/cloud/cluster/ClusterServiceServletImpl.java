@@ -27,6 +27,8 @@ import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.log4j.Logger;
 
+import com.cloud.utils.Profiler;
+
 public class ClusterServiceServletImpl implements ClusterService {
     private static final long serialVersionUID = 4574025200012566153L;
     private static final Logger s_logger = Logger.getLogger(ClusterServiceServletImpl.class);
@@ -87,16 +89,19 @@ public class ClusterServiceServletImpl implements ClusterService {
         int response = 0;
         String result = null;
         try {
-            final long startTick = System.currentTimeMillis();
+            final Profiler profiler = new Profiler();
+            profiler.start();
             response = client.executeMethod(method);
             if (response == HttpStatus.SC_OK) {
                 result = method.getResponseBodyAsString();
+                profiler.stop();
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("POST " + _serviceUrl + " response :" + result + ", responding time: " + (System.currentTimeMillis() - startTick) + " ms");
+                    s_logger.debug("POST " + _serviceUrl + " response :" + result + ", responding time: " + profiler.getDurationInMillis() + " ms");
                 }
             } else {
+                profiler.stop();
                 s_logger.error("Invalid response code : " + response + ", from : " + _serviceUrl + ", method : " + method.getParameter("method") + " responding time: " +
-                        (System.currentTimeMillis() - startTick));
+                        profiler.getDurationInMillis());
             }
         } catch (final HttpException e) {
             s_logger.error("HttpException from : " + _serviceUrl + ", method : " + method.getParameter("method"));
