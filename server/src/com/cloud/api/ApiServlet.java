@@ -32,6 +32,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.Cookie;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiServerService;
@@ -166,6 +167,18 @@ public class ApiServlet extends HttpServlet {
                 responseType = (String)responseTypeParam[0];
             }
 
+            // Implement HttpOnly Session Cookie Support
+            String[] setAuth=(String[])params.get(ApiConstants.SESSIONKEY);
+            if ((setAuth!=null&&setAuth.length>0)&&(setAuth[0]==null||setAuth[0].equals("null"))){
+              Cookie[] requestCookies = req.getCookies();
+              for(Cookie c : requestCookies){
+                 if (c.getName().equals(ApiConstants.SESSIONKEY)) {
+                    setAuth[0]=c.getValue();
+                    break;
+                 }
+              }
+            }
+
             final Object[] commandObj = params.get(ApiConstants.COMMAND);
             if (commandObj != null) {
                 final String command = (String) commandObj[0];
@@ -195,9 +208,10 @@ public class ApiServlet extends HttpServlet {
                             }
                         }
                     }
-
                     try {
                         responseString = apiAuthenticator.authenticate(command, params, session, InetAddress.getByName(remoteAddress), responseType, auditTrailSb, req, resp);
+                        // Add HttpOnly cookie to header on successful auth
+                        resp.addHeader("SET-COOKIE", ApiConstants.SESSIONKEY+"=\"" + session.getAttribute("sessionkey") + "\";HttpOnly;Version=1");
                     } catch (ServerApiException e) {
                         httpResponseCode = e.getErrorCode().getHttpCode();
                         responseString = e.getMessage();

@@ -105,9 +105,9 @@
             bypassLoginCheck: function(args) { //determine to show or bypass login screen
                 if (g_loginResponse == null) { //show login screen
                     /*
-                     * Since we no longer store sessionKey in cookie, opening the
-                     * 2nd browser window (of the same domain) will show login screen (i.e. user has to
-                     * enter credentials again) and will cause the 1st browser window session timeout.
+                     * Changing the cookie name to hostname_cookieName allows 
+                     * separate sessions in the same domain to be handled 
+                     * separately without breaking session persistence.
                      */
                     var unBoxCookieValue = function (cookieName) {
                         var cookieValue = $.cookie(cookieName);
@@ -117,15 +117,8 @@
                         }
                         return cookieValue;
                     };
-                    unBoxCookieValue('sessionkey');
-                    // if sessionkey cookie exists use this to set g_sessionKey
-                    // and destroy sessionkey cookie
-                    if ($.cookie('sessionkey')) {
-                        g_sessionKey = $.cookie('sessionkey');
-                        $.cookie('sessionkey', null);
-                    } else {
-                        g_sessionKey = unBoxCookieValue('JSESSIONID');
-                    }
+                    
+                    g_sessionKey = unBoxCookieValue('sessionKey');
                     g_role = unBoxCookieValue('role');
                     g_userid = unBoxCookieValue('userid');
                     g_domainid = unBoxCookieValue('domainid');
@@ -328,14 +321,17 @@
                         g_kvmsnapshotenabled = null;
                         g_regionsecondaryenabled = null;
                         g_loginCmdText = null;
+                        g_userfullname = null;
+                        g_userid = null;
                         
-                        $.cookie('JSESSIONID', null);
                         $.cookie('sessionkey', null);
                         $.cookie('username', null);
                         $.cookie('account', null);
                         $.cookie('domainid', null);
                         $.cookie('role', null);  
                         $.cookie('timezone', null);
+                        $.cookie('userfullname', null);
+                        $.cookie('userid', null);
                         
                         if (onLogoutCallback()) { //onLogoutCallback() will set g_loginResponse(single-sign-on variable) to null, then bypassLoginCheck() will show login screen.
                             document.location.reload(); //when onLogoutCallback() returns true, reload the current document.
@@ -353,7 +349,6 @@
             },
 
             samlLoginAction: function(args) {
-                $.cookie('JSESSIONID', null);
                 $.cookie('sessionkey', null);
                 $.cookie('username', null);
                 $.cookie('account', null);
