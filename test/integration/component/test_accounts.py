@@ -869,7 +869,7 @@ class TestTemplateHierarchy(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"])
+    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"], required_hardware="true")
     def test_01_template_hierarchy(self):
         """Test to verify template at same level in hierarchy"""
 

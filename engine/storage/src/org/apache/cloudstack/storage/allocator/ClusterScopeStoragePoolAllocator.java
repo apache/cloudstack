@@ -43,7 +43,6 @@ import com.cloud.vm.VirtualMachineProfile;
 @Local(value = StoragePoolAllocator.class)
 public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocator {
     private static final Logger s_logger = Logger.getLogger(ClusterScopeStoragePoolAllocator.class);
-    protected String _allocationAlgorithm = "random";
 
     @Inject
     DiskOfferingDao _diskOfferingDao;

@@ -883,7 +883,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"], required_hardware="false")
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"], required_hardware="true")
     def test_07_templates_per_project(self):
         """Test Templates limit per project
         """

@@ -61,7 +61,7 @@ public class SecurityGroupManagerImpl2Test extends TestCase {
         _sgMgr.scheduleRulesetUpdateToHosts(work, false, null);
         profiler.stop();
 
-        System.out.println("Done " + numVms + " in " + profiler.getDuration() + " ms");
+        System.out.println("Done " + numVms + " in " + profiler.getDurationInMillis() + " ms");
     }
 
     @Test

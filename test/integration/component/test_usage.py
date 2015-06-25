@@ -930,7 +930,7 @@ class TestISOUsage(cloudstackTestCase):
             "sg",
             "eip",
             "advancedns"],
-        required_hardware="false")
+        required_hardware="true")
     def test_01_ISO_usage(self):
         """Test Create/Delete a ISO and verify its usage is generated correctly
         """

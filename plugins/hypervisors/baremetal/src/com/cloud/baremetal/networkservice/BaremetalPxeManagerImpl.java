@@ -75,7 +75,6 @@ import com.cloud.vm.dao.UserVmDao;
 @Local(value = {BaremetalPxeManager.class})
 public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxeManager, ResourceStateAdapter {
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(BaremetalPxeManagerImpl.class);
-    protected String _name;
     @Inject
     DataCenterDao _dcDao;
     @Inject
@@ -101,7 +100,7 @@ public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxe
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
+        setName(name);
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
     }
@@ -115,11 +114,6 @@ public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxe
     public boolean stop() {
         _resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     protected BaremetalPxeService getServiceByType(String type) {
