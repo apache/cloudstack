@@ -2234,28 +2234,31 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         nv = _hostDetailsDao.findDetail(hostId, ApiConstants.PASSWORD);
         final String password = nv.getValue();
         final UpdateHostPasswordCommand cmd = new UpdateHostPasswordCommand(username, password);
-        _agentMgr.easySend(hostId, cmd);
-        return true;
+        final Answer answer = _agentMgr.easySend(hostId, cmd);
+        return answer != null;
     }
 
     @Override
     public boolean updateClusterPassword(final UpdateHostPasswordCmd command) {
         // get agents for the cluster
         final List<HostVO> hosts = listAllHostsInCluster(command.getClusterId());
-        for (final HostVO h : hosts) {
+        for (final HostVO host : hosts) {
             try {
                 /*
                  * FIXME: this is a buggy logic, check with alex. Shouldn't
                  * return if propagation return non null
                  */
-                final Boolean result = propagateResourceEvent(h.getId(), ResourceState.Event.UpdatePassword);
+                final Boolean result = propagateResourceEvent(host.getId(), ResourceState.Event.UpdatePassword);
                 if (result != null) {
                     return result;
                 }
             } catch (final AgentUnavailableException e) {
                 s_logger.error("Agent is not availbale!", e);
             }
-            doUpdateHostPassword(h.getId());
+            final boolean isUpdated = doUpdateHostPassword(host.getId());
+            if (!isUpdated) {
+                throw new CloudRuntimeException("CloudStack failed to update the password of the Host with ID ==> " + host.getId() + ". Please make sure you are still able to connect to your hosts.");
+            }
         }
 
         return true;
