@@ -781,3 +781,6 @@ listOpenDaylightControllers=1
 
 ### GloboDNS commands
 addGloboDnsHost=1
+
+### Quota Service
+listQuotaConfigurations=15

@@ -100,6 +100,154 @@
                     }
                 }
             },
+            quotaConfiguration: {
+                type: 'select',
+                title: 'label.quota.configuration',
+                listView: {
+                    id: 'quota',
+                    label: 'label.quota.configuration',
+                    fields: {
+                        usageType: {
+                            label: 'label.usage.type'
+                        },
+                        usageUnit: {
+                            label: 'label.usgae.unit'
+                        },
+                        currencyValue: {
+                            label: 'label.quota.value'
+                        },
+                        description: {
+                            label: 'label.quota.description'
+                        }
+
+                    },
+                    dataProvider: function(args) {
+                        var data = {};
+                        listViewDataProvider(args, data);
+                        $.ajax({
+                            url: createURL('listQuotaConfigurations'),
+                            data: data,
+                            success: function(json) {
+                                var items = json.quotaconfigurationresponse.QuotaConfiguration;
+                                args.response.success({
+                                    data: items
+                                });
+                            },
+                            error: function(data) {
+                                args.response.error(parseXMLHttpResponse(data));
+                            }
+                        });
+                    },
+                    detailView: {
+                        name: 'label.details',
+                        actions: {
+                            remove: {
+                                label: 'label.remove.quota',
+                                messages: {
+                                    notification: function(args) {
+                                        return 'label.remove.quota';
+                                    },
+                                    confirm: function() {
+                                        return 'message.remove.quota';
+                                    }
+                                },
+                                action: function(args) {
+                                    $.ajax({
+                                        url: createURL("deleteQuotaConfiguration&hostname=" + args.context.quotaConfiguration[0].hostname),
+                                        success: function(json) {
+                                            args.response.success();
+                                        }
+                                    });
+                                    $(window).trigger('cloudStack.fullRefresh');
+                                }
+                            }
+                        },
+                        tabs: {
+                            details: {
+                                title: 'label.quota.configuration',
+                                        fields: [{
+                                         usageType: {
+                                            label: 'label.usage.type'
+                                         },
+                                         usageUnit: {
+                                             label: 'label.usgae.unit'
+                                         },
+                                         currencyValue: {
+                                             label: 'label.quota.value'
+                                         },
+                                         description: {
+                                             label: 'label.quota.description'
+                                         }
+                                }],
+                                dataProvider: function(args) {
+                                    var items = [];
+                                    console.log(args);
+                                    $.ajax({
+                                        url: createURL("listQuotaConfigurations&hostname=" + args.context.quotaConfiguration[0].hostname),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function(json) {
+                                            var item = json.quotaconfigurationresponse.QuotaConfiguration;
+                                            args.response.success({
+                                                data: item[0]
+                                            });
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    },
+                    actions: {
+                        add: {
+                            label: 'label.configure.quota',
+                            messages: {
+                                confirm: function(args) {
+                                    return 'message.configure.quota';
+                                },
+                                notification: function(args) {
+                                    return 'label.configure.quota';
+                                }
+                            },
+                            createForm: {
+                                title: 'label.configure.quota',
+                                fields: {
+                                    hostname: {
+                                        label: 'label.host.name',
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
+                                    port: {
+                                        label: 'label.port',
+                                        validation: {
+                                            required: true
+                                        }
+                                    }
+                                }
+                            },
+                            action: function(args) {
+                                var array = [];
+                                array.push("&hostname=" + todb(args.data.hostname));
+                                array.push("&port=" + todb(args.data.port));;
+                                $.ajax({
+                                    url: createURL("addQuotaConfiguration" + array.join("")),
+                                    dataType: "json",
+                                    async: true,
+                                    success: function(json) {
+                                        var items = json.quotaconfigurationresponse.QuotaAddConfiguration;
+                                        args.response.success({
+                                            data: items
+                                        });
+                                    },
+                                    error: function(json) {
+                                        args.response.error(parseXMLHttpResponse(json));
+                                    }
+                                });
+                            }
+                        }
+                    }
+                }
+	    },
             ldapConfiguration: {
                 type: 'select',
                 title: 'label.ldap.configuration',
