@@ -16,13 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.host;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.log4j.Logger;
-
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.host.Host;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,12 +33,12 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.log4j.Logger;
 
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.host.Host;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
 
 @APICommand(name = "listHosts", description = "Lists hosts.", responseObject = HostResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -203,9 +201,22 @@ public class ListHostsCmd extends BaseListCmd {
                 hostResponse.setObjectName("host");
                 hostResponses.add(hostResponse);
             }
-
             response.setResponses(hostResponses, result.second());
         }
+        // Remove sensitive details from host response
+        List<HostResponse> hostResponsesList = response.getResponses();
+        for (HostResponse hostResponse: hostResponsesList) {
+            Map<String, String> hostDetails = hostResponse.getDetails();
+            if (hostDetails == null) continue;
+            if (hostDetails.containsKey("username")) {
+                hostDetails.remove("username");
+            }
+            if (hostDetails.containsKey("password")) {
+                hostDetails.remove("password");
+            }
+            hostResponse.setDetails(hostDetails);
+        }
+        response.setResponses(hostResponsesList);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
