@@ -55,15 +55,23 @@ public class Ip4Address {
 
     @Override
     public boolean equals(Object that) {
-        if (that instanceof String) { // Assume that is an ip4 address in String form
-            return _addr.equals(that);
-        } else if (that instanceof Ip4Address) {
+
+        if (that instanceof Ip4Address) {
             Ip4Address ip4 = (Ip4Address)that;
             return this._addr.equals(ip4._addr) && (this._mac == ip4._mac || this._mac.equals(ip4._mac));
         } else {
             return false;
         }
     }
+
+    public boolean isSameAddressAs(Object other) {
+        if (other instanceof String) { // Assume that is an ip4 address in String form
+            return _addr.equals(other);
+        } else {
+            return this.equals(other);
+        }
+    }
+
     @Override
     public int hashCode(){
         return (int)(_mac.hashCode()*_addr.hashCode());

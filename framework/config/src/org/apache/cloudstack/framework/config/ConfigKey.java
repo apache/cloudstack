@@ -122,6 +122,13 @@ public class ConfigKey<T> {
         if (obj instanceof ConfigKey) {
             ConfigKey<?> that = (ConfigKey<?>)obj;
             return this._name.equals(that._name);
+        }
+        return false;
+    }
+
+    public boolean isSameKeyAs(Object obj) {
+        if(this.equals(obj)) {
+            return true;
         } else if (obj instanceof String) {
             String key = (String)obj;
             return key.equals(_name);
