@@ -77,7 +77,7 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Boolean isBootable() {
+    public Boolean getBootable() {
         return bootable;
     }
 
@@ -101,7 +101,7 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
         return osTypeId;
     }
 
-    public Boolean isPasswordEnabled() {
+    public Boolean getPasswordEnabled() {
         return passwordEnabled;
     }
 
