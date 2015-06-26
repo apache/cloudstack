@@ -115,14 +115,14 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
     def setUp(self):
-        if not self.snapshotSupported:
-            self.skipTest(
-                "Snapshots are not supported on %s" %
-                self.hypervisor)
 
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
+        if not self.snapshotSupported:
+            self.skipTest(
+                "Snapshots are not supported on %s" %
+                self.hypervisor)
 
 
     def tearDown(self):
