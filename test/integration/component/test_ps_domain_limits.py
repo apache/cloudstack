@@ -194,7 +194,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
             return [FAIL, e, None]
         return [PASS, None, users]
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced", "selfservice"], required_hardware="false")
     def test_01_multiple_domains_primary_storage_limits(self):
         """Test primary storage limit of domain and its sub-domains
 
@@ -536,7 +536,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
                 self.fail("Failure: %s" % e)
         return
 
-    @attr(tags=["advanced"], required_hardware="false")
+    @attr(tags=["advanced"], required_hardware="true")
     def test_04_create_template_snapshot(self):
         """Test create snapshot and templates from volume
 

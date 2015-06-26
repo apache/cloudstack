@@ -505,7 +505,7 @@ class TestVolumeLimits(cloudstackTestCase):
 	return
 
     @data(ROOT_DOMAIN_ADMIN, CHILD_DOMAIN_ADMIN)
-    @attr(tags=["advanced"], required_hardware="false")
+    @attr(tags=["advanced"], required_hardware="true")
     def test_create_template_snapshot(self, value):
         """Test create snapshot and templates from volume
 
