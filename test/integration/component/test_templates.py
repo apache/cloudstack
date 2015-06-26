@@ -504,7 +504,7 @@ class TestTemplates(cloudstackTestCase):
         return
 
     @attr(speed="slow")
-    @attr(tags=["advanced", "advancedns"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns"], required_hardware="true")
     def test_04_template_from_snapshot(self):
         """Create Template from snapshot
         """
