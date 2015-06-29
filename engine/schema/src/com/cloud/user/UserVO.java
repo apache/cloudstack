@@ -101,6 +101,9 @@ public class UserVO implements User, Identity, InternalIdentity {
     @Enumerated(value = EnumType.STRING)
     private Source source;
 
+    @Column(name = "external_entity", length = 65535)
+    private String externalEntity;
+
     public UserVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -283,4 +286,11 @@ public class UserVO implements User, Identity, InternalIdentity {
         this.source = source;
     }
 
+    public String getExternalEntity() {
+        return externalEntity;
+    }
+
+    public void setExternalEntity(String externalEntity) {
+        this.externalEntity = externalEntity;
+    }
 }

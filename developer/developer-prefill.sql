@@ -83,9 +83,4 @@ INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
             VALUES ('Advanced', 'DEFAULT', 'management-server',
             'developer', 'true');
 
--- Enable SAML plugin for developers by default
-INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
-            VALUES ('Advanced', 'DEFAULT', 'management-server',
-            'saml2.enabled', 'true');
-
 commit;

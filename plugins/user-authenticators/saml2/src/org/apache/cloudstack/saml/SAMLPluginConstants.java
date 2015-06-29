@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,20 +15,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.user.dao;
+//
+package org.apache.cloudstack.saml;
 
-import com.cloud.user.UserAccount;
-import com.cloud.user.UserAccountVO;
-import com.cloud.utils.db.GenericDao;
+public class SAMLPluginConstants {
+    public static final int SAML_REFRESH_INTERVAL = 300;
 
-import java.util.List;
-
-public interface UserAccountDao extends GenericDao<UserAccountVO, Long> {
-    List<UserAccountVO> getAllUsersByNameAndEntity(String username, String entity);
-
-    UserAccount getUserAccount(String username, Long domainId);
-
-    boolean validateUsernameInDomain(String username, Long domainId);
-
-    UserAccount getUserByApiKey(String apiKey);
+    public static final String SAML_RESPONSE = "SAMLResponse";
+    public static final String SAML_IDPID = "SAML_IDPID";
+    public static final String SAML_SESSIONID = "SAML_SESSIONID";
+    public static final String SAML_NAMEID = "SAML_NAMEID";
+    public static final String SAMLSP_KEYPAIR = "SAMLSP_KEYPAIR";
+    public static final String SAMLSP_X509CERT = "SAMLSP_X509CERT";
 }
