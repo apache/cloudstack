@@ -35,15 +35,19 @@ import com.cloud.utils.script.Script;
 
 public class KVMHAMonitor extends KVMHABase implements Runnable {
     private static final Logger s_logger = Logger.getLogger(KVMHAMonitor.class);
-    private Map<String, NfsStoragePool> _storagePool = new ConcurrentHashMap<String, NfsStoragePool>();
+    private final Map<String, NfsStoragePool> _storagePool = new ConcurrentHashMap<String, NfsStoragePool>();
 
-    private String _hostIP; /* private ip address */
+    private final String _hostIP; /* private ip address */
 
     public KVMHAMonitor(NfsStoragePool pool, String host, String scriptPath) {
         if (pool != null) {
             _storagePool.put(pool._poolUUID, pool);
         }
         _hostIP = host;
+        configureHeartBeatPath(scriptPath);
+    }
+
+    private static synchronized void configureHeartBeatPath(String scriptPath) {
         KVMHABase.s_heartBeatPath = scriptPath;
     }
 

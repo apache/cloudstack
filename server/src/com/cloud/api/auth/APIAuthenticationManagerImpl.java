@@ -16,19 +16,22 @@
 // under the License.
 package com.cloud.api.auth;
 
-import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.component.ManagerBase;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import javax.ejb.Local;
+
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.auth.APIAuthenticationManager;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
-import org.apache.log4j.Logger;
 
-import javax.ejb.Local;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.component.ManagerBase;
 
 @Local(value = APIAuthenticationManager.class)
 @SuppressWarnings("unchecked")
@@ -52,15 +55,23 @@ public class APIAuthenticationManagerImpl extends ManagerBase implements APIAuth
 
     @Override
     public boolean start() {
-        s_authenticators = new HashMap<String, Class<?>>();
+        initAuthenticator();
         for (Class<?> authenticator: getCommands()) {
             APICommand command = authenticator.getAnnotation(APICommand.class);
             if (command != null && !command.name().isEmpty()
                     && APIAuthenticator.class.isAssignableFrom(authenticator)) {
-                s_authenticators.put(command.name().toLowerCase(), authenticator);
+                addAuthenticator(authenticator, command);
             }
         }
         return true;
+    }
+
+    private static synchronized void addAuthenticator(Class<?> authenticator, APICommand command) {
+        s_authenticators.put(command.name().toLowerCase(), authenticator);
+    }
+
+    private static synchronized void initAuthenticator() {
+        s_authenticators = new ConcurrentHashMap<String, Class<?>>();
     }
 
     @Override
