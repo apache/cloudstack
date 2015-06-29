@@ -36,6 +36,7 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -71,8 +72,7 @@ public class ListIdpsCmd extends BaseCmd implements APIAuthenticator {
     }
 
     @Override
-    public String authenticate(String command, Map<String, Object[]> params, HttpSession session, String remoteAddress, String responseType, StringBuilder auditTrailSb, final HttpServletRequest req, final HttpServletResponse resp) throws ServerApiException {
-        auditTrailSb.append("=== SAML List IdPs ===");
+    public String authenticate(String command, Map<String, Object[]> params, HttpSession session, InetAddress remoteAddress, String responseType, StringBuilder auditTrailSb, HttpServletRequest req, HttpServletResponse resp) throws ServerApiException {
         ListResponse<IdpResponse> response = new ListResponse<IdpResponse>();
         List<IdpResponse> idpResponseList = new ArrayList<IdpResponse>();
         for (SAMLProviderMetadata metadata: _samlAuthManager.getAllIdPMetadata()) {
