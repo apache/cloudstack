@@ -73,6 +73,7 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -214,7 +215,7 @@ public class SAMLUtils {
         Deflater deflater = new Deflater(Deflater.DEFLATED, true);
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(byteArrayOutputStream, deflater);
-        deflaterOutputStream.write(requestMessage.getBytes());
+        deflaterOutputStream.write(requestMessage.getBytes(Charset.forName("UTF-8")));
         deflaterOutputStream.close();
         String encodedRequestMessage = Base64.encodeBytes(byteArrayOutputStream.toByteArray(), Base64.DONT_BREAK_LINES);
         encodedRequestMessage = URLEncoder.encode(encodedRequestMessage, HttpUtils.UTF_8).trim();
@@ -258,7 +259,7 @@ public class SAMLUtils {
         String url = urlEncodedString + "&SigAlg=" + URLEncoder.encode(opensamlAlgoIdSignature, HttpUtils.UTF_8);
         Signature signature = Signature.getInstance(javaSignatureAlgorithmName);
         signature.initSign(signingKey);
-        signature.update(url.getBytes());
+        signature.update(url.getBytes(Charset.forName("UTF-8")));
         String signatureString = Base64.encodeBytes(signature.sign(), Base64.DONT_BREAK_LINES);
         if (signatureString != null) {
             return url + "&Signature=" + URLEncoder.encode(signatureString, HttpUtils.UTF_8);
@@ -282,7 +283,7 @@ public class SAMLUtils {
             KeyFactory keyFactory = SAMLUtils.getKeyFactory();
             if (keyFactory == null) return null;
             X509EncodedKeySpec spec = keyFactory.getKeySpec(key, X509EncodedKeySpec.class);
-            return new String(org.bouncycastle.util.encoders.Base64.encode(spec.getEncoded()));
+            return new String(org.bouncycastle.util.encoders.Base64.encode(spec.getEncoded()), Charset.forName("UTF-8"));
         } catch (InvalidKeySpecException e) {
             s_logger.error("Unable to create KeyFactory:" + e.getMessage());
         }
@@ -295,7 +296,7 @@ public class SAMLUtils {
             if (keyFactory == null) return null;
             PKCS8EncodedKeySpec spec = keyFactory.getKeySpec(key,
                     PKCS8EncodedKeySpec.class);
-            return new String(org.bouncycastle.util.encoders.Base64.encode(spec.getEncoded()));
+            return new String(org.bouncycastle.util.encoders.Base64.encode(spec.getEncoded()), Charset.forName("UTF-8"));
         } catch (InvalidKeySpecException e) {
             s_logger.error("Unable to create KeyFactory:" + e.getMessage());
         }
