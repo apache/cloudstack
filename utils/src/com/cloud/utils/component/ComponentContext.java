@@ -273,6 +273,10 @@ public class ComponentContext implements ApplicationContextAware {
     }
 
     public void setInitializeBeans(boolean initializeBeans) {
+        initInitializeBeans(initializeBeans);
+    }
+
+    private static synchronized void initInitializeBeans(boolean initializeBeans) {
         s_initializeBeans = initializeBeans;
     }
 }
