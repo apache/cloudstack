@@ -64,10 +64,10 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.SERVICE_PROVIDER_LIST, type = CommandType.MAP, description = "provider to service mapping. "
         + "If not specified, the provider for the service will be mapped to the default provider on the physical network")
-    private Map<String, String> serviceProviderList;
+    private Map<String, ? extends Map<String, String>> serviceProviderList;
 
     @Parameter(name = ApiConstants.SERVICE_CAPABILITY_LIST, type = CommandType.MAP, description = "desired service capabilities as part of vpc offering", since = "4.4")
-    private Map serviceCapabilitystList;
+    private Map<String, List<String>> serviceCapabilitystList;
 
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
                type = CommandType.UUID,
@@ -95,10 +95,14 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
         Map<String, List<String>> serviceProviderMap = null;
         if (serviceProviderList != null && !serviceProviderList.isEmpty()) {
             serviceProviderMap = new HashMap<String, List<String>>();
-            Collection servicesCollection = serviceProviderList.values();
-            Iterator iter = servicesCollection.iterator();
+            Collection<? extends Map<String, String>> servicesCollection = serviceProviderList.values();
+            Iterator<? extends Map<String, String>> iter = servicesCollection.iterator();
             while (iter.hasNext()) {
-                HashMap<String, String> services = (HashMap<String, String>)iter.next();
+                Map<String, String> obj = iter.next();
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("service provider entry specified: " + obj);
+                }
+                HashMap<String, String> services = (HashMap<String, String>)obj;
                 String service = services.get("service");
                 String provider = services.get("provider");
                 List<String> providerList = null;
