@@ -92,7 +92,6 @@ public class NiciraNvpResourceTest {
     NiciraNvpResource resource;
     Map<String, Object> parameters;
 
-    private NiciraNvpUtilities niciraNvpUtilities;
     private CommandRetryUtility retryUtility;
 
     @Before
@@ -112,7 +111,6 @@ public class NiciraNvpResourceTest {
         parameters.put("zoneId", "blublub");
         parameters.put("adminpass", "adminpass");
 
-        niciraNvpUtilities = NiciraNvpUtilities.getInstance();
         retryUtility = CommandRetryUtility.getInstance();
         retryUtility.setServerResource(resource);
     }
