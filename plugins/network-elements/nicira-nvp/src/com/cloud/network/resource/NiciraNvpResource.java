@@ -40,8 +40,6 @@ import com.cloud.agent.api.CreateLogicalRouterAnswer;
 import com.cloud.agent.api.CreateLogicalRouterCommand;
 import com.cloud.agent.api.DeleteLogicalRouterAnswer;
 import com.cloud.agent.api.DeleteLogicalRouterCommand;
-import com.cloud.agent.api.DeleteLogicalSwitchPortAnswer;
-import com.cloud.agent.api.DeleteLogicalSwitchPortCommand;
 import com.cloud.agent.api.FindLogicalSwitchPortAnswer;
 import com.cloud.agent.api.FindLogicalSwitchPortCommand;
 import com.cloud.agent.api.PingCommand;
@@ -207,9 +205,7 @@ public class NiciraNvpResource implements ServerResource {
             // [TODO] Remove when all the commands are refactored.
         }
 
-        if (cmd instanceof DeleteLogicalSwitchPortCommand) {
-            return executeRequest((DeleteLogicalSwitchPortCommand)cmd, NUM_RETRIES);
-        } else if (cmd instanceof UpdateLogicalSwitchPortCommand) {
+        if (cmd instanceof UpdateLogicalSwitchPortCommand) {
             return executeRequest((UpdateLogicalSwitchPortCommand)cmd, NUM_RETRIES);
         } else if (cmd instanceof FindLogicalSwitchPortCommand) {
             return executeRequest((FindLogicalSwitchPortCommand)cmd, NUM_RETRIES);
@@ -239,16 +235,6 @@ public class NiciraNvpResource implements ServerResource {
 
     @Override
     public void setAgentControl(final IAgentControl agentControl) {
-    }
-
-    private Answer executeRequest(final DeleteLogicalSwitchPortCommand cmd, final int numRetries) {
-        try {
-            niciraNvpApi.deleteLogicalSwitchPort(cmd.getLogicalSwitchUuid(), cmd.getLogicalSwitchPortUuid());
-            return new DeleteLogicalSwitchPortAnswer(cmd, true, "Logical switch port " + cmd.getLogicalSwitchPortUuid() + " deleted");
-        } catch (final NiciraNvpApiException e) {
-            retryUtility.addRetry(cmd, NUM_RETRIES);
-            return retryUtility.retry(cmd, DeleteLogicalSwitchPortAnswer.class, e);
-        }
     }
 
     private Answer executeRequest(final UpdateLogicalSwitchPortCommand cmd, final int numRetries) {
