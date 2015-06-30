@@ -21,30 +21,43 @@ package com.cloud.network.resource.wrapper;
 
 import static com.cloud.network.resource.NiciraNvpResource.NUM_RETRIES;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.DeleteLogicalSwitchPortAnswer;
-import com.cloud.agent.api.DeleteLogicalSwitchPortCommand;
+import com.cloud.agent.api.UpdateLogicalSwitchPortAnswer;
+import com.cloud.agent.api.UpdateLogicalSwitchPortCommand;
 import com.cloud.network.nicira.NiciraNvpApi;
 import com.cloud.network.nicira.NiciraNvpApiException;
+import com.cloud.network.nicira.NiciraNvpTag;
+import com.cloud.network.nicira.VifAttachment;
 import com.cloud.network.resource.NiciraNvpResource;
 import com.cloud.network.utils.CommandRetryUtility;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 
-@ResourceWrapper(handles =  DeleteLogicalSwitchPortCommand.class)
-public final class NiciraNvpDeleteLogicalSwitchPortCommandWrapper extends CommandWrapper<DeleteLogicalSwitchPortCommand, Answer, NiciraNvpResource> {
+@ResourceWrapper(handles =  UpdateLogicalSwitchPortCommand.class)
+public final class NiciraNvpUpdateLogicalSwitchPortCommandWrapper extends CommandWrapper<UpdateLogicalSwitchPortCommand, Answer, NiciraNvpResource> {
 
     @Override
-    public Answer execute(final DeleteLogicalSwitchPortCommand command, final NiciraNvpResource niciraNvpResource) {
+    public Answer execute(final UpdateLogicalSwitchPortCommand command, final NiciraNvpResource niciraNvpResource) {
+        final String logicalSwitchUuid = command.getLogicalSwitchUuid();
+        final String logicalSwitchPortUuid = command.getLogicalSwitchPortUuid();
+        final String attachmentUuid = command.getAttachmentUuid();
+
         final NiciraNvpApi niciraNvpApi = niciraNvpResource.getNiciraNvpApi();
 
         try {
-            niciraNvpApi.deleteLogicalSwitchPort(command.getLogicalSwitchUuid(), command.getLogicalSwitchPortUuid());
-            return new DeleteLogicalSwitchPortAnswer(command, true, "Logical switch port " + command.getLogicalSwitchPortUuid() + " deleted");
+            // Tags set to scope cs_account and account name
+            final List<NiciraNvpTag> tags = new ArrayList<NiciraNvpTag>();
+            tags.add(new NiciraNvpTag("cs_account", command.getOwnerName()));
+
+            niciraNvpApi.updateLogicalSwitchPortAttachment(logicalSwitchUuid, logicalSwitchPortUuid, new VifAttachment(attachmentUuid));
+            return new UpdateLogicalSwitchPortAnswer(command, true, "Attachment for  " + logicalSwitchPortUuid + " updated", logicalSwitchPortUuid);
         } catch (final NiciraNvpApiException e) {
             final CommandRetryUtility retryUtility = niciraNvpResource.getRetryUtility();
             retryUtility.addRetry(command, NUM_RETRIES);
-            return retryUtility.retry(command, DeleteLogicalSwitchPortAnswer.class, e);
+            return retryUtility.retry(command, UpdateLogicalSwitchPortAnswer.class, e);
         }
     }
 }

@@ -19,8 +19,6 @@
 
 package com.cloud.network.resource;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
@@ -36,38 +34,24 @@ import com.cloud.agent.api.ConfigurePublicIpsOnLogicalRouterAnswer;
 import com.cloud.agent.api.ConfigurePublicIpsOnLogicalRouterCommand;
 import com.cloud.agent.api.ConfigureStaticNatRulesOnLogicalRouterAnswer;
 import com.cloud.agent.api.ConfigureStaticNatRulesOnLogicalRouterCommand;
-import com.cloud.agent.api.CreateLogicalRouterAnswer;
-import com.cloud.agent.api.CreateLogicalRouterCommand;
 import com.cloud.agent.api.DeleteLogicalRouterAnswer;
 import com.cloud.agent.api.DeleteLogicalRouterCommand;
-import com.cloud.agent.api.FindLogicalSwitchPortAnswer;
-import com.cloud.agent.api.FindLogicalSwitchPortCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupNiciraNvpCommand;
-import com.cloud.agent.api.UpdateLogicalSwitchPortAnswer;
-import com.cloud.agent.api.UpdateLogicalSwitchPortCommand;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.network.nicira.ControlClusterStatus;
 import com.cloud.network.nicira.DestinationNatRule;
-import com.cloud.network.nicira.L3GatewayAttachment;
-import com.cloud.network.nicira.LogicalRouter;
 import com.cloud.network.nicira.LogicalRouterPort;
-import com.cloud.network.nicira.LogicalSwitchPort;
 import com.cloud.network.nicira.Match;
 import com.cloud.network.nicira.NatRule;
 import com.cloud.network.nicira.NiciraNvpApi;
 import com.cloud.network.nicira.NiciraNvpApiException;
 import com.cloud.network.nicira.NiciraNvpList;
-import com.cloud.network.nicira.NiciraNvpTag;
-import com.cloud.network.nicira.PatchAttachment;
-import com.cloud.network.nicira.RouterNextHop;
-import com.cloud.network.nicira.SingleDefaultRouteImplicitRoutingConfig;
 import com.cloud.network.nicira.SourceNatRule;
-import com.cloud.network.nicira.VifAttachment;
 import com.cloud.network.utils.CommandRetryUtility;
 import com.cloud.resource.ServerResource;
 
@@ -205,13 +189,7 @@ public class NiciraNvpResource implements ServerResource {
             // [TODO] Remove when all the commands are refactored.
         }
 
-        if (cmd instanceof UpdateLogicalSwitchPortCommand) {
-            return executeRequest((UpdateLogicalSwitchPortCommand)cmd, NUM_RETRIES);
-        } else if (cmd instanceof FindLogicalSwitchPortCommand) {
-            return executeRequest((FindLogicalSwitchPortCommand)cmd, NUM_RETRIES);
-        } else if (cmd instanceof CreateLogicalRouterCommand) {
-            return executeRequest((CreateLogicalRouterCommand)cmd, NUM_RETRIES);
-        } else if (cmd instanceof DeleteLogicalRouterCommand) {
+        if (cmd instanceof DeleteLogicalRouterCommand) {
             return executeRequest((DeleteLogicalRouterCommand)cmd, NUM_RETRIES);
         } else if (cmd instanceof ConfigureStaticNatRulesOnLogicalRouterCommand) {
             return executeRequest((ConfigureStaticNatRulesOnLogicalRouterCommand)cmd, NUM_RETRIES);
@@ -235,135 +213,6 @@ public class NiciraNvpResource implements ServerResource {
 
     @Override
     public void setAgentControl(final IAgentControl agentControl) {
-    }
-
-    private Answer executeRequest(final UpdateLogicalSwitchPortCommand cmd, final int numRetries) {
-        final String logicalSwitchUuid = cmd.getLogicalSwitchUuid();
-        final String logicalSwitchPortUuid = cmd.getLogicalSwitchPortUuid();
-        final String attachmentUuid = cmd.getAttachmentUuid();
-
-        try {
-            // Tags set to scope cs_account and account name
-            final List<NiciraNvpTag> tags = new ArrayList<NiciraNvpTag>();
-            tags.add(new NiciraNvpTag("cs_account", cmd.getOwnerName()));
-
-            niciraNvpApi.updateLogicalSwitchPortAttachment(logicalSwitchUuid, logicalSwitchPortUuid, new VifAttachment(attachmentUuid));
-            return new UpdateLogicalSwitchPortAnswer(cmd, true, "Attachment for  " + logicalSwitchPortUuid + " updated", logicalSwitchPortUuid);
-        } catch (final NiciraNvpApiException e) {
-            retryUtility.addRetry(cmd, NUM_RETRIES);
-            return retryUtility.retry(cmd, UpdateLogicalSwitchPortAnswer.class, e);
-        }
-    }
-
-    private Answer executeRequest(final FindLogicalSwitchPortCommand cmd, final int numRetries) {
-        final String logicalSwitchUuid = cmd.getLogicalSwitchUuid();
-        final String logicalSwitchPortUuid = cmd.getLogicalSwitchPortUuid();
-
-        try {
-            final NiciraNvpList<LogicalSwitchPort> ports = niciraNvpApi.findLogicalSwitchPortsByUuid(logicalSwitchUuid, logicalSwitchPortUuid);
-            if (ports.getResultCount() == 0) {
-                return new FindLogicalSwitchPortAnswer(cmd, false, "Logical switchport " + logicalSwitchPortUuid + " not found", null);
-            } else {
-                return new FindLogicalSwitchPortAnswer(cmd, true, "Logical switchport " + logicalSwitchPortUuid + " found", logicalSwitchPortUuid);
-            }
-        } catch (final NiciraNvpApiException e) {
-            retryUtility.addRetry(cmd, NUM_RETRIES);
-            return retryUtility.retry(cmd, FindLogicalSwitchPortAnswer.class, e);
-        }
-    }
-
-    private Answer executeRequest(final CreateLogicalRouterCommand cmd, final int numRetries) {
-        final String routerName = cmd.getName();
-        final String gatewayServiceUuid = cmd.getGatewayServiceUuid();
-        final String logicalSwitchUuid = cmd.getLogicalSwitchUuid();
-
-        final List<NiciraNvpTag> tags = new ArrayList<NiciraNvpTag>();
-        tags.add(new NiciraNvpTag("cs_account", cmd.getOwnerName()));
-
-        final String publicNetworkNextHopIp = cmd.getPublicNextHop();
-        final String publicNetworkIpAddress = cmd.getPublicIpCidr();
-        final String internalNetworkAddress = cmd.getInternalIpCidr();
-
-        s_logger.debug("Creating a logical router with external ip " + publicNetworkIpAddress + " and internal ip " + internalNetworkAddress + "on gateway service " +
-                gatewayServiceUuid);
-
-        try {
-            // Create the Router
-            LogicalRouter lrc = new LogicalRouter();
-            lrc.setDisplayName(truncate(routerName, NAME_MAX_LEN));
-            lrc.setTags(tags);
-            lrc.setRoutingConfig(new SingleDefaultRouteImplicitRoutingConfig(new RouterNextHop(publicNetworkNextHopIp)));
-            lrc = niciraNvpApi.createLogicalRouter(lrc);
-
-            // store the switchport for rollback
-            LogicalSwitchPort lsp = null;
-
-            try {
-                // Create the outside port for the router
-                LogicalRouterPort lrpo = new LogicalRouterPort();
-                lrpo.setAdminStatusEnabled(true);
-                lrpo.setDisplayName(truncate(routerName + "-outside-port", NAME_MAX_LEN));
-                lrpo.setTags(tags);
-                final List<String> outsideIpAddresses = new ArrayList<String>();
-                outsideIpAddresses.add(publicNetworkIpAddress);
-                lrpo.setIpAddresses(outsideIpAddresses);
-                lrpo = niciraNvpApi.createLogicalRouterPort(lrc.getUuid(), lrpo);
-
-                // Attach the outside port to the gateway service on the correct VLAN
-                final L3GatewayAttachment attachment = new L3GatewayAttachment(gatewayServiceUuid);
-                if (cmd.getVlanId() != 0) {
-                    attachment.setVlanId(cmd.getVlanId());
-                }
-                niciraNvpApi.updateLogicalRouterPortAttachment(lrc.getUuid(), lrpo.getUuid(), attachment);
-
-                // Create the inside port for the router
-                LogicalRouterPort lrpi = new LogicalRouterPort();
-                lrpi.setAdminStatusEnabled(true);
-                lrpi.setDisplayName(truncate(routerName + "-inside-port", NAME_MAX_LEN));
-                lrpi.setTags(tags);
-                final List<String> insideIpAddresses = new ArrayList<String>();
-                insideIpAddresses.add(internalNetworkAddress);
-                lrpi.setIpAddresses(insideIpAddresses);
-                lrpi = niciraNvpApi.createLogicalRouterPort(lrc.getUuid(), lrpi);
-
-                // Create the inside port on the lswitch
-                lsp = new LogicalSwitchPort(truncate(routerName + "-inside-port", NAME_MAX_LEN), tags, true);
-                lsp = niciraNvpApi.createLogicalSwitchPort(logicalSwitchUuid, lsp);
-
-                // Attach the inside router port to the lswitch port with a PatchAttachment
-                niciraNvpApi.updateLogicalRouterPortAttachment(lrc.getUuid(), lrpi.getUuid(), new PatchAttachment(lsp.getUuid()));
-
-                // Attach the inside lswitch port to the router with a PatchAttachment
-                niciraNvpApi.updateLogicalSwitchPortAttachment(logicalSwitchUuid, lsp.getUuid(), new PatchAttachment(lrpi.getUuid()));
-
-                // Setup the source nat rule
-                final SourceNatRule snr = new SourceNatRule();
-                snr.setToSourceIpAddressMin(publicNetworkIpAddress.split("/")[0]);
-                snr.setToSourceIpAddressMax(publicNetworkIpAddress.split("/")[0]);
-                final Match match = new Match();
-                match.setSourceIpAddresses(internalNetworkAddress);
-                snr.setMatch(match);
-                snr.setOrder(200);
-                niciraNvpApi.createLogicalRouterNatRule(lrc.getUuid(), snr);
-            } catch (final NiciraNvpApiException e) {
-                // We need to destroy the router if we already created it
-                // this will also take care of any router ports and rules
-                try {
-                    niciraNvpApi.deleteLogicalRouter(lrc.getUuid());
-                    if (lsp != null) {
-                        niciraNvpApi.deleteLogicalSwitchPort(logicalSwitchUuid, lsp.getUuid());
-                    }
-                } catch (final NiciraNvpApiException ex) {
-                }
-
-                throw e;
-            }
-
-            return new CreateLogicalRouterAnswer(cmd, true, "Logical Router created (uuid " + lrc.getUuid() + ")", lrc.getUuid());
-        } catch (final NiciraNvpApiException e) {
-            retryUtility.addRetry(cmd, NUM_RETRIES);
-            return retryUtility.retry(cmd, CreateLogicalRouterAnswer.class, e);
-        }
     }
 
     private Answer executeRequest(final DeleteLogicalRouterCommand cmd, final int numRetries) {
