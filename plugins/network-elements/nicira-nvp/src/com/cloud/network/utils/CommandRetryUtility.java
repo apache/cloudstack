@@ -27,13 +27,11 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.network.resource.NiciraNvpResource;
 import com.cloud.resource.ServerResource;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 public class CommandRetryUtility {
 
-    private static final Logger s_logger = Logger.getLogger(NiciraNvpResource.class);
+    private static final Logger s_logger = Logger.getLogger(CommandRetryUtility.class);
 
     private static final int ZERO = 0;
     private static CommandRetryUtility instance;
@@ -85,7 +83,7 @@ public class CommandRetryUtility {
             final Constructor<? extends Answer> answerConstructor = answerClass.getConstructor(Command.class, Exception.class);
             return answerConstructor.newInstance(command, error);
         } catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-            throw new CloudRuntimeException(e);
+            return Answer.createUnsupportedCommandAnswer(command);
         }
     }
 }
