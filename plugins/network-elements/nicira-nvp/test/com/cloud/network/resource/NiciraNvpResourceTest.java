@@ -432,8 +432,23 @@ public class NiciraNvpResourceTest {
 
         when(cmd.getLogicalRouterUuid()).thenReturn("aaaaa");
         when(cmd.getL3GatewayServiceUuid()).thenReturn("bbbbb");
-        doThrow(new NiciraNvpApiException()).when(nvpApi).updateLogicalRouterPort((String)any(), (LogicalRouterPort)any());
         when(nvpApi.findLogicalRouterPortByGatewayServiceUuid("aaaaa", "bbbbb")).thenReturn(list);
+        doThrow(new NiciraNvpApiException()).when(nvpApi).updateLogicalRouterPort((String)any(), (LogicalRouterPort)any());
+
+        final ConfigurePublicIpsOnLogicalRouterAnswer answer = (ConfigurePublicIpsOnLogicalRouterAnswer)resource.executeRequest(cmd);
+        assertFalse(answer.getResult());
+
+    }
+
+    @Test
+    public void testConfigurePublicIpsOnLogicalRouterRetry() throws ConfigurationException, NiciraNvpApiException {
+        resource.configure("NiciraNvpResource", parameters);
+
+        final ConfigurePublicIpsOnLogicalRouterCommand cmd = mock(ConfigurePublicIpsOnLogicalRouterCommand.class);
+
+        when(cmd.getLogicalRouterUuid()).thenReturn("aaaaa");
+        when(cmd.getL3GatewayServiceUuid()).thenReturn("bbbbb");
+        when(nvpApi.findLogicalRouterPortByGatewayServiceUuid("aaaaa", "bbbbb")).thenThrow(new NiciraNvpApiException("retry 1")).thenThrow(new NiciraNvpApiException("retry 2"));
 
         final ConfigurePublicIpsOnLogicalRouterAnswer answer = (ConfigurePublicIpsOnLogicalRouterAnswer)resource.executeRequest(cmd);
         assertFalse(answer.getResult());

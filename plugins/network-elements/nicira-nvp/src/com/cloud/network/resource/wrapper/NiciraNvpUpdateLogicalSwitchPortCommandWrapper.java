@@ -32,6 +32,7 @@ import com.cloud.network.nicira.NiciraNvpApiException;
 import com.cloud.network.nicira.NiciraNvpTag;
 import com.cloud.network.nicira.VifAttachment;
 import com.cloud.network.resource.NiciraNvpResource;
+import com.cloud.network.resource.NiciraNvpUtilities;
 import com.cloud.network.utils.CommandRetryUtility;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
@@ -41,6 +42,8 @@ public final class NiciraNvpUpdateLogicalSwitchPortCommandWrapper extends Comman
 
     @Override
     public Answer execute(final UpdateLogicalSwitchPortCommand command, final NiciraNvpResource niciraNvpResource) {
+        final NiciraNvpUtilities niciraNvpUtilities = niciraNvpResource.getNiciraNvpUtilities();
+
         final String logicalSwitchUuid = command.getLogicalSwitchUuid();
         final String logicalSwitchPortUuid = command.getLogicalSwitchPortUuid();
         final String attachmentUuid = command.getAttachmentUuid();
@@ -52,7 +55,9 @@ public final class NiciraNvpUpdateLogicalSwitchPortCommandWrapper extends Comman
             final List<NiciraNvpTag> tags = new ArrayList<NiciraNvpTag>();
             tags.add(new NiciraNvpTag("cs_account", command.getOwnerName()));
 
-            niciraNvpApi.updateLogicalSwitchPortAttachment(logicalSwitchUuid, logicalSwitchPortUuid, new VifAttachment(attachmentUuid));
+            final VifAttachment vifAttachment = niciraNvpUtilities.createVifAttachment(attachmentUuid);
+
+            niciraNvpApi.updateLogicalSwitchPortAttachment(logicalSwitchUuid, logicalSwitchPortUuid, vifAttachment);
             return new UpdateLogicalSwitchPortAnswer(command, true, "Attachment for  " + logicalSwitchPortUuid + " updated", logicalSwitchPortUuid);
         } catch (final NiciraNvpApiException e) {
             final CommandRetryUtility retryUtility = niciraNvpResource.getRetryUtility();
