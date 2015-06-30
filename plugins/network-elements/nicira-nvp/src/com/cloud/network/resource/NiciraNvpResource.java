@@ -28,29 +28,17 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.ConfigurePortForwardingRulesOnLogicalRouterAnswer;
-import com.cloud.agent.api.ConfigurePortForwardingRulesOnLogicalRouterCommand;
-import com.cloud.agent.api.ConfigurePublicIpsOnLogicalRouterAnswer;
-import com.cloud.agent.api.ConfigurePublicIpsOnLogicalRouterCommand;
-import com.cloud.agent.api.ConfigureStaticNatRulesOnLogicalRouterAnswer;
-import com.cloud.agent.api.ConfigureStaticNatRulesOnLogicalRouterCommand;
-import com.cloud.agent.api.DeleteLogicalRouterAnswer;
-import com.cloud.agent.api.DeleteLogicalRouterCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupNiciraNvpCommand;
-import com.cloud.agent.api.to.PortForwardingRuleTO;
-import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.network.nicira.ControlClusterStatus;
 import com.cloud.network.nicira.DestinationNatRule;
-import com.cloud.network.nicira.LogicalRouterPort;
 import com.cloud.network.nicira.Match;
 import com.cloud.network.nicira.NatRule;
 import com.cloud.network.nicira.NiciraNvpApi;
 import com.cloud.network.nicira.NiciraNvpApiException;
-import com.cloud.network.nicira.NiciraNvpList;
 import com.cloud.network.nicira.SourceNatRule;
 import com.cloud.network.utils.CommandRetryUtility;
 import com.cloud.resource.ServerResource;
@@ -185,21 +173,9 @@ public class NiciraNvpResource implements ServerResource {
         try {
             return wrapper.execute(cmd, this);
         } catch (final Exception e) {
-            //return Answer.createUnsupportedCommandAnswer(cmd);
-            // [TODO] Remove when all the commands are refactored.
+            s_logger.debug("Received unsupported command " + cmd.toString());
+            return Answer.createUnsupportedCommandAnswer(cmd);
         }
-
-        if (cmd instanceof DeleteLogicalRouterCommand) {
-            return executeRequest((DeleteLogicalRouterCommand)cmd, NUM_RETRIES);
-        } else if (cmd instanceof ConfigureStaticNatRulesOnLogicalRouterCommand) {
-            return executeRequest((ConfigureStaticNatRulesOnLogicalRouterCommand)cmd, NUM_RETRIES);
-        } else if (cmd instanceof ConfigurePortForwardingRulesOnLogicalRouterCommand) {
-            return executeRequest((ConfigurePortForwardingRulesOnLogicalRouterCommand)cmd, NUM_RETRIES);
-        } else if (cmd instanceof ConfigurePublicIpsOnLogicalRouterCommand) {
-            return executeRequest((ConfigurePublicIpsOnLogicalRouterCommand)cmd, NUM_RETRIES);
-        }
-        s_logger.debug("Received unsupported command " + cmd.toString());
-        return Answer.createUnsupportedCommandAnswer(cmd);
     }
 
     @Override
@@ -215,175 +191,7 @@ public class NiciraNvpResource implements ServerResource {
     public void setAgentControl(final IAgentControl agentControl) {
     }
 
-    private Answer executeRequest(final DeleteLogicalRouterCommand cmd, final int numRetries) {
-        try {
-            niciraNvpApi.deleteLogicalRouter(cmd.getLogicalRouterUuid());
-            return new DeleteLogicalRouterAnswer(cmd, true, "Logical Router deleted (uuid " + cmd.getLogicalRouterUuid() + ")");
-        } catch (final NiciraNvpApiException e) {
-            retryUtility.addRetry(cmd, NUM_RETRIES);
-            return retryUtility.retry(cmd, DeleteLogicalRouterAnswer.class, e);
-        }
-    }
-
-    private Answer executeRequest(final ConfigurePublicIpsOnLogicalRouterCommand cmd, final int numRetries) {
-        try {
-            final NiciraNvpList<LogicalRouterPort> ports = niciraNvpApi.findLogicalRouterPortByGatewayServiceUuid(cmd.getLogicalRouterUuid(), cmd.getL3GatewayServiceUuid());
-            if (ports.getResultCount() != 1) {
-                return new ConfigurePublicIpsOnLogicalRouterAnswer(cmd, false, "No logical router ports found, unable to set ip addresses");
-            }
-            final LogicalRouterPort lrp = ports.getResults().get(0);
-            lrp.setIpAddresses(cmd.getPublicCidrs());
-            niciraNvpApi.updateLogicalRouterPort(cmd.getLogicalRouterUuid(), lrp);
-
-            return new ConfigurePublicIpsOnLogicalRouterAnswer(cmd, true, "Configured " + cmd.getPublicCidrs().size() + " ip addresses on logical router uuid " +
-                    cmd.getLogicalRouterUuid());
-        } catch (final NiciraNvpApiException e) {
-            retryUtility.addRetry(cmd, NUM_RETRIES);
-            return retryUtility.retry(cmd, ConfigurePublicIpsOnLogicalRouterAnswer.class, e);
-        }
-    }
-
-    private Answer executeRequest(final ConfigureStaticNatRulesOnLogicalRouterCommand cmd, final int numRetries) {
-        try {
-            final NiciraNvpList<NatRule> existingRules = niciraNvpApi.findNatRulesByLogicalRouterUuid(cmd.getLogicalRouterUuid());
-            // Rules of the game (also known as assumptions-that-will-make-stuff-break-later-on)
-            // A SourceNat rule with a match other than a /32 cidr is assumed to be the "main" SourceNat rule
-            // Any other SourceNat rule should have a corresponding DestinationNat rule
-
-            for (final StaticNatRuleTO rule : cmd.getRules()) {
-
-                final NatRule[] rulepair = generateStaticNatRulePair(rule.getDstIp(), rule.getSrcIp());
-
-                NatRule incoming = null;
-                NatRule outgoing = null;
-
-                for (final NatRule storedRule : existingRules.getResults()) {
-                    if (storedRule.equalsIgnoreUuid(rulepair[1])) {
-                        // The outgoing rule exists
-                        outgoing = storedRule;
-                        s_logger.debug("Found matching outgoing rule " + outgoing.getUuid());
-                        if (incoming != null) {
-                            break;
-                        }
-                    } else if (storedRule.equalsIgnoreUuid(rulepair[0])) {
-                        // The incoming rule exists
-                        incoming = storedRule;
-                        s_logger.debug("Found matching incoming rule " + incoming.getUuid());
-                        if (outgoing != null) {
-                            break;
-                        }
-                    }
-                }
-                if (incoming != null && outgoing != null) {
-                    if (rule.revoked()) {
-                        s_logger.debug("Deleting incoming rule " + incoming.getUuid());
-                        niciraNvpApi.deleteLogicalRouterNatRule(cmd.getLogicalRouterUuid(), incoming.getUuid());
-
-                        s_logger.debug("Deleting outgoing rule " + outgoing.getUuid());
-                        niciraNvpApi.deleteLogicalRouterNatRule(cmd.getLogicalRouterUuid(), outgoing.getUuid());
-                    }
-                } else {
-                    if (rule.revoked()) {
-                        s_logger.warn("Tried deleting a rule that does not exist, " + rule.getSrcIp() + " -> " + rule.getDstIp());
-                        break;
-                    }
-
-                    rulepair[0] = niciraNvpApi.createLogicalRouterNatRule(cmd.getLogicalRouterUuid(), rulepair[0]);
-                    s_logger.debug("Created " + natRuleToString(rulepair[0]));
-
-                    try {
-                        rulepair[1] = niciraNvpApi.createLogicalRouterNatRule(cmd.getLogicalRouterUuid(), rulepair[1]);
-                        s_logger.debug("Created " + natRuleToString(rulepair[1]));
-                    } catch (final NiciraNvpApiException ex) {
-                        s_logger.debug("Failed to create SourceNatRule, rolling back DestinationNatRule");
-                        niciraNvpApi.deleteLogicalRouterNatRule(cmd.getLogicalRouterUuid(), rulepair[0].getUuid());
-                        throw ex; // Rethrow original exception
-                    }
-
-                }
-            }
-            return new ConfigureStaticNatRulesOnLogicalRouterAnswer(cmd, true, cmd.getRules().size() + " StaticNat rules applied");
-        } catch (final NiciraNvpApiException e) {
-            retryUtility.addRetry(cmd, NUM_RETRIES);
-            return retryUtility.retry(cmd, ConfigureStaticNatRulesOnLogicalRouterAnswer.class, e);
-        }
-    }
-
-    private Answer executeRequest(final ConfigurePortForwardingRulesOnLogicalRouterCommand cmd, final int numRetries) {
-        try {
-            final NiciraNvpList<NatRule> existingRules = niciraNvpApi.findNatRulesByLogicalRouterUuid(cmd.getLogicalRouterUuid());
-            // Rules of the game (also known as assumptions-that-will-make-stuff-break-later-on)
-            // A SourceNat rule with a match other than a /32 cidr is assumed to be the "main" SourceNat rule
-            // Any other SourceNat rule should have a corresponding DestinationNat rule
-
-            for (final PortForwardingRuleTO rule : cmd.getRules()) {
-                if (rule.isAlreadyAdded() && !rule.revoked()) {
-                    // Don't need to do anything
-                    continue;
-                }
-
-                if (rule.getDstPortRange()[0] != rule.getDstPortRange()[1] || rule.getSrcPortRange()[0] != rule.getSrcPortRange()[1]) {
-                    return new ConfigurePortForwardingRulesOnLogicalRouterAnswer(cmd, false, "Nicira NVP doesn't support port ranges for port forwarding");
-                }
-
-                final NatRule[] rulepair = generatePortForwardingRulePair(rule.getDstIp(), rule.getDstPortRange(), rule.getSrcIp(), rule.getSrcPortRange(), rule.getProtocol());
-
-                NatRule incoming = null;
-                NatRule outgoing = null;
-
-                for (final NatRule storedRule : existingRules.getResults()) {
-                    if (storedRule.equalsIgnoreUuid(rulepair[1])) {
-                        // The outgoing rule exists
-                        outgoing = storedRule;
-                        s_logger.debug("Found matching outgoing rule " + outgoing.getUuid());
-                        if (incoming != null) {
-                            break;
-                        }
-                    } else if (storedRule.equalsIgnoreUuid(rulepair[0])) {
-                        // The incoming rule exists
-                        incoming = storedRule;
-                        s_logger.debug("Found matching incoming rule " + incoming.getUuid());
-                        if (outgoing != null) {
-                            break;
-                        }
-                    }
-                }
-                if (incoming != null && outgoing != null) {
-                    if (rule.revoked()) {
-                        s_logger.debug("Deleting incoming rule " + incoming.getUuid());
-                        niciraNvpApi.deleteLogicalRouterNatRule(cmd.getLogicalRouterUuid(), incoming.getUuid());
-
-                        s_logger.debug("Deleting outgoing rule " + outgoing.getUuid());
-                        niciraNvpApi.deleteLogicalRouterNatRule(cmd.getLogicalRouterUuid(), outgoing.getUuid());
-                    }
-                } else {
-                    if (rule.revoked()) {
-                        s_logger.warn("Tried deleting a rule that does not exist, " + rule.getSrcIp() + " -> " + rule.getDstIp());
-                        break;
-                    }
-
-                    rulepair[0] = niciraNvpApi.createLogicalRouterNatRule(cmd.getLogicalRouterUuid(), rulepair[0]);
-                    s_logger.debug("Created " + natRuleToString(rulepair[0]));
-
-                    try {
-                        rulepair[1] = niciraNvpApi.createLogicalRouterNatRule(cmd.getLogicalRouterUuid(), rulepair[1]);
-                        s_logger.debug("Created " + natRuleToString(rulepair[1]));
-                    } catch (final NiciraNvpApiException ex) {
-                        s_logger.warn("NiciraNvpApiException during create call, rolling back previous create");
-                        niciraNvpApi.deleteLogicalRouterNatRule(cmd.getLogicalRouterUuid(), rulepair[0].getUuid());
-                        throw ex; // Rethrow the original exception
-                    }
-
-                }
-            }
-            return new ConfigurePortForwardingRulesOnLogicalRouterAnswer(cmd, true, cmd.getRules().size() + " PortForwarding rules applied");
-        } catch (final NiciraNvpApiException e) {
-            retryUtility.addRetry(cmd, NUM_RETRIES);
-            return retryUtility.retry(cmd, ConfigurePortForwardingRulesOnLogicalRouterAnswer.class, e);
-        }
-    }
-
-    private String natRuleToString(final NatRule rule) {
+    public String natRuleToString(final NatRule rule) {
 
         final StringBuilder natRuleStr = new StringBuilder();
         natRuleStr.append("Rule ");
@@ -427,7 +235,7 @@ public class NiciraNvpResource implements ServerResource {
         }
     }
 
-    protected NatRule[] generateStaticNatRulePair(final String insideIp, final String outsideIp) {
+    public NatRule[] generateStaticNatRulePair(final String insideIp, final String outsideIp) {
         final NatRule[] rulepair = new NatRule[2];
         rulepair[0] = new DestinationNatRule();
         rulepair[0].setType("DestinationNatRule");
@@ -452,7 +260,7 @@ public class NiciraNvpResource implements ServerResource {
 
     }
 
-    protected NatRule[] generatePortForwardingRulePair(final String insideIp, final int[] insidePorts, final String outsideIp, final int[] outsidePorts,
+    public NatRule[] generatePortForwardingRulePair(final String insideIp, final int[] insidePorts, final String outsideIp, final int[] outsidePorts,
             final String protocol) {
         // Start with a basic static nat rule, then add port and protocol details
         final NatRule[] rulepair = generateStaticNatRulePair(insideIp, outsideIp);
