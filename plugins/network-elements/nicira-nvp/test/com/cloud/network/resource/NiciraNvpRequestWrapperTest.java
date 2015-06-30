@@ -22,6 +22,7 @@ package com.cloud.network.resource;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 import org.junit.Test;
@@ -30,6 +31,7 @@ import org.mockito.Mockito;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CreateLogicalSwitchCommand;
+import com.cloud.agent.api.DeleteLogicalSwitchCommand;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.network.nicira.LogicalSwitch;
@@ -88,6 +90,30 @@ public class NiciraNvpRequestWrapperTest {
         try {
             when(niciraNvpApi.createLogicalSwitch(logicalSwitch)).thenReturn(logicalSwitch);
             when(logicalSwitch.getUuid()).thenReturn(transportUuid);
+        } catch (final NiciraNvpApiException e) {
+            fail(e.getMessage());
+        }
+
+        final NiciraNvpRequestWrapper wrapper = NiciraNvpRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(command, niciraNvpResource);
+
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testDeleteLogicalSwitchCommandWrapper() {
+        final NiciraNvpApi niciraNvpApi = Mockito.mock(NiciraNvpApi.class);
+
+        final String logicalSwitchUuid = "d2e05a9e-7120-4487-a5fc-414ab36d9345";
+
+        final DeleteLogicalSwitchCommand command = new DeleteLogicalSwitchCommand(logicalSwitchUuid);
+
+        when(niciraNvpResource.getNiciraNvpApi()).thenReturn(niciraNvpApi);
+
+        try {
+            doNothing().when(niciraNvpApi).deleteLogicalSwitch(command.getLogicalSwitchUuid());
         } catch (final NiciraNvpApiException e) {
             fail(e.getMessage());
         }

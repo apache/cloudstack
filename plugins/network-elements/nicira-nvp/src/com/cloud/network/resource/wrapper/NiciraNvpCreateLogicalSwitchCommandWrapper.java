@@ -19,6 +19,8 @@
 
 package com.cloud.network.resource.wrapper;
 
+import static com.cloud.network.resource.NiciraNvpResource.NUM_RETRIES;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,6 +34,7 @@ import com.cloud.network.nicira.NiciraNvpTag;
 import com.cloud.network.nicira.TransportZoneBinding;
 import com.cloud.network.resource.NiciraNvpResource;
 import com.cloud.network.resource.NiciraNvpUtilities;
+import com.cloud.network.utils.CommandRetryUtility;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 
@@ -62,12 +65,9 @@ public final class NiciraNvpCreateLogicalSwitchCommandWrapper extends CommandWra
             final String switchUuid = logicalSwitch.getUuid();
             return new CreateLogicalSwitchAnswer(command, true, "Logicalswitch " + switchUuid + " created", switchUuid);
         } catch (final NiciraNvpApiException e) {
-            int numRetries = niciraNvpResource.getNumRetries();
-            if (numRetries > 0) {
-                return niciraNvpResource.retry(command, --numRetries);
-            } else {
-                return new CreateLogicalSwitchAnswer(command, e);
-            }
+            final CommandRetryUtility retryUtility = niciraNvpResource.getRetryUtility();
+            retryUtility.addRetry(command, NUM_RETRIES);
+            return retryUtility.retry(command, CreateLogicalSwitchAnswer.class, e);
         }
     }
 }
