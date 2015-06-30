@@ -26,6 +26,7 @@ import com.cloud.agent.api.CreateLogicalSwitchPortCommand;
 import com.cloud.network.nicira.LogicalSwitch;
 import com.cloud.network.nicira.LogicalSwitchPort;
 import com.cloud.network.nicira.NiciraNvpTag;
+import com.cloud.network.nicira.VifAttachment;
 
 public class NiciraNvpUtilities {
 
@@ -56,5 +57,9 @@ public class NiciraNvpUtilities {
 
         final LogicalSwitchPort logicalSwitchPort = new LogicalSwitchPort(attachmentUuid, tags, true);
         return logicalSwitchPort;
+    }
+
+    public VifAttachment createVifAttachment(final String attachmentUuid) {
+        return new VifAttachment(attachmentUuid);
     }
 }
