@@ -22,29 +22,38 @@ package com.cloud.network.resource.wrapper;
 import static com.cloud.network.resource.NiciraNvpResource.NUM_RETRIES;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.DeleteLogicalSwitchPortAnswer;
-import com.cloud.agent.api.DeleteLogicalSwitchPortCommand;
+import com.cloud.agent.api.FindLogicalSwitchPortAnswer;
+import com.cloud.agent.api.FindLogicalSwitchPortCommand;
+import com.cloud.network.nicira.LogicalSwitchPort;
 import com.cloud.network.nicira.NiciraNvpApi;
 import com.cloud.network.nicira.NiciraNvpApiException;
+import com.cloud.network.nicira.NiciraNvpList;
 import com.cloud.network.resource.NiciraNvpResource;
 import com.cloud.network.utils.CommandRetryUtility;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 
-@ResourceWrapper(handles =  DeleteLogicalSwitchPortCommand.class)
-public final class NiciraNvpDeleteLogicalSwitchPortCommandWrapper extends CommandWrapper<DeleteLogicalSwitchPortCommand, Answer, NiciraNvpResource> {
+@ResourceWrapper(handles =  FindLogicalSwitchPortCommand.class)
+public final class NiciraNvpFindLogicalSwitchPortCommandWrapper extends CommandWrapper<FindLogicalSwitchPortCommand, Answer, NiciraNvpResource> {
 
     @Override
-    public Answer execute(final DeleteLogicalSwitchPortCommand command, final NiciraNvpResource niciraNvpResource) {
+    public Answer execute(final FindLogicalSwitchPortCommand command, final NiciraNvpResource niciraNvpResource) {
+        final String logicalSwitchUuid = command.getLogicalSwitchUuid();
+        final String logicalSwitchPortUuid = command.getLogicalSwitchPortUuid();
+
         final NiciraNvpApi niciraNvpApi = niciraNvpResource.getNiciraNvpApi();
 
         try {
-            niciraNvpApi.deleteLogicalSwitchPort(command.getLogicalSwitchUuid(), command.getLogicalSwitchPortUuid());
-            return new DeleteLogicalSwitchPortAnswer(command, true, "Logical switch port " + command.getLogicalSwitchPortUuid() + " deleted");
+            final NiciraNvpList<LogicalSwitchPort> ports = niciraNvpApi.findLogicalSwitchPortsByUuid(logicalSwitchUuid, logicalSwitchPortUuid);
+            if (ports.getResultCount() == 0) {
+                return new FindLogicalSwitchPortAnswer(command, false, "Logical switchport " + logicalSwitchPortUuid + " not found", null);
+            } else {
+                return new FindLogicalSwitchPortAnswer(command, true, "Logical switchport " + logicalSwitchPortUuid + " found", logicalSwitchPortUuid);
+            }
         } catch (final NiciraNvpApiException e) {
             final CommandRetryUtility retryUtility = niciraNvpResource.getRetryUtility();
             retryUtility.addRetry(command, NUM_RETRIES);
-            return retryUtility.retry(command, DeleteLogicalSwitchPortAnswer.class, e);
+            return retryUtility.retry(command, FindLogicalSwitchPortAnswer.class, e);
         }
     }
 }
