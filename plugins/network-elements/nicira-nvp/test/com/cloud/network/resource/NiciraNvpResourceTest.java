@@ -85,11 +85,15 @@ import com.cloud.network.nicira.NiciraNvpApi;
 import com.cloud.network.nicira.NiciraNvpApiException;
 import com.cloud.network.nicira.NiciraNvpList;
 import com.cloud.network.nicira.SourceNatRule;
+import com.cloud.network.utils.CommandRetryUtility;
 
 public class NiciraNvpResourceTest {
     NiciraNvpApi nvpApi = mock(NiciraNvpApi.class);
     NiciraNvpResource resource;
     Map<String, Object> parameters;
+
+    private NiciraNvpUtilities niciraNvpUtilities;
+    private CommandRetryUtility retryUtility;
 
     @Before
     public void setUp() throws ConfigurationException {
@@ -107,6 +111,10 @@ public class NiciraNvpResourceTest {
         parameters.put("guid", "aaaaa-bbbbb-ccccc");
         parameters.put("zoneId", "blublub");
         parameters.put("adminpass", "adminpass");
+
+        niciraNvpUtilities = NiciraNvpUtilities.getInstance();
+        retryUtility = CommandRetryUtility.getInstance();
+        retryUtility.setServerResource(resource);
     }
 
     @Test(expected = ConfigurationException.class)
@@ -295,7 +303,7 @@ public class NiciraNvpResourceTest {
 
         doThrow(new NiciraNvpApiException()).when(nvpApi).updateLogicalSwitchPortAttachment((String)any(), (String)any(), (Attachment)any());
         final UpdateLogicalSwitchPortAnswer dlspa =
-            (UpdateLogicalSwitchPortAnswer)resource.executeRequest(new UpdateLogicalSwitchPortCommand("aaaa", "bbbb", "cccc", "owner", "nicname"));
+                (UpdateLogicalSwitchPortAnswer)resource.executeRequest(new UpdateLogicalSwitchPortCommand("aaaa", "bbbb", "cccc", "owner", "nicname"));
         assertFalse(dlspa.getResult());
     }
 
