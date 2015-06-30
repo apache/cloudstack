@@ -38,8 +38,6 @@ import com.cloud.agent.api.ConfigureStaticNatRulesOnLogicalRouterAnswer;
 import com.cloud.agent.api.ConfigureStaticNatRulesOnLogicalRouterCommand;
 import com.cloud.agent.api.CreateLogicalRouterAnswer;
 import com.cloud.agent.api.CreateLogicalRouterCommand;
-import com.cloud.agent.api.CreateLogicalSwitchPortAnswer;
-import com.cloud.agent.api.CreateLogicalSwitchPortCommand;
 import com.cloud.agent.api.DeleteLogicalRouterAnswer;
 import com.cloud.agent.api.DeleteLogicalRouterCommand;
 import com.cloud.agent.api.DeleteLogicalSwitchPortAnswer;
@@ -209,9 +207,7 @@ public class NiciraNvpResource implements ServerResource {
             // [TODO] Remove when all the commands are refactored.
         }
 
-        if (cmd instanceof CreateLogicalSwitchPortCommand) {
-            return executeRequest((CreateLogicalSwitchPortCommand)cmd, NUM_RETRIES);
-        } else if (cmd instanceof DeleteLogicalSwitchPortCommand) {
+        if (cmd instanceof DeleteLogicalSwitchPortCommand) {
             return executeRequest((DeleteLogicalSwitchPortCommand)cmd, NUM_RETRIES);
         } else if (cmd instanceof UpdateLogicalSwitchPortCommand) {
             return executeRequest((UpdateLogicalSwitchPortCommand)cmd, NUM_RETRIES);
@@ -243,31 +239,6 @@ public class NiciraNvpResource implements ServerResource {
 
     @Override
     public void setAgentControl(final IAgentControl agentControl) {
-    }
-
-    private Answer executeRequest(final CreateLogicalSwitchPortCommand cmd, final int numRetries) {
-        final String logicalSwitchUuid = cmd.getLogicalSwitchUuid();
-        final String attachmentUuid = cmd.getAttachmentUuid();
-
-        try {
-            // Tags set to scope cs_account and account name
-            final List<NiciraNvpTag> tags = new ArrayList<NiciraNvpTag>();
-            tags.add(new NiciraNvpTag("cs_account", cmd.getOwnerName()));
-
-            final LogicalSwitchPort logicalSwitchPort = new LogicalSwitchPort(attachmentUuid, tags, true);
-            final LogicalSwitchPort newPort = niciraNvpApi.createLogicalSwitchPort(logicalSwitchUuid, logicalSwitchPort);
-            try {
-                niciraNvpApi.updateLogicalSwitchPortAttachment(cmd.getLogicalSwitchUuid(), newPort.getUuid(), new VifAttachment(attachmentUuid));
-            } catch (final NiciraNvpApiException ex) {
-                s_logger.warn("modifyLogicalSwitchPort failed after switchport was created, removing switchport");
-                niciraNvpApi.deleteLogicalSwitchPort(cmd.getLogicalSwitchUuid(), newPort.getUuid());
-                throw ex; // Rethrow the original exception
-            }
-            return new CreateLogicalSwitchPortAnswer(cmd, true, "Logical switch port " + newPort.getUuid() + " created", newPort.getUuid());
-        } catch (final NiciraNvpApiException e) {
-            retryUtility.addRetry(cmd, NUM_RETRIES);
-            return retryUtility.retry(cmd, CreateLogicalSwitchPortAnswer.class, e);
-        }
     }
 
     private Answer executeRequest(final DeleteLogicalSwitchPortCommand cmd, final int numRetries) {
