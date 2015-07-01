@@ -324,8 +324,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected VmWorkJobDao _workJobDao;
     @Inject
     protected AsyncJobManager _jobMgr;
-    @Inject
-    protected UserVmService _userVmSrv;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -1930,7 +1928,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm, null, _offeringDao.findById(vm.getId(), vm.getServiceOfferingId()), null, null);
         _networkMgr.prepareNicForMigration(profile, dest);
         volumeMgr.prepareForMigration(profile, dest);
-        profile.setConfigDriveLabel( _userVmSrv.VmConfigDriveLabel.value());
+        profile.setConfigDriveLabel(VmConfigDriveLabel.value());
 
         final VirtualMachineTO to = toVmTO(profile);
         final PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(to);
