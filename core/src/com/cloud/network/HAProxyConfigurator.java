@@ -589,12 +589,9 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         result.add(blankLine);
         final List<String> dSection = Arrays.asList(defaultsSection);
         if (lbCmd.keepAliveEnabled) {
-            dSection.set(6, "\t#no option set here :<");
             dSection.set(7, "\tno option forceclose");
-        } else {
-            dSection.set(6, "\toption forwardfor");
-            dSection.set(7, "\toption forceclose");
         }
+
         if (s_logger.isDebugEnabled()) {
             for (final String s : dSection) {
                 s_logger.debug("default section: " + s);
