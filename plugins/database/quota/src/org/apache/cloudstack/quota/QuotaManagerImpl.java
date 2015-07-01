@@ -17,6 +17,7 @@
 package org.apache.cloudstack.quota;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.ejb.Local;
@@ -24,7 +25,9 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.command.ListQuotaConfigurationsCmd;
 import org.apache.cloudstack.api.response.QuotaConfigurationResponse;
+import org.apache.cloudstack.api.response.QuotaCreditsResponse;
 import org.apache.cloudstack.quota.dao.QuotaConfigurationDao;
+import org.apache.cloudstack.quota.dao.QuotaCreditsDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -39,7 +42,8 @@ public class QuotaManagerImpl implements QuotaManager {
  @Inject
  private QuotaConfigurationDao _quotaConfigurationDao;
 
-
+@Inject
+private QuotaCreditsDao _quotaCreditsDao;
 
  public QuotaManagerImpl() {
      super();
@@ -76,5 +80,15 @@ public class QuotaManagerImpl implements QuotaManager {
      response.setDescription(configuration.getDescription());
      return response;
  }
+
+@Override
+public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Integer amount, Long updatedBy) {
+    QuotaCreditsVO credits = new QuotaCreditsVO(accountId, domainId, amount, updatedBy);
+    credits.setUpdatedOn(new Date());
+    _quotaCreditsDao.persist(credits);
+    return null;
+}
+
+
 
 }
