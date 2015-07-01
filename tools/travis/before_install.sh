@@ -49,8 +49,17 @@ javac -version
 echo -e "\nMaven Version: "
 mvn -v
 
+echo -e "\nDisk Status: "
+df
+
+echo -e "\nMemory Status: "
+free
+
 echo -e "\nCheck Git status"
 git status
+
+echo -e "\nCleaning up stale files in /tmp: "
+sudo find /tmp -type f -mtime +2 | grep -v "`sudo lsof | grep /tmp |awk '{print $9}'|sed -e '1 d' |sort |uniq | tr \\n \|`" | xargs sudo rm -vf
 
 echo -e "\nUpdating the system: "
 sudo apt-get -q -y update > /dev/null
@@ -61,6 +70,8 @@ sudo debconf-set-selections <<< 'mysql-server mysql-server/root_password passwor
 sudo debconf-set-selections <<< 'mysql-server mysql-server/root_password_again password your_password'
 sudo apt-get -q -y install mysql-server > /dev/null
 
+#Restart mysql if running to release deleted file locks on filesystem, if aready running
+sudo status mysql | grep start && sudo stop mysql
 sudo start mysql
 
 echo -e "\nInstalling Development tools: "
