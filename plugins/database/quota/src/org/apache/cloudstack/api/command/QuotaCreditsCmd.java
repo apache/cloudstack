@@ -17,8 +17,6 @@
 package org.apache.cloudstack.api.command;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.APICommand;
@@ -32,7 +30,6 @@ import org.apache.cloudstack.api.response.QuotaCreditsResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.quota.QuotaManager;
 
-import com.cloud.user.Account;
 
 @APICommand(name = "quotaCredits", responseObject = QuotaCreditsResponse.class, description = "Add +-credits to an account", since = "4.2.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaCreditsCmd extends BaseListCmd {
@@ -110,9 +107,9 @@ public void execute() {
         throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "The account does not exists or has been removed/disabled");
     }
 
-    final QuotaCreditsResponse _credit_response = _quotaManager.addQuotaCredits(accountId, domainId, value, CallContext.current().getCallingAccount().getId());
+    final QuotaCreditsResponse credit_response = _quotaManager.addQuotaCredits(accountId, domainId, value, CallContext.current().getCallingAccount().getId());
 
-    setResponseObject(_credit_response);
+    setResponseObject(credit_response);
 }
 
 
