@@ -215,7 +215,7 @@ public class HostResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.DETAILS)
     @Param(description = "Host details in key/value pairs.", since = "4.5")
-    private Map details;
+    private Map<String, String> details;
 
     @Override
     public String getObjectId() {
@@ -422,8 +422,12 @@ public class HostResponse extends BaseResponse {
         this.haHost = haHost;
     }
 
-    public void setDetails(Map details) {
+    public void setDetails(Map<String, String> details) {
         this.details = details;
+    }
+
+    public Map<String, String> getDetails() {
+        return this.details;
     }
 
 }
