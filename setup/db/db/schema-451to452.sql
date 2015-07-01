@@ -19,22 +19,13 @@
 -- Schema upgrade from 4.5.1 to 4.5.2;
 --;
 
--- SAML
+UPDATE IGNORE `cloud`.`configuration` SET `default_value`='PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT' WHERE name='user.authenticators.order';
+UPDATE IGNORE `cloud`.`configuration` SET `value`='PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT' WHERE name='user.authenticators.order';
+UPDATE IGNORE `cloud`.`configuration` SET `default_value`='PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT' WHERE name='user.password.encoders.order';
+UPDATE IGNORE `cloud`.`configuration` SET `value`='PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT' WHERE name='user.password.encoders.order';
+UPDATE IGNORE `cloud`.`configuration` SET `value`="MD5,LDAP,PLAINTEXT" WHERE `name`="user.password.encoders.exclude";
+ALTER TABLE `cloud`.`user` ADD COLUMN `source` varchar(40) NOT NULL DEFAULT 'UNKNOWN';
 
-DELETE FROM `cloud`.`configuration` WHERE name like 'saml%';
-
-ALTER TABLE `cloud`.`user` ADD COLUMN `external_entity` text DEFAULT NULL COMMENT "reference to external federation entity";
-
-DROP TABLE IF EXISTS `cloud`.`saml_token`;
-CREATE TABLE `cloud`.`saml_token` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `uuid` varchar(255) UNIQUE NOT NULL COMMENT 'The Authn Unique Id',
-  `domain_id` bigint unsigned DEFAULT NULL,
-  `entity` text NOT NULL COMMENT 'Identity Provider Entity Id',
-  `created` DATETIME NOT NULL,
-  PRIMARY KEY (`id`),
-  CONSTRAINT `fk_saml_token__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Quota Configuration
 
@@ -57,7 +48,7 @@ INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`,
 INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `description`) VALUES ('Advanced', 'DEFAULT', 'QuotaService', 'quota.usage.smtp.port' , '', '', 'SMTP port');
 INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `description`) VALUES ('Advanced', 'DEFAULT', 'QuotaService', 'quota.usage.smtp.useAuth' , '', '', 'SMTP Auth type');
 
-CREATE TABLE `cloud`.`quota_configuration` (
+CREATE TABLE `cloud_usage`.`quota_configuration` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `usage_type` varchar(255) NOT NULL COMMENT 'usage type',
   `usage_unit` varchar(255) NOT NULL COMMENT 'usage type',
@@ -69,15 +60,56 @@ CREATE TABLE `cloud`.`quota_configuration` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-INSERT IGNORE INTO `cloud`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('RUNNING_VM', 'Compute-Hours', '', '5' , '1', 'Quota mapping for running VM');
-INSERT IGNORE INTO `cloud`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('ALLOCATED_VM', 'Compute-Hours', '', '1' , '1', 'Quota mapping for running VM');
-INSERT IGNORE INTO `cloud`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('IP_ADDRESS', 'IP-Hours', '', '0.1' , '1', 'Quota mapping for running VM');
-INSERT IGNORE INTO `cloud`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('NETWORK_BYTES_SENT', 'GB', '', '1' , '1', 'Quota mapping for running VM');
-INSERT IGNORE INTO `cloud`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('NETWORK_BYTES_RECEIVED', 'GB', '', '1' , '1', 'Quota mapping for running VM');
-INSERT IGNORE INTO `cloud`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('VOLUME', 'GB-Month', '', '5' , '1', 'Quota mapping for running VM');
-INSERT IGNORE INTO `cloud`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('TEMPLATE', 'GB-Month', '', '5' , '1', 'Quota mapping for running VM');
-INSERT IGNORE INTO `cloud`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('ISO', 'GB-Month', '', '5' , '1', 'Quota mapping for running VM');
-INSERT IGNORE INTO `cloud`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('SNAPSHOT', 'GB-Month', '', '5' , '1', 'Quota mapping for running VM');
-INSERT IGNORE INTO `cloud`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('LOAD_BALANCER_POLICY', 'Policy-Hours', '', '5' , '0', 'Quota mapping for running VM');
-INSERT IGNORE INTO `cloud`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('PORT_FORWARDING_RULE', 'Policy-Hours', '', '5' , '0', 'Quota mapping for running VM');
-INSERT IGNORE INTO `cloud`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('NETWORK_OFFERING', 'Policy-Hours', '', '5' , '0', 'Quota mapping for running VM');
+INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('RUNNING_VM', 'Compute-Hours', '', '5' , '1', 'Quota mapping for running VM');
+INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('ALLOCATED_VM', 'Compute-Hours', '', '1' , '1', 'Quota mapping for running VM');
+INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('IP_ADDRESS', 'IP-Hours', '', '0.1' , '1', 'Quota mapping for running VM');
+INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('NETWORK_BYTES_SENT', 'GB', '', '1' , '1', 'Quota mapping for running VM');
+INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('NETWORK_BYTES_RECEIVED', 'GB', '', '1' , '1', 'Quota mapping for running VM');
+INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('VOLUME', 'GB-Month', '', '5' , '1', 'Quota mapping for running VM');
+INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('TEMPLATE', 'GB-Month', '', '5' , '1', 'Quota mapping for running VM');
+INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('ISO', 'GB-Month', '', '5' , '1', 'Quota mapping for running VM');
+INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('SNAPSHOT', 'GB-Month', '', '5' , '1', 'Quota mapping for running VM');
+INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('LOAD_BALANCER_POLICY', 'Policy-Hours', '', '5' , '0', 'Quota mapping for running VM');
+INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('PORT_FORWARDING_RULE', 'Policy-Hours', '', '5' , '0', 'Quota mapping for running VM');
+INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('NETWORK_OFFERING', 'Policy-Hours', '', '5' , '0', 'Quota mapping for running VM');
+INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('CPU', 'Compute-Hours', '100MHz', '5' , '1', 'Quota mapping for 100 MHz of CPU running for an hour');
+INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('vCPU', 'Compute-Hours', '1VCPU', '5' , '1', 'Quota mapping for running VM that has 1vCPU');
+INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('MEMORY', 'Compute-Hours', '1MB', '5' , '1', 'Quota mapping for usign 1MB or RAM for 1 hour');
+
+
+CREATE TABLE `cloud_usage`.`quota_credits` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `account_id` bigint unsigned NOT NULL,
+  `domain_id` bigint(20) unsigned NOT NULL,
+  `credit` decimal(15,2) COMMENT 'amount credited',
+  `updated_on` datetime NOT NULL COMMENT 'date created',
+  `updated_by` bigint unsigned NOT NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+CREATE TABLE `cloud_usage.quota_email_templates` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `template_name` varchar(64) DEFAULT NULL,
+  `template_text` longtext,
+  `category` int(10) unsigned NOT NULL DEFAULT '0',
+  `last_updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `locale` varchar(25) DEFAULT 'en_US',
+  `template_name_locale` varchar(74) DEFAULT NULL,
+  `version` int(11) DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+CREATE TABLE `cloud_usage.quota_sent_emails` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `from_address` varchar(1024) NOT NULL,
+  `to_address` varchar(1024) NOT NULL,
+  `cc_address` varchar(1024) DEFAULT NULL,
+  `bcc_address` varchar(1024) DEFAULT NULL,
+  `send_date` datetime NOT NULL,
+  `subject` varchar(1024) NOT NULL,
+  `mail_text` longtext NOT NULL,
+  `version` int(11) DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
