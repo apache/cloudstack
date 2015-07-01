@@ -149,20 +149,24 @@ public class ResourceTagJoinDaoImpl extends GenericDaoBase<ResourceTagJoinVO, Lo
     public ResourceTagJoinVO searchById(Long id) {
         SearchCriteria<ResourceTagJoinVO> sc = tagIdSearch.create();
         sc.setParameters("id", id);
-        List<ResourceTagJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
-        assert vms != null && vms.size() == 1 : "No tag found for tag id " + id;
-        return vms.get(0);
+        List<ResourceTagJoinVO> tags = searchIncludingRemoved(sc, null, null, false);
+        if (tags != null && tags.size() > 0) {
+            return tags.get(0);
+        } else {
+            return null;
+        }
     }
 
     @Override
     public ResourceTagJoinVO newResourceTagView(ResourceTag vr) {
-
         SearchCriteria<ResourceTagJoinVO> sc = tagIdSearch.create();
         sc.setParameters("id", vr.getId());
-        List<ResourceTagJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
-        assert vms != null && vms.size() == 1 : "No tag found for tag id " + vr.getId();
-        return vms.get(0);
-
+        List<ResourceTagJoinVO> tags = searchIncludingRemoved(sc, null, null, false);
+        if (tags != null && tags.size() > 0) {
+            return tags.get(0);
+        } else {
+            return null;
+        }
     }
 
 }
