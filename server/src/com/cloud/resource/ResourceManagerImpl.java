@@ -2233,7 +2233,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         final String username = nv.getValue();
         nv = _hostDetailsDao.findDetail(hostId, ApiConstants.PASSWORD);
         final String password = nv.getValue();
-        final UpdateHostPasswordCommand cmd = new UpdateHostPasswordCommand(username, password);
+
+
+        final HostVO host = _hostDao.findById(hostId);
+        final String hostIpAddress = host.getPrivateIpAddress();
+
+        final UpdateHostPasswordCommand cmd = new UpdateHostPasswordCommand(username, password, hostIpAddress);
         final Answer answer = _agentMgr.easySend(hostId, cmd);
         return answer.getResult();
     }

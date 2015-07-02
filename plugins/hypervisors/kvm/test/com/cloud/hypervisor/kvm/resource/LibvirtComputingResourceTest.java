@@ -5076,15 +5076,18 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testUpdateHostPasswordCommand() {
+        final String hostIp = "127.0.0.1";
         final String username = "root";
         final String newPassword = "password";
-        final UpdateHostPasswordCommand command = new UpdateHostPasswordCommand(username, newPassword);
+        final UpdateHostPasswordCommand command = new UpdateHostPasswordCommand(username, newPassword, hostIp);
+
+        when(libvirtComputingResource.getUpdateHostPasswdPath()).thenReturn("/tmp");
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
 
         final Answer answer = wrapper.execute(command, libvirtComputingResource);
 
-        assertTrue(answer.getResult());
+        assertFalse(answer.getResult());
     }
 }
