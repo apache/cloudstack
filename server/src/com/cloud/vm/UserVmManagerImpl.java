@@ -3517,7 +3517,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 String configDriveIsoRootFolder = "/tmp";
                 String isoFile = configDriveIsoRootFolder + "/" + vmName + "/configDrive/" + vmName + ".iso";
                 profile.setVmData(vmData);
-                profile.setConfigDriveLabel(VmConfigDriveLabel.value());
+                profile.setConfigDriveLabel(VirtualMachineManager.VmConfigDriveLabel.value());
                 profile.setConfigDriveIsoRootFolder(configDriveIsoRootFolder);
                 profile.setConfigDriveIsoFile(isoFile);
             }
@@ -5292,7 +5292,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {EnableDynamicallyScaleVm, VmIpFetchWaitInterval, VmIpFetchTrialMax, VmIpFetchThreadPoolMax, VmConfigDriveLabel};
+        return new ConfigKey<?>[] {EnableDynamicallyScaleVm, VmIpFetchWaitInterval, VmIpFetchTrialMax, VmIpFetchThreadPoolMax};
     }
 
     @Override

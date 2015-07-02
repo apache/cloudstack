@@ -52,6 +52,9 @@ public interface VirtualMachineManager extends Manager {
             "If set to true, StartCommand, StopCommand, CopyCommand, MigrateCommand will be synchronized on the agent side."
                     + " If set to false, these commands become asynchronous. Default value is false.", false);
 
+    static final ConfigKey<String> VmConfigDriveLabel = new ConfigKey<String>("Hidden", String.class, "vm.configdrive.label", "config",
+            "The default lable name for the config drive", false);
+
     public interface Topics {
         public static final String VM_POWER_STATE = "vm.powerstate";
     }
