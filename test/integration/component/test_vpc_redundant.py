@@ -219,7 +219,6 @@ class TestVPCRedundancy(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        return
         try:
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
@@ -258,7 +257,6 @@ class TestVPCRedundancy(cloudstackTestCase):
         return
 
     def tearDown(self):
-        return
         try:
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
