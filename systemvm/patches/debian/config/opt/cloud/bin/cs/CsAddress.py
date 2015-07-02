@@ -48,11 +48,14 @@ class CsAddress(CsDataBag):
 
     def get_guest_if(self):
         """
-        Return CsInterface object for the first guest interface
+        Return CsInterface object for the lowest guest interface
         """
+        ipr = []
         for ip in self.get_ips():
             if ip.is_guest():
-                return ip
+                ipr.append(ip)
+        if len(ipr) > 0:
+            return sorted(ipr)[-1]
         return None
 
     def get_guest_ip(self):
@@ -407,10 +410,10 @@ class CsIP:
                             ])
 
         if self.get_type() in ["public"]:
-            self.fw.append(["nat", "front",
-                            "-A POSTROUTING -o %s -j SNAT --to-source %s" %
-                           (self.dev, self.address['public_ip'])
-                            ])
+            # self.fw.append(["nat", "front",
+                            # "-A POSTROUTING -o %s -j SNAT --to-source %s" %
+                           # (self.dev, self.address['public_ip'])
+                            # ])
             self.fw.append(["", "front",
                             "-A FORWARD -o %s -d %s -j ACL_INBOUND_%s" % (self.dev, self.address['network'], self.dev)
                             ])

@@ -30,16 +30,13 @@
 # eth1 public ip
 # eth2+ Guest networks
 # -------------------------------------------------------------------- #
-import sys
 import os
-from pprint import pprint
-from CsDatabag import CsDataBag, CsCmdLine
 import logging
 import CsHelper
 from CsFile import CsFile
-from CsConfig import CsConfig
 from CsProcess import CsProcess
 from CsApp import CsPasswdSvc
+from CsAddress import CsDevice
 import socket
 from time import sleep
 
@@ -64,6 +61,7 @@ class CsRedundant(object):
     def __init__(self, config):
         self.cl = config.cmdline()
         self.address = config.address()
+        self.config = config
 
     def set(self):
         logging.debug("Router redundancy status is %s", self.cl.is_redundant())
@@ -83,13 +81,11 @@ class CsRedundant(object):
     def _redundant_on(self):
         guest = self.address.get_guest_if()
         # No redundancy if there is no guest network
+        if self.cl.is_master() or guest is None:
+            for obj in [o for o in self.address.get_ips() if o.is_public()]:
+                self.check_is_up(obj.get_device())
         if guest is None:
             self._redundant_off()
-            # Bring up the public Interface(s)
-            if self.cl.is_master():
-                for obj in [o for o in self.address.get_ips() if o.is_public()]:
-                    print obj.get_device()
-                    self.check_is_up(obj.get_device())
             return
         CsHelper.mkdir(self.CS_RAMDISK_DIR, 0755, False)
         CsHelper.mount_tmpfs(self.CS_RAMDISK_DIR)
@@ -159,6 +155,12 @@ class CsRedundant(object):
         if not proc.find():
             CsHelper.service("keepalived", "restart")
 
+    def release_lock(self):
+        try:
+            os.remove("/tmp/master_lock")
+        except OSError:
+            pass
+
     def set_lock(self):
         """
         Make sure that master state changes happen sequentially
@@ -169,21 +171,21 @@ class CsRedundant(object):
         for iter in range(0, iterations):
             try:
                 s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-                s.bind('\0master_lock')
+                s.bind('/tmp/master_lock')
                 return s
             except socket.error, e:
                 error_code = e.args[0]
                 error_string = e.args[1]
                 print "Process already running (%d:%s). Exiting" % (error_code, error_string)
                 logging.info("Master is already running, waiting")
-                sleep(1)
+                sleep(time_between)
 
     def set_fault(self):
         """ Set fault mode on this router """
         if not self.cl.is_redundant():
             logging.error("Set fault called on non-redundant router")
             return
-        s = self.set_lock()
+        self.set_lock()
         logging.info("Router switched to fault mode")
         ads = [o for o in self.address.get_ips() if o.is_public()]
         for o in ads:
@@ -195,9 +197,10 @@ class CsRedundant(object):
         CsHelper.service("dnsmasq", "stop")
         ads = [o for o in self.address.get_ips() if o.needs_vrrp()]
         for o in ads:
-            pwdsvc = CsPasswdSvc(o.get_gateway()).stop()
+            CsPasswdSvc(o.get_gateway()).stop()
         self.cl.set_fault_state()
         self.cl.save()
+        self.release_lock()
         logging.info("Router switched to fault mode")
 
     def set_backup(self):
@@ -210,22 +213,29 @@ class CsRedundant(object):
             logging.error("Set backup called on node that is already backup")
             return
         """
-        s = self.set_lock()
+        self.set_lock()
         logging.debug("Setting router to backup")
         ads = [o for o in self.address.get_ips() if o.is_public()]
+        dev = ''
         for o in ads:
-            CsHelper.execute("ifconfig %s down" % o.get_device())
+            if dev == o.get_device():
+                continue
+            logging.info("Bringing public interface %s down" % o.get_device())
+            cmd2 = "ip link set %s up" % o.get_device()
+            CsHelper.execute(cmd2)
+            dev = o.get_device()
         cmd = "%s -C %s" % (self.CONNTRACKD_BIN, self.CONNTRACKD_CONF)
         CsHelper.execute("%s -d" % cmd)
         CsHelper.service("ipsec", "stop")
         CsHelper.service("xl2tpd", "stop")
         ads = [o for o in self.address.get_ips() if o.needs_vrrp()]
         for o in ads:
-            pwdsvc = CsPasswdSvc(o.get_gateway()).stop()
+            CsPasswdSvc(o.get_gateway()).stop()
         CsHelper.service("dnsmasq", "stop")
         # self._set_priority(self.CS_PRIO_DOWN)
         self.cl.set_master_state(False)
         self.cl.save()
+        self.release_lock()
         logging.info("Router switched to backup mode")
 
     def set_master(self):
@@ -238,15 +248,20 @@ class CsRedundant(object):
             logging.error("Set master called on master node")
             return
         """
-        s = self.set_lock()
+        self.set_lock()
         logging.debug("Setting router to master")
         ads = [o for o in self.address.get_ips() if o.is_public()]
+        dev = ''
         for o in ads:
-            # cmd2 = "ip link set %s up" % self.getDevice()
-            CsHelper.execute("ifconfig %s down" % o.get_device())
-            CsHelper.execute("ifconfig %s up" % o.get_device())
-            CsHelper.execute("arping -I %s -A %s -c 1" % (o.get_device(), o.get_ip()))
-        # FIXME Need to add in the default routes but I am unsure what the gateway is
+            if dev == o.get_device():
+                continue
+            cmd2 = "ip link set %s up" % o.get_device()
+            if CsDevice(o.get_device(), self.config).waitfordevice():
+                CsHelper.execute(cmd2)
+                dev = o.get_device()
+                logging.info("Bringing public interface %s up" % o.get_device())
+            else:
+                logging.error("Device %s was not ready could not bring it up" % o.get_device())
         # ip route add default via $gw table Table_$dev proto static
         cmd = "%s -C %s" % (self.CONNTRACKD_BIN, self.CONNTRACKD_CONF)
         CsHelper.execute("%s -c" % cmd)
@@ -257,10 +272,11 @@ class CsRedundant(object):
         CsHelper.service("xl2tpd", "restart")
         ads = [o for o in self.address.get_ips() if o.needs_vrrp()]
         for o in ads:
-            pwdsvc = CsPasswdSvc(o.get_gateway()).restart()
+            CsPasswdSvc(o.get_gateway()).restart()
         CsHelper.service("dnsmasq", "restart")
         self.cl.set_master_state(True)
         self.cl.save()
+        self.release_lock()
         logging.info("Router switched to master mode")
 
     def _collect_ignore_ips(self):
