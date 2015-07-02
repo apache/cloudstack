@@ -361,9 +361,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             Integer.class, "vm.job.report.interval", "60",
             "Interval to send application level pings to make sure the connection is still working", false);
 
-    static final ConfigKey<String> VmConfigDriveLabel = new ConfigKey<String>("Hidden", String.class, "vm.configdrive.label", "config",
-            "The default lable name for the config drive", false);
-
     ScheduledExecutorService _executor = null;
 
     protected long _nodeId;
