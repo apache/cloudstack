@@ -39,6 +39,7 @@ from cs.CsFile import CsFile
 from cs.CsApp import CsApache, CsDnsmasq
 from cs.CsMonitor import CsMonitor
 from cs.CsLoadBalancer import CsLoadBalancer
+from cs.CsConfig import CsConfig
 
 
 class CsPassword(CsDataBag):
