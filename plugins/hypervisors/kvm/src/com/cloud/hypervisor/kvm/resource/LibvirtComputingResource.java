@@ -523,7 +523,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     protected String getDefaultHypervisorScriptsDir() {
-        return "scripts/vm/hypervisor";
+        return "scripts/vm/hypervisor/kvm";
     }
 
     protected String getDefaultKvmScriptsDir() {
@@ -557,9 +557,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             domrScriptsDir = getDefaultDomrScriptsDir();
         }
 
-        final String hypervisorScriptsDir = (String)params.get("hypervisor.scripts.dir");
+        String hypervisorScriptsDir = (String)params.get("hypervisor.scripts.dir");
         if (hypervisorScriptsDir == null) {
-            getDefaultHypervisorScriptsDir();
+            hypervisorScriptsDir = getDefaultHypervisorScriptsDir();
         }
 
         String kvmScriptsDir = (String)params.get("kvm.scripts.dir");

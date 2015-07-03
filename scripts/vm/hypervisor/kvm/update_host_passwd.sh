@@ -16,10 +16,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
-hostIp=$1
-username=$2
-new_passwd=$3
+username=$1
+new_passwd=$2
 
-ssh -o StrictHostKeyChecking=no -p 3922 -i /root/.ssh/id_rsa.cloud root@$hostIp "echo -e "$new_passwd\n$new_passwd" | passwd --stdin $username"
+echo -e "$new_passwd\n$new_passwd" | passwd --stdin $username
 
 return $?;

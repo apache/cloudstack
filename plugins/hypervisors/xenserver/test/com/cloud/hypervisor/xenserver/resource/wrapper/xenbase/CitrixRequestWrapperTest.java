@@ -118,6 +118,7 @@ import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.host.HostEnvironment;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
@@ -129,6 +130,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.resource.StorageSubsystemCommandHandler;
+import com.cloud.utils.ExecutionResult;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.xensource.xenapi.Connection;
@@ -1320,14 +1322,23 @@ public class CitrixRequestWrapperTest {
 
     @Test
     public void testUpdateHostPasswordCommand() {
-        final UpdateHostPasswordCommand updatePwd = new UpdateHostPasswordCommand("test", "123");
+        final ExecutionResult executionResult = Mockito.mock(ExecutionResult.class);
+
+        final UpdateHostPasswordCommand updatePwd = new UpdateHostPasswordCommand("test", "123", "127.0.0.1");
+
+        final StringBuffer buff = new StringBuffer();
+        buff.append(updatePwd.getUsername());
+        buff.append(' ');
+        buff.append(updatePwd.getNewPassword());
+
+        when(citrixResourceBase.executeInVR(updatePwd.getHostIp(), VRScripts.UPDATE_HOST_PASSWD, buff.toString())).thenReturn(executionResult);
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);
 
         final Answer answer = wrapper.execute(updatePwd, citrixResourceBase);
 
-        assertTrue(answer.getResult());
+        assertFalse(answer.getResult());
     }
 
     @Test
