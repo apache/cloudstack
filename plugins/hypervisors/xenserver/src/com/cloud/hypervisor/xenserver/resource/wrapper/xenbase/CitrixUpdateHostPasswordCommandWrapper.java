@@ -43,6 +43,7 @@ public final class CitrixUpdateHostPasswordCommandWrapper extends CommandWrapper
         final String newPassword = command.getNewPassword();
 
         final StringBuffer cmdLine = new StringBuffer();
+        cmdLine.append("sh /opt/cloud/bin/");
         cmdLine.append(VRScripts.UPDATE_HOST_PASSWD);
         cmdLine.append(' ');
         cmdLine.append(username);

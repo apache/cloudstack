@@ -523,7 +523,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     protected String getDefaultHypervisorScriptsDir() {
-        return "scripts/vm/hypervisor/kvm";
+        return "scripts/vm/hypervisor";
     }
 
     protected String getDefaultKvmScriptsDir() {

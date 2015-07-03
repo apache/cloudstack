@@ -36,12 +36,11 @@ public final class LibvirtUpdateHostPasswordCommandWrapper extends CommandWrappe
 
     @Override
     public Answer execute(final UpdateHostPasswordCommand command, final LibvirtComputingResource libvirtComputingResource) {
-        final String hostIp = command.getHostIp();
         final String username = command.getUsername();
         final String newPassword = command.getNewPassword();
 
         final Script script = new Script(libvirtComputingResource.getUpdateHostPasswdPath(), TIMEOUT, s_logger);
-        script.add(hostIp, username, newPassword);
+        script.add(username, newPassword);
         final String result = script.execute();
 
         if (result != null) {

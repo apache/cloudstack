@@ -2265,7 +2265,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             if (shouldUpdateHostPasswd) {
                 final boolean isUpdated = doUpdateHostPassword(host.getId());
                 if (!isUpdated) {
-                    throw new CloudRuntimeException("CloudStack failed to update the password of the Host with UUID/ID ==> " + host.getUuid() + "/" + host.getId() + ". Please make sure you are still able to connect to your hosts.");
+                    throw new CloudRuntimeException("CloudStack failed to update the password of the Host with UUID / ID ==> " + host.getUuid() + " / " + host.getId() + ". Please make sure you are still able to connect to your hosts.");
                 }
             }
         }
