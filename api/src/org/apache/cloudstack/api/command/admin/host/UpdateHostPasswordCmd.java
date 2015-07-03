@@ -45,7 +45,7 @@ public class UpdateHostPasswordCmd extends BaseCmd {
     private Long clusterId;
 
     @Parameter(name = ApiConstants.SHOULD_UPDATE_PASSWORD, type = CommandType.BOOLEAN, description = "if the password should also be updated on the hosts")
-    private Boolean shouldUpdateHost;
+    private Boolean updatePasswdOnHost;
 
     @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "the username for the host/cluster")
     private String username;
@@ -66,8 +66,8 @@ public class UpdateHostPasswordCmd extends BaseCmd {
         return clusterId;
     }
 
-    public Boolean getShouldUpdateHost() {
-        return shouldUpdateHost;
+    public Boolean getUpdatePasswdOnHost() {
+        return updatePasswdOnHost;
     }
 
     public String getPassword() {
