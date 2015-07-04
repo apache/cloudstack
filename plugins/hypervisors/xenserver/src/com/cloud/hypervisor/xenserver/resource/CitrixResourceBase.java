@@ -271,8 +271,17 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     public CitrixResourceBase() {
     }
 
-    public void addToPwdQueue(final String password) {
+    /**
+     * Replaces the old password with the new password used to connect to the host.
+     *
+     * @param password  - the new host password.
+     * @return the old password.
+     */
+    public String replaceOldPasswdInQueue(final String password) {
+        final String oldPasswd = _password.poll();
         _password.add(password);
+
+        return oldPasswd;
     }
 
     public String getPwdFromQueue() {

@@ -58,8 +58,8 @@ public final class CitrixUpdateHostPasswordCommandWrapper extends CommandWrapper
         } catch (final Exception e) {
             return new Answer(command, false, e.getMessage());
         }
-        // Add new password to the stack.
-        citrixResourceBase.addToPwdQueue(command.getNewPassword());
+        // Add new password to the queue.
+        citrixResourceBase.replaceOldPasswdInQueue(newPassword);
         return new Answer(command, result.first(), result.second());
     }
 }

@@ -2240,6 +2240,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         final UpdateHostPasswordCommand cmd = new UpdateHostPasswordCommand(username, password, hostIpAddress);
         final Answer answer = _agentMgr.easySend(hostId, cmd);
+
+        s_logger.info("Result returned from update host password ==> " + answer.getDetails());
         return answer.getResult();
     }
 
