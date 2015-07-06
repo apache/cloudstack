@@ -16,28 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.storage;
 
-import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
-import junit.framework.Assert;
-
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Parameter;
+import org.junit.Assert;
 import org.junit.Test;
 
-public class CreateSecondaryStagingStoreCmdTest {
+import org.apache.cloudstack.api.ApiCmdTestUtil;
 
-    static void set(BaseCmd cmd, String fieldName, Object value)
-            throws IllegalArgumentException, IllegalAccessException {
-        for (Field field : cmd.getClass().getDeclaredFields()) {
-            Parameter parameter = field.getAnnotation(Parameter.class);
-            if (parameter != null && fieldName.equals(parameter.name())) {
-                field.setAccessible(true);
-                field.set(cmd, value);
-            }
-        }
-    }
+public class CreateSecondaryStagingStoreCmdTest {
 
     @Test
     public void getDetails() throws IllegalArgumentException,
@@ -48,7 +35,7 @@ public class CreateSecondaryStagingStoreCmdTest {
         kv.put("key", "TEST-KEY");
         kv.put("value", "TEST-VALUE");
         details.put("does not matter", kv);
-        set(cmd, "details", details);
+        ApiCmdTestUtil.set(cmd, "details", details);
         Map<String, String> detailsMap = cmd.getDetails();
         Assert.assertNotNull(detailsMap);
         Assert.assertEquals(1, detailsMap.size());
@@ -60,7 +47,7 @@ public class CreateSecondaryStagingStoreCmdTest {
     public void getDetailsEmpty() throws IllegalArgumentException,
             IllegalAccessException {
         CreateSecondaryStagingStoreCmd cmd = new CreateSecondaryStagingStoreCmd();
-        set(cmd, "details", new HashMap<String, Map<String, String>>());
+        ApiCmdTestUtil.set(cmd, "details", new HashMap<String, Map<String, String>>());
         Assert.assertNull(cmd.getDetails());
     }
 
@@ -68,7 +55,7 @@ public class CreateSecondaryStagingStoreCmdTest {
     public void getDetailsNull() throws IllegalArgumentException,
             IllegalAccessException {
         CreateSecondaryStagingStoreCmd cmd = new CreateSecondaryStagingStoreCmd();
-        set(cmd, "details", null);
+        ApiCmdTestUtil.set(cmd, "details", null);
         Assert.assertNull(cmd.getDetails());
     }
 
