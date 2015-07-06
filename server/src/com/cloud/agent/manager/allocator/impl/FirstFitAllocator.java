@@ -197,6 +197,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         VMTemplateVO template = (VMTemplateVO)vmProfile.getTemplate();
         Account account = vmProfile.getOwner();
         List<Host> suitableHosts = new ArrayList<Host>();
+        List<Host> hostsCopy = new ArrayList<Host>(hosts);
 
         if (type == Host.Type.Storage) {
             // FirstFitAllocator should be used for user VMs only since it won't care whether the host is capable of
@@ -211,23 +212,38 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
 
         String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
         if (haVmTag != null) {
-            hosts.retainAll(_hostDao.listByHostTag(type, clusterId, podId, dcId, haVmTag));
+            hostsCopy.retainAll(_hostDao.listByHostTag(type, clusterId, podId, dcId, haVmTag));
         } else {
             if (hostTagOnOffering == null && hostTagOnTemplate == null) {
-                hosts.retainAll(_resourceMgr.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId));
+                hostsCopy.retainAll(_resourceMgr.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId));
             } else {
                 if (hasSvcOfferingTag) {
-                    hosts.retainAll(_hostDao.listByHostTag(type, clusterId, podId, dcId, hostTagOnOffering));
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Looking for hosts having tag specified on SvcOffering:" + hostTagOnOffering);
+                    }
+                    hostsCopy.retainAll(_hostDao.listByHostTag(type, clusterId, podId, dcId, hostTagOnOffering));
+
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Hosts with tag '" + hostTagOnOffering + "' are:" + hostsCopy);
+                    }
                 }
 
                 if (hasTemplateTag) {
-                    hosts.retainAll(_hostDao.listByHostTag(type, clusterId, podId, dcId, hostTagOnTemplate));
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Looking for hosts having tag specified on Template:" + hostTagOnTemplate);
+                    }
+
+                    hostsCopy.retainAll(_hostDao.listByHostTag(type, clusterId, podId, dcId, hostTagOnTemplate));
+
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Hosts with tag '" + hostTagOnTemplate + "' are:" + hostsCopy);
+                    }
                 }
             }
         }
 
-        if (!hosts.isEmpty()) {
-            suitableHosts = allocateTo(plan, offering, template, avoid, hosts, returnUpTo, considerReservedCapacity, account);
+        if (!hostsCopy.isEmpty()) {
+            suitableHosts = allocateTo(plan, offering, template, avoid, hostsCopy, returnUpTo, considerReservedCapacity, account);
         }
 
         return suitableHosts;
