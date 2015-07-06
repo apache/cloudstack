@@ -64,3 +64,4 @@ ovs-pvlan-cleanup.sh=../../../network,0755,/opt/cloud/bin
 ovs-get-dhcp-iface.sh=..,0755,/opt/cloud/bin
 ovs-get-bridge.sh=..,0755,/opt/cloud/bin
 cloudlog=..,0644,/etc/logrotate.d
+update_host_passwd.sh=../..,0755,/opt/cloud/bin

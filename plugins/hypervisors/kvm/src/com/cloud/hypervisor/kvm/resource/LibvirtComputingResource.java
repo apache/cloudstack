@@ -257,6 +257,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private String _pingTestPath;
 
+    private String _updateHostPasswdPath;
+
     private int _dom0MinMem;
 
     protected boolean _disconnected = true;
@@ -370,6 +372,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public String getPingTestPath() {
         return _pingTestPath;
+    }
+
+    public String getUpdateHostPasswdPath() {
+        return _updateHostPasswdPath;
     }
 
     public int getTimeout() {
@@ -516,6 +522,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return "scripts/storage/qcow2";
     }
 
+    protected String getDefaultHypervisorScriptsDir() {
+        return "scripts/vm/hypervisor";
+    }
+
     protected String getDefaultKvmScriptsDir() {
         return "scripts/vm/hypervisor/kvm";
     }
@@ -545,6 +555,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String domrScriptsDir = (String)params.get("domr.scripts.dir");
         if (domrScriptsDir == null) {
             domrScriptsDir = getDefaultDomrScriptsDir();
+        }
+
+        String hypervisorScriptsDir = (String)params.get("hypervisor.scripts.dir");
+        if (hypervisorScriptsDir == null) {
+            hypervisorScriptsDir = getDefaultHypervisorScriptsDir();
         }
 
         String kvmScriptsDir = (String)params.get("kvm.scripts.dir");
@@ -594,6 +609,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         _clusterId = (String)params.get("cluster");
+
+        _updateHostPasswdPath = Script.findScript(hypervisorScriptsDir, "update_host_passwd.sh");
+        if (_updateHostPasswdPath == null) {
+            throw new ConfigurationException("Unable to find update_host_passwd.sh");
+        }
 
         _modifyVlanPath = Script.findScript(networkScriptsDir, "modifyvlan.sh");
         if (_modifyVlanPath == null) {

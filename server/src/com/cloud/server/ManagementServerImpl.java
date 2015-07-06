@@ -3797,6 +3797,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final HostVO host = _hostDao.findById(cmd.getHostId());
 
+        if (host.getHypervisorType() == HypervisorType.XenServer) {
+            throw new InvalidParameterValueException("Single host update is not supported by XenServer hypervisors. Please try again informing the Cluster ID.");
+        }
+
         if (!supportedHypervisors.contains(host.getHypervisorType())) {
             throw new InvalidParameterValueException("This operation is not supported for this hypervisor type");
         }

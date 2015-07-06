@@ -31,14 +31,15 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.QCOW2Processor;
 import com.cloud.storage.template.TemplateLocation;
+import com.cloud.utils.script.Script;
 
 /**
  * This class is used to wrap the calls to several static methods. By doing so, we make easier to mock this class
  * and the methods wrapped here.
- *
- * Please do not instantiate this class directly, but inject it using the {@code @Inject} annotation.
  */
 public class LibvirtUtilitiesHelper {
+
+    public static final int TIMEOUT = 10000;
 
     public Connect getConnectionByVmName(final String vmName) throws LibvirtException {
         return LibvirtConnection.getConnectionByVmName(vmName);
@@ -89,5 +90,10 @@ public class LibvirtUtilitiesHelper {
 
     public Connect retrieveQemuConnection(final String qemuURI) throws LibvirtException {
         return new Connect(qemuURI);
+    }
+
+    public Script buildScript(final String scriptPath) {
+        final Script script = new Script(scriptPath, TIMEOUT);
+        return script;
     }
 }

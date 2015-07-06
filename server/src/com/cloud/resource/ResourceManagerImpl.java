@@ -2233,13 +2233,21 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         final String username = nv.getValue();
         nv = _hostDetailsDao.findDetail(hostId, ApiConstants.PASSWORD);
         final String password = nv.getValue();
-        final UpdateHostPasswordCommand cmd = new UpdateHostPasswordCommand(username, password);
+
+
+        final HostVO host = _hostDao.findById(hostId);
+        final String hostIpAddress = host.getPrivateIpAddress();
+
+        final UpdateHostPasswordCommand cmd = new UpdateHostPasswordCommand(username, password, hostIpAddress);
         final Answer answer = _agentMgr.easySend(hostId, cmd);
+
+        s_logger.info("Result returned from update host password ==> " + answer.getDetails());
         return answer.getResult();
     }
 
     @Override
     public boolean updateClusterPassword(final UpdateHostPasswordCmd command) {
+        final boolean shouldUpdateHostPasswd = command.getUpdatePasswdOnHost();
         // get agents for the cluster
         final List<HostVO> hosts = listAllHostsInCluster(command.getClusterId());
         for (final HostVO host : hosts) {
@@ -2255,9 +2263,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             } catch (final AgentUnavailableException e) {
                 s_logger.error("Agent is not availbale!", e);
             }
-            final boolean isUpdated = doUpdateHostPassword(host.getId());
-            if (!isUpdated) {
-                throw new CloudRuntimeException("CloudStack failed to update the password of the Host with UUID/ID ==> " + host.getUuid() + "/" + host.getId() + ". Please make sure you are still able to connect to your hosts.");
+
+            if (shouldUpdateHostPasswd) {
+                final boolean isUpdated = doUpdateHostPassword(host.getId());
+                if (!isUpdated) {
+                    throw new CloudRuntimeException("CloudStack failed to update the password of the Host with UUID / ID ==> " + host.getUuid() + " / " + host.getId() + ". Please make sure you are still able to connect to your hosts.");
+                }
             }
         }
 
@@ -2265,10 +2276,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public boolean updateHostPassword(final UpdateHostPasswordCmd cmd) {
+    public boolean updateHostPassword(final UpdateHostPasswordCmd command) {
         // update agent attache password
         try {
-            final Boolean result = propagateResourceEvent(cmd.getHostId(), ResourceState.Event.UpdatePassword);
+            final Boolean result = propagateResourceEvent(command.getHostId(), ResourceState.Event.UpdatePassword);
             if (result != null) {
                 return result;
             }
@@ -2276,7 +2287,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             s_logger.error("Agent is not availbale!", e);
         }
 
-        return doUpdateHostPassword(cmd.getHostId());
+        final boolean shouldUpdateHostPasswd = command.getUpdatePasswdOnHost();
+        // If shouldUpdateHostPasswd has been set to false, the method doUpdateHostPassword() won't be called.
+        return shouldUpdateHostPasswd && doUpdateHostPassword(command.getHostId());
     }
 
     public String getPeerName(final long agentHostId) {
