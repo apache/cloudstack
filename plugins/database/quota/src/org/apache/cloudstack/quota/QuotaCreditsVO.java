@@ -51,6 +51,9 @@ public class QuotaCreditsVO implements InternalIdentity {
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date updatedOn = null;
 
+    public QuotaCreditsVO() {
+    }
+
     public QuotaCreditsVO(long accountId, long domainId, int credit,
             long updatedBy) {
         super();

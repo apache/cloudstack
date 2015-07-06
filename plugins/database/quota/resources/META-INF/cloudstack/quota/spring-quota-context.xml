@@ -27,5 +27,6 @@
 
     <bean id="QuotaManager" class="org.apache.cloudstack.quota.QuotaManagerImpl" />
     <bean id="QuotaConfigurationDao" class="org.apache.cloudstack.quota.dao.QuotaConfigurationDaoImpl" />
+    <bean id="QuotaCreditsDao" class="org.apache.cloudstack.quota.dao.QuotaCreditsDaoImpl"/>
 
 </beans>
