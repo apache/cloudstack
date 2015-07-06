@@ -22,6 +22,7 @@ package com.cloud.utils.net;
 public class Ip4Address {
     String _addr;
     String _mac;
+    static final String s_empty_mac = "00:00:00:00:00:00";
 
     public Ip4Address(String addr, String mac) {
         _addr = addr;
@@ -34,11 +35,11 @@ public class Ip4Address {
     }
 
     public Ip4Address(String addr) {
-        this(addr, null);
+        this(addr, s_empty_mac);
     }
 
     public Ip4Address(long addr) {
-        this(NetUtils.long2Ip(addr), null);
+        this(NetUtils.long2Ip(addr), s_empty_mac);
     }
 
     public String ip4() {
@@ -58,7 +59,7 @@ public class Ip4Address {
 
         if (that instanceof Ip4Address) {
             Ip4Address ip4 = (Ip4Address)that;
-            return this._addr.equals(ip4._addr) && (this._mac == ip4._mac || this._mac.equals(ip4._mac));
+            return _addr.equals(ip4._addr) && (_mac == ip4._mac || _mac.equals(ip4._mac));
         } else {
             return false;
         }
@@ -68,12 +69,12 @@ public class Ip4Address {
         if (other instanceof String) { // Assume that is an ip4 address in String form
             return _addr.equals(other);
         } else {
-            return this.equals(other);
+            return equals(other);
         }
     }
 
     @Override
     public int hashCode(){
-        return (int)(_mac.hashCode()*_addr.hashCode());
+        return _mac.hashCode()*_addr.hashCode();
     }
 }

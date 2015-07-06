@@ -162,6 +162,11 @@
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava-testlib</artifactId>
+      <version>${cs.guava-testlib.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
