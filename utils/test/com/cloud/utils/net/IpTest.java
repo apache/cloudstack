@@ -21,7 +21,10 @@ package com.cloud.utils.net;
 
 import static org.junit.Assert.assertEquals;
 
+import org.junit.Assert;
 import org.junit.Test;
+
+import com.google.common.testing.EqualsTester;
 
 public class IpTest {
 
@@ -41,6 +44,20 @@ public class IpTest {
     public void testStart() {
         Ip min = new Ip(0);
         assertEquals("Minimal address not created", "0.0.0.0", min.addr());
+    }
+
+    @Test
+    public void testEquals() {
+        new EqualsTester()
+                .addEqualityGroup(new Ip("0.0.0.1"), new Ip(1L))
+                .addEqualityGroup(new Ip("0.0.0.0"), new Ip(0L))
+                .testEquals();
+    }
+
+    @Test
+    public void testIsSameAddressAs() {
+        Assert.assertTrue("1 and one should be considdered the same address", new Ip(1L).isSameAddressAs("0.0.0.1"));
+        Assert.assertTrue("zero and 0L should be considdered the same address", new Ip("0.0.0.0").isSameAddressAs(0L));
     }
 
 }
