@@ -19,8 +19,6 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
@@ -31,15 +29,14 @@ import com.cloud.utils.script.Script;
 @ResourceWrapper(handles =  UpdateHostPasswordCommand.class)
 public final class LibvirtUpdateHostPasswordCommandWrapper extends CommandWrapper<UpdateHostPasswordCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtUpdateHostPasswordCommandWrapper.class);
-    private static final int TIMEOUT = 10000;
-
     @Override
     public Answer execute(final UpdateHostPasswordCommand command, final LibvirtComputingResource libvirtComputingResource) {
+        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
+
         final String username = command.getUsername();
         final String newPassword = command.getNewPassword();
 
-        final Script script = new Script(libvirtComputingResource.getUpdateHostPasswdPath(), TIMEOUT, s_logger);
+        final Script script = libvirtUtilitiesHelper.buildScript(libvirtComputingResource.getUpdateHostPasswdPath());
         script.add(username, newPassword);
         final String result = script.execute();
 

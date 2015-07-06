@@ -130,7 +130,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.resource.StorageSubsystemCommandHandler;
-import com.cloud.utils.ExecutionResult;
+import com.cloud.utils.Pair;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.xensource.xenapi.Connection;
@@ -1320,23 +1320,140 @@ public class CitrixRequestWrapperTest {
         assertFalse(answer.getResult());
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testUpdateHostPasswordCommand() {
-        final ExecutionResult executionResult = Mockito.mock(ExecutionResult.class);
+        final XenServerUtilitiesHelper xenServerUtilitiesHelper = Mockito.mock(XenServerUtilitiesHelper.class);
+        final Pair<Boolean, String> result = Mockito.mock(Pair.class);
 
         final UpdateHostPasswordCommand updatePwd = new UpdateHostPasswordCommand("test", "123", "127.0.0.1");
 
-        final StringBuffer buff = new StringBuffer();
-        buff.append(updatePwd.getUsername());
-        buff.append(' ');
-        buff.append(updatePwd.getNewPassword());
+        when(citrixResourceBase.getPwdFromQueue()).thenReturn("password");
 
-        when(citrixResourceBase.executeInVR(updatePwd.getHostIp(), VRScripts.UPDATE_HOST_PASSWD, buff.toString())).thenReturn(executionResult);
+        final String hostIp = updatePwd.getHostIp();
+        final String username = updatePwd.getUsername();
+        final String hostPasswd = citrixResourceBase.getPwdFromQueue();
+        final String newPassword = updatePwd.getNewPassword();
+
+        final StringBuilder cmdLine = new StringBuilder();
+        cmdLine.append(XenServerUtilitiesHelper.SCRIPT_CMD_PATH).append(VRScripts.UPDATE_HOST_PASSWD).append(' ').append(username).append(' ').append(newPassword);
+
+        when(citrixResourceBase.getXenServerUtilitiesHelper()).thenReturn(xenServerUtilitiesHelper);
+        when(xenServerUtilitiesHelper.buildCommandLine(XenServerUtilitiesHelper.SCRIPT_CMD_PATH, VRScripts.UPDATE_HOST_PASSWD, username, newPassword)).thenReturn(cmdLine.toString());
+
+        try {
+            when(xenServerUtilitiesHelper.executeSshWrapper(hostIp, 22, username, null, hostPasswd, cmdLine.toString())).thenReturn(result);
+            when(result.first()).thenReturn(true);
+            when(result.second()).thenReturn("");
+        } catch (final Exception e) {
+            fail(e.getMessage());
+        }
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);
 
         final Answer answer = wrapper.execute(updatePwd, citrixResourceBase);
+
+        verify(citrixResourceBase, times(2)).getPwdFromQueue();
+        verify(citrixResourceBase, times(1)).getXenServerUtilitiesHelper();
+        verify(xenServerUtilitiesHelper, times(1)).buildCommandLine(XenServerUtilitiesHelper.SCRIPT_CMD_PATH, VRScripts.UPDATE_HOST_PASSWD, username, newPassword);
+        try {
+            verify(xenServerUtilitiesHelper, times(1)).executeSshWrapper(hostIp, 22, username, null, hostPasswd, cmdLine.toString());
+        } catch (final Exception e) {
+            fail(e.getMessage());
+        }
+        verify(result, times(1)).first();
+        verify(result, times(1)).second();
+
+        assertTrue(answer.getResult());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testUpdateHostPasswordCommandFail() {
+        final XenServerUtilitiesHelper xenServerUtilitiesHelper = Mockito.mock(XenServerUtilitiesHelper.class);
+        final Pair<Boolean, String> result = Mockito.mock(Pair.class);
+
+        final UpdateHostPasswordCommand updatePwd = new UpdateHostPasswordCommand("test", "123", "127.0.0.1");
+
+        when(citrixResourceBase.getPwdFromQueue()).thenReturn("password");
+
+        final String hostIp = updatePwd.getHostIp();
+        final String username = updatePwd.getUsername();
+        final String hostPasswd = citrixResourceBase.getPwdFromQueue();
+        final String newPassword = updatePwd.getNewPassword();
+
+        final StringBuilder cmdLine = new StringBuilder();
+        cmdLine.append(XenServerUtilitiesHelper.SCRIPT_CMD_PATH).append(VRScripts.UPDATE_HOST_PASSWD).append(' ').append(username).append(' ').append(newPassword);
+
+        when(citrixResourceBase.getXenServerUtilitiesHelper()).thenReturn(xenServerUtilitiesHelper);
+        when(xenServerUtilitiesHelper.buildCommandLine(XenServerUtilitiesHelper.SCRIPT_CMD_PATH, VRScripts.UPDATE_HOST_PASSWD, username, newPassword)).thenReturn(cmdLine.toString());
+
+        try {
+            when(xenServerUtilitiesHelper.executeSshWrapper(hostIp, 22, username, null, hostPasswd, cmdLine.toString())).thenReturn(result);
+            when(result.first()).thenReturn(false);
+            when(result.second()).thenReturn("");
+        } catch (final Exception e) {
+            fail(e.getMessage());
+        }
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(updatePwd, citrixResourceBase);
+
+        verify(citrixResourceBase, times(2)).getPwdFromQueue();
+        verify(citrixResourceBase, times(1)).getXenServerUtilitiesHelper();
+        verify(xenServerUtilitiesHelper, times(1)).buildCommandLine(XenServerUtilitiesHelper.SCRIPT_CMD_PATH, VRScripts.UPDATE_HOST_PASSWD, username, newPassword);
+        try {
+            verify(xenServerUtilitiesHelper, times(1)).executeSshWrapper(hostIp, 22, username, null, hostPasswd, cmdLine.toString());
+        } catch (final Exception e) {
+            fail(e.getMessage());
+        }
+        verify(result, times(1)).first();
+        verify(result, times(1)).second();
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testUpdateHostPasswordCommandException() {
+        final XenServerUtilitiesHelper xenServerUtilitiesHelper = Mockito.mock(XenServerUtilitiesHelper.class);
+
+        final UpdateHostPasswordCommand updatePwd = new UpdateHostPasswordCommand("test", "123", "127.0.0.1");
+
+        when(citrixResourceBase.getPwdFromQueue()).thenReturn("password");
+
+        final String hostIp = updatePwd.getHostIp();
+        final String username = updatePwd.getUsername();
+        final String hostPasswd = citrixResourceBase.getPwdFromQueue();
+        final String newPassword = updatePwd.getNewPassword();
+
+        final StringBuilder cmdLine = new StringBuilder();
+        cmdLine.append(XenServerUtilitiesHelper.SCRIPT_CMD_PATH).append(VRScripts.UPDATE_HOST_PASSWD).append(' ').append(username).append(' ').append(newPassword);
+
+        when(citrixResourceBase.getXenServerUtilitiesHelper()).thenReturn(xenServerUtilitiesHelper);
+        when(xenServerUtilitiesHelper.buildCommandLine(XenServerUtilitiesHelper.SCRIPT_CMD_PATH, VRScripts.UPDATE_HOST_PASSWD, username, newPassword)).thenReturn(cmdLine.toString());
+
+        try {
+            when(xenServerUtilitiesHelper.executeSshWrapper(hostIp, 22, username, null, hostPasswd, cmdLine.toString())).thenThrow(new Exception("testing failure"));
+        } catch (final Exception e) {
+            fail(e.getMessage());
+        }
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(updatePwd, citrixResourceBase);
+
+        verify(citrixResourceBase, times(2)).getPwdFromQueue();
+        verify(citrixResourceBase, times(1)).getXenServerUtilitiesHelper();
+        verify(xenServerUtilitiesHelper, times(1)).buildCommandLine(XenServerUtilitiesHelper.SCRIPT_CMD_PATH, VRScripts.UPDATE_HOST_PASSWD, username, newPassword);
+        try {
+            verify(xenServerUtilitiesHelper, times(1)).executeSshWrapper(hostIp, 22, username, null, hostPasswd, cmdLine.toString());
+        } catch (final Exception e) {
+            fail(e.getMessage());
+        }
 
         assertFalse(answer.getResult());
     }

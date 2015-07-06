@@ -19,6 +19,8 @@
 
 package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
+import static com.cloud.hypervisor.xenserver.resource.wrapper.xenbase.XenServerUtilitiesHelper.SCRIPT_CMD_PATH;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -28,13 +30,11 @@ import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.Pair;
-import com.cloud.utils.ssh.SshHelper;
 
 @ResourceWrapper(handles =  UpdateHostPasswordCommand.class)
 public final class CitrixUpdateHostPasswordCommandWrapper extends CommandWrapper<UpdateHostPasswordCommand, Answer, CitrixResourceBase> {
 
     private static final Logger s_logger = Logger.getLogger(CitrixUpdateHostPasswordCommandWrapper.class);
-    private static final int TIMEOUT = 10000;
 
     @Override
     public Answer execute(final UpdateHostPasswordCommand command, final CitrixResourceBase citrixResourceBase) {
@@ -42,19 +42,14 @@ public final class CitrixUpdateHostPasswordCommandWrapper extends CommandWrapper
         final String username = command.getUsername();
         final String newPassword = command.getNewPassword();
 
-        final StringBuffer cmdLine = new StringBuffer();
-        cmdLine.append("sh /opt/cloud/bin/");
-        cmdLine.append(VRScripts.UPDATE_HOST_PASSWD);
-        cmdLine.append(' ');
-        cmdLine.append(username);
-        cmdLine.append(' ');
-        cmdLine.append(newPassword);
+        final XenServerUtilitiesHelper xenServerUtilitiesHelper = citrixResourceBase.getXenServerUtilitiesHelper();
+        final String cmdLine = xenServerUtilitiesHelper.buildCommandLine(SCRIPT_CMD_PATH, VRScripts.UPDATE_HOST_PASSWD, username, newPassword);
 
         Pair<Boolean, String> result;
-
         try {
             s_logger.debug("Executing command in Host: " + cmdLine);
-            result = SshHelper.sshExecute(hostIp, 22, username, null, citrixResourceBase.getPwdFromQueue(), cmdLine.toString(), 60000, 60000, TIMEOUT);
+            final String hostPassword = citrixResourceBase.getPwdFromQueue();
+            result = xenServerUtilitiesHelper.executeSshWrapper(hostIp, 22, username, null, hostPassword, cmdLine.toString());
         } catch (final Exception e) {
             return new Answer(command, false, e.getMessage());
         }

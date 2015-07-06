@@ -103,6 +103,7 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.xenserver.resource.wrapper.xenbase.CitrixRequestWrapper;
+import com.cloud.hypervisor.xenserver.resource.wrapper.xenbase.XenServerUtilitiesHelper;
 import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
@@ -259,6 +260,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected  String _configDriveSRName = "ConfigDriveISOs";
     protected  String _attachIsoDeviceNum = "3";
 
+    protected XenServerUtilitiesHelper xenServerUtilitiesHelper = new XenServerUtilitiesHelper();
+
     protected int _wait;
     // Hypervisor specific params with generic value, may need to be overridden
     // for specific versions
@@ -286,6 +289,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     public String getPwdFromQueue() {
         return _password.peek();
+    }
+
+    public XenServerUtilitiesHelper getXenServerUtilitiesHelper() {
+        return xenServerUtilitiesHelper;
     }
 
     protected StorageSubsystemCommandHandler buildStorageHandler() {
@@ -5265,7 +5272,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
 
     }
-
 
     public void deleteLocalFolder(final String directory) throws Exception {
         if (directory == null || directory.isEmpty()) {
