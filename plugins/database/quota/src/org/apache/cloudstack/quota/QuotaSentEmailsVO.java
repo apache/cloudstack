@@ -16,7 +16,6 @@
 //under the License.
 package org.apache.cloudstack.quota;
 
-import java.math.BigDecimal;
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -31,85 +30,136 @@ import org.apache.cloudstack.api.InternalIdentity;
 @Entity
 @Table(name = "quota_sent_emails")
 public class QuotaSentEmailsVO implements InternalIdentity {
-/*
- *
-CREATE TABLE `cloud_usage.quota_sent_emails` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `from_address` varchar(1024) NOT NULL,
-  `to_address` varchar(1024) NOT NULL,
-  `cc_address` varchar(1024) DEFAULT NULL,
-  `bcc_address` varchar(1024) DEFAULT NULL,
-  `send_date` datetime NOT NULL,
-  `subject` varchar(1024) NOT NULL,
-  `mail_text` longtext NOT NULL,
-  `version` int(11) DEFAULT '0',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
- */
+    public QuotaSentEmailsVO(Long id, String fromAddress, String toAddress,
+            String ccAddress, String bccAddress, Date sendDate, String subject,
+            String mailText, Long version, Long updatedBy) {
+        super();
+        this.id = id;
+        this.fromAddress = fromAddress;
+        this.toAddress = toAddress;
+        this.ccAddress = ccAddress;
+        this.bccAddress = bccAddress;
+        this.sendDate = sendDate;
+        this.subject = subject;
+        this.mailText = mailText;
+        this.version = version;
+        this.updatedBy = updatedBy;
+    }
 
-  private static final long serialVersionUID = -7117933845287653210L;
 
-  @Id
-  @Column(name = "id")
-  private Long id;
+    private static final long serialVersionUID = -7117933845287653210L;
 
-  @Column(name = "from_address")
-  private String fromAddress = null;
+    @Id
+    @Column(name = "id")
+    private Long id;
 
-  @Column(name = "to_address")
-  private String toAddress = null;
+    @Column(name = "from_address")
+    private String fromAddress = null;
 
-  @Column(name = "cc_address")
-  private String ccAddress = null;
+    @Column(name = "to_address")
+    private String toAddress = null;
 
-  @Column(name = "bcc_address")
-  private String bccAddress = null;
+    @Column(name = "cc_address")
+    private String ccAddress = null;
 
-  @Column(name = "credit")
-  private BigDecimal credit;
+    @Column(name = "bcc_address")
+    private String bccAddress = null;
 
-  @Column(name = "updated_on")
-  @Temporal(value = TemporalType.TIMESTAMP)
-  private Date updatedOn = null;
+    @Column(name = "send_date")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date sendDate = null;
 
-  public QuotaSentEmailsVO() {
-      super();
-  }
+    @Column(name = "subject")
+    private String subject = null;
 
-  public BigDecimal getCredit() {
-      return credit;
-  }
+    @Column(name = "mail_text")
+    private String mailText = null;
 
-  public void setCredit(BigDecimal credit) {
-      this.credit = credit;
-  }
+    @Column(name = "version")
+    private Long version;
 
-  public Date getUpdatedOn() {
-      return updatedOn;
-  }
+    public QuotaSentEmailsVO() {
+        super();
+    }
 
-  public void setUpdatedOn(Date updatedOn) {
-      this.updatedOn = updatedOn;
-  }
+    @Column(name = "updated_by")
+    private Long updatedBy = null;
 
-  public Long getUpdatedBy() {
-      return updatedBy;
-  }
+    @Override
+    public long getId() {
+        // TODO Auto-generated method stub
+        return this.id;
+    }
 
-  public void setUpdatedBy(Long updatedBy) {
-      this.updatedBy = updatedBy;
-  }
+    public String getFromAddress() {
+        return fromAddress;
+    }
 
-  public void setId(Long id) {
-      this.id = id;
-  }
+    public void setFromAddress(String fromAddress) {
+        this.fromAddress = fromAddress;
+    }
 
-  @Column(name = "updated_by")
-  private Long updatedBy = null;
+    public String getToAddress() {
+        return toAddress;
+    }
 
-  @Override
-  public long getId() {
-      // TODO Auto-generated method stub
-      return this.id;
-  }
+    public void setToAddress(String toAddress) {
+        this.toAddress = toAddress;
+    }
+
+    public String getCcAddress() {
+        return ccAddress;
+    }
+
+    public void setCcAddress(String ccAddress) {
+        this.ccAddress = ccAddress;
+    }
+
+    public String getBccAddress() {
+        return bccAddress;
+    }
+
+    public void setBccAddress(String bccAddress) {
+        this.bccAddress = bccAddress;
+    }
+
+    public Date getSendDate() {
+        return sendDate;
+    }
+
+    public void setSendDate(Date sendDate) {
+        this.sendDate = sendDate;
+    }
+
+    public String getSubject() {
+        return subject;
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
+
+    public String getMailText() {
+        return mailText;
+    }
+
+    public void setMailText(String mailText) {
+        this.mailText = mailText;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
+    }
+
+    public Long getUpdatedBy() {
+        return updatedBy;
+    }
+
+    public void setUpdatedBy(Long updatedBy) {
+        this.updatedBy = updatedBy;
+    }
 }

@@ -20,14 +20,8 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.cloudstack.api.response.QuotaCreditsResponse;
-import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.quota.QuotaManager;
 import org.apache.cloudstack.api.response.QuotaEmailTemplateResponse;
 
@@ -42,45 +36,15 @@ private static final String s_name = "quotaemailtemplateresponse";
 @Inject
 private QuotaManager _quotaManager;
 
-@Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Account Id for which quota credits need to be added")
-private String accountName;
+@Parameter(name = "templatename", type = CommandType.STRING, description = "The name of email template")
+private String templateName;
 
-@Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Domain for which quota credits need to be added")
-private Long domainId;
+@Parameter(name = "templatetext", type = CommandType.STRING, description = "The text of the email")
+private Long templateText;
 
+@Parameter(name = "locale", type = CommandType.STRING, description = "The locale of the email text")
+private Integer locale;
 
-@Parameter(name = ApiConstants.VALUE, type = CommandType.INTEGER, entityType = DomainResponse.class, description = "Value of the credits to be added+, subtracted-")
-private Integer value;
-
-
-public String getAccountName() {
-  return accountName;
-}
-
-
-public void setAccountName(String accountName) {
-  this.accountName = accountName;
-}
-
-
-public Long getDomainId() {
-  return domainId;
-}
-
-
-public void setDomainId(Long domainId) {
-  this.domainId = domainId;
-}
-
-
-public Integer getValue() {
-  return value;
-}
-
-
-public void setValue(Integer value) {
-  this.value = value;
-}
 
 
 public QuotaEmailTemplateAddCmd() {
@@ -102,14 +66,40 @@ public String getCommandName() {
 
 @Override
 public void execute() {
-  Long accountId = _accountService.finalyzeAccountId(accountName, domainId, null, true);
-  if (accountId==null){
-      throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "The account does not exists or has been removed/disabled");
-  }
 
-  final QuotaCreditsResponse credit_response = _quotaManager.addQuotaCredits(accountId, domainId, value, CallContext.current().getCallingAccount().getId());
+  final QuotaEmailTemplateResponse templResponse = null;
 
-  setResponseObject(credit_response);
+  setResponseObject(templResponse);
+}
+
+
+public String getTemplateName() {
+    return templateName;
+}
+
+
+public void setTemplateName(String templateName) {
+    this.templateName = templateName;
+}
+
+
+public Long getTemplateText() {
+    return templateText;
+}
+
+
+public void setTemplateText(Long templateText) {
+    this.templateText = templateText;
+}
+
+
+public Integer getLocale() {
+    return locale;
+}
+
+
+public void setLocale(Integer locale) {
+    this.locale = locale;
 }
 
 

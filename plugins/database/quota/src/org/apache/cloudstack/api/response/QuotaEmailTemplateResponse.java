@@ -40,27 +40,15 @@ public class QuotaEmailTemplateResponse extends BaseResponse {
     @Param(description = "the domain ID of the iam policy")
     private String domainId;
 
-    @SerializedName("credits")
-    @Param(description = "the credit deposited")
-    private String credits;
-
-    @SerializedName("balance")
-    @Param(description = "the balance credit in account")
-    private String balance;
-
-    @SerializedName("updated_by")
+    @SerializedName("sent_on")
     @Param(description = "the account name of the admin who updated the credits")
-    private String updatedBy;
-
-
-    @SerializedName("updated_on")
-    @Param(description = "the account name of the admin who updated the credits")
-    private Timestamp updatedOn;
+    private Timestamp SentOn;
 
 
      public QuotaEmailTemplateResponse() {
          super();
      }
+
 
     public String getId() {
         return id;
@@ -92,43 +80,13 @@ public class QuotaEmailTemplateResponse extends BaseResponse {
     }
 
 
-    public String getCredits() {
-        return credits;
+    public Timestamp getSentOn() {
+        return SentOn;
     }
 
 
-    public void setCredits(String credits) {
-        this.credits = credits;
-    }
-
-
-    public String getBalance() {
-        return balance;
-    }
-
-
-    public void setBalance(String balance) {
-        this.balance = balance;
-    }
-
-
-    public String getUpdatedBy() {
-        return updatedBy;
-    }
-
-
-    public void setUpdatedBy(String updatedBy) {
-        this.updatedBy = updatedBy;
-    }
-
-
-    public Timestamp getUpdatedOn() {
-        return updatedOn;
-    }
-
-
-    public void setUpdatedOn(Timestamp updatedOn) {
-        this.updatedOn = updatedOn;
+    public void setSentOn(Timestamp sentOn) {
+        SentOn = sentOn;
     }
 
 
