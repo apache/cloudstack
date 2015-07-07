@@ -29,10 +29,22 @@ import javax.persistence.TemporalType;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name = "quota_credits")
-public class QuotaCreditsVO implements InternalIdentity {
+@Table(name = "quota_balance")
+public class QuotaBalanceVO implements InternalIdentity {
 
-    private static final long serialVersionUID = -3576833845287653210L;
+    public QuotaBalanceVO(Long accountId, Long domainId,
+            BigDecimal creditBalance, Date updatedOn, Long previousUpdateId,
+            Date previousUpdateOn) {
+        super();
+        this.accountId = accountId;
+        this.domainId = domainId;
+        this.creditBalance = creditBalance;
+        this.updatedOn = updatedOn;
+        this.previousUpdateId = previousUpdateId;
+        this.previousUpdateOn = previousUpdateOn;
+    }
+
+    private static final long serialVersionUID = -7112846845287653210L;
 
     @Id
     @Column(name = "id")
@@ -44,23 +56,30 @@ public class QuotaCreditsVO implements InternalIdentity {
     @Column(name = "domain_id")
     private Long domainId = null;
 
-    @Column(name = "credit")
-    private BigDecimal credit;
+    @Column(name = "credit_balance")
+    private BigDecimal creditBalance;
 
     @Column(name = "updated_on")
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date updatedOn = null;
 
-    public QuotaCreditsVO() {
+    @Column(name = "previous_update_id")
+    private Long previousUpdateId;
+
+    @Column(name = "previous_update_on")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date previousUpdateOn = null;
+
+    public QuotaBalanceVO() {
     }
 
-    public QuotaCreditsVO(long accountId, long domainId, int credit,
-            long updatedBy) {
-        super();
-        this.accountId = accountId;
-        this.domainId = domainId;
-        this.credit = new BigDecimal(credit);
-        this.updatedBy = updatedBy;
+    @Override
+    public long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public Long getAccountId() {
@@ -79,12 +98,12 @@ public class QuotaCreditsVO implements InternalIdentity {
         this.domainId = domainId;
     }
 
-    public BigDecimal getCredit() {
-        return credit;
+    public BigDecimal getCreditBalance() {
+        return creditBalance;
     }
 
-    public void setCredit(BigDecimal credit) {
-        this.credit = credit;
+    public void setCreditBalance(BigDecimal creditBalance) {
+        this.creditBalance = creditBalance;
     }
 
     public Date getUpdatedOn() {
@@ -95,24 +114,20 @@ public class QuotaCreditsVO implements InternalIdentity {
         this.updatedOn = updatedOn;
     }
 
-    public Long getUpdatedBy() {
-        return updatedBy;
+    public Long getPreviousUpdateId() {
+        return previousUpdateId;
     }
 
-    public void setUpdatedBy(Long updatedBy) {
-        this.updatedBy = updatedBy;
+    public void setPreviousUpdateId(Long previousUpdateId) {
+        this.previousUpdateId = previousUpdateId;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public Date getPreviousUpdateOn() {
+        return previousUpdateOn;
     }
 
-    @Column(name = "updated_by")
-    private Long updatedBy = null;
-
-    @Override
-    public long getId() {
-        // TODO Auto-generated method stub
-        return this.id;
+    public void setPreviousUpdateOn(Date previousUpdateOn) {
+        this.previousUpdateOn = previousUpdateOn;
     }
+
 }

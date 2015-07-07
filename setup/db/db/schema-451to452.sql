@@ -114,10 +114,8 @@ CREATE TABLE `cloud_usage.quota_email_templates` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `template_name` varchar(64) DEFAULT NULL,
   `template_text` longtext,
-  `category` int(10) unsigned NOT NULL DEFAULT '0',
   `last_updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `locale` varchar(25) DEFAULT 'en_US',
-  `template_name_locale` varchar(74) DEFAULT NULL,
   `version` int(11) DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
