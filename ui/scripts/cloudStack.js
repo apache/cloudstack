@@ -31,9 +31,12 @@
                 sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "events", "regions", "affinityGroups"];
             }
 
-            if (cloudStack.plugins.length) {
-                sections.push('plugins');
-            }
+            $.each(cloudStack.plugins, function(idx, plugin) {
+                if (cloudStack.sections.hasOwnProperty(plugin) && !cloudStack.sections[plugin].showOnNavigation) {
+                    sections.push('plugins');
+                    return false;
+                }
+            });
 
             return sections;
         },
