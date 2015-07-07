@@ -61,7 +61,7 @@
                 );
             }
 
-            if (args.isPlugin) {
+            if (args.isPlugin && !args.showOnNavigation) {
                 $li.hide();
             }
 
@@ -88,7 +88,7 @@
             return $(this).hasClass(sectionID);
         });
         var data = args.sections[sectionID];
-        var isPlugin = data.isPlugin;
+        var isPlugin = data.isPlugin && !data.showOnNavigation;
 
         data.$browser = $browser;
 
