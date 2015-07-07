@@ -59,9 +59,7 @@ public class KafkaEventBus extends ManagerBase implements EventBus {
 
         final Properties props = new Properties();
 
-        try {
-            final FileInputStream is = new FileInputStream(PropertiesUtil.findConfigFile("kafka.producer.properties"));
-
+        try (final FileInputStream is = new FileInputStream(PropertiesUtil.findConfigFile("kafka.producer.properties"));) {
             props.load(is);
 
             _topic = (String)props.remove("topic");
@@ -76,9 +74,6 @@ public class KafkaEventBus extends ManagerBase implements EventBus {
             if (!props.containsKey("value.serializer")) {
                 props.put("value.serializer", DEFAULT_SERIALIZER);
             }
-
-
-            is.close();
         } catch (Exception e) {
             throw new ConfigurationException("Could not read kafka properties");
         }
