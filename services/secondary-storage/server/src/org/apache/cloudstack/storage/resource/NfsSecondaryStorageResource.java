@@ -495,64 +495,64 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             String destFileFullPath = destFile.getAbsolutePath() + File.separator + fileName;
             s_logger.debug("copy snapshot " + srcFile.getAbsolutePath() + " to template " + destFileFullPath);
             Script.runSimpleBashScript("cp " + srcFile.getAbsolutePath() + " " + destFileFullPath);
+            String metaFileName = destFile.getAbsolutePath() + File.separator + "template.properties";
+            File metaFile = new File(metaFileName);
             try {
-                // generate template.properties file
-                String metaFileName = destFile.getAbsolutePath() + File.separator + "template.properties";
                 _storage.create(destFile.getAbsolutePath(), "template.properties");
-                File metaFile = new File(metaFileName);
-                FileWriter writer = new FileWriter(metaFile);
-                BufferedWriter bufferWriter = new BufferedWriter(writer);
-                // KVM didn't change template unique name, just used the template name passed from orchestration layer, so no need
-                // to send template name back.
-                bufferWriter.write("uniquename=" + destData.getName());
-                bufferWriter.write("\n");
-                bufferWriter.write("filename=" + fileName);
-                bufferWriter.write("\n");
-                long size = _storage.getSize(destFileFullPath);
-                bufferWriter.write("size=" + size);
-                bufferWriter.close();
-                writer.close();
+                try ( // generate template.properties file
+                     FileWriter writer = new FileWriter(metaFile);
+                     BufferedWriter bufferWriter = new BufferedWriter(writer);
+                    ) {
+                    // KVM didn't change template unique name, just used the template name passed from orchestration layer, so no need
+                    // to send template name back.
+                    bufferWriter.write("uniquename=" + destData.getName());
+                    bufferWriter.write("\n");
+                    bufferWriter.write("filename=" + fileName);
+                    bufferWriter.write("\n");
+                    long size = _storage.getSize(destFileFullPath);
+                    bufferWriter.write("size=" + size);
 
-                /**
-                 * Snapshots might be in either QCOW2 or RAW image format
-                 *
-                 * For example RBD snapshots are in RAW format
-                 */
-                Processor processor = null;
-                if (srcFormat == ImageFormat.QCOW2) {
-                    processor = new QCOW2Processor();
-                } else if (srcFormat == ImageFormat.RAW) {
-                    processor = new RawImageProcessor();
-                } else {
-                    throw new ConfigurationException("Unknown image format " + srcFormat.toString());
+                    /**
+                     * Snapshots might be in either QCOW2 or RAW image format
+                     *
+                     * For example RBD snapshots are in RAW format
+                     */
+                    Processor processor = null;
+                    if (srcFormat == ImageFormat.QCOW2) {
+                        processor = new QCOW2Processor();
+                    } else if (srcFormat == ImageFormat.RAW) {
+                        processor = new RawImageProcessor();
+                    } else {
+                        throw new ConfigurationException("Unknown image format " + srcFormat.toString());
+                    }
+
+                    Map<String, Object> params = new HashMap<String, Object>();
+                    params.put(StorageLayer.InstanceConfigKey, _storage);
+
+                    processor.configure("template processor", params);
+                    String destPath = destFile.getAbsolutePath();
+
+                    FormatInfo info = processor.process(destPath, null, templateName);
+                    TemplateLocation loc = new TemplateLocation(_storage, destPath);
+                    loc.create(1, true, destData.getName());
+                    loc.addFormat(info);
+                    loc.save();
+
+                    TemplateProp prop = loc.getTemplateInfo();
+                    TemplateObjectTO newTemplate = new TemplateObjectTO();
+                    newTemplate.setPath(destData.getPath() + File.separator + fileName);
+                    newTemplate.setFormat(srcFormat);
+                    newTemplate.setSize(prop.getSize());
+                    newTemplate.setPhysicalSize(prop.getPhysicalSize());
+                    return new CopyCmdAnswer(newTemplate);
+                } catch (ConfigurationException e) {
+                    s_logger.debug("Failed to create template:" + e.toString());
+                    return new CopyCmdAnswer(e.toString());
+                } catch (InternalErrorException e) {
+                    s_logger.debug("Failed to create template:" + e.toString());
+                    return new CopyCmdAnswer(e.toString());
                 }
-
-                Map<String, Object> params = new HashMap<String, Object>();
-                params.put(StorageLayer.InstanceConfigKey, _storage);
-
-                processor.configure("template processor", params);
-                String destPath = destFile.getAbsolutePath();
-
-                FormatInfo info = processor.process(destPath, null, templateName);
-                TemplateLocation loc = new TemplateLocation(_storage, destPath);
-                loc.create(1, true, destData.getName());
-                loc.addFormat(info);
-                loc.save();
-
-                TemplateProp prop = loc.getTemplateInfo();
-                TemplateObjectTO newTemplate = new TemplateObjectTO();
-                newTemplate.setPath(destData.getPath() + File.separator + fileName);
-                newTemplate.setFormat(srcFormat);
-                newTemplate.setSize(prop.getSize());
-                newTemplate.setPhysicalSize(prop.getPhysicalSize());
-                return new CopyCmdAnswer(newTemplate);
-            } catch (ConfigurationException e) {
-                s_logger.debug("Failed to create template:" + e.toString());
-                return new CopyCmdAnswer(e.toString());
             } catch (IOException e) {
-                s_logger.debug("Failed to create template:" + e.toString());
-                return new CopyCmdAnswer(e.toString());
-            } catch (InternalErrorException e) {
                 s_logger.debug("Failed to create template:" + e.toString());
                 return new CopyCmdAnswer(e.toString());
             }
