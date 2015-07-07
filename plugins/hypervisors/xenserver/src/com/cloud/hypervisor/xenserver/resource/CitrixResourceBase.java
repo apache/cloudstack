@@ -5052,12 +5052,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         }
 
                         if (result && content != null && !content.isEmpty()) {
-                            try {
-                                final File file = new File(folder+"/"+fileName+".txt");
-                                final OutputStreamWriter fw = new OutputStreamWriter(new FileOutputStream(file.getAbsoluteFile()),"UTF-8");
-                                final BufferedWriter bw = new BufferedWriter(fw);
+                            File file = new File(folder+"/"+fileName+".txt");
+                            try (OutputStreamWriter fw = new OutputStreamWriter(new FileOutputStream(file.getAbsoluteFile()),"UTF-8");
+                                 BufferedWriter bw = new BufferedWriter(fw);
+                                ) {
                                 bw.write(content);
-                                bw.close();
                                 s_logger.debug("created file: "+ file + " in folder:"+folder);
                             } catch (final IOException ex) {
                                 s_logger.debug("Failed to create file "+ ex.getMessage());
