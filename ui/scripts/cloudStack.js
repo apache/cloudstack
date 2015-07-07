@@ -31,19 +31,12 @@
                 sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "events", "regions", "affinityGroups"];
             }
 
-            if (cloudStack.plugins.length) {
-                var displayPluginSection = false;
-                $.each(cloudStack.plugins, function(idx, plugin) {
-                    if (cloudStack.sections.hasOwnProperty(plugin)) {
-                        if (!cloudStack.sections[plugin].showOnNavigation) {
-                            displayPluginSection = true;
-                        }
-                    }
-                });
-                if (displayPluginSection) {
+            $.each(cloudStack.plugins, function(idx, plugin) {
+                if (cloudStack.sections.hasOwnProperty(plugin) && !cloudStack.sections[plugin].showOnNavigation) {
                     sections.push('plugins');
+                    return false;
                 }
-            }
+            });
 
             return sections;
         },
