@@ -32,7 +32,17 @@
             }
 
             if (cloudStack.plugins.length) {
-                sections.push('plugins');
+                var displayPluginSection = false;
+                $.each(cloudStack.plugins, function(idx, plugin) {
+                    if (cloudStack.sections.hasOwnProperty(plugin)) {
+                        if (!cloudStack.sections[plugin].showOnNavigation) {
+                            displayPluginSection = true;
+                        }
+                    }
+                });
+                if (displayPluginSection) {
+                    sections.push('plugins');
+                }
             }
 
             return sections;

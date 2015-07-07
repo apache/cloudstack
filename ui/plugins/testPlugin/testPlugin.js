@@ -19,6 +19,7 @@
     plugin.ui.addSection({
       id: 'testPlugin',
       title: 'TestPlugin',
+      showOnNavigation: true,
       preFilter: function(args) {
         return isAdmin();
       },
