@@ -64,6 +64,7 @@ class TestVolumeLimits(cloudstackTestCase):
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cloudstackTestClient.getZoneForTests())
         cls.services["mode"] = cls.zone.networktype
+        cls._cleanup = []
         cls.unsupportedStorageType = False
         if cls.hypervisor.lower() == 'lxc':
             if not find_storage_pool_type(cls.api_client, storagetype='rbd'):
@@ -79,7 +80,7 @@ class TestVolumeLimits(cloudstackTestCase):
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.services["volume"]["zoneid"] = cls.zone.id
-        cls._cleanup = []
+
         try:
             cls.service_offering = ServiceOffering.create(cls.api_client, cls.services["service_offering"])
             cls._cleanup.append(cls.service_offering)
