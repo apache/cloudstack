@@ -60,25 +60,25 @@ public class Upgrade222to224Premium extends Upgrade222to224 {
     }
 
     private void updateUserStats(Connection conn) {
-        try {
+        try (   // update network_id information
+                PreparedStatement pstmt = conn.prepareStatement(
+                    "update cloud_usage.user_statistics uus, cloud.user_statistics us set uus.network_id = us.network_id where uus.id = us.id"
+                    );
+            ) {
 
-            // update network_id information
-            PreparedStatement pstmt =
-                conn.prepareStatement("update cloud_usage.user_statistics uus, cloud.user_statistics us set uus.network_id = " + "us.network_id where uus.id = us.id");
             pstmt.executeUpdate();
-            pstmt.close();
-
             s_logger.debug("Upgraded cloud_usage user_statistics with networkId");
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed to upgrade user stats: ", e);
+        }
 
-            // update network_id information in usage_network
-            PreparedStatement pstmt1 =
-                conn.prepareStatement("update cloud_usage.usage_network un, cloud_usage.user_statistics us set un.network_id = "
+        try (   // update network_id information in usage_network
+                PreparedStatement pstmt1 =
+                    conn.prepareStatement("update cloud_usage.usage_network un, cloud_usage.user_statistics us set un.network_id = "
                     + "us.network_id where us.account_id = un.account_id and us.data_center_id = un.zone_id and us.device_id = un.host_id");
+            ) {
             pstmt1.executeUpdate();
-            pstmt1.close();
-
             s_logger.debug("Upgraded cloud_usage usage_network with networkId");
-
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to upgrade user stats: ", e);
         }
