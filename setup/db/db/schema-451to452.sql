@@ -19,22 +19,12 @@
 -- Schema upgrade from 4.5.1 to 4.5.2;
 --;
 
--- SAML
+UPDATE IGNORE `cloud`.`configuration` SET `default_value`='PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT' WHERE name='user.authenticators.order';
+UPDATE IGNORE `cloud`.`configuration` SET `value`='PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT' WHERE name='user.authenticators.order';
+UPDATE IGNORE `cloud`.`configuration` SET `default_value`='PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT' WHERE name='user.password.encoders.order';
+UPDATE IGNORE `cloud`.`configuration` SET `value`='PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT' WHERE name='user.password.encoders.order';
+UPDATE IGNORE `cloud`.`configuration` SET `value`="MD5,LDAP,PLAINTEXT" WHERE `name`="user.password.encoders.exclude";
 
-DELETE FROM `cloud`.`configuration` WHERE name like 'saml%';
-
-ALTER TABLE `cloud`.`user` ADD COLUMN `external_entity` text DEFAULT NULL COMMENT "reference to external federation entity";
-
-DROP TABLE IF EXISTS `cloud`.`saml_token`;
-CREATE TABLE `cloud`.`saml_token` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `uuid` varchar(255) UNIQUE NOT NULL COMMENT 'The Authn Unique Id',
-  `domain_id` bigint unsigned DEFAULT NULL,
-  `entity` text NOT NULL COMMENT 'Identity Provider Entity Id',
-  `created` DATETIME NOT NULL,
-  PRIMARY KEY (`id`),
-  CONSTRAINT `fk_saml_token__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Quota Configuration
 
@@ -93,6 +83,29 @@ CREATE TABLE `cloud_usage`.`quota_credits` (
   `credit` decimal(15,2) COMMENT 'amount credited',
   `updated_on` datetime NOT NULL COMMENT 'date created',
   `updated_by` bigint unsigned NOT NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+CREATE TABLE `cloud_usage`.`quota_usage` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `usage_item_id` bigint unsigned NOT NULL,
+  `usage_type` varchar(64) DEFAULT NULL,
+  `quota_used` int unsigned NOT NULL,
+  `start_date` datetime NOT NULL COMMENT 'start time for this usage item',
+  `end_date` datetime NOT NULL COMMENT 'end time for this usage item',
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+CREATE TABLE `cloud_usage`.`quota_balance` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `account_id` bigint unsigned NOT NULL,
+  `domain_id` bigint(20) unsigned NOT NULL,
+  `credit_balance` decimal(15,2) COMMENT 'amount of credits remaining',
+  `updated_on` datetime NOT NULL COMMENT 'date updated on',
+  `previous_update_id` bigint unsigned NOT NULL COMMENT 'id of last update',
+  `previous_update_on` datetime NOT NULL COMMENT 'date of last update',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
