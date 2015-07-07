@@ -32,18 +32,6 @@ import org.apache.cloudstack.api.InternalIdentity;
 @Table(name = "quota_balance")
 public class QuotaBalanceVO implements InternalIdentity {
 
-    public QuotaBalanceVO(Long accountId, Long domainId,
-            BigDecimal creditBalance, Date updatedOn, Long previousUpdateId,
-            Date previousUpdateOn) {
-        super();
-        this.accountId = accountId;
-        this.domainId = domainId;
-        this.creditBalance = creditBalance;
-        this.updatedOn = updatedOn;
-        this.previousUpdateId = previousUpdateId;
-        this.previousUpdateOn = previousUpdateOn;
-    }
-
     private static final long serialVersionUID = -7112846845287653210L;
 
     @Id
@@ -71,6 +59,18 @@ public class QuotaBalanceVO implements InternalIdentity {
     private Date previousUpdateOn = null;
 
     public QuotaBalanceVO() {
+    }
+
+    public QuotaBalanceVO(Long accountId, Long domainId,
+            BigDecimal creditBalance, Date updatedOn, Long previousUpdateId,
+            Date previousUpdateOn) {
+        super();
+        this.accountId = accountId;
+        this.domainId = domainId;
+        this.creditBalance = creditBalance;
+        this.updatedOn = updatedOn;
+        this.previousUpdateId = previousUpdateId;
+        this.previousUpdateOn = previousUpdateOn;
     }
 
     @Override

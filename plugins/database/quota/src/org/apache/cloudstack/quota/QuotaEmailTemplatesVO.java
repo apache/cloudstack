@@ -31,15 +31,6 @@ import org.apache.cloudstack.api.InternalIdentity;
 @Table(name = "quota_email_templates")
 public class QuotaEmailTemplatesVO implements InternalIdentity {
 
-    public QuotaEmailTemplatesVO(String templateName, String templateText,
-            String locale, Integer version) {
-        super();
-        this.templateName = templateName;
-        this.templateText = templateText;
-        this.locale = locale;
-        this.version = version;
-    }
-
     private static final long serialVersionUID = -7117933842834553210L;
 
     @Id
@@ -52,6 +43,10 @@ public class QuotaEmailTemplatesVO implements InternalIdentity {
     @Column(name = "template_text")
     private String templateText;
 
+
+    @Column(name = "category")
+    private Integer category;
+
     @Column(name = "last_updated")
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date lastUpdated = null;
@@ -63,6 +58,15 @@ public class QuotaEmailTemplatesVO implements InternalIdentity {
     private Integer version;
 
     public QuotaEmailTemplatesVO() {
+    }
+
+    public QuotaEmailTemplatesVO(String templateName, String templateText,
+            String locale, Integer version) {
+        super();
+        this.templateName = templateName;
+        this.templateText = templateText;
+        this.locale = locale;
+        this.version = version;
     }
 
     @Override
@@ -85,6 +89,15 @@ public class QuotaEmailTemplatesVO implements InternalIdentity {
 
     public void setTemplateText(String templateText) {
         this.templateText = templateText;
+    }
+
+
+    public Integer getCategory() {
+        return category;
+    }
+
+    public void setCategory(Integer version) {
+        this.category = category;
     }
 
     public Date getLastUpdated() {
