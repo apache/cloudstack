@@ -45,8 +45,8 @@ public class ListQuotaConfigurationsCmd extends BaseListCmd {
     @Inject
     private QuotaManager _quotaManager;
 
-    @Parameter(name = "usageType", type = CommandType.STRING, required = false, description = "Usage type of the resource")
-    private String _usageType;
+    @Parameter(name = "type", type = CommandType.STRING, required = false, description = "Usage type of the resource")
+    private String usageType;
 
 
     public ListQuotaConfigurationsCmd() {
@@ -87,12 +87,12 @@ public class ListQuotaConfigurationsCmd extends BaseListCmd {
     }
 
     public String getUsageType() {
-        return _usageType;
+        return usageType;
     }
 
 
     public void setUsageType(String usageType) {
-        this._usageType = usageType;
+        this.usageType = usageType;
     }
 
 

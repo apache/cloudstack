@@ -784,6 +784,7 @@ addGloboDnsHost=1
 
 ### Quota Service
 listQuotaConfigurations=15
+quotaEditResourceMapping=15
 quotaRefresh=15
 quotaCredits=15
 quotaStatement=15
