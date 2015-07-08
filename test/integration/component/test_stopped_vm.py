@@ -141,7 +141,6 @@ class TestDeployVM(cloudstackTestCase):
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
-            diskofferingid=self.disk_offering.id,
             mode=self.zone.networktype
         )
 
@@ -1061,7 +1060,6 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
-            diskofferingid=self.disk_offering.id,
             startvm=False
         )
 
