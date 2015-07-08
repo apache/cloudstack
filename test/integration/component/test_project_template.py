@@ -124,6 +124,10 @@ class TestProjectPrivateTemplate(cloudstackTestCase):
                                    type='ROOT',
                                    listall=True
                                    )
+        self.assertEqual(validateList(list_volumes)[0],
+                         PASS,
+                         "list volume  is empty for vmid %s" % self.virtual_machine.id
+                         )
 
         self.volume = list_volumes[0]
 
