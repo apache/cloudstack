@@ -663,7 +663,14 @@ class TestRouterRestart(cloudstackTestCase):
         #    all it's services should resume
 
         # Find router associated with user account
-        list_router_response = list_routers(
+        if (self.services['mode'] == "Basic"):
+            list_router_response = list_routers(
+                                    self.apiclient,
+                                    zoneid=self.zone.id,
+                                    listall=True
+                                    )
+        else:
+            list_router_response = list_routers(
                                     self.apiclient,
                                     account=self.account.name,
                                     domainid=self.account.domainid
@@ -702,7 +709,14 @@ class TestRouterRestart(cloudstackTestCase):
         self.apiclient.restartNetwork(cmd)
 
         # Get router details after restart
-        list_router_response = list_routers(
+        if (self.services['mode'] == "Basic"):
+            list_router_response = list_routers(
+                                    self.apiclient,
+                                    zoneid=self.zone.id,
+                                    listall=True
+                                    )
+        else:
+            list_router_response = list_routers(
                                     self.apiclient,
                                     account=self.account.name,
                                     domainid=self.account.domainid
