@@ -57,11 +57,6 @@ class CsCmdLine(CsDataBag):
             self.dbag['config'] = {}
         return self.dbag['config']
 
-    def get_priority(self):
-        if "router_pr" in self.idata():
-            return self.idata()['router_pr']
-        return 99
-
     def set_guest_gw(self, val):
         self.idata()['guestgw'] = val
 
@@ -69,9 +64,6 @@ class CsCmdLine(CsDataBag):
         if "guestgw" in self.idata():
             return self.idata()['guestgw']
         return False
-
-    def set_priority(self, val):
-        self.idata()['router_pr'] = val
 
     def is_redundant(self):
         if "redundant_router" in self.idata():

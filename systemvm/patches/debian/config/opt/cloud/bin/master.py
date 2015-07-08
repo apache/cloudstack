@@ -51,3 +51,6 @@ if options.master:
 
 if options.backup:
     red.set_backup()
+
+if options.fault:
+    red.set_fault()

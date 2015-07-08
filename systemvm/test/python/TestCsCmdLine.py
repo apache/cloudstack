@@ -32,13 +32,6 @@ class TestCsCmdLine(unittest.TestCase):
     def test_idata(self):
         self.assertTrue(self.cscmdline.idata() == {})
 
-    def test_get_priority(self):
-        self.assertTrue(self.cscmdline.get_priority() == 99)
-
-    def test_set_priority(self):
-        self.cscmdline.set_priority(100)
-        self.assertTrue(self.cscmdline.get_priority() == 100)
-
     def test_is_redundant(self):
         self.assertTrue(self.cscmdline.is_redundant() is False)
         self.cscmdline.set_redundant()
