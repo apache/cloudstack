@@ -224,6 +224,8 @@
 
     <bean id="statsCollector" class="com.cloud.server.StatsCollector" />
 
+    <bean id="usageReporter" class="org.apache.cloudstack.report.UsageReporter" />
+
     <bean id="storagePoolAutomationImpl" class="com.cloud.storage.StoragePoolAutomationImpl" />
 
     <bean id="domainManagerImpl" class="com.cloud.user.DomainManagerImpl" />
