@@ -108,16 +108,9 @@ class CsRedundant(object):
         # keepalived configuration
         file = CsFile(self.KEEPALIVED_CONF)
         ads = [o for o in self.address.get_ips() if o.is_public()]
-        # Add a comment for each public IP.  If any change this will cause keepalived to restart
-        # As things stand keepalived will be configured before the IP is added or deleted
-        i = 0
-        for o in ads:
-            file.addeq("! %s=%s" % (i, o.get_cidr()))
-            i = i + 1
+            
         file.search(" router_id ", "    router_id %s" % self.cl.get_name())
-        file.search(" priority ", "    priority %s" % self.cl.get_priority())
         file.search(" interface ", "    interface %s" % guest.get_device())
-        file.search(" state ", "    state %s" % "EQUAL")
         file.search(" virtual_router_id ", "    virtual_router_id %s" % self.cl.get_router_id())
         file.greplace("[RROUTER_BIN_PATH]", self.CS_ROUTER_DIR)
         file.section("authentication {", "}", ["        auth_type AH \n", "        auth_pass %s\n" % self.cl.get_router_password()])
@@ -153,7 +146,7 @@ class CsRedundant(object):
 
         proc = CsProcess(['/usr/sbin/keepalived', '--vrrp'])
         if not proc.find():
-            CsHelper.service("keepalived", "restart")
+            CsHelper.service("keepalived", "start")
 
     def release_lock(self):
         try:
@@ -185,6 +178,7 @@ class CsRedundant(object):
         if not self.cl.is_redundant():
             logging.error("Set fault called on non-redundant router")
             return
+        
         self.set_lock()
         logging.info("Router switched to fault mode")
         ads = [o for o in self.address.get_ips() if o.is_public()]
@@ -208,11 +202,7 @@ class CsRedundant(object):
         if not self.cl.is_redundant():
             logging.error("Set backup called on non-redundant router")
             return
-        """
-        if not self.cl.is_master():
-            logging.error("Set backup called on node that is already backup")
-            return
-        """
+
         self.set_lock()
         logging.debug("Setting router to backup")
         ads = [o for o in self.address.get_ips() if o.is_public()]
@@ -232,7 +222,7 @@ class CsRedundant(object):
         for o in ads:
             CsPasswdSvc(o.get_gateway()).stop()
         CsHelper.service("dnsmasq", "stop")
-        # self._set_priority(self.CS_PRIO_DOWN)
+
         self.cl.set_master_state(False)
         self.cl.save()
         self.release_lock()
@@ -243,11 +233,7 @@ class CsRedundant(object):
         if not self.cl.is_redundant():
             logging.error("Set master called on non-redundant router")
             return
-        """
-        if self.cl.is_master():
-            logging.error("Set master called on master node")
-            return
-        """
+
         self.set_lock()
         logging.debug("Setting router to master")
         ads = [o for o in self.address.get_ips() if o.is_public()]

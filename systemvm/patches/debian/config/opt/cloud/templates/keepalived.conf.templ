@@ -21,15 +21,14 @@ global_defs {
 
 vrrp_script heartbeat {
     script "[RROUTER_BIN_PATH]/heartbeat.sh"
-    interval 10
+    interval 5
 }
 
 vrrp_instance inside_network {
-    state BACKUP
+    state EQUAL
     interface eth0
     virtual_router_id 51
-    priority [PRIORITY]
-		nopreempt
+    nopreempt
 
     advert_int 1
     authentication {
@@ -46,7 +45,7 @@ vrrp_instance inside_network {
     }
 
     !That's the correct path of the master.py file.
-    notify_master "/opt/cloud/bin/master.py --master"
     notify_backup "/opt/cloud/bin/master.py --backup"
+    notify_master "/opt/cloud/bin/master.py --master"
     notify_fault "/opt/cloud/bin/master.py --fault"
 }

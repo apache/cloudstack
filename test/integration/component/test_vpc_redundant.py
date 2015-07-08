@@ -283,7 +283,8 @@ class TestVPCRedundancy(cloudstackTestCase):
         cnts = [0, 0, 0]
         self.query_routers(count, showall)
         for router in self.routers:
-            cnts[vals.index(router.redundantstate)] += 1
+            if router.state == "Running":
+                cnts[vals.index(router.redundantstate)] += 1
         if cnts[vals.index('MASTER')] != 1:
             self.fail("No Master or too many master routers found %s" % cnts[vals.index('MASTER')])
         # if cnts[vals.index('UNKNOWN')] > 0:
@@ -431,6 +432,7 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.do_vpc_test(False)
 
         self.stop_router("MASTER")
+        # wait for the backup router to transit to master state
         time.sleep(30)
         self.check_master_status(1)
         self.do_vpc_test(False)
@@ -441,7 +443,6 @@ class TestVPCRedundancy(cloudstackTestCase):
 
         self.start_router()
         self.add_nat_rules()
-        time.sleep(60)
         self.check_master_status(2)
         self.do_vpc_test(False)
 
@@ -459,6 +460,7 @@ class TestVPCRedundancy(cloudstackTestCase):
                     vm.set_ip(self.acquire_publicip(o.get_net()))
                 if vm.get_nat() is None:
                     vm.set_nat(self.create_natrule(vm.get_vm(), vm.get_ip(), o.get_net()))
+                    time.sleep(5)
 
     def do_vpc_test(self, expectFail):
         retries = 20
