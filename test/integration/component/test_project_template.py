@@ -17,7 +17,7 @@
 
 from marvin.codes import FAILED, PASS
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.lib.base import Account, VirtualMachine, ServiceOffering,Project,Network,NetworkOffering,Domain,Volume,Template
+from marvin.lib.base import Account, VirtualMachine, ServiceOffering,Project,Network,NetworkOffering,Domain,Volume,Template,validateList
 from marvin.lib.common import get_zone, get_domain, get_template
 from marvin.lib.utils import cleanup_resources
 from nose.plugins.attrib import attr
@@ -96,10 +96,6 @@ class TestProjectPrivateTemplate(cloudstackTestCase):
 
         self.services["network"]["networkoffering"] = self.network_offering.id
 
-
-
-        #cls.api_client = testClient.getUserApiClient(UserName=cls.account.name, DomainName=cls.account.domain)
-
         self.project_network = Network.create(
             self.api_client,
             self.services["network"],
@@ -153,6 +149,7 @@ class TestProjectPrivateTemplate(cloudstackTestCase):
                                     projectid=self.project.id
                                     )
 
+
         self.cleanup.append(self.project)
         self.cleanup.append(self.account)
         self.cleanup.append(self.service_offering)
@@ -160,8 +157,8 @@ class TestProjectPrivateTemplate(cloudstackTestCase):
         self.cleanup.append(self.new_domain)
 
         self.assertEqual(
-                           len(list_template_response),
-                            1,
+                           validateList(list_template_response)[0],
+                            PASS,
                             "There is one private template for this account in this project"
                         )
 

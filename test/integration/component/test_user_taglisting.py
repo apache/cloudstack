@@ -19,8 +19,7 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (Account,
                              ServiceOffering,
                              VirtualMachine,
-                             NetworkOffering,
-                             Network,
+                             validateList,
                              Tag
                             )
 from marvin.lib.common import (get_domain,
@@ -112,9 +111,11 @@ class TestDeployVMWithTags(cloudstackTestCase):
             key='vmtag'+self.virtual_machine.id,
             value='autotag'+self.virtual_machine.id
         )
+
+
         self.assertEqual(
-                           len(tags),
-                            1,
+                           validateList(tags)[0],
+                            PASS,
                             "There is just one tag listed with list tags"
                         )
 
