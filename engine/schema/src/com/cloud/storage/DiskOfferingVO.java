@@ -37,6 +37,7 @@ import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
 import com.cloud.offering.DiskOffering;
+import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -351,6 +352,11 @@ public class DiskOfferingVO implements DiskOffering {
     @Override
     public Storage.ProvisioningType getProvisioningType(){
         return provisioningType;
+    }
+
+    @Override
+    public void setProvisioningType(ProvisioningType provisioningType) {
+        this.provisioningType = provisioningType;
     }
 
     @Override

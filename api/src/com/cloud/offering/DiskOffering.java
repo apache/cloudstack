@@ -69,6 +69,8 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
 
     public ProvisioningType getProvisioningType();
 
+    public void setProvisioningType(ProvisioningType provisioningType);
+
     public String getTags();
 
     public String[] getTagsArray();

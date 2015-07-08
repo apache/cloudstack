@@ -140,6 +140,16 @@
       <artifactId>opensaml</artifactId>
       <version>${cs.opensaml.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>${cs.gson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${cs.guava.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <testResources>
