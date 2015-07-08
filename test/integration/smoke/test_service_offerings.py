@@ -176,8 +176,6 @@ class TestServiceOfferings(cloudstackTestCase):
         cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = template.id
 
-        cls.services["medium"]["zoneid"] = cls.zone.id
-        cls.services["medium"]["template"] = template.id
 
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
@@ -197,7 +195,7 @@ class TestServiceOfferings(cloudstackTestCase):
         )
         cls.medium_virtual_machine = VirtualMachine.create(
             cls.apiclient,
-            cls.services["medium"],
+            cls.services["small"],
             accountid=cls.account.name,
             domainid=cls.account.domainid,
             serviceofferingid=cls.medium_offering.id,
