@@ -27,6 +27,8 @@ import com.cloud.utils.component.PluggableService;
 
 public interface QuotaManager extends PluggableService {
 
+    public void calculateQuotaUsage(QuotaJobVO job, long startDateMillis, long endDateMillis);
+
     Pair<List<QuotaConfigurationVO>, Integer> listConfigurations(ListQuotaConfigurationsCmd cmd);
 
     QuotaConfigurationResponse createQuotaConfigurationResponse(QuotaConfigurationVO configuration);

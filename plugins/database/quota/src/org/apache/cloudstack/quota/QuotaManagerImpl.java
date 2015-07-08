@@ -19,6 +19,7 @@ package org.apache.cloudstack.quota;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -36,77 +37,89 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = QuotaManager.class)
-public class QuotaManagerImpl implements QuotaManager {
- private static final Logger s_logger = Logger.getLogger(QuotaManagerImpl.class.getName());
+public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
+    private static final Logger s_logger = Logger
+            .getLogger(QuotaManagerImpl.class.getName());
 
+    @Inject
+    private QuotaConfigurationDao _quotaConfigurationDao;
 
- @Inject
- private QuotaConfigurationDao _quotaConfigurationDao;
+    @Inject
+    private QuotaCreditsDao _quotaCreditsDao;
 
-@Inject
-private QuotaCreditsDao _quotaCreditsDao;
+    String _hostname = null;
+    int _pid = 0;
+    TimeZone _usageTimezone = TimeZone.getTimeZone("GMT");
 
- public QuotaManagerImpl() {
-     super();
- }
-
- public QuotaManagerImpl(final QuotaConfigurationDao quotaConfigurationDao) {
-     super();
-     _quotaConfigurationDao = quotaConfigurationDao;
- }
-
-
- @Override
- public List<Class<?>> getCommands() {
-     final List<Class<?>> cmdList = new ArrayList<Class<?>>();
-     cmdList.add(ListQuotaConfigurationsCmd.class);
-     cmdList.add(QuotaCreditsCmd.class);
-     cmdList.add(QuotaEmailTemplateAddCmd.class);
-     cmdList.add(QuotaRefreshCmd.class);
-     cmdList.add(QuotaStatementCmd.class);
-     return cmdList;
- }
-
- @Override
- public Pair<List<QuotaConfigurationVO>, Integer> listConfigurations(final ListQuotaConfigurationsCmd cmd) {
-     final Pair<List<QuotaConfigurationVO>, Integer>  result = _quotaConfigurationDao.searchConfigurations();
-     TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
-     return result;
- }
-
-
- @Override
- public QuotaConfigurationResponse createQuotaConfigurationResponse(final QuotaConfigurationVO configuration) {
-     final QuotaConfigurationResponse response = new QuotaConfigurationResponse();
-     response.setUsageType(configuration.getUsageType());
-     response.setUsageUnit(configuration.getUsageUnit());
-     response.setUsageDiscriminator(configuration.getUsageDiscriminator());
-     response.setCurrencyValue(configuration.getCurrencyValue());
-     response.setInclude(configuration.getInclude());
-     response.setDescription(configuration.getDescription());
-     return response;
- }
-
-@Override
-public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Integer amount, Long updatedBy) {
-    QuotaCreditsVO result=null;
-    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-    try {
-        QuotaCreditsVO credits = new QuotaCreditsVO(accountId, domainId, amount, updatedBy);
-        credits.setUpdatedOn(new Date());
-        result = _quotaCreditsDao.persist(credits);
-    } finally {
-        txn.close();
+    public QuotaManagerImpl() {
+        super();
     }
-    TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
-    return new QuotaCreditsResponse(result);
+
+    public QuotaManagerImpl(final QuotaConfigurationDao quotaConfigurationDao) {
+        super();
+        _quotaConfigurationDao = quotaConfigurationDao;
+    }
+
+    @Override
+    public List<Class<?>> getCommands() {
+        final List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(ListQuotaConfigurationsCmd.class);
+        cmdList.add(QuotaCreditsCmd.class);
+        cmdList.add(QuotaEmailTemplateAddCmd.class);
+        cmdList.add(QuotaRefreshCmd.class);
+        cmdList.add(QuotaStatementCmd.class);
+        return cmdList;
+    }
+
+    @Override
+    public Pair<List<QuotaConfigurationVO>, Integer> listConfigurations(
+            final ListQuotaConfigurationsCmd cmd) {
+        final Pair<List<QuotaConfigurationVO>, Integer> result = _quotaConfigurationDao
+                .searchConfigurations();
+        TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+        return result;
+    }
+
+    @Override
+    public QuotaConfigurationResponse createQuotaConfigurationResponse(
+            final QuotaConfigurationVO configuration) {
+        final QuotaConfigurationResponse response = new QuotaConfigurationResponse();
+        response.setUsageType(configuration.getUsageType());
+        response.setUsageUnit(configuration.getUsageUnit());
+        response.setUsageDiscriminator(configuration.getUsageDiscriminator());
+        response.setCurrencyValue(configuration.getCurrencyValue());
+        response.setInclude(configuration.getInclude());
+        response.setDescription(configuration.getDescription());
+        return response;
+    }
+
+    @Override
+    public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId,
+            Integer amount, Long updatedBy) {
+        QuotaCreditsVO result = null;
+        TransactionLegacy txn = TransactionLegacy
+                .open(TransactionLegacy.USAGE_DB);
+        try {
+            QuotaCreditsVO credits = new QuotaCreditsVO(accountId, domainId,
+                    amount, updatedBy);
+            credits.setUpdatedOn(new Date());
+            result = _quotaCreditsDao.persist(credits);
+        } finally {
+            txn.close();
+        }
+        TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+        return new QuotaCreditsResponse(result);
+    }
+
+    @Override
+    public void calculateQuotaUsage(QuotaJobVO job, long startDateMillis,
+            long endDateMillis) {
+        // TODO: Shouldn't we also allow parsing by the type of usage?
+    }
+
 }
-
-
-
-}
-

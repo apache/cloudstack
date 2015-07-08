@@ -75,6 +75,23 @@ INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_uni
 INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('vCPU', 'Compute-Hours', '1VCPU', '5' , '1', 'Quota mapping for running VM that has 1vCPU');
 INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('MEMORY', 'Compute-Hours', '1MB', '5' , '1', 'Quota mapping for usign 1MB or RAM for 1 hour');
 
+CREATE TABLE `cloud_usage.quota_job` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `host` varchar(255) DEFAULT NULL,
+  `pid` int(5) DEFAULT NULL,
+  `job_type` int(1) DEFAULT NULL,
+  `scheduled` int(1) DEFAULT NULL,
+  `start_millis` bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT 'start time in milliseconds of the aggregation range used by this job',
+  `end_millis` bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT 'end time in milliseconds of the aggregation range used by this job',
+  `exec_time` bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT 'how long in milliseconds it took for the job to execute',
+  `start_date` datetime DEFAULT NULL COMMENT 'start date of the aggregation range used by this job',
+  `end_date` datetime DEFAULT NULL COMMENT 'end date of the aggregation range used by this job',
+  `success` int(1) DEFAULT NULL,
+  `heartbeat` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `i_quota_job__end_millis` (`end_millis`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+
 
 CREATE TABLE `cloud_usage`.`quota_credits` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
