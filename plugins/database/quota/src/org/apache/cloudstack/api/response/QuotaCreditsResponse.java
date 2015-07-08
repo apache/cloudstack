@@ -20,37 +20,24 @@ import java.sql.Timestamp;
 
 import com.google.gson.annotations.SerializedName;
 
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.quota.QuotaCreditsVO;
 
 import com.cloud.serializer.Param;
 
 public class QuotaCreditsResponse extends BaseResponse {
 
-    @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the credit")
-    private String id;
-
-    @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account name of the api remaining count")
-    private String accountName;
-
-    @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID of the iam policy")
-    private String domainId;
-
     @SerializedName("credits")
     @Param(description = "the credit deposited")
-    private String credits;
+    private Integer credits;
 
     @SerializedName("balance")
     @Param(description = "the balance credit in account")
-    private String balance;
+    private Integer balance;
 
     @SerializedName("updated_by")
     @Param(description = "the account name of the admin who updated the credits")
     private String updatedBy;
-
 
     @SerializedName("updated_on")
     @Param(description = "the account name of the admin who updated the credits")
@@ -61,52 +48,34 @@ public class QuotaCreditsResponse extends BaseResponse {
          super();
      }
 
-    public String getId() {
-        return id;
-    }
+
+     public QuotaCreditsResponse(QuotaCreditsVO result) {
+         super();
+         if (result != null){
+             this.credits = 100;
+             this.balance = 200;
+             this.updatedBy = "1";
+             this.updatedOn = new Timestamp(System.currentTimeMillis());
+         }
+     }
 
 
-    public void setId(String id) {
-        this.id = id;
-    }
-
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
-    }
-
-
-    public String getDomainId() {
-        return domainId;
-    }
-
-
-    public void setDomainId(String domainId) {
-        this.domainId = domainId;
-    }
-
-
-    public String getCredits() {
+    public Integer getCredits() {
         return credits;
     }
 
 
-    public void setCredits(String credits) {
+    public void setCredits(Integer credits) {
         this.credits = credits;
     }
 
 
-    public String getBalance() {
+    public Integer getBalance() {
         return balance;
     }
 
 
-    public void setBalance(String balance) {
+    public void setBalance(Integer balance) {
         this.balance = balance;
     }
 
@@ -129,7 +98,6 @@ public class QuotaCreditsResponse extends BaseResponse {
     public void setUpdatedOn(Timestamp updatedOn) {
         this.updatedOn = updatedOn;
     }
-
 
 
 }

@@ -24,6 +24,10 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.command.ListQuotaConfigurationsCmd;
+import org.apache.cloudstack.api.command.QuotaCreditsCmd;
+import org.apache.cloudstack.api.command.QuotaEmailTemplateAddCmd;
+import org.apache.cloudstack.api.command.QuotaRefreshCmd;
+import org.apache.cloudstack.api.command.QuotaStatementCmd;
 import org.apache.cloudstack.api.response.QuotaConfigurationResponse;
 import org.apache.cloudstack.api.response.QuotaCreditsResponse;
 import org.apache.cloudstack.quota.dao.QuotaConfigurationDao;
@@ -32,6 +36,7 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = QuotaManager.class)
@@ -59,12 +64,17 @@ private QuotaCreditsDao _quotaCreditsDao;
  public List<Class<?>> getCommands() {
      final List<Class<?>> cmdList = new ArrayList<Class<?>>();
      cmdList.add(ListQuotaConfigurationsCmd.class);
+     cmdList.add(QuotaCreditsCmd.class);
+     cmdList.add(QuotaEmailTemplateAddCmd.class);
+     cmdList.add(QuotaRefreshCmd.class);
+     cmdList.add(QuotaStatementCmd.class);
      return cmdList;
  }
 
  @Override
  public Pair<List<QuotaConfigurationVO>, Integer> listConfigurations(final ListQuotaConfigurationsCmd cmd) {
      final Pair<List<QuotaConfigurationVO>, Integer>  result = _quotaConfigurationDao.searchConfigurations();
+     TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
      return result;
  }
 
@@ -83,10 +93,17 @@ private QuotaCreditsDao _quotaCreditsDao;
 
 @Override
 public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Integer amount, Long updatedBy) {
-    QuotaCreditsVO credits = new QuotaCreditsVO(accountId, domainId, amount, updatedBy);
-    credits.setUpdatedOn(new Date());
-    _quotaCreditsDao.persist(credits);
-    return null;
+    QuotaCreditsVO result=null;
+    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+    try {
+        QuotaCreditsVO credits = new QuotaCreditsVO(accountId, domainId, amount, updatedBy);
+        credits.setUpdatedOn(new Date());
+        result = _quotaCreditsDao.persist(credits);
+    } finally {
+        txn.close();
+    }
+    TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+    return new QuotaCreditsResponse(result);
 }
 
 

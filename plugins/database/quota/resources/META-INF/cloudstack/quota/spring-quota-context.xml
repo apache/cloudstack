@@ -27,6 +27,10 @@
 
     <bean id="QuotaManager" class="org.apache.cloudstack.quota.QuotaManagerImpl" />
     <bean id="QuotaConfigurationDao" class="org.apache.cloudstack.quota.dao.QuotaConfigurationDaoImpl" />
+    <bean id="QuotaBalanceDao" class="org.apache.cloudstack.quota.dao.QuotaBalanceDaoImpl"/>
     <bean id="QuotaCreditsDao" class="org.apache.cloudstack.quota.dao.QuotaCreditsDaoImpl"/>
+    <bean id="QuotaEmailTemplatesDao" class="org.apache.cloudstack.quota.dao.QuotaEmailTemplatesDaoImpl"/>
+    <bean id="QuotaSentEmailDao" class="org.apache.cloudstack.quota.dao.QuotaSentEmailsDaoImpl"/>
+    <bean id="QuotaUsageDao" class="org.apache.cloudstack.quota.dao.QuotaUsageDaoImpl"/>
 
 </beans>

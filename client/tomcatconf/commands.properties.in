@@ -784,11 +784,13 @@ addGloboDnsHost=1
 
 ### Quota Service
 listQuotaConfigurations=15
+quotaRefresh=15
 quotaCredits=15
 quotaStatement=15
-quotaEmailTemplateUpdate=3
-quotaEmailTemplateDelete=3
-quotaEmailTemplateAdd=3
-quotaReports=3
+quotaEmailTemplateUpdate=15
+quotaEmailTemplateDelete=15
+quotaEmailTemplateAdd=15
+quotaReports=15
+
 
 

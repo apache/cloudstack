@@ -27,6 +27,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = {QuotaConfigurationDao.class})
@@ -54,9 +55,14 @@ public class QuotaConfigurationDaoImpl extends GenericDaoBase<QuotaConfiguration
 
  @Override
  public Pair<List<QuotaConfigurationVO>, Integer> searchConfigurations() {
-    final SearchCriteria<QuotaConfigurationVO> sc = listAllIncludedUsageType.create();
-    sc.setParameters("include", 1);
-    return searchAndCount(sc, null);
+     TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+     try {
+         final SearchCriteria<QuotaConfigurationVO> sc = listAllIncludedUsageType.create();
+         sc.setParameters("include", 1);
+         return searchAndCount(sc, null);
+     } finally {
+         txn.close();
+     }
  }
 
 
