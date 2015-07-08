@@ -116,9 +116,9 @@ class TestPathDisableStorage_Basic(cloudstackTestCase):
 
         # Create offerings for local storage if local storage is enabled
         if cls.zone.localstorageenabled:
-            cls.testdata["service_offerings"]["storagetype"] = 'local'
+            cls.testdata["service_offerings"]["tiny"]["storagetype"] = 'local'
             cls.service_offering_local = ServiceOffering.create(cls.apiclient,
-                                                            cls.testdata["service_offerings"]
+                                                            cls.testdata["service_offerings"]["tiny"]
                                                             )
             cls._cleanup.append(cls.service_offering_local)
             cls.testdata["disk_offering"]["storagetype"] = 'local'
@@ -127,7 +127,7 @@ class TestPathDisableStorage_Basic(cloudstackTestCase):
                                                           )
             cls._cleanup.append(cls.disk_offering_local)
             cls.testdata["disk_offering"]["storagetype"] = ' '
-            cls.testdata["service_offerings"]["storagetype"] = ' '
+            cls.testdata["service_offerings"]["tiny"]["storagetype"] = ' '
         else:
             cls.debug("No local storage found")
 
@@ -730,10 +730,10 @@ class TestPathDisableStorage_Maint_Tags(cloudstackTestCase):
 
             # Create offerings for local storage if local storage is enabled
             if cls.zone.localstorageenabled:
-                cls.testdata["service_offerings"]["storagetype"] = 'local'
+                cls.testdata["service_offerings"]["tiny"]["storagetype"] = 'local'
                 cls.debug("Creating local storage offering")
                 cls.service_offering_local = ServiceOffering.create(cls.apiclient,
-                                                                cls.testdata["service_offerings"]
+                                                                cls.testdata["service_offerings"]["tiny"]
                                                                 )
                 cls._cleanup.append(cls.service_offering_local)
                 cls.testdata["disk_offering"]["storagetype"] = 'local'
@@ -743,7 +743,7 @@ class TestPathDisableStorage_Maint_Tags(cloudstackTestCase):
                                                               )
                 cls._cleanup.append(cls.disk_offering_local)
                 cls.testdata["disk_offering"]["storagetype"] = ' '
-                cls.testdata["service_offerings"]["storagetype"] = ' '
+                cls.testdata["service_offerings"]["tiny"]["storagetype"] = ' '
             else:
                 cls.debug("No local storage found")
 
@@ -939,11 +939,11 @@ class TestPathDisableStorage_Maint_Tags(cloudstackTestCase):
         StoragePool.update(self.userapiclient, id=storage_id, tags='disable_prov')
 
         # Step 7: Add tagged service offering
-        self.testdata['service_offerings']['tags'] = 'disable_prov'
-        self.testdata["service_offerings"]["storagetype"] = 'local'
+        self.testdata['service_offerings']['tiny']['tags'] = 'disable_prov'
+        self.testdata["service_offerings"]["tiny"]["storagetype"] = 'local'
         self.tagged_so = ServiceOffering.create(self.userapiclient, self.testdata['service_offerings'])
-        self.testdata['service_offerings']['tags'] = ' '
-        self.testdata["service_offerings"]["storagetype"] = ' '
+        self.testdata['service_offerings']['tiny']['tags'] = ' '
+        self.testdata["service_offerings"]["tiny"]["storagetype"] = ' '
         self.cleanup.append(self.tagged_so)
 
         # Step 8: Enable the pool

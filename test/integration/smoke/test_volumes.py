@@ -101,7 +101,7 @@ class TestCreateVolume(cloudstackTestCase):
                             )
         cls.service_offering = ServiceOffering.create(
                                             cls.apiclient,
-                                            cls.services["service_offerings"]
+                                            cls.services["service_offerings"]["tiny"]
                                             )
         cls.virtual_machine = VirtualMachine.create(
                                     cls.apiclient,
@@ -322,7 +322,7 @@ class TestVolumes(cloudstackTestCase):
                             )
         cls.service_offering = ServiceOffering.create(
                                             cls.apiclient,
-                                            cls.services["service_offerings"]
+                                            cls.services["service_offerings"]["tiny"]
                                         )
         cls.virtual_machine = VirtualMachine.create(
                                     cls.apiclient,
