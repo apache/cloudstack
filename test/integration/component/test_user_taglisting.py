@@ -9,6 +9,7 @@ from marvin.lib.base import (Account,
 from marvin.lib.common import (get_domain,
                                 get_zone,
                                 get_template)
+from marvin.lib.utils import cleanup_resources
 from marvin.cloudstackAPI import *
 from nose.plugins.attrib import attr
 from marvin.codes import FAILED, PASS
@@ -54,26 +55,9 @@ class TestDeployVMWithTags(cloudstackTestCase):
             cls.apiclient,
             cls.services["service_offerings"]["tiny"]
         )
-        cls.cleanup.append(cls.service_offering)
-        cls.network_offering = NetworkOffering.create(
-            cls.apiclient,
-            cls.services["network_offering"],
-        )
-        cls.cleanup.append(cls.network_offering)
-        # Enable Network offering
-        cls.network_offering.update(cls.apiclient, state='Enabled')
 
-        cls.services["network"]["networkoffering"] = cls.network_offering.id
+        cls.cleanup.append(cls.service_offering)
         cls.api_client = cls.testClient.getUserApiClient(UserName=cls.account.name, DomainName=cls.account.domain)
-        cls.network = Network.create(
-            cls.api_client,
-            cls.services["network"],
-            networkofferingid=cls.network_offering.id,
-            accountid=cls.account.name,
-            domainid=cls.domain.id,
-            zoneid=cls.zone.id
-        )
-        cls.cleanup.append(cls.network)
 
     @classmethod
     def tearDownClass(cls):
@@ -81,7 +65,7 @@ class TestDeployVMWithTags(cloudstackTestCase):
             cleanup_resources(cls.apiclient, cls.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
-
+    @attr(tags=["advanced","sg"])
     def test_deploy_vm_with_tags(self):
         """Test Deploy Virtual Machine
         """
@@ -94,7 +78,6 @@ class TestDeployVMWithTags(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             accountid=self.account.name,
             domainid=self.account.domainid,
-            networkids=self.network.id,
             zoneid=self.zone.id
         )
 
@@ -102,36 +85,28 @@ class TestDeployVMWithTags(cloudstackTestCase):
             self.apiclient,
             resourceIds=self.virtual_machine.id,
             resourceType='userVM',
-            tags={'vmtag': 'autotag'}
-        )
-        tag2 = Tag.create(
-            self.apiclient,
-            resourceIds=self.virtual_machine.id,
-            resourceType='userVM',
-            tags={'vmtag1': 'autotag'}
+            tags={'vmtag'+self.virtual_machine.id: 'autotag'+self.virtual_machine.id}
         )
 
         tags = Tag.list(
             self.apiclient,
             listall=True,
             resourceType='userVM',
-            key='vmtag',
-            value='autotag'
+            key='vmtag'+self.virtual_machine.id,
+            value='autotag'+self.virtual_machine.id
         )
-
         self.assertEqual(
                            len(tags),
                             1,
                             "There is just one tag listed with list tags"
                         )
 
-        self.assertGreater(
+        self.assertLess(
                             len(tags),
-                            1,
+                            2,
                             "The user tag is listed multiple times"
                         )
-
-
+        return
 
 
 

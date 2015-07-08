@@ -11,7 +11,7 @@ class TestProjectPrivateTemplate(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        testClient = super(TestDeployVM, cls).getClsTestClient()
+        testClient = super(TestProjectPrivateTemplate, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
         cls.cleanup = []
@@ -62,7 +62,7 @@ class TestProjectPrivateTemplate(cloudstackTestCase):
             cleanup_resources(cls.apiclient, cls.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
-
+    @attr(tags=["advanced"])
     def test_project_private_template(self):
         self.api_client = self.testClient.getUserApiClient(UserName=self.account.name, DomainName=self.account.domain)
 
