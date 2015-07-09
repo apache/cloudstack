@@ -97,6 +97,6 @@ public class GetServiceProviderMetaDataCmdTest {
 
     @Test
     public void testGetAPIType() {
-        Assert.assertTrue(new GetServiceProviderMetaDataCmd().getAPIType() == APIAuthenticationType.LOGIN_API);
+        Assert.assertTrue(new GetServiceProviderMetaDataCmd().getAPIType() == APIAuthenticationType.READONLY_API);
     }
 }

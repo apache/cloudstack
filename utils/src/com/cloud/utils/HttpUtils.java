@@ -51,6 +51,7 @@ public class HttpUtils {
     }
 
     public static String findCookie(final Cookie[] cookies, final String key) {
+        if (cookies == null || key == null) return null;
         for (Cookie cookie: cookies) {
             if (cookie != null && cookie.getName().equals(key)) {
                 return cookie.getValue();

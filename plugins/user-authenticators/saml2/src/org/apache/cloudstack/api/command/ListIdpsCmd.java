@@ -97,7 +97,7 @@ public class ListIdpsCmd extends BaseCmd implements APIAuthenticator {
 
     @Override
     public APIAuthenticationType getAPIType() {
-        return APIAuthenticationType.LOGIN_API;
+        return APIAuthenticationType.READONLY_API;
     }
 
     @Override
