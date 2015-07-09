@@ -254,7 +254,7 @@ public class GetServiceProviderMetaDataCmd extends BaseCmd implements APIAuthent
 
     @Override
     public APIAuthenticationType getAPIType() {
-        return APIAuthenticationType.LOGIN_API;
+        return APIAuthenticationType.READONLY_API;
     }
 
     @Override

@@ -21,6 +21,7 @@ package com.cloud.utils;
 
 import org.apache.log4j.Logger;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
@@ -47,6 +48,18 @@ public class HttpUtils {
         else {
             resp.addHeader("X-XSS-Protection", "1;mode=block");
         }
+    }
+
+    public static String findCookie(final Cookie[] cookies, final String key) {
+        if (cookies == null || key == null || key.isEmpty()) {
+            return null;
+        }
+        for (Cookie cookie: cookies) {
+            if (cookie != null && cookie.getName().equals(key)) {
+                return cookie.getValue();
+            }
+        }
+        return null;
     }
 
     public static void writeHttpResponse(final HttpServletResponse resp, final String response,
