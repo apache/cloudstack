@@ -67,10 +67,8 @@ public class QuotaConfigurationVO implements InternalIdentity {
     @Column(name = "description")
     private String description;
 
-
     public QuotaConfigurationVO() {
     }
-
 
     public QuotaConfigurationVO(final String usagetype, final String usageunit, final String usagediscriminator, final int currencyvalue, final int include, final String description) {
         this.usageType = usagetype;
@@ -81,66 +79,53 @@ public class QuotaConfigurationVO implements InternalIdentity {
         this.description = description;
     }
 
-
     public String getUsageType() {
         return usageType;
     }
-
 
     public void setUsageType(String usageType) {
         this.usageType = usageType;
     }
 
-
     public String getUsageUnit() {
         return usageUnit;
     }
-
 
     public void setUsageUnit(String usageUnit) {
         this.usageUnit = usageUnit;
     }
 
-
     public String getUsageDiscriminator() {
         return usageDiscriminator;
     }
-
 
     public void setUsageDiscriminator(String usageDiscriminator) {
         this.usageDiscriminator = usageDiscriminator;
     }
 
-
     public int getCurrencyValue() {
         return currencyValue;
     }
-
 
     public void setCurrencyValue(int currencyValue) {
         this.currencyValue = currencyValue;
     }
 
-
     public int getInclude() {
         return include;
     }
-
 
     public void setInclude(int include) {
         this.include = include;
     }
 
-
     public String getDescription() {
         return description;
     }
 
-
     public void setDescription(String description) {
         this.description = description;
     }
-
 
     @Override
     public long getId() {

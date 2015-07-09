@@ -16,26 +16,10 @@
 //under the License.
 package org.apache.cloudstack.quota;
 
-import java.util.List;
-
-import org.apache.cloudstack.api.command.ListQuotaConfigurationsCmd;
-import org.apache.cloudstack.api.command.QuotaEditResourceMappingCmd;
-import org.apache.cloudstack.api.response.QuotaConfigurationResponse;
-import org.apache.cloudstack.api.response.QuotaCreditsResponse;
-
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.PluggableService;
 
 public interface QuotaManager extends PluggableService {
 
     public void calculateQuotaUsage(QuotaJobVO job, long startDateMillis, long endDateMillis);
-
-    Pair<List<QuotaConfigurationVO>, Integer> editQuotaMapping(QuotaEditResourceMappingCmd cmd);
-
-    Pair<List<QuotaConfigurationVO>, Integer> listConfigurations(ListQuotaConfigurationsCmd cmd);
-
-    QuotaConfigurationResponse createQuotaConfigurationResponse(QuotaConfigurationVO configuration);
-
-    QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Integer amount, Long updatedBy);
 
 }

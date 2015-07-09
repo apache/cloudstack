@@ -25,7 +25,6 @@ import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
 
-
 public class QuotaEmailTemplateResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
@@ -44,51 +43,40 @@ public class QuotaEmailTemplateResponse extends BaseResponse {
     @Param(description = "the account name of the admin who updated the credits")
     private Timestamp SentOn;
 
-
-     public QuotaEmailTemplateResponse() {
-         super();
-     }
-
+    public QuotaEmailTemplateResponse() {
+        super();
+    }
 
     public String getId() {
         return id;
     }
 
-
     public void setId(String id) {
         this.id = id;
     }
-
 
     public String getAccountName() {
         return accountName;
     }
 
-
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
-
 
     public String getDomainId() {
         return domainId;
     }
 
-
     public void setDomainId(String domainId) {
         this.domainId = domainId;
     }
-
 
     public Timestamp getSentOn() {
         return SentOn;
     }
 
-
     public void setSentOn(Timestamp sentOn) {
         SentOn = sentOn;
     }
-
-
 
 }

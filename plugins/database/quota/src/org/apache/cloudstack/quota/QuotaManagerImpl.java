@@ -24,37 +24,25 @@ import java.util.TimeZone;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.command.ListQuotaConfigurationsCmd;
+import org.apache.cloudstack.api.command.QuotaMapping;
 import org.apache.cloudstack.api.command.QuotaCreditsCmd;
-import org.apache.cloudstack.api.command.QuotaEditResourceMappingCmd;
+import org.apache.cloudstack.api.command.QuotaEditMappingCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateAddCmd;
 import org.apache.cloudstack.api.command.QuotaRefreshCmd;
 import org.apache.cloudstack.api.command.QuotaStatementCmd;
-import org.apache.cloudstack.api.response.QuotaConfigurationResponse;
-import org.apache.cloudstack.api.response.QuotaCreditsResponse;
-import org.apache.cloudstack.quota.dao.QuotaConfigurationDao;
-import org.apache.cloudstack.quota.dao.QuotaCreditsDao;
+import org.apache.cloudstack.api.command.QuotaTypesCmd;
 import org.apache.cloudstack.quota.dao.QuotaJobDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.usage.UsageJobVO;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = QuotaManager.class)
 public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
-    private static final Logger s_logger = Logger
-            .getLogger(QuotaManagerImpl.class.getName());
-
-    @Inject
-    private QuotaConfigurationDao _quotaConfigurationDao;
-
-    @Inject
-    private QuotaCreditsDao _quotaCreditsDao;
+    private static final Logger s_logger = Logger.getLogger(QuotaManagerImpl.class.getName());
 
     @Inject
     private QuotaJobDao _quotaJobDao;
@@ -67,88 +55,21 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         super();
     }
 
-    public QuotaManagerImpl(final QuotaConfigurationDao quotaConfigurationDao) {
-        super();
-        _quotaConfigurationDao = quotaConfigurationDao;
-    }
-
     @Override
     public List<Class<?>> getCommands() {
         final List<Class<?>> cmdList = new ArrayList<Class<?>>();
-        cmdList.add(ListQuotaConfigurationsCmd.class);
+        cmdList.add(QuotaTypesCmd.class);
+        cmdList.add(QuotaMapping.class);
         cmdList.add(QuotaCreditsCmd.class);
         cmdList.add(QuotaEmailTemplateAddCmd.class);
         cmdList.add(QuotaRefreshCmd.class);
         cmdList.add(QuotaStatementCmd.class);
-        cmdList.add(QuotaEditResourceMappingCmd.class);
+        cmdList.add(QuotaEditMappingCmd.class);
         return cmdList;
     }
 
     @Override
-    public Pair<List<QuotaConfigurationVO>, Integer> listConfigurations(
-            final ListQuotaConfigurationsCmd cmd) {
-        final Pair<List<QuotaConfigurationVO>, Integer> result = _quotaConfigurationDao
-                .searchConfigurations();
-        TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
-        return result;
-    }
-
-    @Override
-    public QuotaConfigurationResponse createQuotaConfigurationResponse(
-            final QuotaConfigurationVO configuration) {
-        final QuotaConfigurationResponse response = new QuotaConfigurationResponse();
-        response.setUsageType(configuration.getUsageType());
-        response.setUsageUnit(configuration.getUsageUnit());
-        response.setUsageDiscriminator(configuration.getUsageDiscriminator());
-        response.setCurrencyValue(configuration.getCurrencyValue());
-        response.setInclude(configuration.getInclude());
-        response.setDescription(configuration.getDescription());
-        return response;
-    }
-
-    @Override
-    public Pair<List<QuotaConfigurationVO>, Integer> editQuotaMapping(
-            QuotaEditResourceMappingCmd cmd) {
-        String resourceName = cmd.getUsageType();
-        Integer quotaMapping = cmd.getValue();
-
-        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-        try {
-            QuotaConfigurationVO result = _quotaConfigurationDao.findByUsageType(resourceName);
-            if (result==null) throw new InvalidParameterValueException(resourceName);
-            s_logger.info("Old value=" + result.getCurrencyValue() + ", new value = " + quotaMapping + ", for resource =" + resourceName);
-            result.setCurrencyValue(quotaMapping);
-            _quotaConfigurationDao.persist(result);
-        } finally {
-           txn.close();
-        }
-        final Pair<List<QuotaConfigurationVO>, Integer> result = _quotaConfigurationDao.searchConfigurations();
-        TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
-        return result;
-    }
-
-
-    @Override
-    public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId,
-            Integer amount, Long updatedBy) {
-        QuotaCreditsVO result = null;
-        TransactionLegacy txn = TransactionLegacy
-                .open(TransactionLegacy.USAGE_DB);
-        try {
-            QuotaCreditsVO credits = new QuotaCreditsVO(accountId, domainId,
-                    amount, updatedBy);
-            credits.setUpdatedOn(new Date());
-            result = _quotaCreditsDao.persist(credits);
-        } finally {
-            txn.close();
-        }
-        TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
-        return new QuotaCreditsResponse(result);
-    }
-
-    @Override
-    public void calculateQuotaUsage(QuotaJobVO job, long startDateMillis,
-            long endDateMillis) {
+    public void calculateQuotaUsage(QuotaJobVO job, long startDateMillis, long endDateMillis) {
 
         boolean success = false;
         long timeStart = System.currentTimeMillis();
@@ -170,7 +91,8 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
                 TransactionLegacy jobUpdateTxn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
                 try {
                     jobUpdateTxn.start();
-                    // everything seemed to work...set endDate as the last success date
+                    // everything seemed to work...set endDate as the last
+                    // success date
                     _quotaJobDao.updateJobSuccess(job.getId(), startDateMillis, endDateMillis, System.currentTimeMillis() - timeStart, success);
 
                     // create a new job if this is a recurring job
@@ -191,8 +113,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
                 s_logger.info("Calculating quota usage for records between " + startDate + " and " + endDate);
             }
 
-            //get all the accounts from usage db
-            TransactionLegacy userTxn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+            // get all the accounts from usage db
         } catch (Exception e) {
             s_logger.error("Quota Manager error", e);
         }

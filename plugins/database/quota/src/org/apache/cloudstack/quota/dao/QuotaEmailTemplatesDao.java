@@ -28,8 +28,8 @@ import com.cloud.utils.db.SearchCriteria;
 
 public interface QuotaEmailTemplatesDao extends GenericDao<QuotaEmailTemplatesVO, Long> {
 
- QuotaEmailTemplatesVO fetchTemplate(String templateName);
+    QuotaEmailTemplatesVO fetchTemplate(String templateName);
 
- Pair<List<QuotaBalanceVO>, Integer> searchBalance(SearchCriteria<QuotaBalanceVO> sc, Filter filter);
+    Pair<List<QuotaBalanceVO>, Integer> searchBalance(SearchCriteria<QuotaBalanceVO> sc, Filter filter);
 
 }

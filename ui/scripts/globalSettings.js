@@ -125,7 +125,7 @@
                         var data = {};
                         listViewDataProvider(args, data);
                         $.ajax({
-                            url: createURL('listQuotaConfigurations'),
+                            url: createURL('quotaMapping'),
                             data: data,
                             success: function(json) {
                                 var items = json.quotaconfigurationresponse.QuotaConfiguration;
@@ -183,7 +183,7 @@
                                     var items = [];
                                     console.log(args);
                                     $.ajax({
-                                        url: createURL("listQuotaConfigurations&hostname=" + args.context.quotaConfiguration[0].hostname),
+                                        url: createURL("quotaMapping&hostname=" + args.context.quotaConfiguration[0].hostname),
                                         dataType: "json",
                                         async: true,
                                         success: function(json) {

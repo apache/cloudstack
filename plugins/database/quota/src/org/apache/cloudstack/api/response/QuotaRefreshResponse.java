@@ -23,11 +23,9 @@ import com.google.gson.annotations.SerializedName;
 
 public class QuotaRefreshResponse extends BaseResponse {
 
-
     @SerializedName("result")
     @Param(description = "Execution result for the quota refresh command")
     private String result;
-
 
     public QuotaRefreshResponse() {
         super();
@@ -38,6 +36,7 @@ public class QuotaRefreshResponse extends BaseResponse {
         super();
         this.result = result;
     }
+
     public String getResult() {
         return result;
     }

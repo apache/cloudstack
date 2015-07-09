@@ -43,61 +43,50 @@ public class QuotaCreditsResponse extends BaseResponse {
     @Param(description = "the account name of the admin who updated the credits")
     private Timestamp updatedOn;
 
+    public QuotaCreditsResponse() {
+        super();
+    }
 
-     public QuotaCreditsResponse() {
-         super();
-     }
-
-
-     public QuotaCreditsResponse(QuotaCreditsVO result) {
-         super();
-         if (result != null){
-             this.credits = 100;
-             this.balance = 200;
-             this.updatedBy = "1";
-             this.updatedOn = new Timestamp(System.currentTimeMillis());
-         }
-     }
-
+    public QuotaCreditsResponse(QuotaCreditsVO result) {
+        super();
+        if (result != null) {
+            this.credits = 100;
+            this.balance = 200;
+            this.updatedBy = "1";
+            this.updatedOn = new Timestamp(System.currentTimeMillis());
+        }
+    }
 
     public Integer getCredits() {
         return credits;
     }
 
-
     public void setCredits(Integer credits) {
         this.credits = credits;
     }
-
 
     public Integer getBalance() {
         return balance;
     }
 
-
     public void setBalance(Integer balance) {
         this.balance = balance;
     }
-
 
     public String getUpdatedBy() {
         return updatedBy;
     }
 
-
     public void setUpdatedBy(String updatedBy) {
         this.updatedBy = updatedBy;
     }
-
 
     public Timestamp getUpdatedOn() {
         return updatedOn;
     }
 
-
     public void setUpdatedOn(Timestamp updatedOn) {
         this.updatedOn = updatedOn;
     }
-
 
 }

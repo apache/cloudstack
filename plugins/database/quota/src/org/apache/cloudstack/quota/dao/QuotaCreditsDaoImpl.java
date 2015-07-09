@@ -29,12 +29,11 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = {QuotaCreditsDao.class})
+@Local(value = { QuotaCreditsDao.class })
 public class QuotaCreditsDaoImpl extends GenericDaoBase<QuotaCreditsVO, Long> implements QuotaCreditsDao {
 
     @Override
-    public Pair<List<QuotaCreditsVO>, Integer> searchAndCountAllRecords(
-            SearchCriteria<QuotaCreditsVO> sc, Filter filter) {
+    public Pair<List<QuotaCreditsVO>, Integer> searchAndCountAllRecords(SearchCriteria<QuotaCreditsVO> sc, Filter filter) {
         // TODO Auto-generated method stub
         return null;
     }

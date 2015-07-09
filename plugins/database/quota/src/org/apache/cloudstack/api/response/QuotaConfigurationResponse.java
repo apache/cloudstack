@@ -48,15 +48,14 @@ public class QuotaConfigurationResponse extends BaseResponse {
     @Param(description = "description")
     private String description;
 
+    public QuotaConfigurationResponse() {
+        super();
+    }
 
-     public QuotaConfigurationResponse() {
-         super();
-     }
-
-     public QuotaConfigurationResponse(final String usageType) {
-         super();
-         this.usageType = usageType;
-     }
+    public QuotaConfigurationResponse(final String usageType) {
+        super();
+        this.usageType = usageType;
+    }
 
     public String getUsageType() {
         return usageType;

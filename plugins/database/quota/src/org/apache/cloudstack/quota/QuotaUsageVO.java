@@ -58,8 +58,7 @@ public class QuotaUsageVO implements InternalIdentity {
     public QuotaUsageVO() {
     }
 
-    public QuotaUsageVO(Long usageItemId, String usageType,
-            BigDecimal quotaUsed, Date startDate, Date endDate) {
+    public QuotaUsageVO(Long usageItemId, String usageType, BigDecimal quotaUsed, Date startDate, Date endDate) {
         super();
         this.usageItemId = usageItemId;
         this.usageType = usageType;

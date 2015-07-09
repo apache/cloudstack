@@ -43,7 +43,6 @@ public class QuotaEmailTemplatesVO implements InternalIdentity {
     @Column(name = "template_text")
     private String templateText;
 
-
     @Column(name = "category")
     private Integer category;
 
@@ -60,8 +59,7 @@ public class QuotaEmailTemplatesVO implements InternalIdentity {
     public QuotaEmailTemplatesVO() {
     }
 
-    public QuotaEmailTemplatesVO(String templateName, String templateText,
-            String locale, Integer version) {
+    public QuotaEmailTemplatesVO(String templateName, String templateText, String locale, Integer version) {
         super();
         this.templateName = templateName;
         this.templateText = templateText;
@@ -90,7 +88,6 @@ public class QuotaEmailTemplatesVO implements InternalIdentity {
     public void setTemplateText(String templateText) {
         this.templateText = templateText;
     }
-
 
     public Integer getCategory() {
         return category;

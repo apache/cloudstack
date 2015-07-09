@@ -28,20 +28,20 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.QuotaCreditsResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.quota.QuotaManager;
+import org.apache.cloudstack.quota.QuotaDBUtilsImpl;
 
 import com.cloud.user.Account;
 
 @APICommand(name = "quotaCredits", responseObject = QuotaCreditsResponse.class, description = "Add +-credits to an account", since = "4.2.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaCreditsCmd extends BaseCmd {
 
+    @Inject
+    QuotaDBUtilsImpl _quotaDBUtils;
+
     public static final Logger s_logger = Logger
             .getLogger(QuotaStatementCmd.class.getName());
 
     private static final String s_name = "quotacreditsresponse";
-
-    @Inject
-    private QuotaManager _quotaManager;
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Account Id for which quota credits need to be added")
     private String accountName;
@@ -80,9 +80,9 @@ public class QuotaCreditsCmd extends BaseCmd {
         super();
     }
 
-    public QuotaCreditsCmd(final QuotaManager quotaManager) {
+    public QuotaCreditsCmd(final QuotaDBUtilsImpl quotaDBUtils) {
         super();
-        _quotaManager = quotaManager;
+        _quotaDBUtils = quotaDBUtils;
     }
 
     @Override
@@ -99,7 +99,7 @@ public class QuotaCreditsCmd extends BaseCmd {
                     "The account does not exists or has been removed/disabled");
         }
 
-        final QuotaCreditsResponse credit_response = _quotaManager
+        final QuotaCreditsResponse credit_response = _quotaDBUtils
                 .addQuotaCredits(accountId, domainId, value, CallContext
                         .current().getCallingAccount().getId());
 

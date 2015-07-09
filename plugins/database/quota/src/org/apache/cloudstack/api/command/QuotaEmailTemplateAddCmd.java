@@ -16,91 +16,67 @@
 //under the License.
 package org.apache.cloudstack.api.command;
 
-import javax.inject.Inject;
-
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.quota.QuotaManager;
 import org.apache.cloudstack.api.response.QuotaEmailTemplateResponse;
 
 @APICommand(name = "quotaEmailTemplateAdd", responseObject = QuotaEmailTemplateResponse.class, description = "Add a new email template", since = "4.2.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaEmailTemplateAddCmd extends BaseListCmd {
 
-public static final Logger s_logger = Logger
-      .getLogger(QuotaEmailTemplateAddCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(QuotaEmailTemplateAddCmd.class.getName());
 
-private static final String s_name = "quotaemailtemplateresponse";
+    private static final String s_name = "quotaemailtemplateresponse";
 
-@Inject
-private QuotaManager _quotaManager;
+    @Parameter(name = "templatename", type = CommandType.STRING, description = "The name of email template")
+    private String templateName;
 
-@Parameter(name = "templatename", type = CommandType.STRING, description = "The name of email template")
-private String templateName;
+    @Parameter(name = "templatetext", type = CommandType.STRING, description = "The text of the email")
+    private Long templateText;
 
-@Parameter(name = "templatetext", type = CommandType.STRING, description = "The text of the email")
-private Long templateText;
+    @Parameter(name = "locale", type = CommandType.STRING, description = "The locale of the email text")
+    private Integer locale;
 
-@Parameter(name = "locale", type = CommandType.STRING, description = "The locale of the email text")
-private Integer locale;
+    public QuotaEmailTemplateAddCmd() {
+        super();
+    }
 
+    @Override
+    public String getCommandName() {
+        return s_name;
+    }
 
+    @Override
+    public void execute() {
 
-public QuotaEmailTemplateAddCmd() {
-  super();
-}
+        final QuotaEmailTemplateResponse templResponse = null;
 
+        setResponseObject(templResponse);
+    }
 
-public QuotaEmailTemplateAddCmd(final QuotaManager quotaManager) {
-  super();
-  _quotaManager = quotaManager;
-}
+    public String getTemplateName() {
+        return templateName;
+    }
 
+    public void setTemplateName(String templateName) {
+        this.templateName = templateName;
+    }
 
-@Override
-public String getCommandName() {
-  return s_name;
-}
+    public Long getTemplateText() {
+        return templateText;
+    }
 
+    public void setTemplateText(Long templateText) {
+        this.templateText = templateText;
+    }
 
-@Override
-public void execute() {
+    public Integer getLocale() {
+        return locale;
+    }
 
-  final QuotaEmailTemplateResponse templResponse = null;
-
-  setResponseObject(templResponse);
-}
-
-
-public String getTemplateName() {
-    return templateName;
-}
-
-
-public void setTemplateName(String templateName) {
-    this.templateName = templateName;
-}
-
-
-public Long getTemplateText() {
-    return templateText;
-}
-
-
-public void setTemplateText(Long templateText) {
-    this.templateText = templateText;
-}
-
-
-public Integer getLocale() {
-    return locale;
-}
-
-
-public void setLocale(Integer locale) {
-    this.locale = locale;
-}
-
+    public void setLocale(Integer locale) {
+        this.locale = locale;
+    }
 
 }

@@ -30,40 +30,39 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value = {QuotaConfigurationDao.class})
+@Local(value = { QuotaConfigurationDao.class })
 public class QuotaConfigurationDaoImpl extends GenericDaoBase<QuotaConfigurationVO, Long> implements QuotaConfigurationDao {
- private final SearchBuilder<QuotaConfigurationVO> searchUsageType;
- private final SearchBuilder<QuotaConfigurationVO> listAllIncludedUsageType;
+    private final SearchBuilder<QuotaConfigurationVO> searchUsageType;
+    private final SearchBuilder<QuotaConfigurationVO> listAllIncludedUsageType;
 
- public QuotaConfigurationDaoImpl() {
-     super();
-     searchUsageType = createSearchBuilder();
-     searchUsageType.and("usage_type", searchUsageType.entity().getUsageType(), SearchCriteria.Op.EQ);
-     searchUsageType.done();
+    public QuotaConfigurationDaoImpl() {
+        super();
+        searchUsageType = createSearchBuilder();
+        searchUsageType.and("usage_type", searchUsageType.entity().getUsageType(), SearchCriteria.Op.EQ);
+        searchUsageType.done();
 
-     listAllIncludedUsageType = createSearchBuilder();
-     listAllIncludedUsageType.and("include", listAllIncludedUsageType.entity().getInclude(), SearchCriteria.Op.EQ);
-     listAllIncludedUsageType.done();
- }
+        listAllIncludedUsageType = createSearchBuilder();
+        listAllIncludedUsageType.and("include", listAllIncludedUsageType.entity().getInclude(), SearchCriteria.Op.EQ);
+        listAllIncludedUsageType.done();
+    }
 
- @Override
- public QuotaConfigurationVO findByUsageType(final String usageType) {
-     final SearchCriteria<QuotaConfigurationVO> sc = searchUsageType.create();
-     sc.setParameters("usage_type", usageType);
-     return findOneBy(sc);
- }
+    @Override
+    public QuotaConfigurationVO findByUsageType(final String usageType) {
+        final SearchCriteria<QuotaConfigurationVO> sc = searchUsageType.create();
+        sc.setParameters("usage_type", usageType);
+        return findOneBy(sc);
+    }
 
- @Override
- public Pair<List<QuotaConfigurationVO>, Integer> searchConfigurations() {
-     TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-     try {
-         final SearchCriteria<QuotaConfigurationVO> sc = listAllIncludedUsageType.create();
-         sc.setParameters("include", 1);
-         return searchAndCount(sc, null);
-     } finally {
-         txn.close();
-     }
- }
-
+    @Override
+    public Pair<List<QuotaConfigurationVO>, Integer> searchConfigurations() {
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+        try {
+            final SearchCriteria<QuotaConfigurationVO> sc = listAllIncludedUsageType.create();
+            sc.setParameters("include", 1);
+            return searchAndCount(sc, null);
+        } finally {
+            txn.close();
+        }
+    }
 
 }

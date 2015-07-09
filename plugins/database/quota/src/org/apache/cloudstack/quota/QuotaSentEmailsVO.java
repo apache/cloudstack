@@ -30,9 +30,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 @Entity
 @Table(name = "quota_sent_emails")
 public class QuotaSentEmailsVO implements InternalIdentity {
-    public QuotaSentEmailsVO(Long id, String fromAddress, String toAddress,
-            String ccAddress, String bccAddress, Date sendDate, String subject,
-            String mailText, Long version, Long updatedBy) {
+    public QuotaSentEmailsVO(Long id, String fromAddress, String toAddress, String ccAddress, String bccAddress, Date sendDate, String subject, String mailText, Long version, Long updatedBy) {
         super();
         this.id = id;
         this.fromAddress = fromAddress;
@@ -45,7 +43,6 @@ public class QuotaSentEmailsVO implements InternalIdentity {
         this.version = version;
         this.updatedBy = updatedBy;
     }
-
 
     private static final long serialVersionUID = -7117933845287653210L;
 

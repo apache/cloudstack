@@ -61,9 +61,7 @@ public class QuotaBalanceVO implements InternalIdentity {
     public QuotaBalanceVO() {
     }
 
-    public QuotaBalanceVO(Long accountId, Long domainId,
-            BigDecimal creditBalance, Date updatedOn, Long previousUpdateId,
-            Date previousUpdateOn) {
+    public QuotaBalanceVO(Long accountId, Long domainId, BigDecimal creditBalance, Date updatedOn, Long previousUpdateId, Date previousUpdateOn) {
         super();
         this.accountId = accountId;
         this.domainId = domainId;

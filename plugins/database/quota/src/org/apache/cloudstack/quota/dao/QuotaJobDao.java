@@ -23,19 +23,19 @@ import org.apache.cloudstack.quota.QuotaJobVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface QuotaJobDao extends GenericDao<QuotaJobVO, Long> {
- Long checkHeartbeat(String hostname, int pid, int aggregationDuration);
+    Long checkHeartbeat(String hostname, int pid, int aggregationDuration);
 
- void createNewJob(String hostname, int pid, int jobType);
+    void createNewJob(String hostname, int pid, int jobType);
 
- QuotaJobVO getLastJob();
+    QuotaJobVO getLastJob();
 
- QuotaJobVO getNextImmediateJob();
+    QuotaJobVO getNextImmediateJob();
 
- long getLastJobSuccessDateMillis();
+    long getLastJobSuccessDateMillis();
 
- Date getLastHeartbeat();
+    Date getLastHeartbeat();
 
- QuotaJobVO isOwner(String hostname, int pid);
+    QuotaJobVO isOwner(String hostname, int pid);
 
- void updateJobSuccess(Long jobId, long startMillis, long endMillis, long execTime, boolean success);
+    void updateJobSuccess(Long jobId, long startMillis, long endMillis, long execTime, boolean success);
 }

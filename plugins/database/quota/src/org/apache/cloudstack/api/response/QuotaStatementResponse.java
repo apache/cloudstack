@@ -24,86 +24,85 @@ import com.cloud.serializer.Param;
 
 public class QuotaStatementResponse extends BaseResponse {
 
-  @SerializedName("usageType")
-  @Param(description = "usageType")
-  private String usageType;
+    @SerializedName("usageType")
+    @Param(description = "usageType")
+    private String usageType;
 
-  @SerializedName("usageUnit")
-  @Param(description = "usageUnit")
-  private String usageUnit;
+    @SerializedName("usageUnit")
+    @Param(description = "usageUnit")
+    private String usageUnit;
 
-  @SerializedName("usageDiscriminator")
-  @Param(description = "usageDiscriminator")
-  private String usageDiscriminator;
+    @SerializedName("usageDiscriminator")
+    @Param(description = "usageDiscriminator")
+    private String usageDiscriminator;
 
-  @SerializedName("currencyValue")
-  @Param(description = "currencyValue")
-  private int currencyValue;
+    @SerializedName("currencyValue")
+    @Param(description = "currencyValue")
+    private int currencyValue;
 
-  @SerializedName("include")
-  @Param(description = "include")
-  private int include;
+    @SerializedName("include")
+    @Param(description = "include")
+    private int include;
 
-  @SerializedName("description")
-  @Param(description = "description")
-  private String description;
+    @SerializedName("description")
+    @Param(description = "description")
+    private String description;
 
+    public QuotaStatementResponse() {
+        super();
+    }
 
-   public QuotaStatementResponse() {
-       super();
-   }
+    public QuotaStatementResponse(final String usageType) {
+        super();
+        this.usageType = usageType;
+    }
 
-   public QuotaStatementResponse(final String usageType) {
-       super();
-       this.usageType = usageType;
-   }
+    public String getUsageType() {
+        return usageType;
+    }
 
-  public String getUsageType() {
-      return usageType;
-  }
+    public void setUsageType(String usageType) {
+        this.usageType = usageType;
+    }
 
-  public void setUsageType(String usageType) {
-      this.usageType = usageType;
-  }
+    public String getUsageUnit() {
+        return usageUnit;
+    }
 
-  public String getUsageUnit() {
-      return usageUnit;
-  }
+    public void setUsageUnit(String usageUnit) {
+        this.usageUnit = usageUnit;
+    }
 
-  public void setUsageUnit(String usageUnit) {
-      this.usageUnit = usageUnit;
-  }
+    public String getUsageDiscriminator() {
+        return usageDiscriminator;
+    }
 
-  public String getUsageDiscriminator() {
-      return usageDiscriminator;
-  }
+    public void setUsageDiscriminator(String usageDiscriminator) {
+        this.usageDiscriminator = usageDiscriminator;
+    }
 
-  public void setUsageDiscriminator(String usageDiscriminator) {
-      this.usageDiscriminator = usageDiscriminator;
-  }
+    public int getCurrencyValue() {
+        return currencyValue;
+    }
 
-  public int getCurrencyValue() {
-      return currencyValue;
-  }
+    public void setCurrencyValue(int currencyValue) {
+        this.currencyValue = currencyValue;
+    }
 
-  public void setCurrencyValue(int currencyValue) {
-      this.currencyValue = currencyValue;
-  }
+    public int getInclude() {
+        return include;
+    }
 
-  public int getInclude() {
-      return include;
-  }
+    public void setInclude(int include) {
+        this.include = include;
+    }
 
-  public void setInclude(int include) {
-      this.include = include;
-  }
+    public String getDescription() {
+        return description;
+    }
 
-  public String getDescription() {
-      return description;
-  }
-
-  public void setDescription(String description) {
-      this.description = description;
-  }
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
 }

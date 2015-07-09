@@ -30,7 +30,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = {QuotaEmailTemplatesDao.class})
+@Local(value = { QuotaEmailTemplatesDao.class })
 public class QuotaEmailTemplatesDaoImpl extends GenericDaoBase<QuotaEmailTemplatesVO, Long> implements QuotaEmailTemplatesDao {
 
     @Override
@@ -40,8 +40,7 @@ public class QuotaEmailTemplatesDaoImpl extends GenericDaoBase<QuotaEmailTemplat
     }
 
     @Override
-    public Pair<List<QuotaBalanceVO>, Integer> searchBalance(
-            SearchCriteria<QuotaBalanceVO> sc, Filter filter) {
+    public Pair<List<QuotaBalanceVO>, Integer> searchBalance(SearchCriteria<QuotaBalanceVO> sc, Filter filter) {
         // TODO Auto-generated method stub
         return null;
     }

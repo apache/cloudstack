@@ -54,8 +54,7 @@ public class QuotaCreditsVO implements InternalIdentity {
     public QuotaCreditsVO() {
     }
 
-    public QuotaCreditsVO(long accountId, long domainId, int credit,
-            long updatedBy) {
+    public QuotaCreditsVO(long accountId, long domainId, int credit, long updatedBy) {
         super();
         this.accountId = accountId;
         this.domainId = domainId;

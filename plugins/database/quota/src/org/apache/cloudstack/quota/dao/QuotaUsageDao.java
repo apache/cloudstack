@@ -27,8 +27,8 @@ import com.cloud.utils.db.SearchCriteria;
 
 public interface QuotaUsageDao extends GenericDao<QuotaUsageVO, Long> {
 
-Pair<List<QuotaUsageVO>, Integer> searchAndCountAllRecords(SearchCriteria<QuotaUsageVO> sc, Filter filter);
+    Pair<List<QuotaUsageVO>, Integer> searchAndCountAllRecords(SearchCriteria<QuotaUsageVO> sc, Filter filter);
 
-void saveQuotaUsage(List<QuotaUsageVO> credits);
+    void saveQuotaUsage(List<QuotaUsageVO> credits);
 
 }

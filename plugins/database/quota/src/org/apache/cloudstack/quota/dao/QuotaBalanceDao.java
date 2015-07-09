@@ -27,8 +27,8 @@ import com.cloud.utils.db.SearchCriteria;
 
 public interface QuotaBalanceDao extends GenericDao<QuotaBalanceVO, Long> {
 
- Pair<List<QuotaBalanceVO>, Integer> searchBalance(SearchCriteria<QuotaBalanceVO> sc, Filter filter);
+    Pair<List<QuotaBalanceVO>, Integer> searchBalance(SearchCriteria<QuotaBalanceVO> sc, Filter filter);
 
- void saveQuotaBalance(List<QuotaBalanceVO> credits);
+    void saveQuotaBalance(List<QuotaBalanceVO> credits);
 
 }

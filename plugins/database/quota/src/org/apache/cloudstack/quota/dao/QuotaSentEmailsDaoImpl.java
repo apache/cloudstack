@@ -29,12 +29,11 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = {QuotaSentEmailsDao.class})
+@Local(value = { QuotaSentEmailsDao.class })
 public class QuotaSentEmailsDaoImpl extends GenericDaoBase<QuotaSentEmailsVO, Long> implements QuotaSentEmailsDao {
 
     @Override
-    public Pair<List<QuotaSentEmailsVO>, Integer> searchEmails(
-            SearchCriteria<QuotaSentEmailsVO> sc, Filter filter) {
+    public Pair<List<QuotaSentEmailsVO>, Integer> searchEmails(SearchCriteria<QuotaSentEmailsVO> sc, Filter filter) {
         // TODO Auto-generated method stub
         return null;
     }

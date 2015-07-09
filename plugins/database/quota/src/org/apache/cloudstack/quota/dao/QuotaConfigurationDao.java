@@ -25,8 +25,8 @@ import com.cloud.utils.db.GenericDao;
 
 public interface QuotaConfigurationDao extends GenericDao<QuotaConfigurationVO, Long> {
 
- QuotaConfigurationVO findByUsageType(String usageType);
+    QuotaConfigurationVO findByUsageType(String usageType);
 
- Pair<List<QuotaConfigurationVO>, Integer> searchConfigurations();
+    Pair<List<QuotaConfigurationVO>, Integer> searchConfigurations();
 
 }

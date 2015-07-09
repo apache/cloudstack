@@ -14,34 +14,26 @@
 //KIND, either express or implied.  See the License for the
 //specific language governing permissions and limitations
 //under the License.
-package org.apache.cloudstack.quota.dao;
+package org.apache.cloudstack.quota;
 
 import java.util.List;
 
-import javax.ejb.Local;
-
-import org.springframework.stereotype.Component;
-import org.apache.cloudstack.quota.QuotaUsageVO;
+import org.apache.cloudstack.api.command.QuotaEditMappingCmd;
+import org.apache.cloudstack.api.command.QuotaMapping;
+import org.apache.cloudstack.api.response.QuotaConfigurationResponse;
+import org.apache.cloudstack.api.response.QuotaCreditsResponse;
 
 import com.cloud.utils.Pair;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.component.PluggableService;
 
-@Component
-@Local(value = { QuotaUsageDao.class })
-public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implements QuotaUsageDao {
+public interface QuotaDBUtils extends PluggableService {
 
-    @Override
-    public Pair<List<QuotaUsageVO>, Integer> searchAndCountAllRecords(SearchCriteria<QuotaUsageVO> sc, Filter filter) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+    Pair<List<QuotaConfigurationVO>, Integer> editQuotaMapping(QuotaEditMappingCmd cmd);
 
-    @Override
-    public void saveQuotaUsage(List<QuotaUsageVO> credits) {
-        // TODO Auto-generated method stub
+    Pair<List<QuotaConfigurationVO>, Integer> listConfigurations(QuotaMapping cmd);
 
-    }
+    QuotaConfigurationResponse createQuotaConfigurationResponse(QuotaConfigurationVO configuration);
+
+    QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Integer amount, Long updatedBy);
 
 }

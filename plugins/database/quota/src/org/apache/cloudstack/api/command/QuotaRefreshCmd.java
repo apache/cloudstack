@@ -16,35 +16,23 @@
 //under the License.
 package org.apache.cloudstack.api.command;
 
-import javax.inject.Inject;
-
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.QuotaRefreshResponse;
-import org.apache.cloudstack.quota.QuotaManager;
 
 import com.cloud.user.Account;
 
 @APICommand(name = "quotaRefresh", responseObject = QuotaRefreshResponse.class, description = "Refresh the quota for all accounts if enabled", since = "4.2.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaRefreshCmd extends BaseCmd {
 
-    public static final Logger s_logger = Logger
-            .getLogger(QuotaStatementCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(QuotaStatementCmd.class.getName());
 
     private static final String s_name = "quotarefreshresponse";
 
-    @Inject
-    private QuotaManager _quotaManager;
-
     public QuotaRefreshCmd() {
         super();
-    }
-
-    public QuotaRefreshCmd(final QuotaManager quotaManager) {
-        super();
-        _quotaManager = quotaManager;
     }
 
     @Override
@@ -54,8 +42,7 @@ public class QuotaRefreshCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException {
-        final QuotaRefreshResponse response = new QuotaRefreshResponse(
-                "Success");
+        final QuotaRefreshResponse response = new QuotaRefreshResponse("Success");
         setResponseObject(response);
     }
 
