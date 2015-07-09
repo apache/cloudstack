@@ -1275,12 +1275,20 @@ public class LibvirtVMDef {
         return _hvsType;
     }
 
-    public void setLibvirtVersion(long libvirtVersion) {
+    public static void setGlobalLibvirtVersion(long libvirtVersion) {
         s_libvirtVersion = libvirtVersion;
     }
 
-    public void setQemuVersion(long qemuVersion) {
+    public void setLibvirtVersion(long libvirtVersion) {
+        setGlobalLibvirtVersion(libvirtVersion);
+    }
+
+    public static void setGlobalQemuVersion(long qemuVersion) {
         s_qemuVersion = qemuVersion;
+    }
+
+    public void setQemuVersion(long qemuVersion) {
+        setGlobalQemuVersion(qemuVersion);
     }
 
     public void setDomainName(String domainName) {
