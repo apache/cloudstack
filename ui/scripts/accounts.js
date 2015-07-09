@@ -1061,6 +1061,41 @@
                                                 data: items
                                             });
                                         }
+                                    },
+                                    samlEnable: {
+                                        label: 'label.saml.enable',
+                                        docID: 'helpSamlEnable',
+                                        isBoolean: true,
+                                        validation: {
+                                            required: false
+                                        },
+                                        isHidden: function (args) {
+                                            if (g_idpList) return false;
+                                            return true;
+                                        }
+                                    },
+                                    samlEntity: {
+                                        label: 'label.saml.entity',
+                                        docID: 'helpSamlEntity',
+                                        validation: {
+                                            required: false
+                                        },
+                                        select: function(args) {
+                                            var items = [];
+                                            $(g_idpList).each(function() {
+                                                items.push({
+                                                    id: this.id,
+                                                    description: this.orgName
+                                                });
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        },
+                                        isHidden: function (args) {
+                                            if (g_idpList) return false;
+                                            return true;
+                                        }
                                     }
                                 }
                             },
@@ -1098,12 +1133,30 @@
                                     accounttype: accountObj.accounttype
                                 });
 
+
+                                var authorizeUsersForSamlSSO = function (users, entity) {
+                                    for (var i = 0; i < users.length; i++) {
+                                        $.ajax({
+                                            url: createURL('authorizeSamlSso&enable=true&userid=' + users[i].id + "&entityid=" + entity),
+                                            error: function(XMLHttpResponse) {
+                                                args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                                            }
+                                        });
+                                    }
+                                    return;
+                                };
+
                                 $.ajax({
                                     url: createURL('createUser'),
                                     type: "POST",
                                     data: data,
                                     success: function(json) {
                                         var item = json.createuserresponse.user;
+                                        if (args.data.samlEnable && args.data.samlEnable === 'on') {
+                                            var entity = args.data.samlEntity;
+                                            if (item && entity)
+                                                authorizeUsersForSamlSSO([item], entity);
+                                        }
                                         args.response.success({
                                             data: item
                                         });
