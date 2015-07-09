@@ -137,12 +137,20 @@ class CsRedundant(object):
         if file.is_changed():
             CsHelper.service("keepalived", "reload")
 
-        # Configure heartbeat cron job
-        cron = CsFile("/etc/cron.d/heartbeat")
-        cron.add("SHELL=/bin/bash", 0)
-        cron.add("PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin", 1)
-        cron.add("*/1 * * * * root $SHELL %s/check_heartbeat.sh 2>&1 > /dev/null" % self.CS_ROUTER_DIR, -1)
-        cron.commit()
+        # Configure heartbeat cron job - runs every 30 seconds
+        heartbeat_cron = CsFile("/etc/cron.d/heartbeat")
+        heartbeat_cron.add("SHELL=/bin/bash", 0)
+        heartbeat_cron.add("PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin", 1)
+        heartbeat_cron.add("* * * * * root $SHELL %s/check_heartbeat.sh 2>&1 > /dev/null" % self.CS_ROUTER_DIR, -1)
+        heartbeat_cron.add("* * * * * root sleep 30; $SHELL %s/check_heartbeat.sh 2>&1 > /dev/null" % self.CS_ROUTER_DIR, -1)
+        heartbeat_cron.commit()
+        
+        # Configure KeepaliveD cron job - runs at every reboot
+        keepalived_cron = CsFile("/etc/cron.d/keepalived")
+        keepalived_cron.add("SHELL=/bin/bash", 0)
+        keepalived_cron.add("PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin", 1)
+        keepalived_cron.add("@reboot root service keepalived start", -1)
+        keepalived_cron.commit()
 
         proc = CsProcess(['/usr/sbin/keepalived', '--vrrp'])
         if not proc.find():
