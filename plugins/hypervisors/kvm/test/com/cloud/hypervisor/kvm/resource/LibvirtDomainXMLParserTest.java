@@ -29,14 +29,14 @@ public class LibvirtDomainXMLParserTest extends TestCase {
     public void testDomainXMLParser() {
         int vncPort = 5900;
 
-        DiskDef.diskBus diskBus = DiskDef.diskBus.VIRTIO;
-        DiskDef.diskType diskType = DiskDef.diskType.FILE;
-        DiskDef.deviceType deviceType = DiskDef.deviceType.DISK;
-        DiskDef.diskFmtType diskFormat = DiskDef.diskFmtType.QCOW2;
-        DiskDef.diskCacheMode diskCache = DiskDef.diskCacheMode.NONE;
+        DiskDef.DiskBus diskBus = DiskDef.DiskBus.VIRTIO;
+        DiskDef.DiskType diskType = DiskDef.DiskType.FILE;
+        DiskDef.DeviceType deviceType = DiskDef.DeviceType.DISK;
+        DiskDef.DiskFmtType diskFormat = DiskDef.DiskFmtType.QCOW2;
+        DiskDef.DiskCacheMode diskCache = DiskDef.DiskCacheMode.NONE;
 
-        InterfaceDef.nicModel ifModel = InterfaceDef.nicModel.VIRTIO;
-        InterfaceDef.guestNetType ifType = InterfaceDef.guestNetType.BRIDGE;
+        InterfaceDef.NicModel ifModel = InterfaceDef.NicModel.VIRTIO;
+        InterfaceDef.GuestNetType ifType = InterfaceDef.GuestNetType.BRIDGE;
 
         String diskLabel ="vda";
         String diskPath = "/var/lib/libvirt/images/my-test-image.qcow2";

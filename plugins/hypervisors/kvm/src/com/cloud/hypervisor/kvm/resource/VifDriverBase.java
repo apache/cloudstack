@@ -47,10 +47,10 @@ public abstract class VifDriverBase implements VifDriver {
     @Override
     public abstract void unplug(LibvirtVMDef.InterfaceDef iface);
 
-    protected LibvirtVMDef.InterfaceDef.nicModel getGuestNicModel(String platformEmulator, String nicAdapter) {
+    protected LibvirtVMDef.InterfaceDef.NicModel getGuestNicModel(String platformEmulator, String nicAdapter) {
         // if nicAdapter is found in ENUM, use it. Otherwise, match guest OS type as before
         if (nicAdapter != null && !nicAdapter.isEmpty()) {
-            for (LibvirtVMDef.InterfaceDef.nicModel model : LibvirtVMDef.InterfaceDef.nicModel.values()) {
+            for (LibvirtVMDef.InterfaceDef.NicModel model : LibvirtVMDef.InterfaceDef.NicModel.values()) {
                 if (model.toString().equalsIgnoreCase(nicAdapter)) {
                     return model;
                 }
@@ -58,9 +58,9 @@ public abstract class VifDriverBase implements VifDriver {
         }
 
         if (_libvirtComputingResource.isGuestPVEnabled(platformEmulator)) {
-            return LibvirtVMDef.InterfaceDef.nicModel.VIRTIO;
+            return LibvirtVMDef.InterfaceDef.NicModel.VIRTIO;
         } else {
-            return LibvirtVMDef.InterfaceDef.nicModel.E1000;
+            return LibvirtVMDef.InterfaceDef.NicModel.E1000;
         }
     }
 }

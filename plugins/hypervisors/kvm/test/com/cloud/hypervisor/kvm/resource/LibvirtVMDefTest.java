@@ -27,7 +27,7 @@ public class LibvirtVMDefTest extends TestCase {
 
     public void testInterfaceEtehrnet() {
         LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
-        ifDef.defEthernet("targetDeviceName", "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.nicModel.VIRTIO);
+        ifDef.defEthernet("targetDeviceName", "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO);
 
         String expected =
             "<interface type='ethernet'>\n" + "<target dev='targetDeviceName'/>\n" + "<mac address='00:11:22:aa:bb:dd'/>\n" + "<model type='virtio'/>\n"
@@ -38,10 +38,10 @@ public class LibvirtVMDefTest extends TestCase {
 
     public void testInterfaceDirectNet() {
         LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
-        ifDef.defDirectNet("targetDeviceName", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.nicModel.VIRTIO, "private");
+        ifDef.defDirectNet("targetDeviceName", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO, "private");
 
         String expected =
-            "<interface type='" + LibvirtVMDef.InterfaceDef.guestNetType.DIRECT + "'>\n" + "<source dev='targetDeviceName' mode='private'/>\n" +
+            "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.DIRECT + "'>\n" + "<source dev='targetDeviceName' mode='private'/>\n" +
                 "<mac address='00:11:22:aa:bb:dd'/>\n" + "<model type='virtio'/>\n" + "</interface>\n";
 
         assertEquals(expected, ifDef.toString());
@@ -72,9 +72,9 @@ public class LibvirtVMDefTest extends TestCase {
         String diskLabel = "vda";
 
         DiskDef disk = new DiskDef();
-        DiskDef.diskBus bus = DiskDef.diskBus.VIRTIO;
-        DiskDef.diskFmtType type = DiskDef.diskFmtType.QCOW2;
-        DiskDef.diskCacheMode cacheMode = DiskDef.diskCacheMode.WRITEBACK;
+        DiskDef.DiskBus bus = DiskDef.DiskBus.VIRTIO;
+        DiskDef.DiskFmtType type = DiskDef.DiskFmtType.QCOW2;
+        DiskDef.DiskCacheMode cacheMode = DiskDef.DiskCacheMode.WRITEBACK;
 
         disk.defFileBasedDisk(filePath, diskLabel, bus, type);
         disk.setCacheMode(cacheMode);
@@ -82,7 +82,7 @@ public class LibvirtVMDefTest extends TestCase {
         assertEquals(filePath, disk.getDiskPath());
         assertEquals(diskLabel, disk.getDiskLabel());
         assertEquals(bus, disk.getBusType());
-        assertEquals(DiskDef.deviceType.DISK, disk.getDeviceType());
+        assertEquals(DiskDef.DeviceType.DISK, disk.getDeviceType());
 
         String xmlDef = disk.toString();
         String expectedXml = "<disk  device='disk' type='file'>\n<driver name='qemu' type='" + type.toString() + "' cache='" + cacheMode.toString() + "' />\n" +
