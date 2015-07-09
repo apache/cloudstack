@@ -67,6 +67,7 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
                                 long domainId, long accountId, long userId, Role role, boolean haEnabled) {
         super(id, serviceOfferingId, name, name, Type.SecondaryStorageVm, templateId, hypervisorType, guestOSId, domainId, accountId, userId, haEnabled);
         this.role = role;
+        this.dataCenterId = dataCenterId;
     }
 
     protected SecondaryStorageVmVO() {
