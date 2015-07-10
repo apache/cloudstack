@@ -101,21 +101,19 @@ class CsRedundant(object):
 
         CsHelper.execute('sed -i "s/--exec\ \$DAEMON;/--exec\ \$DAEMON\ --\ --vrrp;/g" /etc/init.d/keepalived')
         # checkrouter.sh configuration
-        file = CsFile("/opt/cloud/bin/checkrouter.sh")
-        file.greplace("[RROUTER_LOG]", self.RROUTER_LOG)
-        file.commit()
+        check_router = CsFile("/opt/cloud/bin/checkrouter.sh")
+        check_router.greplace("[RROUTER_LOG]", self.RROUTER_LOG)
+        check_router.commit()
 
         # keepalived configuration
-        file = CsFile(self.KEEPALIVED_CONF)
-        ads = [o for o in self.address.get_ips() if o.is_public()]
-            
-        file.search(" router_id ", "    router_id %s" % self.cl.get_name())
-        file.search(" interface ", "    interface %s" % guest.get_device())
-        file.search(" virtual_router_id ", "    virtual_router_id %s" % self.cl.get_router_id())
-        file.greplace("[RROUTER_BIN_PATH]", self.CS_ROUTER_DIR)
-        file.section("authentication {", "}", ["        auth_type AH \n", "        auth_pass %s\n" % self.cl.get_router_password()])
-        file.section("virtual_ipaddress {", "}", self._collect_ips())
-        file.commit()
+        keepalived_conf = CsFile(self.KEEPALIVED_CONF)
+        keepalived_conf.search(" router_id ", "    router_id %s" % self.cl.get_name())
+        keepalived_conf.search(" interface ", "    interface %s" % guest.get_device())
+        keepalived_conf.search(" virtual_router_id ", "    virtual_router_id %s" % self.cl.get_router_id())
+        keepalived_conf.greplace("[RROUTER_BIN_PATH]", self.CS_ROUTER_DIR)
+        keepalived_conf.section("authentication {", "}", ["        auth_type AH \n", "        auth_pass %s\n" % self.cl.get_router_password()])
+        keepalived_conf.section("virtual_ipaddress {", "}", self._collect_ips())
+        keepalived_conf.commit()
 
         # conntrackd configuration
         connt = CsFile(self.CONNTRACKD_CONF)
@@ -134,9 +132,6 @@ class CsRedundant(object):
         if connt.is_changed():
             CsHelper.service("conntrackd", "restart")
 
-        if file.is_changed():
-            CsHelper.service("keepalived", "reload")
-
         # Configure heartbeat cron job - runs every 30 seconds
         heartbeat_cron = CsFile("/etc/cron.d/heartbeat")
         heartbeat_cron.add("SHELL=/bin/bash", 0)
@@ -153,8 +148,8 @@ class CsRedundant(object):
         keepalived_cron.commit()
 
         proc = CsProcess(['/usr/sbin/keepalived', '--vrrp'])
-        if not proc.find():
-            CsHelper.service("keepalived", "start")
+        if not proc.find() or keepalived_conf.is_changed():
+            CsHelper.service("keepalived", "restart")
 
     def release_lock(self):
         try:
