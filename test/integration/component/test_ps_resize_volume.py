@@ -91,9 +91,9 @@ class TestResizeVolume(cloudstackTestCase):
             cls.hypervisor = str(get_hypervisor_type(cls.api_client)).lower()
 
             # Creating service offering with normal config
-            cls.service_offering = ServiceOffering.create(cls.api_client,
-                                                          cls.services["\
-                                                          service_offering"])
+            cls.service_offering = ServiceOffering.create(
+                cls.api_client,
+                cls.services["service_offering"])
             cls._cleanup.append(cls.service_offering)
 
             cls.services["disk_offering"]["disksize"] = 5
