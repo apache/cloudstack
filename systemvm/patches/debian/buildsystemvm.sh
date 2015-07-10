@@ -375,8 +375,10 @@ packages() {
   chroot . apt-get --no-install-recommends -q -y --force-yes install open-vm-tools
   #xenstore utils
   chroot . apt-get --no-install-recommends -q -y --force-yes install xenstore-utils libxenstore3.0
-  #keepalived and conntrackd
-  chroot . apt-get --no-install-recommends -q -y --force-yes install keepalived conntrackd ipvsadm libnetfilter-conntrack3 libnl1
+  #keepalived - install version 1.2.13 from wheezy backports
+  chroot . apt-get --no-install-recommends -t wheezy-backports -q -y --force-yes install keepalived
+  #conntrackd
+  chroot . apt-get --no-install-recommends -q -y --force-yes install conntrackd ipvsadm libnetfilter-conntrack3 libnl1
   #ipcalc
   chroot . apt-get --no-install-recommends -q -y --force-yes install ipcalc
   #irqbalance from wheezy-backports

@@ -35,10 +35,9 @@ class CsFile:
                 self.new_config.append(line)
         except IOError:
             logging.debug("File %s does not exist" % self.filename)
-            return
         else:
             logging.debug("Reading file %s" % self.filename)
-            self.config = copy.deepcopy(self.new_config)
+            self.config = list(self.new_config)
 
     def is_changed(self):
         if set(self.config) != set(self.new_config):
@@ -58,6 +57,7 @@ class CsFile:
 
     def commit(self):
         if not self.is_changed():
+            logging.info("Nothing to commit. The %s file did not change" % self.filename)
             return
         handle = open(self.filename, "w+")
         for line in self.new_config:
