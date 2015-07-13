@@ -33,6 +33,7 @@ var g_userPublicTemplateEnabled = "true";
 var g_cloudstackversion = null;
 var g_queryAsyncJobResultInterval = 3000;
 var g_idpList = null;
+var g_appendIdpDomain = false;
 
 //keyboard keycode
 var keycode_Enter = 13;
