@@ -812,7 +812,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
             if (_bridgeType == BridgeType.OPENVSWITCH) {
                 if (conn.getLibVirVersion() < 10 * 1000 + 0) {
-                    throw new ConfigurationException("LibVirt version 0.10.0 required for openvswitch support, but version " + conn.getLibVirVersion() + " detected");
+                    throw new ConfigurationException("Libvirt version 0.10.0 required for openvswitch support, but version " + conn.getLibVirVersion() + " detected");
                 }
             }
         } catch (final LibvirtException e) {
@@ -842,7 +842,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             _guestCpuModel = (String)params.get("guest.cpu.model");
 
             if (_hypervisorLibvirtVersion < 9 * 1000 + 10) {
-                s_logger.warn("LibVirt version 0.9.10 required for guest cpu mode, but version " + prettyVersion(_hypervisorLibvirtVersion) +
+                s_logger.warn("Libvirt version 0.9.10 required for guest cpu mode, but version " + prettyVersion(_hypervisorLibvirtVersion) +
                         " detected, so it will be disabled");
                 _guestCpuMode = "";
                 _guestCpuModel = "";
