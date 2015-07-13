@@ -148,6 +148,23 @@
                                 });
                             }
                         });
+
+                        // SAML: Check Append Domain Setting
+                        if (g_idpList) {
+                            $.ajax({
+                                type: 'GET',
+                                url: createURL('listConfigurations&name=saml2.append.idpdomain'),
+                                dataType: 'json',
+                                async: false,
+                                success: function(data, textStatus, xhr) {
+                                    if (data && data.listconfigurationsresponse && data.listconfigurationsresponse.configuration) {
+                                        g_appendIdpDomain = (data.listconfigurationsresponse.configuration[0].value === 'true');
+                                    }
+                                },
+                                error: function(xhr) {
+                                },
+                            });
+                        }
                     },
 
                     detailView: {
@@ -1081,6 +1098,33 @@
                                             required: false
                                         },
                                         select: function(args) {
+                                            var samlChecked = false;
+                                            var idpUrl = "";
+                                            var appendDomainToUsername = function() {
+                                                if (!g_appendIdpDomain) {
+                                                    return;
+                                                }
+                                                var username = $('input[name=username]').val();
+                                                if (username) {
+                                                    username = username.split('@')[0];
+                                                }
+                                                if (samlChecked) {
+                                                    var link = document.createElement('a');
+                                                    link.setAttribute('href', idpUrl);
+                                                    $('input[name=username]').val(username + "@" + link.host.split('.').splice(-2).join('.'));
+                                                } else {
+                                                    $('input[name=username]').val(username);
+                                                }
+                                            };
+                                            args.$form.find('select[name=samlEntity]').change(function() {
+                                                idpUrl = $(this).children(':selected').val();
+                                                appendDomainToUsername();
+                                            });
+                                            args.$form.find('input[name=samlEnable]').change(function() {
+                                                samlChecked = $(this).context.checked;
+                                                appendDomainToUsername();
+                                            });
+
                                             var items = [];
                                             $(g_idpList).each(function() {
                                                 items.push({
