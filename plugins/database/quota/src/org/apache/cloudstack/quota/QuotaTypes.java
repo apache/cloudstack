@@ -22,10 +22,10 @@ import java.util.List;
 import org.apache.cloudstack.api.response.QuotaTypeResponse;
 import org.apache.cloudstack.usage.UsageTypes;
 
-public class QuotaUsageTypes extends UsageTypes {
-    public static final int CPU_CLOCK_RATE = 24;
-    public static final int CPU_NUMBER = 25;
-    public static final int MEMORY = 26;
+public class QuotaTypes extends UsageTypes {
+    public static final int CPU_CLOCK_RATE = 15;
+    public static final int CPU_NUMBER = 16;
+    public static final int MEMORY = 17;
 
     public static List<QuotaTypeResponse> responseList = new ArrayList<QuotaTypeResponse>();
 

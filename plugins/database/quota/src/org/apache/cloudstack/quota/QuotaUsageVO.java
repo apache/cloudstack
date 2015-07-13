@@ -42,7 +42,7 @@ public class QuotaUsageVO implements InternalIdentity {
     private Long usageItemId;
 
     @Column(name = "usage_type")
-    private String usageType;
+    private int usageType;
 
     @Column(name = "quota_used")
     private BigDecimal quotaUsed;
@@ -58,7 +58,7 @@ public class QuotaUsageVO implements InternalIdentity {
     public QuotaUsageVO() {
     }
 
-    public QuotaUsageVO(Long usageItemId, String usageType, BigDecimal quotaUsed, Date startDate, Date endDate) {
+    public QuotaUsageVO(Long usageItemId, int usageType, BigDecimal quotaUsed, Date startDate, Date endDate) {
         super();
         this.usageItemId = usageItemId;
         this.usageType = usageType;
@@ -81,11 +81,11 @@ public class QuotaUsageVO implements InternalIdentity {
         this.usageItemId = usageItemId;
     }
 
-    public String getUsageType() {
+    public int getUsageType() {
         return usageType;
     }
 
-    public void setUsageType(String usageType) {
+    public void setUsageType(int usageType) {
         this.usageType = usageType;
     }
 

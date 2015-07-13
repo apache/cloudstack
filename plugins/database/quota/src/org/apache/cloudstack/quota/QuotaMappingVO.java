@@ -16,6 +16,8 @@
 //under the License.
 package org.apache.cloudstack.quota;
 
+import java.math.BigDecimal;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -24,25 +26,8 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name = "quota_configuration")
-public class QuotaConfigurationVO implements InternalIdentity {
-    /**
-     * enable.quota.service: Enable quota service by default all of this
-     * functionality is disabled. quota.period.type : Quota period type: 1 for
-     * every x days, 2 for certain day of the month, 3 for yearly on activation
-     * day - default usage reporting cycle quota.period.config : The value for
-     * the above quota period type quota.activity.generate : Set “Y” to enable a
-     * detailed log of the quota usage, rating and billing activity, on daily
-     * basis. Valid values (“Y”, “N”); record.outgoingEmail: Boolean, yes means
-     * all the emails sent out will be stored in local DB, by default it is no.
-     * quota.enable : enable the usage quota enforcement quota.currencySymbol :
-     * The symbol for the currency in use to measure usage. quota.criticalLimit:
-     * A limit when it is reached user is sent and alert.
-     * quota.incrementalLimit: A incremental limit that is added to
-     * criticalLimit in this increments, when breached a email is send to the
-     * user with details.
-     * */
-
+@Table(name = "quota_mapping")
+public class QuotaMappingVO implements InternalIdentity {
     private static final long serialVersionUID = -7117933766387653203L;
 
     @Id
@@ -50,7 +35,10 @@ public class QuotaConfigurationVO implements InternalIdentity {
     private Long id;
 
     @Column(name = "usage_type")
-    private String usageType;
+    private int usageType;
+
+    @Column(name = "usage_name")
+    private String usageName;
 
     @Column(name = "usage_unit")
     private String usageUnit;
@@ -59,7 +47,7 @@ public class QuotaConfigurationVO implements InternalIdentity {
     private String usageDiscriminator;
 
     @Column(name = "currency_value")
-    private int currencyValue;
+    private BigDecimal currencyValue;
 
     @Column(name = "include")
     private int include;
@@ -67,11 +55,12 @@ public class QuotaConfigurationVO implements InternalIdentity {
     @Column(name = "description")
     private String description;
 
-    public QuotaConfigurationVO() {
+    public QuotaMappingVO() {
     }
 
-    public QuotaConfigurationVO(final String usagetype, final String usageunit, final String usagediscriminator, final int currencyvalue, final int include, final String description) {
+    public QuotaMappingVO(final int usagetype, final String usagename, final String usageunit, final String usagediscriminator, final BigDecimal currencyvalue, final int include, final String description) {
         this.usageType = usagetype;
+        this.usageName = usagename;
         this.usageUnit = usageunit;
         this.usageDiscriminator = usagediscriminator;
         this.currencyValue = currencyvalue;
@@ -79,12 +68,20 @@ public class QuotaConfigurationVO implements InternalIdentity {
         this.description = description;
     }
 
-    public String getUsageType() {
+    public int getUsageType() {
         return usageType;
     }
 
-    public void setUsageType(String usageType) {
+    public void setUsageType(int usageType) {
         this.usageType = usageType;
+    }
+
+    public String getUsageName() {
+        return usageName;
+    }
+
+    public void setUsageName(String usageName) {
+        this.usageName = usageName;
     }
 
     public String getUsageUnit() {
@@ -103,11 +100,11 @@ public class QuotaConfigurationVO implements InternalIdentity {
         this.usageDiscriminator = usageDiscriminator;
     }
 
-    public int getCurrencyValue() {
+    public BigDecimal getCurrencyValue() {
         return currencyValue;
     }
 
-    public void setCurrencyValue(int currencyValue) {
+    public void setCurrencyValue(BigDecimal currencyValue) {
         this.currencyValue = currencyValue;
     }
 

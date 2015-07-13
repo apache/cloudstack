@@ -28,12 +28,13 @@ import com.cloud.utils.component.PluggableService;
 
 public interface QuotaDBUtils extends PluggableService {
 
-    Pair<List<QuotaConfigurationVO>, Integer> editQuotaMapping(QuotaEditMappingCmd cmd);
+    Pair<List<QuotaMappingVO>, Integer> editQuotaMapping(QuotaEditMappingCmd cmd);
 
-    Pair<List<QuotaConfigurationVO>, Integer> listConfigurations(QuotaMapping cmd);
+    Pair<List<QuotaMappingVO>, Integer> listConfigurations(QuotaMapping cmd);
 
-    QuotaConfigurationResponse createQuotaConfigurationResponse(QuotaConfigurationVO configuration);
+    QuotaConfigurationResponse createQuotaConfigurationResponse(QuotaMappingVO configuration);
 
     QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Integer amount, Long updatedBy);
+
 
 }

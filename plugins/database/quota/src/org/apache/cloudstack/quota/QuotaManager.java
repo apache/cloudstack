@@ -20,6 +20,6 @@ import com.cloud.utils.component.PluggableService;
 
 public interface QuotaManager extends PluggableService {
 
-    public void calculateQuotaUsage(QuotaJobVO job, long startDateMillis, long endDateMillis);
+    public void calculateQuotaUsage();
 
 }

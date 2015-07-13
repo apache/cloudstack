@@ -97,7 +97,7 @@ public abstract class BaseCmd {
         GET, POST, PUT, DELETE
     }
     public static enum CommandType {
-        BOOLEAN, DATE, FLOAT, INTEGER, SHORT, LIST, LONG, OBJECT, MAP, STRING, TZDATE, UUID
+        BOOLEAN, DATE, FLOAT, DOUBLE, INTEGER, SHORT, LIST, LONG, OBJECT, MAP, STRING, TZDATE, UUID
     }
 
     private Object _responseObject;

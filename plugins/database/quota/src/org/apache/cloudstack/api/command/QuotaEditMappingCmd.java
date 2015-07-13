@@ -25,11 +25,10 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.QuotaConfigurationResponse;
 import org.apache.cloudstack.api.response.QuotaCreditsResponse;
-import org.apache.cloudstack.quota.QuotaConfigurationVO;
+import org.apache.cloudstack.quota.QuotaMappingVO;
 import org.apache.cloudstack.quota.QuotaDBUtilsImpl;
 
 import com.cloud.user.Account;
@@ -45,25 +44,25 @@ public class QuotaEditMappingCmd extends BaseCmd {
     @Inject
     QuotaDBUtilsImpl _quotaDBUtils;
 
-    @Parameter(name = "type", type = CommandType.STRING, required = false, description = "Usage type of the resource")
-    private String usageType;
+    @Parameter(name = "type", type = CommandType.INTEGER, required = true, description = "Integer value for the usage type of the resource")
+    private Integer usageType;
 
-    @Parameter(name = "value", type = CommandType.INTEGER, entityType = DomainResponse.class, description = "The quota vale of the resource as per the default unit")
-    private Integer value;
+    @Parameter(name = "value", type = CommandType.DOUBLE, required = true,  description = "The quota vale of the resource as per the default unit")
+    private Double value;
 
-    public String getUsageType() {
+    public int getUsageType() {
         return usageType;
     }
 
-    public void setUsageType(String usageType) {
+    public void setUsageType(int usageType) {
         this.usageType = usageType;
     }
 
-    public Integer getValue() {
+    public Double getValue() {
         return value;
     }
 
-    public void setValue(Integer value) {
+    public void setValue(Double value) {
         this.value = value;
     }
 
@@ -83,12 +82,12 @@ public class QuotaEditMappingCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        final Pair<List<QuotaConfigurationVO>, Integer> result = _quotaDBUtils.editQuotaMapping(this);
+        final Pair<List<QuotaMappingVO>, Integer> result = _quotaDBUtils.editQuotaMapping(this);
 
         final List<QuotaConfigurationResponse> responses = new ArrayList<QuotaConfigurationResponse>();
-        for (final QuotaConfigurationVO resource : result.first()) {
+        for (final QuotaMappingVO resource : result.first()) {
             final QuotaConfigurationResponse configurationResponse = _quotaDBUtils.createQuotaConfigurationResponse(resource);
-            configurationResponse.setObjectName("QuotaConfiguration");
+            configurationResponse.setObjectName("QuotaMapping");
             responses.add(configurationResponse);
         }
 

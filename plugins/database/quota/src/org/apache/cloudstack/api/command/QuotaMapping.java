@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.QuotaConfigurationResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.quota.QuotaConfigurationVO;
+import org.apache.cloudstack.quota.QuotaMappingVO;
 import org.apache.cloudstack.quota.QuotaDBUtilsImpl;
 
 import com.cloud.user.Account;
@@ -57,10 +57,10 @@ public class QuotaMapping extends BaseListCmd {
 
     @Override
     public void execute() {
-        final Pair<List<QuotaConfigurationVO>, Integer> result = _quotaDBUtils.listConfigurations(this);
+        final Pair<List<QuotaMappingVO>, Integer> result = _quotaDBUtils.listConfigurations(this);
 
         final List<QuotaConfigurationResponse> responses = new ArrayList<QuotaConfigurationResponse>();
-        for (final QuotaConfigurationVO resource : result.first()) {
+        for (final QuotaMappingVO resource : result.first()) {
             final QuotaConfigurationResponse configurationResponse = _quotaDBUtils.createQuotaConfigurationResponse(resource);
             configurationResponse.setObjectName("QuotaConfiguration");
             responses.add(configurationResponse);

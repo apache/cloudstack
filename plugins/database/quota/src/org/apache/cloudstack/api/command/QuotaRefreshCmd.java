@@ -16,11 +16,14 @@
 //under the License.
 package org.apache.cloudstack.api.command;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.QuotaRefreshResponse;
+import org.apache.cloudstack.quota.QuotaManagerImpl;
 
 import com.cloud.user.Account;
 
@@ -31,8 +34,16 @@ public class QuotaRefreshCmd extends BaseCmd {
 
     private static final String s_name = "quotarefreshresponse";
 
+    @Inject
+    QuotaManagerImpl _quotaManager;
+
     public QuotaRefreshCmd() {
         super();
+    }
+
+    public QuotaRefreshCmd(final QuotaManagerImpl quotaManager) {
+        super();
+        _quotaManager = quotaManager;
     }
 
     @Override
@@ -42,6 +53,7 @@ public class QuotaRefreshCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException {
+        _quotaManager.calculateQuotaUsage();
         final QuotaRefreshResponse response = new QuotaRefreshResponse("Success");
         setResponseObject(response);
     }

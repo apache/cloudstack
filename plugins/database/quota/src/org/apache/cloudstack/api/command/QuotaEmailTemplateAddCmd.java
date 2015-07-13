@@ -29,10 +29,10 @@ public class QuotaEmailTemplateAddCmd extends BaseListCmd {
 
     private static final String s_name = "quotaemailtemplateresponse";
 
-    @Parameter(name = "templatename", type = CommandType.STRING, description = "The name of email template")
+    @Parameter(name = "templatename", type = CommandType.STRING, required=true, description = "The name of email template")
     private String templateName;
 
-    @Parameter(name = "templatetext", type = CommandType.STRING, description = "The text of the email")
+    @Parameter(name = "templatetext", type = CommandType.STRING, required=true, description = "The text of the email")
     private Long templateText;
 
     @Parameter(name = "locale", type = CommandType.STRING, description = "The locale of the email text")

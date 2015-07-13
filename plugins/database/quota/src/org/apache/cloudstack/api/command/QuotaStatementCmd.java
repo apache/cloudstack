@@ -35,10 +35,10 @@ public class QuotaStatementCmd extends BaseListCmd {
 
     private static final String s_name = "quotastatementresponse";
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Optional, Account Id for which statement needs to be generated")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required=true, description = "Optional, Account Id for which statement needs to be generated")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Optional, If domain Id is given and the caller is domain admin then the statement is generated for domain.")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required=true, entityType = DomainResponse.class, description = "Optional, If domain Id is given and the caller is domain admin then the statement is generated for domain.")
     private Long domainId;
 
     public QuotaStatementCmd() {

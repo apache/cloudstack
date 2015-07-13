@@ -43,13 +43,13 @@ public class QuotaCreditsCmd extends BaseCmd {
 
     private static final String s_name = "quotacreditsresponse";
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Account Id for which quota credits need to be added")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required=true, description = "Account Id for which quota credits need to be added")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Domain for which quota credits need to be added")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required=true, entityType = DomainResponse.class, description = "Domain for which quota credits need to be added")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.VALUE, type = CommandType.INTEGER, entityType = DomainResponse.class, description = "Value of the credits to be added+, subtracted-")
+    @Parameter(name = ApiConstants.VALUE, type = CommandType.DOUBLE, required=true, description = "Value of the credits to be added+, subtracted-")
     private Integer value;
 
     public String getAccountName() {

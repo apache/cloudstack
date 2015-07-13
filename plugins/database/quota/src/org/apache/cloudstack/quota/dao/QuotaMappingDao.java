@@ -16,26 +16,17 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
-import java.util.Date;
+import java.util.List;
 
-import org.apache.cloudstack.quota.QuotaJobVO;
+import org.apache.cloudstack.quota.QuotaMappingVO;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 
-public interface QuotaJobDao extends GenericDao<QuotaJobVO, Long> {
-    Long checkHeartbeat(String hostname, int pid, int aggregationDuration);
+public interface QuotaMappingDao extends GenericDao<QuotaMappingVO, Long> {
 
-    void createNewJob(String hostname, int pid, int jobType);
+    QuotaMappingVO findByUsageType(int usageType);
 
-    QuotaJobVO getLastJob();
+    Pair<List<QuotaMappingVO>, Integer> listAllMapping();
 
-    QuotaJobVO getNextImmediateJob();
-
-    long getLastJobSuccessDateMillis();
-
-    Date getLastHeartbeat();
-
-    QuotaJobVO isOwner(String hostname, int pid);
-
-    void updateJobSuccess(Long jobId, long startMillis, long endMillis, long execTime, boolean success);
 }

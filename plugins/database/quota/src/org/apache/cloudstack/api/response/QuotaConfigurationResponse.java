@@ -16,6 +16,8 @@
 //under the License.
 package org.apache.cloudstack.api.response;
 
+import java.math.BigDecimal;
+
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.BaseResponse;
@@ -26,7 +28,11 @@ public class QuotaConfigurationResponse extends BaseResponse {
 
     @SerializedName("usageType")
     @Param(description = "usageType")
-    private String usageType;
+    private int usageType;
+
+    @SerializedName("usageName")
+    @Param(description = "usageName")
+    private String usageName;
 
     @SerializedName("usageUnit")
     @Param(description = "usageUnit")
@@ -38,7 +44,7 @@ public class QuotaConfigurationResponse extends BaseResponse {
 
     @SerializedName("currencyValue")
     @Param(description = "currencyValue")
-    private int currencyValue;
+    private BigDecimal currencyValue;
 
     @SerializedName("include")
     @Param(description = "include")
@@ -52,16 +58,24 @@ public class QuotaConfigurationResponse extends BaseResponse {
         super();
     }
 
-    public QuotaConfigurationResponse(final String usageType) {
+    public QuotaConfigurationResponse(final int usageType) {
         super();
         this.usageType = usageType;
     }
 
-    public String getUsageType() {
+    public String getUsageName() {
+        return usageName;
+    }
+
+    public void setUsageName(String usageName) {
+        this.usageName = usageName;
+    }
+
+    public int getUsageType() {
         return usageType;
     }
 
-    public void setUsageType(String usageType) {
+    public void setUsageType(int usageType) {
         this.usageType = usageType;
     }
 
@@ -81,11 +95,11 @@ public class QuotaConfigurationResponse extends BaseResponse {
         this.usageDiscriminator = usageDiscriminator;
     }
 
-    public int getCurrencyValue() {
+    public BigDecimal getCurrencyValue() {
         return currencyValue;
     }
 
-    public void setCurrencyValue(int currencyValue) {
+    public void setCurrencyValue(BigDecimal currencyValue) {
         this.currencyValue = currencyValue;
     }
 

@@ -392,6 +392,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
         final String sql = str.toString();
 
+        s_logger.debug("Sql = " + sql);
+
         PreparedStatement pstmt = null;
         final List<T> result = new ArrayList<T>();
         try {
