@@ -376,7 +376,7 @@ packages() {
   #xenstore utils
   chroot . apt-get --no-install-recommends -q -y --force-yes install xenstore-utils libxenstore3.0
   #keepalived - install version 1.2.13 from wheezy backports
-  chroot . apt-get --no-install-recommends -t wheezy-backports -q -y --force-yes install keepalived
+  chroot . apt-get --no-install-recommends -q -y --force-yes -t wheezy-backports install keepalived
   #conntrackd
   chroot . apt-get --no-install-recommends -q -y --force-yes install conntrackd ipvsadm libnetfilter-conntrack3 libnl1
   #ipcalc

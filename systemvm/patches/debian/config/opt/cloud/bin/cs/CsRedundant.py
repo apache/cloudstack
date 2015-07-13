@@ -139,13 +139,20 @@ class CsRedundant(object):
         heartbeat_cron.add("* * * * * root $SHELL %s/check_heartbeat.sh 2>&1 > /dev/null" % self.CS_ROUTER_DIR, -1)
         heartbeat_cron.add("* * * * * root sleep 30; $SHELL %s/check_heartbeat.sh 2>&1 > /dev/null" % self.CS_ROUTER_DIR, -1)
         heartbeat_cron.commit()
-        
+
         # Configure KeepaliveD cron job - runs at every reboot
         keepalived_cron = CsFile("/etc/cron.d/keepalived")
         keepalived_cron.add("SHELL=/bin/bash", 0)
         keepalived_cron.add("PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin", 1)
         keepalived_cron.add("@reboot root service keepalived start", -1)
         keepalived_cron.commit()
+
+        # Configure ConntrackD cron job - runs at every reboot
+        conntrackd_cron = CsFile("/etc/cron.d/conntrackd")
+        conntrackd_cron.add("SHELL=/bin/bash", 0)
+        conntrackd_cron.add("PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin", 1)
+        conntrackd_cron.add("@reboot root service conntrackd start", -1)
+        conntrackd_cron.commit()
 
         proc = CsProcess(['/usr/sbin/keepalived', '--vrrp'])
         if not proc.find() or keepalived_conf.is_changed():
