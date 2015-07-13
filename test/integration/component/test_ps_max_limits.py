@@ -208,7 +208,6 @@ class TestMaxPrimaryStorageLimits(cloudstackTestCase):
 
         self.virtualMachine = VirtualMachine.create(self.api_client, self.services["virtual_machine"],
                             accountid=self.child_do_admin.name, domainid=self.child_do_admin.domainid,
-                            diskofferingid=self.disk_offering.id,
                             serviceofferingid=self.service_offering.id)
 
         accounts = Account.list(self.apiclient, id=self.child_do_admin.id)
@@ -259,7 +258,6 @@ class TestMaxPrimaryStorageLimits(cloudstackTestCase):
 
         self.virtualMachine = VirtualMachine.create(self.api_client, self.services["virtual_machine"],
                             projectid=self.project.id,
-                            diskofferingid=self.disk_offering.id,
                             serviceofferingid=self.service_offering.id)
 
         try:
