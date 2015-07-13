@@ -37,71 +37,44 @@ CREATE TABLE `cloud`.`saml_token` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
--- Quota Configuration
-
-INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `description`) VALUES ('Advanced', 'DEFAULT', 'QuotaService', 'quota.enable.service' , 'true', 'false', 'Enable or Disable Quota service');
-INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `description`) VALUES ('Advanced', 'DEFAULT', 'QuotaService', 'quota.period.type' , '2', '2', 'Quota period type: 1 for every x days, 2 for certain day of the month, 3 for yearly on activation day - default quota usage reporting cycle');
-INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `description`) VALUES ('Advanced', 'DEFAULT', 'QuotaService', 'quota.period.config' , '15', '15', 'The period config in number of days for the quota period type');
-INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `description`) VALUES ('Advanced', 'DEFAULT', 'QuotaService', 'quota.activity.generate' , 'true', 'false', 'Set true to enable a detailed log of the quota usage, rating and billing activity, on daily basis. Valid values (true, false)');
-INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `description`) VALUES ('Advanced', 'DEFAULT', 'QuotaService', 'quota.email.outgoing.record' , 'true', 'false', 'true means all the emails sent out will be stored in local DB, by default it is false');
-INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `description`) VALUES ('Advanced', 'DEFAULT', 'QuotaService', 'quota.enable.enforcement' , 'true', 'false', ' Enable the usage quota enforcement, i.e. on true exceeding quota the respective account will be locked.');
-INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `description`) VALUES ('Advanced', 'DEFAULT', 'QuotaService', 'quota.currency.symbol' , 'R', 'C', ' The symbol for the currency in use to measure usage.');
-INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `description`) VALUES ('Advanced', 'DEFAULT', 'QuotaService', 'quota.limit.critical' , '80', '80', 'A percentage limit for quota when it is reached user is sent and alert.');
-INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `description`) VALUES ('Advanced', 'DEFAULT', 'QuotaService', 'quota.limit.increment' , '5', '5', 'A percentage incremental limit that is added to criticalLimit in this increments, when breached a email is send to the user with details');
-
--- Quota Emailer
-
-INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `description`) VALUES ('Advanced', 'DEFAULT', 'QuotaService', 'quota.usage.smtp.host' , '', '', 'SMTP host to for email');
-INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `description`) VALUES ('Advanced', 'DEFAULT', 'QuotaService', 'quota.usage.smtp.connection.timeout' , '60', '60', 'SMTP server timeout in seconds');
-INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `description`) VALUES ('Advanced', 'DEFAULT', 'QuotaService', 'quota.usage.smtp.user' , '', '', 'SMTP user');
-INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `description`) VALUES ('Advanced', 'DEFAULT', 'QuotaService', 'quota.usage.smtp.password' , '', '', 'SMTP Password');
-INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `description`) VALUES ('Advanced', 'DEFAULT', 'QuotaService', 'quota.usage.smtp.port' , '', '', 'SMTP port');
-INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `description`) VALUES ('Advanced', 'DEFAULT', 'QuotaService', 'quota.usage.smtp.useAuth' , '', '', 'SMTP Auth type');
-
-CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_configuration` (
-  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
-  `usage_type` varchar(255) NOT NULL COMMENT 'usage type',
+CREATE TABLE IF NOT EXISTS `quota_mapping` (
+  `id` bigint(20) unsigned NOT NULL COMMENT 'id',
+  `usage_type` int(2) unsigned DEFAULT NULL,
+  `usage_name` varchar(255) NOT NULL COMMENT 'usage type',
   `usage_unit` varchar(255) NOT NULL COMMENT 'usage type',
   `usage_discriminator` varchar(255) NOT NULL COMMENT 'usage type',
-  `currency_value` varchar(255) NOT NULL COMMENT 'usage type',
-  `include` BOOLEAN NOT NULL COMMENT 'usage type',
+  `currency_value` decimal(15,2) NOT NULL COMMENT 'usage type',
+  `include` tinyint(1) NOT NULL COMMENT 'usage type',
   `description` varchar(255) NOT NULL COMMENT 'usage type',
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('RUNNING_VM', 'Compute-Hours', '', '5' , '1', 'Quota mapping for running VM');
-INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('ALLOCATED_VM', 'Compute-Hours', '', '1' , '1', 'Quota mapping for running VM');
-INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('IP_ADDRESS', 'IP-Hours', '', '0.1' , '1', 'Quota mapping for running VM');
-INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('NETWORK_BYTES_SENT', 'GB', '', '1' , '1', 'Quota mapping for running VM');
-INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('NETWORK_BYTES_RECEIVED', 'GB', '', '1' , '1', 'Quota mapping for running VM');
-INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('VOLUME', 'GB-Month', '', '5' , '1', 'Quota mapping for running VM');
-INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('TEMPLATE', 'GB-Month', '', '5' , '1', 'Quota mapping for running VM');
-INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('ISO', 'GB-Month', '', '5' , '1', 'Quota mapping for running VM');
-INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('SNAPSHOT', 'GB-Month', '', '5' , '1', 'Quota mapping for running VM');
-INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('LOAD_BALANCER_POLICY', 'Policy-Hours', '', '5' , '0', 'Quota mapping for running VM');
-INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('PORT_FORWARDING_RULE', 'Policy-Hours', '', '5' , '0', 'Quota mapping for running VM');
-INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('NETWORK_OFFERING', 'Policy-Hours', '', '5' , '0', 'Quota mapping for running VM');
-INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('CPU', 'Compute-Hours', '100MHz', '5' , '1', 'Quota mapping for 100 MHz of CPU running for an hour');
-INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('vCPU', 'Compute-Hours', '1VCPU', '5' , '1', 'Quota mapping for running VM that has 1vCPU');
-INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('MEMORY', 'Compute-Hours', '1MB', '5' , '1', 'Quota mapping for usign 1MB or RAM for 1 hour');
-
-CREATE TABLE IF NOT EXISTS `cloud_usage.quota_job` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `host` varchar(255) DEFAULT NULL,
-  `pid` int(5) DEFAULT NULL,
-  `job_type` int(1) DEFAULT NULL,
-  `scheduled` int(1) DEFAULT NULL,
-  `start_millis` bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT 'start time in milliseconds of the aggregation range used by this job',
-  `end_millis` bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT 'end time in milliseconds of the aggregation range used by this job',
-  `exec_time` bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT 'how long in milliseconds it took for the job to execute',
-  `start_date` datetime DEFAULT NULL COMMENT 'start date of the aggregation range used by this job',
-  `end_date` datetime DEFAULT NULL COMMENT 'end date of the aggregation range used by this job',
-  `success` int(1) DEFAULT NULL,
-  `heartbeat` datetime NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `i_quota_job__end_millis` (`end_millis`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+LOCK TABLES `quota_mapping` WRITE;
+INSERT INTO `quota_mapping` VALUES 
+ (1,1,'RUNNING_VM','Compute-Month','',5.00,1,'Quota mapping for running VM'),
+ (2,2,'ALLOCATED_VM','Compute-Month','',10.00,1,'Quota mapping for allocsated VM'),
+ (3,3,'IP_ADDRESS','IP-Month','',5.12,1,'Quota mapping for IP address in use'),
+ (4,4,'NETWORK_BYTES_SENT','GB','',1.00,1,'Quota mapping for network bytes sent'),
+ (5,5,'NETWORK_BYTES_RECEIVED','GB','',1.00,1,'Quota mapping for network bytes received'),
+ (6,6,'VOLUME','GB-Month','',5.00,1,'Quota mapping for volume usage per month'),
+ (7,7,'TEMPLATE','GB-Month','',5.00,1,'Quota mapping for template usage per month'),
+ (8,8,'ISO','GB-Month','',5.00,1,'Quota mapping for ISO storage per month'),
+ (9,9,'SNAPSHOT','GB-Month','',5.00,1,'Quota mapping for snapshot usage per month'),
+ (10,10,'SECURITY_GROUP','Policy-Month','',5.00,1,'Quota mapping for Security groups'),
+ (11,11,'LOAD_BALANCER_POLICY','Policy-Month','',5.00,1,'Quota mapping load balancer policy use per hour'),
+ (12,12,'PORT_FORWARDING_RULE','Policy-Month','',5.00,1,'Quota mapping port forwarding rule useper hour'),
+ (13,13,'NETWORK_OFFERING','Policy-Month','',5.00,1,'Quota mapping for network offering usage per hour'),
+ (14,14,'VPN_USERS','Policy-Month','',5.00,1,'Quota mapping for using VPN'),
+ (15,15,'CPU_SPEED','Compute-Month','100MHz',5.00,1,'Quota mapping for 100 MHz of CPU running for an hour'),
+ (16,16,'vCPU','Compute-Month','1VCPU',5.00,1,'Quota mapping for running VM that has 1vCPU'),
+ (17,17,'MEMORY','Compute-Month','1MB',5.00,1,'Quota mapping for usign 1MB or RAM for 1 hour'),
+ (18,21,'VM_DISK_IO_READ','GB','1',5.00,1,'Quota mapping for 1GB of disk IO read'),
+ (19,22,'VM_DISK_IO_WRITE','GB','1',5.00,1,'Quota mapping for 1GB of disk data write'),
+ (20,23,'VM_DISK_BYTES_READ','GB','1',5.00,1,'Quota mapping for disk bytes read'),
+ (21,24,'VM_DISK_BYTES_WRITE','GB','1',5.00,1,'Quota mapping for disk bytes write'),
+ (22,25,'VM_SNAPSHOT','GB-Month','',5.00,1,'Quota mapping for running VM');
+UNLOCK TABLES;
 
 
 CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_credits` (
