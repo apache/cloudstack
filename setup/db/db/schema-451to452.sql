@@ -21,7 +21,6 @@
 
 -- SAML
 
-
 DELETE FROM `cloud`.`configuration` WHERE name like 'saml%' and component='management-server';
 
 ALTER TABLE `cloud`.`user` ADD COLUMN `external_entity` text DEFAULT NULL COMMENT "reference to external federation entity";
@@ -38,7 +37,9 @@ CREATE TABLE `cloud`.`saml_token` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `quota_mapping` (
+-- Quota
+
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_mapping` (
   `usage_type` int(2) unsigned DEFAULT NULL,
   `usage_name` varchar(255) NOT NULL COMMENT 'usage type',
   `usage_unit` varchar(255) NOT NULL COMMENT 'usage type',
@@ -50,8 +51,8 @@ CREATE TABLE `quota_mapping` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-LOCK TABLES `quota_mapping` WRITE;
-INSERT INTO `quota_mapping` VALUES 
+LOCK TABLES `cloud_usage`.`quota_mapping` WRITE;
+INSERT INTO `cloud_usage`.`quota_mapping` VALUES
  (1,'RUNNING_VM','Compute-Month','',5.00,1,'Quota mapping for running VM'),
  (2,'ALLOCATED_VM','Compute-Month','',10.00,1,'Quota mapping for allocsated VM'),
  (3,'IP_ADDRESS','IP-Month','',5.12,1,'Quota mapping for IP address in use'),
@@ -76,7 +77,6 @@ INSERT INTO `quota_mapping` VALUES
  (25,'VM_SNAPSHOT','GB-Month','',5.00,1,'Quota mapping for running VM');
 UNLOCK TABLES;
 
-
 CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_credits` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `account_id` bigint unsigned NOT NULL,
@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_credits` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `quota_usage` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_usage` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `usage_item_id` bigint(20) unsigned NOT NULL,
   `zone_id` bigint(20) unsigned NOT NULL,
@@ -113,7 +113,7 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_balance` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE IF NOT EXISTS `cloud_usage.quota_email_templates` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_email_templates` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `template_name` varchar(64) DEFAULT NULL,
   `template_text` longtext,
@@ -125,7 +125,7 @@ CREATE TABLE IF NOT EXISTS `cloud_usage.quota_email_templates` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE IF NOT EXISTS `cloud_usage.quota_sent_emails` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_sent_emails` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `from_address` varchar(1024) NOT NULL,
   `to_address` varchar(1024) NOT NULL,
