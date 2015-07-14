@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.command.QuotaMappingCmd;
 import org.apache.cloudstack.api.response.QuotaConfigurationResponse;
 import org.apache.cloudstack.api.response.QuotaCreditsResponse;
 import org.apache.cloudstack.api.response.QuotaStatementResponse;
+import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
 import org.apache.cloudstack.quota.dao.QuotaCreditsDao;
 import org.apache.cloudstack.quota.dao.QuotaMappingDao;
 import org.apache.log4j.Logger;
@@ -51,6 +52,9 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
 
     @Inject
     private QuotaCreditsDao _quotaCreditsDao;
+
+    @Inject
+    private QuotaBalanceDao _quotaBalanceDao;
 
     @Inject
     private UserDao _userDao;
