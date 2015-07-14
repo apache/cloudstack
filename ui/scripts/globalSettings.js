@@ -111,7 +111,7 @@
                             label: 'label.usage.type'
                         },
                         usageUnit: {
-                            label: 'label.usgae.unit'
+                            label: 'label.usage.unit'
                         },
                         currencyValue: {
                             label: 'label.quota.value'
@@ -170,7 +170,7 @@
                                             label: 'label.usage.type'
                                          },
                                          usageUnit: {
-                                             label: 'label.usgae.unit'
+                                             label: 'label.usage.unit'
                                          },
                                          currencyValue: {
                                              label: 'label.quota.value'
