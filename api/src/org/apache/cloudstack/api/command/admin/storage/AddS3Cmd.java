@@ -22,11 +22,13 @@ import static com.cloud.user.Account.ACCOUNT_ID_SYSTEM;
 import static org.apache.cloudstack.api.ApiConstants.S3_ACCESS_KEY;
 import static org.apache.cloudstack.api.ApiConstants.S3_BUCKET_NAME;
 import static org.apache.cloudstack.api.ApiConstants.S3_CONNECTION_TIMEOUT;
+import static org.apache.cloudstack.api.ApiConstants.S3_CONNECTION_TTL;
 import static org.apache.cloudstack.api.ApiConstants.S3_END_POINT;
 import static org.apache.cloudstack.api.ApiConstants.S3_HTTPS_FLAG;
 import static org.apache.cloudstack.api.ApiConstants.S3_MAX_ERROR_RETRY;
 import static org.apache.cloudstack.api.ApiConstants.S3_SECRET_KEY;
 import static org.apache.cloudstack.api.ApiConstants.S3_SOCKET_TIMEOUT;
+import static org.apache.cloudstack.api.ApiConstants.S3_USE_TCP_KEEPALIVE;
 import static org.apache.cloudstack.api.BaseCmd.CommandType.BOOLEAN;
 import static org.apache.cloudstack.api.BaseCmd.CommandType.INTEGER;
 import static org.apache.cloudstack.api.BaseCmd.CommandType.STRING;
@@ -83,6 +85,12 @@ public final class AddS3Cmd extends BaseCmd {
     @Parameter(name = S3_SOCKET_TIMEOUT, type = INTEGER, required = false, description = "socket timeout (milliseconds)")
     private final Integer socketTimeout = null;
 
+    @Parameter(name = S3_CONNECTION_TTL, type = INTEGER, required = false, description = "connection ttl (milliseconds)")
+    private final Integer connectionTtl = null;
+
+    @Parameter(name = S3_USE_TCP_KEEPALIVE, type = BOOLEAN, required = false, description = "whether tcp keepalive is used")
+    private final Boolean useTCPKeepAlive = null;
+
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException, NetworkRuleConflictException {
@@ -103,6 +111,12 @@ public final class AddS3Cmd extends BaseCmd {
         }
         if (getSocketTimeout() != null) {
             dm.put(ApiConstants.S3_SOCKET_TIMEOUT, getSocketTimeout().toString());
+        }
+        if (getConnectionTtl() != null) {
+            dm.put(ApiConstants.S3_CONNECTION_TTL, getConnectionTtl().toString());
+        }
+        if (getUseTCPKeepAlive() != null) {
+            dm.put(ApiConstants.S3_USE_TCP_KEEPALIVE, getUseTCPKeepAlive().toString());
         }
 
 
@@ -168,6 +182,14 @@ public final class AddS3Cmd extends BaseCmd {
             return false;
         }
 
+        if (connectionTtl != null ? !connectionTtl.equals(thatAddS3Cmd.connectionTtl) : thatAddS3Cmd.connectionTtl != null) {
+            return false;
+        }
+
+        if (useTCPKeepAlive != null ? !useTCPKeepAlive.equals(thatAddS3Cmd.useTCPKeepAlive) : thatAddS3Cmd.useTCPKeepAlive != null) {
+            return false;
+        }
+
         return true;
 
     }
@@ -183,6 +205,8 @@ public final class AddS3Cmd extends BaseCmd {
         result = 31 * result + (connectionTimeout != null ? connectionTimeout.hashCode() : 0);
         result = 31 * result + (maxErrorRetry != null ? maxErrorRetry.hashCode() : 0);
         result = 31 * result + (socketTimeout != null ? socketTimeout.hashCode() : 0);
+        result = 31 * result + (connectionTtl != null ? connectionTtl.hashCode() : 0);
+        result = 31 * result + (useTCPKeepAlive != null && useTCPKeepAlive == true ? 1 : 0);
 
         return result;
 
@@ -230,4 +254,11 @@ public final class AddS3Cmd extends BaseCmd {
         return socketTimeout;
     }
 
+    public Integer getConnectionTtl() {
+        return connectionTtl;
+    }
+
+    public Boolean getUseTCPKeepAlive() {
+        return useTCPKeepAlive;
+    }
 }
