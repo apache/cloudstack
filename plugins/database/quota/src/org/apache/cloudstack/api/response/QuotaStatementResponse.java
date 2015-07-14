@@ -31,6 +31,22 @@ public class QuotaStatementResponse extends BaseResponse {
     @Param(description = "usage type")
     private int usageType;
 
+    @SerializedName("accountid")
+    @Param(description = "account id")
+    private Long accountId;
+
+    @SerializedName("account")
+    @Param(description = "account name")
+    private String accountName;
+
+    @SerializedName("domain")
+    @Param(description = "domain id")
+    private Long domainId;
+
+    @SerializedName("name")
+    @Param(description = "usage type name")
+    private String usageName;
+
     @SerializedName("unit")
     @Param(description = "usage unit")
     private String usageUnit;
@@ -47,60 +63,80 @@ public class QuotaStatementResponse extends BaseResponse {
     @Param(description = "end date")
     private Date endDate = null;
 
-
     public QuotaStatementResponse() {
         super();
     }
 
+    public Long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
+    }
+
+    public String getUsageName() {
+        return usageName;
+    }
+
+    public void setUsageName(String usageName) {
+        this.usageName = usageName;
+    }
 
     public int getUsageType() {
         return usageType;
     }
 
-
     public void setUsageType(int usageType) {
         this.usageType = usageType;
     }
-
 
     public String getUsageUnit() {
         return usageUnit;
     }
 
-
     public void setUsageUnit(String usageUnit) {
         this.usageUnit = usageUnit;
     }
-
 
     public BigDecimal getQuotaUsed() {
         return quotaUsed;
     }
 
-
     public void setQuotaUsed(BigDecimal quotaUsed) {
         this.quotaUsed = quotaUsed;
     }
-
 
     public Date getStartDate() {
         return startDate;
     }
 
-
     public void setStartDate(Date startDate) {
         this.startDate = startDate;
     }
-
 
     public Date getEndDate() {
         return endDate;
     }
 
-
     public void setEndDate(Date endDate) {
         this.endDate = endDate;
     }
-
 
 }

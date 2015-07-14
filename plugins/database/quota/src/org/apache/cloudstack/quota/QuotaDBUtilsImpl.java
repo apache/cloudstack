@@ -83,10 +83,10 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
             }
         });
 
-        HashMap<Integer, String> map = new HashMap<Integer, String>();
+        HashMap<Integer, QuotaMappingVO> map = new HashMap<Integer, QuotaMappingVO>();
         List<QuotaMappingVO> result = _quotaMappingDao.listAll();
         for (QuotaMappingVO mapping : result) {
-            map.put(mapping.getUsageType(), mapping.getUsageUnit());
+            map.put(mapping.getUsageType(), mapping);
         }
 
         List<QuotaStatementResponse> statement = new ArrayList<QuotaStatementResponse>();
@@ -99,7 +99,10 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
                     lineitem = new QuotaStatementResponse();
                     lineitem.setUsageType(type);
                     lineitem.setQuotaUsed(totalUsage);
-                    lineitem.setUsageUnit(map.get(type));
+                    lineitem.setAccountId(quotaRecord.getAccountId());
+                    lineitem.setDomainId(quotaRecord.getDomainId());
+                    lineitem.setUsageUnit(map.get(type).getUsageUnit());
+                    lineitem.setUsageName(map.get(type).getUsageName());
                     statement.add(lineitem);
                     totalUsage = new BigDecimal(0);
                 }
