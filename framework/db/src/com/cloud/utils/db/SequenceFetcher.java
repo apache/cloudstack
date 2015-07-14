@@ -156,8 +156,6 @@ public class SequenceFetcher {
                         s_logger.warn("Caught this exception when running: " + (updateStmt != null ? updateStmt.toString() : ""), e);
                     }
                 }
-            } catch (Exception e) {
-                s_logger.warn("Caught this exception when running.", e);
             }
             return null;
         }
