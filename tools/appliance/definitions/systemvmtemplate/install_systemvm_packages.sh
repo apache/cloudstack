@@ -65,7 +65,7 @@ function install_packages() {
     xl2tpd bcrelay ppp ipsec-tools tdb-tools \
     openswan=1:2.6.37-3 \
     xenstore-utils libxenstore3.0 \
-    keepalived conntrackd ipvsadm libnetfilter-conntrack3 libnl1 \
+    conntrackd ipvsadm libnetfilter-conntrack3 libnl1 \
     ipcalc \
     openjdk-7-jre-headless \
     iptables-persistent \
@@ -75,7 +75,7 @@ function install_packages() {
     radvd \
     sharutils
 
-  ${apt_get} -t wheezy-backports install irqbalance open-vm-tools
+  ${apt_get} -t wheezy-backports install keepalived irqbalance open-vm-tools
 
   # hold on installed openswan version, upgrade rest of the packages (if any)
   apt-mark hold openswan
