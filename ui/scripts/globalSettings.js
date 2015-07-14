@@ -100,8 +100,6 @@
                     }
                 }
             },
-
-
             ldapConfiguration: {
                 type: 'select',
                 title: 'label.ldap.configuration',
