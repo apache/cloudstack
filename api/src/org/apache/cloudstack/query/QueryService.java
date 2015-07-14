@@ -79,7 +79,7 @@ import com.cloud.exception.PermissionDeniedException;
  */
 public interface QueryService {
     // Config keys
-    static final ConfigKey<Boolean> AllowUserViewDestroyedVM = new ConfigKey<Boolean>("Advanced", Boolean.class, "user.allow.view.destroyed.vm", "false",
+    static final ConfigKey<Boolean> AllowUserViewDestroyedVM = new ConfigKey<Boolean>("Advanced", Boolean.class, "allow.user.view.destroyed.vm", "false",
             "Determines whether users can view their destroyed or expunging vm ", true, ConfigKey.Scope.Account);
 
     public ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException;
