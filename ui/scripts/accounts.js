@@ -1099,21 +1099,21 @@
                                         },
                                         select: function(args) {
                                             var samlChecked = false;
-                                            var idpUrl = "";
+                                            var idpUrl = args.$form.find('select[name=samlEntity]').children(':selected').val();
                                             var appendDomainToUsername = function() {
                                                 if (!g_appendIdpDomain) {
                                                     return;
                                                 }
-                                                var username = $('input[name=username]').val();
+                                                var username = args.$form.find('input[name=username]').val();
                                                 if (username) {
                                                     username = username.split('@')[0];
                                                 }
                                                 if (samlChecked) {
                                                     var link = document.createElement('a');
                                                     link.setAttribute('href', idpUrl);
-                                                    $('input[name=username]').val(username + "@" + link.host.split('.').splice(-2).join('.'));
+                                                    args.$form.find('input[name=username]').val(username + "@" + link.host.split('.').splice(-2).join('.'));
                                                 } else {
-                                                    $('input[name=username]').val(username);
+                                                    args.$form.find('input[name=username]').val(username);
                                                 }
                                             };
                                             args.$form.find('select[name=samlEntity]').change(function() {

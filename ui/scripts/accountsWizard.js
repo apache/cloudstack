@@ -179,33 +179,6 @@
                     required: false
                 },
                 select: function(args) {
-                    var samlChecked = false;
-                    var idpUrl = "";
-                    var appendDomainToUsername = function() {
-                        if (!g_appendIdpDomain) {
-                            return;
-                        }
-                        var username = $('input[name=username]').val();
-                        if (username) {
-                            username = username.split('@')[0];
-                        }
-                        if (samlChecked) {
-                            var link = document.createElement('a');
-                            link.setAttribute('href', idpUrl);
-                            $('input[name=username]').val(username + "@" + link.host.split('.').splice(-2).join('.'));
-                        } else {
-                            $('input[name=username]').val(username);
-                        }
-                    };
-                    args.$form.find('select[name=samlEntity]').change(function() {
-                        idpUrl = $(this).children(':selected').val();
-                        appendDomainToUsername();
-                    });
-                    args.$form.find('input[name=samlEnable]').change(function() {
-                        samlChecked = $(this).context.checked;
-                        appendDomainToUsername();
-                    });
-
                     var items = [];
                     $(g_idpList).each(function() {
                         items.push({
