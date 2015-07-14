@@ -16,8 +16,7 @@
 //under the License.
 package org.apache.cloudstack.quota;
 
-import java.math.BigDecimal;
-import java.util.Date;
+import org.apache.cloudstack.api.InternalIdentity;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -25,8 +24,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
-
-import org.apache.cloudstack.api.InternalIdentity;
+import java.math.BigDecimal;
+import java.util.Date;
 
 @Entity
 @Table(name = "quota_credits")
@@ -54,7 +53,7 @@ public class QuotaCreditsVO implements InternalIdentity {
     public QuotaCreditsVO() {
     }
 
-    public QuotaCreditsVO(long accountId, long domainId, int credit, long updatedBy) {
+    public QuotaCreditsVO(long accountId, long domainId, String credit, long updatedBy) {
         super();
         this.accountId = accountId;
         this.domainId = domainId;

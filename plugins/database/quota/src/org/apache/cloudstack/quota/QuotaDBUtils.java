@@ -36,6 +36,6 @@ public interface QuotaDBUtils {
 
     List<QuotaStatementResponse> createQuotaStatementResponse(List<QuotaUsageVO> quotaUsage);
 
-    QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Integer amount, Long updatedBy);
+    QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, String amount, Long updatedBy);
 
 }

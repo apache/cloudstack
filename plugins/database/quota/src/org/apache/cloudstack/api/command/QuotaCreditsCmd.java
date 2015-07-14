@@ -16,9 +16,7 @@
 //under the License.
 package org.apache.cloudstack.api.command;
 
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
+import com.cloud.user.Account;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -29,8 +27,9 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.QuotaCreditsResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.quota.QuotaDBUtilsImpl;
+import org.apache.log4j.Logger;
 
-import com.cloud.user.Account;
+import javax.inject.Inject;
 
 @APICommand(name = "quotaCredits", responseObject = QuotaCreditsResponse.class, description = "Add +-credits to an account", since = "4.2.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaCreditsCmd extends BaseCmd {
@@ -49,8 +48,8 @@ public class QuotaCreditsCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required=true, entityType = DomainResponse.class, description = "Domain for which quota credits need to be added")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.VALUE, type = CommandType.DOUBLE, required=true, description = "Value of the credits to be added+, subtracted-")
-    private Integer value;
+    @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, required=true, description = "Value of the credits to be added+, subtracted-")
+    private String value;
 
     public String getAccountName() {
         return accountName;
@@ -68,11 +67,11 @@ public class QuotaCreditsCmd extends BaseCmd {
         this.domainId = domainId;
     }
 
-    public Integer getValue() {
+    public String getValue() {
         return value;
     }
 
-    public void setValue(Integer value) {
+    public void setValue(String value) {
         this.value = value;
     }
 
