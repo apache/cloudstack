@@ -654,11 +654,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
                             rs.getString("vm_instance.instance_name"), VirtualMachine.Type.valueOf(rs.getString("vm_type"))),
                             new Pair<Long, String>(rs.getLong("vm_instance.id"), rs.getString("user_vm_details.value"))));
                 }
-            } catch (Exception e) {
-                s_logger.error("GetVmsDetailsByNames: Exception: " + e.getMessage());
-                throw new CloudRuntimeException("GetVmsDetailsByNames: Exception: " + e.getMessage());
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             s_logger.error("GetVmsDetailsByNames: Exception in sql: " + e.getMessage());
             throw new CloudRuntimeException("GetVmsDetailsByNames: Exception: " + e.getMessage());
         }
