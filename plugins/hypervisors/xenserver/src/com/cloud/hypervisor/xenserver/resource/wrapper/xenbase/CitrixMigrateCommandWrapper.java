@@ -85,7 +85,7 @@ public final class CitrixMigrateCommandWrapper extends CommandWrapper<MigrateCom
 
             // The iso can be attached to vm only once the vm is (present in the host) migrated.
             // Attach the config drive iso device to VM
-            if (!citrixResourceBase.AttachConfigDriveToMigratedVm(conn, vmName, dstHostIpAddr)) {
+            if (!citrixResourceBase.attachConfigDriveToMigratedVm(conn, vmName, dstHostIpAddr)) {
                 s_logger.debug("Config drive ISO attach failed after migration for vm "+vmName);
             }
 
