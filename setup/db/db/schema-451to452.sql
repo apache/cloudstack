@@ -19,11 +19,22 @@
 -- Schema upgrade from 4.5.1 to 4.5.2;
 --;
 
-UPDATE IGNORE `cloud`.`configuration` SET `default_value`='PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT' WHERE name='user.authenticators.order';
-UPDATE IGNORE `cloud`.`configuration` SET `value`='PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT' WHERE name='user.authenticators.order';
-UPDATE IGNORE `cloud`.`configuration` SET `default_value`='PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT' WHERE name='user.password.encoders.order';
-UPDATE IGNORE `cloud`.`configuration` SET `value`='PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT' WHERE name='user.password.encoders.order';
-UPDATE IGNORE `cloud`.`configuration` SET `value`="MD5,LDAP,PLAINTEXT" WHERE `name`="user.password.encoders.exclude";
+-- SAML
+
+DELETE FROM `cloud`.`configuration` WHERE name like 'saml%' and component='management-server';
+
+ALTER TABLE `cloud`.`user` ADD COLUMN `external_entity` text DEFAULT NULL COMMENT "reference to external federation entity";
+
+DROP TABLE IF EXISTS `cloud`.`saml_token`;
+CREATE TABLE `cloud`.`saml_token` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(255) UNIQUE NOT NULL COMMENT 'The Authn Unique Id',
+  `domain_id` bigint unsigned DEFAULT NULL,
+  `entity` text NOT NULL COMMENT 'Identity Provider Entity Id',
+  `created` DATETIME NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_saml_token__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 -- Quota Configuration
@@ -47,7 +58,7 @@ INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`,
 INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `description`) VALUES ('Advanced', 'DEFAULT', 'QuotaService', 'quota.usage.smtp.port' , '', '', 'SMTP port');
 INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `description`) VALUES ('Advanced', 'DEFAULT', 'QuotaService', 'quota.usage.smtp.useAuth' , '', '', 'SMTP Auth type');
 
-CREATE TABLE `cloud_usage`.`quota_configuration` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_configuration` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `usage_type` varchar(255) NOT NULL COMMENT 'usage type',
   `usage_unit` varchar(255) NOT NULL COMMENT 'usage type',
@@ -75,7 +86,7 @@ INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_uni
 INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('vCPU', 'Compute-Hours', '1VCPU', '5' , '1', 'Quota mapping for running VM that has 1vCPU');
 INSERT IGNORE INTO `cloud_usage`.`quota_configuration` (`usage_type`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `description`) VALUES ('MEMORY', 'Compute-Hours', '1MB', '5' , '1', 'Quota mapping for usign 1MB or RAM for 1 hour');
 
-CREATE TABLE `cloud_usage.quota_job` (
+CREATE TABLE IF NOT EXISTS `cloud_usage.quota_job` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `host` varchar(255) DEFAULT NULL,
   `pid` int(5) DEFAULT NULL,
@@ -93,7 +104,7 @@ CREATE TABLE `cloud_usage.quota_job` (
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `cloud_usage`.`quota_credits` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_credits` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `account_id` bigint unsigned NOT NULL,
   `domain_id` bigint(20) unsigned NOT NULL,
@@ -104,7 +115,7 @@ CREATE TABLE `cloud_usage`.`quota_credits` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `cloud_usage`.`quota_usage` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_usage` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `usage_item_id` bigint unsigned NOT NULL,
   `usage_type` varchar(64) DEFAULT NULL,
@@ -115,7 +126,7 @@ CREATE TABLE `cloud_usage`.`quota_usage` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `cloud_usage`.`quota_balance` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_balance` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `account_id` bigint unsigned NOT NULL,
   `domain_id` bigint(20) unsigned NOT NULL,
@@ -127,7 +138,7 @@ CREATE TABLE `cloud_usage`.`quota_balance` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `cloud_usage.quota_email_templates` (
+CREATE TABLE IF NOT EXISTS `cloud_usage.quota_email_templates` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `template_name` varchar(64) DEFAULT NULL,
   `template_text` longtext,
@@ -139,7 +150,7 @@ CREATE TABLE `cloud_usage.quota_email_templates` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `cloud_usage.quota_sent_emails` (
+CREATE TABLE IF NOT EXISTS `cloud_usage.quota_sent_emails` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `from_address` varchar(1024) NOT NULL,
   `to_address` varchar(1024) NOT NULL,
