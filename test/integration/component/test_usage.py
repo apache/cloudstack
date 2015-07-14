@@ -1090,7 +1090,7 @@ class TestLBRuleUsage(cloudstackTestCase):
             "advanced",
             "eip",
             "advancedns",
-            "simulator","bpk"],
+            "simulator"],
         required_hardware="false")
     def test_01_lb_usage(self):
         """Test Create/Delete a LB rule and verify correct usage is recorded
