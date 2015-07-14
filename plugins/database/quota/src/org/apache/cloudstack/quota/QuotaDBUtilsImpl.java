@@ -93,14 +93,14 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
         for (QuotaMappingVO mapping : result) {
             map.put(mapping.getUsageType(), mapping);
         }
-        
+
         List<QuotaStatementItemResponse> items = new ArrayList<QuotaStatementItemResponse>();
         QuotaStatementItemResponse lineitem;
         int type = -1;
         BigDecimal usage = new BigDecimal(0);
         BigDecimal totalUsage = new BigDecimal(0);
         quotaUsage.add(new QuotaUsageVO());// boundry
-        QuotaUsageVO prev=quotaUsage.get(0);
+        QuotaUsageVO prev = quotaUsage.get(0);
         for (final QuotaUsageVO quotaRecord : quotaUsage) {
             if (type != quotaRecord.getUsageType()) {
                 if (type != -1) {
@@ -115,12 +115,12 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
                     lineitem.setUsageName(map.get(type).getUsageName());
                     lineitem.setObjectName("lineitem");
                     items.add(lineitem);
-                    totalUsage=totalUsage.add(usage);
+                    totalUsage = totalUsage.add(usage);
                     usage = new BigDecimal(0);
                 }
                 type = quotaRecord.getUsageType();
             }
-            prev=quotaRecord;
+            prev = quotaRecord;
             usage = usage.add(quotaRecord.getQuotaUsed());
         }
 
