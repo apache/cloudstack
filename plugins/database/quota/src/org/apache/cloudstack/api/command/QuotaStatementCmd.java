@@ -16,17 +16,27 @@
 //under the License.
 package org.apache.cloudstack.api.command;
 
+import java.util.Date;
+import java.util.List;
+
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.quota.QuotaDBUtils;
+import org.apache.cloudstack.quota.QuotaManager;
+import org.apache.cloudstack.quota.QuotaUsageVO;
 import org.apache.cloudstack.api.response.QuotaStatementResponse;
 
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 
 @APICommand(name = "quotaStatement", responseObject = QuotaStatementResponse.class, description = "Create a quota statement", since = "4.2.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaStatementCmd extends BaseListCmd {
@@ -35,11 +45,76 @@ public class QuotaStatementCmd extends BaseListCmd {
 
     private static final String s_name = "quotastatementresponse";
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required=true, description = "Optional, Account Id for which statement needs to be generated")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = true, description = "Optional, Account Id for which statement needs to be generated")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required=true, entityType = DomainResponse.class, description = "Optional, If domain Id is given and the caller is domain admin then the statement is generated for domain.")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = true, entityType = DomainResponse.class, description = "Optional, If domain Id is given and the caller is domain admin then the statement is generated for domain.")
     private Long domainId;
+
+    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, required = true, description = "End date range for quota query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-03.")
+    private Date endDate;
+
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, required = true, description = "Start date range quota query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-01.")
+    private Date startDate;
+
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.INTEGER, description = "List quota usage records for the specified usage type")
+    private Integer usageType;
+
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "List usage records for the specified account")
+    private Long accountId;
+
+    @Inject
+    QuotaManager _quotaManager;
+    @Inject
+    QuotaDBUtils _quotaDBUtils;
+
+    public Long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
+    }
+
+    public Integer getUsageType() {
+        return usageType;
+    }
+
+    public void setUsageType(Integer usageType) {
+        this.usageType = usageType;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
+    }
+
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
+    }
+
+    public Date getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
+    }
 
     public QuotaStatementCmd() {
         super();
@@ -61,21 +136,12 @@ public class QuotaStatementCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        /**
-         * final Pair<List<QuotaConfigurationVO>, Integer> result =
-         * _quotaManager.listConfigurations(this);
-         *
-         * final List<QuotaStatementResponse> responses = new
-         * ArrayList<QuotaStatementResponse>(); for (final QuotaConfigurationVO
-         * resource : result.first()) { final QuotaStatementResponse
-         * configurationResponse =
-         * _quotaManager.createQuotaConfigurationResponse(resource);
-         * configurationResponse.setObjectName("QuotaConfiguration");
-         * responses.add(configurationResponse); }
-         **/
+        Pair<List<QuotaUsageVO>, Integer> result = _quotaManager.getQuotaUsage(this);
+
+        List<QuotaStatementResponse> responses = _quotaDBUtils.createQuotaStatementResponse(result.first());
 
         final ListResponse<QuotaStatementResponse> response = new ListResponse<QuotaStatementResponse>();
-        // response.setResponses(responses, responses.size());
+        response.setResponses(responses, responses.size());
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

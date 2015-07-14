@@ -38,6 +38,15 @@ public class QuotaUsageVO implements InternalIdentity {
     @Column(name = "id")
     private Long id;
 
+    @Column(name = "zone_id")
+    private Long zoneId = null;
+
+    @Column(name = "account_id")
+    private Long accountId = null;
+
+    @Column(name = "domain_id")
+    private Long domainId = null;
+
     @Column(name = "usage_item_id")
     private Long usageItemId;
 
@@ -58,13 +67,40 @@ public class QuotaUsageVO implements InternalIdentity {
     public QuotaUsageVO() {
     }
 
-    public QuotaUsageVO(Long usageItemId, int usageType, BigDecimal quotaUsed, Date startDate, Date endDate) {
+    public QuotaUsageVO(Long usageItemId,  Long zoneId, Long accountId, Long domainId, int usageType, BigDecimal quotaUsed, Date startDate, Date endDate) {
         super();
         this.usageItemId = usageItemId;
+        this.zoneId = zoneId;
+        this.accountId = accountId;
+        this.domainId = domainId;
         this.usageType = usageType;
         this.quotaUsed = quotaUsed;
         this.startDate = startDate;
         this.endDate = endDate;
+    }
+
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(Long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public Long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
+    }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
     }
 
     @Override

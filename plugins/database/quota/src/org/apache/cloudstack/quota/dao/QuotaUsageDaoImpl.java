@@ -34,14 +34,14 @@ public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implem
 
     @Override
     public Pair<List<QuotaUsageVO>, Integer> searchAndCountAllRecords(SearchCriteria<QuotaUsageVO> sc, Filter filter) {
-        // TODO Auto-generated method stub
-        return null;
+        return listAndCountIncludingRemovedBy(sc, filter);
     }
 
     @Override
-    public void saveQuotaUsage(List<QuotaUsageVO> credits) {
-        // TODO Auto-generated method stub
-
+    public void saveQuotaUsage(List<QuotaUsageVO> records) {
+        for (QuotaUsageVO usageRecord : records) {
+            persist(usageRecord);
+        }
     }
 
 }

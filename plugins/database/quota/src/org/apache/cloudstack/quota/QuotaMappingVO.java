@@ -31,9 +31,6 @@ public class QuotaMappingVO implements InternalIdentity {
     private static final long serialVersionUID = -7117933766387653203L;
 
     @Id
-    @Column(name = "id")
-    private Long id;
-
     @Column(name = "usage_type")
     private int usageType;
 
@@ -127,6 +124,6 @@ public class QuotaMappingVO implements InternalIdentity {
     @Override
     public long getId() {
         // TODO Auto-generated method stub
-        return this.id;
+        return this.usageType;
     }
 }

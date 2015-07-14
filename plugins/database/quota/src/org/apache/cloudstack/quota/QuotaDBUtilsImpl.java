@@ -17,7 +17,11 @@
 package org.apache.cloudstack.quota;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.ejb.Local;
@@ -27,6 +31,7 @@ import org.apache.cloudstack.api.command.QuotaEditMappingCmd;
 import org.apache.cloudstack.api.command.QuotaMapping;
 import org.apache.cloudstack.api.response.QuotaConfigurationResponse;
 import org.apache.cloudstack.api.response.QuotaCreditsResponse;
+import org.apache.cloudstack.api.response.QuotaStatementResponse;
 import org.apache.cloudstack.quota.dao.QuotaMappingDao;
 import org.apache.cloudstack.quota.dao.QuotaCreditsDao;
 import org.apache.log4j.Logger;
@@ -38,7 +43,7 @@ import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = QuotaDBUtilsImpl.class)
-public class QuotaDBUtilsImpl {
+public class QuotaDBUtilsImpl implements QuotaDBUtils {
     private static final Logger s_logger = Logger.getLogger(QuotaDBUtilsImpl.class.getName());
 
     @Inject
@@ -47,8 +52,8 @@ public class QuotaDBUtilsImpl {
     @Inject
     private QuotaCreditsDao _quotaCreditsDao;
 
-
-    public QuotaConfigurationResponse createQuotaConfigurationResponse(final QuotaMappingVO configuration) {
+    @Override
+    public QuotaConfigurationResponse createQuotaConfigurationResponse(QuotaMappingVO configuration) {
         final QuotaConfigurationResponse response = new QuotaConfigurationResponse();
         response.setUsageType(configuration.getUsageType());
         response.setUsageName(configuration.getUsageName());
@@ -60,12 +65,54 @@ public class QuotaDBUtilsImpl {
         return response;
     }
 
+    @Override
+    public List<QuotaStatementResponse> createQuotaStatementResponse(List<QuotaUsageVO> quotaUsage) {
+        TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+        Collections.sort(quotaUsage, new Comparator<QuotaUsageVO>() {
+            public int compare(QuotaUsageVO o1, QuotaUsageVO o2) {
+                if (o1.getUsageType() == o2.getUsageType())
+                    return 0;
+                return o1.getUsageType() < o2.getUsageType() ? -1 : 1;
+            }
+        });
+
+        HashMap<Integer, String> map = new HashMap<Integer, String>();
+        List<QuotaMappingVO> result = _quotaMappingDao.listAll();
+        for (QuotaMappingVO mapping : result) {
+            map.put(mapping.getUsageType(), mapping.getUsageUnit());
+        }
+
+        List<QuotaStatementResponse> statement = new ArrayList<QuotaStatementResponse>();
+        QuotaStatementResponse lineitem;
+        int type = -1;
+        BigDecimal totalUsage = new BigDecimal(0);
+        for (final QuotaUsageVO quotaRecord : quotaUsage) {
+            if (type != quotaRecord.getUsageType()) {
+                if (type != -1) {
+                    lineitem = new QuotaStatementResponse();
+                    lineitem.setUsageType(type);
+                    lineitem.setQuotaUsed(totalUsage);
+                    lineitem.setUsageUnit(map.get(type));
+                    statement.add(lineitem);
+                    totalUsage = new BigDecimal(0);
+                }
+                type = quotaRecord.getUsageType();
+            }
+            totalUsage = totalUsage.add(quotaRecord.getQuotaUsed());
+        }
+
+        TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+        return statement;
+    }
+
+    @Override
     public Pair<List<QuotaMappingVO>, Integer> listConfigurations(final QuotaMapping cmd) {
         final Pair<List<QuotaMappingVO>, Integer> result = _quotaMappingDao.listAllMapping();
         TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
         return result;
     }
 
+    @Override
     public Pair<List<QuotaMappingVO>, Integer> editQuotaMapping(QuotaEditMappingCmd cmd) {
         int resourceType = cmd.getUsageType();
         BigDecimal quotaCost = new BigDecimal(cmd.getValue());
@@ -86,6 +133,7 @@ public class QuotaDBUtilsImpl {
         return result;
     }
 
+    @Override
     public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Integer amount, Long updatedBy) {
         QuotaCreditsVO result = null;
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
@@ -99,6 +147,5 @@ public class QuotaDBUtilsImpl {
         TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
         return new QuotaCreditsResponse(result);
     }
-
 
 }

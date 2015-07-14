@@ -16,10 +16,18 @@
 //under the License.
 package org.apache.cloudstack.quota;
 
+import java.util.List;
+
+import org.apache.cloudstack.api.command.QuotaStatementCmd;
+
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.PluggableService;
 
 public interface QuotaManager extends PluggableService {
 
     public void calculateQuotaUsage();
+
+    public Pair<List<QuotaUsageVO>,Integer> getQuotaUsage(QuotaStatementCmd cmd);
+
 
 }

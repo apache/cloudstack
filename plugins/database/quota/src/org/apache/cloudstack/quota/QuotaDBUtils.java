@@ -22,11 +22,11 @@ import org.apache.cloudstack.api.command.QuotaEditMappingCmd;
 import org.apache.cloudstack.api.command.QuotaMapping;
 import org.apache.cloudstack.api.response.QuotaConfigurationResponse;
 import org.apache.cloudstack.api.response.QuotaCreditsResponse;
+import org.apache.cloudstack.api.response.QuotaStatementResponse;
 
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.PluggableService;
 
-public interface QuotaDBUtils extends PluggableService {
+public interface QuotaDBUtils {
 
     Pair<List<QuotaMappingVO>, Integer> editQuotaMapping(QuotaEditMappingCmd cmd);
 
@@ -34,7 +34,8 @@ public interface QuotaDBUtils extends PluggableService {
 
     QuotaConfigurationResponse createQuotaConfigurationResponse(QuotaMappingVO configuration);
 
-    QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Integer amount, Long updatedBy);
+    List<QuotaStatementResponse> createQuotaStatementResponse(List<QuotaUsageVO> quotaUsage);
 
+    QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Integer amount, Long updatedBy);
 
 }

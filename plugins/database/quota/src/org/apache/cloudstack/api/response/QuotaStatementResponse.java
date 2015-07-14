@@ -16,6 +16,9 @@
 //under the License.
 package org.apache.cloudstack.api.response;
 
+import java.math.BigDecimal;
+import java.util.Date;
+
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.BaseResponse;
@@ -24,85 +27,80 @@ import com.cloud.serializer.Param;
 
 public class QuotaStatementResponse extends BaseResponse {
 
-    @SerializedName("usageType")
-    @Param(description = "usageType")
-    private String usageType;
+    @SerializedName("type")
+    @Param(description = "usage type")
+    private int usageType;
 
-    @SerializedName("usageUnit")
-    @Param(description = "usageUnit")
+    @SerializedName("unit")
+    @Param(description = "usage unit")
     private String usageUnit;
 
-    @SerializedName("usageDiscriminator")
-    @Param(description = "usageDiscriminator")
-    private String usageDiscriminator;
+    @SerializedName("quota")
+    @Param(description = "quota consumed")
+    private BigDecimal quotaUsed;
 
-    @SerializedName("currencyValue")
-    @Param(description = "currencyValue")
-    private int currencyValue;
+    @SerializedName("startdate")
+    @Param(description = "start date")
+    private Date startDate = null;
 
-    @SerializedName("include")
-    @Param(description = "include")
-    private int include;
+    @SerializedName("enddate")
+    @Param(description = "end date")
+    private Date endDate = null;
 
-    @SerializedName("description")
-    @Param(description = "description")
-    private String description;
 
     public QuotaStatementResponse() {
         super();
     }
 
-    public QuotaStatementResponse(final String usageType) {
-        super();
-        this.usageType = usageType;
-    }
 
-    public String getUsageType() {
+    public int getUsageType() {
         return usageType;
     }
 
-    public void setUsageType(String usageType) {
+
+    public void setUsageType(int usageType) {
         this.usageType = usageType;
     }
+
 
     public String getUsageUnit() {
         return usageUnit;
     }
 
+
     public void setUsageUnit(String usageUnit) {
         this.usageUnit = usageUnit;
     }
 
-    public String getUsageDiscriminator() {
-        return usageDiscriminator;
+
+    public BigDecimal getQuotaUsed() {
+        return quotaUsed;
     }
 
-    public void setUsageDiscriminator(String usageDiscriminator) {
-        this.usageDiscriminator = usageDiscriminator;
+
+    public void setQuotaUsed(BigDecimal quotaUsed) {
+        this.quotaUsed = quotaUsed;
     }
 
-    public int getCurrencyValue() {
-        return currencyValue;
+
+    public Date getStartDate() {
+        return startDate;
     }
 
-    public void setCurrencyValue(int currencyValue) {
-        this.currencyValue = currencyValue;
+
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
     }
 
-    public int getInclude() {
-        return include;
+
+    public Date getEndDate() {
+        return endDate;
     }
 
-    public void setInclude(int include) {
-        this.include = include;
+
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
 
 }

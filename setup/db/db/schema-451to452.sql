@@ -21,6 +21,7 @@
 
 -- SAML
 
+
 DELETE FROM `cloud`.`configuration` WHERE name like 'saml%' and component='management-server';
 
 ALTER TABLE `cloud`.`user` ADD COLUMN `external_entity` text DEFAULT NULL COMMENT "reference to external federation entity";
@@ -37,8 +38,7 @@ CREATE TABLE `cloud`.`saml_token` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE IF NOT EXISTS `quota_mapping` (
-  `id` bigint(20) unsigned NOT NULL COMMENT 'id',
+CREATE TABLE `quota_mapping` (
   `usage_type` int(2) unsigned DEFAULT NULL,
   `usage_name` varchar(255) NOT NULL COMMENT 'usage type',
   `usage_unit` varchar(255) NOT NULL COMMENT 'usage type',
@@ -46,34 +46,34 @@ CREATE TABLE IF NOT EXISTS `quota_mapping` (
   `currency_value` decimal(15,2) NOT NULL COMMENT 'usage type',
   `include` tinyint(1) NOT NULL COMMENT 'usage type',
   `description` varchar(255) NOT NULL COMMENT 'usage type',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`usage_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 LOCK TABLES `quota_mapping` WRITE;
 INSERT INTO `quota_mapping` VALUES 
- (1,1,'RUNNING_VM','Compute-Month','',5.00,1,'Quota mapping for running VM'),
- (2,2,'ALLOCATED_VM','Compute-Month','',10.00,1,'Quota mapping for allocsated VM'),
- (3,3,'IP_ADDRESS','IP-Month','',5.12,1,'Quota mapping for IP address in use'),
- (4,4,'NETWORK_BYTES_SENT','GB','',1.00,1,'Quota mapping for network bytes sent'),
- (5,5,'NETWORK_BYTES_RECEIVED','GB','',1.00,1,'Quota mapping for network bytes received'),
- (6,6,'VOLUME','GB-Month','',5.00,1,'Quota mapping for volume usage per month'),
- (7,7,'TEMPLATE','GB-Month','',5.00,1,'Quota mapping for template usage per month'),
- (8,8,'ISO','GB-Month','',5.00,1,'Quota mapping for ISO storage per month'),
- (9,9,'SNAPSHOT','GB-Month','',5.00,1,'Quota mapping for snapshot usage per month'),
- (10,10,'SECURITY_GROUP','Policy-Month','',5.00,1,'Quota mapping for Security groups'),
- (11,11,'LOAD_BALANCER_POLICY','Policy-Month','',5.00,1,'Quota mapping load balancer policy use per hour'),
- (12,12,'PORT_FORWARDING_RULE','Policy-Month','',5.00,1,'Quota mapping port forwarding rule useper hour'),
- (13,13,'NETWORK_OFFERING','Policy-Month','',5.00,1,'Quota mapping for network offering usage per hour'),
- (14,14,'VPN_USERS','Policy-Month','',5.00,1,'Quota mapping for using VPN'),
- (15,15,'CPU_SPEED','Compute-Month','100MHz',5.00,1,'Quota mapping for 100 MHz of CPU running for an hour'),
- (16,16,'vCPU','Compute-Month','1VCPU',5.00,1,'Quota mapping for running VM that has 1vCPU'),
- (17,17,'MEMORY','Compute-Month','1MB',5.00,1,'Quota mapping for usign 1MB or RAM for 1 hour'),
- (18,21,'VM_DISK_IO_READ','GB','1',5.00,1,'Quota mapping for 1GB of disk IO read'),
- (19,22,'VM_DISK_IO_WRITE','GB','1',5.00,1,'Quota mapping for 1GB of disk data write'),
- (20,23,'VM_DISK_BYTES_READ','GB','1',5.00,1,'Quota mapping for disk bytes read'),
- (21,24,'VM_DISK_BYTES_WRITE','GB','1',5.00,1,'Quota mapping for disk bytes write'),
- (22,25,'VM_SNAPSHOT','GB-Month','',5.00,1,'Quota mapping for running VM');
+ (1,'RUNNING_VM','Compute-Month','',5.00,1,'Quota mapping for running VM'),
+ (2,'ALLOCATED_VM','Compute-Month','',10.00,1,'Quota mapping for allocsated VM'),
+ (3,'IP_ADDRESS','IP-Month','',5.12,1,'Quota mapping for IP address in use'),
+ (4,'NETWORK_BYTES_SENT','GB','',1.00,1,'Quota mapping for network bytes sent'),
+ (5,'NETWORK_BYTES_RECEIVED','GB','',1.00,1,'Quota mapping for network bytes received'),
+ (6,'VOLUME','GB-Month','',5.00,1,'Quota mapping for volume usage per month'),
+ (7,'TEMPLATE','GB-Month','',5.00,1,'Quota mapping for template usage per month'),
+ (8,'ISO','GB-Month','',5.00,1,'Quota mapping for ISO storage per month'),
+ (9,'SNAPSHOT','GB-Month','',5.00,1,'Quota mapping for snapshot usage per month'),
+ (10,'SECURITY_GROUP','Policy-Month','',5.00,1,'Quota mapping for Security groups'),
+ (11,'LOAD_BALANCER_POLICY','Policy-Month','',5.00,1,'Quota mapping load balancer policy use per hour'),
+ (12,'PORT_FORWARDING_RULE','Policy-Month','',5.00,1,'Quota mapping port forwarding rule useper hour'),
+ (13,'NETWORK_OFFERING','Policy-Month','',5.00,1,'Quota mapping for network offering usage per hour'),
+ (14,'VPN_USERS','Policy-Month','',5.00,1,'Quota mapping for using VPN'),
+ (15,'CPU_SPEED','Compute-Month','100MHz',5.00,1,'Quota mapping for 100 MHz of CPU running for an hour'),
+ (16,'vCPU','Compute-Month','1VCPU',5.00,1,'Quota mapping for running VM that has 1vCPU'),
+ (17,'MEMORY','Compute-Month','1MB',5.00,1,'Quota mapping for usign 1MB or RAM for 1 hour'),
+ (21,'VM_DISK_IO_READ','GB','1',5.00,1,'Quota mapping for 1GB of disk IO read'),
+ (22,'VM_DISK_IO_WRITE','GB','1',5.00,1,'Quota mapping for 1GB of disk data write'),
+ (23,'VM_DISK_BYTES_READ','GB','1',5.00,1,'Quota mapping for disk bytes read'),
+ (24,'VM_DISK_BYTES_WRITE','GB','1',5.00,1,'Quota mapping for disk bytes write'),
+ (25,'VM_SNAPSHOT','GB-Month','',5.00,1,'Quota mapping for running VM');
 UNLOCK TABLES;
 
 
@@ -81,22 +81,24 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_credits` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `account_id` bigint unsigned NOT NULL,
   `domain_id` bigint(20) unsigned NOT NULL,
-  `credit` decimal(15,2) COMMENT 'amount credited',
+  `credit` decimal(15,4) COMMENT 'amount credited',
   `updated_on` datetime NOT NULL COMMENT 'date created',
   `updated_by` bigint unsigned NOT NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-
-CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_usage` (
-  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
-  `usage_item_id` bigint unsigned NOT NULL,
+CREATE TABLE IF NOT EXISTS `quota_usage` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `usage_item_id` bigint(20) unsigned NOT NULL,
+  `zone_id` bigint(20) unsigned NOT NULL,
+  `account_id` bigint(20) unsigned NOT NULL,
+  `domain_id` bigint(20) unsigned NOT NULL,
   `usage_type` varchar(64) DEFAULT NULL,
-  `quota_used` int unsigned NOT NULL,
+  `quota_used` decimal(15,4) unsigned NOT NULL,
   `start_date` datetime NOT NULL COMMENT 'start time for this usage item',
   `end_date` datetime NOT NULL COMMENT 'end time for this usage item',
-  PRIMARY KEY  (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_balance` (
