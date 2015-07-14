@@ -39,6 +39,8 @@ CREATE TABLE `cloud`.`saml_token` (
 
 -- Quota
 
+ALTER TABLE `cloud_usage`.`cloud_usage` ADD COLUMN `quota_calculated` tinyint(1) DEFAULT 0 COMMENT "quota calculation status";
+
 CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_mapping` (
   `usage_type` int(2) unsigned DEFAULT NULL,
   `usage_name` varchar(255) NOT NULL COMMENT 'usage type',
