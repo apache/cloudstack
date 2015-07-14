@@ -502,8 +502,10 @@ public class ApiConstants {
     public static final String S3_BUCKET_NAME = "bucket";
     public static final String S3_HTTPS_FLAG = "usehttps";
     public static final String S3_CONNECTION_TIMEOUT = "connectiontimeout";
+    public static final String S3_CONNECTION_TTL = "connectionttl";
     public static final String S3_MAX_ERROR_RETRY = "maxerrorretry";
     public static final String S3_SOCKET_TIMEOUT = "sockettimeout";
+    public static final String S3_USE_TCP_KEEPALIVE = "usetcpkeepalive";
     public static final String INCL_ZONES = "includezones";
     public static final String EXCL_ZONES = "excludezones";
     public static final String SOURCE = "source";

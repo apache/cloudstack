@@ -34,9 +34,11 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
     private String endPoint;
     private String bucketName;
     private Boolean httpsFlag;
+    private Boolean useTCPKeepAlive;
     private Integer connectionTimeout;
     private Integer maxErrorRetry;
     private Integer socketTimeout;
+    private Integer connectionTtl;
     private Date created;
     private boolean enableRRS;
     private long maxSingleUploadSizeInBytes;
@@ -50,7 +52,7 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
 
     public S3TO(final Long id, final String uuid, final String accessKey, final String secretKey, final String endPoint, final String bucketName,
             final Boolean httpsFlag, final Integer connectionTimeout, final Integer maxErrorRetry, final Integer socketTimeout, final Date created,
-            final boolean enableRRS, final long maxUploadSize) {
+            final boolean enableRRS, final long maxUploadSize, final Integer connectionTtl, final Boolean useTCPKeepAlive) {
 
         super();
 
@@ -67,6 +69,8 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
         this.created = created;
         this.enableRRS = enableRRS;
         this.maxSingleUploadSizeInBytes = maxUploadSize;
+        this.connectionTtl = connectionTtl;
+        this.useTCPKeepAlive = useTCPKeepAlive;
 
     }
 
@@ -118,6 +122,14 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
             return false;
         }
 
+        if (connectionTtl != null ? !connectionTtl.equals(thatS3TO.connectionTtl) : thatS3TO.connectionTtl != null) {
+            return false;
+        }
+
+        if (useTCPKeepAlive != null ? !useTCPKeepAlive.equals(thatS3TO.useTCPKeepAlive) : thatS3TO.useTCPKeepAlive != null) {
+            return false;
+        }
+
         if (bucketName != null ? !bucketName.equals(thatS3TO.bucketName) : thatS3TO.bucketName != null) {
             return false;
         }
@@ -147,6 +159,8 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
         result = 31 * result + (connectionTimeout != null ? connectionTimeout.hashCode() : 0);
         result = 31 * result + (maxErrorRetry != null ? maxErrorRetry.hashCode() : 0);
         result = 31 * result + (socketTimeout != null ? socketTimeout.hashCode() : 0);
+        result = 31 * result + (connectionTtl != null ? connectionTtl.hashCode() : 0);
+        result = 31 * result + (useTCPKeepAlive ? 1 : 0);
 
         return result;
 
@@ -243,6 +257,24 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
 
     public void setSocketTimeout(final Integer socketTimeout) {
         this.socketTimeout = socketTimeout;
+    }
+
+    @Override
+    public Integer getConnectionTtl() {
+        return this.connectionTtl;
+    }
+
+    public void setConnectionTtl(final Integer connectionTtl) {
+        this.connectionTtl = connectionTtl;
+    }
+
+    @Override
+    public Boolean getUseTCPKeepAlive() {
+        return this.useTCPKeepAlive;
+    }
+
+    public void setUseTCPKeepAlive(final Boolean useTCPKeepAlive) {
+        this.useTCPKeepAlive = useTCPKeepAlive;
     }
 
     public Date getCreated() {

@@ -60,7 +60,9 @@ public class S3ImageStoreDriverImpl extends BaseImageStoreDriverImpl {
                 : Integer.valueOf(details.get(ApiConstants.S3_CONNECTION_TIMEOUT)), details.get(ApiConstants.S3_MAX_ERROR_RETRY) == null ? null
                 : Integer.valueOf(details.get(ApiConstants.S3_MAX_ERROR_RETRY)), details.get(ApiConstants.S3_SOCKET_TIMEOUT) == null ? null
                 : Integer.valueOf(details.get(ApiConstants.S3_SOCKET_TIMEOUT)), imgStore.getCreated(), _configDao.getValue(Config.S3EnableRRS.toString()) == null ? false
-                : Boolean.parseBoolean(_configDao.getValue(Config.S3EnableRRS.toString())), getMaxSingleUploadSizeInBytes());
+                : Boolean.parseBoolean(_configDao.getValue(Config.S3EnableRRS.toString())), getMaxSingleUploadSizeInBytes(),
+                details.get(ApiConstants.S3_CONNECTION_TTL) == null ? null : Integer.valueOf(details.get(ApiConstants.S3_CONNECTION_TTL)),
+                details.get(ApiConstants.S3_USE_TCP_KEEPALIVE) == null ? null : Boolean.parseBoolean(details.get(ApiConstants.S3_USE_TCP_KEEPALIVE)));
 
     }
 
