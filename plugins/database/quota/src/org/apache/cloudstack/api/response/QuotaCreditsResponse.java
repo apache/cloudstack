@@ -16,27 +16,26 @@
 //under the License.
 package org.apache.cloudstack.api.response;
 
-import java.sql.Timestamp;
-
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.quota.QuotaCreditsVO;
 
-import com.cloud.serializer.Param;
+import java.math.BigDecimal;
+import java.sql.Timestamp;
 
 public class QuotaCreditsResponse extends BaseResponse {
 
     @SerializedName("credits")
     @Param(description = "the credit deposited")
-    private Integer credits;
+    private String credits;
 
     @SerializedName("balance")
     @Param(description = "the balance credit in account")
-    private Integer balance;
+    private String balance;
 
     @SerializedName("updated_by")
-    @Param(description = "the account name of the admin who updated the credits")
+    @Param(description = "the user name of the admin who updated the credits")
     private String updatedBy;
 
     @SerializedName("updated_on")
@@ -47,29 +46,29 @@ public class QuotaCreditsResponse extends BaseResponse {
         super();
     }
 
-    public QuotaCreditsResponse(QuotaCreditsVO result) {
+    public QuotaCreditsResponse(QuotaCreditsVO result, String updatedBy) {
         super();
         if (result != null) {
-            this.credits = 100;
-            this.balance = 200;
-            this.updatedBy = "1";
+            this.credits = result.getCredit().setScale(2, BigDecimal.ROUND_HALF_EVEN).toString();
+            this.balance = (new BigDecimal("200")).toString();
+            this.updatedBy = updatedBy;
             this.updatedOn = new Timestamp(System.currentTimeMillis());
         }
     }
 
-    public Integer getCredits() {
+    public String getCredits() {
         return credits;
     }
 
-    public void setCredits(Integer credits) {
+    public void setCredits(String credits) {
         this.credits = credits;
     }
 
-    public Integer getBalance() {
+    public String getBalance() {
         return balance;
     }
 
-    public void setBalance(Integer balance) {
+    public void setBalance(String balance) {
         this.balance = balance;
     }
 

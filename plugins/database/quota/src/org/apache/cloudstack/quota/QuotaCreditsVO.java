@@ -105,6 +105,7 @@ public class QuotaCreditsVO implements InternalIdentity {
         this.id = id;
     }
 
+    // User ID of the creditor
     @Column(name = "updated_by")
     private Long updatedBy = null;
 

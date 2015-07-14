@@ -37,8 +37,7 @@ public class QuotaCreditsCmd extends BaseCmd {
     @Inject
     QuotaDBUtilsImpl _quotaDBUtils;
 
-    public static final Logger s_logger = Logger
-            .getLogger(QuotaStatementCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(QuotaStatementCmd.class.getName());
 
     private static final String s_name = "quotacreditsresponse";
 
@@ -98,11 +97,11 @@ public class QuotaCreditsCmd extends BaseCmd {
                     "The account does not exists or has been removed/disabled");
         }
 
-        final QuotaCreditsResponse credit_response = _quotaDBUtils
-                .addQuotaCredits(accountId, domainId, value, CallContext
-                        .current().getCallingAccount().getId());
-
-        setResponseObject(credit_response);
+        final QuotaCreditsResponse response = _quotaDBUtils.addQuotaCredits(accountId, domainId, value,
+                CallContext.current().getCallingUserId());
+        response.setResponseName(getCommandName());
+        response.setObjectName("quotacredits");
+        setResponseObject(response);
     }
 
     @Override

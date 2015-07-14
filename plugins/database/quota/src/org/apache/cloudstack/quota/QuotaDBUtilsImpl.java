@@ -16,6 +16,23 @@
 //under the License.
 package org.apache.cloudstack.quota;
 
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.user.User;
+import com.cloud.user.dao.UserDao;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.TransactionLegacy;
+import org.apache.cloudstack.api.command.QuotaEditMappingCmd;
+import org.apache.cloudstack.api.command.QuotaMappingCmd;
+import org.apache.cloudstack.api.response.QuotaConfigurationResponse;
+import org.apache.cloudstack.api.response.QuotaCreditsResponse;
+import org.apache.cloudstack.api.response.QuotaStatementResponse;
+import org.apache.cloudstack.quota.dao.QuotaCreditsDao;
+import org.apache.cloudstack.quota.dao.QuotaMappingDao;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,23 +40,6 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-
-import org.apache.cloudstack.api.command.QuotaEditMappingCmd;
-import org.apache.cloudstack.api.command.QuotaMappingCmd;
-import org.apache.cloudstack.api.response.QuotaConfigurationResponse;
-import org.apache.cloudstack.api.response.QuotaCreditsResponse;
-import org.apache.cloudstack.api.response.QuotaStatementResponse;
-import org.apache.cloudstack.quota.dao.QuotaMappingDao;
-import org.apache.cloudstack.quota.dao.QuotaCreditsDao;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = QuotaDBUtilsImpl.class)
@@ -51,6 +51,9 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
 
     @Inject
     private QuotaCreditsDao _quotaCreditsDao;
+
+    @Inject
+    private UserDao _userDao;
 
     @Override
     public QuotaConfigurationResponse createQuotaConfigurationResponse(QuotaMappingVO configuration) {
@@ -145,7 +148,12 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
             txn.close();
         }
         TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
-        return new QuotaCreditsResponse(result);
+        String creditor = "1";
+        User creditorUser = _userDao.getUser(updatedBy);
+        if (creditorUser != null) {
+            creditor = creditorUser.getUsername();
+        }
+        return new QuotaCreditsResponse(result, creditor);
     }
 
 }
