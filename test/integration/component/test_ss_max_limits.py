@@ -154,16 +154,16 @@ class TestMaxSecondaryStorageLimits(cloudstackTestCase):
 
         try:
             # Update resource limits for account
-            if accountLimit:
+            if accountLimit is not None:
                 Resources.updateLimit(self.apiclient, resourcetype=11,
                                 max=accountLimit, account=self.child_do_admin.name,
                                 domainid=self.child_do_admin.domainid)
 
-            if projectLimit:
+            if projectLimit is not None:
                 Resources.updateLimit(self.apiclient, resourcetype=11,
                                               max=projectLimit, projectid=self.project.id)
 
-            if domainLimit:
+            if domainLimit is not None:
                 Resources.updateLimit(self.apiclient, resourcetype=11,
                                               max=domainLimit, domainid=self.child_domain.id)
         except Exception as e:
