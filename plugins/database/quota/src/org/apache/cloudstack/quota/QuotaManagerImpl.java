@@ -284,13 +284,13 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
         Date adjustedStartDate = computeAdjustedTime(startDate, usageTZ);
         Date adjustedEndDate = computeAdjustedTime(endDate, usageTZ);
 
-        s_logger.debug("getting quota records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate + ", using pageSize: "
-                + cmd.getPageSizeVal() + " and startIndex: " + cmd.getStartIndex());
+        s_logger.debug("getting quota records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
 
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         Pair<List<QuotaUsageVO>, Integer> quotaUsageRecords = null;
         try {
-            Filter usageFilter = new Filter(QuotaUsageVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+            //TODO instead of max value query with reasonable number and iterate
+            Filter usageFilter = new Filter(QuotaUsageVO.class, "id", true, 0L, Long.MAX_VALUE);
             SearchCriteria<QuotaUsageVO> sc = _quotaUsageDao.createSearchCriteria();
             if (accountId != null) {
                 sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);

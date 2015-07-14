@@ -16,15 +16,16 @@
 //under the License.
 package org.apache.cloudstack.api.response;
 
+import java.math.BigDecimal;
 import java.util.Date;
-import java.util.List;
+
+import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
-public class QuotaStatementResponse  extends BaseResponse {
+public class QuotaStatementBalanceResponse extends BaseResponse {
 
     @SerializedName("accountid")
     @Param(description = "account id")
@@ -38,9 +39,13 @@ public class QuotaStatementResponse  extends BaseResponse {
     @Param(description = "domain id")
     private Long domainId;
 
-    @SerializedName("lineitem")
-    @Param(description = "list of quota usage under variosu types", responseObject = QuotaStatementItemResponse.class)
-    private List<QuotaStatementItemResponse> lineItem;
+    @SerializedName("usedquota")
+    @Param(description = "quota consumed")
+    private BigDecimal quotaUsed;
+
+    @SerializedName("quotabalance")
+    @Param(description = "remaining quota")
+    private BigDecimal quotaBalance;
 
     @SerializedName("startdate")
     @Param(description = "start date")
@@ -50,11 +55,7 @@ public class QuotaStatementResponse  extends BaseResponse {
     @Param(description = "end date")
     private Date endDate = null;
 
-    @SerializedName("balance")
-    @Param(description = "The balance of quota reamining", responseObject = QuotaStatementBalanceResponse.class)
-    private QuotaStatementBalanceResponse balance;
-
-    public QuotaStatementResponse() {
+    public QuotaStatementBalanceResponse() {
         super();
     }
 
@@ -82,12 +83,20 @@ public class QuotaStatementResponse  extends BaseResponse {
         this.domainId = domainId;
     }
 
-    public List<QuotaStatementItemResponse> getLineItem() {
-        return lineItem;
+    public BigDecimal getQuotaUsed() {
+        return quotaUsed;
     }
 
-    public void setLineItem(List<QuotaStatementItemResponse> lineItem) {
-        this.lineItem = lineItem;
+    public void setQuotaUsed(BigDecimal quotaUsed) {
+        this.quotaUsed = quotaUsed;
+    }
+
+    public BigDecimal getQuotaBalance() {
+        return quotaBalance;
+    }
+
+    public void setQuotaBalance(BigDecimal quotaBalance) {
+        this.quotaBalance = quotaBalance;
     }
 
     public Date getStartDate() {
@@ -106,12 +115,5 @@ public class QuotaStatementResponse  extends BaseResponse {
         this.endDate = endDate;
     }
 
-    public QuotaStatementBalanceResponse getBalance() {
-        return balance;
-    }
-
-    public void setBalance(QuotaStatementBalanceResponse balance) {
-        this.balance = balance;
-    }
 
 }

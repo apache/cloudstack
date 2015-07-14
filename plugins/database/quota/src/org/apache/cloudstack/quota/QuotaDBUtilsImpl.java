@@ -21,10 +21,13 @@ import com.cloud.user.User;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.TransactionLegacy;
+
 import org.apache.cloudstack.api.command.QuotaEditMappingCmd;
 import org.apache.cloudstack.api.command.QuotaMappingCmd;
 import org.apache.cloudstack.api.response.QuotaConfigurationResponse;
 import org.apache.cloudstack.api.response.QuotaCreditsResponse;
+import org.apache.cloudstack.api.response.QuotaStatementBalanceResponse;
+import org.apache.cloudstack.api.response.QuotaStatementItemResponse;
 import org.apache.cloudstack.api.response.QuotaStatementResponse;
 import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
 import org.apache.cloudstack.quota.dao.QuotaCreditsDao;
@@ -34,6 +37,7 @@ import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -73,7 +77,8 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
     }
 
     @Override
-    public List<QuotaStatementResponse> createQuotaStatementResponse(List<QuotaUsageVO> quotaUsage) {
+    public QuotaStatementResponse createQuotaStatementResponse(List<QuotaUsageVO> quotaUsage) {
+        QuotaStatementResponse statement = new QuotaStatementResponse();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         Collections.sort(quotaUsage, new Comparator<QuotaUsageVO>() {
             public int compare(QuotaUsageVO o1, QuotaUsageVO o2) {
@@ -89,28 +94,43 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
             map.put(mapping.getUsageType(), mapping);
         }
 
-        List<QuotaStatementResponse> statement = new ArrayList<QuotaStatementResponse>();
-        QuotaStatementResponse lineitem;
+        List<QuotaStatementItemResponse> items = new ArrayList<QuotaStatementItemResponse>();
+        QuotaStatementItemResponse lineitem;
         int type = -1;
+        BigDecimal usage = new BigDecimal(0);
         BigDecimal totalUsage = new BigDecimal(0);
+        quotaUsage.add(new QuotaUsageVO());// boundry
+        QuotaUsageVO prev=quotaUsage.get(0);
         for (final QuotaUsageVO quotaRecord : quotaUsage) {
             if (type != quotaRecord.getUsageType()) {
                 if (type != -1) {
-                    lineitem = new QuotaStatementResponse();
+                    lineitem = new QuotaStatementItemResponse();
                     lineitem.setUsageType(type);
-                    lineitem.setQuotaUsed(totalUsage);
-                    lineitem.setAccountId(quotaRecord.getAccountId());
-                    lineitem.setDomainId(quotaRecord.getDomainId());
+                    lineitem.setQuotaUsed(usage);
+                    lineitem.setAccountId(prev.getAccountId());
+                    lineitem.setDomainId(prev.getDomainId());
+                    lineitem.setStartDate(prev.getStartDate());
+                    lineitem.setEndDate(prev.getEndDate());
                     lineitem.setUsageUnit(map.get(type).getUsageUnit());
                     lineitem.setUsageName(map.get(type).getUsageName());
-                    statement.add(lineitem);
-                    totalUsage = new BigDecimal(0);
+                    lineitem.setObjectName("lineitem");
+                    items.add(lineitem);
+                    totalUsage=totalUsage.add(usage);
+                    usage = new BigDecimal(0);
                 }
                 type = quotaRecord.getUsageType();
             }
-            totalUsage = totalUsage.add(quotaRecord.getQuotaUsed());
+            prev=quotaRecord;
+            usage = usage.add(quotaRecord.getQuotaUsed());
         }
 
+        statement.setLineItem(items);
+        // calculate total quota used and balance
+        QuotaStatementBalanceResponse balance = new QuotaStatementBalanceResponse();
+        balance.setObjectName("balance");
+        balance.setQuotaUsed(totalUsage);
+
+        statement.setBalance(balance);
         TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
         return statement;
     }

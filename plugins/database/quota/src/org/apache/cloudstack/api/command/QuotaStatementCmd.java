@@ -24,22 +24,22 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.QuotaStatementResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.quota.QuotaDBUtils;
 import org.apache.cloudstack.quota.QuotaManager;
 import org.apache.cloudstack.quota.QuotaUsageVO;
-import org.apache.cloudstack.api.response.QuotaStatementResponse;
+import org.apache.cloudstack.api.response.QuotaStatementItemResponse;
 
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "quotaStatement", responseObject = QuotaStatementResponse.class, description = "Create a quota statement", since = "4.2.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class QuotaStatementCmd extends BaseListCmd {
+@APICommand(name = "quotaStatement", responseObject = QuotaStatementItemResponse.class, description = "Create a quota statement", since = "4.2.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+public class QuotaStatementCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(QuotaStatementCmd.class.getName());
 
@@ -138,10 +138,8 @@ public class QuotaStatementCmd extends BaseListCmd {
     public void execute() {
         Pair<List<QuotaUsageVO>, Integer> result = _quotaManager.getQuotaUsage(this);
 
-        List<QuotaStatementResponse> responses = _quotaDBUtils.createQuotaStatementResponse(result.first());
+        QuotaStatementResponse response = _quotaDBUtils.createQuotaStatementResponse(result.first());
 
-        final ListResponse<QuotaStatementResponse> response = new ListResponse<QuotaStatementResponse>();
-        response.setResponses(responses, responses.size());
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
