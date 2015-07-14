@@ -79,7 +79,6 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
     @Override
     public QuotaStatementResponse createQuotaStatementResponse(List<QuotaUsageVO> quotaUsage) {
         QuotaStatementResponse statement = new QuotaStatementResponse();
-        TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         Collections.sort(quotaUsage, new Comparator<QuotaUsageVO>() {
             public int compare(QuotaUsageVO o1, QuotaUsageVO o2) {
                 if (o1.getUsageType() == o2.getUsageType())
@@ -89,11 +88,12 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
         });
 
         HashMap<Integer, QuotaMappingVO> map = new HashMap<Integer, QuotaMappingVO>();
+        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         List<QuotaMappingVO> result = _quotaMappingDao.listAll();
         for (QuotaMappingVO mapping : result) {
             map.put(mapping.getUsageType(), mapping);
         }
-
+        
         List<QuotaStatementItemResponse> items = new ArrayList<QuotaStatementItemResponse>();
         QuotaStatementItemResponse lineitem;
         int type = -1;
@@ -131,14 +131,14 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
         balance.setQuotaUsed(totalUsage);
 
         statement.setBalance(balance);
-        TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+        TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
         return statement;
     }
 
     @Override
     public Pair<List<QuotaMappingVO>, Integer> listConfigurations(final QuotaMappingCmd cmd) {
         final Pair<List<QuotaMappingVO>, Integer> result = _quotaMappingDao.listAllMapping();
-        TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+        TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
         return result;
     }
 
@@ -159,7 +159,7 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
             txn.close();
         }
         final Pair<List<QuotaMappingVO>, Integer> result = _quotaMappingDao.listAllMapping();
-        TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+        TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
         return result;
     }
 
@@ -174,7 +174,7 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
         } finally {
             txn.close();
         }
-        TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+        TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
         String creditor = "1";
         User creditorUser = _userDao.getUser(updatedBy);
         if (creditorUser != null) {
