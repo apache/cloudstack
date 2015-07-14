@@ -16,8 +16,209 @@
 // under the License.
 (function (cloudStack) {
     cloudStack.plugins.quota = function(plugin) {
+        // Quota Global Settings
+        var gsView = cloudStack.sections['global-settings'].sections;
+        gsView.quotaConfiguration = {
+                                        type: 'select',
+                                        title: 'label.quota.configuration',
+                                        listView: {
+                                            id: 'quota',
+                                            label: 'label.quota.configuration',
+                                            fields: {
+                                                usageType: {
+                                                    label: 'label.usage.type'
+                                                },
+                                                usageUnit: {
+                                                    label: 'label.usage.unit'
+                                                },
+                                                currencyValue: {
+                                                    label: 'label.quota.value'
+                                                },
+                                                description: {
+                                                    label: 'label.quota.description'
+                                                }
+                                            },
+                                            dataProvider: function(args) {
+                                                var data = {};
+                                                listViewDataProvider(args, data);
+                                                if (data.hasOwnProperty('page') && data.page > 1) {
+                                                    args.response.success({
+                                                        data: []
+                                                    });
+                                                    return;
+                                                }
+                                                $.ajax({
+                                                    url: createURL('quotaMapping'),
+                                                    data: data,
+                                                    success: function(json) {
+                                                        var items = json.quotaconfigurationresponse.quotamapping;
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    },
+                                                    error: function(data) {
+                                                        args.response.error(parseXMLHttpResponse(data));
+                                                    }
+                                                });
+                                            },
+                                            detailView: {
+                                                name: 'label.details',
+                                                actions: {
+                                                    remove: {
+                                                        label: 'label.quota.remove',
+                                                        messages: {
+                                                            notification: function(args) {
+                                                                return 'label.quota.remove';
+                                                            },
+                                                            confirm: function() {
+                                                                return 'label.quota.remove';
+                                                            }
+                                                        },
+                                                        action: function(args) {
+                                                            $.ajax({
+                                                                url: createURL("deleteQuotaConfiguration&hostname=" + args.context.quotaConfiguration[0].hostname),
+                                                                success: function(json) {
+                                                                    args.response.success();
+                                                                }
+                                                            });
+                                                            $(window).trigger('cloudStack.fullRefresh');
+                                                        }
+                                                    },
+                                                    edit: {
+                                                        label: 'label.quota.configure',
+                                                        messages: {
+                                                            notification: function(args) {
+                                                                return 'label.quota.configure';
+                                                            },
+                                                            confirm: function() {
+                                                                return 'label.quota.configure';
+                                                            }
+                                                        },
+                                                        action: function(args) {
+                                                            var data = {
+                                                                'type': args.context.quotaConfiguration[0].usageType,
+                                                                'usageUnit': args.data.usageUnit,
+                                                                'value': args.data.currencyValue,
+                                                                'description': args.data.description
+                                                            };
+                                                            $.ajax({
+                                                                url: createURL("editQuotaConfiguration"),
+                                                                data: data,
+                                                                success: function(json) {
+                                                                    args.response.success();
+                                                                }
+                                                            });
+                                                            $(window).trigger('cloudStack.fullRefresh');
+                                                        }
+                                                    }
+
+
+                                                },
+                                                tabs: {
+                                                    details: {
+                                                        title: 'label.quota.configuration',
+                                                                fields: [{
+                                                                usageType: {
+                                                                    label: 'label.usage.type'
+                                                                },
+                                                                usageUnit: {
+                                                                    label: 'label.usage.unit',
+                                                                    isEditable: true
+                                                                },
+                                                                currencyValue: {
+                                                                    label: 'label.quota.value',
+                                                                    isEditable: true
+                                                                },
+                                                                description: {
+                                                                    label: 'label.quota.description',
+                                                                    isEditable: true
+                                                                }
+                                                        }],
+                                                        dataProvider: function(args) {
+                                                            var items = [];
+                                                            $.ajax({
+                                                                url: createURL("quotaMapping&type=" + args.context.quotaConfiguration[0].usageType),
+                                                                dataType: "json",
+                                                                async: true,
+                                                                success: function(json) {
+                                                                    var item = json.quotaconfigurationresponse.quotamapping;
+                                                                    args.response.success({
+                                                                        data: item[0]
+                                                                    });
+                                                                }
+                                                            });
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            actions: {
+                                                add: {
+                                                    label: 'label.quota.configure',
+                                                    messages: {
+                                                        confirm: function(args) {
+                                                            return 'message.configure.quota';
+                                                        },
+                                                        notification: function(args) {
+                                                            return 'label.quota.configure';
+                                                        }
+                                                    },
+                                                    createForm: {
+                                                        title: 'label.quota.configure',
+                                                        fields: {
+                                                            usageType: {
+                                                                label: 'label.usage.type',
+                                                                validation: {
+                                                                    required: true
+                                                                }
+                                                            },
+                                                            periodUnit: {
+                                                                label: 'label.usage.unit',
+                                                                validation: {
+                                                                    required: true
+                                                                }
+                                                            },
+                                                            quotaValue: {
+                                                                label: 'label.quota.value',
+                                                                validation: {
+                                                                    required: true
+                                                                }
+                                                            },
+                                                            quotaDescription: {
+                                                                label: 'label.quota.description',
+                                                                validation: {
+                                                                    required: false
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    action: function(args) {
+                                                        var array = [];
+                                                        array.push("&type=" + todb(args.data.usageType));
+                                                        array.push("&period=" + todb(args.data.periodUnit));;
+                                                        array.push("&value=" + todb(args.data.quotaValue));;
+                                                        array.push("&description=" + todb(args.data.quotaDescription));;
+                                                        $.ajax({
+                                                            url: createURL("addQuotaConfiguration" + array.join("")),
+                                                            dataType: "json",
+                                                            async: true,
+                                                            success: function(json) {
+                                                                var items = json.quotaconfigurationresponse.QuotaAddConfiguration;
+                                                                args.response.success({
+                                                                    data: items
+                                                                });
+                                                            },
+                                                            error: function(json) {
+                                                                args.response.error(parseXMLHttpResponse(json));
+                                                            }
+                                                        });
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    };
+
+        // Quota view on user page
         var userView = cloudStack.sections.accounts.sections.users.listView.detailView;
-        // Add view to show quota information
         userView.tabs.quota = {
                                   title: 'Quota',
                                   fields: [{
