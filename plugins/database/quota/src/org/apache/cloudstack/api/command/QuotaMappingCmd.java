@@ -62,7 +62,7 @@ public class QuotaMappingCmd extends BaseListCmd {
         final List<QuotaConfigurationResponse> responses = new ArrayList<QuotaConfigurationResponse>();
         for (final QuotaMappingVO resource : result.first()) {
             final QuotaConfigurationResponse configurationResponse = _quotaDBUtils.createQuotaConfigurationResponse(resource);
-            configurationResponse.setObjectName("QuotaConfiguration");
+            configurationResponse.setObjectName("quotamapping");
             responses.add(configurationResponse);
         }
 
