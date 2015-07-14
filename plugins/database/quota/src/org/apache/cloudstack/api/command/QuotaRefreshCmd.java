@@ -18,15 +18,16 @@ package org.apache.cloudstack.api.command;
 
 import com.cloud.user.Account;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.QuotaRefreshResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.quota.QuotaManagerImpl;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = "quotaRefresh", responseObject = QuotaRefreshResponse.class, description = "Refresh the quota for all accounts if enabled", since = "4.2.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "quotaRefresh", responseObject = SuccessResponse.class, description = "Refresh the quota for all accounts if enabled", since = "4.2.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaRefreshCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(QuotaStatementCmd.class.getName());
@@ -52,10 +53,13 @@ public class QuotaRefreshCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException {
-        _quotaManager.calculateQuotaUsage();
-        final QuotaRefreshResponse response = new QuotaRefreshResponse("Success");
-        response.setResponseName(getCommandName());
-        setResponseObject(response);
+        boolean result = _quotaManager.calculateQuotaUsage();
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to refresh quota records");
+        }
     }
 
     @Override

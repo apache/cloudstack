@@ -16,36 +16,6 @@
 //under the License.
 package org.apache.cloudstack.quota;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.cloudstack.api.command.QuotaMapping;
-import org.apache.cloudstack.api.command.QuotaCreditsCmd;
-import org.apache.cloudstack.api.command.QuotaEditMappingCmd;
-import org.apache.cloudstack.api.command.QuotaEmailTemplateAddCmd;
-import org.apache.cloudstack.api.command.QuotaRefreshCmd;
-import org.apache.cloudstack.api.command.QuotaStatementCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.quota.dao.QuotaMappingDao;
-import org.apache.cloudstack.quota.dao.QuotaUsageDao;
-import org.apache.cloudstack.utils.usage.UsageUtils;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.configuration.Config;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
@@ -64,6 +34,34 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
+import org.apache.cloudstack.api.command.QuotaCreditsCmd;
+import org.apache.cloudstack.api.command.QuotaEditMappingCmd;
+import org.apache.cloudstack.api.command.QuotaEmailTemplateAddCmd;
+import org.apache.cloudstack.api.command.QuotaMapping;
+import org.apache.cloudstack.api.command.QuotaRefreshCmd;
+import org.apache.cloudstack.api.command.QuotaStatementCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.quota.dao.QuotaMappingDao;
+import org.apache.cloudstack.quota.dao.QuotaUsageDao;
+import org.apache.cloudstack.utils.usage.UsageUtils;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 
 @Component
 @Local(value = QuotaManager.class)
@@ -141,7 +139,8 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
     }
 
     @Override
-    public void calculateQuotaUsage() {
+    public boolean calculateQuotaUsage() {
+        boolean jobResult = false;
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
             // get quota mappings
@@ -218,13 +217,14 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
                     }
                 }
             }
-
+            jobResult = true;
         } catch (Exception e) {
             s_logger.error("Quota Manager error", e);
             e.printStackTrace();
         } finally {
             txn.close();
         }
+        return jobResult;
     }
 
     @SuppressWarnings("deprecation")
