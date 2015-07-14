@@ -28,7 +28,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.command.QuotaEditMappingCmd;
-import org.apache.cloudstack.api.command.QuotaMapping;
+import org.apache.cloudstack.api.command.QuotaMappingCmd;
 import org.apache.cloudstack.api.response.QuotaConfigurationResponse;
 import org.apache.cloudstack.api.response.QuotaCreditsResponse;
 import org.apache.cloudstack.api.response.QuotaStatementResponse;
@@ -106,7 +106,7 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
     }
 
     @Override
-    public Pair<List<QuotaMappingVO>, Integer> listConfigurations(final QuotaMapping cmd) {
+    public Pair<List<QuotaMappingVO>, Integer> listConfigurations(final QuotaMappingCmd cmd) {
         final Pair<List<QuotaMappingVO>, Integer> result = _quotaMappingDao.listAllMapping();
         TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
         return result;

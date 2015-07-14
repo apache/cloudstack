@@ -37,7 +37,7 @@ import com.cloud.utils.db.TransactionLegacy;
 import org.apache.cloudstack.api.command.QuotaCreditsCmd;
 import org.apache.cloudstack.api.command.QuotaEditMappingCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateAddCmd;
-import org.apache.cloudstack.api.command.QuotaMapping;
+import org.apache.cloudstack.api.command.QuotaMappingCmd;
 import org.apache.cloudstack.api.command.QuotaRefreshCmd;
 import org.apache.cloudstack.api.command.QuotaStatementCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -118,7 +118,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
     @Override
     public List<Class<?>> getCommands() {
         final List<Class<?>> cmdList = new ArrayList<Class<?>>();
-        cmdList.add(QuotaMapping.class);
+        cmdList.add(QuotaMappingCmd.class);
         cmdList.add(QuotaCreditsCmd.class);
         cmdList.add(QuotaEmailTemplateAddCmd.class);
         cmdList.add(QuotaRefreshCmd.class);

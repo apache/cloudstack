@@ -34,9 +34,9 @@ import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
 @APICommand(name = "quotaMapping", responseObject = QuotaConfigurationResponse.class, description = "Lists all Quota and Usage configurations", since = "4.2.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class QuotaMapping extends BaseListCmd {
+public class QuotaMappingCmd extends BaseListCmd {
 
-    public static final Logger s_logger = Logger.getLogger(QuotaMapping.class.getName());
+    public static final Logger s_logger = Logger.getLogger(QuotaMappingCmd.class.getName());
 
     private static final String s_name = "quotaconfigurationresponse";
 
@@ -46,11 +46,11 @@ public class QuotaMapping extends BaseListCmd {
     @Parameter(name = "type", type = CommandType.STRING, required = false, description = "Usage type of the resource")
     private String usageType;
 
-    public QuotaMapping() {
+    public QuotaMappingCmd() {
         super();
     }
 
-    public QuotaMapping(final QuotaDBUtilsImpl quotaDBUtils) {
+    public QuotaMappingCmd(final QuotaDBUtilsImpl quotaDBUtils) {
         super();
         _quotaDBUtils = quotaDBUtils;
     }

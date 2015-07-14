@@ -19,7 +19,7 @@ package org.apache.cloudstack.quota;
 import java.util.List;
 
 import org.apache.cloudstack.api.command.QuotaEditMappingCmd;
-import org.apache.cloudstack.api.command.QuotaMapping;
+import org.apache.cloudstack.api.command.QuotaMappingCmd;
 import org.apache.cloudstack.api.response.QuotaConfigurationResponse;
 import org.apache.cloudstack.api.response.QuotaCreditsResponse;
 import org.apache.cloudstack.api.response.QuotaStatementResponse;
@@ -30,7 +30,7 @@ public interface QuotaDBUtils {
 
     Pair<List<QuotaMappingVO>, Integer> editQuotaMapping(QuotaEditMappingCmd cmd);
 
-    Pair<List<QuotaMappingVO>, Integer> listConfigurations(QuotaMapping cmd);
+    Pair<List<QuotaMappingVO>, Integer> listConfigurations(QuotaMappingCmd cmd);
 
     QuotaConfigurationResponse createQuotaConfigurationResponse(QuotaMappingVO configuration);
 

@@ -87,7 +87,7 @@ public class QuotaEditMappingCmd extends BaseCmd {
         final List<QuotaConfigurationResponse> responses = new ArrayList<QuotaConfigurationResponse>();
         for (final QuotaMappingVO resource : result.first()) {
             final QuotaConfigurationResponse configurationResponse = _quotaDBUtils.createQuotaConfigurationResponse(resource);
-            configurationResponse.setObjectName("QuotaMapping");
+            configurationResponse.setObjectName("quotamapping");
             responses.add(configurationResponse);
         }
 
