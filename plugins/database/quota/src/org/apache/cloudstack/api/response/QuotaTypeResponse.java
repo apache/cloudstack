@@ -52,7 +52,7 @@ public class QuotaTypeResponse extends BaseResponse {
     public QuotaTypeResponse(Integer quotaType, String description) {
         this.quotaType = quotaType;
         this.description = description;
-        setObjectName("usagetype");
+        setObjectName(ApiConstants.USAGE_TYPE);
     }
 
 }

@@ -19,53 +19,50 @@ package org.apache.cloudstack.api.command;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.QuotaConfigurationResponse;
+import org.apache.cloudstack.api.response.QuotaTariffResponse;
 import org.apache.cloudstack.quota.QuotaDBUtilsImpl;
-import org.apache.cloudstack.quota.QuotaMappingVO;
+import org.apache.cloudstack.quota.QuotaTariffVO;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
-@APICommand(name = "quotaMapping", responseObject = QuotaConfigurationResponse.class, description = "Lists all Quota and Usage configurations", since = "4.2.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class QuotaMappingCmd extends BaseListCmd {
-
-    public static final Logger s_logger = Logger.getLogger(QuotaMappingCmd.class.getName());
-
-    private static final String s_name = "quotaconfigurationresponse";
+@APICommand(name = "quotaTariffList", responseObject = QuotaTariffResponse.class, description = "Lists all quota tariff plans", since = "4.6.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+public class QuotaTariffListCmd extends BaseListCmd {
+    public static final Logger s_logger = Logger.getLogger(QuotaTariffListCmd.class.getName());
+    private static final String s_name = "quotatarifflistresponse";
 
     @Inject
     QuotaDBUtilsImpl _quotaDBUtils;
 
-    @Parameter(name = "type", type = CommandType.STRING, required = false, description = "Usage type of the resource")
-    private String usageType;
+    @Parameter(name = ApiConstants.USAGE_TYPE, type = CommandType.INTEGER, required = false, description = "Usage type of the resource")
+    private Integer usageType;
 
-    public QuotaMappingCmd() {
+    public QuotaTariffListCmd() {
         super();
     }
 
-    public QuotaMappingCmd(final QuotaDBUtilsImpl quotaDBUtils) {
+    public QuotaTariffListCmd(final QuotaDBUtilsImpl quotaDBUtils) {
         super();
         _quotaDBUtils = quotaDBUtils;
     }
 
     @Override
     public void execute() {
-        final Pair<List<QuotaMappingVO>, Integer> result = _quotaDBUtils.listConfigurations(this);
+        final Pair<List<QuotaTariffVO>, Integer> result = _quotaDBUtils.listQuotaTariffPlans(this);
 
-        final List<QuotaConfigurationResponse> responses = new ArrayList<QuotaConfigurationResponse>();
-        for (final QuotaMappingVO resource : result.first()) {
-            final QuotaConfigurationResponse configurationResponse = _quotaDBUtils.createQuotaConfigurationResponse(resource);
-            configurationResponse.setObjectName("quotamapping");
-            responses.add(configurationResponse);
+        final List<QuotaTariffResponse> responses = new ArrayList<QuotaTariffResponse>();
+        for (final QuotaTariffVO resource : result.first()) {
+            responses.add(_quotaDBUtils.createQuotaTariffResponse(resource));
         }
 
-        final ListResponse<QuotaConfigurationResponse> response = new ListResponse<QuotaConfigurationResponse>();
-        response.setResponses(responses, responses.size());
+        final ListResponse<QuotaTariffResponse> response = new ListResponse<QuotaTariffResponse>();
+        response.setResponses(responses);
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
@@ -80,11 +77,11 @@ public class QuotaMappingCmd extends BaseListCmd {
         return Account.ACCOUNT_ID_SYSTEM;
     }
 
-    public String getUsageType() {
+    public Integer getUsageType() {
         return usageType;
     }
 
-    public void setUsageType(String usageType) {
+    public void setUsageType(Integer usageType) {
         this.usageType = usageType;
     }
 

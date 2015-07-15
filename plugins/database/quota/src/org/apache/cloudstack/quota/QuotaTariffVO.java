@@ -16,18 +16,17 @@
 //under the License.
 package org.apache.cloudstack.quota;
 
-import java.math.BigDecimal;
+import org.apache.cloudstack.api.InternalIdentity;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
-
-import org.apache.cloudstack.api.InternalIdentity;
+import java.math.BigDecimal;
 
 @Entity
-@Table(name = "quota_mapping")
-public class QuotaMappingVO implements InternalIdentity {
+@Table(name = "quota_tariff")
+public class QuotaTariffVO implements InternalIdentity {
     private static final long serialVersionUID = -7117933766387653203L;
 
     @Id
@@ -52,10 +51,10 @@ public class QuotaMappingVO implements InternalIdentity {
     @Column(name = "description")
     private String description;
 
-    public QuotaMappingVO() {
+    public QuotaTariffVO() {
     }
 
-    public QuotaMappingVO(final int usagetype, final String usagename, final String usageunit, final String usagediscriminator, final BigDecimal currencyvalue, final int include, final String description) {
+    public QuotaTariffVO(final int usagetype, final String usagename, final String usageunit, final String usagediscriminator, final BigDecimal currencyvalue, final int include, final String description) {
         this.usageType = usagetype;
         this.usageName = usagename;
         this.usageUnit = usageunit;
@@ -123,7 +122,6 @@ public class QuotaMappingVO implements InternalIdentity {
 
     @Override
     public long getId() {
-        // TODO Auto-generated method stub
         return this.usageType;
     }
 }

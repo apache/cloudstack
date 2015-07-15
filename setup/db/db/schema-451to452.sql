@@ -41,7 +41,7 @@ CREATE TABLE `cloud`.`saml_token` (
 
 ALTER TABLE `cloud_usage`.`cloud_usage` ADD COLUMN `quota_calculated` tinyint(1) DEFAULT 0 COMMENT "quota calculation status";
 
-CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_mapping` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_tariff` (
   `usage_type` int(2) unsigned DEFAULT NULL,
   `usage_name` varchar(255) NOT NULL COMMENT 'usage type',
   `usage_unit` varchar(255) NOT NULL COMMENT 'usage type',
@@ -53,30 +53,30 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_mapping` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-LOCK TABLES `cloud_usage`.`quota_mapping` WRITE;
-INSERT INTO `cloud_usage`.`quota_mapping` VALUES
- (1,'RUNNING_VM','Compute-Month','',5.00,1,'Quota mapping for running VM'),
- (2,'ALLOCATED_VM','Compute-Month','',10.00,1,'Quota mapping for allocsated VM'),
- (3,'IP_ADDRESS','IP-Month','',5.12,1,'Quota mapping for IP address in use'),
- (4,'NETWORK_BYTES_SENT','GB','',1.00,1,'Quota mapping for network bytes sent'),
- (5,'NETWORK_BYTES_RECEIVED','GB','',1.00,1,'Quota mapping for network bytes received'),
- (6,'VOLUME','GB-Month','',5.00,1,'Quota mapping for volume usage per month'),
- (7,'TEMPLATE','GB-Month','',5.00,1,'Quota mapping for template usage per month'),
- (8,'ISO','GB-Month','',5.00,1,'Quota mapping for ISO storage per month'),
- (9,'SNAPSHOT','GB-Month','',5.00,1,'Quota mapping for snapshot usage per month'),
- (10,'SECURITY_GROUP','Policy-Month','',5.00,1,'Quota mapping for Security groups'),
- (11,'LOAD_BALANCER_POLICY','Policy-Month','',5.00,1,'Quota mapping load balancer policy use per hour'),
- (12,'PORT_FORWARDING_RULE','Policy-Month','',5.00,1,'Quota mapping port forwarding rule useper hour'),
- (13,'NETWORK_OFFERING','Policy-Month','',5.00,1,'Quota mapping for network offering usage per hour'),
- (14,'VPN_USERS','Policy-Month','',5.00,1,'Quota mapping for using VPN'),
- (15,'CPU_SPEED','Compute-Month','100MHz',5.00,1,'Quota mapping for 100 MHz of CPU running for an hour'),
- (16,'vCPU','Compute-Month','1VCPU',5.00,1,'Quota mapping for running VM that has 1vCPU'),
- (17,'MEMORY','Compute-Month','1MB',5.00,1,'Quota mapping for usign 1MB or RAM for 1 hour'),
- (21,'VM_DISK_IO_READ','GB','1',5.00,1,'Quota mapping for 1GB of disk IO read'),
- (22,'VM_DISK_IO_WRITE','GB','1',5.00,1,'Quota mapping for 1GB of disk data write'),
- (23,'VM_DISK_BYTES_READ','GB','1',5.00,1,'Quota mapping for disk bytes read'),
- (24,'VM_DISK_BYTES_WRITE','GB','1',5.00,1,'Quota mapping for disk bytes write'),
- (25,'VM_SNAPSHOT','GB-Month','',5.00,1,'Quota mapping for running VM');
+LOCK TABLES `cloud_usage`.`quota_tariff` WRITE;
+INSERT INTO `cloud_usage`.`quota_tariff` VALUES
+ (1,'RUNNING_VM','Compute-Month','',5.00,1,'Quota tariff for running VM'),
+ (2,'ALLOCATED_VM','Compute-Month','',10.00,1,'Quota tariff for allocated VM'),
+ (3,'IP_ADDRESS','IP-Month','',5.12,1,'Quota tariff for IP address in use'),
+ (4,'NETWORK_BYTES_SENT','GB','',1.00,1,'Quota tariff for network bytes sent'),
+ (5,'NETWORK_BYTES_RECEIVED','GB','',1.00,1,'Quota tariff for network bytes received'),
+ (6,'VOLUME','GB-Month','',5.00,1,'Quota tariff for volume usage per month'),
+ (7,'TEMPLATE','GB-Month','',5.00,1,'Quota tariff for template usage per month'),
+ (8,'ISO','GB-Month','',5.00,1,'Quota tariff for ISO storage per month'),
+ (9,'SNAPSHOT','GB-Month','',5.00,1,'Quota tariff for snapshot usage per month'),
+ (10,'SECURITY_GROUP','Policy-Month','',5.00,1,'Quota tariff for Security groups'),
+ (11,'LOAD_BALANCER_POLICY','Policy-Month','',5.00,1,'Quota tariff load balancer policy use per hour'),
+ (12,'PORT_FORWARDING_RULE','Policy-Month','',5.00,1,'Quota tariff port forwarding rule useper hour'),
+ (13,'NETWORK_OFFERING','Policy-Month','',5.00,1,'Quota tariff for network offering usage per hour'),
+ (14,'VPN_USERS','Policy-Month','',5.00,1,'Quota tariff for using VPN'),
+ (15,'CPU_SPEED','Compute-Month','100MHz',5.00,1,'Quota tariff for 100 MHz of CPU running for an hour'),
+ (16,'vCPU','Compute-Month','1VCPU',5.00,1,'Quota tariff for running VM that has 1vCPU'),
+ (17,'MEMORY','Compute-Month','1MB',5.00,1,'Quota tariff for usign 1MB or RAM for 1 hour'),
+ (21,'VM_DISK_IO_READ','GB','1',5.00,1,'Quota tariff for 1GB of disk IO read'),
+ (22,'VM_DISK_IO_WRITE','GB','1',5.00,1,'Quota tariff for 1GB of disk data write'),
+ (23,'VM_DISK_BYTES_READ','GB','1',5.00,1,'Quota tariff for disk bytes read'),
+ (24,'VM_DISK_BYTES_WRITE','GB','1',5.00,1,'Quota tariff for disk bytes write'),
+ (25,'VM_SNAPSHOT','GB-Month','',5.00,1,'Quota tariff for running VM');
 UNLOCK TABLES;
 
 CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_credits` (

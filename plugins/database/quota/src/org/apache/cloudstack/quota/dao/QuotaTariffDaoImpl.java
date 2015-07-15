@@ -16,26 +16,24 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
-import java.util.List;
-
-import javax.ejb.Local;
-
-import org.springframework.stereotype.Component;
-import org.apache.cloudstack.quota.QuotaMappingVO;
-
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
+import org.apache.cloudstack.quota.QuotaTariffVO;
+import org.springframework.stereotype.Component;
+
+import javax.ejb.Local;
+import java.util.List;
 
 @Component
-@Local(value = { QuotaMappingDao.class })
-public class QuotaMappingDaoImpl extends GenericDaoBase<QuotaMappingVO, Long> implements QuotaMappingDao {
-    private final SearchBuilder<QuotaMappingVO> searchUsageType;
-    private final SearchBuilder<QuotaMappingVO> listAllIncludedUsageType;
+@Local(value = { QuotaTariffDao.class })
+public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> implements QuotaTariffDao {
+    private final SearchBuilder<QuotaTariffVO> searchUsageType;
+    private final SearchBuilder<QuotaTariffVO> listAllIncludedUsageType;
 
-    public QuotaMappingDaoImpl() {
+    public QuotaTariffDaoImpl() {
         super();
         searchUsageType = createSearchBuilder();
         searchUsageType.and("usage_type", searchUsageType.entity().getUsageType(), SearchCriteria.Op.EQ);
@@ -47,27 +45,42 @@ public class QuotaMappingDaoImpl extends GenericDaoBase<QuotaMappingVO, Long> im
     }
 
     @Override
-    public QuotaMappingVO findByUsageType(final int usageType) {
+    public QuotaTariffVO findTariffPlanByUsageType(final int usageType) {
+        QuotaTariffVO result = null;
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
-            final SearchCriteria<QuotaMappingVO> sc = searchUsageType.create();
+            final SearchCriteria<QuotaTariffVO> sc = searchUsageType.create();
             sc.setParameters("usage_type", usageType);
-            return findOneBy(sc);
+            result = findOneBy(sc);
         } finally {
             txn.close();
+            // Switch back to Cloud DB
+            TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
         }
+        return result;
     }
 
     @Override
-    public Pair<List<QuotaMappingVO>, Integer> listAllMapping() {
+    public Pair<List<QuotaTariffVO>, Integer> listAllTariffPlans() {
+        Pair<List<QuotaTariffVO>, Integer> result = null;
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
-            final SearchCriteria<QuotaMappingVO> sc = listAllIncludedUsageType.create();
+            final SearchCriteria<QuotaTariffVO> sc = listAllIncludedUsageType.create();
             sc.setParameters("include", 1);
-            return searchAndCount(sc, null);
+            result = searchAndCount(sc, null);
         } finally {
             txn.close();
+            // Switch back to Cloud DB
+            TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
         }
+        return result;
     }
 
+    @Override
+    public boolean updateQuotaTariff(QuotaTariffVO plan) {
+        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close(); // Switch to Usage DB
+        boolean result = this.update(plan.getId(), plan);
+        TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close(); // Switch back to Cloud DB
+        return result;
+    }
 }

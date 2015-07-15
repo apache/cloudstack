@@ -28,16 +28,16 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
-import org.apache.cloudstack.api.command.QuotaEditMappingCmd;
-import org.apache.cloudstack.api.command.QuotaMappingCmd;
-import org.apache.cloudstack.api.response.QuotaConfigurationResponse;
+import org.apache.cloudstack.api.command.QuotaTariffListCmd;
+import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
+import org.apache.cloudstack.api.response.QuotaTariffResponse;
 import org.apache.cloudstack.api.response.QuotaCreditsResponse;
 import org.apache.cloudstack.api.response.QuotaStatementBalanceResponse;
 import org.apache.cloudstack.api.response.QuotaStatementItemResponse;
 import org.apache.cloudstack.api.response.QuotaStatementResponse;
 import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
 import org.apache.cloudstack.quota.dao.QuotaCreditsDao;
-import org.apache.cloudstack.quota.dao.QuotaMappingDao;
+import org.apache.cloudstack.quota.dao.QuotaTariffDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -58,7 +58,8 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
     private static final Logger s_logger = Logger.getLogger(QuotaDBUtilsImpl.class.getName());
 
     @Inject
-    private QuotaMappingDao _quotaMappingDao;
+    private QuotaTariffDao _quotaTariffDao;
+
     @Inject
     private QuotaCreditsDao _quotaCreditsDao;
     @Inject
@@ -73,13 +74,13 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
     static Long s_recordtofetch = 1000L;
 
     @Override
-    public QuotaConfigurationResponse createQuotaConfigurationResponse(QuotaMappingVO configuration) {
-        final QuotaConfigurationResponse response = new QuotaConfigurationResponse();
+    public QuotaTariffResponse createQuotaTariffResponse(QuotaTariffVO configuration) {
+        final QuotaTariffResponse response = new QuotaTariffResponse();
         response.setUsageType(configuration.getUsageType());
         response.setUsageName(configuration.getUsageName());
         response.setUsageUnit(configuration.getUsageUnit());
         response.setUsageDiscriminator(configuration.getUsageDiscriminator());
-        response.setCurrencyValue(configuration.getCurrencyValue());
+        response.setTariffValue(configuration.getCurrencyValue());
         response.setInclude(configuration.getInclude());
         response.setDescription(configuration.getDescription());
         return response;
@@ -96,10 +97,10 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
             }
         });
 
-        HashMap<Integer, QuotaMappingVO> map = new HashMap<Integer, QuotaMappingVO>();
+        HashMap<Integer, QuotaTariffVO> map = new HashMap<Integer, QuotaTariffVO>();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
-        List<QuotaMappingVO> result = _quotaMappingDao.listAll();
-        for (QuotaMappingVO mapping : result) {
+        List<QuotaTariffVO> result = _quotaTariffDao.listAll();
+        for (QuotaTariffVO mapping : result) {
             map.put(mapping.getUsageType(), mapping);
         }
 
@@ -145,30 +146,31 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
     }
 
     @Override
-    public Pair<List<QuotaMappingVO>, Integer> listConfigurations(final QuotaMappingCmd cmd) {
-        final Pair<List<QuotaMappingVO>, Integer> result = _quotaMappingDao.listAllMapping();
-        TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
+    public Pair<List<QuotaTariffVO>, Integer> listQuotaTariffPlans(final QuotaTariffListCmd cmd) {
+        Pair<List<QuotaTariffVO>, Integer> result = new Pair<List<QuotaTariffVO>, Integer>(new ArrayList<QuotaTariffVO>(), 0);
+        if (cmd.getUsageType() != null) {
+            QuotaTariffVO tariffPlan = _quotaTariffDao.findTariffPlanByUsageType(cmd.getUsageType());
+            if (tariffPlan != null) {
+                result.first().add(tariffPlan);
+                result.second(1);
+            }
+        } else {
+            result = _quotaTariffDao.listAllTariffPlans();
+        }
         return result;
     }
 
     @Override
-    public Pair<List<QuotaMappingVO>, Integer> editQuotaMapping(QuotaEditMappingCmd cmd) {
-        int resourceType = cmd.getUsageType();
-        BigDecimal quotaCost = new BigDecimal(cmd.getValue());
-
-        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-        try {
-            QuotaMappingVO result = _quotaMappingDao.findByUsageType(resourceType);
-            if (result == null)
-                throw new InvalidParameterValueException("Resource type " + resourceType);
-            s_logger.info("Old value=" + result.getCurrencyValue() + ", new value = " + quotaCost + ", for resource =" + resourceType);
-            result.setCurrencyValue(quotaCost);
-            _quotaMappingDao.persist(result);
-        } finally {
-            txn.close();
+    public QuotaTariffVO updateQuotaTariffPlan(QuotaTariffUpdateCmd cmd) {
+        final int resourceType = cmd.getUsageType();
+        final BigDecimal quotaCost = new BigDecimal(cmd.getValue());
+        QuotaTariffVO result = _quotaTariffDao.findTariffPlanByUsageType(resourceType);
+        if (result == null) {
+            throw new InvalidParameterValueException(String.format("Invalid Usage Resource type=%d provided", resourceType));
         }
-        final Pair<List<QuotaMappingVO>, Integer> result = _quotaMappingDao.listAllMapping();
-        TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
+        s_logger.info(String.format("Updating Quota Tariff Plan: Old value=%s, new value=%s for resource type=%d", result.getCurrencyValue(), quotaCost, resourceType));
+        result.setCurrencyValue(quotaCost);
+        _quotaTariffDao.updateQuotaTariff(result);
         return result;
     }
 

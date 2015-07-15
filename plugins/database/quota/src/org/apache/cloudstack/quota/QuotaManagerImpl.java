@@ -34,16 +34,16 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import org.apache.cloudstack.api.command.QuotaCreditsCmd;
-import org.apache.cloudstack.api.command.QuotaEditMappingCmd;
+import org.apache.cloudstack.api.command.QuotaTariffListCmd;
+import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateAddCmd;
-import org.apache.cloudstack.api.command.QuotaMappingCmd;
 import org.apache.cloudstack.api.command.QuotaRefreshCmd;
 import org.apache.cloudstack.api.command.QuotaStatementCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.quota.dao.QuotaMappingDao;
+import org.apache.cloudstack.quota.dao.QuotaTariffDao;
 import org.apache.cloudstack.quota.dao.QuotaUsageDao;
 import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.log4j.Logger;
@@ -72,7 +72,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
     @Inject
     private UsageDao _usageDao;
     @Inject
-    private QuotaMappingDao _quotaConfigurationDao;
+    private QuotaTariffDao _quotaTariffDao;
     @Inject
     private QuotaUsageDao _quotaUsageDao;
     @Inject
@@ -117,12 +117,12 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
     @Override
     public List<Class<?>> getCommands() {
         final List<Class<?>> cmdList = new ArrayList<Class<?>>();
-        cmdList.add(QuotaMappingCmd.class);
+        cmdList.add(QuotaTariffListCmd.class);
         cmdList.add(QuotaCreditsCmd.class);
         cmdList.add(QuotaEmailTemplateAddCmd.class);
         cmdList.add(QuotaRefreshCmd.class);
         cmdList.add(QuotaStatementCmd.class);
-        cmdList.add(QuotaEditMappingCmd.class);
+        cmdList.add(QuotaTariffUpdateCmd.class);
         return cmdList;
     }
 
@@ -143,9 +143,9 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
             // get quota mappings
-            final Pair<List<QuotaMappingVO>, Integer> result = _quotaConfigurationDao.listAllMapping();
-            HashMap<Integer, QuotaMappingVO> mapping = new HashMap<Integer, QuotaMappingVO>();
-            for (final QuotaMappingVO resource : result.first()) {
+            final Pair<List<QuotaTariffVO>, Integer> result = _quotaTariffDao.listAllTariffPlans();
+            HashMap<Integer, QuotaTariffVO> mapping = new HashMap<Integer, QuotaTariffVO>();
+            for (final QuotaTariffVO resource : result.first()) {
                 s_logger.debug("QuotaConf=" + resource.getDescription());
                 mapping.put(resource.getUsageType(), resource);
             }
@@ -350,7 +350,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
     }
 
     @DB
-    private QuotaUsageVO updateQuotaDiskUsage(UsageVO usageRecord, HashMap<Integer, QuotaMappingVO> mapping, BigDecimal aggregationRatio, int quotaType) {
+    private QuotaUsageVO updateQuotaDiskUsage(UsageVO usageRecord, HashMap<Integer, QuotaTariffVO> mapping, BigDecimal aggregationRatio, int quotaType) {
         QuotaUsageVO quota_usage = null;
         if (mapping.get(quotaType) != null) {
             BigDecimal quotaUsgage;
@@ -376,7 +376,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
     }
 
     @DB
-    private List<QuotaUsageVO> updateQuotaRunningVMUsage(UsageVO usageRecord, HashMap<Integer, QuotaMappingVO> mapping, BigDecimal aggregationRatio) {
+    private List<QuotaUsageVO> updateQuotaRunningVMUsage(UsageVO usageRecord, HashMap<Integer, QuotaTariffVO> mapping, BigDecimal aggregationRatio) {
         List<QuotaUsageVO> quotalist = new ArrayList<QuotaUsageVO>();
         QuotaUsageVO quota_usage;
         BigDecimal cpuquotausgage, speedquotausage, memoryquotausage, vmusage;
@@ -432,7 +432,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
     }
 
     @DB
-    private QuotaUsageVO updateQuotaAllocatedVMUsage(UsageVO usageRecord, HashMap<Integer, QuotaMappingVO> mapping, BigDecimal aggregationRatio) {
+    private QuotaUsageVO updateQuotaAllocatedVMUsage(UsageVO usageRecord, HashMap<Integer, QuotaTariffVO> mapping, BigDecimal aggregationRatio) {
         QuotaUsageVO quota_usage = null;
         if (mapping.get(QuotaTypes.ALLOCATED_VM) != null) {
             BigDecimal vmusage;
@@ -455,7 +455,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
     }
 
     @DB
-    private QuotaUsageVO updateQuotaRaw(UsageVO usageRecord, HashMap<Integer, QuotaMappingVO> mapping, BigDecimal aggregationRatio, int ruleType) {
+    private QuotaUsageVO updateQuotaRaw(UsageVO usageRecord, HashMap<Integer, QuotaTariffVO> mapping, BigDecimal aggregationRatio, int ruleType) {
         QuotaUsageVO quota_usage = null;
         if (mapping.get(ruleType) != null) {
             BigDecimal ruleusage;
@@ -478,7 +478,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
     }
 
     @DB
-    private QuotaUsageVO updateQuotaNetwork(UsageVO usageRecord, HashMap<Integer, QuotaMappingVO> mapping, int transferType) {
+    private QuotaUsageVO updateQuotaNetwork(UsageVO usageRecord, HashMap<Integer, QuotaTariffVO> mapping, int transferType) {
         QuotaUsageVO quota_usage = null;
         if (mapping.get(transferType) != null) {
             BigDecimal onegbcost;

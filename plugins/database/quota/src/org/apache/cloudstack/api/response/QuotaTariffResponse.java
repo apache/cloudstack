@@ -16,15 +16,13 @@
 //under the License.
 package org.apache.cloudstack.api.response;
 
-import java.math.BigDecimal;
-
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.BaseResponse;
 
-import com.cloud.serializer.Param;
+import java.math.BigDecimal;
 
-public class QuotaConfigurationResponse extends BaseResponse {
+public class QuotaTariffResponse extends BaseResponse {
 
     @SerializedName("usageType")
     @Param(description = "usageType")
@@ -42,9 +40,9 @@ public class QuotaConfigurationResponse extends BaseResponse {
     @Param(description = "usageDiscriminator")
     private String usageDiscriminator;
 
-    @SerializedName("currencyValue")
-    @Param(description = "currencyValue")
-    private BigDecimal currencyValue;
+    @SerializedName("tariffValue")
+    @Param(description = "tariffValue")
+    private BigDecimal tariffValue;
 
     @SerializedName("include")
     @Param(description = "include")
@@ -54,11 +52,12 @@ public class QuotaConfigurationResponse extends BaseResponse {
     @Param(description = "description")
     private String description;
 
-    public QuotaConfigurationResponse() {
+    public QuotaTariffResponse() {
         super();
+        this.setObjectName("quotatariff");
     }
 
-    public QuotaConfigurationResponse(final int usageType) {
+    public QuotaTariffResponse(final int usageType) {
         super();
         this.usageType = usageType;
     }
@@ -95,12 +94,12 @@ public class QuotaConfigurationResponse extends BaseResponse {
         this.usageDiscriminator = usageDiscriminator;
     }
 
-    public BigDecimal getCurrencyValue() {
-        return currencyValue;
+    public BigDecimal getTariffValue() {
+        return tariffValue;
     }
 
-    public void setCurrencyValue(BigDecimal currencyValue) {
-        this.currencyValue = currencyValue;
+    public void setTariffValue(BigDecimal tariffValue) {
+        this.tariffValue = tariffValue;
     }
 
     public int getInclude() {

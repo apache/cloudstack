@@ -16,25 +16,25 @@
 //under the License.
 package org.apache.cloudstack.quota;
 
-import java.util.List;
+import com.cloud.utils.Pair;
+import com.cloud.usage.UsageVO;
+import com.cloud.service.ServiceOfferingVO;
 
-import org.apache.cloudstack.api.command.QuotaEditMappingCmd;
-import org.apache.cloudstack.api.command.QuotaMappingCmd;
-import org.apache.cloudstack.api.response.QuotaConfigurationResponse;
+import org.apache.cloudstack.api.command.QuotaTariffListCmd;
+import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
 import org.apache.cloudstack.api.response.QuotaCreditsResponse;
 import org.apache.cloudstack.api.response.QuotaStatementResponse;
+import org.apache.cloudstack.api.response.QuotaTariffResponse;
 
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.usage.UsageVO;
-import com.cloud.utils.Pair;
+import java.util.List;
 
 public interface QuotaDBUtils {
 
-    Pair<List<QuotaMappingVO>, Integer> editQuotaMapping(QuotaEditMappingCmd cmd);
+    QuotaTariffVO updateQuotaTariffPlan(QuotaTariffUpdateCmd cmd);
 
-    Pair<List<QuotaMappingVO>, Integer> listConfigurations(QuotaMappingCmd cmd);
+    Pair<List<QuotaTariffVO>, Integer> listQuotaTariffPlans(QuotaTariffListCmd cmd);
 
-    QuotaConfigurationResponse createQuotaConfigurationResponse(QuotaMappingVO configuration);
+    QuotaTariffResponse createQuotaTariffResponse(QuotaTariffVO configuration);
 
     QuotaStatementResponse createQuotaStatementResponse(List<QuotaUsageVO> quotaUsage);
 

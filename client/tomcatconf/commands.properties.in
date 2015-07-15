@@ -783,8 +783,9 @@ listOpenDaylightControllers=1
 addGloboDnsHost=1
 
 ### Quota Service
-quotaMapping=15
-quotaEditMapping=15
+quotaTariffList=15
+quotaTariffUpdate=7
+
 quotaRefresh=15
 quotaCredits=15
 quotaStatement=15
@@ -792,6 +793,4 @@ quotaEmailTemplateUpdate=15
 quotaEmailTemplateDelete=15
 quotaEmailTemplateAdd=15
 quotaReports=15
-
-
 

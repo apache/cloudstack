@@ -16,17 +16,17 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
-import java.util.List;
-
-import org.apache.cloudstack.quota.QuotaMappingVO;
-
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.quota.QuotaTariffVO;
 
-public interface QuotaMappingDao extends GenericDao<QuotaMappingVO, Long> {
+import java.util.List;
 
-    QuotaMappingVO findByUsageType(int usageType);
+public interface QuotaTariffDao extends GenericDao<QuotaTariffVO, Long> {
 
-    Pair<List<QuotaMappingVO>, Integer> listAllMapping();
+    QuotaTariffVO findTariffPlanByUsageType(int usageType);
 
+    Pair<List<QuotaTariffVO>, Integer> listAllTariffPlans();
+
+    boolean updateQuotaTariff(QuotaTariffVO plan);
 }
