@@ -59,11 +59,10 @@ public class MockServer implements Runnable {
     @Override
     public void run() {
 
-        try {
-            Socket socket = serverSocket.accept();
+        try (Socket socket = serverSocket.accept();) {
 
             if (verbose)
-                System.out.println("[" + this + "] INFO: Clien connected: " + socket.getRemoteSocketAddress() + ".");
+                System.out.println("[" + this + "] INFO: Client connected: " + socket.getRemoteSocketAddress() + ".");
 
             InputStream is = socket.getInputStream();
             OutputStream os = socket.getOutputStream();
@@ -135,10 +134,6 @@ public class MockServer implements Runnable {
                 }
                 try {
                     os.close();
-                } catch (Throwable e) {
-                }
-                try {
-                    socket.close();
                 } catch (Throwable e) {
                 }
                 try {

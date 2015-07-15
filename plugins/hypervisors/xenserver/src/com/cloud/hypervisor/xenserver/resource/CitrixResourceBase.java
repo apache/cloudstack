@@ -5318,7 +5318,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
 
-    public boolean AttachConfigDriveToMigratedVm(Connection conn, String vmName, String ipAddr) {
+    public boolean attachConfigDriveToMigratedVm(Connection conn, String vmName, String ipAddr) {
 
         // attach the config drive in destination host
 
@@ -5375,8 +5375,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             return true;
 
-        }catch (Exception ex) {
-            s_logger.debug("Failed to attach config drive ISO to the VM  "+ vmName + " In host " + ipAddr );
+        } catch (BadServerResponse e) {
+            s_logger.warn("Failed to attach config drive ISO to the VM  "+ vmName + " In host " + ipAddr + " due to a bad server response.", e);
+            return false;
+        } catch (XenAPIException e) {
+            s_logger.warn("Failed to attach config drive ISO to the VM  "+ vmName + " In host " + ipAddr + " due to a xapi problem.", e);
+            return false;
+        } catch (XmlRpcException e) {
+            s_logger.warn("Failed to attach config drive ISO to the VM  "+ vmName + " In host " + ipAddr + " due to a problem in a remote call.", e);
             return false;
         }
 

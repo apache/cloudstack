@@ -104,6 +104,7 @@ class Services:
                 "name": "SSH",
                 "alg": "roundrobin",
                 # Algorithm used for load balancing
+                "openfirewall":"false",
                 "privateport": 22,
                 "publicport": 2222,
             },

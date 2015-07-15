@@ -16,22 +16,13 @@
 // under the License.
 package com.cloud.api;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.util.Arrays;
-import java.util.Collections;
-import java.net.InetAddress;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import com.cloud.user.Account;
+import com.cloud.user.AccountService;
+import com.cloud.user.User;
+import com.cloud.utils.HttpUtils;
+import com.cloud.utils.StringUtils;
+import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.net.NetUtils;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiServerService;
@@ -45,13 +36,22 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
-import com.cloud.user.Account;
-import com.cloud.user.AccountService;
-import com.cloud.user.User;
-import com.cloud.utils.HttpUtils;
-import com.cloud.utils.StringUtils;
-import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.net.NetUtils;
+import javax.inject.Inject;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
+import java.net.URLDecoder;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Component("apiServlet")
 @SuppressWarnings("serial")
@@ -187,7 +187,7 @@ public class ApiServlet extends HttpServlet {
                         }
                         session = req.getSession(true);
                         if (ApiServer.isSecureSessionCookieEnabled()) {
-                            resp.setHeader("SET-COOKIE", "JSESSIONID=" + session.getId() + ";Secure;Path=/client");
+                            resp.setHeader("SET-COOKIE", String.format("JSESSIONID=%s;Secure;HttpOnly;Path=/client", session.getId()));
                             if (s_logger.isDebugEnabled()) {
                                 if (s_logger.isDebugEnabled()) {
                                     s_logger.debug("Session cookie is marked secure!");
@@ -198,11 +198,15 @@ public class ApiServlet extends HttpServlet {
 
                     try {
                         responseString = apiAuthenticator.authenticate(command, params, session, InetAddress.getByName(remoteAddress), responseType, auditTrailSb, req, resp);
+                        if (session != null && session.getAttribute(ApiConstants.SESSIONKEY) != null) {
+                            resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly", ApiConstants.SESSIONKEY, session.getAttribute(ApiConstants.SESSIONKEY)));
+                        }
                     } catch (ServerApiException e) {
                         httpResponseCode = e.getErrorCode().getHttpCode();
                         responseString = e.getMessage();
                         s_logger.debug("Authentication failure: " + e.getMessage());
                     }
+
                     if (apiAuthenticator.getAPIType() == APIAuthenticationType.LOGOUT_API) {
                         if (session != null) {
                             final Long userId = (Long) session.getAttribute("userid");
@@ -220,6 +224,9 @@ public class ApiServlet extends HttpServlet {
                             } catch (final IllegalStateException ignored) {
                             }
                         }
+                        Cookie sessionKeyCookie = new Cookie(ApiConstants.SESSIONKEY, "");
+                        sessionKeyCookie.setMaxAge(0);
+                        resp.addCookie(sessionKeyCookie);
                     }
                     HttpUtils.writeHttpResponse(resp, responseString, httpResponseCode, responseType, ApiServer.getJSONContentType());
                     return;
@@ -236,11 +243,15 @@ public class ApiServlet extends HttpServlet {
 
             if (!isNew) {
                 userId = (Long)session.getAttribute("userid");
-                final String account = (String)session.getAttribute("account");
+                final String account = (String) session.getAttribute("account");
                 final Object accountObj = session.getAttribute("accountobj");
-                final String sessionKey = (String)session.getAttribute(ApiConstants.SESSIONKEY);
-                final String[] sessionKeyParam = (String[])params.get(ApiConstants.SESSIONKEY);
-                if ((sessionKeyParam == null) || (sessionKey == null) || !sessionKey.equals(sessionKeyParam[0])) {
+                final String sessionKey = (String) session.getAttribute(ApiConstants.SESSIONKEY);
+                final String sessionKeyFromCookie = HttpUtils.findCookie(req.getCookies(), ApiConstants.SESSIONKEY);
+                final String[] sessionKeyFromParams = (String[]) params.get(ApiConstants.SESSIONKEY);
+                if ((sessionKey == null)
+                        || (sessionKeyFromParams == null && sessionKeyFromCookie == null)
+                        || (sessionKeyFromParams != null && !sessionKey.equals(sessionKeyFromParams[0]))
+                        || (sessionKeyFromCookie != null && !sessionKey.equals(sessionKeyFromCookie))) {
                     try {
                         session.invalidate();
                     } catch (final IllegalStateException ise) {

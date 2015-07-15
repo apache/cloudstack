@@ -33,6 +33,7 @@ var g_userPublicTemplateEnabled = "true";
 var g_cloudstackversion = null;
 var g_queryAsyncJobResultInterval = 3000;
 var g_idpList = null;
+var g_appendIdpDomain = false;
 
 //keyboard keycode
 var keycode_Enter = 13;
@@ -170,7 +171,10 @@ var pollAsyncJobResult = function(args) {
 
     function createURL(apiName, options) {
         if (!options) options = {};
-        var urlString = clientApiUrl + "?" + "command=" + apiName + "&response=json&sessionkey=" + g_sessionKey;
+        var urlString = clientApiUrl + "?" + "command=" + apiName + "&response=json";
+        if (g_sessionKey) {
+            urlString += "&sessionkey=" + g_sessionKey;
+        }
 
         if (cloudStack.context && cloudStack.context.projects && !options.ignoreProject) {
             urlString = urlString + '&projectid=' + cloudStack.context.projects[0].id;
