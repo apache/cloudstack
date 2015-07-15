@@ -42,8 +42,11 @@ import com.cloud.utils.Pair;
  */
 public interface UserVmManager extends UserVmService {
     static final String EnableDynamicallyScaleVmCK = "enable.dynamic.scale.vm";
+    static final String AllowUserExpungeRecoverVmCK ="allow.user.expunge.recover.vm";
     static final ConfigKey<Boolean> EnableDynamicallyScaleVm = new ConfigKey<Boolean>("Advanced", Boolean.class, EnableDynamicallyScaleVmCK, "false",
         "Enables/Disables dynamically scaling a vm", true, ConfigKey.Scope.Zone);
+    static final ConfigKey<Boolean> AllowUserExpungeRecoverVm = new ConfigKey<Boolean>("Advanced", Boolean.class, AllowUserExpungeRecoverVmCK, "false",
+        "Determines whether users can expunge or recover their vm", true, ConfigKey.Scope.Account);
 
     static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
 
