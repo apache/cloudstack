@@ -16,19 +16,17 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
+import java.util.Date;
 import java.util.List;
 
 import org.apache.cloudstack.quota.QuotaCreditsVO;
 
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.db.SearchCriteria;
 
 public interface QuotaCreditsDao extends GenericDao<QuotaCreditsVO, Long> {
 
-    Pair<List<QuotaCreditsVO>, Integer> searchAndCountAllRecords(SearchCriteria<QuotaCreditsVO> sc, Filter filter);
+    List<QuotaCreditsVO> getCredits(long accountId, long domainId, Date startDate, Date endDate);
 
-    void saveQuotaCredits(List<QuotaCreditsVO> credits);
+    QuotaCreditsVO saveCredits(QuotaCreditsVO credits);
 
 }

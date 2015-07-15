@@ -16,32 +16,46 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.springframework.stereotype.Component;
+import org.apache.cloudstack.quota.QuotaBalanceVO;
 import org.apache.cloudstack.quota.QuotaCreditsVO;
 
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
 @Local(value = { QuotaCreditsDao.class })
 public class QuotaCreditsDaoImpl extends GenericDaoBase<QuotaCreditsVO, Long> implements QuotaCreditsDao {
+    @Inject
+    QuotaBalanceDao _quotaBalanceDao;
 
+    @SuppressWarnings("deprecation")
     @Override
-    public Pair<List<QuotaCreditsVO>, Integer> searchAndCountAllRecords(SearchCriteria<QuotaCreditsVO> sc, Filter filter) {
-        // TODO Auto-generated method stub
-        return null;
+    public List<QuotaCreditsVO> getCredits(long accountId, long domainId, Date startDate, Date endDate) {
+        SearchCriteria<QuotaCreditsVO> sc = createSearchCriteria();
+        if ((startDate != null) && (endDate != null) && startDate.before(endDate)) {
+            sc.addAnd("startDate", SearchCriteria.Op.BETWEEN, startDate, endDate);
+            sc.addAnd("endDate", SearchCriteria.Op.BETWEEN, startDate, endDate);
+        } else {
+            return new ArrayList<QuotaCreditsVO>();
+        }
+        return listBy(sc);
     }
 
     @Override
-    public void saveQuotaCredits(List<QuotaCreditsVO> credits) {
-        // TODO Auto-generated method stub
-        //
+    public QuotaCreditsVO saveCredits(QuotaCreditsVO credits) {
+        persist(credits);
+        // make an entry in the balance table
+        QuotaBalanceVO bal = new QuotaBalanceVO(credits);
+        _quotaBalanceDao.persist(bal);
+        return credits;
     }
 
 }

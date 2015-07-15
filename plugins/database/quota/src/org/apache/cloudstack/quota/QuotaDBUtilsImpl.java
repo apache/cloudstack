@@ -17,9 +17,15 @@
 package org.apache.cloudstack.quota;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.usage.UsageVO;
+import com.cloud.usage.dao.UsageDao;
 import com.cloud.user.User;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 import org.apache.cloudstack.api.command.QuotaEditMappingCmd;
@@ -53,15 +59,18 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
 
     @Inject
     private QuotaMappingDao _quotaMappingDao;
-
     @Inject
     private QuotaCreditsDao _quotaCreditsDao;
-
     @Inject
     private QuotaBalanceDao _quotaBalanceDao;
-
+    @Inject
+    private ServiceOfferingDao _serviceOfferingDao;
     @Inject
     private UserDao _userDao;
+    @Inject
+    private UsageDao _usageDao;
+
+    static Long s_recordtofetch = 1000L;
 
     @Override
     public QuotaConfigurationResponse createQuotaConfigurationResponse(QuotaMappingVO configuration) {
@@ -164,13 +173,13 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
     }
 
     @Override
-    public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, String amount, Long updatedBy) {
+    public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy) {
         QuotaCreditsVO result = null;
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
-            QuotaCreditsVO credits = new QuotaCreditsVO(accountId, domainId, amount, updatedBy);
+            QuotaCreditsVO credits = new QuotaCreditsVO(accountId, domainId, new BigDecimal(amount), updatedBy);
             credits.setUpdatedOn(new Date());
-            result = _quotaCreditsDao.persist(credits);
+            result = _quotaCreditsDao.saveCredits(credits);
         } finally {
             txn.close();
         }
@@ -181,6 +190,37 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
             creditor = creditorUser.getUsername();
         }
         return new QuotaCreditsResponse(result, creditor);
+    }
+
+    @Override
+    @SuppressWarnings("deprecation")
+    public Pair<List<? extends UsageVO>, Integer> getUsageRecords(long accountId, long domainId) {
+        s_logger.debug("getting usage records for account: " + accountId + ", domainId: " + domainId);
+        Filter usageFilter = new Filter(UsageVO.class, "startDate", true, 0L, s_recordtofetch);
+        SearchCriteria<UsageVO> sc = _usageDao.createSearchCriteria();
+        if (accountId != -1) {
+            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+        }
+        if (domainId != -1) {
+            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+        }
+        sc.addAnd("quotaCalculated", SearchCriteria.Op.EQ, 0);
+        s_logger.debug("Getting usage records" + usageFilter.getOrderBy());
+        Pair<List<UsageVO>, Integer> usageRecords = _usageDao.searchAndCountAllRecords(sc, usageFilter);
+        return new Pair<List<? extends UsageVO>, Integer>(usageRecords.first(), usageRecords.second());
+    }
+
+    @Override
+    public ServiceOfferingVO findServiceOffering(Long vmId, long serviceOfferingId) {
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+        ServiceOfferingVO result;
+        try {
+            result = _serviceOfferingDao.findById(vmId, serviceOfferingId);
+        } finally {
+            txn.close();
+        }
+        TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+        return result;
     }
 
 }

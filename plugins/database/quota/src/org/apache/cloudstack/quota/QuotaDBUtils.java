@@ -24,6 +24,8 @@ import org.apache.cloudstack.api.response.QuotaConfigurationResponse;
 import org.apache.cloudstack.api.response.QuotaCreditsResponse;
 import org.apache.cloudstack.api.response.QuotaStatementResponse;
 
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.usage.UsageVO;
 import com.cloud.utils.Pair;
 
 public interface QuotaDBUtils {
@@ -36,6 +38,10 @@ public interface QuotaDBUtils {
 
     QuotaStatementResponse createQuotaStatementResponse(List<QuotaUsageVO> quotaUsage);
 
-    QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, String amount, Long updatedBy);
+    Pair<List<? extends UsageVO>, Integer> getUsageRecords(long accountId, long domainId);
+
+    ServiceOfferingVO findServiceOffering(Long vmId, long serviceOfferingId);
+
+    QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy);
 
 }

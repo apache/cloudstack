@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command;
 
 import com.cloud.user.Account;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -41,14 +42,14 @@ public class QuotaCreditsCmd extends BaseCmd {
 
     private static final String s_name = "quotacreditsresponse";
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required=true, description = "Account Id for which quota credits need to be added")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = true, description = "Account Id for which quota credits need to be added")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required=true, entityType = DomainResponse.class, description = "Domain for which quota credits need to be added")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = true, entityType = DomainResponse.class, description = "Domain for which quota credits need to be added")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, required=true, description = "Value of the credits to be added+, subtracted-")
-    private String value;
+    @Parameter(name = ApiConstants.VALUE, type = CommandType.DOUBLE, required = true, description = "Value of the credits to be added+, subtracted-")
+    private Double value;
 
     public String getAccountName() {
         return accountName;
@@ -66,11 +67,11 @@ public class QuotaCreditsCmd extends BaseCmd {
         this.domainId = domainId;
     }
 
-    public String getValue() {
+    public Double getValue() {
         return value;
     }
 
-    public void setValue(String value) {
+    public void setValue(Double value) {
         this.value = value;
     }
 
@@ -90,15 +91,12 @@ public class QuotaCreditsCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        Long accountId = _accountService.finalyzeAccountId(accountName,
-                domainId, null, true);
+        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, null, true);
         if (accountId == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
-                    "The account does not exists or has been removed/disabled");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "The account does not exists or has been removed/disabled");
         }
 
-        final QuotaCreditsResponse response = _quotaDBUtils.addQuotaCredits(accountId, domainId, value,
-                CallContext.current().getCallingUserId());
+        final QuotaCreditsResponse response = _quotaDBUtils.addQuotaCredits(accountId, domainId, value, CallContext.current().getCallingUserId());
         response.setResponseName(getCommandName());
         response.setObjectName("quotacredits");
         setResponseObject(response);

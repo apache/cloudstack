@@ -47,6 +47,9 @@ public class QuotaBalanceVO implements InternalIdentity {
     @Column(name = "credit_balance")
     private BigDecimal creditBalance;
 
+    @Column(name = "credits_id")
+    private Long creditsId;
+
     @Column(name = "updated_on")
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date updatedOn = null;
@@ -59,6 +62,16 @@ public class QuotaBalanceVO implements InternalIdentity {
     private Date previousUpdateOn = null;
 
     public QuotaBalanceVO() {
+        super();
+    }
+
+    public QuotaBalanceVO(QuotaCreditsVO credit) {
+        super();
+        this.accountId = credit.getAccountId();
+        this.domainId = credit.getDomainId();
+        this.creditBalance = credit.getCredit();
+        this.updatedOn = credit.getUpdatedOn();
+        this.creditsId = credit.getId();
     }
 
     public QuotaBalanceVO(Long accountId, Long domainId, BigDecimal creditBalance, Date updatedOn, Long previousUpdateId, Date previousUpdateOn) {
@@ -94,6 +107,14 @@ public class QuotaBalanceVO implements InternalIdentity {
 
     public void setDomainId(Long domainId) {
         this.domainId = domainId;
+    }
+
+    public Long getCreditsId() {
+        return creditsId;
+    }
+
+    public void setCreditsId(Long creditsId) {
+        this.creditsId = creditsId;
     }
 
     public BigDecimal getCreditBalance() {

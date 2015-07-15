@@ -18,21 +18,19 @@ package org.apache.cloudstack.api.response;
 
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.quota.QuotaCreditsVO;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Timestamp;
 
 public class QuotaCreditsResponse extends BaseResponse {
 
     @SerializedName("credits")
     @Param(description = "the credit deposited")
-    private String credits;
-
-    @SerializedName("balance")
-    @Param(description = "the balance credit in account")
-    private String balance;
+    private BigDecimal credits;
 
     @SerializedName("updated_by")
     @Param(description = "the user name of the admin who updated the credits")
@@ -49,27 +47,18 @@ public class QuotaCreditsResponse extends BaseResponse {
     public QuotaCreditsResponse(QuotaCreditsVO result, String updatedBy) {
         super();
         if (result != null) {
-            this.credits = result.getCredit().setScale(2, BigDecimal.ROUND_HALF_EVEN).toString();
-            this.balance = (new BigDecimal("200")).toString();
+            this.credits = result.getCredit().setScale(2, RoundingMode.HALF_EVEN);
             this.updatedBy = updatedBy;
             this.updatedOn = new Timestamp(System.currentTimeMillis());
         }
     }
 
-    public String getCredits() {
+    public BigDecimal getCredits() {
         return credits;
     }
 
-    public void setCredits(String credits) {
+    public void setCredits(BigDecimal credits) {
         this.credits = credits;
-    }
-
-    public String getBalance() {
-        return balance;
-    }
-
-    public void setBalance(String balance) {
-        this.balance = balance;
     }
 
     public String getUpdatedBy() {
