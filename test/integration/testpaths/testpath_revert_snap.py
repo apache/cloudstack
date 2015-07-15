@@ -31,6 +31,7 @@ from marvin.lib.common import (get_domain,
                                get_template,
                                list_volumes,
                               )
+from marvin.codes import PASS
 
 class TestUnableToRevertSnapshot(cloudstackTestCase):
 
@@ -118,7 +119,6 @@ class TestUnableToRevertSnapshot(cloudstackTestCase):
 
         """
         # Step 1
-        # Create VM on cluster wide
         vm = VirtualMachine.create(
             self.userapiclient,
             self.testdata["small"],
@@ -137,11 +137,13 @@ class TestUnableToRevertSnapshot(cloudstackTestCase):
 
         volume_list_validation = validateList(volumes_cluster_list)
 
-        self.assertNotEqual(
-                len(volume_list_validation),
-                0,
-                "Check if volume gets attached properly"
+	self.assertEqual(
+                volume_list_validation[0],
+                PASS,
+                "Event list validation failed due to %s" %
+		volume_list_validation[2]
             )
+ 
         root_volume = volumes_cluster_list[0]
         
         #Step 2
