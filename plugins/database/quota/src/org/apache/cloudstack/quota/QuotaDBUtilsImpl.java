@@ -97,11 +97,11 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
             }
         });
 
-        HashMap<Integer, QuotaTariffVO> map = new HashMap<Integer, QuotaTariffVO>();
+        HashMap<Integer, QuotaTariffVO> quotaTariffMap = new HashMap<Integer, QuotaTariffVO>();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         List<QuotaTariffVO> result = _quotaTariffDao.listAll();
-        for (QuotaTariffVO mapping : result) {
-            map.put(mapping.getUsageType(), mapping);
+        for (QuotaTariffVO quotaTariff : result) {
+            quotaTariffMap.put(quotaTariff.getUsageType(), quotaTariff);
         }
 
         List<QuotaStatementItemResponse> items = new ArrayList<QuotaStatementItemResponse>();
@@ -121,8 +121,8 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
                     lineitem.setDomainId(prev.getDomainId());
                     lineitem.setStartDate(prev.getStartDate());
                     lineitem.setEndDate(prev.getEndDate());
-                    lineitem.setUsageUnit(map.get(type).getUsageUnit());
-                    lineitem.setUsageName(map.get(type).getUsageName());
+                    lineitem.setUsageUnit(quotaTariffMap.get(type).getUsageUnit());
+                    lineitem.setUsageName(quotaTariffMap.get(type).getUsageName());
                     lineitem.setObjectName("lineitem");
                     items.add(lineitem);
                     totalUsage = totalUsage.add(usage);
@@ -168,7 +168,7 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
         if (result == null) {
             throw new InvalidParameterValueException(String.format("Invalid Usage Resource type=%d provided", resourceType));
         }
-        s_logger.info(String.format("Updating Quota Tariff Plan: Old value=%s, new value=%s for resource type=%d", result.getCurrencyValue(), quotaCost, resourceType));
+        s_logger.debug(String.format("Updating Quota Tariff Plan: Old value=%s, new value=%s for resource type=%d", result.getCurrencyValue(), quotaCost, resourceType));
         result.setCurrencyValue(quotaCost);
         _quotaTariffDao.updateQuotaTariff(result);
         return result;

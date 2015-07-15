@@ -34,11 +34,11 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import org.apache.cloudstack.api.command.QuotaCreditsCmd;
-import org.apache.cloudstack.api.command.QuotaTariffListCmd;
-import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateAddCmd;
 import org.apache.cloudstack.api.command.QuotaRefreshCmd;
 import org.apache.cloudstack.api.command.QuotaStatementCmd;
+import org.apache.cloudstack.api.command.QuotaTariffListCmd;
+import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -118,11 +118,11 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
     public List<Class<?>> getCommands() {
         final List<Class<?>> cmdList = new ArrayList<Class<?>>();
         cmdList.add(QuotaTariffListCmd.class);
+        cmdList.add(QuotaTariffUpdateCmd.class);
         cmdList.add(QuotaCreditsCmd.class);
         cmdList.add(QuotaEmailTemplateAddCmd.class);
         cmdList.add(QuotaRefreshCmd.class);
         cmdList.add(QuotaStatementCmd.class);
-        cmdList.add(QuotaTariffUpdateCmd.class);
         return cmdList;
     }
 
@@ -142,12 +142,12 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
         boolean jobResult = false;
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
-            // get quota mappings
+            // get quota tariff plans
             final Pair<List<QuotaTariffVO>, Integer> result = _quotaTariffDao.listAllTariffPlans();
-            HashMap<Integer, QuotaTariffVO> mapping = new HashMap<Integer, QuotaTariffVO>();
+            HashMap<Integer, QuotaTariffVO> quotaTariffMap = new HashMap<Integer, QuotaTariffVO>();
             for (final QuotaTariffVO resource : result.first()) {
                 s_logger.debug("QuotaConf=" + resource.getDescription());
-                mapping.put(resource.getUsageType(), resource);
+                quotaTariffMap.put(resource.getUsageType(), resource);
             }
 
             // get all the active accounts for which there is usage
@@ -163,49 +163,49 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
                         BigDecimal aggregationRatio = new BigDecimal(_aggregationDuration).divide(s_minutesInMonth, 8, RoundingMode.HALF_EVEN);
                         switch (usageRecord.getUsageType()) {
                         case QuotaTypes.RUNNING_VM:
-                            quotalistforaccount.addAll(updateQuotaRunningVMUsage(usageRecord, mapping, aggregationRatio));
+                            quotalistforaccount.addAll(updateQuotaRunningVMUsage(usageRecord, quotaTariffMap, aggregationRatio));
                             break;
                         case QuotaTypes.ALLOCATED_VM:
-                            quotalistforaccount.add(updateQuotaAllocatedVMUsage(usageRecord, mapping, aggregationRatio));
+                            quotalistforaccount.add(updateQuotaAllocatedVMUsage(usageRecord, quotaTariffMap, aggregationRatio));
                             break;
                         case QuotaTypes.SNAPSHOT:
-                            quotalistforaccount.add(updateQuotaDiskUsage(usageRecord, mapping, aggregationRatio, QuotaTypes.SNAPSHOT));
+                            quotalistforaccount.add(updateQuotaDiskUsage(usageRecord, quotaTariffMap, aggregationRatio, QuotaTypes.SNAPSHOT));
                             break;
                         case QuotaTypes.TEMPLATE:
-                            quotalistforaccount.add(updateQuotaDiskUsage(usageRecord, mapping, aggregationRatio, QuotaTypes.TEMPLATE));
+                            quotalistforaccount.add(updateQuotaDiskUsage(usageRecord, quotaTariffMap, aggregationRatio, QuotaTypes.TEMPLATE));
                             break;
                         case QuotaTypes.ISO:
-                            quotalistforaccount.add(updateQuotaDiskUsage(usageRecord, mapping, aggregationRatio, QuotaTypes.ISO));
+                            quotalistforaccount.add(updateQuotaDiskUsage(usageRecord, quotaTariffMap, aggregationRatio, QuotaTypes.ISO));
                             break;
                         case QuotaTypes.VOLUME:
-                            quotalistforaccount.add(updateQuotaDiskUsage(usageRecord, mapping, aggregationRatio, QuotaTypes.VOLUME));
+                            quotalistforaccount.add(updateQuotaDiskUsage(usageRecord, quotaTariffMap, aggregationRatio, QuotaTypes.VOLUME));
                             break;
                         case QuotaTypes.VM_SNAPSHOT:
-                            quotalistforaccount.add(updateQuotaDiskUsage(usageRecord, mapping, aggregationRatio, QuotaTypes.VM_SNAPSHOT));
+                            quotalistforaccount.add(updateQuotaDiskUsage(usageRecord, quotaTariffMap, aggregationRatio, QuotaTypes.VM_SNAPSHOT));
                             break;
                         case QuotaTypes.LOAD_BALANCER_POLICY:
-                            quotalistforaccount.add(updateQuotaRaw(usageRecord, mapping, aggregationRatio, QuotaTypes.LOAD_BALANCER_POLICY));
+                            quotalistforaccount.add(updateQuotaRaw(usageRecord, quotaTariffMap, aggregationRatio, QuotaTypes.LOAD_BALANCER_POLICY));
                             break;
                         case QuotaTypes.PORT_FORWARDING_RULE:
-                            quotalistforaccount.add(updateQuotaRaw(usageRecord, mapping, aggregationRatio, QuotaTypes.PORT_FORWARDING_RULE));
+                            quotalistforaccount.add(updateQuotaRaw(usageRecord, quotaTariffMap, aggregationRatio, QuotaTypes.PORT_FORWARDING_RULE));
                             break;
                         case QuotaTypes.IP_ADDRESS:
-                            quotalistforaccount.add(updateQuotaRaw(usageRecord, mapping, aggregationRatio, QuotaTypes.IP_ADDRESS));
+                            quotalistforaccount.add(updateQuotaRaw(usageRecord, quotaTariffMap, aggregationRatio, QuotaTypes.IP_ADDRESS));
                             break;
                         case QuotaTypes.NETWORK_OFFERING:
-                            quotalistforaccount.add(updateQuotaRaw(usageRecord, mapping, aggregationRatio, QuotaTypes.NETWORK_OFFERING));
+                            quotalistforaccount.add(updateQuotaRaw(usageRecord, quotaTariffMap, aggregationRatio, QuotaTypes.NETWORK_OFFERING));
                             break;
                         case QuotaTypes.SECURITY_GROUP:
-                            quotalistforaccount.add(updateQuotaRaw(usageRecord, mapping, aggregationRatio, QuotaTypes.SECURITY_GROUP));
+                            quotalistforaccount.add(updateQuotaRaw(usageRecord, quotaTariffMap, aggregationRatio, QuotaTypes.SECURITY_GROUP));
                             break;
                         case QuotaTypes.VPN_USERS:
-                            quotalistforaccount.add(updateQuotaRaw(usageRecord, mapping, aggregationRatio, QuotaTypes.VPN_USERS));
+                            quotalistforaccount.add(updateQuotaRaw(usageRecord, quotaTariffMap, aggregationRatio, QuotaTypes.VPN_USERS));
                             break;
                         case QuotaTypes.NETWORK_BYTES_RECEIVED:
-                            quotalistforaccount.add(updateQuotaRaw(usageRecord, mapping, aggregationRatio, QuotaTypes.NETWORK_BYTES_RECEIVED));
+                            quotalistforaccount.add(updateQuotaRaw(usageRecord, quotaTariffMap, aggregationRatio, QuotaTypes.NETWORK_BYTES_RECEIVED));
                             break;
                         case QuotaTypes.NETWORK_BYTES_SENT:
-                            quotalistforaccount.add(updateQuotaRaw(usageRecord, mapping, aggregationRatio, QuotaTypes.NETWORK_BYTES_SENT));
+                            quotalistforaccount.add(updateQuotaRaw(usageRecord, quotaTariffMap, aggregationRatio, QuotaTypes.NETWORK_BYTES_SENT));
                             break;
                         case QuotaTypes.VM_DISK_IO_READ:
                         case QuotaTypes.VM_DISK_IO_WRITE:
@@ -350,9 +350,9 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
     }
 
     @DB
-    private QuotaUsageVO updateQuotaDiskUsage(UsageVO usageRecord, HashMap<Integer, QuotaTariffVO> mapping, BigDecimal aggregationRatio, int quotaType) {
+    private QuotaUsageVO updateQuotaDiskUsage(UsageVO usageRecord, HashMap<Integer, QuotaTariffVO> quotaTariffMap, BigDecimal aggregationRatio, int quotaType) {
         QuotaUsageVO quota_usage = null;
-        if (mapping.get(quotaType) != null) {
+        if (quotaTariffMap.get(quotaType) != null) {
             BigDecimal quotaUsgage;
             BigDecimal onehourcostpergb;
             BigDecimal noofgbinuse;
@@ -361,7 +361,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
             // + usageRecord.getTemplateId() + ", " +
             // usageRecord.getUsageDisplay()
             // + ", aggrR=" + aggregationRatio);
-            onehourcostpergb = mapping.get(quotaType).getCurrencyValue().multiply(aggregationRatio);
+            onehourcostpergb = quotaTariffMap.get(quotaType).getCurrencyValue().multiply(aggregationRatio);
             noofgbinuse = new BigDecimal(usageRecord.getSize()).divide(s_gb, 8, RoundingMode.HALF_EVEN);
             quotaUsgage = new BigDecimal(usageRecord.getRawUsage()).multiply(onehourcostpergb).multiply(noofgbinuse);
             // s_logger.info(" No of GB In use = " + noofgbinuse +
@@ -376,7 +376,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
     }
 
     @DB
-    private List<QuotaUsageVO> updateQuotaRunningVMUsage(UsageVO usageRecord, HashMap<Integer, QuotaTariffVO> mapping, BigDecimal aggregationRatio) {
+    private List<QuotaUsageVO> updateQuotaRunningVMUsage(UsageVO usageRecord, HashMap<Integer, QuotaTariffVO> quotaTariffMap, BigDecimal aggregationRatio) {
         List<QuotaUsageVO> quotalist = new ArrayList<QuotaUsageVO>();
         QuotaUsageVO quota_usage;
         BigDecimal cpuquotausgage, speedquotausage, memoryquotausage, vmusage;
@@ -390,35 +390,35 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
         ServiceOfferingVO serviceoffering = _quotaDBUtils.findServiceOffering(usageRecord.getVmInstanceId(), usageRecord.getOfferingId());
         rawusage = new BigDecimal(usageRecord.getRawUsage());
 
-        if (mapping.get(QuotaTypes.CPU_NUMBER) != null) {
+        if (quotaTariffMap.get(QuotaTypes.CPU_NUMBER) != null) {
             BigDecimal cpu = new BigDecimal(serviceoffering.getCpu());
-            onehourcostpercpu = mapping.get(QuotaTypes.CPU_NUMBER).getCurrencyValue().multiply(aggregationRatio);
+            onehourcostpercpu = quotaTariffMap.get(QuotaTypes.CPU_NUMBER).getCurrencyValue().multiply(aggregationRatio);
             cpuquotausgage = rawusage.multiply(onehourcostpercpu).multiply(cpu);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), QuotaTypes.CPU_NUMBER, cpuquotausgage,
                     usageRecord.getStartDate(), usageRecord.getEndDate());
             _quotaUsageDao.persist(quota_usage);
             quotalist.add(quota_usage);
         }
-        if (mapping.get(QuotaTypes.CPU_CLOCK_RATE) != null) {
+        if (quotaTariffMap.get(QuotaTypes.CPU_CLOCK_RATE) != null) {
             BigDecimal speed = new BigDecimal(serviceoffering.getSpeed() / 100.00);
-            onehourcostper100mhz = mapping.get(QuotaTypes.CPU_CLOCK_RATE).getCurrencyValue().multiply(aggregationRatio);
+            onehourcostper100mhz = quotaTariffMap.get(QuotaTypes.CPU_CLOCK_RATE).getCurrencyValue().multiply(aggregationRatio);
             speedquotausage = rawusage.multiply(onehourcostper100mhz).multiply(speed);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), QuotaTypes.CPU_CLOCK_RATE, speedquotausage,
                     usageRecord.getStartDate(), usageRecord.getEndDate());
             _quotaUsageDao.persist(quota_usage);
             quotalist.add(quota_usage);
         }
-        if (mapping.get(QuotaTypes.MEMORY) != null) {
+        if (quotaTariffMap.get(QuotaTypes.MEMORY) != null) {
             BigDecimal memory = new BigDecimal(serviceoffering.getRamSize());
-            onehourcostper1mb = mapping.get(QuotaTypes.MEMORY).getCurrencyValue().multiply(aggregationRatio);
+            onehourcostper1mb = quotaTariffMap.get(QuotaTypes.MEMORY).getCurrencyValue().multiply(aggregationRatio);
             memoryquotausage = rawusage.multiply(onehourcostper1mb).multiply(memory);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), QuotaTypes.MEMORY, memoryquotausage,
                     usageRecord.getStartDate(), usageRecord.getEndDate());
             _quotaUsageDao.persist(quota_usage);
             quotalist.add(quota_usage);
         }
-        if (mapping.get(QuotaTypes.RUNNING_VM) != null) {
-            onehourcostforvmusage = mapping.get(QuotaTypes.RUNNING_VM).getCurrencyValue().multiply(aggregationRatio);
+        if (quotaTariffMap.get(QuotaTypes.RUNNING_VM) != null) {
+            onehourcostforvmusage = quotaTariffMap.get(QuotaTypes.RUNNING_VM).getCurrencyValue().multiply(aggregationRatio);
             vmusage = rawusage.multiply(onehourcostforvmusage);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), QuotaTypes.RUNNING_VM, vmusage,
                     usageRecord.getStartDate(), usageRecord.getEndDate());
@@ -432,9 +432,9 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
     }
 
     @DB
-    private QuotaUsageVO updateQuotaAllocatedVMUsage(UsageVO usageRecord, HashMap<Integer, QuotaTariffVO> mapping, BigDecimal aggregationRatio) {
+    private QuotaUsageVO updateQuotaAllocatedVMUsage(UsageVO usageRecord, HashMap<Integer, QuotaTariffVO> quotaTariffMap, BigDecimal aggregationRatio) {
         QuotaUsageVO quota_usage = null;
-        if (mapping.get(QuotaTypes.ALLOCATED_VM) != null) {
+        if (quotaTariffMap.get(QuotaTypes.ALLOCATED_VM) != null) {
             BigDecimal vmusage;
             BigDecimal onehourcostforvmusage;
             // s_logger.info(usageRecord.getDescription() + ", " +
@@ -442,7 +442,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
             // + usageRecord.getVmInstanceId() + ", "
             // + usageRecord.getUsageDisplay() + ", aggrR=" + aggregationRatio);
 
-            onehourcostforvmusage = mapping.get(QuotaTypes.ALLOCATED_VM).getCurrencyValue().multiply(aggregationRatio);
+            onehourcostforvmusage = quotaTariffMap.get(QuotaTypes.ALLOCATED_VM).getCurrencyValue().multiply(aggregationRatio);
             vmusage = new BigDecimal(usageRecord.getRawUsage()).multiply(onehourcostforvmusage);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), QuotaTypes.ALLOCATED_VM, vmusage,
                     usageRecord.getStartDate(), usageRecord.getEndDate());
@@ -455,9 +455,9 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
     }
 
     @DB
-    private QuotaUsageVO updateQuotaRaw(UsageVO usageRecord, HashMap<Integer, QuotaTariffVO> mapping, BigDecimal aggregationRatio, int ruleType) {
+    private QuotaUsageVO updateQuotaRaw(UsageVO usageRecord, HashMap<Integer, QuotaTariffVO> quotaTariffMap, BigDecimal aggregationRatio, int ruleType) {
         QuotaUsageVO quota_usage = null;
-        if (mapping.get(ruleType) != null) {
+        if (quotaTariffMap.get(ruleType) != null) {
             BigDecimal ruleusage;
             BigDecimal onehourcost;
             // s_logger.info(usageRecord.getDescription() + ", " +
@@ -465,7 +465,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
             // + usageRecord.getVmInstanceId() + ", "
             // + usageRecord.getUsageDisplay() + ", aggrR=" + aggregationRatio);
 
-            onehourcost = mapping.get(ruleType).getCurrencyValue().multiply(aggregationRatio);
+            onehourcost = quotaTariffMap.get(ruleType).getCurrencyValue().multiply(aggregationRatio);
             ruleusage = new BigDecimal(usageRecord.getRawUsage()).multiply(onehourcost);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), ruleType, ruleusage, usageRecord.getStartDate(),
                     usageRecord.getEndDate());
@@ -478,9 +478,9 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
     }
 
     @DB
-    private QuotaUsageVO updateQuotaNetwork(UsageVO usageRecord, HashMap<Integer, QuotaTariffVO> mapping, int transferType) {
+    private QuotaUsageVO updateQuotaNetwork(UsageVO usageRecord, HashMap<Integer, QuotaTariffVO> quotaTariffMap, int transferType) {
         QuotaUsageVO quota_usage = null;
-        if (mapping.get(transferType) != null) {
+        if (quotaTariffMap.get(transferType) != null) {
             BigDecimal onegbcost;
             BigDecimal rawusageingb;
             BigDecimal networkusage;
@@ -489,7 +489,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
             // + usageRecord.getVmInstanceId() + ", "
             // + usageRecord.getUsageDisplay());
 
-            onegbcost = mapping.get(transferType).getCurrencyValue();
+            onegbcost = quotaTariffMap.get(transferType).getCurrencyValue();
             rawusageingb = new BigDecimal(usageRecord.getRawUsage()).divide(s_gb, 8, RoundingMode.HALF_EVEN);
             networkusage = rawusageingb.multiply(onegbcost);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), transferType, networkusage, usageRecord.getStartDate(),
