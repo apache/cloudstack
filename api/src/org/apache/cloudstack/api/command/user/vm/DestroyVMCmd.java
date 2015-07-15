@@ -40,7 +40,7 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "destroyVirtualMachine", description = "Destroys a virtual machine. Once destroyed, only the administrator can recover it.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
+@APICommand(name = "destroyVirtualMachine", description = "Destroys a virtual machine.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class DestroyVMCmd extends BaseAsyncCmd {
@@ -59,7 +59,7 @@ public class DestroyVMCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.EXPUNGE,
                type = CommandType.BOOLEAN,
-               description = "If true is passed, the vm is expunged immediately. False by default. Parameter can be passed to the call by ROOT/Domain admin only",
+               description = "If true is passed, the vm is expunged immediately. False by default.",
                since = "4.2.1")
     private Boolean expunge;
 
