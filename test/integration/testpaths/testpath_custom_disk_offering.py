@@ -19,10 +19,10 @@
 
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.cloudstackAPI import (createDiskOffering)
+from marvin.cloudstackAPI import (createDiskOffering, deleteDiskOffering)
 from marvin.lib.utils import (cleanup_resources)
 from marvin.lib.common import (get_domain,
-                               get_zone
+                               get_zone,
                                )
 
 
@@ -60,6 +60,11 @@ class TestCustomDiskOfferingWithSize(cloudstackTestCase):
 
     def tearDown(self):
         try:
+            if hasattr(self, 'disk_offering'):
+                cmd = deleteDiskOffering.deleteDiskOfferingCmd()
+                cmd.id = self.disk_offering.id
+                self.apiclient.deleteDiskOffering(cmd)
+
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -79,6 +84,6 @@ class TestCustomDiskOfferingWithSize(cloudstackTestCase):
             cmd.name = "Custom Disk Offering"
             cmd.customized = True
             cmd.disksize = 2
-            self.apiclient.createDiskOffering(cmd)
+            self.disk_offering = self.apiclient.createDiskOffering(cmd)
 
         return
