@@ -91,6 +91,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
     static BigDecimal s_hoursInMonth = new BigDecimal(30 * 24);
     static BigDecimal s_minutesInMonth = new BigDecimal(30 * 24 * 60);
     static BigDecimal s_gb = new BigDecimal(1024 * 1024 * 1024);
+    static Long s_recordtofetch=1000L;
 
     public QuotaManagerImpl() {
         super();
@@ -154,68 +155,68 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
             // get all the active accounts for which there is usage
             List<AccountVO> accounts = _accountDao.listAll();
             for (AccountVO account : accounts) {
-                s_logger.info("Account =" + account.getAccountName());
-                Pair<List<? extends UsageVO>, Integer> usageRecords = getUsageRecords(account.getAccountId(), account.getDomainId());
-                s_logger.debug("Usage records found " + usageRecords.second());
-
-                for (UsageVO usageRecord : usageRecords.first()) {
-
-                    BigDecimal aggregationRatio = new BigDecimal(_aggregationDuration).divide(s_minutesInMonth, 8, RoundingMode.HALF_EVEN);
-
-                    switch (usageRecord.getUsageType()) {
-                    case QuotaTypes.RUNNING_VM:
-                        updateQuotaRunningVMUsage(usageRecord, mapping, aggregationRatio);
-                        break;
-                    case QuotaTypes.ALLOCATED_VM:
-                        updateQuotaAllocatedVMUsage(usageRecord, mapping, aggregationRatio);
-                        break;
-                    case QuotaTypes.SNAPSHOT:
-                        updateQuotaDiskUsage(usageRecord, mapping, aggregationRatio, QuotaTypes.SNAPSHOT);
-                        break;
-                    case QuotaTypes.TEMPLATE:
-                        updateQuotaDiskUsage(usageRecord, mapping, aggregationRatio, QuotaTypes.TEMPLATE);
-                        break;
-                    case QuotaTypes.ISO:
-                        updateQuotaDiskUsage(usageRecord, mapping, aggregationRatio, QuotaTypes.ISO);
-                        break;
-                    case QuotaTypes.VOLUME:
-                        updateQuotaDiskUsage(usageRecord, mapping, aggregationRatio, QuotaTypes.VOLUME);
-                        break;
-                    case QuotaTypes.VM_SNAPSHOT:
-                        updateQuotaDiskUsage(usageRecord, mapping, aggregationRatio, QuotaTypes.VM_SNAPSHOT);
-                        break;
-                    case QuotaTypes.LOAD_BALANCER_POLICY:
-                        updateQuotaRaw(usageRecord, mapping, aggregationRatio, QuotaTypes.LOAD_BALANCER_POLICY);
-                        break;
-                    case QuotaTypes.PORT_FORWARDING_RULE:
-                        updateQuotaRaw(usageRecord, mapping, aggregationRatio, QuotaTypes.PORT_FORWARDING_RULE);
-                        break;
-                    case QuotaTypes.IP_ADDRESS:
-                        updateQuotaRaw(usageRecord, mapping, aggregationRatio, QuotaTypes.IP_ADDRESS);
-                        break;
-                    case QuotaTypes.NETWORK_OFFERING:
-                        updateQuotaRaw(usageRecord, mapping, aggregationRatio, QuotaTypes.NETWORK_OFFERING);
-                        break;
-                    case QuotaTypes.SECURITY_GROUP:
-                        updateQuotaRaw(usageRecord, mapping, aggregationRatio, QuotaTypes.SECURITY_GROUP);
-                        break;
-                    case QuotaTypes.VPN_USERS:
-                        updateQuotaRaw(usageRecord, mapping, aggregationRatio, QuotaTypes.VPN_USERS);
-                        break;
-                    case QuotaTypes.NETWORK_BYTES_RECEIVED:
-                        updateQuotaRaw(usageRecord, mapping, aggregationRatio, QuotaTypes.NETWORK_BYTES_RECEIVED);
-                        break;
-                    case QuotaTypes.NETWORK_BYTES_SENT:
-                        updateQuotaRaw(usageRecord, mapping, aggregationRatio, QuotaTypes.NETWORK_BYTES_SENT);
-                        break;
-                    case QuotaTypes.VM_DISK_IO_READ:
-                    case QuotaTypes.VM_DISK_IO_WRITE:
-                    case QuotaTypes.VM_DISK_BYTES_READ:
-                    case QuotaTypes.VM_DISK_BYTES_WRITE:
-                    default:
-                        break;
+                Pair<List<? extends UsageVO>, Integer> usageRecords = null;
+                do {
+                    s_logger.info("Account =" + account.getAccountName());
+                    usageRecords = getUsageRecords(account.getAccountId(), account.getDomainId());
+                    s_logger.debug("Usage records found " + usageRecords.second());
+                    for (UsageVO usageRecord : usageRecords.first()) {
+                        BigDecimal aggregationRatio = new BigDecimal(_aggregationDuration).divide(s_minutesInMonth, 8, RoundingMode.HALF_EVEN);
+                        switch (usageRecord.getUsageType()) {
+                        case QuotaTypes.RUNNING_VM:
+                            updateQuotaRunningVMUsage(usageRecord, mapping, aggregationRatio);
+                            break;
+                        case QuotaTypes.ALLOCATED_VM:
+                            updateQuotaAllocatedVMUsage(usageRecord, mapping, aggregationRatio);
+                            break;
+                        case QuotaTypes.SNAPSHOT:
+                            updateQuotaDiskUsage(usageRecord, mapping, aggregationRatio, QuotaTypes.SNAPSHOT);
+                            break;
+                        case QuotaTypes.TEMPLATE:
+                            updateQuotaDiskUsage(usageRecord, mapping, aggregationRatio, QuotaTypes.TEMPLATE);
+                            break;
+                        case QuotaTypes.ISO:
+                            updateQuotaDiskUsage(usageRecord, mapping, aggregationRatio, QuotaTypes.ISO);
+                            break;
+                        case QuotaTypes.VOLUME:
+                            updateQuotaDiskUsage(usageRecord, mapping, aggregationRatio, QuotaTypes.VOLUME);
+                            break;
+                        case QuotaTypes.VM_SNAPSHOT:
+                            updateQuotaDiskUsage(usageRecord, mapping, aggregationRatio, QuotaTypes.VM_SNAPSHOT);
+                            break;
+                        case QuotaTypes.LOAD_BALANCER_POLICY:
+                            updateQuotaRaw(usageRecord, mapping, aggregationRatio, QuotaTypes.LOAD_BALANCER_POLICY);
+                            break;
+                        case QuotaTypes.PORT_FORWARDING_RULE:
+                            updateQuotaRaw(usageRecord, mapping, aggregationRatio, QuotaTypes.PORT_FORWARDING_RULE);
+                            break;
+                        case QuotaTypes.IP_ADDRESS:
+                            updateQuotaRaw(usageRecord, mapping, aggregationRatio, QuotaTypes.IP_ADDRESS);
+                            break;
+                        case QuotaTypes.NETWORK_OFFERING:
+                            updateQuotaRaw(usageRecord, mapping, aggregationRatio, QuotaTypes.NETWORK_OFFERING);
+                            break;
+                        case QuotaTypes.SECURITY_GROUP:
+                            updateQuotaRaw(usageRecord, mapping, aggregationRatio, QuotaTypes.SECURITY_GROUP);
+                            break;
+                        case QuotaTypes.VPN_USERS:
+                            updateQuotaRaw(usageRecord, mapping, aggregationRatio, QuotaTypes.VPN_USERS);
+                            break;
+                        case QuotaTypes.NETWORK_BYTES_RECEIVED:
+                            updateQuotaRaw(usageRecord, mapping, aggregationRatio, QuotaTypes.NETWORK_BYTES_RECEIVED);
+                            break;
+                        case QuotaTypes.NETWORK_BYTES_SENT:
+                            updateQuotaRaw(usageRecord, mapping, aggregationRatio, QuotaTypes.NETWORK_BYTES_SENT);
+                            break;
+                        case QuotaTypes.VM_DISK_IO_READ:
+                        case QuotaTypes.VM_DISK_IO_WRITE:
+                        case QuotaTypes.VM_DISK_BYTES_READ:
+                        case QuotaTypes.VM_DISK_BYTES_WRITE:
+                        default:
+                            break;
+                        }
                     }
-                }
+                } while ((usageRecords != null) && !usageRecords.first().isEmpty());
             }
             jobResult = true;
         } catch (Exception e) {
@@ -328,8 +329,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
             txn.close();
         }
 
-        // switch back to VMOPS_DB
-        TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+        TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
         return quotaUsageRecords;
     }
 
@@ -467,7 +467,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
     @SuppressWarnings("deprecation")
     public Pair<List<? extends UsageVO>, Integer> getUsageRecords(long accountId, long domainId) {
         s_logger.debug("getting usage records for account: " + accountId + ", domainId: " + domainId);
-        Filter usageFilter = new Filter(UsageVO.class, "id", true, 10000L, null);
+        Filter usageFilter = new Filter(UsageVO.class, "id", true, s_recordtofetch, null);
         SearchCriteria<UsageVO> sc = _usageDao.createSearchCriteria();
         if (accountId != -1) {
             sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
