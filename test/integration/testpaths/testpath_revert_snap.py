@@ -32,7 +32,6 @@ from marvin.lib.common import (get_domain,
                                list_volumes,
                               )
 
-
 class TestUnableToRevertSnapshot(cloudstackTestCase):
 
     @classmethod
