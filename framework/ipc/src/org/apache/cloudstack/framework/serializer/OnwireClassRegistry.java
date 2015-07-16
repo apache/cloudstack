@@ -32,7 +32,6 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
 
@@ -156,28 +155,27 @@ public class OnwireClassRegistry {
 
     static Set<Class<?>> getFromJARFile(String jar, String packageName) throws IOException, ClassNotFoundException {
         Set<Class<?>> classes = new HashSet<Class<?>>();
-        JarInputStream jarFile = new JarInputStream(new FileInputStream(jar));
-        JarEntry jarEntry;
-        do {
-            jarEntry = jarFile.getNextJarEntry();
-            if (jarEntry != null) {
-                String className = jarEntry.getName();
-                if (className.endsWith(".class")) {
-                    className = stripFilenameExtension(className);
-                    if (className.startsWith(packageName)) {
-                        try {
-                            Class<?> clz = Class.forName(className.replace('/', '.'));
-                            classes.add(clz);
-                        } catch (ClassNotFoundException | NoClassDefFoundError e) {
-                            s_logger.warn("Unable to load class from jar file", e);
+        try (JarInputStream jarFile = new JarInputStream(new FileInputStream(jar));) {
+            JarEntry jarEntry;
+            do {
+                jarEntry = jarFile.getNextJarEntry();
+                if (jarEntry != null) {
+                    String className = jarEntry.getName();
+                    if (className.endsWith(".class")) {
+                        className = stripFilenameExtension(className);
+                        if (className.startsWith(packageName)) {
+                            try {
+                                Class<?> clz = Class.forName(className.replace('/', '.'));
+                                classes.add(clz);
+                            } catch (ClassNotFoundException | NoClassDefFoundError e) {
+                                s_logger.warn("Unable to load class from jar file", e);
+                            }
                         }
                     }
                 }
-            }
-        } while (jarEntry != null);
-
-        IOUtils.closeQuietly(jarFile);
-        return classes;
+            } while (jarEntry != null);
+            return classes;
+        }
     }
 
     static String stripFilenameExtension(String file) {
