@@ -116,7 +116,6 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
         String insertSql = "INSERT INTO `cloud`.`op_dc_ip_address_alloc` (ip_address, data_center_id, pod_id, mac_address) " +
             "VALUES (?, ?, ?, (select mac_address from `cloud`.`data_center` where id=?))";
         String updateSql = "UPDATE `cloud`.`data_center` set mac_address = mac_address+1 where id=?";
-        PreparedStatement stmt = null;
 
         long startIP = NetUtils.ip2Long(start);
         long endIP = NetUtils.ip2Long(end);
@@ -125,17 +124,17 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
             txn.start();
 
             while (startIP <= endIP) {
-                stmt = txn.prepareStatement(insertSql);
-                stmt.setString(1, NetUtils.long2Ip(startIP++));
-                stmt.setLong(2, dcId);
-                stmt.setLong(3, podId);
-                stmt.setLong(4, dcId);
-                stmt.executeUpdate();
-                stmt.close();
-                stmt = txn.prepareStatement(updateSql);
-                stmt.setLong(1, dcId);
-                stmt.executeUpdate();
-                stmt.close();
+                try(PreparedStatement insertPstmt = txn.prepareStatement(insertSql);) {
+                    insertPstmt.setString(1, NetUtils.long2Ip(startIP++));
+                    insertPstmt.setLong(2, dcId);
+                    insertPstmt.setLong(3, podId);
+                    insertPstmt.setLong(4, dcId);
+                    insertPstmt.executeUpdate();
+                }
+                try(PreparedStatement updatePstmt = txn.prepareStatement(updateSql);) {
+                    updatePstmt.setLong(1, dcId);
+                    updatePstmt.executeUpdate();
+                }
             }
             txn.commit();
         } catch (SQLException ex) {
