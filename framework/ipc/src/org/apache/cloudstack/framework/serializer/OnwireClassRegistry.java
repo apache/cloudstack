@@ -106,10 +106,10 @@ public class OnwireClassRegistry {
             if (resources != null) {
                 while (resources.hasMoreElements()) {
                     String filePath = resources.nextElement().getFile();
-                    // WINDOWS HACK
-                    if (filePath.indexOf("%20") > 0)
-                        filePath = filePath.replaceAll("%20", " ");
                     if (filePath != null) {
+                        // WINDOWS HACK
+                        if (filePath.indexOf("%20") > 0)
+                            filePath = filePath.replaceAll("%20", " ");
                         if ((filePath.indexOf("!") > 0) && (filePath.indexOf(".jar") > 0)) {
                             String jarPath = filePath.substring(0, filePath.indexOf("!")).substring(filePath.indexOf(":") + 1);
                             // WINDOWS HACK
