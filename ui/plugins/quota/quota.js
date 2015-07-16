@@ -16,206 +16,6 @@
 // under the License.
 (function (cloudStack) {
     cloudStack.plugins.quota = function(plugin) {
-        // Quota Global Settings
-        var gsView = cloudStack.sections['global-settings'].sections;
-        gsView.quotaConfiguration = {
-                                        type: 'select',
-                                        title: 'label.quota.configuration',
-                                        listView: {
-                                            id: 'quota',
-                                            label: 'label.quota.configuration',
-                                            fields: {
-                                                usageType: {
-                                                    label: 'label.usage.type'
-                                                },
-                                                usageUnit: {
-                                                    label: 'label.usage.unit'
-                                                },
-                                                currencyValue: {
-                                                    label: 'label.quota.value'
-                                                },
-                                                description: {
-                                                    label: 'label.quota.description'
-                                                }
-                                            },
-                                            dataProvider: function(args) {
-                                                var data = {};
-                                                listViewDataProvider(args, data);
-                                                if (data.hasOwnProperty('page') && data.page > 1) {
-                                                    args.response.success({
-                                                        data: []
-                                                    });
-                                                    return;
-                                                }
-                                                $.ajax({
-                                                    url: createURL('quotaMapping'),
-                                                    data: data,
-                                                    success: function(json) {
-                                                        var items = json.quotaconfigurationresponse.quotamapping;
-                                                        args.response.success({
-                                                            data: items
-                                                        });
-                                                    },
-                                                    error: function(data) {
-                                                        args.response.error(parseXMLHttpResponse(data));
-                                                    }
-                                                });
-                                            },
-                                            detailView: {
-                                                name: 'label.details',
-                                                actions: {
-                                                    remove: {
-                                                        label: 'label.quota.remove',
-                                                        messages: {
-                                                            notification: function(args) {
-                                                                return 'label.quota.remove';
-                                                            },
-                                                            confirm: function() {
-                                                                return 'label.quota.remove';
-                                                            }
-                                                        },
-                                                        action: function(args) {
-                                                            $.ajax({
-                                                                url: createURL("deleteQuotaConfiguration&hostname=" + args.context.quotaConfiguration[0].hostname),
-                                                                success: function(json) {
-                                                                    args.response.success();
-                                                                }
-                                                            });
-                                                            $(window).trigger('cloudStack.fullRefresh');
-                                                        }
-                                                    },
-                                                    edit: {
-                                                        label: 'label.quota.configure',
-                                                        messages: {
-                                                            notification: function(args) {
-                                                                return 'label.quota.configure';
-                                                            },
-                                                            confirm: function() {
-                                                                return 'label.quota.configure';
-                                                            }
-                                                        },
-                                                        action: function(args) {
-                                                            var data = {
-                                                                'type': args.context.quotaConfiguration[0].usageType,
-                                                                'usageUnit': args.data.usageUnit,
-                                                                'value': args.data.currencyValue,
-                                                                'description': args.data.description
-                                                            };
-                                                            $.ajax({
-                                                                url: createURL("editQuotaConfiguration"),
-                                                                data: data,
-                                                                success: function(json) {
-                                                                    args.response.success();
-                                                                }
-                                                            });
-                                                            $(window).trigger('cloudStack.fullRefresh');
-                                                        }
-                                                    }
-
-
-                                                },
-                                                tabs: {
-                                                    details: {
-                                                        title: 'label.quota.configuration',
-                                                                fields: [{
-                                                                usageType: {
-                                                                    label: 'label.usage.type'
-                                                                },
-                                                                usageUnit: {
-                                                                    label: 'label.usage.unit',
-                                                                    isEditable: true
-                                                                },
-                                                                currencyValue: {
-                                                                    label: 'label.quota.value',
-                                                                    isEditable: true
-                                                                },
-                                                                description: {
-                                                                    label: 'label.quota.description',
-                                                                    isEditable: true
-                                                                }
-                                                        }],
-                                                        dataProvider: function(args) {
-                                                            var items = [];
-                                                            $.ajax({
-                                                                url: createURL("quotaMapping&type=" + args.context.quotaConfiguration[0].usageType),
-                                                                dataType: "json",
-                                                                async: true,
-                                                                success: function(json) {
-                                                                    var item = json.quotaconfigurationresponse.quotamapping;
-                                                                    args.response.success({
-                                                                        data: item[0]
-                                                                    });
-                                                                }
-                                                            });
-                                                        }
-                                                    }
-                                                }
-                                            },
-                                            actions: {
-                                                add: {
-                                                    label: 'label.quota.configure',
-                                                    messages: {
-                                                        confirm: function(args) {
-                                                            return 'message.configure.quota';
-                                                        },
-                                                        notification: function(args) {
-                                                            return 'label.quota.configure';
-                                                        }
-                                                    },
-                                                    createForm: {
-                                                        title: 'label.quota.configure',
-                                                        fields: {
-                                                            usageType: {
-                                                                label: 'label.usage.type',
-                                                                validation: {
-                                                                    required: true
-                                                                }
-                                                            },
-                                                            periodUnit: {
-                                                                label: 'label.usage.unit',
-                                                                validation: {
-                                                                    required: true
-                                                                }
-                                                            },
-                                                            quotaValue: {
-                                                                label: 'label.quota.value',
-                                                                validation: {
-                                                                    required: true
-                                                                }
-                                                            },
-                                                            quotaDescription: {
-                                                                label: 'label.quota.description',
-                                                                validation: {
-                                                                    required: false
-                                                                }
-                                                            }
-                                                        }
-                                                    },
-                                                    action: function(args) {
-                                                        var array = [];
-                                                        array.push("&type=" + todb(args.data.usageType));
-                                                        array.push("&period=" + todb(args.data.periodUnit));;
-                                                        array.push("&value=" + todb(args.data.quotaValue));;
-                                                        array.push("&description=" + todb(args.data.quotaDescription));;
-                                                        $.ajax({
-                                                            url: createURL("addQuotaConfiguration" + array.join("")),
-                                                            dataType: "json",
-                                                            async: true,
-                                                            success: function(json) {
-                                                                var items = json.quotaconfigurationresponse.QuotaAddConfiguration;
-                                                                args.response.success({
-                                                                    data: items
-                                                                });
-                                                            },
-                                                            error: function(json) {
-                                                                args.response.error(parseXMLHttpResponse(json));
-                                                            }
-                                                        });
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    };
 
         // Quota view on user page
         var userView = cloudStack.sections.accounts.sections.users.listView.detailView;
@@ -260,10 +60,161 @@
           title: 'Quota',
           showOnNavigation: true,
           preFilter: function(args) {
-              return isAdmin() || isDomainAdmin();
+              //return isAdmin() || isDomainAdmin();
+              return true;
           },
           show: function() {
-            return $('<div style="width:100%;height:100%">').html('Hello World');
+            var $quotaView = $('<div class="quota-container detail-view ui-tabs ui-widget ui-widget-content ui-corner-all">');
+            var $toolbar = $('<div class="toolbar"><div class="section-switcher reduced-hide"><div class="section-select"><label>Quota Management</label></div></div></div>');
+            var $tabs = $('<ul class="ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all">');
+            var $tabViews = [];
+
+            var sections = [{'id': 'quota-reports',
+                             'name': 'Reports',
+                             'render': function ($node) {
+                                  $node.html("<p>REPORT View Stub</p>");
+                              }
+                            },
+                            {
+                             'id': 'quota-tariff',
+                             'name' : 'Tariff Plan',
+                             'render': function($node) {
+                                  var tariffView = $('<div class="details" style="margin-top: -30px">');
+                                  var tariffTable = $('<table style="margin-top: 15px">');
+
+                                  tariffTable.appendTo($('<div class="data-table">').appendTo($('<div class="view list-view">').appendTo(tariffView)));
+
+                                  var tariffTableHead = $('<tr>');
+                                  $('<th>ID</th>').appendTo(tariffTableHead);
+                                  $('<th>').html(_l('label.usage.type')).appendTo(tariffTableHead);
+                                  $('<th>').html(_l('label.usage.unit')).appendTo(tariffTableHead);
+                                  $('<th>').html(_l('label.quota.value')).appendTo(tariffTableHead);
+                                  $('<th>').html(_l('label.quota.description')).appendTo(tariffTableHead);
+                                  tariffTableHead.appendTo($('<thead>').appendTo(tariffTable));
+
+                                  $.ajax({
+                                      url: createURL('quotaTariffList'),
+                                      success: function(json) {
+                                          var items = json.quotatarifflistresponse.quotatariff;
+                                          var tariffTableBody = $('<tbody>');
+
+                                          for (var i = 0; i < items.length; i++) {
+                                              var tariffTableBodyRow = $('<tr>');
+                                              if (i % 2 == 0) {
+                                                  tariffTableBodyRow.addClass('even');
+                                              } else {
+                                                  tariffTableBodyRow.addClass('odd');
+                                              }
+                                              $('<td>').html(items[i].usageType).appendTo(tariffTableBodyRow);
+                                              $('<td>').html(items[i].usageName).appendTo(tariffTableBodyRow);
+                                              $('<td>').html(items[i].usageUnit).appendTo(tariffTableBodyRow);
+
+                                              if (isAdmin()) {
+                                                  var valueCell = $('<td class="value actions">');
+                                                  var value = $('<span>').html(items[i].tariffValue);
+                                                  value.appendTo(valueCell);
+                                                  valueCell.appendTo(tariffTableBodyRow);
+
+                                                  var usageType = items[i].usageType;
+                                                  var editButton = $('<div class="action edit quota-tariff-edit" alt="Change value" title="Change value"><span class="icon">&nbsp;</span></div>');
+                                                  editButton.appendTo(valueCell);
+                                                  editButton.attr('id', 'quota-tariff-edit-' + items[i].usageType);
+                                                  editButton.click(function() {
+                                                      console.log($(this));
+                                                      var usageTypeId = $(this).context.id.replace('quota-tariff-edit-', '');
+                                                      cloudStack.dialog.createForm({
+                                                          form: {
+                                                              title: 'label.quota.configuration',
+                                                              fields: {
+                                                                  quotaValue: {
+                                                                      label: 'label.quota.value',
+                                                                      validation: {
+                                                                          required: true
+                                                                      }
+                                                                  }
+                                                              }
+                                                          },
+                                                          after: function(args) {
+                                                              $.ajax({
+                                                                  url: createURL('quotaTariffUpdate'),
+                                                                  data: {
+                                                                      usagetype: usageTypeId,
+                                                                      value: args.data.quotaValue
+                                                                  },
+                                                                  type: "POST",
+                                                                  success: function(json) {
+                                                                      $('#quota-tariff').click();
+                                                                  },
+                                                                  error: function(json) {
+                                                                      // TODO: handle error?
+                                                                  }
+                                                              });
+                                                          }
+                                                      });
+                                                  });
+                                              } else {
+                                                  $('<td>').html(items[i].tariffValue).appendTo(tariffTableBodyRow);
+                                              }
+                                              $('<td>').html(items[i].description).appendTo(tariffTableBodyRow);
+                                              tariffTableBodyRow.appendTo(tariffTableBody);
+                                          }
+                                          tariffTableBody.appendTo(tariffTable);
+                                      },
+                                      error: function(data) {
+                                          // TODO: Add error dialog?
+                                      }
+                                  });
+
+                                  tariffView.appendTo($node);
+                             }
+                            },
+                            {'id': 'quota-email',
+                             'name': 'Email Templates',
+                             'render': function($node) {
+                                  $node.html("<p>EMAIL TEMPLATE STUB</p>");
+                             }
+                            }];
+
+
+            for (idx in sections) {
+                var tabLi = $('<li detail-view-tab="true" class="first ui-state-default ui-corner-top"><a href="#">' +  sections[idx].name+ '</a></li>');
+                var tabView = $('<div class="detail-group ui-tabs-panel ui-widget-content ui-corner-bottom ui-tabs-hide">');
+
+                tabLi.attr('id', sections[idx].id);
+                tabView.attr('id', 'details-tab-' + sections[idx].id);
+
+                tabLi.click(function() {
+                    var tabIdx = 0;
+                    for (sidx in sections) {
+                        $('#' + sections[sidx].id).removeClass('ui-tabs-selected ui-state-active');
+                        $('#details-tab-' + sections[sidx].id).addClass('ui-tabs-hide');
+                        $('#details-tab-' + sections[sidx].id).empty();
+                        if (sections[sidx].id === $(this).context.id) {
+                            tabIdx = sidx;
+                        }
+                    }
+                    $(this).addClass('ui-tabs-selected ui-state-active');
+                    var tabDetails = $('#details-tab-' + $(this).context.id);
+                    tabDetails.removeClass('ui-tabs-hide');
+                    sections[tabIdx].render(tabDetails);
+                });
+
+                if (idx == 0) {
+                    tabLi.addClass('ui-tabs-selected ui-state-active');
+                    tabView.removeClass('ui-tabs-hide');
+                    sections[idx].render(tabView);
+                }
+
+                tabLi.appendTo($tabs);
+                $tabViews.push(tabView);
+            }
+
+            $toolbar.appendTo($quotaView);
+            $tabs.appendTo($quotaView);
+            for (idx in $tabViews) {
+                $tabViews[idx].appendTo($quotaView);
+            }
+            return $quotaView;
           }
 
         });
