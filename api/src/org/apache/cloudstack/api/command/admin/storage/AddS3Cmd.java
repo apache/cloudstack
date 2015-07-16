@@ -68,28 +68,28 @@ public final class AddS3Cmd extends BaseCmd {
     private String secretKey;
 
     @Parameter(name = S3_END_POINT, type = STRING, required = false, description = "S3 host name")
-    private final String endPoint = null;
+    private String endPoint;
 
     @Parameter(name = S3_BUCKET_NAME, type = STRING, required = true, description = "name of the template storage bucket")
     private String bucketName;
 
     @Parameter(name = S3_HTTPS_FLAG, type = BOOLEAN, required = false, description = "connect to the S3 endpoint via HTTPS?")
-    private final Boolean httpsFlag = null;
+    private Boolean httpsFlag;
 
     @Parameter(name = S3_CONNECTION_TIMEOUT, type = INTEGER, required = false, description = "connection timeout (milliseconds)")
-    private final Integer connectionTimeout = null;
+    private Integer connectionTimeout;
 
     @Parameter(name = S3_MAX_ERROR_RETRY, type = INTEGER, required = false, description = "maximum number of times to retry on error")
-    private final Integer maxErrorRetry = null;
+    private Integer maxErrorRetry;
 
     @Parameter(name = S3_SOCKET_TIMEOUT, type = INTEGER, required = false, description = "socket timeout (milliseconds)")
-    private final Integer socketTimeout = null;
+    private Integer socketTimeout;
 
     @Parameter(name = S3_CONNECTION_TTL, type = INTEGER, required = false, description = "connection ttl (milliseconds)")
-    private final Integer connectionTtl = null;
+    private Integer connectionTtl;
 
     @Parameter(name = S3_USE_TCP_KEEPALIVE, type = BOOLEAN, required = false, description = "whether tcp keepalive is used")
-    private final Boolean useTCPKeepAlive = null;
+    private Boolean useTCPKeepAlive;
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
