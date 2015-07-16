@@ -65,6 +65,7 @@ $(document).ready(function() {
     if (url != undefined && url != null && url.length > 0) {
         url = unescape(clientApiUrl + "?" + url);
         $.ajax({
+            type: 'POST',
             url: url,
             dataType: "json",
             async: false,
