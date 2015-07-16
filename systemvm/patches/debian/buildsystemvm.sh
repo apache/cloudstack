@@ -347,6 +347,12 @@ vpn_config() {
   cp -r ${scriptdir}/vpn/* ./
 }
 
+#
+# IMPORTANT REMARK
+# Package intallation is no longer done via this script. We are not removing the code yet, but we want to 
+# make sure that everybody willing to install/update packages should refer to the file:
+#   ==> cloud-tools/appliance/definitions/systemvmtemplate/install_systemvm_packages.sh
+#
 packages() {
   DEBIAN_FRONTEND=noninteractive
   DEBIAN_PRIORITY=critical
