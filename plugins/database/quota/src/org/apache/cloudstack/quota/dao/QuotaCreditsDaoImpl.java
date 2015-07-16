@@ -27,6 +27,7 @@ import org.springframework.stereotype.Component;
 import org.apache.cloudstack.quota.QuotaBalanceVO;
 import org.apache.cloudstack.quota.QuotaCreditsVO;
 
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
 
@@ -39,14 +40,16 @@ public class QuotaCreditsDaoImpl extends GenericDaoBase<QuotaCreditsVO, Long> im
     @SuppressWarnings("deprecation")
     @Override
     public List<QuotaCreditsVO> getCredits(long accountId, long domainId, Date startDate, Date endDate) {
+        Filter filter = new Filter(QuotaCreditsVO.class, "updatedOn", true, 0L, Long.MAX_VALUE);
         SearchCriteria<QuotaCreditsVO> sc = createSearchCriteria();
+        sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+        sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
         if ((startDate != null) && (endDate != null) && startDate.before(endDate)) {
-            sc.addAnd("startDate", SearchCriteria.Op.BETWEEN, startDate, endDate);
-            sc.addAnd("endDate", SearchCriteria.Op.BETWEEN, startDate, endDate);
+            sc.addAnd("updatedOn", SearchCriteria.Op.BETWEEN, startDate, endDate);
         } else {
             return new ArrayList<QuotaCreditsVO>();
         }
-        return listBy(sc);
+        return this.search(sc, filter);
     }
 
     @Override

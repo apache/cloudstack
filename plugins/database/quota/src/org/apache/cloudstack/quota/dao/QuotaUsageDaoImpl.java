@@ -16,15 +16,20 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import javax.ejb.Local;
+
+import org.springframework.stereotype.Component;
+import org.apache.cloudstack.quota.QuotaUsageVO;
+
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
-import org.apache.cloudstack.quota.QuotaUsageVO;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import java.util.List;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = { QuotaUsageDao.class })
@@ -40,6 +45,51 @@ public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implem
         for (QuotaUsageVO usageRecord : records) {
             persist(usageRecord);
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public List<QuotaUsageVO> getQuotaUsage(Long accountId, Long domainId, Integer usageType, Date startDate, Date endDate) {
+
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+        List<QuotaUsageVO> quotaUsageRecords = null;
+        try {
+            // TODO instead of max value query with reasonable number and
+            // iterate
+            SearchCriteria<QuotaUsageVO> sc = createSearchCriteria();
+            if (accountId != null) {
+                sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+            }
+            /*
+             * if (isDomainAdmin) { SearchCriteria<DomainVO> sdc =
+             * _domainDao.createSearchCriteria(); sdc.addOr("path",
+             * SearchCriteria.Op.LIKE,
+             * _domainDao.findById(caller.getDomainId()).getPath() + "%");
+             * List<DomainVO> domains = _domainDao.search(sdc, null); List<Long>
+             * domainIds = new ArrayList<Long>(); for (DomainVO domain :
+             * domains) domainIds.add(domain.getId()); sc.addAnd("domainId",
+             * SearchCriteria.Op.IN, domainIds.toArray());
+             * s_logger.debug("Account ID=" + accountId); }
+             */
+            if (domainId != null) {
+                sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+            }
+            if (usageType != null) {
+                sc.addAnd("usageType", SearchCriteria.Op.EQ, usageType);
+            }
+            if ((startDate != null) && (endDate != null) && startDate.before(endDate)) {
+                sc.addAnd("startDate", SearchCriteria.Op.BETWEEN, startDate, endDate);
+                sc.addAnd("endDate", SearchCriteria.Op.BETWEEN, startDate, endDate);
+            } else {
+                return new ArrayList<QuotaUsageVO>();
+            }
+            quotaUsageRecords = listBy(sc);
+        } finally {
+            txn.close();
+        }
+
+        TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
+        return quotaUsageRecords;
     }
 
 }

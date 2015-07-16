@@ -16,19 +16,21 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
+import java.util.Date;
 import java.util.List;
 
 import org.apache.cloudstack.quota.QuotaBalanceVO;
 
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.db.SearchCriteria;
 
 public interface QuotaBalanceDao extends GenericDao<QuotaBalanceVO, Long> {
 
-    Pair<List<QuotaBalanceVO>, Integer> searchBalance(SearchCriteria<QuotaBalanceVO> sc, Filter filter);
-
     void saveQuotaBalance(List<QuotaBalanceVO> credits);
+
+    List<QuotaBalanceVO> getCreditBalance(long accountId, long domainId, Date startDate, Date endDate);
+
+    QuotaBalanceVO getLastBalanceEntry(long accountId, long domainId, Date beforeThis);
+
+    List<QuotaBalanceVO> getQuotaBalance(Long accountId, Long domainId, Date startDate, Date endDate);
 
 }

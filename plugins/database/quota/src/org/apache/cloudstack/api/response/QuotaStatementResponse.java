@@ -16,6 +16,7 @@
 //under the License.
 package org.apache.cloudstack.api.response;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -42,6 +43,10 @@ public class QuotaStatementResponse  extends BaseResponse {
     @Param(description = "list of quota usage under variosu types", responseObject = QuotaStatementItemResponse.class)
     private List<QuotaStatementItemResponse> lineItem;
 
+    @SerializedName("totalquota")
+    @Param(description = "total quota used during this period")
+    private BigDecimal totalQuota;
+
     @SerializedName("startdate")
     @Param(description = "start date")
     private Date startDate = null;
@@ -49,10 +54,6 @@ public class QuotaStatementResponse  extends BaseResponse {
     @SerializedName("enddate")
     @Param(description = "end date")
     private Date endDate = null;
-
-    @SerializedName("balance")
-    @Param(description = "The balance of quota reamining", responseObject = QuotaStatementBalanceResponse.class)
-    private QuotaStatementBalanceResponse balance;
 
     public QuotaStatementResponse() {
         super();
@@ -106,12 +107,12 @@ public class QuotaStatementResponse  extends BaseResponse {
         this.endDate = endDate;
     }
 
-    public QuotaStatementBalanceResponse getBalance() {
-        return balance;
+
+    public BigDecimal getTotalQuota() {
+        return totalQuota;
     }
 
-    public void setBalance(QuotaStatementBalanceResponse balance) {
-        this.balance = balance;
+    public void setTotalQuota(BigDecimal totalQuota) {
+        this.totalQuota = totalQuota;
     }
-
 }

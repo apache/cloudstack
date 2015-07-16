@@ -28,21 +28,21 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.cloudstack.api.response.QuotaStatementResponse;
+import org.apache.cloudstack.api.response.QuotaBalanceResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.quota.QuotaBalanceVO;
 import org.apache.cloudstack.quota.QuotaDBUtils;
 import org.apache.cloudstack.quota.QuotaManager;
-import org.apache.cloudstack.quota.QuotaUsageVO;
 import org.apache.cloudstack.api.response.QuotaStatementItemResponse;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "quotaStatement", responseObject = QuotaStatementItemResponse.class, description = "Create a quota statement", since = "4.2.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class QuotaStatementCmd extends BaseCmd {
+@APICommand(name = "quotaBalance", responseObject = QuotaStatementItemResponse.class, description = "Create a quota balance statement", since = "4.2.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+public class QuotaBalanceCmd extends BaseCmd {
 
-    public static final Logger s_logger = Logger.getLogger(QuotaStatementCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(QuotaBalanceCmd.class.getName());
 
-    private static final String s_name = "quotastatementresponse";
+    private static final String s_name = "quotabalanceresponse";
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = true, description = "Optional, Account Id for which statement needs to be generated")
     private String accountName;
@@ -55,9 +55,6 @@ public class QuotaStatementCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, required = true, description = "Start date range quota query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-01.")
     private Date startDate;
-
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.INTEGER, description = "List quota usage records for the specified usage type")
-    private Integer usageType;
 
     @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "List usage records for the specified account")
     private Long accountId;
@@ -73,14 +70,6 @@ public class QuotaStatementCmd extends BaseCmd {
 
     public void setAccountId(Long accountId) {
         this.accountId = accountId;
-    }
-
-    public Integer getUsageType() {
-        return usageType;
-    }
-
-    public void setUsageType(Integer usageType) {
-        this.usageType = usageType;
     }
 
     public String getAccountName() {
@@ -115,7 +104,7 @@ public class QuotaStatementCmd extends BaseCmd {
         this.startDate = startDate;
     }
 
-    public QuotaStatementCmd() {
+    public QuotaBalanceCmd() {
         super();
     }
 
@@ -135,9 +124,9 @@ public class QuotaStatementCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        List<QuotaUsageVO> quotaUsage = _quotaManager.getQuotaUsage(this);
+        List<QuotaBalanceVO> quotaUsage = _quotaManager.getQuotaBalance(this);
 
-        QuotaStatementResponse response = _quotaDBUtils.createQuotaStatementResponse(quotaUsage);
+        QuotaBalanceResponse response = _quotaDBUtils.createQuotaBalanceResponse(quotaUsage);
 
         response.setResponseName(getCommandName());
         setResponseObject(response);

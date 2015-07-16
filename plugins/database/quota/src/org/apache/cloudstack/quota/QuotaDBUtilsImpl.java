@@ -27,15 +27,15 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
 import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
 import org.apache.cloudstack.api.response.QuotaTariffResponse;
 import org.apache.cloudstack.api.response.QuotaCreditsResponse;
-import org.apache.cloudstack.api.response.QuotaStatementBalanceResponse;
+import org.apache.cloudstack.api.response.QuotaBalanceResponse;
 import org.apache.cloudstack.api.response.QuotaStatementItemResponse;
 import org.apache.cloudstack.api.response.QuotaStatementResponse;
-import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
 import org.apache.cloudstack.quota.dao.QuotaCreditsDao;
 import org.apache.cloudstack.quota.dao.QuotaTariffDao;
 import org.apache.log4j.Logger;
@@ -50,6 +50,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 
 @Component
@@ -62,8 +63,6 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
 
     @Inject
     private QuotaCreditsDao _quotaCreditsDao;
-    @Inject
-    private QuotaBalanceDao _quotaBalanceDao;
     @Inject
     private ServiceOfferingDao _serviceOfferingDao;
     @Inject
@@ -84,6 +83,38 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
         response.setInclude(configuration.getInclude());
         response.setDescription(configuration.getDescription());
         return response;
+    }
+
+    @Override
+    public QuotaBalanceResponse createQuotaBalanceResponse(List<QuotaBalanceVO> quotaBalance) {
+        Collections.sort(quotaBalance, new Comparator<QuotaBalanceVO>() {
+            public int compare(QuotaBalanceVO o1, QuotaBalanceVO o2) {
+                return o1.getUpdatedOn().compareTo(o2.getUpdatedOn());
+            }
+        });
+        QuotaBalanceResponse resp = new QuotaBalanceResponse();
+
+        for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
+            QuotaBalanceVO entry = it.next();
+            if (entry.getCreditsId() > 0) {
+                resp.addCredits(entry);
+                it.remove();
+            }
+        }
+
+        if (quotaBalance.size() > 0) {
+            QuotaBalanceVO startItem = quotaBalance.get(0);
+            QuotaBalanceVO endItem = quotaBalance.get(quotaBalance.size() - 1);
+            resp.setStartDate(startItem.getUpdatedOn());
+            resp.setStartQuota(startItem.getCreditBalance());
+            resp.setEndDate(endItem.getUpdatedOn());
+            resp.setEndQuota(endItem.getCreditBalance());
+        } else {
+            new CloudRuntimeException("The request period is small and does not contain balance entries to provide any meaningful values.");
+        }
+
+        resp.setObjectName("balance");
+        return resp;
     }
 
     @Override
@@ -109,7 +140,7 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
         int type = -1;
         BigDecimal usage = new BigDecimal(0);
         BigDecimal totalUsage = new BigDecimal(0);
-        quotaUsage.add(new QuotaUsageVO());// boundry
+        quotaUsage.add(new QuotaUsageVO());// boundary
         QuotaUsageVO prev = quotaUsage.get(0);
         for (final QuotaUsageVO quotaRecord : quotaUsage) {
             if (type != quotaRecord.getUsageType()) {
@@ -135,12 +166,8 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
         }
 
         statement.setLineItem(items);
-        // calculate total quota used and balance
-        QuotaStatementBalanceResponse balance = new QuotaStatementBalanceResponse();
-        balance.setObjectName("balance");
-        balance.setQuotaUsed(totalUsage);
-
-        statement.setBalance(balance);
+        statement.setTotalQuota(totalUsage);
+        statement.setObjectName("statement");
         TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
         return statement;
     }

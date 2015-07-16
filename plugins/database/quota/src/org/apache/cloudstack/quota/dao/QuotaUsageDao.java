@@ -16,6 +16,7 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
+import java.util.Date;
 import java.util.List;
 
 import org.apache.cloudstack.quota.QuotaUsageVO;
@@ -26,6 +27,8 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.SearchCriteria;
 
 public interface QuotaUsageDao extends GenericDao<QuotaUsageVO, Long> {
+
+    List<QuotaUsageVO> getQuotaUsage(Long accountId, Long domainId, Integer usageType, Date startDate, Date endDate);
 
     Pair<List<QuotaUsageVO>, Integer> searchAndCountAllRecords(SearchCriteria<QuotaUsageVO> sc, Filter filter);
 

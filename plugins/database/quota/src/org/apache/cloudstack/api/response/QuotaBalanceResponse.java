@@ -17,15 +17,18 @@
 package org.apache.cloudstack.api.response;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.quota.QuotaBalanceVO;
 
 import com.cloud.serializer.Param;
 
-public class QuotaStatementBalanceResponse extends BaseResponse {
+public class QuotaBalanceResponse extends BaseResponse {
 
     @SerializedName("accountid")
     @Param(description = "account id")
@@ -39,13 +42,17 @@ public class QuotaStatementBalanceResponse extends BaseResponse {
     @Param(description = "domain id")
     private Long domainId;
 
-    @SerializedName("usedquota")
-    @Param(description = "quota consumed")
-    private BigDecimal quotaUsed;
+    @SerializedName("startquota")
+    @Param(description = "quota started with")
+    private BigDecimal startQuota;
 
-    @SerializedName("quotabalance")
-    @Param(description = "remaining quota")
-    private BigDecimal quotaBalance;
+    @SerializedName("endquota")
+    @Param(description = "quota by end of this period")
+    private BigDecimal endQuota;
+
+    @SerializedName("credits")
+    @Param(description = "list of credits made during this period")
+    private List<QuotaCreditsResponse> credits = null;
 
     @SerializedName("startdate")
     @Param(description = "start date")
@@ -55,8 +62,9 @@ public class QuotaStatementBalanceResponse extends BaseResponse {
     @Param(description = "end date")
     private Date endDate = null;
 
-    public QuotaStatementBalanceResponse() {
+    public QuotaBalanceResponse() {
         super();
+        credits = new ArrayList<QuotaCreditsResponse>();
     }
 
     public Long getAccountId() {
@@ -83,20 +91,35 @@ public class QuotaStatementBalanceResponse extends BaseResponse {
         this.domainId = domainId;
     }
 
-    public BigDecimal getQuotaUsed() {
-        return quotaUsed;
+    public BigDecimal getStartQuota() {
+        return startQuota;
     }
 
-    public void setQuotaUsed(BigDecimal quotaUsed) {
-        this.quotaUsed = quotaUsed;
+    public void setStartQuota(BigDecimal startQuota) {
+        this.startQuota = startQuota;
     }
 
-    public BigDecimal getQuotaBalance() {
-        return quotaBalance;
+    public BigDecimal getEndQuota() {
+        return endQuota;
     }
 
-    public void setQuotaBalance(BigDecimal quotaBalance) {
-        this.quotaBalance = quotaBalance;
+    public void setEndQuota(BigDecimal endQuota) {
+        this.endQuota = endQuota;
+    }
+
+    public List<QuotaCreditsResponse> getCredits() {
+        return credits;
+    }
+
+    public void setCredits(List<QuotaCreditsResponse> credits) {
+        this.credits = credits;
+    }
+
+    public void addCredits(QuotaBalanceVO credit) {
+        QuotaCreditsResponse cr = new QuotaCreditsResponse();
+        cr.setCredits(credit.getCreditBalance());
+        cr.setUpdatedOn(credit.getUpdatedOn());
+        credits.add(cr);
     }
 
     public Date getStartDate() {
@@ -114,6 +137,5 @@ public class QuotaStatementBalanceResponse extends BaseResponse {
     public void setEndDate(Date endDate) {
         this.endDate = endDate;
     }
-
 
 }

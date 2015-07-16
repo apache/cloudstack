@@ -24,15 +24,15 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.user.Account;
-import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
+
+import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaCreditsCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateAddCmd;
 import org.apache.cloudstack.api.command.QuotaRefreshCmd;
@@ -44,6 +44,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.dao.QuotaTariffDao;
+import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
 import org.apache.cloudstack.quota.dao.QuotaUsageDao;
 import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.log4j.Logger;
@@ -52,6 +53,7 @@ import org.springframework.stereotype.Component;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -80,9 +82,9 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
     @Inject
     private ConfigurationDao _configDao;
     @Inject
-    private AccountService _accountService;
-    @Inject
     private QuotaDBUtils _quotaDBUtils;
+    @Inject
+    private QuotaBalanceDao _quotaBalanceDao;
 
     private TimeZone _usageTimezone;
     private int _aggregationDuration = 0;
@@ -123,6 +125,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
         cmdList.add(QuotaEmailTemplateAddCmd.class);
         cmdList.add(QuotaRefreshCmd.class);
         cmdList.add(QuotaStatementCmd.class);
+        cmdList.add(QuotaBalanceCmd.class);
         return cmdList;
     }
 
@@ -202,10 +205,10 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
                             quotalistforaccount.add(updateQuotaRaw(usageRecord, quotaTariffMap, aggregationRatio, QuotaTypes.VPN_USERS));
                             break;
                         case QuotaTypes.NETWORK_BYTES_RECEIVED:
-                            quotalistforaccount.add(updateQuotaRaw(usageRecord, quotaTariffMap, aggregationRatio, QuotaTypes.NETWORK_BYTES_RECEIVED));
+                            quotalistforaccount.add(updateQuotaNetwork(usageRecord, quotaTariffMap, QuotaTypes.NETWORK_BYTES_RECEIVED));
                             break;
                         case QuotaTypes.NETWORK_BYTES_SENT:
-                            quotalistforaccount.add(updateQuotaRaw(usageRecord, quotaTariffMap, aggregationRatio, QuotaTypes.NETWORK_BYTES_SENT));
+                            quotalistforaccount.add(updateQuotaNetwork(usageRecord, quotaTariffMap, QuotaTypes.NETWORK_BYTES_SENT));
                             break;
                         case QuotaTypes.VM_DISK_IO_READ:
                         case QuotaTypes.VM_DISK_IO_WRITE:
@@ -218,19 +221,33 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
                 } while ((usageRecords != null) && !usageRecords.first().isEmpty());
                 // list of quotas for this account
                 s_logger.info("Quota entries size = " + quotalistforaccount.size());
-                Date startDate = new Date();
-                Date endDate = new Date();
-                int count = 0;
+                quotalistforaccount.add(new QuotaUsageVO());
+                Date startDate = new Date(0);
+                Date endDate = new Date(0);
                 BigDecimal aggrUsage = new BigDecimal(0);
                 for (QuotaUsageVO entry : quotalistforaccount) {
                     if (startDate.compareTo(entry.getStartDate()) != 0) {
-                        startDate = entry.getStartDate();
-                        endDate = entry.getEndDate();
-                        s_logger.info("Start Date=" + startDate.toString() + " to endDate=" + endDate.toString() + "record count=" + count);
-                        aggrUsage = aggrUsage.add(entry.getQuotaUsed());
-                        count = 0;
+                        QuotaBalanceVO lastrealbalanceentry = _quotaBalanceDao.getLastBalanceEntry(account.getAccountId(), account.getDomainId(), startDate);
+                        Date lastbalancedate;
+                        if (lastrealbalanceentry != null) {
+                            lastbalancedate = lastrealbalanceentry.getUpdatedOn();
+                            aggrUsage = aggrUsage.add(lastrealbalanceentry.getCreditBalance());
+                        } else {
+                            lastbalancedate = new Date(0);
+                        }
+
+                        List<QuotaBalanceVO> creditsrcvd = _quotaBalanceDao.getCreditBalance(account.getAccountId(), account.getDomainId(), lastbalancedate, endDate);
+                        for (QuotaBalanceVO credit : creditsrcvd) {
+                            aggrUsage = aggrUsage.add(credit.getCreditBalance());
+                        }
+
+                        QuotaBalanceVO newbalance = new QuotaBalanceVO(account.getAccountId(), account.getDomainId(), aggrUsage, endDate, null, null);
+                        _quotaBalanceDao.persist(newbalance);
+                        aggrUsage = new BigDecimal(0);
                     }
-                    count++;
+                    startDate = entry.getStartDate();
+                    endDate = entry.getEndDate();
+                    aggrUsage = aggrUsage.subtract(entry.getQuotaUsed());
                 }
             } // END ACCOUNT
             jobResult = true;
@@ -243,9 +260,47 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
         return jobResult;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public Pair<List<QuotaUsageVO>, Integer> getQuotaUsage(QuotaStatementCmd cmd) {
+    public List<QuotaBalanceVO> getQuotaBalance(QuotaBalanceCmd cmd) {
+        Long accountId = cmd.getAccountId();
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+        Account userAccount = null;
+        Account caller = CallContext.current().getCallingAccount();
+
+        // if accountId is not specified, use accountName and domainId
+        if ((accountId == null) && (accountName != null) && (domainId != null)) {
+            if (_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
+                Filter filter = new Filter(AccountVO.class, "id", Boolean.FALSE, null, null);
+                List<AccountVO> accounts = _accountDao.listAccounts(accountName, domainId, filter);
+                if (accounts.size() > 0) {
+                    userAccount = accounts.get(0);
+                }
+                if (userAccount != null) {
+                    accountId = userAccount.getId();
+                } else {
+                    throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+                }
+            } else {
+                throw new PermissionDeniedException("Invalid Domain Id or Account");
+            }
+        }
+
+        Date startDate = cmd.getStartDate();
+        Date endDate = cmd.getEndDate();
+        if (startDate.after(endDate)) {
+            throw new InvalidParameterValueException("Incorrect Date Range. Start date: " + startDate + " is after end date:" + endDate);
+        }
+        TimeZone usageTZ = getUsageTimezone();
+        Date adjustedStartDate = computeAdjustedTime(startDate, usageTZ);
+        Date adjustedEndDate = computeAdjustedTime(endDate, usageTZ);
+
+        s_logger.debug("getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
+        return _quotaBalanceDao.getQuotaBalance(accountId, domainId, adjustedStartDate, adjustedEndDate);
+    }
+
+    @Override
+    public List<QuotaUsageVO> getQuotaUsage(QuotaStatementCmd cmd) {
         Long accountId = cmd.getAccountId();
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
@@ -271,26 +326,6 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
             }
         }
 
-        boolean isAdmin = false;
-        boolean isDomainAdmin = false;
-
-        // If accountId couldn't be found using accountName and domainId, get it
-        // from userContext
-        if (accountId == null) {
-            accountId = caller.getId();
-            // List records for all the accounts if the caller account is of
-            // type admin.
-            // If account_id or account_name is explicitly mentioned, list
-            // records for the specified account only even if the caller is of
-            // type admin
-            if (_accountService.isRootAdmin(caller.getId())) {
-                isAdmin = true;
-            } else if (_accountService.isDomainAdmin(caller.getId())) {
-                isDomainAdmin = true;
-            }
-            s_logger.debug("Account details not available. Using userContext accountId: " + accountId);
-        }
-
         Date startDate = cmd.getStartDate();
         Date endDate = cmd.getEndDate();
         if (startDate.after(endDate)) {
@@ -301,52 +336,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
         Date adjustedEndDate = computeAdjustedTime(endDate, usageTZ);
 
         s_logger.debug("getting quota records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
-
-        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-        Pair<List<QuotaUsageVO>, Integer> quotaUsageRecords = null;
-        try {
-            // TODO instead of max value query with reasonable number and
-            // iterate
-            Filter usageFilter = new Filter(QuotaUsageVO.class, "id", true, 0L, Long.MAX_VALUE);
-            SearchCriteria<QuotaUsageVO> sc = _quotaUsageDao.createSearchCriteria();
-            if (accountId != null) {
-                sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-                s_logger.debug("Account ID=" + accountId);
-            }
-            /*
-             * if (isDomainAdmin) { SearchCriteria<DomainVO> sdc =
-             * _domainDao.createSearchCriteria(); sdc.addOr("path",
-             * SearchCriteria.Op.LIKE,
-             * _domainDao.findById(caller.getDomainId()).getPath() + "%");
-             * List<DomainVO> domains = _domainDao.search(sdc, null); List<Long>
-             * domainIds = new ArrayList<Long>(); for (DomainVO domain :
-             * domains) domainIds.add(domain.getId()); sc.addAnd("domainId",
-             * SearchCriteria.Op.IN, domainIds.toArray());
-             * s_logger.debug("Account ID=" + accountId); }
-             */
-            if (domainId != null) {
-                sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-                s_logger.debug("Domain ID=" + domainId);
-            }
-            if (usageType != null) {
-                sc.addAnd("usageType", SearchCriteria.Op.EQ, usageType);
-                s_logger.debug("usageType ID=" + usageType);
-            }
-            if ((adjustedStartDate != null) && (adjustedEndDate != null) && adjustedStartDate.before(adjustedEndDate)) {
-                sc.addAnd("startDate", SearchCriteria.Op.BETWEEN, adjustedStartDate, adjustedEndDate);
-                sc.addAnd("endDate", SearchCriteria.Op.BETWEEN, adjustedStartDate, adjustedEndDate);
-                s_logger.debug("start Date=" + adjustedStartDate + ", enddate=" + adjustedEndDate);
-            } else {
-                s_logger.debug("Screwed up start Date=" + adjustedStartDate + ", enddate=" + adjustedEndDate);
-                return new Pair<List<QuotaUsageVO>, Integer>(new ArrayList<QuotaUsageVO>(), new Integer(0));
-            }
-            quotaUsageRecords = _quotaUsageDao.searchAndCountAllRecords(sc, usageFilter);
-        } finally {
-            txn.close();
-        }
-
-        TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
-        return quotaUsageRecords;
+        return _quotaUsageDao.getQuotaUsage(accountId, domainId, usageType, adjustedStartDate, adjustedEndDate);
     }
 
     @DB

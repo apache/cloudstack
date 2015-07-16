@@ -24,7 +24,7 @@ import org.apache.cloudstack.quota.QuotaCreditsVO;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.sql.Timestamp;
+import java.util.Date;
 
 public class QuotaCreditsResponse extends BaseResponse {
 
@@ -38,7 +38,7 @@ public class QuotaCreditsResponse extends BaseResponse {
 
     @SerializedName("updated_on")
     @Param(description = "the account name of the admin who updated the credits")
-    private Timestamp updatedOn;
+    private Date updatedOn;
 
     public QuotaCreditsResponse() {
         super();
@@ -49,7 +49,7 @@ public class QuotaCreditsResponse extends BaseResponse {
         if (result != null) {
             this.credits = result.getCredit().setScale(2, RoundingMode.HALF_EVEN);
             this.updatedBy = updatedBy;
-            this.updatedOn = new Timestamp(System.currentTimeMillis());
+            this.updatedOn = new Date();
         }
     }
 
@@ -69,11 +69,11 @@ public class QuotaCreditsResponse extends BaseResponse {
         this.updatedBy = updatedBy;
     }
 
-    public Timestamp getUpdatedOn() {
+    public Date getUpdatedOn() {
         return updatedOn;
     }
 
-    public void setUpdatedOn(Timestamp updatedOn) {
+    public void setUpdatedOn(Date updatedOn) {
         this.updatedOn = updatedOn;
     }
 

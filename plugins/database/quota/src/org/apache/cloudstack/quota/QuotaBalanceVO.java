@@ -79,6 +79,7 @@ public class QuotaBalanceVO implements InternalIdentity {
         this.accountId = accountId;
         this.domainId = domainId;
         this.creditBalance = creditBalance;
+        this.creditsId=0L;
         this.updatedOn = updatedOn;
         this.previousUpdateId = previousUpdateId;
         this.previousUpdateOn = previousUpdateOn;
