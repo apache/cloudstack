@@ -67,7 +67,7 @@ public class UpdateHostPasswordCmd extends BaseCmd {
     }
 
     public Boolean getUpdatePasswdOnHost() {
-        return updatePasswdOnHost;
+        return updatePasswdOnHost == null ? false : true;
     }
 
     public String getPassword() {
