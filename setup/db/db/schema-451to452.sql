@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_usage` (
   `account_id` bigint(20) unsigned NOT NULL,
   `domain_id` bigint(20) unsigned NOT NULL,
   `usage_type` varchar(64) DEFAULT NULL,
-  `quota_used` decimal(15,4) unsigned NOT NULL,
+  `quota_used` decimal(15,8) unsigned NOT NULL,
   `start_date` datetime NOT NULL COMMENT 'start time for this usage item',
   `end_date` datetime NOT NULL COMMENT 'end time for this usage item',
   PRIMARY KEY (`id`)
@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_balance` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `account_id` bigint unsigned NOT NULL,
   `domain_id` bigint(20) unsigned NOT NULL,
-  `credit_balance` decimal(15,2) COMMENT 'amount of credits remaining',
+  `credit_balance` decimal(15,8) COMMENT 'amount of credits remaining',
   `credits_id`  bigint unsigned COMMENT 'if not null then this entry corresponds to credit change quota_credits',
   `updated_on` datetime NOT NULL COMMENT 'date updated on',
   `previous_update_id` bigint unsigned NOT NULL COMMENT 'id of last update',
