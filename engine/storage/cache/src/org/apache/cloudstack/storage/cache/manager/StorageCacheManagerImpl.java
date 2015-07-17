@@ -223,7 +223,7 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
 
     @Override
     public DataObject createCacheObject(DataObject data, DataStore store) {
-        DataObject objOnCacheStore;
+        DataObject objOnCacheStore = null;
         final Object lock;
         final DataObjectType type = data.getType();
         final String typeName;
@@ -249,6 +249,7 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
         }
         s_logger.debug("check " + typeName + " cache entry(id: " + dataId + ") on store(id: " + storeId + ")");
 
+        DataObject existingDataObj = null;
         synchronized (lock) {
             DataObjectInStore obj = objectInStoreMgr.findObject(data, store);
             if (obj != null) {
@@ -292,12 +293,22 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
                     s_logger.debug("there is already one in the cache store");
                     DataObject dataObj = objectInStoreMgr.get(data, store);
                     dataObj.incRefCount();
-                    return dataObj;
+                    existingDataObj = dataObj;
                 }
             }
 
-            s_logger.debug("create " + typeName + " cache entry(id: " + dataId + ") on store(id: " + storeId + ")");
-            objOnCacheStore = store.create(data);
+            if(existingDataObj == null) {
+                s_logger.debug("create " + typeName + " cache entry(id: " + dataId + ") on store(id: " + storeId + ")");
+                objOnCacheStore = store.create(data);
+            }
+            lock.notifyAll();
+        }
+        if (existingDataObj != null) {
+            return existingDataObj;
+        }
+        if (objOnCacheStore == null) {
+            s_logger.error("create " + typeName + " cache entry(id: " + dataId + ") on store(id: " + storeId + ") failed");
+            return null;
         }
 
         AsyncCallFuture<CopyCommandResult> future = new AsyncCallFuture<CopyCommandResult>();
