@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.response;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -96,7 +97,7 @@ public class QuotaBalanceResponse extends BaseResponse {
     }
 
     public void setStartQuota(BigDecimal startQuota) {
-        this.startQuota = startQuota;
+        this.startQuota = startQuota.setScale(2, RoundingMode.HALF_EVEN);
     }
 
     public BigDecimal getEndQuota() {
@@ -104,7 +105,7 @@ public class QuotaBalanceResponse extends BaseResponse {
     }
 
     public void setEndQuota(BigDecimal endQuota) {
-        this.endQuota = endQuota;
+        this.endQuota = endQuota.setScale(2, RoundingMode.HALF_EVEN);
     }
 
     public List<QuotaCreditsResponse> getCredits() {

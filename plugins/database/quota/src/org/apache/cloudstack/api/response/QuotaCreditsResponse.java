@@ -47,9 +47,9 @@ public class QuotaCreditsResponse extends BaseResponse {
     public QuotaCreditsResponse(QuotaCreditsVO result, String updatedBy) {
         super();
         if (result != null) {
-            this.credits = result.getCredit().setScale(2, RoundingMode.HALF_EVEN);
-            this.updatedBy = updatedBy;
-            this.updatedOn = new Date();
+            setCredits(result.getCredit());
+            setUpdatedBy(updatedBy);
+            setUpdatedOn(new Date());
         }
     }
 
@@ -58,7 +58,7 @@ public class QuotaCreditsResponse extends BaseResponse {
     }
 
     public void setCredits(BigDecimal credits) {
-        this.credits = credits;
+        this.credits = credits.setScale(2, RoundingMode.HALF_EVEN);
     }
 
     public String getUpdatedBy() {

@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.response;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Date;
 
 import com.google.gson.annotations.SerializedName;
@@ -120,7 +121,7 @@ public class QuotaStatementItemResponse extends BaseResponse {
     }
 
     public void setQuotaUsed(BigDecimal quotaUsed) {
-        this.quotaUsed = quotaUsed;
+        this.quotaUsed = quotaUsed.setScale(2, RoundingMode.HALF_EVEN);
     }
 
     public Date getStartDate() {
