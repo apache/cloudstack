@@ -650,11 +650,11 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             } else { // !keystoreFile.exists() and dbExisted
                 // Export keystore to local file
                 byte[] storeBytes = Base64.decodeBase64(dbString);
-                try {
-                    String tmpKeystorePath = "/tmp/tmpkey";
-                    FileOutputStream fo = new FileOutputStream(tmpKeystorePath);
+                String tmpKeystorePath = "/tmp/tmpkey";
+                try (
+                        FileOutputStream fo = new FileOutputStream(tmpKeystorePath);
+                    ) {
                     fo.write(storeBytes);
-                    fo.close();
                     Script script = new Script(true, "cp", 5000, null);
                     script.add("-f");
                     script.add(tmpKeystorePath);
