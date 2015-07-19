@@ -14,6 +14,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
+###############################################################################
+# build for cloudstack_home_dir not this folder
 
 FROM centos:6
 
@@ -43,14 +46,15 @@ RUN cd /etc/cloudstack/management; \
     ln -s tomcat6-nonssl.conf tomcat6.conf; \
     ln -s server-nonssl.xml server.xml; \
     ln -s log4j-cloud.xml log4j.xml
-COPY cloud.sudoer /etc/sudoers.d/cloud
 COPY init.sh_centos6 /root/init.sh
-
-
 
 RUN sed -i "s/cluster.node.IP=.*/cluster.node.IP=localhost/" /etc/cloudstack/management/db.properties
 
 EXPOSE 8080 8250 8096 45219 9090 8787
+# Ports:
+#   8080: webui, api
+#   8250: systemvm communication
+#   8096: api port without authentication(default=off)
 # Troubleshooting ports: 
 #   8787: CloudStack (Tomcat) debug socket
 #   9090: Cloudstack Management Cluster Interface
