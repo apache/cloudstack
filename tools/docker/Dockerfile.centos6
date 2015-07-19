@@ -15,9 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-###############################################################################
-# build for cloudstack_home_dir not this folder
-
 FROM centos:6
 
 MAINTAINER "Apache CloudStack" <dev@cloudstack.apache.org>
