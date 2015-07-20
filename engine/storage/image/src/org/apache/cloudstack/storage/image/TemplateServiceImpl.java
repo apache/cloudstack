@@ -291,10 +291,10 @@ public class TemplateServiceImpl implements TemplateService {
                     List<VMTemplateVO> allTemplates = null;
                     if (zoneId == null) {
                         // region wide store
-                        allTemplates = _templateDao.listAllActive();
+                        allTemplates = _templateDao.listByState(VirtualMachineTemplate.State.Active, VirtualMachineTemplate.State.NotUploaded, VirtualMachineTemplate.State.UploadInProgress);
                     } else {
                         // zone wide store
-                        allTemplates = _templateDao.listAllInZone(zoneId);
+                        allTemplates = _templateDao.listInZoneByState(zoneId, VirtualMachineTemplate.State.Active, VirtualMachineTemplate.State.NotUploaded, VirtualMachineTemplate.State.UploadInProgress);
                     }
                     List<VMTemplateVO> rtngTmplts = _templateDao.listAllSystemVMTemplates();
                     List<VMTemplateVO> defaultBuiltin = _templateDao.listDefaultBuiltinTemplates();
