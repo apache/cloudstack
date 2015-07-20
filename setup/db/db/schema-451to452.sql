@@ -110,8 +110,6 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_balance` (
   `credit_balance` decimal(15,8) COMMENT 'amount of credits remaining',
   `credits_id`  bigint unsigned COMMENT 'if not null then this entry corresponds to credit change quota_credits',
   `updated_on` datetime NOT NULL COMMENT 'date updated on',
-  `previous_update_id` bigint unsigned NOT NULL COMMENT 'id of last update',
-  `previous_update_on` datetime NOT NULL COMMENT 'date of last update',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

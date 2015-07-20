@@ -23,9 +23,9 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.user.Account;
+import com.cloud.user.Account.State;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
-import com.cloud.user.Account.State;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
@@ -33,14 +33,13 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
-
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
 import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
-import org.apache.cloudstack.api.response.QuotaTariffResponse;
-import org.apache.cloudstack.api.response.QuotaCreditsResponse;
 import org.apache.cloudstack.api.response.QuotaBalanceResponse;
+import org.apache.cloudstack.api.response.QuotaCreditsResponse;
 import org.apache.cloudstack.api.response.QuotaStatementItemResponse;
 import org.apache.cloudstack.api.response.QuotaStatementResponse;
+import org.apache.cloudstack.api.response.QuotaTariffResponse;
 import org.apache.cloudstack.quota.dao.QuotaCreditsDao;
 import org.apache.cloudstack.quota.dao.QuotaTariffDao;
 import org.apache.log4j.Logger;
@@ -48,7 +47,6 @@ import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
-
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -151,7 +149,7 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
 
     @Override
     public QuotaStatementResponse createQuotaStatementResponse(List<QuotaUsageVO> quotaUsage) {
-        short opendb=TransactionLegacy.currentTxn().getDatabaseId();
+        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         QuotaStatementResponse statement = new QuotaStatementResponse();
         Collections.sort(quotaUsage, new Comparator<QuotaUsageVO>() {
@@ -187,7 +185,7 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
                     lineitem.setEndDate(prev.getEndDate());
                     lineitem.setUsageUnit(quotaTariffMap.get(type).getUsageUnit());
                     lineitem.setUsageName(quotaTariffMap.get(type).getUsageName());
-                    lineitem.setObjectName("lineitem");
+                    lineitem.setObjectName("quotausage");
                     items.add(lineitem);
                     totalUsage = totalUsage.add(usage);
                     usage = new BigDecimal(0);
@@ -238,7 +236,7 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
 
     @Override
     public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy) {
-        short opendb=TransactionLegacy.currentTxn().getDatabaseId();
+        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         QuotaCreditsVO result = null;
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {

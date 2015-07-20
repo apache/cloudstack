@@ -69,10 +69,150 @@
             var $tabs = $('<ul class="ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all">');
             var $tabViews = [];
 
-            var sections = [{'id': 'quota-reports',
-                             'name': 'Reports',
+            var sections = [{'id': 'quota-statement',
+                             'name': 'Statement',
                              'render': function ($node) {
-                                  $node.html("<p>REPORT View Stub</p>");
+                                  var statementView = $('<div class="details" style="padding: 10px">');
+                                  var generatedStatement = $('<div class="quota-generated-statement">');
+
+                                  var statementForm = $('<div class="quota-statement">');
+                                  var domainDropdown = $('<div class="quota-domain-dropdown">');
+                                  var accountDropdown = $('<div class="quota-account-dropdown">');
+                                  var startDateInput = $('<input type="text" id="quota-statement-start-date">');
+                                  var endDateInput = $('<input type="text" id="quota-statement-end-date">');
+                                  var generateStatementButton = $('<button id="quota-get-statement-button">').html("Generate Statement");
+
+                                  startDateInput.datepicker({
+                                      defaultDate: "+1w",
+                                      changeMonth: true,
+                                      dateFormat: "yy-mm-dd",
+                                      onClose: function (selectedDate) {
+                                          endDateInput.datepicker("option", "minDate", selectedDate);
+                                      }
+                                  });
+
+                                  endDateInput.datepicker({
+                                      defaultDate: "+1w",
+                                      changeMonth: true,
+                                      dateFormat: "yy-mm-dd",
+                                      onClose: function (selectedDate) {
+                                          startDateInput.datepicker("option", "maxDate", selectedDate);
+                                      }
+                                  });
+
+                                  generateStatementButton.click(function() {
+                                      var domainId = domainDropdown.find("select :selected").val();
+                                      var accountId = accountDropdown.find("select :selected").val();
+                                      var account = accountDropdown.find("select :selected").html();
+                                      var startDate = startDateInput.val();
+                                      var endDate = endDateInput.val();
+
+                                      $.ajax({
+                                          url: createURL('quotaStatement'),
+                                          data: {
+                                              domainid: domainId,
+                                              accountid: accountId,
+                                              account: account,
+                                              startdate: startDate,
+                                              enddate: endDate
+                                          },
+                                          success: function(json) {
+                                              var statement = json.quotastatementresponse.statement;
+                                              var totalQuota = statement.totalquota;
+                                              var quotaUsage = statement.quotausage;
+
+                                              generatedStatement.empty();
+                                              $("<br><hr>").appendTo(generatedStatement);
+                                              $("<p>").html("Total Quota: " + totalQuota).appendTo(generatedStatement);
+
+                                              if (quotaUsage.length < 1) {
+                                                  return;
+                                              }
+
+                                              var statementTable = $('<table>');
+                                              statementTable.appendTo($('<div class="data-table view list-view">').appendTo(generatedStatement));
+
+                                              var statementTableHead = $('<tr>');
+                                              $('<th>').html(_l('label.usage.type')).appendTo(statementTableHead);
+                                              $('<th>').html(_l('label.quota.description')).appendTo(statementTableHead);
+                                              $('<th>').html(_l('label.quota.value')).appendTo(statementTableHead);
+                                              $('<th>').html(_l('label.usage.unit')).appendTo(statementTableHead);
+                                              $('<th>').html("Start Date").appendTo(statementTableHead);
+                                              $('<th>').html("End Date").appendTo(statementTableHead);
+                                              statementTableHead.appendTo($('<thead>').appendTo(statementTable));
+
+                                              var statementTableBody = $('<tbody>');
+                                              for (var i = 0; i < quotaUsage.length; i++) {
+                                                  var statementTableBodyRow = $('<tr>');
+                                                  if (i % 2 == 0) {
+                                                      statementTableBodyRow.addClass('even');
+                                                  } else {
+                                                      statementTableBodyRow.addClass('odd');
+                                                  }
+                                                  $('<td>').html(quotaUsage[i].type).appendTo(statementTableBodyRow);
+                                                  $('<td>').html(quotaUsage[i].name).appendTo(statementTableBodyRow);
+                                                  $('<td>').html(quotaUsage[i].quota).appendTo(statementTableBodyRow);
+                                                  $('<td>').html(quotaUsage[i].unit).appendTo(statementTableBodyRow);
+                                                  $('<td>').html(quotaUsage[i].startdate).appendTo(statementTableBodyRow);
+                                                  $('<td>').html(quotaUsage[i].enddate).appendTo(statementTableBodyRow);
+                                                  statementTableBodyRow.appendTo(statementTableBody);
+                                              }
+                                              statementTableBody.appendTo(statementTable);
+                                          },
+                                          error: function(json) {
+                                              generatedStatement.empty();
+                                              var error = JSON.parse(json.responseText);
+                                              if (error.hasOwnProperty('quotastatementresponse')) {
+                                                  $("<br><hr>").appendTo(generatedStatement);
+                                                  $("<p>").html("Error: " + error.quotastatementresponse.errortext).appendTo(generatedStatement);
+                                              }
+                                          }
+                                      });
+                                  });
+
+                                  domainDropdown.appendTo(statementForm);
+                                  accountDropdown.appendTo(statementForm);
+                                  startDateInput.appendTo($("<p>Start Date: </p>").appendTo(statementForm));
+                                  endDateInput.appendTo($("<p>End Date: </p>").appendTo(statementForm));
+
+                                  generateStatementButton.appendTo(statementForm);
+
+
+                                  $.ajax({
+                                      url: createURL('listDomains&listall=true'),
+                                      success: function(json) {
+                                          var domains = json.listdomainsresponse.domain;
+                                          var dropdown = $('<select>');
+                                          for (var i = 0; i < domains.length; i++) {
+                                              $('<option value="' + domains[i].id + '">' + domains[i].name + '</option>').appendTo(dropdown);
+                                          }
+                                          $('<span>Domain: </span>').appendTo(domainDropdown);
+                                          dropdown.appendTo(domainDropdown);
+                                      },
+                                      error: function(data) {
+                                          // TODO: Add error dialog?
+                                      }
+                                  });
+
+                                  $.ajax({
+                                      url: createURL('listAccounts&listall=true'),
+                                      success: function(json) {
+                                          var accounts = json.listaccountsresponse.account;
+                                          var dropdown = $('<select>');
+                                          for (var i = 0; i < accounts.length; i++) {
+                                              $('<option value="' + accounts[i].id + '">' + accounts[i].name + '</option>').appendTo(dropdown);
+                                          }
+                                          $('<span>Account: </span>').appendTo(accountDropdown);
+                                          dropdown.appendTo(accountDropdown);
+                                      },
+                                      error: function(data) {
+                                          // TODO: Add error dialog?
+                                      }
+                                  });
+
+                                  statementForm.appendTo(statementView);
+                                  generatedStatement.appendTo(statementView);
+                                  statementView.appendTo($node);
                               }
                             },
                             {
@@ -120,7 +260,6 @@
                                                   editButton.appendTo(valueCell);
                                                   editButton.attr('id', 'quota-tariff-edit-' + items[i].usageType);
                                                   editButton.click(function() {
-                                                      console.log($(this));
                                                       var usageTypeId = $(this).context.id.replace('quota-tariff-edit-', '');
                                                       cloudStack.dialog.createForm({
                                                           form: {

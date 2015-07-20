@@ -16,8 +16,7 @@
 //under the License.
 package org.apache.cloudstack.quota;
 
-import java.math.BigDecimal;
-import java.util.Date;
+import org.apache.cloudstack.api.InternalIdentity;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -25,8 +24,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
-
-import org.apache.cloudstack.api.InternalIdentity;
+import java.math.BigDecimal;
+import java.util.Date;
 
 @Entity
 @Table(name = "quota_balance")
@@ -54,13 +53,6 @@ public class QuotaBalanceVO implements InternalIdentity {
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date updatedOn = null;
 
-    @Column(name = "previous_update_id")
-    private Long previousUpdateId;
-
-    @Column(name = "previous_update_on")
-    @Temporal(value = TemporalType.TIMESTAMP)
-    private Date previousUpdateOn = null;
-
     public QuotaBalanceVO() {
         super();
     }
@@ -74,15 +66,13 @@ public class QuotaBalanceVO implements InternalIdentity {
         this.creditsId = credit.getId();
     }
 
-    public QuotaBalanceVO(Long accountId, Long domainId, BigDecimal creditBalance, Date updatedOn, Long previousUpdateId, Date previousUpdateOn) {
+    public QuotaBalanceVO(Long accountId, Long domainId, BigDecimal creditBalance, Date updatedOn) {
         super();
         this.accountId = accountId;
         this.domainId = domainId;
         this.creditBalance = creditBalance;
         this.creditsId=0L;
         this.updatedOn = updatedOn;
-        this.previousUpdateId = previousUpdateId;
-        this.previousUpdateOn = previousUpdateOn;
     }
 
     @Override
@@ -133,21 +123,4 @@ public class QuotaBalanceVO implements InternalIdentity {
     public void setUpdatedOn(Date updatedOn) {
         this.updatedOn = updatedOn;
     }
-
-    public Long getPreviousUpdateId() {
-        return previousUpdateId;
-    }
-
-    public void setPreviousUpdateId(Long previousUpdateId) {
-        this.previousUpdateId = previousUpdateId;
-    }
-
-    public Date getPreviousUpdateOn() {
-        return previousUpdateOn;
-    }
-
-    public void setPreviousUpdateOn(Date previousUpdateOn) {
-        this.previousUpdateOn = previousUpdateOn;
-    }
-
 }

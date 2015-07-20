@@ -242,7 +242,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
                             aggrUsage = aggrUsage.add(credit.getCreditBalance());
                         }
 
-                        QuotaBalanceVO newbalance = new QuotaBalanceVO(account.getAccountId(), account.getDomainId(), aggrUsage, endDate, null, null);
+                        QuotaBalanceVO newbalance = new QuotaBalanceVO(account.getAccountId(), account.getDomainId(), aggrUsage, endDate);
                         _quotaBalanceDao.persist(newbalance);
                         aggrUsage = new BigDecimal(0);
                     }

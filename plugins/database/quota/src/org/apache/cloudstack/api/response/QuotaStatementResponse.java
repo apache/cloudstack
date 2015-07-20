@@ -16,15 +16,14 @@
 //under the License.
 package org.apache.cloudstack.api.response;
 
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
+import org.apache.cloudstack.api.BaseResponse;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Date;
 import java.util.List;
-
-import org.apache.cloudstack.api.BaseResponse;
-
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 public class QuotaStatementResponse  extends BaseResponse {
 
@@ -40,8 +39,8 @@ public class QuotaStatementResponse  extends BaseResponse {
     @Param(description = "domain id")
     private Long domainId;
 
-    @SerializedName("lineitem")
-    @Param(description = "list of quota usage under variosu types", responseObject = QuotaStatementItemResponse.class)
+    @SerializedName("quotausage")
+    @Param(description = "list of quota usage under various types", responseObject = QuotaStatementItemResponse.class)
     private List<QuotaStatementItemResponse> lineItem;
 
     @SerializedName("totalquota")
