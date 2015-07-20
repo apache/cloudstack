@@ -846,94 +846,75 @@ public class Upgrade410to420 implements DbUpgrade {
     }
 
     private void updateNonLegacyZones(Connection conn, List<Long> zones) {
-        PreparedStatement clustersQuery = null;
-        PreparedStatement clusterDetailsQuery = null;
-        PreparedStatement pstmt = null;
-        ResultSet clusters = null;
-        ResultSet clusterDetails = null;
-        ResultSet dcInfo = null;
         try {
             for (Long zoneId : zones) {
                 s_logger.debug("Discovered non-legacy zone " + zoneId + ". Processing the zone to associate with VMware datacenter.");
 
                 // All clusters in a non legacy zone will belong to the same VMware DC, hence pick the first cluster
-                clustersQuery = conn.prepareStatement("select id from `cloud`.`cluster` where removed is NULL AND data_center_id=?");
-                clustersQuery.setLong(1, zoneId);
-                clusters = clustersQuery.executeQuery();
-                clusters.next();
-                Long clusterId = clusters.getLong("id");
+                try (PreparedStatement clustersQuery = conn.prepareStatement("select id from `cloud`.`cluster` where removed is NULL AND data_center_id=?");) {
+                    clustersQuery.setLong(1, zoneId);
+                    try (ResultSet clusters = clustersQuery.executeQuery();) {
+                        clusters.next();
+                        Long clusterId = clusters.getLong("id");
 
-                // Get VMware datacenter details from cluster_details table
-                String user = null;
-                String password = null;
-                String url = null;
-                clusterDetailsQuery = conn.prepareStatement("select name, value from `cloud`.`cluster_details` where cluster_id=?");
-                clusterDetailsQuery.setLong(1, clusterId);
-                clusterDetails = clusterDetailsQuery.executeQuery();
-                while (clusterDetails.next()) {
-                    String key = clusterDetails.getString(1);
-                    String value = clusterDetails.getString(2);
-                    if (key.equalsIgnoreCase("username")) {
-                        user = value;
-                    } else if (key.equalsIgnoreCase("password")) {
-                        password = value;
-                    } else if (key.equalsIgnoreCase("url")) {
-                        url = value;
+                        // Get VMware datacenter details from cluster_details table
+                        String user = null;
+                        String password = null;
+                        String url = null;
+                        try (PreparedStatement clusterDetailsQuery = conn.prepareStatement("select name, value from `cloud`.`cluster_details` where cluster_id=?");) {
+                            clusterDetailsQuery.setLong(1, clusterId);
+                            try (ResultSet clusterDetails = clusterDetailsQuery.executeQuery();) {
+                                while (clusterDetails.next()) {
+                                    String key = clusterDetails.getString(1);
+                                    String value = clusterDetails.getString(2);
+                                    if (key.equalsIgnoreCase("username")) {
+                                        user = value;
+                                    } else if (key.equalsIgnoreCase("password")) {
+                                        password = value;
+                                    } else if (key.equalsIgnoreCase("url")) {
+                                        url = value;
+                                    }
+                                }
+                                String[] tokens = url.split("/"); // url format - http://vcenter/dc/cluster
+                                String vc = tokens[2];
+                                String dcName = tokens[3];
+                                String guid = dcName + "@" + vc;
+
+                                try (PreparedStatement insertVmWareDC = conn
+                                        .prepareStatement("INSERT INTO `cloud`.`vmware_data_center` (uuid, name, guid, vcenter_host, username, password) values(?, ?, ?, ?, ?, ?)");) {
+                                    insertVmWareDC.setString(1, UUID.randomUUID().toString());
+                                    insertVmWareDC.setString(2, dcName);
+                                    insertVmWareDC.setString(3, guid);
+                                    insertVmWareDC.setString(4, vc);
+                                    insertVmWareDC.setString(5, user);
+                                    insertVmWareDC.setString(6, password);
+                                    insertVmWareDC.executeUpdate();
+                                }
+                                try (PreparedStatement selectVmWareDC = conn.prepareStatement("SELECT id FROM `cloud`.`vmware_data_center` where guid=?");) {
+                                    selectVmWareDC.setString(1, guid);
+                                    try (ResultSet vmWareDcInfo = selectVmWareDC.executeQuery();) {
+                                        Long vmwareDcId = -1L;
+                                        if (vmWareDcInfo.next()) {
+                                            vmwareDcId = vmWareDcInfo.getLong("id");
+                                        }
+
+                                        try (PreparedStatement insertMapping = conn
+                                                .prepareStatement("INSERT INTO `cloud`.`vmware_data_center_zone_map` (zone_id, vmware_data_center_id) values(?, ?)");) {
+                                            insertMapping.setLong(1, zoneId);
+                                            insertMapping.setLong(2, vmwareDcId);
+                                            insertMapping.executeUpdate();
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
-                String[] tokens = url.split("/"); // url format - http://vcenter/dc/cluster
-                String vc = tokens[2];
-                String dcName = tokens[3];
-                String guid = dcName + "@" + vc;
-
-                pstmt = conn.prepareStatement("INSERT INTO `cloud`.`vmware_data_center` (uuid, name, guid, vcenter_host, username, password) values(?, ?, ?, ?, ?, ?)");
-                pstmt.setString(1, UUID.randomUUID().toString());
-                pstmt.setString(2, dcName);
-                pstmt.setString(3, guid);
-                pstmt.setString(4, vc);
-                pstmt.setString(5, user);
-                pstmt.setString(6, password);
-                pstmt.executeUpdate();
-
-                pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`vmware_data_center` where guid=?");
-                pstmt.setString(1, guid);
-                dcInfo = pstmt.executeQuery();
-                Long vmwareDcId = -1L;
-                if (dcInfo.next()) {
-                    vmwareDcId = dcInfo.getLong("id");
-                }
-
-                pstmt = conn.prepareStatement("INSERT INTO `cloud`.`vmware_data_center_zone_map` (zone_id, vmware_data_center_id) values(?, ?)");
-                pstmt.setLong(1, zoneId);
-                pstmt.setLong(2, vmwareDcId);
-                pstmt.executeUpdate();
             }
         } catch (SQLException e) {
             String msg = "Unable to update non legacy zones." + e.getMessage();
             s_logger.error(msg);
             throw new CloudRuntimeException(msg, e);
-        } finally {
-            try {
-                if (clustersQuery != null) {
-                    clustersQuery.close();
-                }
-                if (clusterDetails != null) {
-                    clusterDetails.close();
-                }
-                if (clusterDetailsQuery != null) {
-                    clusterDetailsQuery.close();
-                }
-                if (clusters != null) {
-                    clusters.close();
-                }
-                if (dcInfo != null) {
-                    dcInfo.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 
