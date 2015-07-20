@@ -30,7 +30,7 @@
     </bean>
 
     <bean id="LdapManager" class="org.apache.cloudstack.ldap.LdapManagerImpl" />
-    <bean id="LdapUserManager" class="org.apache.cloudstack.ldap.LdapUserManager" />
+    <bean id="LdapUserManagerFactory" class="org.apache.cloudstack.ldap.LdapUserManagerFactory" />
     <bean id="LdapContextFactory" class="org.apache.cloudstack.ldap.LdapContextFactory" />
     <bean id="LdapConfigurationDao"
         class="org.apache.cloudstack.ldap.dao.LdapConfigurationDaoImpl" />

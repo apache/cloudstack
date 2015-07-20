@@ -18,6 +18,7 @@ package groovy.org.apache.cloudstack.ldap
 
 import org.apache.cloudstack.ldap.LdapConfiguration
 import org.apache.cloudstack.ldap.LdapUserManager
+import org.apache.cloudstack.ldap.OpenLdapUserManagerImpl
 import spock.lang.Shared
 
 import javax.naming.NamingException
@@ -29,7 +30,7 @@ import javax.naming.directory.SearchResult
 import javax.naming.ldap.InitialLdapContext
 import javax.naming.ldap.LdapContext
 
-class LdapUserManagerSpec extends spock.lang.Specification {
+class OpenLdapUserManagerSpec extends spock.lang.Specification {
 
     @Shared
     private def ldapConfiguration
@@ -184,7 +185,7 @@ class LdapUserManagerSpec extends spock.lang.Specification {
         given: "We have attributes, a search and a user manager"
         def attributes = createUserAttributes(username, email, firstname, lastname)
         def search = createSearchResult(attributes)
-        def userManager = new LdapUserManager(ldapConfiguration)
+        def userManager = new OpenLdapUserManagerImpl(ldapConfiguration)
         def result = userManager.createUser(search)
 
         expect: "The crated user the data supplied from LDAP"
@@ -199,7 +200,7 @@ class LdapUserManagerSpec extends spock.lang.Specification {
     def "Test successfully returning a list from get users"() {
         given: "We have a LdapUserManager"
 
-        def userManager = new LdapUserManager(ldapConfiguration)
+        def userManager = new OpenLdapUserManagerImpl(ldapConfiguration)
 
         when: "A request for users is made"
         def result = userManager.getUsers(username, createContext())
@@ -211,7 +212,7 @@ class LdapUserManagerSpec extends spock.lang.Specification {
     def "Test successfully returning a list from get users when no username is given"() {
         given: "We have a LdapUserManager"
 
-        def userManager = new LdapUserManager(ldapConfiguration)
+        def userManager = new OpenLdapUserManagerImpl(ldapConfiguration)
 
         when: "Get users is called without a username"
         def result = userManager.getUsers(createContext())
@@ -222,7 +223,7 @@ class LdapUserManagerSpec extends spock.lang.Specification {
 
     def "Test successfully returning a ldap user from searchUsers"() {
         given: "We have a LdapUserManager"
-        def userManager = new LdapUserManager(ldapConfiguration)
+        def userManager = new OpenLdapUserManagerImpl(ldapConfiguration)
 
         when: "We search for users"
         def result = userManager.searchUsers(createContext())
@@ -234,7 +235,7 @@ class LdapUserManagerSpec extends spock.lang.Specification {
     def "Test successfully returning an Ldap user from a get user request"() {
         given: "We have a LdapUserMaanger"
 
-        def userManager = new LdapUserManager(ldapConfiguration)
+        def userManager = new OpenLdapUserManagerImpl(ldapConfiguration)
 
         when: "A request for a user is made"
         def result = userManager.getUser(username, createContext())
@@ -255,7 +256,7 @@ class LdapUserManagerSpec extends spock.lang.Specification {
         def context = Mock(LdapContext)
         context.search(_, _, _) >> searchUsersResults;
 
-        def userManager = new LdapUserManager(ldapConfiguration)
+        def userManager = new OpenLdapUserManagerImpl(ldapConfiguration)
 
         when: "a get user request is made and no user is found"
         def result = userManager.getUser(username, context)
@@ -266,14 +267,14 @@ class LdapUserManagerSpec extends spock.lang.Specification {
 
     def "Test that a newly created Ldap User Manager is not null"() {
         given: "You have created a new Ldap user manager object"
-        def result = new LdapUserManager();
+        def result = new OpenLdapUserManagerImpl();
         expect: "The result is not null"
         result != null
     }
 
     def "test successful generateGroupSearchFilter"() {
         given: "ldap user manager and ldap config"
-        def ldapUserManager = new LdapUserManager(ldapConfiguration)
+        def ldapUserManager = new OpenLdapUserManagerImpl(ldapConfiguration)
         def groupName = varGroupName == null ? "*" : varGroupName
         def expectedResult = "(&(objectClass=groupOfUniqueNames)(cn=" + groupName + "))";
 
@@ -286,7 +287,7 @@ class LdapUserManagerSpec extends spock.lang.Specification {
 
     def "test successful getUsersInGroup one user"() {
         given: "ldap user manager and ldap config"
-        def ldapUserManager = new LdapUserManager(ldapConfiguration)
+        def ldapUserManager = new OpenLdapUserManagerImpl(ldapConfiguration)
 
         when: "A request for users is made"
         def result = ldapUserManager.getUsersInGroup("engineering", createGroupSearchContextOneUser())
@@ -296,7 +297,7 @@ class LdapUserManagerSpec extends spock.lang.Specification {
 
     def "test successful getUsersInGroup no user"() {
         given: "ldap user manager and ldap config"
-        def ldapUserManager = new LdapUserManager(ldapConfiguration)
+        def ldapUserManager = new OpenLdapUserManagerImpl(ldapConfiguration)
 
         when: "A request for users is made"
         def result = ldapUserManager.getUsersInGroup("engineering", createGroupSearchContextNoUser())
@@ -306,7 +307,7 @@ class LdapUserManagerSpec extends spock.lang.Specification {
 
     def "test successful getUserForDn"() {
         given: "ldap user manager and ldap config"
-        def ldapUserManager = new LdapUserManager(ldapConfiguration)
+        def ldapUserManager = new OpenLdapUserManagerImpl(ldapConfiguration)
 
         when: "A request for users is made"
         def result = ldapUserManager.getUserForDn("cn=Ryan Murphy,ou=engineering,dc=cloudstack,dc=org", createContext())
@@ -324,7 +325,7 @@ class LdapUserManagerSpec extends spock.lang.Specification {
         given: "ldap configuration where basedn is not set"
         def ldapconfig = Mock(LdapConfiguration)
         ldapconfig.getBaseDn() >> null
-        def ldapUserManager = new LdapUserManager(ldapconfig)
+        def ldapUserManager = new OpenLdapUserManagerImpl(ldapconfig)
 
         when: "A request for search users is made"
         def result = ldapUserManager.searchUsers(new InitialLdapContext())
