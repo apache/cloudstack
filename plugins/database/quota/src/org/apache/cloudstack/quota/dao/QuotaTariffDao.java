@@ -16,7 +16,6 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
-import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.quota.QuotaTariffVO;
 
@@ -26,7 +25,7 @@ public interface QuotaTariffDao extends GenericDao<QuotaTariffVO, Long> {
 
     QuotaTariffVO findTariffPlanByUsageType(int usageType);
 
-    Pair<List<QuotaTariffVO>, Integer> listAllTariffPlans();
+    List<QuotaTariffVO> listAllTariffPlans();
 
     boolean updateQuotaTariff(QuotaTariffVO plan);
 }

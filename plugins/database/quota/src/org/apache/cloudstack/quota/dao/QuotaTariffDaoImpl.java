@@ -16,7 +16,6 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
-import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -61,13 +60,13 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
     }
 
     @Override
-    public Pair<List<QuotaTariffVO>, Integer> listAllTariffPlans() {
-        Pair<List<QuotaTariffVO>, Integer> result = null;
+    public List<QuotaTariffVO> listAllTariffPlans() {
+        List<QuotaTariffVO> result = null;
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
             final SearchCriteria<QuotaTariffVO> sc = listAllIncludedUsageType.create();
             sc.setParameters("include", 1);
-            result = searchAndCount(sc, null);
+            result = listBy(sc);
         } finally {
             txn.close();
             // Switch back to Cloud DB

@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command;
 
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -54,10 +53,10 @@ public class QuotaTariffListCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        final Pair<List<QuotaTariffVO>, Integer> result = _quotaDBUtils.listQuotaTariffPlans(this);
+        final List<QuotaTariffVO> result = _quotaDBUtils.listQuotaTariffPlans(this);
 
         final List<QuotaTariffResponse> responses = new ArrayList<QuotaTariffResponse>();
-        for (final QuotaTariffVO resource : result.first()) {
+        for (final QuotaTariffVO resource : result) {
             responses.add(_quotaDBUtils.createQuotaTariffResponse(resource));
         }
 

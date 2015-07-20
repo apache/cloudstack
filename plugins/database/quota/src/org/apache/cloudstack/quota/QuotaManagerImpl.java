@@ -142,13 +142,14 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
 
     @Override
     public boolean calculateQuotaUsage() {
+        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         boolean jobResult = false;
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
             // get quota tariff plans
-            final Pair<List<QuotaTariffVO>, Integer> result = _quotaTariffDao.listAllTariffPlans();
+            final List<QuotaTariffVO> result = _quotaTariffDao.listAllTariffPlans();
             HashMap<Integer, QuotaTariffVO> quotaTariffMap = new HashMap<Integer, QuotaTariffVO>();
-            for (final QuotaTariffVO resource : result.first()) {
+            for (final QuotaTariffVO resource : result) {
                 s_logger.debug("QuotaConf=" + resource.getDescription());
                 quotaTariffMap.put(resource.getUsageType(), resource);
             }
@@ -257,11 +258,15 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
         } finally {
             txn.close();
         }
+        TransactionLegacy.open(opendb).close();
         return jobResult;
     }
 
     @Override
     public List<QuotaBalanceVO> getQuotaBalance(QuotaBalanceCmd cmd) {
+        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+        TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
+
         Long accountId = cmd.getAccountId();
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
@@ -285,22 +290,31 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
                 throw new PermissionDeniedException("Invalid Domain Id or Account");
             }
         }
+        TransactionLegacy.open(opendb).close();
 
         Date startDate = cmd.getStartDate();
         Date endDate = cmd.getEndDate();
-        if (startDate.after(endDate)) {
-            throw new InvalidParameterValueException("Incorrect Date Range. Start date: " + startDate + " is after end date:" + endDate);
-        }
+        startDate = startDate == null ? new Date() : startDate;
+
         TimeZone usageTZ = getUsageTimezone();
         Date adjustedStartDate = computeAdjustedTime(startDate, usageTZ);
-        Date adjustedEndDate = computeAdjustedTime(endDate, usageTZ);
 
-        s_logger.debug("getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
-        return _quotaBalanceDao.getQuotaBalance(accountId, domainId, adjustedStartDate, adjustedEndDate);
+        if (endDate == null) {
+            s_logger.debug("getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", on or before " + adjustedStartDate);
+            return _quotaBalanceDao.getQuotaBalance(accountId, domainId, adjustedStartDate);
+        } else if (startDate.before(endDate)) {
+            Date adjustedEndDate = computeAdjustedTime(endDate, usageTZ);
+            s_logger.debug("getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
+            return _quotaBalanceDao.getQuotaBalance(accountId, domainId, adjustedStartDate, adjustedEndDate);
+        } else {
+            throw new InvalidParameterValueException("Incorrect Date Range. Start date: " + startDate + " is after end date:" + endDate);
+        }
     }
 
     @Override
     public List<QuotaUsageVO> getQuotaUsage(QuotaStatementCmd cmd) {
+        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+        TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
         Long accountId = cmd.getAccountId();
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
@@ -325,6 +339,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
                 throw new PermissionDeniedException("Invalid Domain Id or Account");
             }
         }
+        TransactionLegacy.open(opendb).close();
 
         Date startDate = cmd.getStartDate();
         Date endDate = cmd.getEndDate();
@@ -346,11 +361,6 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
             BigDecimal quotaUsgage;
             BigDecimal onehourcostpergb;
             BigDecimal noofgbinuse;
-            // s_logger.info(usageRecord.getDescription() + ", " +
-            // usageRecord.getType() + ", " + usageRecord.getOfferingId() + ", "
-            // + usageRecord.getTemplateId() + ", " +
-            // usageRecord.getUsageDisplay()
-            // + ", aggrR=" + aggregationRatio);
             onehourcostpergb = quotaTariffMap.get(quotaType).getCurrencyValue().multiply(aggregationRatio);
             noofgbinuse = new BigDecimal(usageRecord.getSize()).divide(s_gb, 8, RoundingMode.HALF_EVEN);
             quotaUsgage = new BigDecimal(usageRecord.getRawUsage()).multiply(onehourcostpergb).multiply(noofgbinuse);
@@ -427,11 +437,6 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
         if (quotaTariffMap.get(QuotaTypes.ALLOCATED_VM) != null) {
             BigDecimal vmusage;
             BigDecimal onehourcostforvmusage;
-            // s_logger.info(usageRecord.getDescription() + ", " +
-            // usageRecord.getType() + ", " + usageRecord.getOfferingId() + ", "
-            // + usageRecord.getVmInstanceId() + ", "
-            // + usageRecord.getUsageDisplay() + ", aggrR=" + aggregationRatio);
-
             onehourcostforvmusage = quotaTariffMap.get(QuotaTypes.ALLOCATED_VM).getCurrencyValue().multiply(aggregationRatio);
             vmusage = new BigDecimal(usageRecord.getRawUsage()).multiply(onehourcostforvmusage);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), QuotaTypes.ALLOCATED_VM, vmusage,
@@ -450,11 +455,6 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
         if (quotaTariffMap.get(ruleType) != null) {
             BigDecimal ruleusage;
             BigDecimal onehourcost;
-            // s_logger.info(usageRecord.getDescription() + ", " +
-            // usageRecord.getType() + ", " + usageRecord.getOfferingId() + ", "
-            // + usageRecord.getVmInstanceId() + ", "
-            // + usageRecord.getUsageDisplay() + ", aggrR=" + aggregationRatio);
-
             onehourcost = quotaTariffMap.get(ruleType).getCurrencyValue().multiply(aggregationRatio);
             ruleusage = new BigDecimal(usageRecord.getRawUsage()).multiply(onehourcost);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), ruleType, ruleusage, usageRecord.getStartDate(),
@@ -474,11 +474,6 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Confi
             BigDecimal onegbcost;
             BigDecimal rawusageingb;
             BigDecimal networkusage;
-            // s_logger.info(usageRecord.getDescription() + ", " +
-            // usageRecord.getType() + ", " + usageRecord.getOfferingId() + ", "
-            // + usageRecord.getVmInstanceId() + ", "
-            // + usageRecord.getUsageDisplay());
-
             onegbcost = quotaTariffMap.get(transferType).getCurrencyValue();
             rawusageingb = new BigDecimal(usageRecord.getRawUsage()).divide(s_gb, 8, RoundingMode.HALF_EVEN);
             networkusage = rawusageingb.multiply(onegbcost);

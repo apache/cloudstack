@@ -26,7 +26,7 @@ public interface Account extends ControlledEntity, InternalIdentity, Identity {
 
 
     public enum State {
-        disabled, enabled, locked
+        disabled, enabled, locked, nocredit
     }
 
     public static final short ACCOUNT_TYPE_NORMAL = 0;
@@ -39,6 +39,7 @@ public interface Account extends ControlledEntity, InternalIdentity, Identity {
     public static final String ACCOUNT_STATE_DISABLED = "disabled";
     public static final String ACCOUNT_STATE_ENABLED = "enabled";
     public static final String ACCOUNT_STATE_LOCKED = "locked";
+    public static final String ACCOUNT_STATE_NOCREDIT = "nocredit";
 
     public static final long ACCOUNT_ID_SYSTEM = 1;
 

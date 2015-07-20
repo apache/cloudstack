@@ -30,6 +30,7 @@ import org.apache.cloudstack.quota.QuotaCreditsVO;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = { QuotaCreditsDao.class })
@@ -40,6 +41,8 @@ public class QuotaCreditsDaoImpl extends GenericDaoBase<QuotaCreditsVO, Long> im
     @SuppressWarnings("deprecation")
     @Override
     public List<QuotaCreditsVO> getCredits(long accountId, long domainId, Date startDate, Date endDate) {
+        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+        TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         Filter filter = new Filter(QuotaCreditsVO.class, "updatedOn", true, 0L, Long.MAX_VALUE);
         SearchCriteria<QuotaCreditsVO> sc = createSearchCriteria();
         sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
@@ -49,15 +52,20 @@ public class QuotaCreditsDaoImpl extends GenericDaoBase<QuotaCreditsVO, Long> im
         } else {
             return new ArrayList<QuotaCreditsVO>();
         }
-        return this.search(sc, filter);
+        List<QuotaCreditsVO> qc = search(sc, filter);
+        TransactionLegacy.open(opendb).close();
+        return qc;
     }
 
     @Override
     public QuotaCreditsVO saveCredits(QuotaCreditsVO credits) {
+        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+        TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         persist(credits);
         // make an entry in the balance table
         QuotaBalanceVO bal = new QuotaBalanceVO(credits);
         _quotaBalanceDao.persist(bal);
+        TransactionLegacy.open(opendb).close();
         return credits;
     }
 

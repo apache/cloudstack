@@ -17,11 +17,16 @@
 package org.apache.cloudstack.quota;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountVO;
 import com.cloud.user.User;
+import com.cloud.user.Account.State;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
@@ -69,6 +74,8 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
     private UserDao _userDao;
     @Inject
     private UsageDao _usageDao;
+    @Inject
+    private AccountDao _accountDao;
 
     static Long s_recordtofetch = 1000L;
 
@@ -86,10 +93,35 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
     }
 
     @Override
+    public QuotaBalanceResponse createQuotaLastBalanceResponse(List<QuotaBalanceVO> quotaBalance) {
+        Collections.sort(quotaBalance, new Comparator<QuotaBalanceVO>() {
+            public int compare(QuotaBalanceVO o1, QuotaBalanceVO o2) {
+                return o2.getUpdatedOn().compareTo(o1.getUpdatedOn()); // desc
+            }
+        });
+        QuotaBalanceResponse resp = new QuotaBalanceResponse();
+        BigDecimal lastCredits=new BigDecimal(0);
+        for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
+            QuotaBalanceVO entry = it.next();
+            //s_logger.info("Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
+            if (entry.getCreditsId() > 0) {
+                lastCredits=lastCredits.add(entry.getCreditBalance());
+            }
+            else {
+                resp.setStartDate(entry.getUpdatedOn());
+                resp.setStartQuota(entry.getCreditBalance().add(lastCredits));
+                break; // add only consecutive credit entries
+            }
+        }
+        resp.setObjectName("balance");
+        return resp;
+    }
+
+    @Override
     public QuotaBalanceResponse createQuotaBalanceResponse(List<QuotaBalanceVO> quotaBalance) {
         Collections.sort(quotaBalance, new Comparator<QuotaBalanceVO>() {
             public int compare(QuotaBalanceVO o1, QuotaBalanceVO o2) {
-                return o1.getUpdatedOn().compareTo(o2.getUpdatedOn());
+                return o1.getUpdatedOn().compareTo(o2.getUpdatedOn()); //asc
             }
         });
         QuotaBalanceResponse resp = new QuotaBalanceResponse();
@@ -119,6 +151,8 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
 
     @Override
     public QuotaStatementResponse createQuotaStatementResponse(List<QuotaUsageVO> quotaUsage) {
+        short opendb=TransactionLegacy.currentTxn().getDatabaseId();
+        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         QuotaStatementResponse statement = new QuotaStatementResponse();
         Collections.sort(quotaUsage, new Comparator<QuotaUsageVO>() {
             public int compare(QuotaUsageVO o1, QuotaUsageVO o2) {
@@ -129,7 +163,6 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
         });
 
         HashMap<Integer, QuotaTariffVO> quotaTariffMap = new HashMap<Integer, QuotaTariffVO>();
-        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         List<QuotaTariffVO> result = _quotaTariffDao.listAll();
         for (QuotaTariffVO quotaTariff : result) {
             quotaTariffMap.put(quotaTariff.getUsageType(), quotaTariff);
@@ -168,18 +201,17 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
         statement.setLineItem(items);
         statement.setTotalQuota(totalUsage);
         statement.setObjectName("statement");
-        TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
+        TransactionLegacy.open(opendb).close();
         return statement;
     }
 
     @Override
-    public Pair<List<QuotaTariffVO>, Integer> listQuotaTariffPlans(final QuotaTariffListCmd cmd) {
-        Pair<List<QuotaTariffVO>, Integer> result = new Pair<List<QuotaTariffVO>, Integer>(new ArrayList<QuotaTariffVO>(), 0);
+    public List<QuotaTariffVO> listQuotaTariffPlans(final QuotaTariffListCmd cmd) {
+        List<QuotaTariffVO> result = new ArrayList<QuotaTariffVO>();
         if (cmd.getUsageType() != null) {
             QuotaTariffVO tariffPlan = _quotaTariffDao.findTariffPlanByUsageType(cmd.getUsageType());
             if (tariffPlan != null) {
-                result.first().add(tariffPlan);
-                result.second(1);
+                result.add(tariffPlan);
             }
         } else {
             result = _quotaTariffDao.listAllTariffPlans();
@@ -189,6 +221,8 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
 
     @Override
     public QuotaTariffVO updateQuotaTariffPlan(QuotaTariffUpdateCmd cmd) {
+        short opendb=TransactionLegacy.currentTxn().getDatabaseId();
+        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         final int resourceType = cmd.getUsageType();
         final BigDecimal quotaCost = new BigDecimal(cmd.getValue());
         QuotaTariffVO result = _quotaTariffDao.findTariffPlanByUsageType(resourceType);
@@ -198,11 +232,13 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
         s_logger.debug(String.format("Updating Quota Tariff Plan: Old value=%s, new value=%s for resource type=%d", result.getCurrencyValue(), quotaCost, resourceType));
         result.setCurrencyValue(quotaCost);
         _quotaTariffDao.updateQuotaTariff(result);
+        TransactionLegacy.open(opendb).close();
         return result;
     }
 
     @Override
     public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy) {
+        short opendb=TransactionLegacy.currentTxn().getDatabaseId();
         QuotaCreditsVO result = null;
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
@@ -218,12 +254,15 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
         if (creditorUser != null) {
             creditor = creditorUser.getUsername();
         }
+        TransactionLegacy.open(opendb).close();
         return new QuotaCreditsResponse(result, creditor);
     }
 
     @Override
     @SuppressWarnings("deprecation")
     public Pair<List<? extends UsageVO>, Integer> getUsageRecords(long accountId, long domainId) {
+        short opendb=TransactionLegacy.currentTxn().getDatabaseId();
+        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         s_logger.debug("getting usage records for account: " + accountId + ", domainId: " + domainId);
         Filter usageFilter = new Filter(UsageVO.class, "startDate", true, 0L, s_recordtofetch);
         SearchCriteria<UsageVO> sc = _usageDao.createSearchCriteria();
@@ -236,11 +275,13 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
         sc.addAnd("quotaCalculated", SearchCriteria.Op.EQ, 0);
         s_logger.debug("Getting usage records" + usageFilter.getOrderBy());
         Pair<List<UsageVO>, Integer> usageRecords = _usageDao.searchAndCountAllRecords(sc, usageFilter);
+        TransactionLegacy.open(opendb).close();
         return new Pair<List<? extends UsageVO>, Integer>(usageRecords.first(), usageRecords.second());
     }
 
     @Override
     public ServiceOfferingVO findServiceOffering(Long vmId, long serviceOfferingId) {
+        short opendb=TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
         ServiceOfferingVO result;
         try {
@@ -248,8 +289,78 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
         } finally {
             txn.close();
         }
-        TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+        TransactionLegacy.open(opendb).close();
         return result;
+    }
+
+    @Override
+    public boolean accountLockNoCredit(AccountVO account) {
+        short opendb=TransactionLegacy.currentTxn().getDatabaseId();
+        boolean success = false;
+
+        if (account == null) {
+            s_logger.warn("The account parameter is null");
+            return false;
+        }
+
+        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            throw new InvalidParameterValueException("Project accounts cannot be locked " + account.getAccountName());
+        }
+
+        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
+            throw new PermissionDeniedException("Account name : " + account.getAccountName() + " is a system account, lock is not allowed");
+        }
+
+        if (account.getState().equals(State.locked)) {
+            if (s_logger.isInfoEnabled()) {
+                s_logger.warn("The account is locked cannot put it in nocredit state (accountId: " + account.getId() + "), locking failed.");
+            }
+        } else if (account.getState().equals(State.enabled)) {
+            TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+            try {
+                AccountVO acctForUpdate = _accountDao.createForUpdate();
+                acctForUpdate.setState(State.nocredit);
+                success = _accountDao.update(Long.valueOf(account.getId()), acctForUpdate);
+            } finally {
+                txn.close();
+            }
+        } else {
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("Attempting to lock a non-enabled account, current state is " + account.getState() + " (accountId: " + account.getId() + "), locking failed.");
+            }
+        }
+
+        TransactionLegacy.open(opendb).close();
+        return success;
+    }
+
+    @Override
+    public boolean accountUnlockCredit(AccountVO account) {
+        short opendb=TransactionLegacy.currentTxn().getDatabaseId();
+        boolean success = false;
+
+        if (account == null) {
+            s_logger.warn("The account parameter is null");
+            return success;
+        }
+
+        if (account.getState().equals(State.nocredit)) {
+            TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+            try {
+                AccountVO acctForUpdate = _accountDao.createForUpdate();
+                acctForUpdate.setState(State.enabled);
+                success = _accountDao.update(Long.valueOf(account.getId()), acctForUpdate);
+            } finally {
+                txn.close();
+            }
+        } else {
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("Attempting to unlock a account that is not locked due to no credits, current state is " + account.getState() + " (accountId: " + account.getId()
+                        + "), unlocking failed.");
+            }
+        }
+        TransactionLegacy.open(opendb).close();
+        return success;
     }
 
 }

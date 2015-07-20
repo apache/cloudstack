@@ -50,10 +50,10 @@ public class QuotaBalanceCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = true, entityType = DomainResponse.class, description = "Optional, If domain Id is given and the caller is domain admin then the statement is generated for domain.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, required = true, description = "End date range for quota query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-03.")
+    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "End date range for quota query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-03.")
     private Date endDate;
 
-    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, required = true, description = "Start date range quota query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-01.")
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "Start date range quota query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-01.")
     private Date startDate;
 
     @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "List usage records for the specified account")
@@ -126,7 +126,12 @@ public class QuotaBalanceCmd extends BaseCmd {
     public void execute() {
         List<QuotaBalanceVO> quotaUsage = _quotaManager.getQuotaBalance(this);
 
-        QuotaBalanceResponse response = _quotaDBUtils.createQuotaBalanceResponse(quotaUsage);
+        QuotaBalanceResponse response;
+        if (getEndDate() == null) {
+            response = _quotaDBUtils.createQuotaLastBalanceResponse(quotaUsage);
+        } else {
+            response = _quotaDBUtils.createQuotaBalanceResponse(quotaUsage);
+        }
 
         response.setResponseName(getCommandName());
         setResponseObject(response);
