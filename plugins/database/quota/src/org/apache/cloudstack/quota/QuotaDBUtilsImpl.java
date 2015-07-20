@@ -17,16 +17,11 @@
 package org.apache.cloudstack.quota;
 
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
-import com.cloud.user.Account;
-import com.cloud.user.Account.State;
-import com.cloud.user.AccountVO;
 import com.cloud.user.User;
-import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
@@ -72,8 +67,6 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
     private UserDao _userDao;
     @Inject
     private UsageDao _usageDao;
-    @Inject
-    private AccountDao _accountDao;
 
     static Long s_recordtofetch = 1000L;
 
@@ -289,76 +282,6 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
         }
         TransactionLegacy.open(opendb).close();
         return result;
-    }
-
-    @Override
-    public boolean accountLockNoCredit(AccountVO account) {
-        short opendb=TransactionLegacy.currentTxn().getDatabaseId();
-        boolean success = false;
-
-        if (account == null) {
-            s_logger.warn("The account parameter is null");
-            return false;
-        }
-
-        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-            throw new InvalidParameterValueException("Project accounts cannot be locked " + account.getAccountName());
-        }
-
-        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-            throw new PermissionDeniedException("Account name : " + account.getAccountName() + " is a system account, lock is not allowed");
-        }
-
-        if (account.getState().equals(State.locked)) {
-            if (s_logger.isInfoEnabled()) {
-                s_logger.warn("The account is locked cannot put it in nocredit state (accountId: " + account.getId() + "), locking failed.");
-            }
-        } else if (account.getState().equals(State.enabled)) {
-            TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
-            try {
-                AccountVO acctForUpdate = _accountDao.createForUpdate();
-                acctForUpdate.setState(State.nocredit);
-                success = _accountDao.update(Long.valueOf(account.getId()), acctForUpdate);
-            } finally {
-                txn.close();
-            }
-        } else {
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Attempting to lock a non-enabled account, current state is " + account.getState() + " (accountId: " + account.getId() + "), locking failed.");
-            }
-        }
-
-        TransactionLegacy.open(opendb).close();
-        return success;
-    }
-
-    @Override
-    public boolean accountUnlockCredit(AccountVO account) {
-        short opendb=TransactionLegacy.currentTxn().getDatabaseId();
-        boolean success = false;
-
-        if (account == null) {
-            s_logger.warn("The account parameter is null");
-            return success;
-        }
-
-        if (account.getState().equals(State.nocredit)) {
-            TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
-            try {
-                AccountVO acctForUpdate = _accountDao.createForUpdate();
-                acctForUpdate.setState(State.enabled);
-                success = _accountDao.update(Long.valueOf(account.getId()), acctForUpdate);
-            } finally {
-                txn.close();
-            }
-        } else {
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Attempting to unlock a account that is not locked due to no credits, current state is " + account.getState() + " (accountId: " + account.getId()
-                        + "), unlocking failed.");
-            }
-        }
-        TransactionLegacy.open(opendb).close();
-        return success;
     }
 
 }

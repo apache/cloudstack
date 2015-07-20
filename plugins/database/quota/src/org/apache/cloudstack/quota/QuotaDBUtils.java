@@ -18,7 +18,6 @@ package org.apache.cloudstack.quota;
 
 import com.cloud.utils.Pair;
 import com.cloud.usage.UsageVO;
-import com.cloud.user.AccountVO;
 import com.cloud.service.ServiceOfferingVO;
 
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
@@ -47,10 +46,6 @@ public interface QuotaDBUtils {
     ServiceOfferingVO findServiceOffering(Long vmId, long serviceOfferingId);
 
     QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy);
-
-    boolean accountLockNoCredit(AccountVO account);
-
-    boolean accountUnlockCredit(AccountVO account);
 
     QuotaBalanceResponse createQuotaLastBalanceResponse(List<QuotaBalanceVO> quotaBalance);
 

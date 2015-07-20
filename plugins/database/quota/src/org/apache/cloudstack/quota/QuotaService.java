@@ -4,7 +4,7 @@
 //regarding copyright ownership.  The ASF licenses this file
 //to you under the Apache License, Version 2.0 (the
 //"License"); you may not use this file except in compliance
-//the License.  You may obtain a copy of the License at
+//with the License.  You may obtain a copy of the License at
 //
 //http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -16,10 +16,17 @@
 //under the License.
 package org.apache.cloudstack.quota;
 
-import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.PluggableService;
 
-public interface QuotaManager extends Manager {
+import org.apache.cloudstack.api.command.QuotaBalanceCmd;
+import org.apache.cloudstack.api.command.QuotaStatementCmd;
 
-    public boolean calculateQuotaUsage();
+import java.util.List;
+
+public interface QuotaService extends PluggableService {
+
+    public List<QuotaUsageVO> getQuotaUsage(QuotaStatementCmd cmd);
+
+    List<QuotaBalanceVO> getQuotaBalance(QuotaBalanceCmd cmd);
 
 }

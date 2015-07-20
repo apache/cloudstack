@@ -26,6 +26,7 @@
                       http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 
     <bean id="QuotaManager" class="org.apache.cloudstack.quota.QuotaManagerImpl" />
+    <bean id="QuotaService" class="org.apache.cloudstack.quota.QuotaServiceImpl" />
     <bean id="QuotaDBUtils" class="org.apache.cloudstack.quota.QuotaDBUtilsImpl" />
     <bean id="QuotaTariffDao" class="org.apache.cloudstack.quota.dao.QuotaTariffDaoImpl" />
     <bean id="QuotaBalanceDao" class="org.apache.cloudstack.quota.dao.QuotaBalanceDaoImpl"/>
