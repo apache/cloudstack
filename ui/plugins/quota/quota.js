@@ -176,15 +176,10 @@ var g_quotaCurrency = '';
                                           success: function(json) {
                                               var statement = json.quotabalanceresponse.balance;
                                               var credits = statement.credits;
-                                              var startBalance = '';
-                                              var endBalance = '';
-
-                                              if (statement.hasOwnProperty('startquota')) {
-                                                  startBalance = statement.startquota;
-                                              }
-                                              if (statement.hasOwnProperty('endquota')) {
-                                                  endBalance = statement.endquota;
-                                              }
+                                              var startBalance = statement.startquota;
+                                              var startBalanceDate = statement.startdate;
+                                              var endBalance = statement.endquota;
+                                              var endBalanceDate = statement.enddate;
 
                                               generatedBalanceStatement.empty();
                                               $("<br>").appendTo(generatedBalanceStatement);
@@ -201,13 +196,11 @@ var g_quotaCurrency = '';
 
                                               var statementTableBody = $('<tbody>');
 
-                                              if (startBalance) {
-                                                  var statementTableBodyRow = $('<tr>');
-                                                  $('<td>').html("Start Balance").appendTo(statementTableBodyRow);
-                                                  $('<td>').html(g_quotaCurrency + startBalance).appendTo(statementTableBodyRow);
-                                                  $('<td>').html(startDate).appendTo(statementTableBodyRow);
-                                                  statementTableBodyRow.appendTo(statementTableBody);
-                                              }
+                                              var statementTableBodyRow = $('<tr>');
+                                              $('<td>').html("Start Balance").appendTo(statementTableBodyRow);
+                                              $('<td>').html(g_quotaCurrency + startBalance).appendTo(statementTableBodyRow);
+                                              $('<td>').html(startBalanceDate).appendTo(statementTableBodyRow);
+                                              statementTableBodyRow.appendTo(statementTableBody);
 
                                               for (var i = 0; i < credits.length; i++) {
                                                   var statementTableBodyRow = $('<tr>');
@@ -222,13 +215,11 @@ var g_quotaCurrency = '';
                                                   statementTableBodyRow.appendTo(statementTableBody);
                                               }
 
-                                              if (endBalance) {
-                                                  var statementTableBodyRow = $('<tr>');
-                                                  $('<td>').html("End Balance").appendTo(statementTableBodyRow);
-                                                  $('<td>').html(g_quotaCurrency + endBalance).appendTo(statementTableBodyRow);
-                                                  $('<td>').html(endDate).appendTo(statementTableBodyRow);
-                                                  statementTableBodyRow.appendTo(statementTableBody);
-                                              }
+                                              var statementTableBodyRow = $('<tr>');
+                                              $('<td>').html("End Balance").appendTo(statementTableBodyRow);
+                                              $('<td>').html(g_quotaCurrency + endBalance).appendTo(statementTableBodyRow);
+                                              $('<td>').html(endBalanceDate).appendTo(statementTableBodyRow);
+                                              statementTableBodyRow.appendTo(statementTableBody);
 
                                               statementTableBody.appendTo(statementTable);
                                           },
