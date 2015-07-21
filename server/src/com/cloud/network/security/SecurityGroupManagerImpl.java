@@ -40,7 +40,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.fsm.StateMachine2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
 
@@ -107,6 +106,7 @@ import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
+import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -200,10 +200,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             try {
                 work();
             } catch (Throwable th) {
-                try {
                     s_logger.error("Problem with SG work", th);
-                } catch (Throwable th2) {
-                }
             }
         }
     }
@@ -216,10 +213,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                 cleanupUnfinishedWork();
                 //processScheduledWork();
             } catch (Throwable th) {
-                try {
-                    s_logger.error("Problem with SG Cleanup", th);
-                } catch (Throwable th2) {
-                }
+                s_logger.error("Problem with SG Cleanup", th);
             }
         }
     }

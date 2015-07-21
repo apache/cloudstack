@@ -611,7 +611,10 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
                 l.add(info);
             }
         } catch (SQLException e) {
+            s_logger.error("sql exception while getting running hosts: " + e.getLocalizedMessage());
         } catch (Throwable e) {
+            s_logger.info("[ignored]"
+                    + "caught something while getting running hosts: " + e.getLocalizedMessage());
         }
         return l;
     }

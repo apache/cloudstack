@@ -262,6 +262,8 @@ public class StressTestDirectAttach {
                                     int stopResponseCode = executeStop(server, developerServer, username);
                                     s_logger.info("stop response code: " + stopResponseCode);
                                 } catch (Exception e1) {
+                                    s_logger.info("[ignored]"
+                                            + "error executing stop during stress test: " + e1.getLocalizedMessage());
                                 }
                             } finally {
                                 NDC.clear();

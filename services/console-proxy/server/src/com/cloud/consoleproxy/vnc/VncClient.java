@@ -45,7 +45,7 @@ public class VncClient {
     private DataInputStream is;
     private DataOutputStream os;
 
-    private VncScreenDescription screen = new VncScreenDescription();
+    private final VncScreenDescription screen = new VncScreenDescription();
 
     private VncClientPacketSender sender;
     private VncServerPacketReceiver receiver;
@@ -86,7 +86,7 @@ public class VncClient {
     }
 
     public VncClient(ConsoleProxyClientListener clientListener) {
-        this.noUI = true;
+        noUI = true;
         this.clientListener = clientListener;
     }
 
@@ -108,6 +108,8 @@ public class VncClient {
             try {
                 is.close();
             } catch (Throwable e) {
+                s_logger.info("[ignored]"
+                        + "failed to close resource for input: " + e.getLocalizedMessage());
             }
         }
 
@@ -115,6 +117,8 @@ public class VncClient {
             try {
                 os.close();
             } catch (Throwable e) {
+                s_logger.info("[ignored]"
+                        + "failed to get close resource for output: " + e.getLocalizedMessage());
             }
         }
 
@@ -122,6 +126,8 @@ public class VncClient {
             try {
                 socket.close();
             } catch (Throwable e) {
+                s_logger.info("[ignored]"
+                        + "failed to get close resource for socket: " + e.getLocalizedMessage());
             }
         }
     }
@@ -139,14 +145,14 @@ public class VncClient {
         }
 
         RawHTTP tunnel = new RawHTTP("CONNECT", host, port, path, session, useSSL);
-        this.socket = tunnel.connect();
+        socket = tunnel.connect();
         doConnect(sid);
     }
 
     public void connectTo(String host, int port, String password) throws UnknownHostException, IOException {
         // Connect to server
         s_logger.info("Connecting to VNC server " + host + ":" + port + "...");
-        this.socket = new Socket(host, port);
+        socket = new Socket(host, port);
         doConnect(password);
     }
 
@@ -187,7 +193,7 @@ public class VncClient {
                 frame.setVisible(false);
                 frame.dispose();
             }
-            this.shutdown();
+            shutdown();
         }
     }
 

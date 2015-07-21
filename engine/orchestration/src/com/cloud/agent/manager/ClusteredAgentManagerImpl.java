@@ -483,6 +483,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 try {
                     prevCh.close();
                 } catch (Exception e) {
+                    s_logger.info("[ignored]"
+                            + "failed to get close resource for previous channel Socket: " + e.getLocalizedMessage());
                 }
             }
             if (ch == null || ch == prevCh) {

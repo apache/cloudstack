@@ -82,7 +82,8 @@ public class IpSqlGenerator {
                 out.close();
             }
         } catch (Exception e) {
-
+            s_logger.info("[ignored]"
+                    + "error during ip insert generator: " + e.getLocalizedMessage());
         }
     }
 }

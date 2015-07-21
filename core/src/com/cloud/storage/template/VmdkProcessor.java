@@ -77,7 +77,8 @@ public class VmdkProcessor extends AdapterBase implements Processor {
             long size = getTemplateVirtualSize(file.getParent(), file.getName());
             return size;
         } catch (Exception e) {
-
+            s_logger.info("[ignored]"
+                    + "failed to get template virtual size for vmdk: " + e.getLocalizedMessage());
         }
         return file.length();
     }

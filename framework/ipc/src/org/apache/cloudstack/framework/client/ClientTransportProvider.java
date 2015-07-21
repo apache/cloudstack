@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.framework.serializer.MessageSerializer;
 import org.apache.cloudstack.framework.transport.TransportEndpoint;
 import org.apache.cloudstack.framework.transport.TransportEndpointSite;
@@ -32,10 +34,11 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 
 public class ClientTransportProvider implements TransportProvider {
+    final static Logger s_logger = Logger.getLogger(ClientTransportProvider.class);
     public static final int DEFAULT_WORKER_POOL_SIZE = 5;
 
-    private Map<Integer, ClientTransportEndpointSite> _endpointSites = new HashMap<Integer, ClientTransportEndpointSite>();
-    private Map<String, ClientTransportEndpointSite> _attachedMap = new HashMap<String, ClientTransportEndpointSite>();
+    private final Map<Integer, ClientTransportEndpointSite> _endpointSites = new HashMap<Integer, ClientTransportEndpointSite>();
+    private final Map<String, ClientTransportEndpointSite> _attachedMap = new HashMap<String, ClientTransportEndpointSite>();
 
     private MessageSerializer _messageSerializer;
 
@@ -69,6 +72,8 @@ public class ClientTransportProvider implements TransportProvider {
                 try {
                     _connection.connect(_serverAddress, _serverPort);
                 } catch (Throwable e) {
+                    s_logger.info("[ignored]"
+                            + "error during ipc client initialization: " + e.getLocalizedMessage());
                 }
             }
         });

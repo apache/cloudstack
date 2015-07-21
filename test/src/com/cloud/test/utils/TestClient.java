@@ -197,6 +197,8 @@ public class TestClient {
                                     String url = server + "?email=" + username + "&password=" + username + "&command=stop";
                                     client.executeMethod(new GetMethod(url));
                                 } catch (Exception e1) {
+                                    s_logger.info("[ignored]"
+                                            + "error while executing last resort stop attampt: " + e1.getLocalizedMessage());
                                 }
                             } finally {
                                 NDC.clear();

@@ -1695,7 +1695,8 @@ public class NetscalerResource implements ServerResource {
                     return site;
                 }
             } catch (Exception e) {
-
+                s_logger.info("[ignored]"
+                        + "error getting site: " + e.getLocalizedMessage());
             }
             return null;
         }
