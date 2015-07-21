@@ -14,6 +14,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
+var g_quotaCurrency = '';
 (function (cloudStack) {
     cloudStack.plugins.quota = function(plugin) {
 
@@ -64,6 +66,22 @@
               return true;
           },
           show: function() {
+            $.ajax({
+                url: createURL('listConfigurations'),
+                data: {
+                    name: 'quota.currency.symbol'
+                },
+                success: function(json) {
+                    if (json.hasOwnProperty('listconfigurationsresponse') && json.listconfigurationsresponse.hasOwnProperty('configuration')) {
+                        console.log(json.listconfigurationsresponse);
+                        g_quotaCurrency = json.listconfigurationsresponse.configuration[0].value + ' ';
+                    }
+                },
+                error: function(data) {
+                    // FIXME: what to do on error?
+                }
+            });
+
             var $quotaView = $('<div class="quota-container detail-view ui-tabs ui-widget ui-widget-content ui-corner-all">');
             var $toolbar = $('<div class="toolbar"><div class="section-switcher reduced-hide"><div class="section-select"><label>Quota Management</label></div></div></div>');
             var $tabs = $('<ul class="ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all">');
@@ -101,7 +119,10 @@
                                   });
 
                                   generateStatementButton.click(function() {
-                                      var domainId = domainDropdown.find("select :selected").val();
+                                      var domainId = g_domainid;
+                                      if (isAdmin() || isDomainAdmin()) {
+                                          domainId = domainDropdown.find("select :selected").val();
+                                      }
                                       var accountId = accountDropdown.find("select :selected").val();
                                       var account = accountDropdown.find("select :selected").html();
                                       var startDate = startDateInput.val();
@@ -123,14 +144,15 @@
 
                                               generatedStatement.empty();
                                               $("<br><hr>").appendTo(generatedStatement);
-                                              $("<p>").html("Total Quota: " + totalQuota).appendTo(generatedStatement);
+                                              $("<p>").html("Total Quota: " + g_quotaCurrency + totalQuota).appendTo(generatedStatement);
 
                                               if (quotaUsage.length < 1) {
                                                   return;
                                               }
 
+                                              $("<p>").html("<br>Quota Usage:").appendTo(generatedStatement);
                                               var statementTable = $('<table>');
-                                              statementTable.appendTo($('<div class="data-table view list-view">').appendTo(generatedStatement));
+                                              statementTable.appendTo($('<div class="data-table">').appendTo(generatedStatement));
 
                                               var statementTableHead = $('<tr>');
                                               $('<th>').html(_l('label.usage.type')).appendTo(statementTableHead);
@@ -151,7 +173,7 @@
                                                   }
                                                   $('<td>').html(quotaUsage[i].type).appendTo(statementTableBodyRow);
                                                   $('<td>').html(quotaUsage[i].name).appendTo(statementTableBodyRow);
-                                                  $('<td>').html(quotaUsage[i].quota).appendTo(statementTableBodyRow);
+                                                  $('<td>').html(g_quotaCurrency + quotaUsage[i].quota).appendTo(statementTableBodyRow);
                                                   $('<td>').html(quotaUsage[i].unit).appendTo(statementTableBodyRow);
                                                   $('<td>').html(quotaUsage[i].startdate).appendTo(statementTableBodyRow);
                                                   $('<td>').html(quotaUsage[i].enddate).appendTo(statementTableBodyRow);
@@ -177,38 +199,74 @@
 
                                   generateStatementButton.appendTo(statementForm);
 
-
-                                  $.ajax({
-                                      url: createURL('listDomains&listall=true'),
-                                      success: function(json) {
-                                          var domains = json.listdomainsresponse.domain;
-                                          var dropdown = $('<select>');
-                                          for (var i = 0; i < domains.length; i++) {
-                                              $('<option value="' + domains[i].id + '">' + domains[i].name + '</option>').appendTo(dropdown);
-                                          }
-                                          $('<span>Domain: </span>').appendTo(domainDropdown);
-                                          dropdown.appendTo(domainDropdown);
-                                      },
-                                      error: function(data) {
-                                          // TODO: Add error dialog?
+                                  var accountLister = function(selectedDomainId) {
+                                      var data = {listall: true};
+                                      if (selectedDomainId) {
+                                          data.domainid = selectedDomainId;
                                       }
-                                  });
-
-                                  $.ajax({
-                                      url: createURL('listAccounts&listall=true'),
-                                      success: function(json) {
-                                          var accounts = json.listaccountsresponse.account;
-                                          var dropdown = $('<select>');
-                                          for (var i = 0; i < accounts.length; i++) {
-                                              $('<option value="' + accounts[i].id + '">' + accounts[i].name + '</option>').appendTo(dropdown);
+                                      $.ajax({
+                                          url: createURL('listAccounts'),
+                                          data : data,
+                                          success: function(json) {
+                                              accountDropdown.empty();
+                                              if (json.hasOwnProperty('listaccountsresponse') && json.listaccountsresponse.hasOwnProperty('account')) {
+                                                  var accounts = json.listaccountsresponse.account;
+                                                  var dropdown = $('<select>');
+                                                  for (var i = 0; i < accounts.length; i++) {
+                                                      $('<option value="' + accounts[i].id + '">' + accounts[i].name + '</option>').appendTo(dropdown);
+                                                  }
+                                                  $('<span>Account: </span>').appendTo(accountDropdown);
+                                                  dropdown.appendTo(accountDropdown);
+                                              } else {
+                                                  $('<span>Accounts: No accounts found in the selected domain</span>').appendTo(accountDropdown);
+                                              }
+                                          },
+                                          error: function(data) {
+                                              // TODO: Add error dialog?
                                           }
-                                          $('<span>Account: </span>').appendTo(accountDropdown);
-                                          dropdown.appendTo(accountDropdown);
-                                      },
-                                      error: function(data) {
-                                          // TODO: Add error dialog?
-                                      }
-                                  });
+                                      });
+                                  };
+
+                                  var domainLister = function() {
+                                      $.ajax({
+                                          url: createURL('listDomains'),
+                                          data: {
+                                              listall: true
+                                          },
+                                          success: function(json) {
+                                              var domains = json.listdomainsresponse.domain;
+                                              var dropdown = $('<select>');
+                                              if (domains.length > 1) {
+                                                  $('<option value="">--- Select Domain ---</option>').appendTo(dropdown);
+                                              }
+                                              for (var i = 0; i < domains.length; i++) {
+                                                  $('<option value="' + domains[i].id + '">' + domains[i].name + '</option>').appendTo(dropdown);
+                                              }
+                                              $('<span>Domain: </span>').appendTo(domainDropdown);
+                                              dropdown.appendTo(domainDropdown);
+
+                                              dropdown.change(function() {
+                                                  var selectedDomainId = $(this).find(':selected').val();
+                                                  if (!selectedDomainId) {
+                                                      accountDropdown.empty();
+                                                      $('<span>Accounts: Select a valid domain to start with</span>').appendTo(accountDropdown);
+                                                      return;
+                                                  }
+                                                  accountLister(selectedDomainId);
+                                              });
+                                              dropdown.change();
+                                          },
+                                          error: function(data) {
+                                              // FIXME: what to do on error?
+                                          }
+                                      });
+                                  };
+
+                                  if (isAdmin() || isDomainAdmin()) {
+                                      domainLister();
+                                  } else {
+                                      accountLister(g_domainid);
+                                  }
 
                                   statementForm.appendTo(statementView);
                                   generatedStatement.appendTo(statementView);
@@ -307,6 +365,120 @@
                                   tariffView.appendTo($node);
                              }
                             },
+                            {'id': 'quota-credit',
+                             'name': 'Manage Credits',
+                             'render': function($node) {
+                                  var manageCreditView = $('<div class="details" style="padding: 10px">');
+                                  var creditStatement = $('<div class="quota-credit-statement">');
+
+                                  var creditForm = $('<div class="quota-credit">');
+                                  var domainDropdown = $('<div class="quota-domain-dropdown">');
+                                  var accountDropdown = $('<div class="quota-account-dropdown">');
+                                  var quotaValueInput = $('<input type="text">');
+                                  var addCreditButton = $('<button id="quota-add-credit-button">').html("Add Credit");
+
+                                  addCreditButton.click(function() {
+                                      if (isAdmin() || isDomainAdmin()) {
+                                          domainId = domainDropdown.find("select :selected").val();
+                                      } else {
+                                          return;
+                                      }
+                                      var account = accountDropdown.find("select :selected").val();
+                                      var quotaValue = quotaValueInput.val();
+
+                                      $.ajax({
+                                          url: createURL('quotaCredits'),
+                                          data: {
+                                              account: account,
+                                              domainid: domainId,
+                                              value: quotaValue
+                                          },
+                                          success: function(json) {
+                                              quotaValueInput.val('');
+                                              $('<hr>').appendTo(creditStatement);
+                                              $('<p>').html('Credit amount ' + g_quotaCurrency + json.quotacreditsresponse.quotacredits.credits + ' added to the account').appendTo(creditStatement);
+                                          },
+                                          error: function(json) {
+                                          }
+                                      });
+                                  });
+
+                                  domainDropdown.appendTo(creditForm);
+                                  accountDropdown.appendTo(creditForm);
+                                  quotaValueInput.appendTo($("<p>Quota Credit Value: </p>").appendTo(creditForm));
+
+                                  addCreditButton.appendTo(creditForm);
+
+                                  var accountLister = function(selectedDomainId) {
+                                      var data = {listall: true};
+                                      if (selectedDomainId) {
+                                          data.domainid = selectedDomainId;
+                                      }
+                                      $.ajax({
+                                          url: createURL('listAccounts'),
+                                          data : data,
+                                          success: function(json) {
+                                              accountDropdown.empty();
+                                              if (json.hasOwnProperty('listaccountsresponse') && json.listaccountsresponse.hasOwnProperty('account')) {
+                                                  var accounts = json.listaccountsresponse.account;
+                                                  var dropdown = $('<select>');
+                                                  for (var i = 0; i < accounts.length; i++) {
+                                                      $('<option value="' + accounts[i].name + '">' + accounts[i].name + '</option>').appendTo(dropdown);
+                                                  }
+                                                  $('<span>Account: </span>').appendTo(accountDropdown);
+                                                  dropdown.appendTo(accountDropdown);
+                                              } else {
+                                                  $('<span>Accounts: No accounts found in the selected domain</span>').appendTo(accountDropdown);
+                                              }
+                                          },
+                                          error: function(data) {
+                                              // TODO: Add error dialog?
+                                          }
+                                      });
+                                  };
+
+                                  var domainLister = function() {
+                                      $.ajax({
+                                          url: createURL('listDomains'),
+                                          data: {
+                                              listall: true
+                                          },
+                                          success: function(json) {
+                                              var domains = json.listdomainsresponse.domain;
+                                              var dropdown = $('<select>');
+                                              if (domains.length > 1) {
+                                                  $('<option value="">--- Select Domain ---</option>').appendTo(dropdown);
+                                              }
+                                              for (var i = 0; i < domains.length; i++) {
+                                                  $('<option value="' + domains[i].id + '">' + domains[i].name + '</option>').appendTo(dropdown);
+                                              }
+                                              $('<span>Domain: </span>').appendTo(domainDropdown);
+                                              dropdown.appendTo(domainDropdown);
+
+                                              dropdown.change(function() {
+                                                  var selectedDomainId = $(this).find(':selected').val();
+                                                  if (!selectedDomainId) {
+                                                      accountDropdown.empty();
+                                                      $('<span>Accounts: Select a valid domain to start with</span>').appendTo(accountDropdown);
+                                                      return;
+                                                  }
+                                                  accountLister(selectedDomainId);
+                                              });
+                                              dropdown.change();
+                                          },
+                                          error: function(data) {
+                                              // FIXME: what to do on error?
+                                          }
+                                      });
+                                  };
+
+                                  domainLister();
+
+                                  creditForm.appendTo(manageCreditView);
+                                  creditStatement.appendTo(manageCreditView);
+                                  manageCreditView.appendTo($node);
+                             }
+                            },
                             {'id': 'quota-email',
                              'name': 'Email Templates',
                              'render': function($node) {
@@ -314,6 +486,16 @@
                              }
                             }];
 
+            if (isAdmin()) {
+            } else if (isDomainAdmin()) {
+                sections = $.grep(sections, function(item) {
+                    return ['quota-credit', 'quota-email'].indexOf(item.id) < 0;
+                });
+            } else {
+                sections = $.grep(sections, function(item) {
+                    return ['quota-credit', 'quota-email'].indexOf(item.id) < 0;
+                });
+            }
 
             for (idx in sections) {
                 var tabLi = $('<li detail-view-tab="true" class="first ui-state-default ui-corner-top"><a href="#">' +  sections[idx].name+ '</a></li>');

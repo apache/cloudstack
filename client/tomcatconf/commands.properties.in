@@ -785,13 +785,11 @@ addGloboDnsHost=1
 ### Quota Service
 quotaTariffList=15
 quotaTariffUpdate=7
-
-quotaRefresh=15
-quotaCredits=15
 quotaStatement=15
+quotaCredits=1
 quotaBalance=15
+quotaRefresh=7
 quotaEmailTemplateUpdate=15
 quotaEmailTemplateDelete=15
 quotaEmailTemplateAdd=15
-quotaReports=15
 
