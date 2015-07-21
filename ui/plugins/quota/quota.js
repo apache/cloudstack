@@ -73,7 +73,6 @@ var g_quotaCurrency = '';
                 },
                 success: function(json) {
                     if (json.hasOwnProperty('listconfigurationsresponse') && json.listconfigurationsresponse.hasOwnProperty('configuration')) {
-                        console.log(json.listconfigurationsresponse);
                         g_quotaCurrency = json.listconfigurationsresponse.configuration[0].value + ' ';
                     }
                 },
