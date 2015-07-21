@@ -35,7 +35,7 @@ public class StringUtils {
 
     private static Charset preferredACSCharset;
 
-    {
+    static {
         String preferredCharset = "UTF-8";
         if (Charset.isSupported(preferredCharset)) {
             preferredACSCharset = Charset.forName(preferredCharset);
