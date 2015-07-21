@@ -21,6 +21,7 @@ package com.cloud.utils;
 
 import static org.junit.Assert.assertEquals;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -29,6 +30,16 @@ import junit.framework.Assert;
 import org.junit.Test;
 
 public class StringUtilsTest {
+    @Test
+    public void testGetPrefferedCharset() {
+        assertEquals(StringUtils.getPreferredCharset(),Charset.forName("UTF-8"));
+    }
+
+    @Test
+    public void testGetDefaultCharset() {
+        assertEquals(StringUtils.getPreferredCharset(),Charset.defaultCharset());
+    }
+
     @Test
     public void testCleanPasswordFromJsonObjectAtEnd() {
         String input = "{\"foo\":\"bar\",\"password\":\"test\"}";
