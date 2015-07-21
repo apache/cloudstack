@@ -88,17 +88,17 @@ var g_quotaCurrency = '';
                                       var startDate = startDateInput.val();
                                       var endDate = endDateInput.val();
 
-                                      if (!startDate || !endDate) {
-                                          generatedStatement.empty();
-                                          $("<br><hr>").appendTo(generatedStatement);
-                                          $("<p>").html("Error: Please select start and end dates").appendTo(generatedStatement);
-                                          return;
-                                      }
-
                                       if (!domainId || !account) {
                                           generatedStatement.empty();
                                           $("<br><hr>").appendTo(generatedStatement);
                                           $("<p>").html("Error: Please select valid domain and account").appendTo(generatedStatement);
+                                          return;
+                                      }
+
+                                      if (!startDate || !endDate) {
+                                          generatedStatement.empty();
+                                          $("<br><hr>").appendTo(generatedStatement);
+                                          $("<p>").html("Error: Please select start and end dates").appendTo(generatedStatement);
                                           return;
                                       }
 
