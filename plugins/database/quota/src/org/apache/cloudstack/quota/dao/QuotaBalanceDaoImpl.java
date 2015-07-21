@@ -124,21 +124,7 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
                 return new ArrayList<QuotaBalanceVO>();
             }
             quotaUsageRecords = listBy(sc);
-
-            // get records before startDate to find start balance
-            List<QuotaBalanceVO> quotaUsageOnOrBeforeStartDate = findQuotaBalance(accountId, domainId, startDate);
-            for (Iterator<QuotaBalanceVO> it = quotaUsageOnOrBeforeStartDate.iterator(); it.hasNext();) {
-                QuotaBalanceVO entry = it.next();
-                s_logger.info("Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
-                if (entry.getCreditsId() > 0) {
-                    quotaUsageRecords.add(entry);
-                } else {
-                    quotaUsageRecords.add(entry);
-                    break; // add only consecutive credit entries and last
-                           // balance entry
-                }
-            }
-
+            quotaUsageRecords.addAll(findQuotaBalance(accountId, domainId, startDate));
         } finally {
             txn.close();
         }

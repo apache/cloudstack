@@ -93,14 +93,13 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
             }
         });
         QuotaBalanceResponse resp = new QuotaBalanceResponse();
-        BigDecimal lastCredits=new BigDecimal(0);
+        BigDecimal lastCredits = new BigDecimal(0);
         for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
             QuotaBalanceVO entry = it.next();
-            //s_logger.info("Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
+            s_logger.info("Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
             if (entry.getCreditsId() > 0) {
-                lastCredits=lastCredits.add(entry.getCreditBalance());
-            }
-            else {
+                lastCredits = lastCredits.add(entry.getCreditBalance());
+            } else {
                 resp.setStartQuota(entry.getCreditBalance().add(lastCredits));
                 break; // add only consecutive credit entries
             }
@@ -117,14 +116,16 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
         }
         Collections.sort(quotaBalance, new Comparator<QuotaBalanceVO>() {
             public int compare(QuotaBalanceVO o1, QuotaBalanceVO o2) {
-                return o1.getUpdatedOn().compareTo(o2.getUpdatedOn()); //asc
+                return o1.getUpdatedOn().compareTo(o2.getUpdatedOn()); // asc
             }
         });
-        QuotaBalanceResponse resp = new QuotaBalanceResponse();
 
+        QuotaBalanceResponse resp = new QuotaBalanceResponse();
+        BigDecimal lastCredits = new BigDecimal(0);
         for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
             QuotaBalanceVO entry = it.next();
             if (entry.getCreditsId() > 0) {
+                lastCredits = lastCredits.add(entry.getCreditBalance());
                 resp.addCredits(entry);
                 it.remove();
             }
@@ -136,7 +137,7 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
             resp.setStartDate(startDate);
             resp.setStartQuota(startItem.getCreditBalance());
             resp.setEndDate(endDate);
-            resp.setEndQuota(endItem.getCreditBalance());
+            resp.setEndQuota(endItem.getCreditBalance().add(lastCredits));
         } else {
             resp.setStartQuota(new BigDecimal(0));
             resp.setEndQuota(new BigDecimal(0));
@@ -218,7 +219,7 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
 
     @Override
     public QuotaTariffVO updateQuotaTariffPlan(QuotaTariffUpdateCmd cmd) {
-        short opendb=TransactionLegacy.currentTxn().getDatabaseId();
+        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         final int resourceType = cmd.getUsageType();
         final BigDecimal quotaCost = new BigDecimal(cmd.getValue());
@@ -258,7 +259,7 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
     @Override
     @SuppressWarnings("deprecation")
     public Pair<List<? extends UsageVO>, Integer> getUsageRecords(long accountId, long domainId) {
-        short opendb=TransactionLegacy.currentTxn().getDatabaseId();
+        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         s_logger.debug("getting usage records for account: " + accountId + ", domainId: " + domainId);
         Filter usageFilter = new Filter(UsageVO.class, "startDate", true, 0L, s_recordtofetch);
@@ -278,7 +279,7 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
 
     @Override
     public ServiceOfferingVO findServiceOffering(Long vmId, long serviceOfferingId) {
-        short opendb=TransactionLegacy.currentTxn().getDatabaseId();
+        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
         ServiceOfferingVO result;
         try {
