@@ -309,7 +309,7 @@ var g_quotaCurrency = '';
 
                                               if (isAdmin()) {
                                                   var valueCell = $('<td class="value actions">');
-                                                  var value = $('<span>').html(items[i].tariffValue);
+                                                  var value = $('<span>').html(g_quotaCurrency + items[i].tariffValue);
                                                   value.appendTo(valueCell);
                                                   valueCell.appendTo(tariffTableBodyRow);
 
