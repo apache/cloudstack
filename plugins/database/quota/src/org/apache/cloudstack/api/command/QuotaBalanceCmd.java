@@ -128,13 +128,10 @@ public class QuotaBalanceCmd extends BaseCmd {
 
         QuotaBalanceResponse response;
         if (getEndDate() == null) {
-            response = _quotaDBUtils.createQuotaLastBalanceResponse(quotaUsage);
+            response = _quotaDBUtils.createQuotaLastBalanceResponse(quotaUsage, startDate);
         } else {
-            response = _quotaDBUtils.createQuotaBalanceResponse(quotaUsage);
-            response.setEndDate(endDate);
+            response = _quotaDBUtils.createQuotaBalanceResponse(quotaUsage, startDate, endDate);
         }
-        response.setStartDate(startDate);
-
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

@@ -40,13 +40,13 @@ public interface QuotaDBUtils {
 
     QuotaStatementResponse createQuotaStatementResponse(List<QuotaUsageVO> quotaUsage);
 
-    QuotaBalanceResponse createQuotaBalanceResponse(List<QuotaBalanceVO> quotaUsage);
+    QuotaBalanceResponse createQuotaBalanceResponse(List<QuotaBalanceVO> quotaUsage, Date startDate, Date endDate);
 
     Pair<List<? extends UsageVO>, Integer> getUsageRecords(long accountId, long domainId);
 
     ServiceOfferingVO findServiceOffering(Long vmId, long serviceOfferingId);
 
-    QuotaBalanceResponse createQuotaLastBalanceResponse(List<QuotaBalanceVO> quotaBalance);
+    QuotaBalanceResponse createQuotaLastBalanceResponse(List<QuotaBalanceVO> quotaBalance, Date startDate);
 
     QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy, Date despositedOn);
 

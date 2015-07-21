@@ -168,12 +168,26 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         Date adjustedStartDate = computeAdjustedTime(startDate, usageTZ);
 
         if (endDate == null) {
-            s_logger.debug("getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", on or before " + adjustedStartDate);
-            return _quotaBalanceDao.findQuotaBalance(accountId, domainId, adjustedStartDate);
+            s_logger.debug("Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", on or before " + adjustedStartDate);
+            List<QuotaBalanceVO> qbrecords = _quotaBalanceDao.findQuotaBalance(accountId, domainId, adjustedStartDate);
+            s_logger.info("Found records size=" + qbrecords.size());
+            if (qbrecords.size() == 0){
+                throw new InvalidParameterValueException("Incorrect Date there are no quota records before this date " + adjustedStartDate);
+            }
+            else {
+                return qbrecords;
+            }
         } else if (startDate.before(endDate)) {
             Date adjustedEndDate = computeAdjustedTime(endDate, usageTZ);
-            s_logger.debug("getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
-            return _quotaBalanceDao.findQuotaBalance(accountId, domainId, adjustedStartDate, adjustedEndDate);
+            s_logger.debug("Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
+            List<QuotaBalanceVO> qbrecords =  _quotaBalanceDao.findQuotaBalance(accountId, domainId, adjustedStartDate, adjustedEndDate);
+            s_logger.info("Found records size=" + qbrecords.size());
+            if (qbrecords.size() == 0){
+                throw new InvalidParameterValueException("Incorrect Date range there are no quota records between these dates start date " + adjustedStartDate  + " and end date:" + endDate);
+            }
+            else {
+                return qbrecords;
+            }
         } else {
             throw new InvalidParameterValueException("Incorrect Date Range. Start date: " + startDate + " is after end date:" + endDate);
         }

@@ -154,34 +154,36 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
                 } while ((usageRecords != null) && !usageRecords.first().isEmpty());
                 // list of quotas for this account
                 s_logger.info("Quota entries size = " + quotalistforaccount.size());
-                quotalistforaccount.add(new QuotaUsageVO());
-                Date startDate = new Date(0);
-                Date endDate = new Date(0);
-                BigDecimal aggrUsage = new BigDecimal(0);
-                for (QuotaUsageVO entry : quotalistforaccount) {
-                    if (startDate.compareTo(entry.getStartDate()) != 0) {
-                        QuotaBalanceVO lastrealbalanceentry = _quotaBalanceDao.findLastBalanceEntry(account.getAccountId(), account.getDomainId(), startDate);
-                        Date lastbalancedate;
-                        if (lastrealbalanceentry != null) {
-                            lastbalancedate = lastrealbalanceentry.getUpdatedOn();
-                            aggrUsage = aggrUsage.add(lastrealbalanceentry.getCreditBalance());
-                        } else {
-                            lastbalancedate = new Date(0);
-                        }
+                if (quotalistforaccount.size() > 0) { // balance to be processed
+                    quotalistforaccount.add(new QuotaUsageVO());
+                    Date startDate = new Date(0);
+                    Date endDate = new Date(0);
+                    BigDecimal aggrUsage = new BigDecimal(0);
+                    for (QuotaUsageVO entry : quotalistforaccount) {
+                        if (startDate.compareTo(entry.getStartDate()) != 0) {
+                            QuotaBalanceVO lastrealbalanceentry = _quotaBalanceDao.findLastBalanceEntry(account.getAccountId(), account.getDomainId(), startDate);
+                            Date lastbalancedate;
+                            if (lastrealbalanceentry != null) {
+                                lastbalancedate = lastrealbalanceentry.getUpdatedOn();
+                                aggrUsage = aggrUsage.add(lastrealbalanceentry.getCreditBalance());
+                            } else {
+                                lastbalancedate = new Date(0);
+                            }
 
-                        List<QuotaBalanceVO> creditsrcvd = _quotaBalanceDao.findCreditBalance(account.getAccountId(), account.getDomainId(), lastbalancedate, endDate);
-                        for (QuotaBalanceVO credit : creditsrcvd) {
-                            aggrUsage = aggrUsage.add(credit.getCreditBalance());
-                        }
+                            List<QuotaBalanceVO> creditsrcvd = _quotaBalanceDao.findCreditBalance(account.getAccountId(), account.getDomainId(), lastbalancedate, endDate);
+                            for (QuotaBalanceVO credit : creditsrcvd) {
+                                aggrUsage = aggrUsage.add(credit.getCreditBalance());
+                            }
 
-                        QuotaBalanceVO newbalance = new QuotaBalanceVO(account.getAccountId(), account.getDomainId(), aggrUsage, endDate);
-                        _quotaBalanceDao.persist(newbalance);
-                        aggrUsage = new BigDecimal(0);
+                            QuotaBalanceVO newbalance = new QuotaBalanceVO(account.getAccountId(), account.getDomainId(), aggrUsage, endDate);
+                            _quotaBalanceDao.persist(newbalance);
+                            aggrUsage = new BigDecimal(0);
+                        }
+                        startDate = entry.getStartDate();
+                        endDate = entry.getEndDate();
+                        aggrUsage = aggrUsage.subtract(entry.getQuotaUsed());
                     }
-                    startDate = entry.getStartDate();
-                    endDate = entry.getEndDate();
-                    aggrUsage = aggrUsage.subtract(entry.getQuotaUsed());
-                }
+                }// balance processed
             } // END ACCOUNT
             jobResult = true;
         } catch (Exception e) {

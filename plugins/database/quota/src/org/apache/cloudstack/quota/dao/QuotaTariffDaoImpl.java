@@ -45,6 +45,7 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
 
     @Override
     public QuotaTariffVO findTariffPlanByUsageType(final int usageType) {
+        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         QuotaTariffVO result = null;
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
@@ -53,14 +54,15 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
             result = findOneBy(sc);
         } finally {
             txn.close();
-            // Switch back to Cloud DB
-            TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
+            // Switch back
+            TransactionLegacy.open(opendb).close();
         }
         return result;
     }
 
     @Override
     public List<QuotaTariffVO> listAllTariffPlans() {
+        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         List<QuotaTariffVO> result = null;
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
@@ -69,17 +71,19 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
             result = listBy(sc);
         } finally {
             txn.close();
-            // Switch back to Cloud DB
-            TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
+            // Switch back
+            TransactionLegacy.open(opendb).close();
         }
         return result;
     }
 
     @Override
     public boolean updateQuotaTariff(QuotaTariffVO plan) {
-        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close(); // Switch to Usage DB
+        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close(); // Switch to
+                                                                    // Usage DB
         boolean result = this.update(plan.getId(), plan);
-        TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close(); // Switch back to Cloud DB
+        TransactionLegacy.open(opendb).close(); // Switch back
         return result;
     }
 }

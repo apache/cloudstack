@@ -83,7 +83,7 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
     }
 
     @Override
-    public QuotaBalanceResponse createQuotaLastBalanceResponse(List<QuotaBalanceVO> quotaBalance) {
+    public QuotaBalanceResponse createQuotaLastBalanceResponse(List<QuotaBalanceVO> quotaBalance, Date startDate) {
         if (quotaBalance.size() == 0) {
             new InvalidParameterValueException("There are no balance entries on or before the requested date.");
         }
@@ -101,17 +101,17 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
                 lastCredits=lastCredits.add(entry.getCreditBalance());
             }
             else {
-                resp.setStartDate(entry.getUpdatedOn());
                 resp.setStartQuota(entry.getCreditBalance().add(lastCredits));
                 break; // add only consecutive credit entries
             }
         }
+        resp.setStartDate(startDate);
         resp.setObjectName("balance");
         return resp;
     }
 
     @Override
-    public QuotaBalanceResponse createQuotaBalanceResponse(List<QuotaBalanceVO> quotaBalance) {
+    public QuotaBalanceResponse createQuotaBalanceResponse(List<QuotaBalanceVO> quotaBalance, Date startDate, Date endDate) {
         if (quotaBalance.size() == 0) {
             new InvalidParameterValueException("The request period does not contain balance entries.");
         }
@@ -133,9 +133,9 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
         if (quotaBalance.size() > 0) {
             QuotaBalanceVO startItem = quotaBalance.get(0);
             QuotaBalanceVO endItem = quotaBalance.get(quotaBalance.size() - 1);
-            resp.setStartDate(startItem.getUpdatedOn());
+            resp.setStartDate(startDate);
             resp.setStartQuota(startItem.getCreditBalance());
-            resp.setEndDate(endItem.getUpdatedOn());
+            resp.setEndDate(endDate);
             resp.setEndQuota(endItem.getCreditBalance());
         } else {
             resp.setStartQuota(new BigDecimal(0));
