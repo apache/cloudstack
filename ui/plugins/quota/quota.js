@@ -18,51 +18,11 @@
 var g_quotaCurrency = '';
 (function (cloudStack) {
     cloudStack.plugins.quota = function(plugin) {
-
-        // Quota view on user page
-        var userView = cloudStack.sections.accounts.sections.users.listView.detailView;
-        userView.tabs.quota = {
-                                  title: 'Quota',
-                                  fields: [{
-                                      username: {
-                                          label: 'label.name',
-                                          isEditable: true,
-                                          validation: {
-                                              required: true
-                                          }
-                                      }
-                                  }, {
-                                      id: {
-                                          label: 'label.id'
-                                      },
-                                      state: {
-                                          label: 'label.state'
-                                      },
-                                      account: {
-                                          label: 'label.account.name'
-                                      }
-                                  }],
-                                  dataProvider: function(args) {
-                                      $.ajax({
-                                          url: createURL('listUsers'),
-                                          data: {
-                                              id: args.context.users[0].id
-                                          },
-                                          success: function(json) {
-                                              args.response.success({
-                                                  data: json.listusersresponse.user[0]
-                                              });
-                                          }
-                                      });
-                                  }
-                              };
-
         plugin.ui.addSection({
           id: 'quota',
           title: 'Quota',
           showOnNavigation: true,
           preFilter: function(args) {
-              //return isAdmin() || isDomainAdmin();
               return true;
           },
           show: function() {
@@ -128,6 +88,20 @@ var g_quotaCurrency = '';
                                       var startDate = startDateInput.val();
                                       var endDate = endDateInput.val();
 
+                                      if (!startDate || !endDate) {
+                                          generatedStatement.empty();
+                                          $("<br><hr>").appendTo(generatedStatement);
+                                          $("<p>").html("Error: Please select start and end dates").appendTo(generatedStatement);
+                                          return;
+                                      }
+
+                                      if (!domainId || !account) {
+                                          generatedStatement.empty();
+                                          $("<br><hr>").appendTo(generatedStatement);
+                                          $("<p>").html("Error: Please select valid domain and account").appendTo(generatedStatement);
+                                          return;
+                                      }
+
                                       $.ajax({
                                           url: createURL('quotaStatement'),
                                           data: {
@@ -144,13 +118,13 @@ var g_quotaCurrency = '';
 
                                               generatedStatement.empty();
                                               $("<br><hr>").appendTo(generatedStatement);
-                                              $("<p>").html("Total Quota: " + g_quotaCurrency + totalQuota).appendTo(generatedStatement);
+                                              $("<p>").html("Total Quota Usage: " + g_quotaCurrency + totalQuota).appendTo(generatedStatement);
 
                                               if (quotaUsage.length < 1) {
                                                   return;
                                               }
 
-                                              $("<p>").html("<br>Quota Usage:").appendTo(generatedStatement);
+                                              $("<p>").html("<br>Usage Statement:").appendTo(generatedStatement);
                                               var statementTable = $('<table>');
                                               statementTable.appendTo($('<div class="data-table">').appendTo(generatedStatement));
 
@@ -215,7 +189,7 @@ var g_quotaCurrency = '';
                                               generatedBalanceStatement.empty();
                                               $("<br>").appendTo(generatedBalanceStatement);
 
-                                              $("<p>").html("<br>Quota Balance sheet:").appendTo(generatedBalanceStatement);
+                                              $("<p>").html("<br>Quota Balance Statement:").appendTo(generatedBalanceStatement);
                                               var statementTable = $('<table>');
                                               statementTable.appendTo($('<div class="data-table">').appendTo(generatedBalanceStatement));
 
