@@ -91,6 +91,7 @@ var g_quotaCurrency = '';
                              'render': function ($node) {
                                   var statementView = $('<div class="details" style="padding: 10px">');
                                   var generatedStatement = $('<div class="quota-generated-statement">');
+                                  var generatedBalanceStatement = $('<div class="quota-generated-balance-statement">');
 
                                   var statementForm = $('<div class="quota-statement">');
                                   var domainDropdown = $('<div class="quota-domain-dropdown">');
@@ -189,6 +190,85 @@ var g_quotaCurrency = '';
                                               }
                                           }
                                       });
+
+                                      $.ajax({
+                                          url: createURL('quotaBalance'),
+                                          data: {
+                                              domainid: domainId,
+                                              account: account,
+                                              startdate: startDate,
+                                              enddate: endDate
+                                          },
+                                          success: function(json) {
+                                              var statement = json.quotabalanceresponse.balance;
+                                              var credits = statement.credits;
+                                              var startBalance = '';
+                                              var endBalance = '';
+
+                                              if (statement.hasOwnProperty('startquota')) {
+                                                  startBalance = statement.startquota;
+                                              }
+                                              if (statement.hasOwnProperty('endquota')) {
+                                                  endBalance = statement.endquota;
+                                              }
+
+                                              generatedBalanceStatement.empty();
+                                              $("<br>").appendTo(generatedBalanceStatement);
+
+                                              $("<p>").html("<br>Quota Balance sheet:").appendTo(generatedBalanceStatement);
+                                              var statementTable = $('<table>');
+                                              statementTable.appendTo($('<div class="data-table">').appendTo(generatedBalanceStatement));
+
+                                              var statementTableHead = $('<tr>');
+                                              $('<th>').html('Description').appendTo(statementTableHead);
+                                              $('<th>').html('Amount').appendTo(statementTableHead);
+                                              $('<th>').html("Date").appendTo(statementTableHead);
+                                              statementTableHead.appendTo($('<thead>').appendTo(statementTable));
+
+                                              var statementTableBody = $('<tbody>');
+
+                                              if (startBalance) {
+                                                  var statementTableBodyRow = $('<tr>');
+                                                  $('<td>').html("Start Balance").appendTo(statementTableBodyRow);
+                                                  $('<td>').html(g_quotaCurrency + startBalance).appendTo(statementTableBodyRow);
+                                                  $('<td>').html(startDate).appendTo(statementTableBodyRow);
+                                                  statementTableBodyRow.appendTo(statementTableBody);
+                                              }
+
+                                              for (var i = 0; i < credits.length; i++) {
+                                                  var statementTableBodyRow = $('<tr>');
+                                                  if (i % 2 == 0) {
+                                                      statementTableBodyRow.addClass('even');
+                                                  } else {
+                                                      statementTableBodyRow.addClass('odd');
+                                                  }
+                                                  $('<td>').html("Credit").appendTo(statementTableBodyRow);
+                                                  $('<td>').html(g_quotaCurrency + credits[i].credits).appendTo(statementTableBodyRow);
+                                                  $('<td>').html(credits[i].updated_on).appendTo(statementTableBodyRow);
+                                                  statementTableBodyRow.appendTo(statementTableBody);
+                                              }
+
+                                              if (endBalance) {
+                                                  var statementTableBodyRow = $('<tr>');
+                                                  $('<td>').html("End Balance").appendTo(statementTableBodyRow);
+                                                  $('<td>').html(g_quotaCurrency + endBalance).appendTo(statementTableBodyRow);
+                                                  $('<td>').html(endDate).appendTo(statementTableBodyRow);
+                                                  statementTableBodyRow.appendTo(statementTableBody);
+                                              }
+
+                                              statementTableBody.appendTo(statementTable);
+                                          },
+                                          error: function(json) {
+                                              generatedBalanceStatement.empty();
+                                              var error = JSON.parse(json.responseText);
+                                              if (error.hasOwnProperty('quotabalanceresponse')) {
+                                                  $("<br>").appendTo(generatedBalanceStatement);
+                                                  $("<p>").html("Error: " + error.quotabalanceresponse.errortext).appendTo(generatedBalanceStatement);
+                                              }
+                                          }
+                                      });
+
+
                                   });
 
                                   domainDropdown.appendTo(statementForm);
@@ -269,6 +349,7 @@ var g_quotaCurrency = '';
 
                                   statementForm.appendTo(statementView);
                                   generatedStatement.appendTo(statementView);
+                                  generatedBalanceStatement.appendTo(statementView);
                                   statementView.appendTo($node);
                               }
                             },
@@ -385,6 +466,11 @@ var g_quotaCurrency = '';
                                       var account = accountDropdown.find("select :selected").val();
                                       var quotaValue = quotaValueInput.val();
 
+                                      if (!quotaValue) {
+                                          creditStatement.empty();
+                                          return;
+                                      }
+
                                       $.ajax({
                                           url: createURL('quotaCredits'),
                                           data: {
@@ -394,8 +480,25 @@ var g_quotaCurrency = '';
                                           },
                                           success: function(json) {
                                               quotaValueInput.val('');
+                                              creditStatement.empty();
                                               $('<hr>').appendTo(creditStatement);
-                                              $('<p>').html('Credit amount ' + g_quotaCurrency + json.quotacreditsresponse.quotacredits.credits + ' added to the account').appendTo(creditStatement);
+                                              $('<p>').html('Credit amount ' + g_quotaCurrency + json.quotacreditsresponse.quotacredits.credits + ' added to the account ' + account).appendTo(creditStatement);
+                                              $.ajax({
+                                                  url: createURL('quotaBalance'),
+                                                  data: {
+                                                      account: account,
+                                                      domainid: domainId,
+                                                  },
+                                                  success: function(json) {
+                                                      if (json.hasOwnProperty('quotabalanceresponse') && json.quotabalanceresponse.hasOwnProperty('balance')) {
+                                                          $('<p>').html('Current Quota Balance of "' + account + '": ' + g_quotaCurrency + json.quotabalanceresponse.balance.startquota).appendTo(creditStatement);
+                                                      }
+                                                  },
+                                                  error: function(json) {
+                                                  }
+                                              });
+
+
                                           },
                                           error: function(json) {
                                           }

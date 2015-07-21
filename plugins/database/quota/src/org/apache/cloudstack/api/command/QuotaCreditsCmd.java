@@ -95,6 +95,9 @@ public class QuotaCreditsCmd extends BaseCmd {
         if (accountId == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "The account does not exists or has been removed/disabled");
         }
+        if (value == null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please send a valid non-empty quota value");
+        }
 
         final QuotaCreditsResponse response = _quotaDBUtils.addQuotaCredits(accountId, domainId, value, CallContext.current().getCallingUserId());
         response.setResponseName(getCommandName());
