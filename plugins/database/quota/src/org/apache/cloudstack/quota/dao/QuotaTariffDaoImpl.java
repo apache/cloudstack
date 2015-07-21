@@ -54,9 +54,9 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
             result = findOneBy(sc);
         } finally {
             txn.close();
-            // Switch back
-            TransactionLegacy.open(opendb).close();
         }
+        // Switch back
+        TransactionLegacy.open(opendb).close();
         return result;
     }
 
@@ -71,9 +71,9 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
             result = listBy(sc);
         } finally {
             txn.close();
-            // Switch back
-            TransactionLegacy.open(opendb).close();
         }
+        // Switch back
+        TransactionLegacy.open(opendb).close();
         return result;
     }
 

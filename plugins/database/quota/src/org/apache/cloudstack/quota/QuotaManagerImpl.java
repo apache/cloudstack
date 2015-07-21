@@ -16,6 +16,7 @@
 //under the License.
 package org.apache.cloudstack.quota;
 
+import com.cloud.configuration.Config;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
@@ -26,14 +27,17 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.TransactionLegacy;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.dao.QuotaTariffDao;
 import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
 import org.apache.cloudstack.quota.dao.QuotaUsageDao;
+import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -41,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 
 @Component
@@ -60,6 +65,8 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     private QuotaDBUtils _quotaDBUtils;
     @Inject
     private QuotaBalanceDao _quotaBalanceDao;
+    @Inject
+    private ConfigurationDao _configDao;
 
     private TimeZone _usageTimezone;
     private int _aggregationDuration = 0;
@@ -73,6 +80,25 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     }
 
     @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        super.configure(name, params);
+        String timeZoneStr = _configDao.getValue(Config.UsageAggregationTimezone.toString());
+        String aggregationRange = _configDao.getValue(Config.UsageStatsJobAggregationRange.toString());
+        if (timeZoneStr == null) {
+            timeZoneStr = "GMT";
+        }
+        _usageTimezone = TimeZone.getTimeZone(timeZoneStr);
+
+        _aggregationDuration = Integer.parseInt(aggregationRange);
+        if (_aggregationDuration < UsageUtils.USAGE_AGGREGATION_RANGE_MIN) {
+            s_logger.warn("Usage stats job aggregation range is to small, using the minimum value of " + UsageUtils.USAGE_AGGREGATION_RANGE_MIN);
+            _aggregationDuration = UsageUtils.USAGE_AGGREGATION_RANGE_MIN;
+        }
+        s_logger.info("Usage timezone = " + _usageTimezone + " AggregationDuration=" + _aggregationDuration);
+        return true;
+    }
+
+    @Override
     public boolean calculateQuotaUsage() {
         short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         boolean jobResult = false;
@@ -82,7 +108,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             final List<QuotaTariffVO> result = _quotaTariffDao.listAllTariffPlans();
             HashMap<Integer, QuotaTariffVO> quotaTariffMap = new HashMap<Integer, QuotaTariffVO>();
             for (final QuotaTariffVO resource : result) {
-                s_logger.debug("QuotaConf=" + resource.getDescription());
+                //s_logger.debug("QuotaConf=" + resource.getDescription() + " value=" + resource.getCurrencyValue());
                 quotaTariffMap.put(resource.getUsageType(), resource);
             }
 
@@ -156,8 +182,8 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
                 s_logger.info("Quota entries size = " + quotalistforaccount.size());
                 if (quotalistforaccount.size() > 0) { // balance to be processed
                     quotalistforaccount.add(new QuotaUsageVO());
-                    Date startDate = new Date(0);
-                    Date endDate = new Date(0);
+                    Date startDate = quotalistforaccount.get(0).getStartDate();
+                    Date endDate = quotalistforaccount.get(0).getEndDate();
                     BigDecimal aggrUsage = new BigDecimal(0);
                     for (QuotaUsageVO entry : quotalistforaccount) {
                         if (startDate.compareTo(entry.getStartDate()) != 0) {
@@ -176,6 +202,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
                             }
 
                             QuotaBalanceVO newbalance = new QuotaBalanceVO(account.getAccountId(), account.getDomainId(), aggrUsage, endDate);
+                            //s_logger.info("Balance entry=" + aggrUsage + " on Date=" + endDate);
                             _quotaBalanceDao.persist(newbalance);
                             aggrUsage = new BigDecimal(0);
                         }
@@ -224,10 +251,8 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         BigDecimal cpuquotausgage, speedquotausage, memoryquotausage, vmusage;
         BigDecimal onehourcostpercpu, onehourcostper100mhz, onehourcostper1mb, onehourcostforvmusage;
         BigDecimal rawusage;
-        // s_logger.info(usageRecord.getDescription() + ", " +
-        // usageRecord.getType() + ", " + usageRecord.getOfferingId() + ", " +
-        // usageRecord.getVmInstanceId() + ", " + usageRecord.getUsageDisplay()
-        // + ", aggrR=" + aggregationRatio);
+        //s_logger.info(usageRecord.getDescription() + ", " + usageRecord.getType() + ", " + usageRecord.getOfferingId() + ", " + usageRecord.getVmInstanceId() + ", " + usageRecord.getUsageDisplay()
+                //+ ", aggrR=" + aggregationRatio);
         // get service offering details
         ServiceOfferingVO serviceoffering = _quotaDBUtils.findServiceOffering(usageRecord.getVmInstanceId(), usageRecord.getOfferingId());
         rawusage = new BigDecimal(usageRecord.getRawUsage());
@@ -280,6 +305,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             BigDecimal vmusage;
             BigDecimal onehourcostforvmusage;
             onehourcostforvmusage = quotaTariffMap.get(QuotaTypes.ALLOCATED_VM).getCurrencyValue().multiply(aggregationRatio);
+            //s_logger.info("Quotatariff onehourcostforvmusage=" + onehourcostforvmusage);
             vmusage = new BigDecimal(usageRecord.getRawUsage()).multiply(onehourcostforvmusage);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), QuotaTypes.ALLOCATED_VM, vmusage,
                     usageRecord.getStartDate(), usageRecord.getEndDate());
@@ -298,6 +324,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             BigDecimal ruleusage;
             BigDecimal onehourcost;
             onehourcost = quotaTariffMap.get(ruleType).getCurrencyValue().multiply(aggregationRatio);
+            //s_logger.info("Quotatariff onehourcost=" + onehourcost);
             ruleusage = new BigDecimal(usageRecord.getRawUsage()).multiply(onehourcost);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), ruleType, ruleusage, usageRecord.getStartDate(),
                     usageRecord.getEndDate());
@@ -317,6 +344,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             BigDecimal rawusageingb;
             BigDecimal networkusage;
             onegbcost = quotaTariffMap.get(transferType).getCurrencyValue();
+            //s_logger.info("Quotatariff onegbcost=" + onegbcost);
             rawusageingb = new BigDecimal(usageRecord.getRawUsage()).divide(s_gb, 8, RoundingMode.HALF_EVEN);
             networkusage = rawusageingb.multiply(onegbcost);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), transferType, networkusage, usageRecord.getStartDate(),

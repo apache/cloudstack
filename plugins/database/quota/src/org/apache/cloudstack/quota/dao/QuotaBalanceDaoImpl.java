@@ -87,7 +87,7 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
     @Override
     public List<QuotaBalanceVO> findCreditBalance(long accountId, long domainId, Date lastbalancedate, Date beforeThis) {
         short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         Filter filter = new Filter(QuotaBalanceVO.class, "updatedOn", true, 0L, Long.MAX_VALUE);
         SearchCriteria<QuotaBalanceVO> sc = createSearchCriteria();
         sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);

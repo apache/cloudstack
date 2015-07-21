@@ -124,6 +124,7 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
         BigDecimal lastCredits = new BigDecimal(0);
         for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
             QuotaBalanceVO entry = it.next();
+            s_logger.info("Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
             if (entry.getCreditsId() > 0) {
                 lastCredits = lastCredits.add(entry.getCreditBalance());
                 resp.addCredits(entry);
