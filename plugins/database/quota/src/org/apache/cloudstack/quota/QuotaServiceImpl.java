@@ -233,8 +233,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
             throw new InvalidParameterValueException("Incorrect deposit date: " + adjustedStartDate + " there are balance entries after this date");
         }
 
-        _quotaDBUtils.addQuotaCredits(accountId, domainId, amount, updatedBy, adjustedStartDate);
-        return null;
+        return _quotaDBUtils.addQuotaCredits(accountId, domainId, amount, updatedBy, adjustedStartDate);
     }
 
     public TimeZone getUsageTimezone() {
