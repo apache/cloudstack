@@ -18,7 +18,6 @@
     <version>4.5.2</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
-
   <dependencies>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
@@ -34,6 +33,11 @@
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>${cs.commons-lang3.version}</version>
     </dependency>
   </dependencies>
 </project>
