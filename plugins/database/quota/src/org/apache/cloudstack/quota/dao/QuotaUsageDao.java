@@ -28,7 +28,7 @@ import com.cloud.utils.db.SearchCriteria;
 
 public interface QuotaUsageDao extends GenericDao<QuotaUsageVO, Long> {
 
-    List<QuotaUsageVO> getQuotaUsage(Long accountId, Long domainId, Integer usageType, Date startDate, Date endDate);
+    List<QuotaUsageVO> findQuotaUsage(Long accountId, Long domainId, Integer usageType, Date startDate, Date endDate);
 
     Pair<List<QuotaUsageVO>, Integer> searchAndCountAllRecords(SearchCriteria<QuotaUsageVO> sc, Filter filter);
 

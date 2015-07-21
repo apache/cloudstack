@@ -27,12 +27,14 @@ public interface QuotaBalanceDao extends GenericDao<QuotaBalanceVO, Long> {
 
     void saveQuotaBalance(List<QuotaBalanceVO> credits);
 
-    List<QuotaBalanceVO> getCreditBalance(long accountId, long domainId, Date startDate, Date endDate);
+    List<QuotaBalanceVO> findCreditBalance(long accountId, long domainId, Date startDate, Date endDate);
 
-    QuotaBalanceVO getLastBalanceEntry(long accountId, long domainId, Date beforeThis);
+    QuotaBalanceVO findLastBalanceEntry(long accountId, long domainId, Date beforeThis);
 
-    List<QuotaBalanceVO> getQuotaBalance(Long accountId, Long domainId, Date startDate, Date endDate);
+    QuotaBalanceVO findLaterBalanceEntry(long accountId, long domainId, Date afterThis);
 
-    List<QuotaBalanceVO> getQuotaBalance(Long accountId, Long domainId, Date startDate);
+    List<QuotaBalanceVO> findQuotaBalance(Long accountId, Long domainId, Date startDate, Date endDate);
+
+    List<QuotaBalanceVO> findQuotaBalance(Long accountId, Long domainId, Date startDate);
 
 }

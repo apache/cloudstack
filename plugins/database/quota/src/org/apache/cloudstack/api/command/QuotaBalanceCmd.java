@@ -60,7 +60,7 @@ public class QuotaBalanceCmd extends BaseCmd {
     private Long accountId;
 
     @Inject
-    QuotaService _quotaManager;
+    QuotaService _quotaService;
     @Inject
     QuotaDBUtils _quotaDBUtils;
 
@@ -124,14 +124,16 @@ public class QuotaBalanceCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        List<QuotaBalanceVO> quotaUsage = _quotaManager.getQuotaBalance(this);
+        List<QuotaBalanceVO> quotaUsage = _quotaService.getQuotaBalance(this);
 
         QuotaBalanceResponse response;
         if (getEndDate() == null) {
             response = _quotaDBUtils.createQuotaLastBalanceResponse(quotaUsage);
         } else {
             response = _quotaDBUtils.createQuotaBalanceResponse(quotaUsage);
+            response.setEndDate(endDate);
         }
+        response.setStartDate(startDate);
 
         response.setResponseName(getCommandName());
         setResponseObject(response);

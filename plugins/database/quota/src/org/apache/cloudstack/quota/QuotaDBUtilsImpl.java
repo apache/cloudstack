@@ -27,7 +27,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
 import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
 import org.apache.cloudstack.api.response.QuotaBalanceResponse;
@@ -85,6 +84,9 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
 
     @Override
     public QuotaBalanceResponse createQuotaLastBalanceResponse(List<QuotaBalanceVO> quotaBalance) {
+        if (quotaBalance.size() == 0) {
+            new InvalidParameterValueException("There are no balance entries on or before the requested date.");
+        }
         Collections.sort(quotaBalance, new Comparator<QuotaBalanceVO>() {
             public int compare(QuotaBalanceVO o1, QuotaBalanceVO o2) {
                 return o2.getUpdatedOn().compareTo(o1.getUpdatedOn()); // desc
@@ -110,6 +112,9 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
 
     @Override
     public QuotaBalanceResponse createQuotaBalanceResponse(List<QuotaBalanceVO> quotaBalance) {
+        if (quotaBalance.size() == 0) {
+            new InvalidParameterValueException("The request period does not contain balance entries.");
+        }
         Collections.sort(quotaBalance, new Comparator<QuotaBalanceVO>() {
             public int compare(QuotaBalanceVO o1, QuotaBalanceVO o2) {
                 return o1.getUpdatedOn().compareTo(o2.getUpdatedOn()); //asc
@@ -133,7 +138,8 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
             resp.setEndDate(endItem.getUpdatedOn());
             resp.setEndQuota(endItem.getCreditBalance());
         } else {
-            new CloudRuntimeException("The request period is small and does not contain balance entries to provide any meaningful values.");
+            resp.setStartQuota(new BigDecimal(0));
+            resp.setEndQuota(new BigDecimal(0));
         }
 
         resp.setObjectName("balance");
@@ -228,13 +234,13 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
     }
 
     @Override
-    public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy) {
+    public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy, Date despositedOn) {
         short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         QuotaCreditsVO result = null;
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
             QuotaCreditsVO credits = new QuotaCreditsVO(accountId, domainId, new BigDecimal(amount), updatedBy);
-            credits.setUpdatedOn(new Date());
+            credits.setUpdatedOn(despositedOn);
             result = _quotaCreditsDao.saveCredits(credits);
         } finally {
             txn.close();

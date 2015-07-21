@@ -63,7 +63,7 @@ public class QuotaStatementCmd extends BaseCmd {
     private Long accountId;
 
     @Inject
-    QuotaService _quotaManager;
+    QuotaService _quotaService;
     @Inject
     QuotaDBUtils _quotaDBUtils;
 
@@ -135,7 +135,7 @@ public class QuotaStatementCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        List<QuotaUsageVO> quotaUsage = _quotaManager.getQuotaUsage(this);
+        List<QuotaUsageVO> quotaUsage = _quotaService.getQuotaUsage(this);
 
         QuotaStatementResponse response = _quotaDBUtils.createQuotaStatementResponse(quotaUsage);
 

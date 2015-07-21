@@ -40,7 +40,7 @@ public class QuotaCreditsDaoImpl extends GenericDaoBase<QuotaCreditsVO, Long> im
 
     @SuppressWarnings("deprecation")
     @Override
-    public List<QuotaCreditsVO> getCredits(long accountId, long domainId, Date startDate, Date endDate) {
+    public List<QuotaCreditsVO> findCredits(long accountId, long domainId, Date startDate, Date endDate) {
         short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         Filter filter = new Filter(QuotaCreditsVO.class, "updatedOn", true, 0L, Long.MAX_VALUE);

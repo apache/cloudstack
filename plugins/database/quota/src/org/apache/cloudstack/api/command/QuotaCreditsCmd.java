@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.QuotaCreditsResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.quota.QuotaDBUtilsImpl;
+import org.apache.cloudstack.quota.QuotaService;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -36,7 +36,7 @@ import javax.inject.Inject;
 public class QuotaCreditsCmd extends BaseCmd {
 
     @Inject
-    QuotaDBUtilsImpl _quotaDBUtils;
+    QuotaService _quotaService;
 
     public static final Logger s_logger = Logger.getLogger(QuotaStatementCmd.class.getName());
 
@@ -79,9 +79,9 @@ public class QuotaCreditsCmd extends BaseCmd {
         super();
     }
 
-    public QuotaCreditsCmd(final QuotaDBUtilsImpl quotaDBUtils) {
+    public QuotaCreditsCmd(final QuotaService quotaService) {
         super();
-        _quotaDBUtils = quotaDBUtils;
+        _quotaService = quotaService;
     }
 
     @Override
@@ -99,7 +99,7 @@ public class QuotaCreditsCmd extends BaseCmd {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please send a valid non-empty quota value");
         }
 
-        final QuotaCreditsResponse response = _quotaDBUtils.addQuotaCredits(accountId, domainId, value, CallContext.current().getCallingUserId());
+        final QuotaCreditsResponse response = _quotaService.addQuotaCredits(accountId, domainId, value, CallContext.current().getCallingUserId());
         response.setResponseName(getCommandName());
         response.setObjectName("quotacredits");
         setResponseObject(response);

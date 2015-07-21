@@ -160,7 +160,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
                 BigDecimal aggrUsage = new BigDecimal(0);
                 for (QuotaUsageVO entry : quotalistforaccount) {
                     if (startDate.compareTo(entry.getStartDate()) != 0) {
-                        QuotaBalanceVO lastrealbalanceentry = _quotaBalanceDao.getLastBalanceEntry(account.getAccountId(), account.getDomainId(), startDate);
+                        QuotaBalanceVO lastrealbalanceentry = _quotaBalanceDao.findLastBalanceEntry(account.getAccountId(), account.getDomainId(), startDate);
                         Date lastbalancedate;
                         if (lastrealbalanceentry != null) {
                             lastbalancedate = lastrealbalanceentry.getUpdatedOn();
@@ -169,7 +169,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
                             lastbalancedate = new Date(0);
                         }
 
-                        List<QuotaBalanceVO> creditsrcvd = _quotaBalanceDao.getCreditBalance(account.getAccountId(), account.getDomainId(), lastbalancedate, endDate);
+                        List<QuotaBalanceVO> creditsrcvd = _quotaBalanceDao.findCreditBalance(account.getAccountId(), account.getDomainId(), lastbalancedate, endDate);
                         for (QuotaBalanceVO credit : creditsrcvd) {
                             aggrUsage = aggrUsage.add(credit.getCreditBalance());
                         }

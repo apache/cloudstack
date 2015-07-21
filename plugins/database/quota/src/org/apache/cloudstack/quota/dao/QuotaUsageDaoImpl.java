@@ -49,7 +49,7 @@ public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implem
 
     @SuppressWarnings("deprecation")
     @Override
-    public List<QuotaUsageVO> getQuotaUsage(Long accountId, Long domainId, Integer usageType, Date startDate, Date endDate) {
+    public List<QuotaUsageVO> findQuotaUsage(Long accountId, Long domainId, Integer usageType, Date startDate, Date endDate) {
         short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         List<QuotaUsageVO> quotaUsageRecords = null;

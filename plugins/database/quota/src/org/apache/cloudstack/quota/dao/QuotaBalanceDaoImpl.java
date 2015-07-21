@@ -36,7 +36,7 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
 
     @SuppressWarnings("deprecation")
     @Override
-    public QuotaBalanceVO getLastBalanceEntry(long accountId, long domainId, Date beforeThis) {
+    public QuotaBalanceVO findLastBalanceEntry(long accountId, long domainId, Date beforeThis) {
         short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         Filter filter = new Filter(QuotaBalanceVO.class, "updatedOn", false, 0L, 1L);
@@ -45,6 +45,22 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
         sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
         sc.addAnd("creditsId", SearchCriteria.Op.EQ, 0);
         sc.addAnd("updatedOn", SearchCriteria.Op.LT, beforeThis);
+        List<QuotaBalanceVO> quotab = this.search(sc, filter);
+        TransactionLegacy.open(opendb).close();
+        return quotab.size() > 0 ? quotab.get(0) : null;
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public QuotaBalanceVO findLaterBalanceEntry(long accountId, long domainId, Date afterThis) {
+        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
+        Filter filter = new Filter(QuotaBalanceVO.class, "updatedOn", true, 0L, 1L);
+        SearchCriteria<QuotaBalanceVO> sc = createSearchCriteria();
+        sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+        sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+        sc.addAnd("creditsId", SearchCriteria.Op.EQ, 0);
+        sc.addAnd("updatedOn", SearchCriteria.Op.GT, afterThis);
         List<QuotaBalanceVO> quotab = this.search(sc, filter);
         TransactionLegacy.open(opendb).close();
         return quotab.size() > 0 ? quotab.get(0) : null;
@@ -66,7 +82,7 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
 
     @SuppressWarnings("deprecation")
     @Override
-    public List<QuotaBalanceVO> getCreditBalance(long accountId, long domainId, Date lastbalancedate, Date beforeThis) {
+    public List<QuotaBalanceVO> findCreditBalance(long accountId, long domainId, Date lastbalancedate, Date beforeThis) {
         short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         Filter filter = new Filter(QuotaBalanceVO.class, "updatedOn", true, 0L, Long.MAX_VALUE);
@@ -86,7 +102,7 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
 
     @SuppressWarnings("deprecation")
     @Override
-    public List<QuotaBalanceVO> getQuotaBalance(Long accountId, Long domainId, Date startDate, Date endDate) {
+    public List<QuotaBalanceVO> findQuotaBalance(Long accountId, Long domainId, Date startDate, Date endDate) {
         short opendb = TransactionLegacy.currentTxn().getDatabaseId();
 
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
@@ -115,7 +131,7 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
 
     @SuppressWarnings("deprecation")
     @Override
-    public List<QuotaBalanceVO> getQuotaBalance(Long accountId, Long domainId, Date startDate) {
+    public List<QuotaBalanceVO> findQuotaBalance(Long accountId, Long domainId, Date startDate) {
         short opendb = TransactionLegacy.currentTxn().getDatabaseId();
 
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);

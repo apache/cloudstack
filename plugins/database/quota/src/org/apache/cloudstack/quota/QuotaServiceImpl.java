@@ -34,6 +34,7 @@ import org.apache.cloudstack.api.command.QuotaRefreshCmd;
 import org.apache.cloudstack.api.command.QuotaStatementCmd;
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
 import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
+import org.apache.cloudstack.api.response.QuotaCreditsResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -71,6 +72,8 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
     private ConfigurationDao _configDao;
     @Inject
     private QuotaBalanceDao _quotaBalanceDao;
+    @Inject
+    private QuotaDBUtils _quotaDBUtils;
 
     private TimeZone _usageTimezone;
     private int _aggregationDuration = 0;
@@ -159,17 +162,18 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         Date startDate = cmd.getStartDate();
         Date endDate = cmd.getEndDate();
         startDate = startDate == null ? new Date() : startDate;
+        cmd.setStartDate(startDate);
 
         TimeZone usageTZ = getUsageTimezone();
         Date adjustedStartDate = computeAdjustedTime(startDate, usageTZ);
 
         if (endDate == null) {
             s_logger.debug("getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", on or before " + adjustedStartDate);
-            return _quotaBalanceDao.getQuotaBalance(accountId, domainId, adjustedStartDate);
+            return _quotaBalanceDao.findQuotaBalance(accountId, domainId, adjustedStartDate);
         } else if (startDate.before(endDate)) {
             Date adjustedEndDate = computeAdjustedTime(endDate, usageTZ);
             s_logger.debug("getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
-            return _quotaBalanceDao.getQuotaBalance(accountId, domainId, adjustedStartDate, adjustedEndDate);
+            return _quotaBalanceDao.findQuotaBalance(accountId, domainId, adjustedStartDate, adjustedEndDate);
         } else {
             throw new InvalidParameterValueException("Incorrect Date Range. Start date: " + startDate + " is after end date:" + endDate);
         }
@@ -215,7 +219,22 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         Date adjustedEndDate = computeAdjustedTime(endDate, usageTZ);
 
         s_logger.debug("getting quota records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
-        return _quotaUsageDao.getQuotaUsage(accountId, domainId, usageType, adjustedStartDate, adjustedEndDate);
+        return _quotaUsageDao.findQuotaUsage(accountId, domainId, usageType, adjustedStartDate, adjustedEndDate);
+    }
+
+    @Override
+    public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy) {
+        Date depositDate = new Date();
+        TimeZone usageTZ = getUsageTimezone();
+        Date adjustedStartDate = computeAdjustedTime(depositDate, usageTZ);
+        QuotaBalanceVO qb = _quotaBalanceDao.findLaterBalanceEntry(accountId, domainId, adjustedStartDate);
+
+        if (qb != null) {
+            throw new InvalidParameterValueException("Incorrect deposit date: " + adjustedStartDate + " there are balance entries after this date");
+        }
+
+        _quotaDBUtils.addQuotaCredits(accountId, domainId, amount, updatedBy, adjustedStartDate);
+        return null;
     }
 
     public TimeZone getUsageTimezone() {

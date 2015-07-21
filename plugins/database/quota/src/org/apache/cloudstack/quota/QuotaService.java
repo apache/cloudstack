@@ -20,6 +20,7 @@ import com.cloud.utils.component.PluggableService;
 
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaStatementCmd;
+import org.apache.cloudstack.api.response.QuotaCreditsResponse;
 
 import java.util.List;
 
@@ -28,5 +29,7 @@ public interface QuotaService extends PluggableService {
     public List<QuotaUsageVO> getQuotaUsage(QuotaStatementCmd cmd);
 
     List<QuotaBalanceVO> getQuotaBalance(QuotaBalanceCmd cmd);
+
+    public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy);
 
 }

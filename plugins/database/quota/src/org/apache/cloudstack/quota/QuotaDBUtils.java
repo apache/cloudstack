@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.response.QuotaCreditsResponse;
 import org.apache.cloudstack.api.response.QuotaStatementResponse;
 import org.apache.cloudstack.api.response.QuotaTariffResponse;
 
+import java.util.Date;
 import java.util.List;
 
 public interface QuotaDBUtils {
@@ -45,8 +46,8 @@ public interface QuotaDBUtils {
 
     ServiceOfferingVO findServiceOffering(Long vmId, long serviceOfferingId);
 
-    QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy);
-
     QuotaBalanceResponse createQuotaLastBalanceResponse(List<QuotaBalanceVO> quotaBalance);
+
+    QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy, Date despositedOn);
 
 }
