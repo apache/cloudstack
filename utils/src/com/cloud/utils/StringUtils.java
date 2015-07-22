@@ -52,6 +52,10 @@ public class StringUtils {
         return Charset.isSupported(UTF8);
     }
 
+    public static Charset getDefaultCharset() {
+        return Charset.defaultCharset();
+    }
+
     public static String join(final Iterable<? extends Object> iterable, final String delim) {
         final StringBuilder sb = new StringBuilder();
         if (iterable != null) {

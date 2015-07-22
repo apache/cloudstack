@@ -42,7 +42,11 @@ public class StringUtilsTest {
 
     @Test
     public void testGetDefaultCharset() {
-        assertEquals(StringUtils.getPreferredCharset(), Charset.defaultCharset());
+        // Is this test irrelevant? Is wrapping the Charset.defaultCharset() too much?
+        // This test was added in order to cover the new StringUtils.getDefaultCharset().
+        // One cannot be sure that StringUtils.getPreferredCharset() will always be
+        // equals to Charset.defaultCharset()
+        assertEquals(StringUtils.getDefaultCharset(), Charset.defaultCharset());
     }
 
     @Test
