@@ -323,7 +323,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     @DB
     private QuotaUsageVO updateQuotaRaw(UsageVO usageRecord, BigDecimal aggregationRatio, int ruleType) {
         QuotaUsageVO quota_usage = null;
-        QuotaTariffVO tariff = _quotaTariffDao.findTariffPlanByUsageType(QuotaTypes.ALLOCATED_VM, usageRecord.getEndDate());
+        QuotaTariffVO tariff = _quotaTariffDao.findTariffPlanByUsageType(ruleType, usageRecord.getEndDate());
         if (tariff != null) {
             BigDecimal ruleusage;
             BigDecimal onehourcost;
@@ -343,7 +343,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     @DB
     private QuotaUsageVO updateQuotaNetwork(UsageVO usageRecord, int transferType) {
         QuotaUsageVO quota_usage = null;
-        QuotaTariffVO tariff = _quotaTariffDao.findTariffPlanByUsageType(QuotaTypes.ALLOCATED_VM, usageRecord.getEndDate());
+        QuotaTariffVO tariff = _quotaTariffDao.findTariffPlanByUsageType(transferType, usageRecord.getEndDate());
         if (tariff != null) {
             BigDecimal onegbcost;
             BigDecimal rawusageingb;
