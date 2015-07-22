@@ -35,9 +35,6 @@ var g_quotaCurrency = '';
                     if (json.hasOwnProperty('listconfigurationsresponse') && json.listconfigurationsresponse.hasOwnProperty('configuration')) {
                         g_quotaCurrency = json.listconfigurationsresponse.configuration[0].value + ' ';
                     }
-                },
-                error: function(data) {
-                    // FIXME: what to do on error?
                 }
             });
 
@@ -155,13 +152,11 @@ var g_quotaCurrency = '';
                                               }
                                               statementTableBody.appendTo(statementTable);
                                           },
-                                          error: function(json) {
+                                          error: function(data) {
                                               generatedStatement.empty();
-                                              var error = JSON.parse(json.responseText);
-                                              if (error.hasOwnProperty('quotastatementresponse')) {
-                                                  $("<br><hr>").appendTo(generatedStatement);
-                                                  $("<p>").html("Error: " + error.quotastatementresponse.errortext).appendTo(generatedStatement);
-                                              }
+                                              cloudStack.dialog.notice({
+                                                  message: parseXMLHttpResponse(data)
+                                              });
                                           }
                                       });
 
@@ -223,17 +218,13 @@ var g_quotaCurrency = '';
 
                                               statementTableBody.appendTo(statementTable);
                                           },
-                                          error: function(json) {
+                                          error: function(data) {
                                               generatedBalanceStatement.empty();
-                                              var error = JSON.parse(json.responseText);
-                                              if (error.hasOwnProperty('quotabalanceresponse')) {
-                                                  $("<br>").appendTo(generatedBalanceStatement);
-                                                  $("<p>").html("Error: " + error.quotabalanceresponse.errortext).appendTo(generatedBalanceStatement);
-                                              }
+                                              cloudStack.dialog.notice({
+                                                  message: parseXMLHttpResponse(data)
+                                              });
                                           }
                                       });
-
-
                                   });
 
                                   domainDropdown.appendTo(statementForm);
@@ -332,6 +323,7 @@ var g_quotaCurrency = '';
                                   $('<th>').html(_l('label.usage.type')).appendTo(tariffTableHead);
                                   $('<th>').html(_l('label.usage.unit')).appendTo(tariffTableHead);
                                   $('<th>').html(_l('label.quota.value')).appendTo(tariffTableHead);
+                                  $('<th>').html('Effective Date').appendTo(tariffTableHead);
                                   $('<th>').html(_l('label.quota.description')).appendTo(tariffTableHead);
                                   tariffTableHead.appendTo($('<thead>').appendTo(tariffTable));
 
@@ -364,7 +356,7 @@ var g_quotaCurrency = '';
                                                   editButton.attr('id', 'quota-tariff-edit-' + items[i].usageType);
                                                   editButton.click(function() {
                                                       var usageTypeId = $(this).context.id.replace('quota-tariff-edit-', '');
-                                                      cloudStack.dialog.createForm({
+                                                      var updateTariffForm = cloudStack.dialog.createForm({
                                                           form: {
                                                               title: 'label.quota.configuration',
                                                               fields: {
@@ -373,7 +365,13 @@ var g_quotaCurrency = '';
                                                                       validation: {
                                                                           required: true
                                                                       }
-                                                                  }
+                                                                  },
+                                                                  effectiveDate: {
+                                                                      label: 'Effective Date',
+                                                                      validation: {
+                                                                          required: true
+                                                                      }
+                                                                  },
                                                               }
                                                           },
                                                           after: function(args) {
@@ -381,29 +379,40 @@ var g_quotaCurrency = '';
                                                                   url: createURL('quotaTariffUpdate'),
                                                                   data: {
                                                                       usagetype: usageTypeId,
-                                                                      value: args.data.quotaValue
+                                                                      value: args.data.quotaValue,
+                                                                      startDate: args.data.effectiveDate
                                                                   },
                                                                   type: "POST",
                                                                   success: function(json) {
                                                                       $('#quota-tariff').click();
                                                                   },
-                                                                  error: function(json) {
-                                                                      // TODO: handle error?
+                                                                  error: function(data) {
+                                                                      cloudStack.dialog.notice({
+                                                                          message: parseXMLHttpResponse(data)
+                                                                      });
                                                                   }
                                                               });
                                                           }
+                                                      });
+                                                      updateTariffForm.find('input[name=effectiveDate]').datepicker({
+                                                          defaultDate: "+1w",
+                                                          changeMonth: true,
+                                                          dateFormat: "yy-mm-dd",
                                                       });
                                                   });
                                               } else {
                                                   $('<td>').html(items[i].tariffValue).appendTo(tariffTableBodyRow);
                                               }
+                                              $('<td>').html(items[i].effectiveDate).appendTo(tariffTableBodyRow);
                                               $('<td>').html(items[i].description).appendTo(tariffTableBodyRow);
                                               tariffTableBodyRow.appendTo(tariffTableBody);
                                           }
                                           tariffTableBody.appendTo(tariffTable);
                                       },
                                       error: function(data) {
-                                          // TODO: Add error dialog?
+                                          cloudStack.dialog.notice({
+                                              message: parseXMLHttpResponse(data)
+                                          });
                                       }
                                   });
 
