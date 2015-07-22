@@ -860,7 +860,7 @@ def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules, vif
                 for ip in ips:
                     execute("iptables -I " + vmchain + " -p icmp --icmp-type " + range + " " + direction + " " + ip + " -j "+ action)
 
-        if allow_any
+        if allow_any:
             if protocol == 'all':
                 execute("iptables -I " + vmchain + " -m state --state NEW " + direction + " 0.0.0.0/0 -j "+action)
             elif protocol != 'icmp':
