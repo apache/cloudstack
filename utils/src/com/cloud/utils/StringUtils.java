@@ -36,7 +36,7 @@ public class StringUtils {
     private static Charset preferredACSCharset;
 
     static {
-        String preferredCharset = "UTF-8";
+        final String preferredCharset = "UTF-8";
         if (Charset.isSupported(preferredCharset)) {
             preferredACSCharset = Charset.forName(preferredCharset);
         } else {
@@ -48,16 +48,16 @@ public class StringUtils {
         return preferredACSCharset;
     }
 
-    public static String join(Iterable<? extends Object> iterable, String delim) {
-        StringBuilder sb = new StringBuilder();
+    public static String join(final Iterable<? extends Object> iterable, final String delim) {
+        final StringBuilder sb = new StringBuilder();
         if (iterable != null) {
-            Iterator<? extends Object> iter = iterable.iterator();
+            final Iterator<? extends Object> iter = iterable.iterator();
             if (iter.hasNext()) {
-                Object next = iter.next();
+                final Object next = iter.next();
                 sb.append(next.toString());
             }
             while (iter.hasNext()) {
-                Object next = iter.next();
+                final Object next = iter.next();
                 sb.append(delim + next.toString());
             }
         }
@@ -68,7 +68,7 @@ public class StringUtils {
         return org.apache.commons.lang.StringUtils.join(components, delimiter);
     }
 
-    public static boolean isNotBlank(String str) {
+    public static boolean isNotBlank(final String str) {
         if (str != null && str.trim().length() > 0) {
             return true;
         }
@@ -78,8 +78,8 @@ public class StringUtils {
 
     public static String cleanupTags(String tags) {
         if (tags != null) {
-            String[] tokens = tags.split(",");
-            StringBuilder t = new StringBuilder();
+            final String[] tokens = tags.split(",");
+            final StringBuilder t = new StringBuilder();
             for (int i = 0; i < tokens.length; i++) {
                 t.append(tokens[i].trim()).append(",");
             }
@@ -94,11 +94,11 @@ public class StringUtils {
      * @param tags
      * @return List of tags
      */
-    public static List<String> csvTagsToList(String tags) {
-        List<String> tagsList = new ArrayList<String>();
+    public static List<String> csvTagsToList(final String tags) {
+        final List<String> tagsList = new ArrayList<String>();
 
         if (tags != null) {
-            String[] tokens = tags.split(",");
+            final String[] tokens = tags.split(",");
             for (int i = 0; i < tokens.length; i++) {
                 tagsList.add(tokens[i].trim());
             }
@@ -113,8 +113,8 @@ public class StringUtils {
      * @return String containing a comma separated list of tags
      */
 
-    public static String listToCsvTags(List<String> tagsList) {
-        StringBuilder tags = new StringBuilder();
+    public static String listToCsvTags(final List<String> tagsList) {
+        final StringBuilder tags = new StringBuilder();
         if (tagsList.size() > 0) {
             for (int i = 0; i < tagsList.size(); i++) {
                 tags.append(tagsList.get(i));
@@ -127,12 +127,12 @@ public class StringUtils {
         return tags.toString();
     }
 
-    public static String getExceptionStackInfo(Throwable e) {
-        StringBuffer sb = new StringBuffer();
+    public static String getExceptionStackInfo(final Throwable e) {
+        final StringBuffer sb = new StringBuffer();
 
         sb.append(e.toString()).append("\n");
-        StackTraceElement[] elemnents = e.getStackTrace();
-        for (StackTraceElement element : elemnents) {
+        final StackTraceElement[] elemnents = e.getStackTrace();
+        for (final StackTraceElement element : elemnents) {
             sb.append(element.getClassName()).append(".");
             sb.append(element.getMethodName()).append("(");
             sb.append(element.getFileName()).append(":");
@@ -143,15 +143,15 @@ public class StringUtils {
         return sb.toString();
     }
 
-    public static String unicodeEscape(String s) {
-        StringBuilder sb = new StringBuilder();
+    public static String unicodeEscape(final String s) {
+        final StringBuilder sb = new StringBuilder();
         for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            if ((c >> 7) > 0) {
+            final char c = s.charAt(i);
+            if (c >> 7 > 0) {
                 sb.append("\\u");
-                sb.append(hexChar[(c >> 12) & 0xF]); // append the hex character for the left-most 4-bits
-                sb.append(hexChar[(c >> 8) & 0xF]);  // hex for the second group of 4-bits from the left
-                sb.append(hexChar[(c >> 4) & 0xF]);  // hex for the third group
+                sb.append(hexChar[c >> 12 & 0xF]); // append the hex character for the left-most 4-bits
+                sb.append(hexChar[c >> 8 & 0xF]);  // hex for the second group of 4-bits from the left
+                sb.append(hexChar[c >> 4 & 0xF]);  // hex for the third group
                 sb.append(hexChar[c & 0xF]);         // hex for the last group, e.g., the right most 4-bits
             } else {
                 sb.append(c);
@@ -160,12 +160,12 @@ public class StringUtils {
         return sb.toString();
     }
 
-    public static String getMaskedPasswordForDisplay(String password) {
+    public static String getMaskedPasswordForDisplay(final String password) {
         if (password == null || password.isEmpty()) {
             return "*";
         }
 
-        StringBuffer sb = new StringBuffer();
+        final StringBuffer sb = new StringBuffer();
         sb.append(password.charAt(0));
         for (int i = 1; i < password.length(); i++) {
             sb.append("*");
@@ -187,14 +187,14 @@ public class StringUtils {
     private static final Pattern REGEX_REDUNDANT_AND = Pattern.compile("(&|%26)(&|%26)+");
 
     // Responsible for stripping sensitive content from request and response strings
-    public static String cleanString(String stringToClean) {
+    public static String cleanString(final String stringToClean) {
         String cleanResult = "";
         if (stringToClean != null) {
             cleanResult = REGEX_PASSWORD_QUERYSTRING.matcher(stringToClean).replaceAll("");
             cleanResult = REGEX_PASSWORD_JSON.matcher(cleanResult).replaceAll("");
-            Matcher detailsMatcher = REGEX_PASSWORD_DETAILS.matcher(cleanResult);
+            final Matcher detailsMatcher = REGEX_PASSWORD_DETAILS.matcher(cleanResult);
             while (detailsMatcher.find()) {
-                Matcher detailsIndexMatcher = REGEX_PASSWORD_DETAILS_INDEX.matcher(detailsMatcher.group());
+                final Matcher detailsIndexMatcher = REGEX_PASSWORD_DETAILS_INDEX.matcher(detailsMatcher.group());
                 if (detailsIndexMatcher.find()) {
                     cleanResult = cleanDetails(cleanResult, detailsIndexMatcher.group());
                 }
@@ -203,9 +203,9 @@ public class StringUtils {
         return cleanResult;
     }
 
-    public static String cleanDetails(String stringToClean, String detailsIndexSting) {
+    public static String cleanDetails(final String stringToClean, final String detailsIndexSting) {
         String cleanResult = stringToClean;
-        for (String log : stringToClean.split("&|%26")) {
+        for (final String log : stringToClean.split("&|%26")) {
             if (log.contains(detailsIndexSting)) {
                 cleanResult = cleanResult.replace(log, "");
             }
@@ -214,7 +214,7 @@ public class StringUtils {
         return cleanResult;
     }
 
-    public static boolean areTagsEqual(String tags1, String tags2) {
+    public static boolean areTagsEqual(final String tags1, final String tags2) {
         if (tags1 == null && tags2 == null) {
             return true;
         }
@@ -229,28 +229,28 @@ public class StringUtils {
 
         final String delimiter = ",";
 
-        List<String> lstTags1 = new ArrayList<String>();
-        String[] aTags1 = tags1.split(delimiter);
+        final List<String> lstTags1 = new ArrayList<String>();
+        final String[] aTags1 = tags1.split(delimiter);
 
-        for (String tag1 : aTags1) {
+        for (final String tag1 : aTags1) {
             lstTags1.add(tag1.toLowerCase());
         }
 
-        List<String> lstTags2 = new ArrayList<String>();
-        String[] aTags2 = tags2.split(delimiter);
+        final List<String> lstTags2 = new ArrayList<String>();
+        final String[] aTags2 = tags2.split(delimiter);
 
-        for (String tag2 : aTags2) {
+        for (final String tag2 : aTags2) {
             lstTags2.add(tag2.toLowerCase());
         }
 
         return lstTags1.containsAll(lstTags2) && lstTags2.containsAll(lstTags1);
     }
 
-    public static String stripControlCharacters(String s) {
+    public static String stripControlCharacters(final String s) {
         return StringUtilities.stripControls(s);
     }
 
-    public static int formatForOutput(String text, int start, int columns, char separator) {
+    public static int formatForOutput(final String text, final int start, final int columns, final char separator) {
         if (start >= text.length()) {
             return -1;
         }
@@ -259,24 +259,24 @@ public class StringUtils {
         if (end > text.length()) {
             end = text.length();
         }
-        String searchable = text.substring(start, end);
-        int found = searchable.lastIndexOf(separator);
+        final String searchable = text.substring(start, end);
+        final int found = searchable.lastIndexOf(separator);
         return found > 0 ? found : end - start;
     }
 
-    public static Map<String, String> stringToMap(String s) {
-        Map<String, String> map = new HashMap<String, String>();
-        String[] elements = s.split(";");
-        for (String parts : elements) {
-            String[] keyValue = parts.split(":");
+    public static Map<String, String> stringToMap(final String s) {
+        final Map<String, String> map = new HashMap<String, String>();
+        final String[] elements = s.split(";");
+        for (final String parts : elements) {
+            final String[] keyValue = parts.split(":");
             map.put(keyValue[0], keyValue[1]);
         }
         return map;
     }
 
-    public static String mapToString(Map<String, String> map) {
+    public static String mapToString(final Map<String, String> map) {
         String s = "";
-        for (Map.Entry<String, String> entry : map.entrySet()) {
+        for (final Map.Entry<String, String> entry : map.entrySet()) {
             s += entry.getKey() + ":" + entry.getValue() + ";";
         }
         if (s.length() > 0) {
@@ -285,25 +285,25 @@ public class StringUtils {
         return s;
     }
 
-    public static <T> List<T> applyPagination(List<T> originalList, Long startIndex, Long pageSizeVal) {
+    public static <T> List<T> applyPagination(final List<T> originalList, final Long startIndex, final Long pageSizeVal) {
         // Most likely pageSize will never exceed int value, and we need integer to partition the listToReturn
-        boolean applyPagination = startIndex != null && pageSizeVal != null
+        final boolean applyPagination = startIndex != null && pageSizeVal != null
                 && startIndex <= Integer.MAX_VALUE && startIndex >= Integer.MIN_VALUE && pageSizeVal <= Integer.MAX_VALUE
                 && pageSizeVal >= Integer.MIN_VALUE;
-        List<T> listWPagination = null;
-        if (applyPagination) {
-            listWPagination = new ArrayList<>();
-            int index = startIndex.intValue() == 0 ? 0 : startIndex.intValue() / pageSizeVal.intValue();
-            List<List<T>> partitions = StringUtils.partitionList(originalList, pageSizeVal.intValue());
-            if (index < partitions.size()) {
-                listWPagination = partitions.get(index);
-            }
-        }
-        return listWPagination;
+                List<T> listWPagination = null;
+                if (applyPagination) {
+                    listWPagination = new ArrayList<>();
+                    final int index = startIndex.intValue() == 0 ? 0 : startIndex.intValue() / pageSizeVal.intValue();
+                    final List<List<T>> partitions = StringUtils.partitionList(originalList, pageSizeVal.intValue());
+                    if (index < partitions.size()) {
+                        listWPagination = partitions.get(index);
+                    }
+                }
+                return listWPagination;
     }
 
-    private static <T> List<List<T>> partitionList(List<T> originalList, int chunkSize) {
-        List<List<T>> listOfChunks = new ArrayList<List<T>>();
+    private static <T> List<List<T>> partitionList(final List<T> originalList, final int chunkSize) {
+        final List<List<T>> listOfChunks = new ArrayList<List<T>>();
         for (int i = 0; i < originalList.size() / chunkSize; i++) {
             listOfChunks.add(originalList.subList(i * chunkSize, i * chunkSize + chunkSize));
         }
