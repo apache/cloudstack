@@ -227,18 +227,26 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
     public QuotaTariffVO updateQuotaTariffPlan(QuotaTariffUpdateCmd cmd) {
         short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
-        final int resourceType = cmd.getUsageType();
-        final BigDecimal quotaCost = new BigDecimal(cmd.getValue());
-        final Date effectiveDate = _quotaManager.computeAdjustedTime(cmd.getStartDate());
-        QuotaTariffVO result = _quotaTariffDao.findTariffPlanByUsageType(resourceType, effectiveDate);
-        if (result == null) {
-            throw new InvalidParameterValueException(String.format("Invalid Usage Resource type=%d provided", resourceType));
+        QuotaTariffVO result = null;
+        try {
+            final int resourceType = cmd.getUsageType();
+            final BigDecimal quotaCost = new BigDecimal(cmd.getValue());
+            final Date effectiveDate = _quotaManager.computeAdjustedTime(cmd.getStartDate());
+            result = _quotaTariffDao.findTariffPlanByUsageType(resourceType, effectiveDate);
+            if (result == null) {
+                throw new InvalidParameterValueException(String.format("Invalid Usage Resource type=%d provided", resourceType));
+            }
+            s_logger.debug(String.format("Updating Quota Tariff Plan: Old value=%s, new value=%s for resource type=%d", result.getCurrencyValue(), quotaCost, resourceType));
+            result.setCurrencyValue(quotaCost);
+            result.setEffectiveOn(effectiveDate);
+        } catch (Exception pokemon) {
+            s_logger.error("Error in update quota tariff plan: " + pokemon);
+        } finally {
+            TransactionLegacy.open(opendb).close();
         }
-        s_logger.debug(String.format("Updating Quota Tariff Plan: Old value=%s, new value=%s for resource type=%d", result.getCurrencyValue(), quotaCost, resourceType));
-        result.setCurrencyValue(quotaCost);
-        result.setEffectiveOn(effectiveDate);
-        _quotaTariffDao.updateQuotaTariff(result);
-        TransactionLegacy.open(opendb).close();
+        if (result != null) {
+            _quotaTariffDao.updateQuotaTariff(result);
+        }
         return result;
     }
 
