@@ -46,8 +46,8 @@ public class QuotaTariffResponse extends BaseResponse {
     @Param(description = "tariffValue")
     private BigDecimal tariffValue;
 
-    @SerializedName("effective_on")
-    @Param(description = "the time at whihc this quota value will be effective")
+    @SerializedName("effectiveDate")
+    @Param(description = "the date on/after which this quota value will be effective")
     private Date effectiveOn = null;
 
     @SerializedName("include")

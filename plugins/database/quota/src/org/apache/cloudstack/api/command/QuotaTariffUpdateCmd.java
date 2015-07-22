@@ -29,6 +29,7 @@ import org.apache.cloudstack.quota.QuotaTariffVO;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+import java.util.Date;
 
 @APICommand(name = "quotaTariffUpdate", responseObject = QuotaTariffResponse.class, description = "Update the tariff plan for a resource", since = "4.6.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaTariffUpdateCmd extends BaseCmd {
@@ -44,6 +45,9 @@ public class QuotaTariffUpdateCmd extends BaseCmd {
     @Parameter(name = "value", type = CommandType.DOUBLE, required = true,  description = "The quota tariff value of the resource as per the default unit")
     private Double value;
 
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, required = true, description = "The effective start date on/after which the quota tariff is effective and older tariffs are no longer used for the usage type. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-03.")
+    private Date startDate;
+
     public int getUsageType() {
         return usageType;
     }
@@ -58,6 +62,14 @@ public class QuotaTariffUpdateCmd extends BaseCmd {
 
     public void setValue(Double value) {
         this.value = value;
+    }
+
+    public Date getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
     }
 
     public QuotaTariffUpdateCmd() {

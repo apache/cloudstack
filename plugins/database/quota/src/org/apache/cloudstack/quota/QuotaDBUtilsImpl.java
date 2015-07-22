@@ -229,13 +229,14 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         final int resourceType = cmd.getUsageType();
         final BigDecimal quotaCost = new BigDecimal(cmd.getValue());
-        Date now = _quotaManager.computeAdjustedTime(new Date());
-        QuotaTariffVO result = _quotaTariffDao.findTariffPlanByUsageType(resourceType, now);
+        final Date effectiveDate = _quotaManager.computeAdjustedTime(cmd.getStartDate());
+        QuotaTariffVO result = _quotaTariffDao.findTariffPlanByUsageType(resourceType, effectiveDate);
         if (result == null) {
             throw new InvalidParameterValueException(String.format("Invalid Usage Resource type=%d provided", resourceType));
         }
         s_logger.debug(String.format("Updating Quota Tariff Plan: Old value=%s, new value=%s for resource type=%d", result.getCurrencyValue(), quotaCost, resourceType));
         result.setCurrencyValue(quotaCost);
+        result.setEffectiveOn(effectiveDate);
         _quotaTariffDao.updateQuotaTariff(result);
         TransactionLegacy.open(opendb).close();
         return result;
