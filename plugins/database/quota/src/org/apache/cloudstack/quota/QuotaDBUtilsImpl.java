@@ -37,6 +37,7 @@ import org.apache.cloudstack.api.response.QuotaTariffResponse;
 import org.apache.cloudstack.quota.dao.QuotaCreditsDao;
 import org.apache.cloudstack.quota.dao.QuotaTariffDao;
 import org.apache.log4j.Logger;
+import org.joda.time.DateTimeComparator;
 import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
@@ -228,6 +229,7 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
         short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         QuotaTariffVO result = null;
+        boolean updateRecord = false;
         try {
             final int resourceType = cmd.getUsageType();
             final BigDecimal quotaCost = new BigDecimal(cmd.getValue());
@@ -237,6 +239,9 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
                 throw new InvalidParameterValueException(String.format("Invalid Usage Resource type=%d provided", resourceType));
             }
             s_logger.debug(String.format("Updating Quota Tariff Plan: Old value=%s, new value=%s for resource type=%d", result.getCurrencyValue(), quotaCost, resourceType));
+            if (DateTimeComparator.getDateOnlyInstance().compare(result.getEffectiveOn(), effectiveDate) == 0) {
+                updateRecord = true;
+            }
             result.setCurrencyValue(quotaCost);
             result.setEffectiveOn(effectiveDate);
         } catch (Exception pokemon) {
@@ -245,7 +250,11 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
             TransactionLegacy.open(opendb).close();
         }
         if (result != null) {
-            _quotaTariffDao.updateQuotaTariff(result);
+            if (updateRecord) {
+                _quotaTariffDao.updateQuotaTariff(result);
+            } else {
+                result = _quotaTariffDao.addQuotaTariff(result);
+            }
         }
         return result;
     }

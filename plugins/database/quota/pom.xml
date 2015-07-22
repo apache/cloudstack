@@ -39,5 +39,10 @@
       <artifactId>commons-lang3</artifactId>
       <version>${cs.commons-lang3.version}</version>
     </dependency>
+    <dependency>
+      <groupId>joda-time</groupId>
+      <artifactId>joda-time</artifactId>
+      <version>${cs.joda-time.version}</version>
+    </dependency>
   </dependencies>
 </project>

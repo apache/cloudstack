@@ -97,6 +97,7 @@
     <cs.findbugs.version>2.5.3</cs.findbugs.version>
     <cs.javadoc.version>2.9.1</cs.javadoc.version>
     <cs.opensaml.version>2.6.1</cs.opensaml.version>
+    <cs.joda-time.version>2.8.1</cs.joda-time.version>
   </properties>
 
   <distributionManagement>

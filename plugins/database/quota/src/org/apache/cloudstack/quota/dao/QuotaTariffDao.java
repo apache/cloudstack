@@ -30,4 +30,6 @@ public interface QuotaTariffDao extends GenericDao<QuotaTariffVO, Long> {
     List<QuotaTariffVO> listAllTariffPlans(Date onOrBefore);
 
     boolean updateQuotaTariff(QuotaTariffVO plan);
+
+    QuotaTariffVO addQuotaTariff(QuotaTariffVO plan);
 }

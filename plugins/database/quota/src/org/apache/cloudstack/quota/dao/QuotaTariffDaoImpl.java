@@ -117,4 +117,15 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         TransactionLegacy.open(opendb).close(); // Switch back
         return result;
     }
+
+    @Override
+    public QuotaTariffVO addQuotaTariff(QuotaTariffVO plan) {
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close(); // Switch to
+        // Usage DB
+        plan.setId(null);
+        QuotaTariffVO result = this.persist(plan);
+        TransactionLegacy.open(opendb).close(); // Switch back
+        return result;
+    }
 }

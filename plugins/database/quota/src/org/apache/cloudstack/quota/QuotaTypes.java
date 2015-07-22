@@ -27,9 +27,8 @@ public class QuotaTypes extends UsageTypes {
     public static final int CPU_NUMBER = 16;
     public static final int MEMORY = 17;
 
-    public static List<QuotaTypeResponse> responseList = new ArrayList<QuotaTypeResponse>();
-
     public static List<QuotaTypeResponse> listQuotaUsageTypes() {
+        final List<QuotaTypeResponse> responseList = new ArrayList<QuotaTypeResponse>();
         responseList.add(new QuotaTypeResponse(RUNNING_VM, "Running Vm Usage"));
         responseList.add(new QuotaTypeResponse(ALLOCATED_VM, "Allocated Vm Usage"));
         responseList.add(new QuotaTypeResponse(IP_ADDRESS, "IP Address Usage"));
