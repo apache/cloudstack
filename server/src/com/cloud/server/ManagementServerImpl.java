@@ -16,9 +16,7 @@
 // under the License.
 package com.cloud.server;
 
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -3625,11 +3623,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final String name = cmd.getName();
         String key = cmd.getPublicKey();
-        try {
-            key = URLDecoder.decode(key, "UTF-8");
-        } catch (final UnsupportedEncodingException e) {
-            s_logger.warn("key decoding tried invain: " + e.getLocalizedMessage());
-        }
+
         final String publicKey = getPublicKeyFromKeyKeyMaterial(key);
         final String fingerprint = getFingerprint(publicKey);
 
