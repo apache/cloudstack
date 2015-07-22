@@ -20,24 +20,29 @@
 package com.cloud.utils;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import junit.framework.Assert;
-
 import org.junit.Test;
 
 public class StringUtilsTest {
+
     @Test
-    public void testGetPrefferedCharset() {
-        assertEquals(StringUtils.getPreferredCharset(), Charset.forName("UTF-8"));
+    public void testGetPreferredCharset() {
+        final boolean ifUtf8Supported = StringUtils.isUtf8Supported();
+        if (ifUtf8Supported) {
+            assertEquals(StringUtils.getPreferredCharset(), Charset.forName("UTF-8"));
+        } else {
+            assertNotEquals(StringUtils.getPreferredCharset(), Charset.forName("UTF-8"));
+        }
     }
 
     @Test
     public void testGetDefaultCharset() {
-        assertEquals(StringUtils.getPreferredCharset(),Charset.defaultCharset());
+        assertEquals(StringUtils.getPreferredCharset(), Charset.defaultCharset());
     }
 
     @Test
@@ -238,7 +243,7 @@ public class StringUtilsTest {
 
     @Test
     public void listToCsvTags() {
-        Assert.assertEquals("a,b,c", StringUtils.listToCsvTags(Arrays.asList("a","b", "c")));
-        Assert.assertEquals("", StringUtils.listToCsvTags(new ArrayList<String>()));
+        assertEquals("a,b,c", StringUtils.listToCsvTags(Arrays.asList("a","b", "c")));
+        assertEquals("", StringUtils.listToCsvTags(new ArrayList<String>()));
     }
 }

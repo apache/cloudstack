@@ -34,11 +34,11 @@ public class StringUtils {
     private static final char[] hexChar = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
     private static Charset preferredACSCharset;
+    private static final String UTF8 = "UTF-8";
 
     static {
-        final String preferredCharset = "UTF-8";
-        if (Charset.isSupported(preferredCharset)) {
-            preferredACSCharset = Charset.forName(preferredCharset);
+        if (isUtf8Supported()) {
+            preferredACSCharset = Charset.forName(UTF8);
         } else {
             preferredACSCharset = Charset.defaultCharset();
         }
@@ -46,6 +46,10 @@ public class StringUtils {
 
     public static Charset getPreferredCharset() {
         return preferredACSCharset;
+    }
+
+    public static boolean isUtf8Supported() {
+        return Charset.isSupported(UTF8);
     }
 
     public static String join(final Iterable<? extends Object> iterable, final String delim) {
