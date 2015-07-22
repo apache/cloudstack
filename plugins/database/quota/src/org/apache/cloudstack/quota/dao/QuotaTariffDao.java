@@ -25,7 +25,7 @@ import java.util.List;
 
 public interface QuotaTariffDao extends GenericDao<QuotaTariffVO, Long> {
 
-    QuotaTariffVO findTariffPlanByUsageType(int usageType, Date onOrBefore);
+    QuotaTariffVO findTariffPlanByUsageType(int quotaType, Date onOrBefore);
 
     List<QuotaTariffVO> listAllTariffPlans(Date onOrBefore);
 
