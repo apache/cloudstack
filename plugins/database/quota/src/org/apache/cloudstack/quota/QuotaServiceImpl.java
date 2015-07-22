@@ -79,9 +79,9 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
     private TimeZone _usageTimezone;
     private int _aggregationDuration = 0;
 
-    static BigDecimal s_hoursInMonth = new BigDecimal(30 * 24);
-    static BigDecimal s_minutesInMonth = new BigDecimal(30 * 24 * 60);
-    static BigDecimal s_gb = new BigDecimal(1024 * 1024 * 1024);
+    final static BigDecimal s_hoursInMonth = new BigDecimal(30 * 24);
+    final static BigDecimal s_minutesInMonth = new BigDecimal(30 * 24 * 60);
+    final static BigDecimal s_gb = new BigDecimal(1024 * 1024 * 1024);
 
     public QuotaServiceImpl() {
         super();
@@ -132,7 +132,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
 
     @Override
     public List<QuotaBalanceVO> getQuotaBalance(QuotaBalanceCmd cmd) {
-        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
 
         Long accountId = cmd.getAccountId();
@@ -195,7 +195,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
 
     @Override
     public List<QuotaUsageVO> getQuotaUsage(QuotaStatementCmd cmd) {
-        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
         Long accountId = cmd.getAccountId();
         String accountName = cmd.getAccountName();

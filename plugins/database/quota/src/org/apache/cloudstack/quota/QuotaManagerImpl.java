@@ -100,7 +100,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
 
     @Override
     public boolean calculateQuotaUsage() {
-        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         boolean jobResult = false;
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
@@ -218,7 +218,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     }
 
     @DB
-    private QuotaUsageVO updateQuotaDiskUsage(UsageVO usageRecord, BigDecimal aggregationRatio, int quotaType) {
+    private QuotaUsageVO updateQuotaDiskUsage(UsageVO usageRecord, final BigDecimal aggregationRatio, final int quotaType) {
         QuotaUsageVO quota_usage = null;
         QuotaTariffVO tariff = _quotaTariffDao.findTariffPlanByUsageType(quotaType, usageRecord.getEndDate());
         if (tariff != null) {
@@ -240,7 +240,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     }
 
     @DB
-    private List<QuotaUsageVO> updateQuotaRunningVMUsage(UsageVO usageRecord, BigDecimal aggregationRatio) {
+    private List<QuotaUsageVO> updateQuotaRunningVMUsage(UsageVO usageRecord, final BigDecimal aggregationRatio) {
         List<QuotaUsageVO> quotalist = new ArrayList<QuotaUsageVO>();
         QuotaUsageVO quota_usage;
         BigDecimal cpuquotausgage, speedquotausage, memoryquotausage, vmusage;
@@ -300,7 +300,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     }
 
     @DB
-    private QuotaUsageVO updateQuotaAllocatedVMUsage(UsageVO usageRecord, BigDecimal aggregationRatio) {
+    private QuotaUsageVO updateQuotaAllocatedVMUsage(UsageVO usageRecord, final BigDecimal aggregationRatio) {
         QuotaUsageVO quota_usage = null;
         QuotaTariffVO tariff = _quotaTariffDao.findTariffPlanByUsageType(QuotaTypes.ALLOCATED_VM, usageRecord.getEndDate());
         if (tariff != null) {
@@ -321,7 +321,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     }
 
     @DB
-    private QuotaUsageVO updateQuotaRaw(UsageVO usageRecord, BigDecimal aggregationRatio, int ruleType) {
+    private QuotaUsageVO updateQuotaRaw(UsageVO usageRecord, final BigDecimal aggregationRatio, final int ruleType) {
         QuotaUsageVO quota_usage = null;
         QuotaTariffVO tariff = _quotaTariffDao.findTariffPlanByUsageType(ruleType, usageRecord.getEndDate());
         if (tariff != null) {
@@ -341,7 +341,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     }
 
     @DB
-    private QuotaUsageVO updateQuotaNetwork(UsageVO usageRecord, int transferType) {
+    private QuotaUsageVO updateQuotaNetwork(UsageVO usageRecord, final int transferType) {
         QuotaUsageVO quota_usage = null;
         QuotaTariffVO tariff = _quotaTariffDao.findTariffPlanByUsageType(transferType, usageRecord.getEndDate());
         if (tariff != null) {
@@ -363,7 +363,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     }
 
     @Override
-    public Date computeAdjustedTime(Date date) {
+    public Date computeAdjustedTime(final Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
         TimeZone localTZ = cal.getTimeZone();

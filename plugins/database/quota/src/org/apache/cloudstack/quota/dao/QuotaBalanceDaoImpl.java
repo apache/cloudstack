@@ -39,8 +39,8 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
 
     @SuppressWarnings("deprecation")
     @Override
-    public QuotaBalanceVO findLastBalanceEntry(long accountId, long domainId, Date beforeThis) {
-        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+    public QuotaBalanceVO findLastBalanceEntry(final long accountId, final long domainId, final Date beforeThis) {
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         Filter filter = new Filter(QuotaBalanceVO.class, "updatedOn", false, 0L, 1L);
         SearchCriteria<QuotaBalanceVO> sc = createSearchCriteria();
@@ -55,8 +55,8 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
 
     @SuppressWarnings("deprecation")
     @Override
-    public QuotaBalanceVO findLaterBalanceEntry(long accountId, long domainId, Date afterThis) {
-        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+    public QuotaBalanceVO findLaterBalanceEntry(final long accountId, final long domainId, final Date afterThis) {
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         Filter filter = new Filter(QuotaBalanceVO.class, "updatedOn", true, 0L, 1L);
         SearchCriteria<QuotaBalanceVO> sc = createSearchCriteria();
@@ -70,8 +70,8 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
     }
 
     @Override
-    public void saveQuotaBalance(List<QuotaBalanceVO> credits) {
-        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+    public void saveQuotaBalance(final List<QuotaBalanceVO> credits) {
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
             for (QuotaBalanceVO credit : credits) {
@@ -85,8 +85,8 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
 
     @SuppressWarnings("deprecation")
     @Override
-    public List<QuotaBalanceVO> findCreditBalance(long accountId, long domainId, Date lastbalancedate, Date beforeThis) {
-        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+    public List<QuotaBalanceVO> findCreditBalance(final long accountId, final long domainId, final Date lastbalancedate, final Date beforeThis) {
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         Filter filter = new Filter(QuotaBalanceVO.class, "updatedOn", true, 0L, Long.MAX_VALUE);
         SearchCriteria<QuotaBalanceVO> sc = createSearchCriteria();
@@ -105,8 +105,8 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
 
     @SuppressWarnings("deprecation")
     @Override
-    public List<QuotaBalanceVO> findQuotaBalance(Long accountId, Long domainId, Date startDate, Date endDate) {
-        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+    public List<QuotaBalanceVO> findQuotaBalance(final Long accountId, final Long domainId, final Date startDate, final Date endDate) {
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
 
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         List<QuotaBalanceVO> quotaUsageRecords = null;
@@ -135,8 +135,8 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
 
     @SuppressWarnings("deprecation")
     @Override
-    public List<QuotaBalanceVO> findQuotaBalance(Long accountId, Long domainId, Date startDate) {
-        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+    public List<QuotaBalanceVO> findQuotaBalance(final Long accountId, final Long domainId, final Date startDate) {
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
 
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         List<QuotaBalanceVO> quotaUsageRecords = null;

@@ -154,7 +154,7 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
 
     @Override
     public QuotaStatementResponse createQuotaStatementResponse(List<QuotaUsageVO> quotaUsage) {
-        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         QuotaStatementResponse statement = new QuotaStatementResponse();
         Collections.sort(quotaUsage, new Comparator<QuotaUsageVO>() {
@@ -226,7 +226,7 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
 
     @Override
     public QuotaTariffVO updateQuotaTariffPlan(QuotaTariffUpdateCmd cmd) {
-        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         QuotaTariffVO result = null;
         boolean updateRecord = false;
@@ -260,8 +260,8 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
     }
 
     @Override
-    public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy, Date despositedOn) {
-        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+    public QuotaCreditsResponse addQuotaCredits(final Long accountId, final Long domainId, final Double amount, final Long updatedBy, final Date despositedOn) {
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         QuotaCreditsVO result = null;
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
@@ -283,8 +283,8 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
 
     @Override
     @SuppressWarnings("deprecation")
-    public Pair<List<? extends UsageVO>, Integer> getUsageRecords(long accountId, long domainId) {
-        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+    public Pair<List<? extends UsageVO>, Integer> getUsageRecords(final long accountId, final long domainId) {
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         s_logger.debug("getting usage records for account: " + accountId + ", domainId: " + domainId);
         Filter usageFilter = new Filter(UsageVO.class, "startDate", true, 0L, s_recordtofetch);
@@ -303,8 +303,8 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
     }
 
     @Override
-    public ServiceOfferingVO findServiceOffering(Long vmId, long serviceOfferingId) {
-        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+    public ServiceOfferingVO findServiceOffering(final Long vmId, final long serviceOfferingId) {
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
         ServiceOfferingVO result;
         try {

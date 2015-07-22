@@ -40,8 +40,8 @@ public class QuotaCreditsDaoImpl extends GenericDaoBase<QuotaCreditsVO, Long> im
 
     @SuppressWarnings("deprecation")
     @Override
-    public List<QuotaCreditsVO> findCredits(long accountId, long domainId, Date startDate, Date endDate) {
-        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+    public List<QuotaCreditsVO> findCredits(final long accountId, final long domainId, final Date startDate, final Date endDate) {
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         Filter filter = new Filter(QuotaCreditsVO.class, "updatedOn", true, 0L, Long.MAX_VALUE);
         SearchCriteria<QuotaCreditsVO> sc = createSearchCriteria();
@@ -58,8 +58,8 @@ public class QuotaCreditsDaoImpl extends GenericDaoBase<QuotaCreditsVO, Long> im
     }
 
     @Override
-    public QuotaCreditsVO saveCredits(QuotaCreditsVO credits) {
-        short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+    public QuotaCreditsVO saveCredits(final QuotaCreditsVO credits) {
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         persist(credits);
         // make an entry in the balance table
