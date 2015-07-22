@@ -51,7 +51,6 @@ import javax.naming.ConfigurationException;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +73,8 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
     private QuotaBalanceDao _quotaBalanceDao;
     @Inject
     private QuotaDBUtils _quotaDBUtils;
+    @Inject
+    private QuotaManager _quotaManager;
 
     private TimeZone _usageTimezone;
     private int _aggregationDuration = 0;
@@ -164,8 +165,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         startDate = startDate == null ? new Date() : startDate;
         cmd.setStartDate(startDate);
 
-        TimeZone usageTZ = getUsageTimezone();
-        Date adjustedStartDate = computeAdjustedTime(startDate, usageTZ);
+        Date adjustedStartDate = _quotaManager.computeAdjustedTime(startDate);
 
         if (endDate == null) {
             s_logger.debug("Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", on or before " + adjustedStartDate);
@@ -178,7 +178,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
                 return qbrecords;
             }
         } else if (startDate.before(endDate)) {
-            Date adjustedEndDate = computeAdjustedTime(endDate, usageTZ);
+            Date adjustedEndDate = _quotaManager.computeAdjustedTime(endDate);
             s_logger.debug("Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
             List<QuotaBalanceVO> qbrecords =  _quotaBalanceDao.findQuotaBalance(accountId, domainId, adjustedStartDate, adjustedEndDate);
             s_logger.info("Found records size=" + qbrecords.size());
@@ -228,9 +228,8 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         if (startDate.after(endDate)) {
             throw new InvalidParameterValueException("Incorrect Date Range. Start date: " + startDate + " is after end date:" + endDate);
         }
-        TimeZone usageTZ = getUsageTimezone();
-        Date adjustedStartDate = computeAdjustedTime(startDate, usageTZ);
-        Date adjustedEndDate = computeAdjustedTime(endDate, usageTZ);
+        Date adjustedStartDate = _quotaManager.computeAdjustedTime(startDate);
+        Date adjustedEndDate = _quotaManager.computeAdjustedTime(endDate);
 
         s_logger.debug("getting quota records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
         return _quotaUsageDao.findQuotaUsage(accountId, domainId, usageType, adjustedStartDate, adjustedEndDate);
@@ -239,8 +238,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
     @Override
     public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy) {
         Date depositDate = new Date();
-        TimeZone usageTZ = getUsageTimezone();
-        Date adjustedStartDate = computeAdjustedTime(depositDate, usageTZ);
+        Date adjustedStartDate = _quotaManager.computeAdjustedTime(depositDate);
         QuotaBalanceVO qb = _quotaBalanceDao.findLaterBalanceEntry(accountId, domainId, adjustedStartDate);
 
         if (qb != null) {
@@ -250,32 +248,5 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         return _quotaDBUtils.addQuotaCredits(accountId, domainId, amount, updatedBy, adjustedStartDate);
     }
 
-    public TimeZone getUsageTimezone() {
-        return _usageTimezone;
-    }
-
-    private Date computeAdjustedTime(Date initialDate, TimeZone targetTZ) {
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(initialDate);
-        TimeZone localTZ = cal.getTimeZone();
-        int timezoneOffset = cal.get(Calendar.ZONE_OFFSET);
-        if (localTZ.inDaylightTime(initialDate)) {
-            timezoneOffset += (60 * 60 * 1000);
-        }
-        cal.add(Calendar.MILLISECOND, timezoneOffset);
-
-        Date newTime = cal.getTime();
-
-        Calendar calTS = Calendar.getInstance(targetTZ);
-        calTS.setTime(newTime);
-        timezoneOffset = calTS.get(Calendar.ZONE_OFFSET);
-        if (targetTZ.inDaylightTime(initialDate)) {
-            timezoneOffset += (60 * 60 * 1000);
-        }
-
-        calTS.add(Calendar.MILLISECOND, -1 * timezoneOffset);
-
-        return calTS.getTime();
-    }
 
 }

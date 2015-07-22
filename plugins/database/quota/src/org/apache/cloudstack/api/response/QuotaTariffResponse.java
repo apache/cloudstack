@@ -18,9 +18,11 @@ package org.apache.cloudstack.api.response;
 
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.BaseResponse;
 
 import java.math.BigDecimal;
+import java.util.Date;
 
 public class QuotaTariffResponse extends BaseResponse {
 
@@ -43,6 +45,10 @@ public class QuotaTariffResponse extends BaseResponse {
     @SerializedName("tariffValue")
     @Param(description = "tariffValue")
     private BigDecimal tariffValue;
+
+    @SerializedName("effective_on")
+    @Param(description = "the time at whihc this quota value will be effective")
+    private Date effectiveOn = null;
 
     @SerializedName("include")
     @Param(description = "include")
@@ -116,6 +122,14 @@ public class QuotaTariffResponse extends BaseResponse {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Date getEffectiveOn() {
+        return effectiveOn;
+    }
+
+    public void setEffectiveOn(Date effectiveOn) {
+        this.effectiveOn = effectiveOn;
     }
 
 }

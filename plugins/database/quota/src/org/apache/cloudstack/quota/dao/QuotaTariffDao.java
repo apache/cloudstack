@@ -17,15 +17,17 @@
 package org.apache.cloudstack.quota.dao;
 
 import com.cloud.utils.db.GenericDao;
+
 import org.apache.cloudstack.quota.QuotaTariffVO;
 
+import java.util.Date;
 import java.util.List;
 
 public interface QuotaTariffDao extends GenericDao<QuotaTariffVO, Long> {
 
-    QuotaTariffVO findTariffPlanByUsageType(int usageType);
+    QuotaTariffVO findTariffPlanByUsageType(int usageType, Date onOrBefore);
 
-    List<QuotaTariffVO> listAllTariffPlans();
+    List<QuotaTariffVO> listAllTariffPlans(Date onOrBefore);
 
     boolean updateQuotaTariff(QuotaTariffVO plan);
 }

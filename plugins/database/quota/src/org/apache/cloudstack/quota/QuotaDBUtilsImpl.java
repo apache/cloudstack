@@ -66,19 +66,22 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
     private UserDao _userDao;
     @Inject
     private UsageDao _usageDao;
+    @Inject
+    private QuotaManager _quotaManager;
 
     static Long s_recordtofetch = 1000L;
 
     @Override
-    public QuotaTariffResponse createQuotaTariffResponse(QuotaTariffVO configuration) {
+    public QuotaTariffResponse createQuotaTariffResponse(QuotaTariffVO tariff) {
         final QuotaTariffResponse response = new QuotaTariffResponse();
-        response.setUsageType(configuration.getUsageType());
-        response.setUsageName(configuration.getUsageName());
-        response.setUsageUnit(configuration.getUsageUnit());
-        response.setUsageDiscriminator(configuration.getUsageDiscriminator());
-        response.setTariffValue(configuration.getCurrencyValue());
-        response.setInclude(configuration.getInclude());
-        response.setDescription(configuration.getDescription());
+        response.setUsageType(tariff.getUsageType());
+        response.setUsageName(tariff.getUsageName());
+        response.setUsageUnit(tariff.getUsageUnit());
+        response.setUsageDiscriminator(tariff.getUsageDiscriminator());
+        response.setTariffValue(tariff.getCurrencyValue());
+        response.setInclude(tariff.getInclude());
+        response.setEffectiveOn(tariff.getEffectiveOn());
+        response.setDescription(tariff.getDescription());
         return response;
     }
 
@@ -207,13 +210,15 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
     @Override
     public List<QuotaTariffVO> listQuotaTariffPlans(final QuotaTariffListCmd cmd) {
         List<QuotaTariffVO> result = new ArrayList<QuotaTariffVO>();
+        Date now = _quotaManager.computeAdjustedTime(new Date());
+        s_logger.info("Now=" + now.toGMTString() + " quotatype=" + cmd.getUsageType());
         if (cmd.getUsageType() != null) {
-            QuotaTariffVO tariffPlan = _quotaTariffDao.findTariffPlanByUsageType(cmd.getUsageType());
+            QuotaTariffVO tariffPlan = _quotaTariffDao.findTariffPlanByUsageType(cmd.getUsageType(), now);
             if (tariffPlan != null) {
                 result.add(tariffPlan);
             }
         } else {
-            result = _quotaTariffDao.listAllTariffPlans();
+            result = _quotaTariffDao.listAllTariffPlans(now);
         }
         return result;
     }
@@ -224,7 +229,8 @@ public class QuotaDBUtilsImpl implements QuotaDBUtils {
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         final int resourceType = cmd.getUsageType();
         final BigDecimal quotaCost = new BigDecimal(cmd.getValue());
-        QuotaTariffVO result = _quotaTariffDao.findTariffPlanByUsageType(resourceType);
+        Date now = _quotaManager.computeAdjustedTime(new Date());
+        QuotaTariffVO result = _quotaTariffDao.findTariffPlanByUsageType(resourceType, now);
         if (result == null) {
             throw new InvalidParameterValueException(String.format("Invalid Usage Resource type=%d provided", resourceType));
         }

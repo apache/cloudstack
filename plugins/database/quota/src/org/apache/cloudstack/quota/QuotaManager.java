@@ -16,10 +16,14 @@
 //under the License.
 package org.apache.cloudstack.quota;
 
+import java.util.Date;
+
 import com.cloud.utils.component.Manager;
 
 public interface QuotaManager extends Manager {
 
     public boolean calculateQuotaUsage();
+
+    Date computeAdjustedTime(Date date);
 
 }
