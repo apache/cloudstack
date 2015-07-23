@@ -229,3 +229,28 @@ JOIN `cloud`.`service_offering` o ON (v.service_offering_id = o.id)
 JOIN `cloud`.`vm_snapshots` s ON (s.service_offering_id = o.id AND s.vm_id = v.id)
 WHERE (o.cpu is null AND o.speed IS NULL AND o.ram_size IS NULL) AND
 (d.name = 'cpuNumber' OR d.name = 'cpuSpeed' OR d.name = 'memory');
+
+DROP TABLE IF EXISTS `cloud`.`netscaler_servicepackages`;
+CREATE TABLE `cloud`.`netscaler_servicepackages` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(255) UNIQUE,
+  `name` varchar(255) UNIQUE COMMENT 'name of the service package',
+  `description` varchar(255) COMMENT 'description of the service package',
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `cloud`.`external_netscaler_controlcenter`;
+CREATE TABLE `cloud`.`external_netscaler_controlcenter` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(255) UNIQUE,
+  `username` varchar(255) COMMENT 'username of the NCC',
+  `password` varchar(255) COMMENT 'password of NCC',
+  `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the external load balancer device',
+  `ncc_ip` varchar(255) COMMENT 'IP of NCC Manager',
+  `num_retries` bigint unsigned NOT NULL default 2 COMMENT 'Number of retries in ncc for command failure',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_external_ncc_devices_host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `service_package_id` varchar(255) NULL default NULL COMMENT 'Netscaler ControlCenter Service Package';
+ALTER TABLE `network_offerings` ADD CONSTRAINT `fk_netscaler_service_package_id` FOREIGN KEY (`service_package_id`) REFERENCES `netscaler_servicepackages` (`uuid`);
