@@ -17,17 +17,19 @@
 package org.apache.cloudstack.api.command;
 
 import com.cloud.user.Account;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.api.response.QuotaTariffResponse;
-import org.apache.cloudstack.quota.QuotaResponseBuilderImpl;
-import org.apache.cloudstack.quota.QuotaTariffVO;
+import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,7 +39,7 @@ public class QuotaTariffListCmd extends BaseListCmd {
     private static final String s_name = "quotatarifflistresponse";
 
     @Inject
-    QuotaResponseBuilderImpl _quotaDBUtils;
+    QuotaResponseBuilder _responseBuilder;
 
     @Parameter(name = ApiConstants.USAGE_TYPE, type = CommandType.INTEGER, required = false, description = "Usage type of the resource")
     private Integer usageType;
@@ -46,19 +48,14 @@ public class QuotaTariffListCmd extends BaseListCmd {
         super();
     }
 
-    public QuotaTariffListCmd(final QuotaResponseBuilderImpl quotaDBUtils) {
-        super();
-        _quotaDBUtils = quotaDBUtils;
-    }
-
     @Override
     public void execute() {
-        final List<QuotaTariffVO> result = _quotaDBUtils.listQuotaTariffPlans(this);
+        final List<QuotaTariffVO> result = _responseBuilder.listQuotaTariffPlans(this);
 
         final List<QuotaTariffResponse> responses = new ArrayList<QuotaTariffResponse>();
         for (final QuotaTariffVO resource : result) {
             s_logger.info("Result desc=" + resource.getDescription() + " date=" + resource.getEffectiveOn() + " val=" + resource.getCurrencyValue());
-            responses.add(_quotaDBUtils.createQuotaTariffResponse(resource));
+            responses.add(_responseBuilder.createQuotaTariffResponse(resource));
         }
 
         final ListResponse<QuotaTariffResponse> response = new ListResponse<QuotaTariffResponse>();

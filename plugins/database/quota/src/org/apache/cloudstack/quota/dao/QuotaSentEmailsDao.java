@@ -18,7 +18,7 @@ package org.apache.cloudstack.quota.dao;
 
 import java.util.List;
 
-import org.apache.cloudstack.quota.QuotaSentEmailsVO;
+import org.apache.cloudstack.quota.vo.QuotaSentEmailsVO;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;

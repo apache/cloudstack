@@ -29,10 +29,9 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.QuotaBalanceResponse;
+import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.quota.QuotaBalanceVO;
-import org.apache.cloudstack.quota.QuotaResponseBuilder;
-import org.apache.cloudstack.quota.QuotaService;
+import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.api.response.QuotaStatementItemResponse;
 
 import com.cloud.user.Account;
@@ -60,9 +59,7 @@ public class QuotaBalanceCmd extends BaseCmd {
     private Long accountId;
 
     @Inject
-    QuotaService _quotaService;
-    @Inject
-    QuotaResponseBuilder _quotaDBUtils;
+    QuotaResponseBuilder _responseBuilder;
 
     public Long getAccountId() {
         return accountId;
@@ -124,13 +121,13 @@ public class QuotaBalanceCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        List<QuotaBalanceVO> quotaUsage = _quotaService.getQuotaBalance(this);
+        List<QuotaBalanceVO> quotaUsage = _responseBuilder.getQuotaBalance(this);
 
         QuotaBalanceResponse response;
         if (getEndDate() == null) {
-            response = _quotaDBUtils.createQuotaLastBalanceResponse(quotaUsage, startDate);
+            response = _responseBuilder.createQuotaLastBalanceResponse(quotaUsage, startDate);
         } else {
-            response = _quotaDBUtils.createQuotaBalanceResponse(quotaUsage, startDate, endDate);
+            response = _responseBuilder.createQuotaBalanceResponse(quotaUsage, startDate, endDate);
         }
         response.setResponseName(getCommandName());
         setResponseObject(response);

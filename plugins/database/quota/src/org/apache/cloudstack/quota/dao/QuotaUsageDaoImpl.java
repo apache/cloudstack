@@ -23,7 +23,7 @@ import java.util.List;
 import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
-import org.apache.cloudstack.quota.QuotaUsageVO;
+import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;

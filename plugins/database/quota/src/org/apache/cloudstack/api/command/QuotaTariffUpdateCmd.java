@@ -17,18 +17,20 @@
 package org.apache.cloudstack.api.command;
 
 import com.cloud.user.Account;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.api.response.QuotaTariffResponse;
-import org.apache.cloudstack.quota.QuotaResponseBuilderImpl;
-import org.apache.cloudstack.quota.QuotaTariffVO;
+import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+
 import java.util.Date;
 
 @APICommand(name = "quotaTariffUpdate", responseObject = QuotaTariffResponse.class, description = "Update the tariff plan for a resource", since = "4.6.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -37,7 +39,7 @@ public class QuotaTariffUpdateCmd extends BaseCmd {
     private static final String s_name = "quotatariffupdateresponse";
 
     @Inject
-    QuotaResponseBuilderImpl _quotaDBUtils;
+    QuotaResponseBuilder _responseBuilder;
 
     @Parameter(name = ApiConstants.USAGE_TYPE, type = CommandType.INTEGER, required = true, description = "Integer value for the usage type of the resource")
     private Integer usageType;
@@ -76,11 +78,6 @@ public class QuotaTariffUpdateCmd extends BaseCmd {
         super();
     }
 
-    public QuotaTariffUpdateCmd(final QuotaResponseBuilderImpl quotaDBUtils) {
-        super();
-        _quotaDBUtils = quotaDBUtils;
-    }
-
     @Override
     public String getCommandName() {
         return s_name;
@@ -88,11 +85,11 @@ public class QuotaTariffUpdateCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        final QuotaTariffVO result = _quotaDBUtils.updateQuotaTariffPlan(this);
+        final QuotaTariffVO result = _responseBuilder.updateQuotaTariffPlan(this);
         if (result == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update quota tariff plan");
         }
-        final QuotaTariffResponse response = _quotaDBUtils.createQuotaTariffResponse(result);
+        final QuotaTariffResponse response = _responseBuilder.createQuotaTariffResponse(result);
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

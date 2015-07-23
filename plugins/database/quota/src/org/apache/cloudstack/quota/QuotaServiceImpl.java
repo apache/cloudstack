@@ -34,13 +34,15 @@ import org.apache.cloudstack.api.command.QuotaRefreshCmd;
 import org.apache.cloudstack.api.command.QuotaStatementCmd;
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
 import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
-import org.apache.cloudstack.api.response.QuotaCreditsResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
 import org.apache.cloudstack.quota.dao.QuotaUsageDao;
+import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
+import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -51,6 +53,7 @@ import javax.naming.ConfigurationException;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -71,10 +74,6 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
     private ConfigurationDao _configDao;
     @Inject
     private QuotaBalanceDao _quotaBalanceDao;
-    @Inject
-    private QuotaResponseBuilder _quotaDBUtils;
-    @Inject
-    private QuotaManager _quotaManager;
 
     private TimeZone _usageTimezone;
     private int _aggregationDuration = 0;
@@ -131,13 +130,10 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
     }
 
     @Override
-    public List<QuotaBalanceVO> getQuotaBalance(QuotaBalanceCmd cmd) {
+    public List<QuotaBalanceVO> getQuotaBalance(Long accountId, String accountName, Long domainId, Date startDate, Date endDate) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
 
-        Long accountId = cmd.getAccountId();
-        String accountName = cmd.getAccountName();
-        Long domainId = cmd.getDomainId();
         Account userAccount = null;
         Account caller = CallContext.current().getCallingAccount();
 
@@ -160,32 +156,27 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         }
         TransactionLegacy.open(opendb).close();
 
-        Date startDate = cmd.getStartDate();
-        Date endDate = cmd.getEndDate();
         startDate = startDate == null ? new Date() : startDate;
-        cmd.setStartDate(startDate);
 
-        Date adjustedStartDate = _quotaManager.computeAdjustedTime(startDate);
+        Date adjustedStartDate = computeAdjustedTime(startDate);
 
         if (endDate == null) {
             s_logger.debug("Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", on or before " + adjustedStartDate);
             List<QuotaBalanceVO> qbrecords = _quotaBalanceDao.findQuotaBalance(accountId, domainId, adjustedStartDate);
             s_logger.info("Found records size=" + qbrecords.size());
-            if (qbrecords.size() == 0){
+            if (qbrecords.size() == 0) {
                 throw new InvalidParameterValueException("Incorrect Date there are no quota records before this date " + adjustedStartDate);
-            }
-            else {
+            } else {
                 return qbrecords;
             }
         } else if (startDate.before(endDate)) {
-            Date adjustedEndDate = _quotaManager.computeAdjustedTime(endDate);
+            Date adjustedEndDate = computeAdjustedTime(endDate);
             s_logger.debug("Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
-            List<QuotaBalanceVO> qbrecords =  _quotaBalanceDao.findQuotaBalance(accountId, domainId, adjustedStartDate, adjustedEndDate);
+            List<QuotaBalanceVO> qbrecords = _quotaBalanceDao.findQuotaBalance(accountId, domainId, adjustedStartDate, adjustedEndDate);
             s_logger.info("Found records size=" + qbrecords.size());
-            if (qbrecords.size() == 0){
-                throw new InvalidParameterValueException("Incorrect Date range there are no quota records between these dates start date " + adjustedStartDate  + " and end date:" + endDate);
-            }
-            else {
+            if (qbrecords.size() == 0) {
+                throw new InvalidParameterValueException("Incorrect Date range there are no quota records between these dates start date " + adjustedStartDate + " and end date:" + endDate);
+            } else {
                 return qbrecords;
             }
         } else {
@@ -194,15 +185,11 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
     }
 
     @Override
-    public List<QuotaUsageVO> getQuotaUsage(QuotaStatementCmd cmd) {
+    public List<QuotaUsageVO> getQuotaUsage(Long accountId, String accountName, Long domainId, Integer usageType, Date startDate, Date endDate) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
-        Long accountId = cmd.getAccountId();
-        String accountName = cmd.getAccountName();
-        Long domainId = cmd.getDomainId();
         Account userAccount = null;
         Account caller = CallContext.current().getCallingAccount();
-        Integer usageType = cmd.getUsageType();
 
         // if accountId is not specified, use accountName and domainId
         if ((accountId == null) && (accountName != null) && (domainId != null)) {
@@ -223,30 +210,40 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         }
         TransactionLegacy.open(opendb).close();
 
-        Date startDate = cmd.getStartDate();
-        Date endDate = cmd.getEndDate();
         if (startDate.after(endDate)) {
             throw new InvalidParameterValueException("Incorrect Date Range. Start date: " + startDate + " is after end date:" + endDate);
         }
-        Date adjustedStartDate = _quotaManager.computeAdjustedTime(startDate);
-        Date adjustedEndDate = _quotaManager.computeAdjustedTime(endDate);
+        Date adjustedStartDate = computeAdjustedTime(startDate);
+        Date adjustedEndDate = computeAdjustedTime(endDate);
 
-        s_logger.debug("getting quota records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
+        s_logger.debug("Getting quota records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
         return _quotaUsageDao.findQuotaUsage(accountId, domainId, usageType, adjustedStartDate, adjustedEndDate);
     }
 
-    @Override
-    public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy) {
-        Date depositDate = new Date();
-        Date adjustedStartDate = _quotaManager.computeAdjustedTime(depositDate);
-        QuotaBalanceVO qb = _quotaBalanceDao.findLaterBalanceEntry(accountId, domainId, adjustedStartDate);
 
-        if (qb != null) {
-            throw new InvalidParameterValueException("Incorrect deposit date: " + adjustedStartDate + " there are balance entries after this date");
+    @Override
+    public Date computeAdjustedTime(final Date date) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        TimeZone localTZ = cal.getTimeZone();
+        int timezoneOffset = cal.get(Calendar.ZONE_OFFSET);
+        if (localTZ.inDaylightTime(date)) {
+            timezoneOffset += (60 * 60 * 1000);
+        }
+        cal.add(Calendar.MILLISECOND, timezoneOffset);
+
+        Date newTime = cal.getTime();
+
+        Calendar calTS = Calendar.getInstance(_usageTimezone);
+        calTS.setTime(newTime);
+        timezoneOffset = calTS.get(Calendar.ZONE_OFFSET);
+        if (_usageTimezone.inDaylightTime(date)) {
+            timezoneOffset += (60 * 60 * 1000);
         }
 
-        return _quotaDBUtils.addQuotaCredits(accountId, domainId, amount, updatedBy, adjustedStartDate);
-    }
+        calTS.add(Calendar.MILLISECOND, -1 * timezoneOffset);
 
+        return calTS.getTime();
+    }
 
 }

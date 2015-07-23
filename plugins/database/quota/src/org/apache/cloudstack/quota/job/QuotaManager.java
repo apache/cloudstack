@@ -14,16 +14,12 @@
 //KIND, either express or implied.  See the License for the
 //specific language governing permissions and limitations
 //under the License.
-package org.apache.cloudstack.quota;
-
-import java.util.Date;
+package org.apache.cloudstack.quota.job;
 
 import com.cloud.utils.component.Manager;
 
 public interface QuotaManager extends Manager {
 
     public boolean calculateQuotaUsage();
-
-    Date computeAdjustedTime(Date date);
 
 }

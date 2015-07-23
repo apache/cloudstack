@@ -14,34 +14,32 @@
 //KIND, either express or implied.  See the License for the
 //specific language governing permissions and limitations
 //under the License.
-package org.apache.cloudstack.quota;
+package org.apache.cloudstack.api.response;
 
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.usage.UsageVO;
-import com.cloud.usage.dao.UsageDao;
 import com.cloud.user.User;
 import com.cloud.user.dao.UserDao;
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
+
+import org.apache.cloudstack.api.command.QuotaBalanceCmd;
+import org.apache.cloudstack.api.command.QuotaStatementCmd;
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
 import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
-import org.apache.cloudstack.api.response.QuotaBalanceResponse;
-import org.apache.cloudstack.api.response.QuotaCreditsResponse;
-import org.apache.cloudstack.api.response.QuotaStatementItemResponse;
-import org.apache.cloudstack.api.response.QuotaStatementResponse;
-import org.apache.cloudstack.api.response.QuotaTariffResponse;
+import org.apache.cloudstack.quota.QuotaService;
+import org.apache.cloudstack.quota.constant.QuotaTypes;
+import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
 import org.apache.cloudstack.quota.dao.QuotaCreditsDao;
 import org.apache.cloudstack.quota.dao.QuotaTariffDao;
+import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
+import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
+import org.apache.cloudstack.quota.vo.QuotaTariffVO;
+import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 import org.apache.log4j.Logger;
-import org.joda.time.DateTimeComparator;
 import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,19 +56,14 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Inject
     private QuotaTariffDao _quotaTariffDao;
-
+    @Inject
+    private QuotaBalanceDao _quotaBalanceDao;
     @Inject
     private QuotaCreditsDao _quotaCreditsDao;
     @Inject
-    private ServiceOfferingDao _serviceOfferingDao;
-    @Inject
     private UserDao _userDao;
     @Inject
-    private UsageDao _usageDao;
-    @Inject
-    private QuotaManager _quotaManager;
-
-    static Long s_recordtofetch = 1000L;
+    private QuotaService _quotaService;
 
     @Override
     public QuotaTariffResponse createQuotaTariffResponse(QuotaTariffVO tariff) {
@@ -128,7 +121,9 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         BigDecimal lastCredits = new BigDecimal(0);
         for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
             QuotaBalanceVO entry = it.next();
-            //s_logger.info("Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
+            // s_logger.info("Date=" + entry.getUpdatedOn().toGMTString() +
+            // " balance=" + entry.getCreditBalance() + " credit=" +
+            // entry.getCreditsId());
             if (entry.getCreditsId() > 0) {
                 lastCredits = lastCredits.add(entry.getCreditBalance());
                 resp.addCredits(entry);
@@ -154,6 +149,9 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Override
     public QuotaStatementResponse createQuotaStatementResponse(List<QuotaUsageVO> quotaUsage) {
+        if (quotaUsage == null) {
+            new InvalidParameterValueException("There is no uage data for period mentioned.");
+        }
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         QuotaStatementResponse statement = new QuotaStatementResponse();
@@ -211,7 +209,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     @Override
     public List<QuotaTariffVO> listQuotaTariffPlans(final QuotaTariffListCmd cmd) {
         List<QuotaTariffVO> result = new ArrayList<QuotaTariffVO>();
-        Date now = _quotaManager.computeAdjustedTime(new Date());
+        Date now = _quotaService.computeAdjustedTime(new Date());
         s_logger.info("Now=" + now.toGMTString() + " quotatype=" + cmd.getUsageType());
         if (cmd.getUsageType() != null) {
             QuotaTariffVO tariffPlan = _quotaTariffDao.findTariffPlanByUsageType(cmd.getUsageType(), now);
@@ -226,37 +224,53 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Override
     public QuotaTariffVO updateQuotaTariffPlan(QuotaTariffUpdateCmd cmd) {
+        final int quotaType = cmd.getUsageType();
+        final BigDecimal quotaCost = new BigDecimal(cmd.getValue());
+        final Date effectiveDate = _quotaService.computeAdjustedTime(cmd.getStartDate());
+        final Date now = _quotaService.computeAdjustedTime(new Date());
+        // if effective date is in the past return error
+        if (effectiveDate.compareTo(now) < 0) {
+            throw new InvalidParameterValueException("Incorrect effective date for tariff " + effectiveDate + " is less than now " + now);
+        }
+        QuotaTypes quotaConstant = QuotaTypes.listQuotaTypes().get(quotaType);
+        if (quotaConstant==null) {
+            throw new InvalidParameterValueException("Quota type does not exists " + quotaType);
+        }
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         QuotaTariffVO result = null;
-        boolean updateRecord = false;
         try {
-            final int resourceType = cmd.getUsageType();
-            final BigDecimal quotaCost = new BigDecimal(cmd.getValue());
-            final Date effectiveDate = _quotaManager.computeAdjustedTime(cmd.getStartDate());
-            result = _quotaTariffDao.findTariffPlanByUsageType(resourceType, effectiveDate);
-            if (result == null) {
-                throw new InvalidParameterValueException(String.format("Invalid Usage Resource type=%d provided", resourceType));
-            }
-            s_logger.debug(String.format("Updating Quota Tariff Plan: Old value=%s, new value=%s for resource type=%d", result.getCurrencyValue(), quotaCost, resourceType));
-            if (DateTimeComparator.getDateOnlyInstance().compare(result.getEffectiveOn(), effectiveDate) == 0) {
-                updateRecord = true;
-            }
+            result = new QuotaTariffVO();
+            result.setUsageType(quotaType);
+            result.setUsageName(quotaConstant.getQuotaName());
+            result.setUsageUnit(quotaConstant.getQuotaUnit());
+            result.setUsageDiscriminator(quotaConstant.getDiscriminator());
             result.setCurrencyValue(quotaCost);
             result.setEffectiveOn(effectiveDate);
+            result.setUpdatedOn(now);
+            result.setUpdatedBy(cmd.getEntityOwnerId());
+
+            s_logger.debug(String.format("Updating Quota Tariff Plan: New value=%s for resource type=%d effective on date=%s", quotaCost, quotaType, effectiveDate));
+            _quotaTariffDao.addQuotaTariff(result);
         } catch (Exception pokemon) {
             s_logger.error("Error in update quota tariff plan: " + pokemon);
         } finally {
             TransactionLegacy.open(opendb).close();
         }
-        if (result != null) {
-            if (updateRecord) {
-                _quotaTariffDao.updateQuotaTariff(result);
-            } else {
-                result = _quotaTariffDao.addQuotaTariff(result);
-            }
-        }
         return result;
+    }
+
+    @Override
+    public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy) {
+        Date depositDate = new Date();
+        Date adjustedStartDate = _quotaService.computeAdjustedTime(depositDate);
+        QuotaBalanceVO qb = _quotaBalanceDao.findLaterBalanceEntry(accountId, domainId, adjustedStartDate);
+
+        if (qb != null) {
+            throw new InvalidParameterValueException("Incorrect deposit date: " + adjustedStartDate + " there are balance entries after this date");
+        }
+
+        return addQuotaCredits(accountId, domainId, amount, updatedBy, adjustedStartDate);
     }
 
     @Override
@@ -282,38 +296,13 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
-    public Pair<List<? extends UsageVO>, Integer> getUsageRecords(final long accountId, final long domainId) {
-        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
-        s_logger.debug("getting usage records for account: " + accountId + ", domainId: " + domainId);
-        Filter usageFilter = new Filter(UsageVO.class, "startDate", true, 0L, s_recordtofetch);
-        SearchCriteria<UsageVO> sc = _usageDao.createSearchCriteria();
-        if (accountId != -1) {
-            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-        }
-        if (domainId != -1) {
-            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-        }
-        sc.addAnd("quotaCalculated", SearchCriteria.Op.EQ, 0);
-        s_logger.debug("Getting usage records" + usageFilter.getOrderBy());
-        Pair<List<UsageVO>, Integer> usageRecords = _usageDao.searchAndCountAllRecords(sc, usageFilter);
-        TransactionLegacy.open(opendb).close();
-        return new Pair<List<? extends UsageVO>, Integer>(usageRecords.first(), usageRecords.second());
+    public List<QuotaUsageVO> getQuotaUsage(QuotaStatementCmd cmd) {
+        return _quotaService.getQuotaUsage(cmd.getAccountId(), cmd.getAccountName(), cmd.getDomainId(), cmd.getUsageType(), cmd.getStartDate(), cmd.getEndDate());
     }
 
     @Override
-    public ServiceOfferingVO findServiceOffering(final Long vmId, final long serviceOfferingId) {
-        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
-        ServiceOfferingVO result;
-        try {
-            result = _serviceOfferingDao.findById(vmId, serviceOfferingId);
-        } finally {
-            txn.close();
-        }
-        TransactionLegacy.open(opendb).close();
-        return result;
+    public List<QuotaBalanceVO> getQuotaBalance(QuotaBalanceCmd cmd) {
+        return _quotaService.getQuotaBalance(cmd.getAccountId(), cmd.getAccountName(), cmd.getDomainId(), cmd.getStartDate(), cmd.getEndDate());
     }
 
 }

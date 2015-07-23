@@ -14,12 +14,15 @@
 //KIND, either express or implied.  See the License for the
 //specific language governing permissions and limitations
 //under the License.
-package org.apache.cloudstack.quota;
+package org.apache.cloudstack.quota.vo;
 
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.quota.constant.QuotaTypes;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
@@ -34,6 +37,7 @@ public class QuotaTariffVO implements InternalIdentity {
     private static final long serialVersionUID = -7117933766387653203L;
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
 
@@ -59,9 +63,6 @@ public class QuotaTariffVO implements InternalIdentity {
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date effectiveOn = null;
 
-    @Column(name = "description")
-    private String description;
-
     @Column(name = "updated_on")
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date updatedOn = null;
@@ -73,7 +74,7 @@ public class QuotaTariffVO implements InternalIdentity {
     }
 
     public QuotaTariffVO(final int usagetype, final String usagename, final String usageunit, final String usagediscriminator, final BigDecimal currencyvalue, final int include,
-            final Date effectiveOn, final Date updatedOn, final long updatedBy, final String description) {
+            final Date effectiveOn, final Date updatedOn, final long updatedBy) {
         this.usageType = usagetype;
         this.usageName = usagename;
         this.usageUnit = usageunit;
@@ -81,7 +82,6 @@ public class QuotaTariffVO implements InternalIdentity {
         this.currencyValue = currencyvalue;
         this.include = include;
         this.effectiveOn = effectiveOn;
-        this.description = description;
         this.updatedOn = updatedOn;
         this.updatedBy = updatedBy;
     }
@@ -164,11 +164,7 @@ public class QuotaTariffVO implements InternalIdentity {
     }
 
     public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
+        return QuotaTypes.getDescription(usageType);
     }
 
     @Override

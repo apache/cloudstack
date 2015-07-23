@@ -19,7 +19,7 @@ package org.apache.cloudstack.quota.dao;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.cloudstack.quota.QuotaUsageVO;
+import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;

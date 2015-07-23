@@ -14,7 +14,7 @@
 //KIND, either express or implied.  See the License for the
 //specific language governing permissions and limitations
 //under the License.
-package org.apache.cloudstack.quota;
+package org.apache.cloudstack.quota.vo;
 
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -24,6 +24,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+
 import java.math.BigDecimal;
 import java.util.Date;
 

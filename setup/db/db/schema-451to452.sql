@@ -50,7 +50,6 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_tariff` (
   `currency_value` decimal(15,2) NOT NULL COMMENT 'usage type',
   `include` tinyint(1) NOT NULL COMMENT 'usage type',
   `effective_on` datetime NOT NULL COMMENT 'date time on which this quota values will become effective',
-  `description` varchar(255) NOT NULL COMMENT 'usage type',
   `updated_on` datetime NOT NULL COMMENT 'date this entry was updated on',
   `updated_by` bigint unsigned NOT NULL,
   PRIMARY KEY (`id`)
@@ -58,29 +57,29 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_tariff` (
 
 
 LOCK TABLES `cloud_usage`.`quota_tariff` WRITE;
-INSERT INTO `cloud_usage`.`quota_tariff` (`usage_type`, `usage_name`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `effective_on`, `description`, `updated_on`, `updated_by`) VALUES
- (1,'RUNNING_VM','Compute-Month','',0.00,1,'2010-05-04','Quota tariff for running VM', '2010-05-04',1),
- (2,'ALLOCATED_VM','Compute-Month','',0.00,1,'2010-05-04','Quota tariff for allocated VM', '2010-05-04',1),
- (3,'IP_ADDRESS','IP-Month','',0.00,1,'2010-05-04','Quota tariff for IP address in use', '2010-05-04',1),
- (4,'NETWORK_BYTES_SENT','GB','',0.00,1,'2010-05-04','Quota tariff for network bytes sent', '2010-05-04',1),
- (5,'NETWORK_BYTES_RECEIVED','GB','',0.00,1,'2010-05-04','Quota tariff for network bytes received', '2010-05-04',1),
- (6,'VOLUME','GB-Month','',0.00,1,'2010-05-04','Quota tariff for volume usage per month', '2010-05-04',1),
- (7,'TEMPLATE','GB-Month','',0.00,1,'2010-05-04','Quota tariff for template usage per month', '2010-05-04',1),
- (8,'ISO','GB-Month','',0.00,1,'2010-05-04','Quota tariff for ISO storage per month', '2010-05-04',1),
- (9,'SNAPSHOT','GB-Month','',0.00,1,'2010-05-04','Quota tariff for snapshot usage per month', '2010-05-04',1),
- (10,'SECURITY_GROUP','Policy-Month','',0.00,1,'2010-05-04','Quota tariff for Security groups', '2010-05-04',1),
- (11,'LOAD_BALANCER_POLICY','Policy-Month','',0.00,1,'2010-05-04','Quota tariff load balancer policy use per hour', '2010-05-04',1),
- (12,'PORT_FORWARDING_RULE','Policy-Month','',0.00,1,'2010-05-04','Quota tariff port forwarding rule useper hour', '2010-05-04',1),
- (13,'NETWORK_OFFERING','Policy-Month','',0.00,1,'2010-05-04','Quota tariff for network offering usage per hour', '2010-05-04',1),
- (14,'VPN_USERS','Policy-Month','',0.00,1,'2010-05-04','Quota tariff for using VPN', '2010-05-04',1),
- (15,'CPU_SPEED','Compute-Month','100MHz',0.00,1,'2010-05-04','Quota tariff for 100 MHz of CPU running for an hour', '2010-05-04',1),
- (16,'vCPU','Compute-Month','1VCPU',0.00,1,'2010-05-04','Quota tariff for running VM that has 1vCPU', '2010-05-04',1),
- (17,'MEMORY','Compute-Month','1MB',0.00,1,'2010-05-04','Quota tariff for usign 1MB or RAM for 1 hour', '2010-05-04',1),
- (21,'VM_DISK_IO_READ','GB','1',0.00,1,'2010-05-04','Quota tariff for 1GB of disk IO read', '2010-05-04',1),
- (22,'VM_DISK_IO_WRITE','GB','1',0.00,1,'2010-05-04','Quota tariff for 1GB of disk data write', '2010-05-04',1),
- (23,'VM_DISK_BYTES_READ','GB','1',0.00,1,'2010-05-04','Quota tariff for disk bytes read', '2010-05-04',1),
- (24,'VM_DISK_BYTES_WRITE','GB','1',0.00,1,'2010-05-04','Quota tariff for disk bytes write', '2010-05-04',1),
- (25,'VM_SNAPSHOT','GB-Month','',0.00,1,'2010-05-04','Quota tariff for running VM', '2010-05-04',1);
+INSERT INTO `cloud_usage`.`quota_tariff` (`usage_type`, `usage_name`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `effective_on`,  `updated_on`, `updated_by`) VALUES
+ (1,'RUNNING_VM','Compute-Month','',0.00,1,'2010-05-04', '2010-05-04',1),
+ (2,'ALLOCATED_VM','Compute-Month','',0.00,1,'2010-05-04', '2010-05-04',1),
+ (3,'IP_ADDRESS','IP-Month','',0.00,1,'2010-05-04', '2010-05-04',1),
+ (4,'NETWORK_BYTES_SENT','GB','',0.00,1,'2010-05-04', '2010-05-04',1),
+ (5,'NETWORK_BYTES_RECEIVED','GB','',0.00,1,'2010-05-04', '2010-05-04',1),
+ (6,'VOLUME','GB-Month','',0.00,1,'2010-05-04', '2010-05-04',1),
+ (7,'TEMPLATE','GB-Month','',0.00,1,'2010-05-04', '2010-05-04',1),
+ (8,'ISO','GB-Month','',0.00,1,'2010-05-04', '2010-05-04',1),
+ (9,'SNAPSHOT','GB-Month','',0.00,1,'2010-05-04', '2010-05-04',1),
+ (10,'SECURITY_GROUP','Policy-Month','',0.00,1,'2010-05-04', '2010-05-04',1),
+ (11,'LOAD_BALANCER_POLICY','Policy-Month','',0.00,1,'2010-05-04', '2010-05-04',1),
+ (12,'PORT_FORWARDING_RULE','Policy-Month','',0.00,1,'2010-05-04', '2010-05-04',1),
+ (13,'NETWORK_OFFERING','Policy-Month','',0.00,1,'2010-05-04', '2010-05-04',1),
+ (14,'VPN_USERS','Policy-Month','',0.00,1,'2010-05-04', '2010-05-04',1),
+ (15,'CPU_SPEED','Compute-Month','100MHz',0.00,1,'2010-05-04', '2010-05-04',1),
+ (16,'vCPU','Compute-Month','1VCPU',0.00,1,'2010-05-04', '2010-05-04',1),
+ (17,'MEMORY','Compute-Month','1MB',0.00,1,'2010-05-04', '2010-05-04',1),
+ (21,'VM_DISK_IO_READ','GB','1',0.00,1,'2010-05-04', '2010-05-04',1),
+ (22,'VM_DISK_IO_WRITE','GB','1',0.00,1,'2010-05-04', '2010-05-04',1),
+ (23,'VM_DISK_BYTES_READ','GB','1',0.00,1,'2010-05-04', '2010-05-04',1),
+ (24,'VM_DISK_BYTES_WRITE','GB','1',0.00,1,'2010-05-04', '2010-05-04',1),
+ (25,'VM_SNAPSHOT','GB-Month','',0.00,1,'2010-05-04', '2010-05-04',1);
 UNLOCK TABLES;
 
 CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_credits` (

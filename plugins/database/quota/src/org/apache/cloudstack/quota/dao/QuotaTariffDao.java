@@ -18,7 +18,7 @@ package org.apache.cloudstack.quota.dao;
 
 import com.cloud.utils.db.GenericDao;
 
-import org.apache.cloudstack.quota.QuotaTariffVO;
+import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 
 import java.util.Date;
 import java.util.List;

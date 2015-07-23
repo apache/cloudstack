@@ -24,8 +24,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.springframework.stereotype.Component;
-import org.apache.cloudstack.quota.QuotaBalanceVO;
-import org.apache.cloudstack.quota.QuotaCreditsVO;
+import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
+import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
 
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;

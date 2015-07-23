@@ -14,10 +14,11 @@
 //KIND, either express or implied.  See the License for the
 //specific language governing permissions and limitations
 //under the License.
-package org.apache.cloudstack.quota;
+package org.apache.cloudstack.quota.job;
 
 import com.cloud.configuration.Config;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.user.AccountVO;
@@ -28,9 +29,13 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.TransactionLegacy;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.dao.QuotaTariffDao;
 import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
 import org.apache.cloudstack.quota.dao.QuotaUsageDao;
+import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
+import org.apache.cloudstack.quota.vo.QuotaTariffVO;
+import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -42,7 +47,6 @@ import javax.naming.ConfigurationException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +66,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     @Inject
     private QuotaUsageDao _quotaUsageDao;
     @Inject
-    private QuotaResponseBuilder _quotaDBUtils;
+    private ServiceOfferingDao _serviceOfferingDao;
     @Inject
     private QuotaBalanceDao _quotaBalanceDao;
     @Inject
@@ -111,7 +115,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
                 List<QuotaUsageVO> quotalistforaccount = new ArrayList<QuotaUsageVO>();
                 do {
                     s_logger.info("Account =" + account.getAccountName());
-                    usageRecords = _quotaDBUtils.getUsageRecords(account.getAccountId(), account.getDomainId());
+                    usageRecords = _usageDao.getUsageRecords(account.getAccountId(), account.getDomainId());
                     s_logger.debug("Usage records found " + usageRecords.second());
                     for (UsageVO usageRecord : usageRecords.first()) {
                         BigDecimal aggregationRatio = new BigDecimal(_aggregationDuration).divide(s_minutesInMonth, 8, RoundingMode.HALF_EVEN);
@@ -205,7 +209,6 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
                     }
                 }// balance processed
             } // END ACCOUNT
-            txn.commit();
             jobResult = true;
         } catch (Exception e) {
             s_logger.error("Quota Manager error", e);
@@ -251,7 +254,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         // usageRecord.getVmInstanceId() + ", " + usageRecord.getUsageDisplay()
         // + ", aggrR=" + aggregationRatio);
         // get service offering details
-        ServiceOfferingVO serviceoffering = _quotaDBUtils.findServiceOffering(usageRecord.getVmInstanceId(), usageRecord.getOfferingId());
+        ServiceOfferingVO serviceoffering = _serviceOfferingDao.findServiceOffering(usageRecord.getVmInstanceId(), usageRecord.getOfferingId());
         rawusage = new BigDecimal(usageRecord.getRawUsage());
 
         QuotaTariffVO tariff = _quotaTariffDao.findTariffPlanByUsageType(QuotaTypes.CPU_NUMBER, usageRecord.getEndDate());
@@ -360,31 +363,6 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         usageRecord.setQuotaCalculated(1);
         _usageDao.persist(usageRecord);
         return quota_usage;
-    }
-
-    @Override
-    public Date computeAdjustedTime(final Date date) {
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(date);
-        TimeZone localTZ = cal.getTimeZone();
-        int timezoneOffset = cal.get(Calendar.ZONE_OFFSET);
-        if (localTZ.inDaylightTime(date)) {
-            timezoneOffset += (60 * 60 * 1000);
-        }
-        cal.add(Calendar.MILLISECOND, timezoneOffset);
-
-        Date newTime = cal.getTime();
-
-        Calendar calTS = Calendar.getInstance(_usageTimezone);
-        calTS.setTime(newTime);
-        timezoneOffset = calTS.get(Calendar.ZONE_OFFSET);
-        if (_usageTimezone.inDaylightTime(date)) {
-            timezoneOffset += (60 * 60 * 1000);
-        }
-
-        calTS.add(Calendar.MILLISECOND, -1 * timezoneOffset);
-
-        return calTS.getTime();
     }
 
 }

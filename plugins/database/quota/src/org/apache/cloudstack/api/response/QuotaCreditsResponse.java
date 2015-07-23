@@ -20,7 +20,7 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.quota.QuotaCreditsVO;
+import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;

@@ -21,7 +21,7 @@ import java.util.List;
 import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
-import org.apache.cloudstack.quota.QuotaSentEmailsVO;
+import org.apache.cloudstack.quota.vo.QuotaSentEmailsVO;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;

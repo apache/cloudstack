@@ -28,11 +28,10 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.api.response.QuotaStatementResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.quota.QuotaResponseBuilder;
-import org.apache.cloudstack.quota.QuotaService;
-import org.apache.cloudstack.quota.QuotaUsageVO;
+import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 import org.apache.cloudstack.api.response.QuotaStatementItemResponse;
 
 import com.cloud.user.Account;
@@ -63,9 +62,7 @@ public class QuotaStatementCmd extends BaseCmd {
     private Long accountId;
 
     @Inject
-    QuotaService _quotaService;
-    @Inject
-    QuotaResponseBuilder _quotaDBUtils;
+    QuotaResponseBuilder _responseBuilder;
 
     public Long getAccountId() {
         return accountId;
@@ -135,9 +132,9 @@ public class QuotaStatementCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        List<QuotaUsageVO> quotaUsage = _quotaService.getQuotaUsage(this);
+        List<QuotaUsageVO> quotaUsage = _responseBuilder.getQuotaUsage(this);
 
-        QuotaStatementResponse response = _quotaDBUtils.createQuotaStatementResponse(quotaUsage);
+        QuotaStatementResponse response = _responseBuilder.createQuotaStatementResponse(quotaUsage);
 
         response.setResponseName(getCommandName());
         setResponseObject(response);

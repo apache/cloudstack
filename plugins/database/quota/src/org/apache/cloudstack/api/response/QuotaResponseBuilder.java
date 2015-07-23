@@ -14,18 +14,16 @@
 //KIND, either express or implied.  See the License for the
 //specific language governing permissions and limitations
 //under the License.
-package org.apache.cloudstack.quota;
+package org.apache.cloudstack.api.response;
 
-import com.cloud.utils.Pair;
-import com.cloud.usage.UsageVO;
-import com.cloud.service.ServiceOfferingVO;
 
+import org.apache.cloudstack.api.command.QuotaBalanceCmd;
+import org.apache.cloudstack.api.command.QuotaStatementCmd;
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
 import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
-import org.apache.cloudstack.api.response.QuotaBalanceResponse;
-import org.apache.cloudstack.api.response.QuotaCreditsResponse;
-import org.apache.cloudstack.api.response.QuotaStatementResponse;
-import org.apache.cloudstack.api.response.QuotaTariffResponse;
+import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
+import org.apache.cloudstack.quota.vo.QuotaTariffVO;
+import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 
 import java.util.Date;
 import java.util.List;
@@ -42,12 +40,14 @@ public interface QuotaResponseBuilder {
 
     QuotaBalanceResponse createQuotaBalanceResponse(List<QuotaBalanceVO> quotaUsage, Date startDate, Date endDate);
 
-    Pair<List<? extends UsageVO>, Integer> getUsageRecords(long accountId, long domainId);
-
-    ServiceOfferingVO findServiceOffering(Long vmId, long serviceOfferingId);
-
     QuotaBalanceResponse createQuotaLastBalanceResponse(List<QuotaBalanceVO> quotaBalance, Date startDate);
 
     QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy, Date despositedOn);
+
+    public List<QuotaUsageVO> getQuotaUsage(QuotaStatementCmd cmd);
+
+    List<QuotaBalanceVO> getQuotaBalance(QuotaBalanceCmd cmd);
+
+    QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy);
 
 }

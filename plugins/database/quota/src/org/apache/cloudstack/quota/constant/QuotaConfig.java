@@ -15,11 +15,10 @@
 //specific language governing permissions and limitations
 //under the License.
 
-package org.apache.cloudstack.quota;
+package org.apache.cloudstack.quota.constant;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface QuotaConfig  {
-
 
  public static final ConfigKey<Boolean> QuotaPluginEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "quota.enable.service", "false",
          "Indicates whether Quota plugin is enabled or not", true);

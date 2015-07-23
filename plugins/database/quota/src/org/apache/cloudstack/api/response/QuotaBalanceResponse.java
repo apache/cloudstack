@@ -25,7 +25,7 @@ import java.util.List;
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.quota.QuotaBalanceVO;
+import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 
 import com.cloud.serializer.Param;
 

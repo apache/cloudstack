@@ -22,9 +22,8 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
-import org.apache.cloudstack.api.response.QuotaTypeResponse;
-import org.apache.cloudstack.quota.QuotaTariffVO;
-import org.apache.cloudstack.quota.QuotaTypes;
+import org.apache.cloudstack.quota.constant.QuotaTypes;
+import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -91,8 +90,8 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
             final SearchCriteria<QuotaTariffVO> sc = listAllIncludedUsageType.create();
             sc.setParameters("include", 1);
             sc.setParameters("onorbeforedate", onOrBeforeDate);
-            for (QuotaTypeResponse resp : QuotaTypes.listQuotaUsageTypes()) {
-                sc.setParameters("quotatype", resp.getQuotaType());
+            for (Integer quotaType : QuotaTypes.listQuotaTypes().keySet()) {
+                sc.setParameters("quotatype", quotaType);
                 List<QuotaTariffVO> result = search(sc, filter);
                 if (result.size() > 0) {
                     tariffs.add(result.get(0));

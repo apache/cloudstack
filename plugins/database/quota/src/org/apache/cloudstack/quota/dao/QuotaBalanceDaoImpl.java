@@ -24,7 +24,7 @@ import java.util.List;
 import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
-import org.apache.cloudstack.quota.QuotaBalanceVO;
+import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.db.Filter;

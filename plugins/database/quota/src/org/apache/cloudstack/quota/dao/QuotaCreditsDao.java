@@ -19,7 +19,7 @@ package org.apache.cloudstack.quota.dao;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.cloudstack.quota.QuotaCreditsVO;
+import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
 
 import com.cloud.utils.db.GenericDao;
 
