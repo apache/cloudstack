@@ -32,21 +32,22 @@ import org.apache.log4j.Logger;
 
 public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements LdapUserManager {
     public static final Logger s_logger = Logger.getLogger(ADLdapUserManagerImpl.class.getName());
+    private static final String MICROSOFT_AD_NESTED_MEMBERS_FILTER = "memberOf:1.2.840.113556.1.4.1941";
 
     @Override
     public List<LdapUser> getUsersInGroup(String groupName, LdapContext context) throws NamingException {
-        final SearchControls searchControls = new SearchControls();
-        searchControls.setSearchScope(_ldapConfiguration.getScope());
-        searchControls.setReturningAttributes(_ldapConfiguration.getReturnAttributes());
+        if (StringUtils.isBlank(groupName)) {
+            throw new IllegalArgumentException("ldap group name cannot be blank");
+        }
 
         String basedn = _ldapConfiguration.getBaseDn();
         if (StringUtils.isBlank(basedn)) {
             throw new IllegalArgumentException("ldap basedn is not configured");
         }
 
-        if (StringUtils.isBlank(groupName)) {
-            throw new IllegalArgumentException("ldap group name cannot be blank");
-        }
+        final SearchControls searchControls = new SearchControls();
+        searchControls.setSearchScope(_ldapConfiguration.getScope());
+        searchControls.setReturningAttributes(_ldapConfiguration.getReturnAttributes());
 
         NamingEnumeration<SearchResult> results = context.search(basedn, generateADGroupSearchFilter(groupName), searchControls);
         final List<LdapUser> users = new ArrayList<LdapUser>();
@@ -65,7 +66,7 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
 
         final StringBuilder memberOfFilter = new StringBuilder();
         String groupCnName =  _ldapConfiguration.getCommonNameAttribute() + "=" +groupName + "," +  _ldapConfiguration.getBaseDn();
-        memberOfFilter.append("(memberOf:1.2.840.113556.1.4.1941:=");
+        memberOfFilter.append("(" + MICROSOFT_AD_NESTED_MEMBERS_FILTER + ":=");
         memberOfFilter.append(groupCnName);
         memberOfFilter.append(")");
 

@@ -19,6 +19,7 @@
 package groovy.org.apache.cloudstack.ldap
 
 import org.apache.cloudstack.ldap.ADLdapUserManagerImpl
+import org.apache.cloudstack.ldap.LdapUserManager
 import org.apache.cloudstack.ldap.LdapUserManagerFactory
 import org.apache.cloudstack.ldap.OpenLdapUserManagerImpl
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory
@@ -42,7 +43,7 @@ class LdapUserManagerFactorySpec extends spock.lang.Specification {
         def result = ldapUserManagerFactory.getInstance(id);
 
         def expected;
-        if(id == "microsoftad") {
+        if(id == LdapUserManager.Provider.MICROSOFTAD) {
             expected = ADLdapUserManagerImpl.class;
         } else {
             expected = OpenLdapUserManagerImpl.class;
@@ -51,6 +52,6 @@ class LdapUserManagerFactorySpec extends spock.lang.Specification {
         expect:
         assert result.class.is(expected)
         where:
-        id << ["openldap", "microsoftad", null, "xyz"]
+        id << [LdapUserManager.Provider.MICROSOFTAD, LdapUserManager.Provider.OPENLDAP, null]
     }
 }

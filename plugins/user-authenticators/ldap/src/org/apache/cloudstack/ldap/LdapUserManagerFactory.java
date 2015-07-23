@@ -24,28 +24,37 @@ import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class LdapUserManagerFactory implements ApplicationContextAware {
+
+
     public static final Logger s_logger = Logger.getLogger(LdapUserManagerFactory.class.getName());
 
-    private static LdapUserManager adUserManager;
-    private static LdapUserManager openLdapUserManager;
+    private static Map<LdapUserManager.Provider, LdapUserManager> ldapUserManagerMap = new HashMap<>();
 
     static ApplicationContext applicationCtx;
 
-    public LdapUserManager getInstance(String id) {
-        if ("microsoftad".equalsIgnoreCase(id)) {
-            if (adUserManager == null) {
-                adUserManager = new ADLdapUserManagerImpl();
-                applicationCtx.getAutowireCapableBeanFactory().autowireBeanProperties(adUserManager, AutowireCapableBeanFactory.AUTOWIRE_BY_TYPE, true);
+    public LdapUserManager getInstance(LdapUserManager.Provider provider) {
+        LdapUserManager ldapUserManager;
+        if (provider == LdapUserManager.Provider.MICROSOFTAD) {
+            ldapUserManager = ldapUserManagerMap.get(LdapUserManager.Provider.MICROSOFTAD);
+            if (ldapUserManager == null) {
+                ldapUserManager = new ADLdapUserManagerImpl();
+                applicationCtx.getAutowireCapableBeanFactory().autowireBeanProperties(ldapUserManager, AutowireCapableBeanFactory.AUTOWIRE_BY_TYPE, true);
+                ldapUserManagerMap.put(LdapUserManager.Provider.MICROSOFTAD, ldapUserManager);
             }
-            return adUserManager;
+        } else {
+            //defaults to opendldap
+            ldapUserManager = ldapUserManagerMap.get(LdapUserManager.Provider.OPENLDAP);
+            if (ldapUserManager == null) {
+                ldapUserManager = new OpenLdapUserManagerImpl();
+                applicationCtx.getAutowireCapableBeanFactory().autowireBeanProperties(ldapUserManager, AutowireCapableBeanFactory.AUTOWIRE_BY_TYPE, true);
+                ldapUserManagerMap.put(LdapUserManager.Provider.OPENLDAP, ldapUserManager);
+            }
         }
-        //defaults to opendldap
-        if (openLdapUserManager == null) {
-            openLdapUserManager = new OpenLdapUserManagerImpl();
-            applicationCtx.getAutowireCapableBeanFactory().autowireBeanProperties(openLdapUserManager, AutowireCapableBeanFactory.AUTOWIRE_BY_TYPE, true);
-        }
-        return openLdapUserManager;
+        return ldapUserManager;
     }
 
     @Override

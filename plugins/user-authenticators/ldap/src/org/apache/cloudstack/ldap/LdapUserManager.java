@@ -26,6 +26,10 @@ import javax.naming.ldap.LdapContext;
 
 public interface LdapUserManager {
 
+    public enum Provider {
+        MICROSOFTAD, OPENLDAP;
+    }
+
     public LdapUser getUser(final String username, final LdapContext context) throws NamingException, IOException;
 
     public List<LdapUser> getUsers(final LdapContext context) throws NamingException, IOException;

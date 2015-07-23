@@ -25,6 +25,7 @@ import org.apache.cloudstack.framework.config.impl.ConfigurationVO
 import org.apache.cloudstack.ldap.LdapConfiguration
 import org.apache.cloudstack.ldap.LdapConfigurationVO
 import org.apache.cloudstack.ldap.LdapManager
+import org.apache.cloudstack.ldap.LdapUserManager
 import org.apache.cloudstack.ldap.dao.LdapConfigurationDao
 import org.apache.cxf.common.util.StringUtils
 
@@ -295,13 +296,14 @@ class LdapConfigurationSpec extends spock.lang.Specification {
         def ldapConfigurationDao = Mock(LdapConfigurationDao)
         LdapConfiguration ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
 
-        def expected = provider == null ? "openldap" : provider //"openldap" is the default value
+        def expected = provider.equalsIgnoreCase("microsoftad") ? LdapUserManager.Provider.MICROSOFTAD : LdapUserManager.Provider.OPENLDAP //"openldap" is the default value
 
         def result = ldapConfiguration.getLdapProvider()
         expect:
+        println "asserting for provider configuration: " + provider
         result == expected
         where:
-        provider << ["openldap", "microsoftad", null, "xyz"]
+        provider << ["openldap", "microsoftad", "", " ", "xyz", "MicrosoftAd", "OpenLdap", "MicrosoftAD"]
     }
 
 }

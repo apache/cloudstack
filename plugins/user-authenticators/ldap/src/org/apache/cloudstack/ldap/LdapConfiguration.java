@@ -167,7 +167,16 @@ public class LdapConfiguration implements Configurable{
         return ldapPageSize.value();
     }
 
-    public String getLdapProvider() { return ldapProvider.value();}
+    public LdapUserManager.Provider getLdapProvider() {
+        LdapUserManager.Provider provider;
+        try {
+            provider = LdapUserManager.Provider.valueOf(ldapProvider.value().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            //openldap is the default
+            provider = LdapUserManager.Provider.OPENLDAP;
+        }
+        return provider;
+    }
 
     @Override
     public String getConfigComponentName() {
