@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,18 +14,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
+package com.cloud.network.dao;
 
-package com.cloud.agent.api;
+import java.util.List;
 
-import com.cloud.host.Host;
+import com.cloud.network.NetScalerServicePackageVO;
+import com.cloud.utils.db.GenericDao;
 
-public class StartupExternalLoadBalancerCommand extends StartupCommand {
-    public StartupExternalLoadBalancerCommand() {
-        super(Host.Type.ExternalLoadBalancer);
-    }
+public interface NetScalerServicePackageDao extends GenericDao<NetScalerServicePackageVO, Long> {
 
-    public StartupExternalLoadBalancerCommand(Host.Type type) {
-        super(type);
-    }
+    NetScalerServicePackageVO findByPodId(long podId);
+
+    List<NetScalerServicePackageVO> listByNetScalerDeviceId(long netscalerDeviceId);
 }

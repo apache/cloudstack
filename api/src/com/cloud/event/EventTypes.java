@@ -545,6 +545,11 @@ public class EventTypes {
     //Usage related events
     public static final String EVENT_USAGE_REMOVE_USAGE_RECORDS = "USAGE.REMOVE.USAGE.RECORDS";
 
+    // Netscaler Service Package events
+    public static final String EVENT_NETSCALER_SERVICEPACKAGE_ADD = "NETSCALER.SERVICEPACKAGE.ADD";
+    public static final String EVENT_NETSCALER_SERVICEPACKAGE_DELETE = "NETSCALER.SERVICEPACKAGE.DELETE";
+
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking
@@ -918,6 +923,10 @@ public class EventTypes {
 
         //Usage
         entityEventDetails.put(EVENT_USAGE_REMOVE_USAGE_RECORDS, Usage.class);
+        // Netscaler Service Packages
+        entityEventDetails.put(EVENT_NETSCALER_SERVICEPACKAGE_ADD, "NETSCALER.SERVICEPACKAGE.CREATE");
+        entityEventDetails.put(EVENT_NETSCALER_SERVICEPACKAGE_DELETE, "NETSCALER.SERVICEPACKAGE.DELETE");
+
     }
 
     public static String getEntityForEvent(String eventName) {

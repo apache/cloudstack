@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,18 +14,33 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
+package com.cloud.network.dao;
 
-package com.cloud.agent.api;
+import java.util.List;
 
-import com.cloud.host.Host;
+import javax.ejb.Local;
 
-public class StartupExternalLoadBalancerCommand extends StartupCommand {
-    public StartupExternalLoadBalancerCommand() {
-        super(Host.Type.ExternalLoadBalancer);
+import org.springframework.stereotype.Component;
+
+import com.cloud.network.NetScalerControlCenterVO;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.GenericDaoBase;
+
+@Component
+@Local(value = NetScalerControlCenterDao.class)
+@DB
+public class NetScalerControlCenterDaoImpl extends GenericDaoBase<NetScalerControlCenterVO, Long> implements NetScalerControlCenterDao {
+
+    @Override
+    public NetScalerControlCenterVO findByPodId(long podId) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
-    public StartupExternalLoadBalancerCommand(Host.Type type) {
-        super(type);
+    @Override
+    public List<NetScalerControlCenterVO> listByNetScalerDeviceId(long netscalerDeviceId) {
+        // TODO Auto-generated method stub
+        return null;
     }
+
 }
