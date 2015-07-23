@@ -62,7 +62,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     @Inject
     private QuotaUsageDao _quotaUsageDao;
     @Inject
-    private QuotaDBUtils _quotaDBUtils;
+    private QuotaResponseBuilder _quotaDBUtils;
     @Inject
     private QuotaBalanceDao _quotaBalanceDao;
     @Inject

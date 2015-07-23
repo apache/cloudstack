@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.QuotaStatementResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.quota.QuotaDBUtils;
+import org.apache.cloudstack.quota.QuotaResponseBuilder;
 import org.apache.cloudstack.quota.QuotaService;
 import org.apache.cloudstack.quota.QuotaUsageVO;
 import org.apache.cloudstack.api.response.QuotaStatementItemResponse;
@@ -65,7 +65,7 @@ public class QuotaStatementCmd extends BaseCmd {
     @Inject
     QuotaService _quotaService;
     @Inject
-    QuotaDBUtils _quotaDBUtils;
+    QuotaResponseBuilder _quotaDBUtils;
 
     public Long getAccountId() {
         return accountId;

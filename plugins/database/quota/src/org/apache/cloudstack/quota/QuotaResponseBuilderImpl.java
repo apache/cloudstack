@@ -52,9 +52,9 @@ import java.util.Iterator;
 import java.util.List;
 
 @Component
-@Local(value = QuotaDBUtilsImpl.class)
-public class QuotaDBUtilsImpl implements QuotaDBUtils {
-    private static final Logger s_logger = Logger.getLogger(QuotaDBUtilsImpl.class.getName());
+@Local(value = QuotaResponseBuilderImpl.class)
+public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
+    private static final Logger s_logger = Logger.getLogger(QuotaResponseBuilderImpl.class.getName());
 
     @Inject
     private QuotaTariffDao _quotaTariffDao;

@@ -24,7 +24,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.QuotaTariffResponse;
-import org.apache.cloudstack.quota.QuotaDBUtilsImpl;
+import org.apache.cloudstack.quota.QuotaResponseBuilderImpl;
 import org.apache.cloudstack.quota.QuotaTariffVO;
 import org.apache.log4j.Logger;
 
@@ -37,7 +37,7 @@ public class QuotaTariffUpdateCmd extends BaseCmd {
     private static final String s_name = "quotatariffupdateresponse";
 
     @Inject
-    QuotaDBUtilsImpl _quotaDBUtils;
+    QuotaResponseBuilderImpl _quotaDBUtils;
 
     @Parameter(name = ApiConstants.USAGE_TYPE, type = CommandType.INTEGER, required = true, description = "Integer value for the usage type of the resource")
     private Integer usageType;
@@ -76,7 +76,7 @@ public class QuotaTariffUpdateCmd extends BaseCmd {
         super();
     }
 
-    public QuotaTariffUpdateCmd(final QuotaDBUtilsImpl quotaDBUtils) {
+    public QuotaTariffUpdateCmd(final QuotaResponseBuilderImpl quotaDBUtils) {
         super();
         _quotaDBUtils = quotaDBUtils;
     }

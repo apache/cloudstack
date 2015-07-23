@@ -72,7 +72,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
     @Inject
     private QuotaBalanceDao _quotaBalanceDao;
     @Inject
-    private QuotaDBUtils _quotaDBUtils;
+    private QuotaResponseBuilder _quotaDBUtils;
     @Inject
     private QuotaManager _quotaManager;
 

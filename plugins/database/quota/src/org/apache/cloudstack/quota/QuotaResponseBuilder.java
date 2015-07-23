@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.response.QuotaTariffResponse;
 import java.util.Date;
 import java.util.List;
 
-public interface QuotaDBUtils {
+public interface QuotaResponseBuilder {
 
     QuotaTariffVO updateQuotaTariffPlan(QuotaTariffUpdateCmd cmd);
 
