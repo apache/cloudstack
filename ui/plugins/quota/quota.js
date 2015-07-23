@@ -129,10 +129,12 @@ var g_quotaCurrency = '';
                                               $('<th>').html(_l('label.usage.type')).appendTo(statementTableHead);
                                               $('<th>').html(_l('label.quota.description')).appendTo(statementTableHead);
                                               $('<th>').html(_l('label.quota.value')).appendTo(statementTableHead);
-                                              $('<th>').html(_l('label.usage.unit')).appendTo(statementTableHead);
-                                              $('<th>').html("Start Date").appendTo(statementTableHead);
-                                              $('<th>').html("End Date").appendTo(statementTableHead);
+                                              //$('<th>').html("Start Date").appendTo(statementTableHead);
+                                              //$('<th>').html("End Date").appendTo(statementTableHead);
                                               statementTableHead.appendTo($('<thead>').appendTo(statementTable));
+
+                                              // Add total usage
+                                              quotaUsage.push({type: '', name: 'Total', quota: totalQuota, });
 
                                               var statementTableBody = $('<tbody>');
                                               for (var i = 0; i < quotaUsage.length; i++) {
@@ -145,9 +147,8 @@ var g_quotaCurrency = '';
                                                   $('<td>').html(quotaUsage[i].type).appendTo(statementTableBodyRow);
                                                   $('<td>').html(quotaUsage[i].name).appendTo(statementTableBodyRow);
                                                   $('<td>').html(g_quotaCurrency + quotaUsage[i].quota).appendTo(statementTableBodyRow);
-                                                  $('<td>').html(quotaUsage[i].unit).appendTo(statementTableBodyRow);
-                                                  $('<td>').html(quotaUsage[i].startdate).appendTo(statementTableBodyRow);
-                                                  $('<td>').html(quotaUsage[i].enddate).appendTo(statementTableBodyRow);
+                                                  //$('<td>').html(quotaUsage[i].startdate).appendTo(statementTableBodyRow);
+                                                  //$('<td>').html(quotaUsage[i].enddate).appendTo(statementTableBodyRow);
                                                   statementTableBodyRow.appendTo(statementTableBody);
                                               }
                                               statementTableBody.appendTo(statementTable);
@@ -184,17 +185,17 @@ var g_quotaCurrency = '';
                                               statementTable.appendTo($('<div class="data-table">').appendTo(generatedBalanceStatement));
 
                                               var statementTableHead = $('<tr>');
-                                              $('<th>').html('Description').appendTo(statementTableHead);
                                               $('<th>').html('Amount').appendTo(statementTableHead);
                                               $('<th>').html("Date").appendTo(statementTableHead);
+                                              $('<th>').html('Description').appendTo(statementTableHead);
                                               statementTableHead.appendTo($('<thead>').appendTo(statementTable));
 
                                               var statementTableBody = $('<tbody>');
 
                                               var statementTableBodyRow = $('<tr>');
-                                              $('<td>').html("Start Balance").appendTo(statementTableBodyRow);
                                               $('<td>').html(g_quotaCurrency + startBalance).appendTo(statementTableBodyRow);
                                               $('<td>').html(startBalanceDate).appendTo(statementTableBodyRow);
+                                              $('<td>').html("Start Balance").appendTo(statementTableBodyRow);
                                               statementTableBodyRow.appendTo(statementTableBody);
 
                                               for (var i = 0; i < credits.length; i++) {
@@ -204,16 +205,16 @@ var g_quotaCurrency = '';
                                                   } else {
                                                       statementTableBodyRow.addClass('odd');
                                                   }
-                                                  $('<td>').html("Credit").appendTo(statementTableBodyRow);
                                                   $('<td>').html(g_quotaCurrency + credits[i].credits).appendTo(statementTableBodyRow);
                                                   $('<td>').html(credits[i].updated_on).appendTo(statementTableBodyRow);
+                                                  $('<td>').html("Credit").appendTo(statementTableBodyRow);
                                                   statementTableBodyRow.appendTo(statementTableBody);
                                               }
 
                                               var statementTableBodyRow = $('<tr>');
-                                              $('<td>').html("End Balance").appendTo(statementTableBodyRow);
                                               $('<td>').html(g_quotaCurrency + endBalance).appendTo(statementTableBodyRow);
                                               $('<td>').html(endBalanceDate).appendTo(statementTableBodyRow);
+                                              $('<td>').html("End Balance").appendTo(statementTableBodyRow);
                                               statementTableBodyRow.appendTo(statementTableBody);
 
                                               statementTableBody.appendTo(statementTable);
@@ -558,7 +559,73 @@ var g_quotaCurrency = '';
                             {'id': 'quota-email',
                              'name': 'Email Templates',
                              'render': function($node) {
-                                  $node.html("<p>EMAIL TEMPLATE STUB</p>");
+                                  var manageTemplatesView = $('<div class="details" style="padding: 10px">');
+
+
+                                  var emailTemplateForm = $('<div class="quota-email-form">');
+                                  var templateDropdown = $('<div class="quota-template-dropdown">');
+                                  var templateOptions = $('<select><option value="QUOTA_LOW">Template for accounts with low quota balance</option><option value="QUOTA_EMPTY">Template for accounts with no quota balance</option></select>');
+                                  templateOptions.appendTo($('<p>Select Template: </p>').appendTo(templateDropdown));
+                                  $('<br>').appendTo(templateDropdown);
+
+                                  var templateSubjectTextArea = $('<textarea id="quota-template-subjectarea">');
+                                  var templateBodyTextArea = $('<textarea id="quota-template-bodyarea" style="height: 320px"></textarea>');
+                                  var saveTemplateButton = $('<button id="quota-save-template-button">').html("Save Template");
+
+                                  templateOptions.change(function() {
+                                      var templateName = $(this).find(':selected').val();
+                                      templateSubjectTextArea.val('');
+                                      templateBodyTextArea.val('');
+                                      $.ajax({
+                                          url: createURL('quotaEmailTemplateList'),
+                                          data: {
+                                              templatetype: templateName
+                                          },
+                                          success: function(json) {
+                                              if (!json.hasOwnProperty('quotaemailtemplatelistresponse') || !json.quotaemailtemplatelistresponse.hasOwnProperty('quotaemailtemplate')) {
+                                                  return;
+                                              }
+                                              var template = json.quotaemailtemplatelistresponse.quotaemailtemplate[0];
+                                              templateSubjectTextArea.val(template.templatesubject.replace(/\\n/g, '\n'));
+                                              templateBodyTextArea.val(template.templatebody.replace(/\\n/g, '\n'));
+                                          },
+                                          error: function(data) {
+                                          }
+                                      });
+                                  });
+                                  templateOptions.change();
+
+                                  saveTemplateButton.click(function() {
+                                      var templateName = templateOptions.find(':selected').val();
+                                      var templateSubject = templateSubjectTextArea.val();
+                                      var templateBody = templateBodyTextArea.val();
+
+                                      $.ajax({
+                                          url: createURL('quotaEmailTemplateUpdate'),
+                                          data: {
+                                              templatetype: templateName,
+                                              templatesubject: templateSubject,
+                                              templatebody: unescape(templateBody),
+                                          },
+                                          success: function(json) {
+                                              templateOptions.change();
+                                          },
+                                          error: function(data) {
+                                              //handle error here
+                                          }
+                                      });
+                                  });
+
+                                  templateDropdown.appendTo(emailTemplateForm);
+                                  $('<p>').html('Email Template Subject:').appendTo(emailTemplateForm);
+                                  templateSubjectTextArea.appendTo(emailTemplateForm);
+                                  $('<p>').html('Email Template Body:').appendTo(emailTemplateForm);
+                                  templateBodyTextArea.appendTo(emailTemplateForm);
+                                  saveTemplateButton.appendTo(emailTemplateForm);
+                                  $('<hr>').appendTo(emailTemplateForm);
+
+                                  emailTemplateForm.appendTo(manageTemplatesView);
+                                  manageTemplatesView.appendTo($node);
                              }
                             }];
 
