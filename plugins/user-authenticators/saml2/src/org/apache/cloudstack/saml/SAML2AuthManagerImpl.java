@@ -338,6 +338,7 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
                 return;
             }
             s_logger.debug("Starting SAML IDP Metadata Refresh Task");
+
             Map <String, SAMLProviderMetadata> metadataMap = new HashMap<String, SAMLProviderMetadata>();
             try {
                 discoverAndAddIdp(_idpMetaDataProvider.getMetadata(), metadataMap);
@@ -369,7 +370,7 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
             } else {
                 File metadataFile = PropertiesUtil.findConfigFile(idpMetaDataUrl);
                 if (metadataFile == null) {
-                    s_logger.error("Metadata file returned null");
+                    s_logger.error("Provided Metadata is not a URL, Unable to locate metadata file from local path: " + idpMetaDataUrl);
                     return false;
                 }
                 else{
