@@ -71,9 +71,9 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     private TimeZone _usageTimezone;
     private int _aggregationDuration = 0;
 
-    static BigDecimal s_hoursInMonth = new BigDecimal(30 * 24);
-    static BigDecimal s_minutesInMonth = new BigDecimal(30 * 24 * 60);
-    static BigDecimal s_gb = new BigDecimal(1024 * 1024 * 1024);
+    final static BigDecimal s_hoursInMonth = new BigDecimal(30 * 24);
+    final static BigDecimal s_minutesInMonth = new BigDecimal(30 * 24 * 60);
+    final static BigDecimal s_gb = new BigDecimal(1024 * 1024 * 1024);
 
     public QuotaManagerImpl() {
         super();
@@ -104,7 +104,6 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         boolean jobResult = false;
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
-
             // get all the active accounts for which there is usage
             List<AccountVO> accounts = _accountDao.listAll();
             for (AccountVO account : accounts) { // START ACCOUNT
@@ -206,6 +205,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
                     }
                 }// balance processed
             } // END ACCOUNT
+            txn.commit();
             jobResult = true;
         } catch (Exception e) {
             s_logger.error("Quota Manager error", e);
