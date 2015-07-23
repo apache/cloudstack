@@ -586,8 +586,8 @@ var g_quotaCurrency = '';
                                                   return;
                                               }
                                               var template = json.quotaemailtemplatelistresponse.quotaemailtemplate[0];
-                                              templateSubjectTextArea.val(template.templatesubject.replace(/\\n/g, '\n'));
-                                              templateBodyTextArea.val(template.templatebody.replace(/\\n/g, '\n'));
+                                              templateSubjectTextArea.val(template.templatesubject.replace(/\\n/g, '\n').replace(/\\"/g, '"'));
+                                              templateBodyTextArea.val(template.templatebody.replace(/\\n/g, '\n').replace(/\\"/g, '"'));
                                           },
                                           error: function(data) {
                                           }
