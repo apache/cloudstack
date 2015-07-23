@@ -368,8 +368,14 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
                 _idpMetaDataProvider = new HTTPMetadataProvider(_timer, client, idpMetaDataUrl);
             } else {
                 File metadataFile = PropertiesUtil.findConfigFile(idpMetaDataUrl);
-                s_logger.debug("Provided Metadata is not a URL, trying to read metadata file from local path: " + metadataFile.getAbsolutePath());
-                _idpMetaDataProvider = new FilesystemMetadataProvider(_timer, metadataFile);
+                if (metadataFile == null) {
+                    s_logger.error("Metadata file returned null");
+                    return false;
+                }
+                else{
+                    s_logger.debug("Provided Metadata is not a URL, trying to read metadata file from local path: " + metadataFile.getAbsolutePath());
+                    _idpMetaDataProvider = new FilesystemMetadataProvider(_timer, metadataFile);
+                }
             }
             _idpMetaDataProvider.setRequireValidMetadata(true);
             _idpMetaDataProvider.setParserPool(new BasicParserPool());
