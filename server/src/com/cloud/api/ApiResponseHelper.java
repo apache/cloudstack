@@ -505,7 +505,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
-            tagResponses.add(tagResponse);
+            if(tagResponse != null)
+                tagResponses.add(tagResponse);
         }
         snapshotResponse.setTags(tagResponses);
 
@@ -790,7 +791,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
-            tagResponses.add(tagResponse);
+            if(tagResponse != null)
+                tagResponses.add(tagResponse);
         }
         ipResponse.setTags(tagResponses);
 
@@ -832,7 +834,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
-            tagResponses.add(tagResponse);
+            if(tagResponse != null)
+                tagResponses.add(tagResponse);
         }
         lbResponse.setTags(tagResponses);
 
@@ -1119,7 +1122,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
-            tagResponses.add(tagResponse);
+            if(tagResponse != null)
+                tagResponses.add(tagResponse);
         }
         response.setTags(tagResponses);
 
@@ -2072,7 +2076,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
-            tagResponses.add(tagResponse);
+            if(tagResponse != null)
+                tagResponses.add(tagResponse);
         }
         response.setTags(tagResponses);
 
@@ -2158,7 +2163,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
-            tagResponses.add(tagResponse);
+            if(tagResponse != null)
+                tagResponses.add(tagResponse);
         }
         response.setTags(tagResponses);
 
@@ -2209,7 +2215,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
-            tagResponses.add(tagResponse);
+            if(tagResponse != null)
+                tagResponses.add(tagResponse);
         }
         response.setTags(tagResponses);
 
@@ -2645,6 +2652,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public ResourceTagResponse createResourceTagResponse(ResourceTag resourceTag, boolean keyValueOnly) {
         ResourceTagJoinVO rto = ApiDBUtils.newResourceTagView(resourceTag);
+        if(rto == null)
+            return null;
         return ApiDBUtils.newResourceTagResponse(rto, keyValueOnly);
     }
 
@@ -2753,7 +2762,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
-            tagResponses.add(tagResponse);
+            if(tagResponse != null)
+                tagResponses.add(tagResponse);
         }
         response.setTags(tagResponses);
         response.setObjectName("vpc");
@@ -2944,7 +2954,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
-            tagResponses.add(tagResponse);
+            if(tagResponse != null)
+                tagResponses.add(tagResponse);
         }
         response.setTags(tagResponses);
         response.setObjectName("staticroute");
@@ -3512,7 +3523,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
-            tagResponses.add(tagResponse);
+            if(tagResponse != null)
+                tagResponses.add(tagResponse);
         }
         lbResponse.setTags(tagResponses);
 
