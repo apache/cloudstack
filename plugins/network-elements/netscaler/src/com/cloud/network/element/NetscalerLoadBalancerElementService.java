@@ -23,7 +23,12 @@ import com.cloud.api.commands.ConfigureNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.DeleteNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.ListNetscalerLoadBalancerNetworksCmd;
 import com.cloud.api.commands.ListNetscalerLoadBalancersCmd;
+import com.cloud.api.commands.RegisterNetscalerControlCenterCmd;
+import com.cloud.api.commands.RegisterServicePackageCmd;
 import com.cloud.api.response.NetscalerLoadBalancerResponse;
+import com.cloud.api.response.NetScalerServicePackageResponse;
+import com.cloud.network.NetScalerControlCenterVO;
+import com.cloud.network.NetScalerServicePackageVO;
 import com.cloud.network.Network;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
 import com.cloud.utils.component.PluggableService;
@@ -71,4 +76,19 @@ public interface NetscalerLoadBalancerElementService extends PluggableService {
      * @return NetscalerLoadBalancerResponse
      */
     public NetscalerLoadBalancerResponse createNetscalerLoadBalancerResponse(ExternalLoadBalancerDeviceVO lbDeviceVO);
+
+    /**
+     * creates API response object for netscaler load balancers
+     * @param lbDeviceVO external load balancer VO object
+     * @return NetscalerLoadBalancerResponse
+     */
+    public NetScalerServicePackageResponse registerNetscalerServicePackage(RegisterServicePackageCmd cmd);
+
+    public NetScalerServicePackageResponse deleteNetscalerServicePackage(RegisterServicePackageCmd cmd);
+
+    public NetScalerServicePackageResponse listNetscalerServicePackage(RegisterServicePackageCmd cmd);
+
+    public NetScalerServicePackageResponse createNetscalerServicePackageResponse(NetScalerServicePackageVO servicePackageVO);
+
+    public NetScalerControlCenterVO registerNetscalerControlCenter(RegisterNetscalerControlCenterCmd registerNetscalerControlCenterCmd);
 }
