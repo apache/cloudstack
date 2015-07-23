@@ -220,7 +220,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             }
         }
 
-        return Status.Alert;
+        return hostState;
     }
 
     @Override
