@@ -1112,7 +1112,12 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         if (!(startup[0] instanceof StartupExternalLoadBalancerCommand)) {
             return null;
         }
-        host.setType(Host.Type.ExternalLoadBalancer);
+        if(host.getName().equalsIgnoreCase("NetScalerControlCenter")) {
+            host.setType(Host.Type.NetScalerControlCenter);
+        }
+        else {
+            host.setType(Host.Type.ExternalLoadBalancer);
+        }
         return host;
     }
 
