@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.response;
 
 
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
+import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
+import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
 import org.apache.cloudstack.api.command.QuotaStatementCmd;
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
 import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
@@ -50,4 +52,7 @@ public interface QuotaResponseBuilder {
 
     QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy);
 
+    List<QuotaEmailTemplateResponse> listQuotaEmailTemplates(QuotaEmailTemplateListCmd cmd);
+
+    boolean updateQuotaEmailTemplate(QuotaEmailTemplateUpdateCmd cmd);
 }

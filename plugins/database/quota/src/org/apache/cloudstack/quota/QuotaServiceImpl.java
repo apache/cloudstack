@@ -29,7 +29,8 @@ import com.cloud.utils.db.TransactionLegacy;
 
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaCreditsCmd;
-import org.apache.cloudstack.api.command.QuotaEmailTemplateAddCmd;
+import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
+import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
 import org.apache.cloudstack.api.command.QuotaRefreshCmd;
 import org.apache.cloudstack.api.command.QuotaStatementCmd;
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
@@ -108,13 +109,14 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
     @Override
     public List<Class<?>> getCommands() {
         final List<Class<?>> cmdList = new ArrayList<Class<?>>();
-        cmdList.add(QuotaTariffListCmd.class);
-        cmdList.add(QuotaTariffUpdateCmd.class);
-        cmdList.add(QuotaCreditsCmd.class);
-        cmdList.add(QuotaEmailTemplateAddCmd.class);
         cmdList.add(QuotaRefreshCmd.class);
         cmdList.add(QuotaStatementCmd.class);
         cmdList.add(QuotaBalanceCmd.class);
+        cmdList.add(QuotaTariffListCmd.class);
+        cmdList.add(QuotaTariffUpdateCmd.class);
+        cmdList.add(QuotaCreditsCmd.class);
+        cmdList.add(QuotaEmailTemplateListCmd.class);
+        cmdList.add(QuotaEmailTemplateUpdateCmd.class);
         return cmdList;
     }
 

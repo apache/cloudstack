@@ -112,7 +112,7 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close(); // Switch to
                                                                     // Usage DB
-        boolean result = this.update(plan.getId(), plan);
+        final boolean result = this.update(plan.getId(), plan);
         TransactionLegacy.open(opendb).close(); // Switch back
         return result;
     }
@@ -123,7 +123,7 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close(); // Switch to
         // Usage DB
         plan.setId(null);
-        QuotaTariffVO result = this.persist(plan);
+        final QuotaTariffVO result = this.persist(plan);
         TransactionLegacy.open(opendb).close(); // Switch back
         return result;
     }

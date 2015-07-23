@@ -20,6 +20,6 @@ import com.cloud.utils.component.Manager;
 
 public interface QuotaManager extends Manager {
 
-    public boolean calculateQuotaUsage();
+    boolean calculateQuotaUsage();
 
 }

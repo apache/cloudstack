@@ -16,33 +16,49 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
-import java.util.List;
+import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
+import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
+import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
-
-import org.springframework.stereotype.Component;
-import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
-import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
-
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.SearchCriteria;
+import java.util.List;
 
 @Component
 @Local(value = { QuotaEmailTemplatesDao.class })
 public class QuotaEmailTemplatesDaoImpl extends GenericDaoBase<QuotaEmailTemplatesVO, Long> implements QuotaEmailTemplatesDao {
 
-    @Override
-    public QuotaEmailTemplatesVO fetchTemplate(String templateName) {
-        // TODO Auto-generated method stub
-        return null;
+    protected SearchBuilder<QuotaEmailTemplatesVO> QuotaEmailTemplateSearch;
+
+    public QuotaEmailTemplatesDaoImpl() {
+        super();
+
+        QuotaEmailTemplateSearch = createSearchBuilder();
+        QuotaEmailTemplateSearch.and("template_name", QuotaEmailTemplateSearch.entity().getTemplateName(), SearchCriteria.Op.EQ);
+        QuotaEmailTemplateSearch.done();
     }
 
     @Override
-    public Pair<List<QuotaBalanceVO>, Integer> searchBalance(SearchCriteria<QuotaBalanceVO> sc, Filter filter) {
-        // TODO Auto-generated method stub
-        return null;
+    public List<QuotaEmailTemplatesVO> listAllQuotaEmailTemplates(String templateName) {
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+        TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+        SearchCriteria<QuotaEmailTemplatesVO> sc = QuotaEmailTemplateSearch.create();
+        if (templateName != null) {
+            sc.setParameters("template_name", templateName);
+        }
+        List<QuotaEmailTemplatesVO> result = this.listBy(sc);
+        TransactionLegacy.open(opendb).close();
+        return result;
     }
 
+    @Override
+    public boolean updateQuotaEmailTemplate(QuotaEmailTemplatesVO template) {
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+        TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+        final boolean result = this.update(template.getId(), template);
+        TransactionLegacy.open(opendb).close();
+        return result;
+    }
 }

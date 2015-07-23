@@ -16,60 +16,54 @@
 //under the License.
 package org.apache.cloudstack.quota.vo;
 
-import java.util.Date;
+import org.apache.cloudstack.api.InternalIdentity;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
-
-import org.apache.cloudstack.api.InternalIdentity;
+import java.util.Date;
 
 @Entity
 @Table(name = "quota_email_templates")
 public class QuotaEmailTemplatesVO implements InternalIdentity {
-
-    private static final long serialVersionUID = -7117933842834553210L;
-
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
 
     @Column(name = "template_name")
     private String templateName;
 
-    @Column(name = "template_text")
-    private String templateText;
+    @Column(name = "template_subject")
+    private String templateSubject;
 
-    @Column(name = "category")
-    private Integer category;
-
-    @Column(name = "last_updated")
-    @Temporal(value = TemporalType.TIMESTAMP)
-    private Date lastUpdated = null;
+    @Column(name = "template_body")
+    private String templateBody;
 
     @Column(name = "locale")
     private String locale;
 
-    @Column(name = "version")
-    private Integer version;
+    @Column(name = "updated")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date lastUpdated = null;
 
     public QuotaEmailTemplatesVO() {
     }
 
-    public QuotaEmailTemplatesVO(String templateName, String templateText, String locale, Integer version) {
+    public QuotaEmailTemplatesVO(String templateName, String templateSubject, String templateBody) {
         super();
         this.templateName = templateName;
-        this.templateText = templateText;
-        this.locale = locale;
-        this.version = version;
+        this.templateSubject = templateSubject;
+        this.templateBody = templateBody;
     }
 
     @Override
     public long getId() {
-        // TODO Auto-generated method stub
         return id;
     }
 
@@ -81,20 +75,20 @@ public class QuotaEmailTemplatesVO implements InternalIdentity {
         this.templateName = templateName;
     }
 
-    public String getTemplateText() {
-        return templateText;
+    public String getTemplateSubject() {
+        return templateSubject;
     }
 
-    public void setTemplateText(String templateText) {
-        this.templateText = templateText;
+    public void setTemplateSubject(String templateSubject) {
+        this.templateSubject = templateSubject;
     }
 
-    public Integer getCategory() {
-        return category;
+    public String getTemplateBody() {
+        return templateBody;
     }
 
-    public void setCategory(Integer version) {
-        this.category = category;
+    public void setTemplateBody(String templateBody) {
+        this.templateBody = templateBody;
     }
 
     public Date getLastUpdated() {
@@ -112,13 +106,4 @@ public class QuotaEmailTemplatesVO implements InternalIdentity {
     public void setLocale(String locale) {
         this.locale = locale;
     }
-
-    public Integer getVersion() {
-        return version;
-    }
-
-    public void setVersion(Integer version) {
-        this.version = version;
-    }
-
 }

@@ -16,20 +16,12 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
-import java.util.List;
-
-import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
+import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.db.SearchCriteria;
+import java.util.List;
 
 public interface QuotaEmailTemplatesDao extends GenericDao<QuotaEmailTemplatesVO, Long> {
-
-    QuotaEmailTemplatesVO fetchTemplate(String templateName);
-
-    Pair<List<QuotaBalanceVO>, Integer> searchBalance(SearchCriteria<QuotaBalanceVO> sc, Filter filter);
-
+    List<QuotaEmailTemplatesVO> listAllQuotaEmailTemplates(String templateName);
+    boolean updateQuotaEmailTemplate(QuotaEmailTemplatesVO template);
 }

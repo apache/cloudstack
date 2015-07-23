@@ -16,67 +16,75 @@
 //under the License.
 package org.apache.cloudstack.api.response;
 
-import java.sql.Timestamp;
-
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
-
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
-import com.cloud.serializer.Param;
+import java.util.Date;
 
 public class QuotaEmailTemplateResponse extends BaseResponse {
+    @SerializedName("templatetype")
+    @Param(description = "Template type")
+    private String templateType;
 
-    @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the credit")
-    private String id;
+    @SerializedName("templatesubject")
+    @Param(description = "The quota email template subject")
+    private String templateSubject;
 
-    @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account name of the api remaining count")
-    private String accountName;
+    @SerializedName("templatebody")
+    @Param(description = "The quota email template content")
+    private String templateText;
 
-    @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID of the iam policy")
-    private String domainId;
+    @SerializedName("locale")
+    @Param(description = "The quota email template locale")
+    private String locale;
 
-    @SerializedName("sent_on")
-    @Param(description = "the account name of the admin who updated the credits")
-    private Timestamp SentOn;
+    @SerializedName("last_updated")
+    @Param(description = "Last date/time when template was updated")
+    private Date lastUpdatedOn;
 
     public QuotaEmailTemplateResponse() {
         super();
+        this.setObjectName("quotaemailtemplate");
     }
 
-    public String getId() {
-        return id;
+    public String getTemplateType() {
+        return templateType;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setTemplateType(String templateType) {
+        this.templateType = templateType;
     }
 
-    public String getAccountName() {
-        return accountName;
+    public String getTemplateSubject() {
+        return templateSubject;
     }
 
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
+    public void setTemplateSubject(String templateSubject) {
+        this.templateSubject = templateSubject;
     }
 
-    public String getDomainId() {
-        return domainId;
+    public String getTemplateText() {
+        return templateText;
     }
 
-    public void setDomainId(String domainId) {
-        this.domainId = domainId;
+    public void setTemplateText(String templateText) {
+        this.templateText = templateText;
     }
 
-    public Timestamp getSentOn() {
-        return SentOn;
+    public String getLocale() {
+        return locale;
     }
 
-    public void setSentOn(Timestamp sentOn) {
-        SentOn = sentOn;
+    public void setLocale(String locale) {
+        this.locale = locale;
     }
 
+    public Date getLastUpdatedOn() {
+        return lastUpdatedOn;
+    }
+
+    public void setLastUpdatedOn(Date lastUpdatedOn) {
+        this.lastUpdatedOn = lastUpdatedOn;
+    }
 }

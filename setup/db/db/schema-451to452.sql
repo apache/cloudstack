@@ -119,15 +119,19 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_balance` (
 
 CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_email_templates` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `template_name` varchar(64) DEFAULT NULL,
-  `template_text` longtext,
-  `category` int(10) unsigned NOT NULL DEFAULT '0',
-  `last_updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `template_name` varchar(64) NOT NULL UNIQUE,
+  `template_subject` longtext,
+  `template_body` longtext,
   `locale` varchar(25) DEFAULT 'en_US',
-  `version` int(11) DEFAULT '0',
+  `updated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+LOCK TABLES `cloud_usage`.`quota_email_templates` WRITE;
+INSERT INTO `cloud_usage`.`quota_email_templates` (`template_name`, `template_subject`, `template_body`) VALUES
+ ('QUOTA_LOW', 'Quota Usage Threshold crossed ${accountName}', 'Your account "${accountName}" in the domain "${domainName}" has reached usage threshold, the current balance is ${quotaCurrency} ${quotaValue}'),
+ ('QUOTA_EMPTY', 'Quota Exhausted, account ${accountName} is locked now', 'Your account "${accountName}" in the domain "${domainName}" has exhausted allocated quota due to which your account has locked now, please contact the administrator');
+UNLOCK TABLES;
 
 CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_sent_emails` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,

@@ -27,11 +27,10 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.TransactionLegacy;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
-import org.apache.cloudstack.quota.dao.QuotaTariffDao;
 import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
+import org.apache.cloudstack.quota.dao.QuotaTariffDao;
 import org.apache.cloudstack.quota.dao.QuotaUsageDao;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
@@ -43,7 +42,6 @@ import org.springframework.stereotype.Component;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;

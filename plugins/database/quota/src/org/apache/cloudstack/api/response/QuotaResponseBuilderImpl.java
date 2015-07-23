@@ -20,8 +20,9 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.User;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.db.TransactionLegacy;
-
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
+import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
+import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
 import org.apache.cloudstack.api.command.QuotaStatementCmd;
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
 import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
@@ -29,17 +30,19 @@ import org.apache.cloudstack.quota.QuotaService;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
 import org.apache.cloudstack.quota.dao.QuotaCreditsDao;
+import org.apache.cloudstack.quota.dao.QuotaEmailTemplatesDao;
 import org.apache.cloudstack.quota.dao.QuotaTariffDao;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
+import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
-
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -60,6 +63,9 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     private QuotaBalanceDao _quotaBalanceDao;
     @Inject
     private QuotaCreditsDao _quotaCreditsDao;
+    @Inject
+    private QuotaEmailTemplatesDao _quotaEmailTemplateDao;
+
     @Inject
     private UserDao _userDao;
     @Inject
@@ -293,6 +299,47 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         }
         TransactionLegacy.open(opendb).close();
         return new QuotaCreditsResponse(result, creditor);
+    }
+
+    private QuotaEmailTemplateResponse createQuotaEmailResponse(QuotaEmailTemplatesVO template) {
+        QuotaEmailTemplateResponse response = new QuotaEmailTemplateResponse();
+        response.setTemplateType(template.getTemplateName());
+        response.setTemplateSubject(template.getTemplateSubject());
+        response.setTemplateText(template.getTemplateBody());
+        response.setLocale(template.getLocale());
+        response.setLastUpdatedOn(template.getLastUpdated());
+        return response;
+    }
+
+    @Override
+    public List<QuotaEmailTemplateResponse> listQuotaEmailTemplates(QuotaEmailTemplateListCmd cmd) {
+        final String templateName = cmd.getTemplateName();
+        List<QuotaEmailTemplatesVO> templates = _quotaEmailTemplateDao.listAllQuotaEmailTemplates(templateName);
+        final List<QuotaEmailTemplateResponse> responses = new ArrayList<QuotaEmailTemplateResponse>();
+        for (final QuotaEmailTemplatesVO template : templates) {
+            responses.add(createQuotaEmailResponse(template));
+        }
+        return responses;
+    }
+
+    @Override
+    public boolean updateQuotaEmailTemplate(QuotaEmailTemplateUpdateCmd cmd) {
+        final String templateName = cmd.getTemplateName();
+        final String templateSubject = StringEscapeUtils.escapeHtml(cmd.getTemplateSubject());
+        final String templateBody = StringEscapeUtils.escapeHtml(cmd.getTemplateBody());
+        final String locale = cmd.getLocale();
+
+        final List<QuotaEmailTemplatesVO> templates = _quotaEmailTemplateDao.listAllQuotaEmailTemplates(templateName);
+        if (templates.size() == 1) {
+            final QuotaEmailTemplatesVO template = templates.get(0);
+            template.setTemplateSubject(templateSubject);
+            template.setTemplateBody(templateBody);
+            if (locale != null) {
+                template.setLocale(locale);
+            }
+            return _quotaEmailTemplateDao.updateQuotaEmailTemplate(template);
+        }
+        return false;
     }
 
     @Override
