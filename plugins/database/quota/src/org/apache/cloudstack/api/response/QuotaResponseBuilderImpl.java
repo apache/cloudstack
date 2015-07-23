@@ -325,8 +325,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     @Override
     public boolean updateQuotaEmailTemplate(QuotaEmailTemplateUpdateCmd cmd) {
         final String templateName = cmd.getTemplateName();
-        final String templateSubject = StringEscapeUtils.escapeHtml(cmd.getTemplateSubject());
-        final String templateBody = StringEscapeUtils.escapeHtml(cmd.getTemplateBody());
+        final String templateSubject = StringEscapeUtils.escapeJavaScript(cmd.getTemplateSubject());
+        final String templateBody = StringEscapeUtils.escapeJavaScript(cmd.getTemplateBody());
         final String locale = cmd.getLocale();
 
         final List<QuotaEmailTemplatesVO> templates = _quotaEmailTemplateDao.listAllQuotaEmailTemplates(templateName);
