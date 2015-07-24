@@ -2095,13 +2095,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Can't find zone by id " + volume.getDataCenterId());
         }
 
-        if (volume.getInstanceId() != null) {
-            // Check that Vm to which this volume is attached does not have VM Snapshots
-            if (_vmSnapshotDao.findByVm(volume.getInstanceId()).size() > 0) {
-                throw new InvalidParameterValueException("Volume snapshot is not allowed, please detach it from VM with VM Snapshots");
-            }
-        }
-
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zone.getName());
         }

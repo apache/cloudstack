@@ -1165,7 +1165,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
             final Set<VDI> snapshots = volume.getSnapshots(conn);
             for (final VDI snapshot : snapshots) {
                 try {
-                    if (!snapshot.getUuid(conn).equals(avoidSnapshotUuid) && snapshot.getSnapshotTime(conn).before(avoidSnapshot.getSnapshotTime(conn))) {
+                    if (!snapshot.getUuid(conn).equals(avoidSnapshotUuid) && snapshot.getSnapshotTime(conn).before(avoidSnapshot.getSnapshotTime(conn)) && snapshot.getVBDs(conn).isEmpty()) {
                         snapshot.destroy(conn);
                     }
                 } catch (final Exception e) {
