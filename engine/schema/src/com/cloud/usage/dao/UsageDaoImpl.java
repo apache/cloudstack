@@ -463,7 +463,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
 
     @Override
     @SuppressWarnings("deprecation")
-    public Pair<List<? extends UsageVO>, Integer> getUsageRecords(final long accountId, final long domainId) {
+    public Pair<List<? extends UsageVO>, Integer> getUsageRecordsPendingQuotaAggregation(final long accountId, final long domainId) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         s_logger.debug("getting usage records for account: " + accountId + ", domainId: " + domainId);
