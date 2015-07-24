@@ -25,6 +25,8 @@ import org.apache.cloudstack.framework.config.impl.ConfigurationVO
 import org.apache.cloudstack.ldap.LdapConfiguration
 import org.apache.cloudstack.ldap.LdapConfigurationVO
 import org.apache.cloudstack.ldap.LdapManager
+import org.apache.cloudstack.ldap.LdapUserManager
+import org.apache.cloudstack.ldap.dao.LdapConfigurationDao
 import org.apache.cxf.common.util.StringUtils
 
 import javax.naming.directory.SearchControls
@@ -33,8 +35,8 @@ class LdapConfigurationSpec extends spock.lang.Specification {
     def "Test that getAuthentication returns none"() {
         given: "We have a ConfigDao, LdapManager and LdapConfiguration"
         def configDao = Mock(ConfigurationDao)
-        def ldapManager = Mock(LdapManager)
-        def ldapConfiguration = new LdapConfiguration(configDao, ldapManager)
+        def ldapConfigurationDao = Mock(LdapConfigurationDao)
+        def ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
         when: "Get authentication is called"
         String authentication = ldapConfiguration.getAuthentication()
         then: "none should be returned"
@@ -44,8 +46,8 @@ class LdapConfigurationSpec extends spock.lang.Specification {
     def "Test that getAuthentication returns simple"() {
         given: "We have a configDao, LdapManager and LdapConfiguration with bind principle and password set"
         def configDao = Mock(ConfigurationDao)
-        def ldapManager = Mock(LdapManager)
-        def ldapConfiguration = new LdapConfiguration(configDao, ldapManager)
+        def ldapConfigurationDao = Mock(LdapConfigurationDao)
+        def ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
         configDao.getValue("ldap.bind.password") >> "password"
         configDao.getValue("ldap.bind.principal") >> "cn=rmurphy,dc=cloudstack,dc=org"
         when: "Get authentication is called"
@@ -58,8 +60,8 @@ class LdapConfigurationSpec extends spock.lang.Specification {
         given: "We have a ConfigDao, LdapManager and ldapConfiguration with a baseDn value set."
         def configDao = Mock(ConfigurationDao)
         configDao.getValue("ldap.basedn") >> "dc=cloudstack,dc=org"
-        def ldapManager = Mock(LdapManager)
-        def ldapConfiguration = new LdapConfiguration(configDao, ldapManager)
+        def ldapConfigurationDao = Mock(LdapConfigurationDao)
+        def ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
         when: "Get basedn is called"
         String baseDn = ldapConfiguration.getBaseDn();
         then: "The set baseDn should be returned"
@@ -70,8 +72,8 @@ class LdapConfigurationSpec extends spock.lang.Specification {
         given: "Given that we have a ConfigDao, LdapManager and LdapConfiguration"
         def configDao = Mock(ConfigurationDao)
         configDao.getValue("ldap.email.attribute") >> "mail"
-        def ldapManager = Mock(LdapManager)
-        def ldapConfiguration = new LdapConfiguration(configDao, ldapManager)
+        def ldapConfigurationDao = Mock(LdapConfigurationDao)
+        def ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
         when: "Get Email Attribute is called"
         String emailAttribute = ldapConfiguration.getEmailAttribute()
         then: "mail should be returned"
@@ -81,8 +83,8 @@ class LdapConfigurationSpec extends spock.lang.Specification {
     def "Test that getFactory returns com.sun.jndi.ldap.LdapCtxFactory"() {
         given: "We have a ConfigDao, LdapManager and LdapConfiguration"
         def configDao = Mock(ConfigurationDao)
-        def ldapManager = Mock(LdapManager)
-        def ldapConfiguration = new LdapConfiguration(configDao, ldapManager)
+        def ldapConfigurationDao = Mock(LdapConfigurationDao)
+        def ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
         when: "Get Factory is scalled"
         String factory = ldapConfiguration.getFactory();
         then: "com.sun.jndi.ldap.LdapCtxFactory is returned"
@@ -93,8 +95,8 @@ class LdapConfigurationSpec extends spock.lang.Specification {
         given: "We have a ConfigDao, LdapManager and LdapConfiguration"
         def configDao = Mock(ConfigurationDao)
         configDao.getValue("ldap.firstname.attribute") >> "givenname"
-        def ldapManager = Mock(LdapManager)
-        def ldapConfiguration = new LdapConfiguration(configDao, ldapManager)
+        def ldapConfigurationDao = Mock(LdapConfigurationDao)
+        def ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
         when: "Get firstname attribute is called"
         String firstname = ldapConfiguration.getFirstnameAttribute()
         then: "givennam should be returned"
@@ -105,8 +107,8 @@ class LdapConfigurationSpec extends spock.lang.Specification {
         given: "We have a ConfigDao, LdapManager and LdapConfiguration"
         def configDao = Mock(ConfigurationDao)
         configDao.getValue("ldap.lastname.attribute") >> "sn"
-        def ldapManager = Mock(LdapManager)
-        def ldapConfiguration = new LdapConfiguration(configDao, ldapManager)
+        def ldapConfigurationDao = Mock(LdapConfigurationDao)
+        def ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
         when: "Get Lastname Attribute is scalled "
         String lastname = ldapConfiguration.getLastnameAttribute()
         then: "sn should be returned"
@@ -120,8 +122,8 @@ class LdapConfigurationSpec extends spock.lang.Specification {
         configDao.getValue("ldap.lastname.attribute") >> "sn"
         configDao.getValue("ldap.username.attribute") >> "uid"
         configDao.getValue("ldap.email.attribute") >> "mail"
-        def ldapManager = Mock(LdapManager)
-        def ldapConfiguration = new LdapConfiguration(configDao, ldapManager)
+        def ldapConfigurationDao = Mock(LdapConfigurationDao)
+        def ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
         when: "Get return attributes is called"
         String[] returnAttributes = ldapConfiguration.getReturnAttributes()
         then: "An array containing uid, mail, givenname, sn and cn is returned"
@@ -131,8 +133,8 @@ class LdapConfigurationSpec extends spock.lang.Specification {
     def "Test that getScope returns SearchControls.SUBTREE_SCOPE"() {
         given: "We have ConfigDao, LdapManager and LdapConfiguration"
         def configDao = Mock(ConfigurationDao)
-        def ldapManager = Mock(LdapManager)
-        def ldapConfiguration = new LdapConfiguration(configDao, ldapManager)
+        def ldapConfigurationDao = Mock(LdapConfigurationDao)
+        def ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
         when: "Get scope is called"
         int scope = ldapConfiguration.getScope()
         then: "SearchControls.SUBTRE_SCOPE should be returned"
@@ -143,8 +145,8 @@ class LdapConfigurationSpec extends spock.lang.Specification {
         given: "We have ConfigDao, LdapManager and LdapConfiguration"
         def configDao = Mock(ConfigurationDao)
         configDao.getValue("ldap.username.attribute") >> "uid"
-        def ldapManager = Mock(LdapManager)
-        def ldapConfiguration = new LdapConfiguration(configDao, ldapManager)
+        def ldapConfigurationDao = Mock(LdapConfigurationDao)
+        def ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
         when: "Get Username Attribute is called"
         String usernameAttribute = ldapConfiguration.getUsernameAttribute()
         then: "uid should be returned"
@@ -155,8 +157,8 @@ class LdapConfigurationSpec extends spock.lang.Specification {
         given: "We have a ConfigDao, LdapManager and LdapConfiguration"
         def configDao = Mock(ConfigurationDao)
         configDao.getValue("ldap.user.object") >> "inetOrgPerson"
-        def ldapManager = Mock(LdapManager)
-        def ldapConfiguration = new LdapConfiguration(configDao, ldapManager)
+        def ldapConfigurationDao = Mock(LdapConfigurationDao)
+        def ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
         when: "Get user object is called"
         String userObject = ldapConfiguration.getUserObject()
         then: "inetOrgPerson is returned"
@@ -166,14 +168,14 @@ class LdapConfigurationSpec extends spock.lang.Specification {
     def "Test that providerUrl successfully returns a URL when a configuration is available"() {
         given: "We have a ConfigDao, LdapManager, LdapConfiguration"
         def configDao = Mock(ConfigurationDao)
-        def ldapManager = Mock(LdapManager)
+        def ldapConfigurationDao = Mock(LdapConfigurationDao)
         List<LdapConfigurationVO> ldapConfigurationList = new ArrayList()
         ldapConfigurationList.add(new LdapConfigurationVO("localhost", 389))
         Pair<List<LdapConfigurationVO>, Integer> result = new Pair<List<LdapConfigurationVO>, Integer>();
         result.set(ldapConfigurationList, ldapConfigurationList.size())
-        ldapManager.listConfigurations(_) >> result
+        ldapConfigurationDao.searchConfigurations(_,_) >> result
 
-        LdapConfiguration ldapConfiguration = new LdapConfiguration(configDao, ldapManager)
+        LdapConfiguration ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
 
         when: "A request is made to get the providerUrl"
         String providerUrl = ldapConfiguration.getProviderUrl()
@@ -186,8 +188,8 @@ class LdapConfigurationSpec extends spock.lang.Specification {
         given: "We have a ConfigDao with a value for ldap.search.group.principle and an LdapConfiguration"
         def configDao = Mock(ConfigurationDao)
         configDao.getValue("ldap.search.group.principle") >> "cn=cloudstack,cn=users,dc=cloudstack,dc=org"
-        def ldapManager = Mock(LdapManager)
-        LdapConfiguration ldapConfiguration = new LdapConfiguration(configDao, ldapManager)
+        def ldapConfigurationDao = Mock(LdapConfigurationDao)
+        LdapConfiguration ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
 
         when: "A request is made to get the search group principle"
         String result = ldapConfiguration.getSearchGroupPrinciple();
@@ -200,8 +202,8 @@ class LdapConfigurationSpec extends spock.lang.Specification {
         given: "We have a ConfigDao with a value for truststore password"
         def configDao = Mock(ConfigurationDao)
         configDao.getValue("ldap.truststore.password") >> "password"
-        def ldapManager = Mock(LdapManager)
-        LdapConfiguration ldapConfiguration = new LdapConfiguration(configDao, ldapManager)
+        def ldapConfigurationDao = Mock(LdapConfigurationDao)
+        LdapConfiguration ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
 
         when: "A request is made to get the truststore password"
         String result = ldapConfiguration.getTrustStorePassword()
@@ -215,8 +217,8 @@ class LdapConfigurationSpec extends spock.lang.Specification {
         def configDao = Mock(ConfigurationDao)
         configDao.getValue("ldap.truststore") >> "/tmp/ldap.ts"
         configDao.getValue("ldap.truststore.password") >> "password"
-        def ldapManager = Mock(LdapManager)
-        LdapConfiguration ldapConfiguration = new LdapConfiguration(configDao, ldapManager)
+        def ldapConfigurationDao = Mock(LdapConfigurationDao)
+        LdapConfiguration ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
 
         when: "A request is made to get the status of SSL"
         boolean result = ldapConfiguration.getSSLStatus();
@@ -230,8 +232,8 @@ class LdapConfigurationSpec extends spock.lang.Specification {
         def configDao = Mock(ConfigurationDao)
         configDao.getValue("ldap.group.object") >> groupObject
 
-        def ldapManger = Mock(LdapManager)
-        LdapConfiguration ldapConfiguration = new LdapConfiguration(configDao, ldapManger)
+        def ldapConfigurationDao = Mock(LdapConfigurationDao)
+        LdapConfiguration ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
         def expectedResult = groupObject == null ? "groupOfUniqueNames" : groupObject
 
         def result = ldapConfiguration.getGroupObject()
@@ -246,8 +248,8 @@ class LdapConfigurationSpec extends spock.lang.Specification {
         def configDao = Mock(ConfigurationDao)
         configDao.getValue("ldap.group.user.uniquemember") >> groupObject
 
-        def ldapManger = Mock(LdapManager)
-        LdapConfiguration ldapConfiguration = new LdapConfiguration(configDao, ldapManger)
+        def ldapConfigurationDao = Mock(LdapConfigurationDao)
+        LdapConfiguration ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
         def expectedResult = groupObject == null ? "uniquemember" : groupObject
 
         def result = ldapConfiguration.getGroupUniqueMemeberAttribute()
@@ -268,8 +270,8 @@ class LdapConfigurationSpec extends spock.lang.Specification {
         configDepotImpl.global() >> configDao
         ConfigKey.init(configDepotImpl)
 
-        def ldapManger = Mock(LdapManager)
-        LdapConfiguration ldapConfiguration = new LdapConfiguration(configDao, ldapManger)
+        def ldapConfigurationDao = Mock(LdapConfigurationDao)
+        LdapConfiguration ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
 
         def expected = timeout == null ? 1000 : timeout.toLong() //1000 is the default value
 
@@ -278,6 +280,30 @@ class LdapConfigurationSpec extends spock.lang.Specification {
         result == expected
         where:
         timeout << ["1000000", "1000", null]
+    }
+
+    def "Test getLdapProvider()"() {
+        given: "We have configdao for ldap group object"
+        def configDao = Mock(ConfigurationDao)
+        ConfigurationVO configurationVo = new ConfigurationVO("ldap.read.timeout", LdapConfiguration.ldapProvider);
+        configurationVo.setValue(provider)
+        configDao.findById("ldap.provider") >> configurationVo
+
+        def configDepotImpl = Mock(ConfigDepotImpl)
+        configDepotImpl.global() >> configDao
+        ConfigKey.init(configDepotImpl)
+
+        def ldapConfigurationDao = Mock(LdapConfigurationDao)
+        LdapConfiguration ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
+
+        def expected = provider.equalsIgnoreCase("microsoftad") ? LdapUserManager.Provider.MICROSOFTAD : LdapUserManager.Provider.OPENLDAP //"openldap" is the default value
+
+        def result = ldapConfiguration.getLdapProvider()
+        expect:
+        println "asserting for provider configuration: " + provider
+        result == expected
+        where:
+        provider << ["openldap", "microsoftad", "", " ", "xyz", "MicrosoftAd", "OpenLdap", "MicrosoftAD"]
     }
 
 }

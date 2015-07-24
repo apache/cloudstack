@@ -57,7 +57,7 @@ class LdapCreateAccountCmdSpec extends spock.lang.Specification {
         AccountService accountService = Mock(AccountService)
         def ldapCreateAccountCmd = Spy(LdapCreateAccountCmd, constructorArgs: [ldapManager, accountService])
         ldapCreateAccountCmd.getCurrentContext() >> Mock(CallContext)
-        ldapCreateAccountCmd.createCloudstackUserAccount(_) >> null
+        ldapCreateAccountCmd.createCloudstackUserAccount(_, _, _) >> null
         when: "Cloudstack fail to create the user"
         ldapCreateAccountCmd.execute()
         then: "An exception is thrown"

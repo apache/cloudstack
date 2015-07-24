@@ -21,12 +21,12 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.naming.directory.SearchControls;
 
-import org.apache.cloudstack.api.command.LdapListConfigurationCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.ldap.dao.LdapConfigurationDao;
 
 public class LdapConfiguration implements Configurable{
     private final static String factory = "com.sun.jndi.ldap.LdapCtxFactory";
@@ -36,6 +36,8 @@ public class LdapConfiguration implements Configurable{
 
     private static final ConfigKey<Integer> ldapPageSize = new ConfigKey<Integer>(Integer.class, "ldap.request.page.size", "Advanced", "1000",
                                                                                "page size sent to ldap server on each request to get user", true, ConfigKey.Scope.Global, 1);
+    private static final ConfigKey<String> ldapProvider = new ConfigKey<String>(String.class, "ldap.provider", "Advanced", "openldap", "ldap provider ex:openldap, microsoftad",
+                                                                                true, ConfigKey.Scope.Global, null);
 
     private final static int scope = SearchControls.SUBTREE_SCOPE;
 
@@ -43,14 +45,14 @@ public class LdapConfiguration implements Configurable{
     private ConfigurationDao _configDao;
 
     @Inject
-    private LdapManager _ldapManager;
+    private LdapConfigurationDao _ldapConfigurationDao;
 
     public LdapConfiguration() {
     }
 
-    public LdapConfiguration(final ConfigurationDao configDao, final LdapManager ldapManager) {
+    public LdapConfiguration(final ConfigurationDao configDao, final LdapConfigurationDao ldapConfigurationDao) {
         _configDao = configDao;
-        _ldapManager = ldapManager;
+        _ldapConfigurationDao = ldapConfigurationDao;
     }
 
     public String getAuthentication() {
@@ -94,7 +96,7 @@ public class LdapConfiguration implements Configurable{
 
     public String getProviderUrl() {
         final String protocol = getSSLStatus() == true ? "ldaps://" : "ldap://";
-        final Pair<List<? extends LdapConfigurationVO>, Integer> result = _ldapManager.listConfigurations(new LdapListConfigurationCmd(_ldapManager));
+        final Pair<List<LdapConfigurationVO>, Integer> result = _ldapConfigurationDao.searchConfigurations(null, 0);
         final StringBuilder providerUrls = new StringBuilder();
         String delim = "";
         for (final LdapConfigurationVO resource : result.first()) {
@@ -165,6 +167,17 @@ public class LdapConfiguration implements Configurable{
         return ldapPageSize.value();
     }
 
+    public LdapUserManager.Provider getLdapProvider() {
+        LdapUserManager.Provider provider;
+        try {
+            provider = LdapUserManager.Provider.valueOf(ldapProvider.value().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            //openldap is the default
+            provider = LdapUserManager.Provider.OPENLDAP;
+        }
+        return provider;
+    }
+
     @Override
     public String getConfigComponentName() {
         return LdapConfiguration.class.getSimpleName();
@@ -172,6 +185,6 @@ public class LdapConfiguration implements Configurable{
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ldapReadTimeout, ldapPageSize};
+        return new ConfigKey<?>[] {ldapReadTimeout, ldapPageSize, ldapProvider};
     }
 }
