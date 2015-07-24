@@ -34,7 +34,7 @@ public class LdapUserManagerFactory implements ApplicationContextAware {
 
     private static Map<LdapUserManager.Provider, LdapUserManager> ldapUserManagerMap = new HashMap<>();
 
-    static ApplicationContext applicationCtx;
+    private ApplicationContext applicationCtx;
 
     public LdapUserManager getInstance(LdapUserManager.Provider provider) {
         LdapUserManager ldapUserManager;
@@ -46,7 +46,7 @@ public class LdapUserManagerFactory implements ApplicationContextAware {
                 ldapUserManagerMap.put(LdapUserManager.Provider.MICROSOFTAD, ldapUserManager);
             }
         } else {
-            //defaults to opendldap
+            //defaults to openldap
             ldapUserManager = ldapUserManagerMap.get(LdapUserManager.Provider.OPENLDAP);
             if (ldapUserManager == null) {
                 ldapUserManager = new OpenLdapUserManagerImpl();
