@@ -50,10 +50,6 @@ public class QuotaTariffResponse extends BaseResponse {
     @Param(description = "the date on/after which this quota value will be effective")
     private Date effectiveOn = null;
 
-    @SerializedName("include")
-    @Param(description = "include")
-    private int include;
-
     @SerializedName("description")
     @Param(description = "description")
     private String description;
@@ -106,14 +102,6 @@ public class QuotaTariffResponse extends BaseResponse {
 
     public void setTariffValue(BigDecimal tariffValue) {
         this.tariffValue = tariffValue;
-    }
-
-    public int getInclude() {
-        return include;
-    }
-
-    public void setInclude(int include) {
-        this.include = include;
     }
 
     public String getDescription() {

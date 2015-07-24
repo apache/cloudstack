@@ -48,7 +48,6 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         searchUsageType.done();
 
         listAllIncludedUsageType = createSearchBuilder();
-        listAllIncludedUsageType.and("include", listAllIncludedUsageType.entity().getInclude(), SearchCriteria.Op.EQ);
         listAllIncludedUsageType.and("onorbeforedate", listAllIncludedUsageType.entity().getEffectiveOn(), SearchCriteria.Op.LTEQ);
         listAllIncludedUsageType.and("quotatype", listAllIncludedUsageType.entity().getUsageType(), SearchCriteria.Op.EQ);
         listAllIncludedUsageType.done();
@@ -62,7 +61,6 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         try {
             final Filter filter = new Filter(QuotaTariffVO.class, "effectiveOn", false, 0L, 1L);
             final SearchCriteria<QuotaTariffVO> sc = listAllIncludedUsageType.create();
-            sc.setParameters("include", 1);
             sc.setParameters("onorbeforedate", onOrBeforeDate);
             sc.setParameters("quotatype", quotaType);
             result = search(sc, filter);
@@ -88,7 +86,6 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         try {
             final Filter filter = new Filter(QuotaTariffVO.class, "effectiveOn", false, 0L, 1L);
             final SearchCriteria<QuotaTariffVO> sc = listAllIncludedUsageType.create();
-            sc.setParameters("include", 1);
             sc.setParameters("onorbeforedate", onOrBeforeDate);
             for (Integer quotaType : QuotaTypes.listQuotaTypes().keySet()) {
                 sc.setParameters("quotatype", quotaType);

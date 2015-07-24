@@ -31,6 +31,7 @@ import org.apache.log4j.Logger;
 import javax.inject.Inject;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @APICommand(name = "quotaTariffList", responseObject = QuotaTariffResponse.class, description = "Lists all quota tariff plans", since = "4.6.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -43,6 +44,9 @@ public class QuotaTariffListCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.USAGE_TYPE, type = CommandType.INTEGER, required = false, description = "Usage type of the resource")
     private Integer usageType;
+
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, required = false, description = "The effective start date on/after which the quota tariff is effective and older tariffs are no longer used for the usage type. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-03.")
+    private Date startDate;
 
     public QuotaTariffListCmd() {
         super();
@@ -72,6 +76,10 @@ public class QuotaTariffListCmd extends BaseListCmd {
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    public Date getStartDate() {
+        return startDate;
     }
 
     public Integer getUsageType() {

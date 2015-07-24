@@ -56,9 +56,6 @@ public class QuotaTariffVO implements InternalIdentity {
     @Column(name = "currency_value")
     private BigDecimal currencyValue;
 
-    @Column(name = "include")
-    private int include;
-
     @Column(name = "effective_on")
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date effectiveOn = null;
@@ -73,14 +70,13 @@ public class QuotaTariffVO implements InternalIdentity {
     public QuotaTariffVO() {
     }
 
-    public QuotaTariffVO(final int usagetype, final String usagename, final String usageunit, final String usagediscriminator, final BigDecimal currencyvalue, final int include,
+    public QuotaTariffVO(final int usagetype, final String usagename, final String usageunit, final String usagediscriminator, final BigDecimal currencyvalue,
             final Date effectiveOn, final Date updatedOn, final long updatedBy) {
         this.usageType = usagetype;
         this.usageName = usagename;
         this.usageUnit = usageunit;
         this.usageDiscriminator = usagediscriminator;
         this.currencyValue = currencyvalue;
-        this.include = include;
         this.effectiveOn = effectiveOn;
         this.updatedOn = updatedOn;
         this.updatedBy = updatedBy;
@@ -153,14 +149,6 @@ public class QuotaTariffVO implements InternalIdentity {
 
     public void setCurrencyValue(BigDecimal currencyValue) {
         this.currencyValue = currencyValue;
-    }
-
-    public int getInclude() {
-        return include;
-    }
-
-    public void setInclude(int include) {
-        this.include = include;
     }
 
     public String getDescription() {

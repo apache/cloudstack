@@ -48,7 +48,6 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_tariff` (
   `usage_unit` varchar(255) NOT NULL COMMENT 'usage type',
   `usage_discriminator` varchar(255) NOT NULL COMMENT 'usage type',
   `currency_value` decimal(15,2) NOT NULL COMMENT 'usage type',
-  `include` tinyint(1) NOT NULL COMMENT 'usage type',
   `effective_on` datetime NOT NULL COMMENT 'date time on which this quota values will become effective',
   `updated_on` datetime NOT NULL COMMENT 'date this entry was updated on',
   `updated_by` bigint unsigned NOT NULL,

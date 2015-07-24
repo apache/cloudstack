@@ -79,7 +79,6 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         response.setUsageUnit(tariff.getUsageUnit());
         response.setUsageDiscriminator(tariff.getUsageDiscriminator());
         response.setTariffValue(tariff.getCurrencyValue());
-        response.setInclude(tariff.getInclude());
         response.setEffectiveOn(tariff.getEffectiveOn());
         response.setDescription(tariff.getDescription());
         return response;
@@ -215,7 +214,10 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     @Override
     public List<QuotaTariffVO> listQuotaTariffPlans(final QuotaTariffListCmd cmd) {
         List<QuotaTariffVO> result = new ArrayList<QuotaTariffVO>();
-        Date now = _quotaService.computeAdjustedTime(new Date());
+        Date now = cmd.getStartDate();
+        if (now == null) {
+            now = _quotaService.computeAdjustedTime(new Date());
+        }
         s_logger.info("Now=" + now.toGMTString() + " quotatype=" + cmd.getUsageType());
         if (cmd.getUsageType() != null) {
             QuotaTariffVO tariffPlan = _quotaTariffDao.findTariffPlanByUsageType(cmd.getUsageType(), now);
