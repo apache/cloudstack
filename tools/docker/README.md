@@ -4,15 +4,15 @@
 Dockerfiles used to build CloudStack images available on Docker hub.
 
 
-## Use images from docker.io
+## Use images from docker
 
 ### CloudStack Management-server 
 
 ```
-docker pull docker.io/mysql:5.5
-docker pull docker.io/cloudstack/management_centos6
-docker run --name cloudstack-mysql -e MYSQL_ROOT_PASSWORD=password -d docker.io/mysql:5.5
-docker run -ti --name cloudstack --link cloudstack-mysql:mysql -d -p 8080:8080 -p 8250:8250 docker.io/cloudstack/management_centos6
+docker pull mysql:5.5
+docker pull cloudstack/management_centos6
+docker run --name cloudstack-mysql -e MYSQL_ROOT_PASSWORD=password -d mysql:5.5
+docker run -ti --name cloudstack --link cloudstack-mysql:mysql -d -p 8080:8080 -p 8250:8250 cloudstack/management_centos6
 ```
 
 ### Marvin
@@ -21,14 +21,14 @@ Use marvin to deploy or test your CloudStack environment.
 Use Marvin with cloudstack connection thru the API port (8096)
 
 ```
-docker pull docker.io/cloudstack/marvin
-docker run -ti --name marvin --link cloudstack:8096 docker.io/cloudstack/marvin /bin/bash
+docker pull cloudstack/marvin
+docker run -ti --rm --name marvin --link cloudstack:8096 cloudstack/marvin /bin/bash
 ```
 
 
 ## How to build images
 
-Image provide by docker.io/cloudstack are automatically build by Jenkins performing following tasks:
+Image provide by CloudStack are automatically build by Jenkins performing following tasks:
 
 
 ### CentOS 6
@@ -39,19 +39,19 @@ tag:latest = master branch
 1. build the base image
 
    ```
-   docker build -f Dockerfile.centos6 -t docker.io/cloudstack/management_centos6 .
+   docker build -f Dockerfile.centos6 -t cloudstack/management_centos6 .
    ```
 
 2. on jenkins, database and systemvm.iso are pre-deployed. the inital start require privileged container to
    mount systemvm.iso and copy ssh_rsa.pub into it.
 
    ```
-   docker run --name cloudstack-mysql -e MYSQL_ROOT_PASSWORD=password -d docker.io/mysql:5.5
-   docker run --privileged -d --name cloudstack docker.io/cloudstack/management_centos6
+   docker run --name cloudstack-mysql -e MYSQL_ROOT_PASSWORD=password -d mysql:5.5
+   docker run --privileged --link cloudstack-mysql:mysql -d --name cloudstack cloudstack/management_centos6
    sleep 300
    docker exec cloudstack /etc/init.d/cloudstack-management stop
    docker stop cloudstack
-   docker commit -m "init system.iso" -a "Apache CloudStack" cloudstack docker.io/cloudstack/management_centos6
+   docker commit -m "init system.iso" -a "Apache CloudStack" cloudstack cloudstack/management_centos6
    ```
 
 ### Marvin
@@ -62,5 +62,5 @@ Build Marvin container usable to deploy cloud in the CloudStack management serve
 1. to build the image
 
    ```
-   docker build -f Dockerfile.marvin -t docker.io/cloudstack/marvin ../..
+   docker build -f Dockerfile.marvin -t cloudstack/marvin ../..
    ```
