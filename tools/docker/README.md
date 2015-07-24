@@ -22,11 +22,29 @@ Use Marvin with cloudstack connection thru the API port (8096)
 
 ```
 docker pull cloudstack/marvin
-docker run -ti --rm --name marvin --link cloudstack:8096 cloudstack/marvin /bin/bash
+docker run -ti --rm --name marvin --link acs-sim:8080 cloudstack/marvin
 ```
 
+Deploy Cloud using marvin:
 
-## How to build images
+```
+docker run -ti --rm --link simulator:8096 python /root/tools/marvin/marvin/deployDataCenter.py -i /root/setup/dev/advanced.cfg
+```
+
+Perform Smoke tests:
+```
+docker run -ti --rm --link simulator:8096 \
+  nosetests-2.7 -v --with-marvin \
+  --marvin-config=dev/advanced.cfg \
+  --with-xunit \
+  --xunit-file=xunit.xml \
+  -a tags=advanced,required_hardware=false \
+  --zone=Sandbox-simulator \
+  --hypervisor=simulator \
+  -w integration/smoke
+```
+
+# How to build images
 
 Image provide by CloudStack are automatically build by Jenkins performing following tasks:
 
