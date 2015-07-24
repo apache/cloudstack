@@ -63,7 +63,10 @@ public interface QuotaConfig  {
             "Quota SMTP port", true);
 
     public static final ConfigKey<String> QuotaSmtpAuthType = new ConfigKey<String>("Advanced", String.class, "quota.usage.smtp.useAuth", "",
-            "Quota SMTP authorization type", true);
+            "If true, use secure SMTP authentication when sending emails.", true);
+
+    public static final ConfigKey<String> QuotaSmtpSender = new ConfigKey<String>("Advanced", String.class, "quota.usage.smtp.sender", "",
+            "Sender of quota alert email (will be in the From header of the email)", true);
 
     enum QuotaEmailTemplateTypes {
         QUOTA_LOW, QUOTA_EMPTY

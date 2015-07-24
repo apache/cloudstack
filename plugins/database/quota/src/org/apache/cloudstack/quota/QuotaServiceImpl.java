@@ -127,8 +127,13 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { QuotaPluginEnabled, QuotaPeriodType, QuotaPeriod, QuotaGenerateActivity, QuotaEmailRecordOutgoing, QuotaEnableEnforcement, QuotaCurrencySymbol, QuotaLimitCritical,
-                QuotaLimitIncremental, QuotaSmtpHost, QuotaSmtpTimeout, QuotaSmtpUser, QuotaSmtpPassword, QuotaSmtpPort, QuotaSmtpAuthType };
+        return new ConfigKey<?>[] {
+                QuotaPluginEnabled,QuotaPeriodType, QuotaPeriod,
+                QuotaGenerateActivity, QuotaEmailRecordOutgoing, QuotaEnableEnforcement,
+                QuotaCurrencySymbol, QuotaLimitCritical, QuotaLimitIncremental,
+                QuotaSmtpHost, QuotaSmtpPort, QuotaSmtpTimeout,
+                QuotaSmtpUser, QuotaSmtpPassword,
+                QuotaSmtpAuthType, QuotaSmtpSender };
     }
 
     @Override

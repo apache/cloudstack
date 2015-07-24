@@ -623,6 +623,7 @@ var g_quotaCurrency = '';
                                   templateBodyTextArea.appendTo(emailTemplateForm);
                                   saveTemplateButton.appendTo(emailTemplateForm);
                                   $('<hr>').appendTo(emailTemplateForm);
+                                  $('<p>').html("These options can be used in template as ${variable}: quotaBalance, accountName, accountId, accountUsers, domainName, domainId").appendTo(emailTemplateForm);
 
                                   emailTemplateForm.appendTo(manageTemplatesView);
                                   manageTemplatesView.appendTo($node);
