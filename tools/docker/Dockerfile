@@ -19,6 +19,9 @@
 
 FROM ubuntu:14.04
 
+MAINTAINER "Apache CloudStack" <dev@cloudstack.apache.org>
+LABEL Vendor="Apache.org" License="ApacheV2" Version="4.6.0"
+
 RUN apt-get -y update && apt-get install -y \
     genisoimage \
     git \
@@ -51,6 +54,6 @@ RUN (/usr/bin/mysqld_safe &); \
     mvn -Pdeveloper -pl developer -Ddeploydb-simulator; \
     pip install tools/marvin/dist/Marvin-4.6.0-SNAPSHOT.tar.gz
 
-EXPOSE 8080
+EXPOSE 8080 8096
 
 CMD ["/usr/bin/supervisord"]
