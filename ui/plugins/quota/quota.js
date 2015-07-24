@@ -115,13 +115,12 @@ var g_quotaCurrency = '';
 
                                               generatedStatement.empty();
                                               $("<br><hr>").appendTo(generatedStatement);
-                                              $("<p>").html("Total Quota Usage: " + g_quotaCurrency + totalQuota).appendTo(generatedStatement);
 
                                               if (quotaUsage.length < 1) {
                                                   return;
                                               }
 
-                                              $("<p>").html("<br>Usage Statement:").appendTo(generatedStatement);
+                                              $("<p>").html("<br>Quota Usage Statement:").appendTo(generatedStatement);
                                               var statementTable = $('<table>');
                                               statementTable.appendTo($('<div class="data-table">').appendTo(generatedStatement));
 
@@ -134,7 +133,7 @@ var g_quotaCurrency = '';
                                               statementTableHead.appendTo($('<thead>').appendTo(statementTable));
 
                                               // Add total usage
-                                              quotaUsage.push({type: '', name: 'Total', quota: totalQuota, });
+                                              quotaUsage.push({type: '', name: '<b style="font-weight: bold">Total Quota Usage</b>', quota: totalQuota, });
 
                                               var statementTableBody = $('<tbody>');
                                               for (var i = 0; i < quotaUsage.length; i++) {
@@ -191,11 +190,10 @@ var g_quotaCurrency = '';
                                               statementTableHead.appendTo($('<thead>').appendTo(statementTable));
 
                                               var statementTableBody = $('<tbody>');
-
                                               var statementTableBodyRow = $('<tr>');
                                               $('<td>').html(g_quotaCurrency + startBalance).appendTo(statementTableBodyRow);
                                               $('<td>').html(startBalanceDate).appendTo(statementTableBodyRow);
-                                              $('<td>').html("Start Balance").appendTo(statementTableBodyRow);
+                                              $('<td>').html("Start Quota Balance").appendTo(statementTableBodyRow);
                                               statementTableBodyRow.appendTo(statementTableBody);
 
                                               for (var i = 0; i < credits.length; i++) {
@@ -214,7 +212,7 @@ var g_quotaCurrency = '';
                                               var statementTableBodyRow = $('<tr>');
                                               $('<td>').html(g_quotaCurrency + endBalance).appendTo(statementTableBodyRow);
                                               $('<td>').html(endBalanceDate).appendTo(statementTableBodyRow);
-                                              $('<td>').html("End Balance").appendTo(statementTableBodyRow);
+                                              $('<td style="font-weight: bold">').html("Final Quota Balance").appendTo(statementTableBodyRow);
                                               statementTableBodyRow.appendTo(statementTableBody);
 
                                               statementTableBody.appendTo(statementTable);
@@ -315,108 +313,131 @@ var g_quotaCurrency = '';
                              'name' : 'Tariff Plan',
                              'render': function($node) {
                                   var tariffView = $('<div class="details" style="margin-top: -30px">');
-                                  var tariffTable = $('<table style="margin-top: 15px">');
+                                  var tariffViewList = $('<div class="view list-view">');
+                                  tariffViewList.appendTo(tariffView);
 
-                                  tariffTable.appendTo($('<div class="data-table">').appendTo($('<div class="view list-view">').appendTo(tariffView)));
+                                  var renderDateForm = function(lastDate) {
+                                      var startDateInput = $('<input type="text" id="quota-tariff-startdate">');
+                                      startDateInput.val(lastDate);
 
-                                  var tariffTableHead = $('<tr>');
-                                  $('<th>ID</th>').appendTo(tariffTableHead);
-                                  $('<th>').html(_l('label.usage.type')).appendTo(tariffTableHead);
-                                  $('<th>').html(_l('label.usage.unit')).appendTo(tariffTableHead);
-                                  $('<th>').html(_l('label.quota.value')).appendTo(tariffTableHead);
-                                  $('<th>').html('Effective Date').appendTo(tariffTableHead);
-                                  $('<th>').html(_l('label.quota.description')).appendTo(tariffTableHead);
-                                  tariffTableHead.appendTo($('<thead>').appendTo(tariffTable));
-
-                                  $.ajax({
-                                      url: createURL('quotaTariffList'),
-                                      success: function(json) {
-                                          var items = json.quotatarifflistresponse.quotatariff;
-                                          var tariffTableBody = $('<tbody>');
-
-                                          for (var i = 0; i < items.length; i++) {
-                                              var tariffTableBodyRow = $('<tr>');
-                                              if (i % 2 == 0) {
-                                                  tariffTableBodyRow.addClass('even');
-                                              } else {
-                                                  tariffTableBodyRow.addClass('odd');
+                                      startDateInput.datepicker({
+                                          defaultDate: "+1w",
+                                          changeMonth: true,
+                                          dateFormat: "yy-mm-dd",
+                                          onClose: function (selectedDate) {
+                                              if (!selectedDate) {
+                                                  return;
                                               }
-                                              $('<td>').html(items[i].usageType).appendTo(tariffTableBodyRow);
-                                              $('<td>').html(items[i].usageName).appendTo(tariffTableBodyRow);
-                                              $('<td>').html(items[i].usageUnit).appendTo(tariffTableBodyRow);
-
-                                              if (isAdmin()) {
-                                                  var valueCell = $('<td class="value actions">');
-                                                  var value = $('<span>').html(g_quotaCurrency + items[i].tariffValue);
-                                                  value.appendTo(valueCell);
-                                                  valueCell.appendTo(tariffTableBodyRow);
-
-                                                  var usageType = items[i].usageType;
-                                                  var editButton = $('<div class="action edit quota-tariff-edit" alt="Change value" title="Change value"><span class="icon">&nbsp;</span></div>');
-                                                  editButton.appendTo(valueCell);
-                                                  editButton.attr('id', 'quota-tariff-edit-' + items[i].usageType);
-                                                  editButton.click(function() {
-                                                      var usageTypeId = $(this).context.id.replace('quota-tariff-edit-', '');
-                                                      var updateTariffForm = cloudStack.dialog.createForm({
-                                                          form: {
-                                                              title: 'label.quota.configuration',
-                                                              fields: {
-                                                                  quotaValue: {
-                                                                      label: 'label.quota.value',
-                                                                      validation: {
-                                                                          required: true
-                                                                      }
-                                                                  },
-                                                                  effectiveDate: {
-                                                                      label: 'Effective Date',
-                                                                      validation: {
-                                                                          required: true
-                                                                      }
-                                                                  },
-                                                              }
-                                                          },
-                                                          after: function(args) {
-                                                              $.ajax({
-                                                                  url: createURL('quotaTariffUpdate'),
-                                                                  data: {
-                                                                      usagetype: usageTypeId,
-                                                                      value: args.data.quotaValue,
-                                                                      startDate: args.data.effectiveDate
-                                                                  },
-                                                                  type: "POST",
-                                                                  success: function(json) {
-                                                                      $('#quota-tariff').click();
-                                                                  },
-                                                                  error: function(data) {
-                                                                      cloudStack.dialog.notice({
-                                                                          message: parseXMLHttpResponse(data)
-                                                                      });
-                                                                  }
-                                                              });
-                                                          }
-                                                      });
-                                                      updateTariffForm.find('input[name=effectiveDate]').datepicker({
-                                                          defaultDate: "+1w",
-                                                          changeMonth: true,
-                                                          dateFormat: "yy-mm-dd",
-                                                      });
-                                                  });
-                                              } else {
-                                                  $('<td>').html(items[i].tariffValue).appendTo(tariffTableBodyRow);
-                                              }
-                                              $('<td>').html(items[i].effectiveDate).appendTo(tariffTableBodyRow);
-                                              $('<td>').html(items[i].description).appendTo(tariffTableBodyRow);
-                                              tariffTableBodyRow.appendTo(tariffTableBody);
+                                              tariffViewList.empty();
+                                              renderDateForm(selectedDate);
+                                              renderTariffTable(selectedDate);
                                           }
-                                          tariffTableBody.appendTo(tariffTable);
-                                      },
-                                      error: function(data) {
-                                          cloudStack.dialog.notice({
-                                              message: parseXMLHttpResponse(data)
-                                          });
-                                      }
-                                  });
+                                      });
+                                      startDateInput.appendTo($('<br><span style="padding: 10px">').html('Effective Date: ').appendTo(tariffViewList));
+                                  };
 
+                                  var renderTariffTable = function(startDate) {
+                                      var tariffTable = $('<table style="margin-top: 15px">');
+                                      tariffTable.appendTo(tariffViewList);
+
+                                      var tariffTableHead = $('<tr>');
+                                      $('<th>').html(_l('label.usage.type')).appendTo(tariffTableHead);
+                                      $('<th>').html(_l('label.usage.unit')).appendTo(tariffTableHead);
+                                      $('<th>').html(_l('label.quota.value')).appendTo(tariffTableHead);
+                                      $('<th>').html(_l('label.quota.description')).appendTo(tariffTableHead);
+                                      tariffTableHead.appendTo($('<thead>').appendTo(tariffTable));
+
+                                      $.ajax({
+                                          url: createURL('quotaTariffList'),
+                                          data: {startdate: startDate },
+                                          success: function(json) {
+                                              var items = json.quotatarifflistresponse.quotatariff;
+                                              var tariffTableBody = $('<tbody>');
+
+                                              for (var i = 0; i < items.length; i++) {
+                                                  var tariffTableBodyRow = $('<tr>');
+                                                  if (i % 2 == 0) {
+                                                      tariffTableBodyRow.addClass('even');
+                                                  } else {
+                                                      tariffTableBodyRow.addClass('odd');
+                                                  }
+                                                  $('<td>').html(items[i].usageName).appendTo(tariffTableBodyRow);
+                                                  $('<td>').html(items[i].usageUnit).appendTo(tariffTableBodyRow);
+
+                                                  if (isAdmin()) {
+                                                      var valueCell = $('<td class="value actions">');
+                                                      var value = $('<span>').html(g_quotaCurrency + items[i].tariffValue);
+                                                      value.appendTo(valueCell);
+                                                      valueCell.appendTo(tariffTableBodyRow);
+
+                                                      var usageType = items[i].usageType;
+                                                      var editButton = $('<div class="action edit quota-tariff-edit" alt="Change value" title="Change value"><span class="icon">&nbsp;</span></div>');
+                                                      editButton.appendTo(valueCell);
+                                                      editButton.attr('id', 'quota-tariff-edit-' + items[i].usageType);
+                                                      editButton.click(function() {
+                                                          var usageTypeId = $(this).context.id.replace('quota-tariff-edit-', '');
+                                                          var updateTariffForm = cloudStack.dialog.createForm({
+                                                              form: {
+                                                                  title: 'label.quota.configuration',
+                                                                  fields: {
+                                                                      quotaValue: {
+                                                                          label: 'label.quota.value',
+                                                                          validation: {
+                                                                              required: true
+                                                                          }
+                                                                      },
+                                                                      effectiveDate: {
+                                                                          label: 'Effective Date',
+                                                                          validation: {
+                                                                              required: true
+                                                                          }
+                                                                      },
+                                                                  }
+                                                              },
+                                                              after: function(args) {
+                                                                  $.ajax({
+                                                                      url: createURL('quotaTariffUpdate'),
+                                                                      data: {
+                                                                          usagetype: usageTypeId,
+                                                                          value: args.data.quotaValue,
+                                                                          startDate: args.data.effectiveDate
+                                                                      },
+                                                                      type: "POST",
+                                                                      success: function(json) {
+                                                                          $('#quota-tariff').click();
+                                                                      },
+                                                                      error: function(data) {
+                                                                          cloudStack.dialog.notice({
+                                                                              message: parseXMLHttpResponse(data)
+                                                                          });
+                                                                      }
+                                                                  });
+                                                              }
+                                                          });
+                                                          updateTariffForm.find('input[name=effectiveDate]').datepicker({
+                                                              defaultDate: "+1w",
+                                                              changeMonth: true,
+                                                              dateFormat: "yy-mm-dd",
+                                                          });
+                                                      });
+                                                  } else {
+                                                      $('<td>').html(items[i].tariffValue).appendTo(tariffTableBodyRow);
+                                                  }
+                                                  $('<td>').html(items[i].description).appendTo(tariffTableBodyRow);
+                                                  tariffTableBodyRow.appendTo(tariffTableBody);
+                                              }
+                                              tariffTableBody.appendTo(tariffTable);
+                                          },
+                                          error: function(data) {
+                                              cloudStack.dialog.notice({
+                                                  message: parseXMLHttpResponse(data)
+                                              });
+                                          }
+                                      });
+                                  };
+
+                                  renderDateForm();
+                                  renderTariffTable();
                                   tariffView.appendTo($node);
                              }
                             },
@@ -472,8 +493,6 @@ var g_quotaCurrency = '';
                                                   error: function(json) {
                                                   }
                                               });
-
-
                                           },
                                           error: function(json) {
                                           }
