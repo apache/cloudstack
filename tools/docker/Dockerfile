@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-# Docker simulator build
+# CloudStack-simulator build
 
 FROM ubuntu:14.04
 
@@ -42,7 +42,7 @@ RUN (/usr/bin/mysqld_safe &); sleep 5; mysqladmin -u root -proot password ''
 
 RUN pip install --allow-external mysql-connector-python mysql-connector-python
 
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY tools/docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY . ./root
 WORKDIR /root
 
