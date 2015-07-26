@@ -54,14 +54,20 @@ public class S3ImageStoreDriverImpl extends BaseImageStoreDriverImpl {
     public DataStoreTO getStoreTO(DataStore store) {
         ImageStoreImpl imgStore = (ImageStoreImpl)store;
         Map<String, String> details = _imageStoreDetailsDao.getDetails(imgStore.getId());
-        return new S3TO(imgStore.getId(), imgStore.getUuid(), details.get(ApiConstants.S3_ACCESS_KEY), details.get(ApiConstants.S3_SECRET_KEY),
-            details.get(ApiConstants.S3_END_POINT), details.get(ApiConstants.S3_BUCKET_NAME), details.get(ApiConstants.S3_HTTPS_FLAG) == null ? false
-                : Boolean.parseBoolean(details.get(ApiConstants.S3_HTTPS_FLAG)), details.get(ApiConstants.S3_CONNECTION_TIMEOUT) == null ? null
-                : Integer.valueOf(details.get(ApiConstants.S3_CONNECTION_TIMEOUT)), details.get(ApiConstants.S3_MAX_ERROR_RETRY) == null ? null
-                : Integer.valueOf(details.get(ApiConstants.S3_MAX_ERROR_RETRY)), details.get(ApiConstants.S3_SOCKET_TIMEOUT) == null ? null
-                : Integer.valueOf(details.get(ApiConstants.S3_SOCKET_TIMEOUT)), imgStore.getCreated(), _configDao.getValue(Config.S3EnableRRS.toString()) == null ? false
-                : Boolean.parseBoolean(_configDao.getValue(Config.S3EnableRRS.toString())), getMaxSingleUploadSizeInBytes());
-
+        return new S3TO(imgStore.getId(),
+                        imgStore.getUuid(),
+                        details.get(ApiConstants.S3_ACCESS_KEY),
+                        details.get(ApiConstants.S3_SECRET_KEY),
+                        details.get(ApiConstants.S3_END_POINT), details.get(ApiConstants.S3_BUCKET_NAME),
+                        details.get(ApiConstants.S3_HTTPS_FLAG) == null ? false : Boolean.parseBoolean(details.get(ApiConstants.S3_HTTPS_FLAG)),
+                        details.get(ApiConstants.S3_CONNECTION_TIMEOUT) == null ? null : Integer.valueOf(details.get(ApiConstants.S3_CONNECTION_TIMEOUT)),
+                        details.get(ApiConstants.S3_MAX_ERROR_RETRY) == null ? null : Integer.valueOf(details.get(ApiConstants.S3_MAX_ERROR_RETRY)),
+                        details.get(ApiConstants.S3_SOCKET_TIMEOUT) == null ? null : Integer.valueOf(details.get(ApiConstants.S3_SOCKET_TIMEOUT)),
+                        imgStore.getCreated(),
+                        _configDao.getValue(Config.S3EnableRRS.toString()) == null ? false : Boolean.parseBoolean(_configDao.getValue(Config.S3EnableRRS.toString())),
+                        getMaxSingleUploadSizeInBytes(),
+                        details.get(ApiConstants.S3_CONNECTION_TTL) == null ? null : Integer.valueOf(details.get(ApiConstants.S3_CONNECTION_TTL)),
+                        details.get(ApiConstants.S3_USE_TCP_KEEPALIVE) == null ? null : Boolean.parseBoolean(details.get(ApiConstants.S3_USE_TCP_KEEPALIVE)));
     }
 
     private long getMaxSingleUploadSizeInBytes() {

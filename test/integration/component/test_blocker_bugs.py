@@ -663,7 +663,14 @@ class TestRouterRestart(cloudstackTestCase):
         #    all it's services should resume
 
         # Find router associated with user account
-        list_router_response = list_routers(
+        if (self.services['mode'] == "Basic"):
+            list_router_response = list_routers(
+                                    self.apiclient,
+                                    zoneid=self.zone.id,
+                                    listall=True
+                                    )
+        else:
+            list_router_response = list_routers(
                                     self.apiclient,
                                     account=self.account.name,
                                     domainid=self.account.domainid
@@ -702,7 +709,14 @@ class TestRouterRestart(cloudstackTestCase):
         self.apiclient.restartNetwork(cmd)
 
         # Get router details after restart
-        list_router_response = list_routers(
+        if (self.services['mode'] == "Basic"):
+            list_router_response = list_routers(
+                                    self.apiclient,
+                                    zoneid=self.zone.id,
+                                    listall=True
+                                    )
+        else:
+            list_router_response = list_routers(
                                     self.apiclient,
                                     account=self.account.name,
                                     domainid=self.account.domainid
@@ -743,11 +757,11 @@ class TestTemplates(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         cls.templateSupported = True
+        cls._cleanup = []
         if cls.hypervisor.lower() in ['lxc']:
             cls.templateSupported = False
             return
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls._cleanup = []
         try:
             cls.account = Account.create(
                             cls.api_client,
@@ -1024,6 +1038,7 @@ class TestDataPersistency(cloudstackTestCase):
         cls.domain = get_domain(cls.api_client)
         cls.services['mode'] = cls.zone.networktype
         cls.templateSupported = True
+        cls.cleanup = []
         template = get_template(
                             cls.api_client,
                             cls.zone.id,

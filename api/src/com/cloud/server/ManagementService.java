@@ -300,6 +300,8 @@ public interface ManagementService {
 
     boolean updateHostPassword(UpdateHostPasswordCmd cmd);
 
+    boolean updateClusterPassword(UpdateHostPasswordCmd cmd);
+
     InstanceGroup updateVmGroup(UpdateVMGroupCmd cmd);
 
     Map<String, Object> listCapabilities(ListCapabilitiesCmd cmd);
@@ -414,7 +416,7 @@ public interface ManagementService {
     String[] listEventTypes();
 
     Pair<List<? extends HypervisorCapabilities>, Integer> listHypervisorCapabilities(Long id, HypervisorType hypervisorType, String keyword, Long startIndex,
-        Long pageSizeVal);
+            Long pageSizeVal);
 
     HypervisorCapabilities updateHypervisorCapabilities(Long id, Long maxGuestsLimit, Boolean securityGroupEnabled);
 
@@ -429,7 +431,7 @@ public interface ManagementService {
     List<String> listDeploymentPlanners();
 
     VirtualMachine upgradeSystemVM(ScaleSystemVMCmd cmd) throws ResourceUnavailableException, ManagementServerException, VirtualMachineMigrationException,
-        ConcurrentOperationException;
+    ConcurrentOperationException;
 
     void cleanupVMReservations();
 

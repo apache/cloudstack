@@ -48,11 +48,14 @@ class CsAddress(CsDataBag):
 
     def get_guest_if(self):
         """
-        Return CsInterface object for the first guest interface
+        Return CsInterface object for the lowest guest interface
         """
+        ipr = []
         for ip in self.get_ips():
             if ip.is_guest():
-                return ip
+                ipr.append(ip)
+        if len(ipr) > 0:
+            return sorted(ipr)[-1]
         return None
 
     def get_guest_ip(self):
@@ -130,10 +133,6 @@ class CsInterface:
             return self.get_attr("gateway")
         else:
             return self.config.cmdline().get_guest_gw()
-#             if self.config.cmdline().is_redundant():
-#                 return self.config.cmdline().get_guest_gw()
-#             else:
-#                 return self.get_ip()
 
     def ip_in_subnet(self, ip):
         ipo = IPAddress(ip)
@@ -407,10 +406,6 @@ class CsIP:
                             ])
 
         if self.get_type() in ["public"]:
-            self.fw.append(["nat", "front",
-                            "-A POSTROUTING -o %s -j SNAT --to-source %s" %
-                           (self.dev, self.address['public_ip'])
-                            ])
             self.fw.append(["", "front",
                             "-A FORWARD -o %s -d %s -j ACL_INBOUND_%s" % (self.dev, self.address['network'], self.dev)
                             ])
@@ -454,7 +449,6 @@ class CsIP:
                 vpccidr = self.config.cmdline().get_vpccidr()
                 self.fw.append(["filter", "", "-A FORWARD -s %s ! -d %s -j ACCEPT" % (vpccidr, vpccidr)])
                 self.fw.append(["nat", "", "-A POSTROUTING -j SNAT -o %s --to-source %s" % (self.dev, self.address['public_ip'])])
-        # route.flush()
 
     def list(self):
         self.iplist = {}

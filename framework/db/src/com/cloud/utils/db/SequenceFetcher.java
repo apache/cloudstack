@@ -94,15 +94,14 @@ public class SequenceFetcher {
         @Override
         @SuppressWarnings("unchecked")
         public T call() throws Exception {
-            try {
-                PreparedStatement stmt = null;
-                StringBuilder sql = new StringBuilder("SELECT ");
-                sql.append(_tg.valueColumnName()).append(" FROM ").append(_tg.table());
-                sql.append(" WHERE ").append(_tg.pkColumnName()).append(" = ? FOR UPDATE");
+            StringBuilder sql = new StringBuilder("SELECT ");
+            sql.append(_tg.valueColumnName()).append(" FROM ").append(_tg.table());
+            sql.append(" WHERE ").append(_tg.pkColumnName()).append(" = ? FOR UPDATE");
 
-                TransactionLegacy txn = TransactionLegacy.open("Sequence");
 
-                PreparedStatement selectStmt = txn.prepareStatement(sql.toString());
+            try (TransactionLegacy txn = TransactionLegacy.open("Sequence");
+                 PreparedStatement selectStmt = txn.prepareStatement(sql.toString());
+                ) {
                 if (_key == null) {
                     selectStmt.setString(1, _tg.pkColumnValue());
                 } else {
@@ -113,33 +112,33 @@ public class SequenceFetcher {
                 sql.append(_tg.table()).append(" SET ").append(_tg.valueColumnName()).append("=").append("?+?");
                 sql.append(" WHERE ").append(_tg.pkColumnName()).append("=?");
 
-                PreparedStatement updateStmt = txn.prepareStatement(sql.toString());
-                if (isRandom) {
-                    updateStmt.setInt(2, random.nextInt(10) + 1);
-                } else {
-                    updateStmt.setInt(2, _tg.allocationSize());
-                }
-                if (_key == null) {
-                    updateStmt.setString(3, _tg.pkColumnValue());
-                } else {
-                    updateStmt.setObject(3, _key);
-                }
+                try (PreparedStatement updateStmt = txn.prepareStatement(sql.toString());) {
+                    if (isRandom) {
+                        updateStmt.setInt(2, random.nextInt(10) + 1);
+                    } else {
+                        updateStmt.setInt(2, _tg.allocationSize());
+                    }
+                    if (_key == null) {
+                        updateStmt.setString(3, _tg.pkColumnValue());
+                    } else {
+                        updateStmt.setObject(3, _key);
+                    }
 
-                ResultSet rs = null;
-                try {
                     txn.start();
-
-                    stmt = selectStmt;
-                    rs = stmt.executeQuery();
                     Object obj = null;
-                    while (rs.next()) {
-                        if (_clazz.isAssignableFrom(Long.class)) {
-                            obj = rs.getLong(1);
-                        } else if (_clazz.isAssignableFrom(Integer.class)) {
-                            obj = rs.getInt(1);
-                        } else {
-                            obj = rs.getObject(1);
+                    try (ResultSet rs = selectStmt.executeQuery();) {
+
+                        while (rs.next()) {
+                            if (_clazz.isAssignableFrom(Long.class)) {
+                                obj = rs.getLong(1);
+                            } else if (_clazz.isAssignableFrom(Integer.class)) {
+                                obj = rs.getInt(1);
+                            } else {
+                                obj = rs.getObject(1);
+                            }
                         }
+                    } catch (SQLException e) {
+                        s_logger.warn("Caught this exception when running: " + (selectStmt != null ? selectStmt.toString() : ""), e);
                     }
 
                     if (obj == null) {
@@ -148,26 +147,17 @@ public class SequenceFetcher {
                     }
 
                     updateStmt.setObject(1, obj);
-                    stmt = updateStmt;
-                    int rows = stmt.executeUpdate();
-                    assert rows == 1 : "Come on....how exactly did we update this many rows " + rows + " for " + updateStmt.toString();
-                    txn.commit();
-                    return (T)obj;
-                } catch (SQLException e) {
-                    s_logger.warn("Caught this exception when running: " + (stmt != null ? stmt.toString() : ""), e);
-                } finally {
-                    if (rs != null) {
-                        rs.close();
+                    try {
+                        int rows = updateStmt.executeUpdate();
+                        assert rows == 1 : "Come on....how exactly did we update this many rows " + rows + " for " + updateStmt.toString();
+                        txn.commit();
+                        return (T)obj;
+                    } catch (SQLException e) {
+                        s_logger.warn("Caught this exception when running: " + (updateStmt != null ? updateStmt.toString() : ""), e);
                     }
-                    selectStmt.close();
-                    updateStmt.close();
-                    txn.close();
                 }
-            } catch (Exception e) {
-                s_logger.warn("Caught this exception when running.", e);
             }
             return null;
         }
     }
-
 }

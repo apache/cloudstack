@@ -103,6 +103,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.log4j.Logger;
@@ -223,7 +225,7 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 
 @Component
 @Local(value = {QueryService.class})
-public class QueryManagerImpl extends ManagerBase implements QueryService {
+public class QueryManagerImpl extends ManagerBase implements QueryService, Configurable {
 
     public static final Logger s_logger = Logger.getLogger(QueryManagerImpl.class);
 
@@ -814,7 +816,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         String hypervisor = cmd.getHypervisor();
         Object name = cmd.getName();
-        Object state = cmd.getState();
+        String state = cmd.getState();
         Object zoneId = cmd.getZoneId();
         Object keyword = cmd.getKeyword();
         boolean isAdmin = false;
@@ -968,24 +970,24 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
         if (state != null) {
-            sc.setParameters("stateEQ", state);
+            if (state.equalsIgnoreCase("present")) {
+                sc.setParameters("stateNIN", "Destroyed", "Expunging");
+            } else {
+                sc.setParameters("stateEQ", state);
+            }
         }
 
         if (hypervisor != null) {
             sc.setParameters("hypervisorType", hypervisor);
         }
 
-        // Don't show Destroyed and Expunging vms to the end user
-        if (!isAdmin) {
+        // Don't show Destroyed and Expunging vms to the end user if the AllowUserViewDestroyedVM flag is not set.
+        if (!isAdmin && !AllowUserViewDestroyedVM.valueIn(caller.getAccountId())) {
             sc.setParameters("stateNIN", "Destroyed", "Expunging");
         }
 
         if (zoneId != null) {
             sc.setParameters("dataCenterId", zoneId);
-
-            if (state == null) {
-                sc.setParameters("stateNEQ", "Destroyed");
-            }
         }
 
         if (affinityGroupId != null) {
@@ -3685,4 +3687,13 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         return resourceDetailResponse;
     }
 
+    @Override
+    public String getConfigComponentName() {
+        return QueryService.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {AllowUserViewDestroyedVM};
+    }
 }

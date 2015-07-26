@@ -49,6 +49,18 @@ javac -version
 echo -e "\nMaven Version: "
 mvn -v
 
+echo -e "\nDisk Status: "
+df
+
+echo -e "\nMemory Status: "
+free
+
+echo -e "\nCheck Git status"
+git status
+
+echo -e "\nCleaning up stale files in /tmp: "
+sudo find /tmp -type f -mtime +2 | grep -v "`sudo lsof | grep /tmp |awk '{print $9}'|sed -e '1 d' |sort |uniq | tr \\n \|`" | xargs sudo rm -vf
+
 echo -e "\nUpdating the system: "
 sudo apt-get -q -y update > /dev/null
 
@@ -58,17 +70,17 @@ sudo debconf-set-selections <<< 'mysql-server mysql-server/root_password passwor
 sudo debconf-set-selections <<< 'mysql-server mysql-server/root_password_again password your_password'
 sudo apt-get -q -y install mysql-server > /dev/null
 
-sudo /etc/init.d/mysql start
-
-echo -e "\nInstalling Tomcat: "
-wget -q -O tomcat.tar.gz http://archive.apache.org/dist/tomcat/tomcat-6/v6.0.33/bin/apache-tomcat-6.0.33.tar.gz
-sudo mkdir -p /opt/tomcat
-sudo tar xfv tomcat.tar.gz -C /opt/tomcat --strip 1 > /dev/null
+#Restart mysql if running to release deleted file locks on filesystem, if aready running
+sudo status mysql | grep start && sudo stop mysql
+sudo start mysql
 
 echo -e "\nInstalling Development tools: "
+RETRY_COUNT=3
 
 sudo apt-get -q -y install uuid-runtime genisoimage python-setuptools python-pip netcat > /dev/null
-
+if [[ $? -ne 0 ]]; then
+  echo -e "\napt-get packages failed to install"
+fi
 echo "<settings>
   <mirrors>
     <mirror>
@@ -82,5 +94,52 @@ echo "<settings>
 
 echo -e "\nInstalling some python packages: "
 
-sudo pip install lxml > /dev/null
-sudo pip install texttable > /dev/null
+for ((i=0;i<$RETRY_COUNT;i++))
+do
+  sudo pip install --upgrade lxml texttable paramiko > /tmp/piplog
+  if [[ $? -eq 0 ]]; then
+    echo -e "\npython packages installed successfully"
+    break;
+  fi
+  echo -e "\npython packages failed to install"
+  cat /tmp/piplog
+done
+
+#Download project dependencies in a way we can retry if there's a failure, without failing the whole build
+
+#Resolve plugins first
+echo -e "\nDownloading Plugin dependencies"
+for ((i=0;i<$RETRY_COUNT;i++))
+do
+ #The output file is used on the next phase by the downloadDeps.sh script
+ mvn org.apache.maven.plugins:maven-dependency-plugin:resolve-plugins | grep "Plugin Resolved:" | sort -u | awk '{print $4}' | tee /tmp/resolvedPlugins
+ if [[ $? -eq 0 ]]; then
+   echo -e "\nPlugin dependencies downloaded successfully"
+   break;
+ fi
+ echo -e "\nDependency download failed"
+ #Test DNS record
+ getent hosts repo1.maven.org
+ while ! nc -vzw 5 repo1.maven.org 80; do echo -e "\nFailed to connect to repo1.maven.org:80 will retry in 10 seconds"; sleep 10; done
+done
+
+#Resolve remaining deps
+cd tools/travis
+echo -e "\nDownloading Project dependencies"
+
+for ((i=0;i<$RETRY_COUNT;i++))
+do
+ ./downloadDeps.sh > /tmp/phase2
+ if [[ $? -eq 0 ]]; then
+   echo -e "\n$(cat cleandeps.out |wc -l) project dependencies downloaded successfully"
+   break;
+ fi
+ echo -e "\nDependency download failed"
+ #Print out errors from failed run
+ cat /tmp/phase2 | grep -i -e "fail" -e "error" -e "exception"
+ #Test DNS record
+ getent hosts repo1.maven.org
+ while ! nc -vzw 5 repo1.maven.org 80; do echo -e "\nFailed to connect to repo1.maven.org:80 will retry in 10 seconds"; sleep 10; done
+ echo -e "\nRetrying download"
+done
+cd ../..

@@ -1819,10 +1819,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         String displayText = cmd.getDisplayText();
         String format = cmd.getFormat();
         Long guestOSId = cmd.getOsTypeId();
-        Boolean passwordEnabled = cmd.isPasswordEnabled();
+        Boolean passwordEnabled = cmd.getPasswordEnabled();
         Boolean isDynamicallyScalable = cmd.isDynamicallyScalable();
         Boolean isRoutingTemplate = cmd.isRoutingType();
-        Boolean bootable = cmd.isBootable();
+        Boolean bootable = cmd.getBootable();
         Boolean requiresHvm = cmd.getRequiresHvm();
         Integer sortKey = cmd.getSortKey();
         Map details = cmd.getDetails();
@@ -1846,9 +1846,19 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
         }
 
+        // update is needed if any of the fields below got filled by the user
         boolean updateNeeded =
-                !(name == null && displayText == null && format == null && guestOSId == null && passwordEnabled == null && bootable == null && requiresHvm == null && sortKey == null &&
-                        isDynamicallyScalable == null && isRoutingTemplate == null && details == null);
+                !(name == null &&
+                  displayText == null &&
+                  format == null &&
+                  guestOSId == null &&
+                  passwordEnabled == null &&
+                  bootable == null &&
+                  requiresHvm == null &&
+                  sortKey == null &&
+                  isDynamicallyScalable == null &&
+                  isRoutingTemplate == null &&
+                  details == null);
         if (!updateNeeded) {
             return template;
         }

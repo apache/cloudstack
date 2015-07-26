@@ -198,7 +198,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 final Set<VDI> setVdis = srcSr.getVDIs(conn);
 
                 if (setVdis.size() != 1) {
-                    return new CopyCmdAnswer("Can't find template VDI under: " + uri.getHost() + ":" + uri.getPath() + "/" + volumeDirectory);
+                    return new CopyCmdAnswer("Expected 1 VDI template but found " + setVdis.size() + " VDI template(s) on: " + uri.getHost() + ":" + uri.getPath() + "/" + volumeDirectory);
                 }
 
                 final VDI srcVdi = setVdis.iterator().next();

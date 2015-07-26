@@ -148,6 +148,23 @@
                                 });
                             }
                         });
+
+                        // SAML: Check Append Domain Setting
+                        if (g_idpList) {
+                            $.ajax({
+                                type: 'GET',
+                                url: createURL('listConfigurations&name=saml2.append.idpdomain'),
+                                dataType: 'json',
+                                async: false,
+                                success: function(data, textStatus, xhr) {
+                                    if (data && data.listconfigurationsresponse && data.listconfigurationsresponse.configuration) {
+                                        g_appendIdpDomain = (data.listconfigurationsresponse.configuration[0].value === 'true');
+                                    }
+                                },
+                                error: function(xhr) {
+                                },
+                            });
+                        }
                     },
 
                     detailView: {
@@ -1061,6 +1078,68 @@
                                                 data: items
                                             });
                                         }
+                                    },
+                                    samlEnable: {
+                                        label: 'label.saml.enable',
+                                        docID: 'helpSamlEnable',
+                                        isBoolean: true,
+                                        validation: {
+                                            required: false
+                                        },
+                                        isHidden: function (args) {
+                                            if (g_idpList) return false;
+                                            return true;
+                                        }
+                                    },
+                                    samlEntity: {
+                                        label: 'label.saml.entity',
+                                        docID: 'helpSamlEntity',
+                                        validation: {
+                                            required: false
+                                        },
+                                        select: function(args) {
+                                            var samlChecked = false;
+                                            var idpUrl = args.$form.find('select[name=samlEntity]').children(':selected').val();
+                                            var appendDomainToUsername = function() {
+                                                if (!g_appendIdpDomain) {
+                                                    return;
+                                                }
+                                                var username = args.$form.find('input[name=username]').val();
+                                                if (username) {
+                                                    username = username.split('@')[0];
+                                                }
+                                                if (samlChecked) {
+                                                    var link = document.createElement('a');
+                                                    link.setAttribute('href', idpUrl);
+                                                    args.$form.find('input[name=username]').val(username + "@" + link.host.split('.').splice(-2).join('.'));
+                                                } else {
+                                                    args.$form.find('input[name=username]').val(username);
+                                                }
+                                            };
+                                            args.$form.find('select[name=samlEntity]').change(function() {
+                                                idpUrl = $(this).children(':selected').val();
+                                                appendDomainToUsername();
+                                            });
+                                            args.$form.find('input[name=samlEnable]').change(function() {
+                                                samlChecked = $(this).context.checked;
+                                                appendDomainToUsername();
+                                            });
+
+                                            var items = [];
+                                            $(g_idpList).each(function() {
+                                                items.push({
+                                                    id: this.id,
+                                                    description: this.orgName
+                                                });
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        },
+                                        isHidden: function (args) {
+                                            if (g_idpList) return false;
+                                            return true;
+                                        }
                                     }
                                 }
                             },
@@ -1098,12 +1177,30 @@
                                     accounttype: accountObj.accounttype
                                 });
 
+
+                                var authorizeUsersForSamlSSO = function (users, entity) {
+                                    for (var i = 0; i < users.length; i++) {
+                                        $.ajax({
+                                            url: createURL('authorizeSamlSso&enable=true&userid=' + users[i].id + "&entityid=" + entity),
+                                            error: function(XMLHttpResponse) {
+                                                args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                                            }
+                                        });
+                                    }
+                                    return;
+                                };
+
                                 $.ajax({
                                     url: createURL('createUser'),
                                     type: "POST",
                                     data: data,
                                     success: function(json) {
                                         var item = json.createuserresponse.user;
+                                        if (args.data.samlEnable && args.data.samlEnable === 'on') {
+                                            var entity = args.data.samlEntity;
+                                            if (item && entity)
+                                                authorizeUsersForSamlSSO([item], entity);
+                                        }
                                         args.response.success({
                                             data: item
                                         });
@@ -1218,6 +1315,102 @@
                                                     });
                                                 }
                                             });
+                                        }
+                                    }
+                                }
+                            },
+
+                            configureSamlAuthorization: {
+                                label: 'label.action.configure.samlauthorization',
+                                messages: {
+                                    notification: function(args) {
+                                        return 'label.action.configure.samlauthorization';
+                                    }
+                                },
+                                action: {
+                                    custom: function(args) {
+                                        var start = args.start;
+                                        var complete = args.complete;
+                                        var context = args.context;
+
+                                        if (g_idpList) {
+                                            $.ajax({
+                                                url: createURL('listSamlAuthorization'),
+                                                data: {
+                                                    userid: context.users[0].id,
+                                                },
+                                                success: function(json) {
+                                                    var authorization = json.listsamlauthorizationsresponse.samlauthorization[0];
+                                                    cloudStack.dialog.createForm({
+                                                        form: {
+                                                            title: 'label.action.configure.samlauthorization',
+                                                            fields: {
+                                                                samlEnable: {
+                                                                    label: 'label.saml.enable',
+                                                                    docID: 'helpSamlEnable',
+                                                                    isBoolean: true,
+                                                                    isChecked: authorization.status,
+                                                                    validation: {
+                                                                        required: false
+                                                                    }
+                                                                },
+                                                                samlEntity: {
+                                                                    label: 'label.saml.entity',
+                                                                    docID: 'helpSamlEntity',
+                                                                    validation: {
+                                                                        required: false
+                                                                    },
+                                                                    select: function(args) {
+                                                                        var items = [];
+                                                                        $(g_idpList).each(function() {
+                                                                            items.push({
+                                                                                id: this.id,
+                                                                                description: this.orgName
+                                                                            });
+                                                                        });
+                                                                        args.response.success({
+                                                                            data: items
+                                                                        });
+                                                                        args.$select.change(function() {
+                                                                            $('select[name="samlEntity"] option[value="' + authorization.idpid  + '"]').attr("selected", "selected");
+                                                                        });
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        after: function(args) {
+                                                            start();
+                                                            var enableSaml = false;
+                                                            var idpId = '';
+                                                            if (args.data.hasOwnProperty('samlEnable')) {
+                                                                enableSaml = (args.data.samlEnable === 'on');
+                                                            }
+                                                            if (args.data.hasOwnProperty('samlEntity')) {
+                                                                idpId = args.data.samlEntity;
+                                                            }
+                                                            $.ajax({
+                                                                url: createURL('authorizeSamlSso'),
+                                                                data: {
+                                                                    userid: context.users[0].id,
+                                                                    enable: enableSaml,
+                                                                    entityid: idpId
+                                                                },
+                                                                type: "POST",
+                                                                success: function(json) {
+                                                                    complete();
+                                                                },
+                                                                error: function(json) {
+                                                                    complete({ error: parseXMLHttpResponse(json) });
+                                                                }
+                                                            });
+                                                        }
+                                                    });
+                                                },
+                                                error: function(json) {
+                                                    complete({ error: parseXMLHttpResponse(json) });
+                                                }
+                                            });
+
                                         }
                                     }
                                 }
@@ -1797,6 +1990,9 @@
             allowedActions.push("edit");
             allowedActions.push("changePassword");
             allowedActions.push("generateKeys");
+            if (g_idpList) {
+                allowedActions.push("configureSamlAuthorization");
+            }
             if (!(jsonObj.domain == "ROOT" && jsonObj.account == "admin" && jsonObj.accounttype == 1)) { //if not system-generated default admin account user
                 if (jsonObj.state == "enabled")
                     allowedActions.push("disable");
@@ -1818,6 +2014,9 @@
                 
                 allowedActions.push("changePassword");
                 allowedActions.push("generateKeys");
+                if (g_idpList) {
+                    allowedActions.push("configureSamlAuthorization");
+                }
         	}        	
         }
         return allowedActions;

@@ -168,6 +168,8 @@ class MarvinPlugin(Plugin):
     def beforeTest(self, test):
         self.__testModName = test.__str__()
         self.__testName = test.__str__().split()[0]
+        if not self.__testName:
+            self.__testName = "test"
         self.__testClient.identifier = '-'.\
             join([self.__identifier, self.__testName])
         if self.__tcRunLogger:

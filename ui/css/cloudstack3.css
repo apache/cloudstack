@@ -369,7 +369,7 @@ body.login {
 .login .select-language select {
   width: 260px;
   border: 1px solid #808080;
-  margin-top: 30px;
+  margin-top: 20px;
   /*+border-radius:4px;*/
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
@@ -460,14 +460,12 @@ body.login {
   background: transparent url(../images/sprites.png) -563px -747px;
   cursor: pointer;
   border: none;
-  margin: 7px 120px 0 -1px;
   text-align: center;
   width: 60px;
   height: 15px;
   display: block;
   color: #FFFFFF;
   font-weight: bold;
-  float: left;
   text-indent: -1px;
   /*+text-shadow:0px 1px 2px #000000;*/
   -moz-text-shadow: 0px 1px 2px #000000;
@@ -12749,6 +12747,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -196px -704px;
 }
 
+.configureSamlAuthorization .icon {
+  background-position: -165px -122px;
+}
+
+.configureSamlAuthorization:hover .icon {
+  background-position: -165px -704px;
+}
+
 .viewConsole .icon {
   background-position: -231px -2px;
 }
@@ -12972,13 +12978,6 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   border: 1px solid #AFAFAF;
-  -moz-box-shadow: inset 0px 1px #727272;
-  -webkit-box-shadow: inset 0px 1px #727272;
-  -o-box-shadow: inset 0px 1px #727272;
-  box-shadow: inset 0px 1px #727272;
-  -moz-box-shadow: inset 0px 1px 0px #727272;
-  -webkit-box-shadow: inset 0px 1px 0px #727272;
-  -o-box-shadow: inset 0px 1px 0px #727272;
 }
 
 .manual-account-details > *:nth-child(even) {

@@ -22,7 +22,7 @@ Description: CloudStack server library
 
 Package: cloudstack-agent
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, openjdk-7-jre | openjdk-8-jre, cloudstack-common (= ${source:Version}), lsb-base (>= 3.2), libcommons-daemon-java, openssh-client, libvirt0, qemu-system-x86 | qemu-kvm, libvirt-bin, uuid-runtime, rsync, iproute, perl-modules, ebtables, vlan, wget, jsvc, ipset, python-libvirt, ethtool, iptables
+Depends: ${misc:Depends}, ${python:Depends}, openjdk-7-jre-headless | openjdk-8-jre-headless, cloudstack-common (= ${source:Version}), lsb-base (>= 3.2), libcommons-daemon-java, openssh-client, libvirt0, qemu-system-x86 | qemu-kvm, libvirt-bin, uuid-runtime, rsync, iproute, perl-modules, ebtables, vlan, wget, jsvc, ipset, python-libvirt, ethtool, iptables
 Conflicts: cloud-agent, cloud-agent-libs, cloud-agent-deps, cloud-agent-scripts
 Description: CloudStack agent
  The CloudStack agent is in charge of managing shared computing resources in
@@ -31,7 +31,7 @@ Description: CloudStack agent
 
 Package: cloudstack-usage
 Architecture: all
-Depends: ${misc:Depends}, openjdk-7-jre | openjdk-8-jre, cloudstack-common (= ${source:Version}), jsvc, libmysql-java
+Depends: ${misc:Depends}, openjdk-7-jre-headless | openjdk-8-jre-headless, cloudstack-common (= ${source:Version}), jsvc, libmysql-java
 Description: CloudStack usage monitor
  The CloudStack usage monitor provides usage accounting across the entire cloud for
  cloud operators to charge based on usage parameters.

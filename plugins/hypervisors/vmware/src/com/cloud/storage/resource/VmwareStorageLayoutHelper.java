@@ -109,7 +109,7 @@ public class VmwareStorageLayoutHelper {
             // be left over in its previous owner VM. We will do a fixup synchronization here by moving it to root
             // again.
             //
-            syncVolumeToRootFolder(dcMo, ds, vmdkName);
+            syncVolumeToRootFolder(dcMo, ds, vmdkName, vmName);
         }
 
         if (ds.fileExists(vmdkFullCloneModeLegacyPair[1])) {
@@ -133,10 +133,15 @@ public class VmwareStorageLayoutHelper {
         return vmdkLinkedCloneModePair[0];
     }
 
-    public static void syncVolumeToRootFolder(DatacenterMO dcMo, DatastoreMO ds, String vmdkName) throws Exception {
+    public static void syncVolumeToRootFolder(DatacenterMO dcMo, DatastoreMO ds, String vmdkName, String vmName) throws Exception {
         String fileDsFullPath = ds.searchFileInSubFolders(vmdkName + ".vmdk", false);
         if (fileDsFullPath == null)
             return;
+
+        String folderName = null;
+        if (ds.folderExists(String.format("[%s]", ds.getName()), vmName)) {
+            folderName = String.format("[%s] %s", ds.getName(), vmName);
+        }
 
         DatastoreFile srcDsFile = new DatastoreFile(fileDsFullPath);
         String companionFilePath = srcDsFile.getCompanionPath(vmdkName + "-flat.vmdk");
@@ -159,6 +164,13 @@ public class VmwareStorageLayoutHelper {
         String targetPath = getLegacyDatastorePathFromVmdkFileName(ds, vmdkName + ".vmdk");
         s_logger.info("Fixup folder-synchronization. move " + fileDsFullPath + " -> " + targetPath);
         ds.moveDatastoreFile(fileDsFullPath, dcMo.getMor(), ds.getMor(), targetPath, dcMo.getMor(), true);
+
+        if (folderName != null) {
+            String[] files = ds.listDirContent(folderName);
+            if (files == null || files.length == 0) {
+                ds.deleteFolder(folderName, dcMo.getMor());
+            }
+        }
     }
 
     public static void moveVolumeToRootFolder(DatacenterMO dcMo, List<String> detachedDisks) throws Exception {

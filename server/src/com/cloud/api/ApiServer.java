@@ -1062,8 +1062,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             final SecureRandom sesssionKeyRandom = new SecureRandom();
             final byte sessionKeyBytes[] = new byte[20];
             sesssionKeyRandom.nextBytes(sessionKeyBytes);
-            final String sessionKey = Base64.encodeBase64String(sessionKeyBytes);
-            session.setAttribute("sessionkey", sessionKey);
+            final String sessionKey = Base64.encodeBase64URLSafeString(sessionKeyBytes);
+            session.setAttribute(ApiConstants.SESSIONKEY, sessionKey);
 
             return createLoginResponse(session);
         }

@@ -35,7 +35,7 @@ import org.xml.sax.SAXException;
 
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.nicModel;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.NicModel;
 
 public class LibvirtDomainXMLParser {
     private static final Logger s_logger = Logger.getLogger(LibvirtDomainXMLParser.class);
@@ -75,15 +75,15 @@ public class LibvirtDomainXMLParser {
                     String diskLabel = getAttrValue("target", "dev", disk);
                     String bus = getAttrValue("target", "bus", disk);
 
-                    DiskDef.diskFmtType fmt = null;
+                    DiskDef.DiskFmtType fmt = null;
                     if (diskFmtType != null) {
-                        fmt = DiskDef.diskFmtType.valueOf(diskFmtType.toUpperCase());
+                        fmt = DiskDef.DiskFmtType.valueOf(diskFmtType.toUpperCase());
                     }
 
                     def.defNetworkBasedDisk(diskPath, host, port, authUserName, poolUuid, diskLabel,
-                        DiskDef.diskBus.valueOf(bus.toUpperCase()),
-                        DiskDef.diskProtocol.valueOf(protocol.toUpperCase()), fmt);
-                    def.setCacheMode(DiskDef.diskCacheMode.valueOf(diskCacheMode.toUpperCase()));
+                        DiskDef.DiskBus.valueOf(bus.toUpperCase()),
+                        DiskDef.DiskProtocol.valueOf(protocol.toUpperCase()), fmt);
+                    def.setCacheMode(DiskDef.DiskCacheMode.valueOf(diskCacheMode.toUpperCase()));
                 } else {
                     String diskFmtType = getAttrValue("driver", "type", disk);
                     String diskCacheMode = getAttrValue("driver", "cache", disk);
@@ -96,20 +96,20 @@ public class LibvirtDomainXMLParser {
 
                     if (type.equalsIgnoreCase("file")) {
                         if (device.equalsIgnoreCase("disk")) {
-                            DiskDef.diskFmtType fmt = null;
+                            DiskDef.DiskFmtType fmt = null;
                             if (diskFmtType != null) {
-                                fmt = DiskDef.diskFmtType.valueOf(diskFmtType.toUpperCase());
+                                fmt = DiskDef.DiskFmtType.valueOf(diskFmtType.toUpperCase());
                             }
-                            def.defFileBasedDisk(diskFile, diskLabel, DiskDef.diskBus.valueOf(bus.toUpperCase()), fmt);
+                            def.defFileBasedDisk(diskFile, diskLabel, DiskDef.DiskBus.valueOf(bus.toUpperCase()), fmt);
                         } else if (device.equalsIgnoreCase("cdrom")) {
                             def.defISODisk(diskFile);
                         }
                     } else if (type.equalsIgnoreCase("block")) {
                         def.defBlockBasedDisk(diskDev, diskLabel,
-                            DiskDef.diskBus.valueOf(bus.toUpperCase()));
+                            DiskDef.DiskBus.valueOf(bus.toUpperCase()));
                     }
                     if (diskCacheMode != null) {
-                        def.setCacheMode(DiskDef.diskCacheMode.valueOf(diskCacheMode.toUpperCase()));
+                        def.setCacheMode(DiskDef.DiskCacheMode.valueOf(diskCacheMode.toUpperCase()));
                     }
                 }
 
@@ -160,13 +160,13 @@ public class LibvirtDomainXMLParser {
                 }
                 if (type.equalsIgnoreCase("network")) {
                     String network = getAttrValue("source", "network", nic);
-                    def.defPrivateNet(network, dev, mac, nicModel.valueOf(model.toUpperCase()), networkRateKBps);
+                    def.defPrivateNet(network, dev, mac, NicModel.valueOf(model.toUpperCase()), networkRateKBps);
                 } else if (type.equalsIgnoreCase("bridge")) {
                     String bridge = getAttrValue("source", "bridge", nic);
-                    def.defBridgeNet(bridge, dev, mac, nicModel.valueOf(model.toUpperCase()), networkRateKBps);
+                    def.defBridgeNet(bridge, dev, mac, NicModel.valueOf(model.toUpperCase()), networkRateKBps);
                 } else if (type.equalsIgnoreCase("ethernet")) {
                     String scriptPath = getAttrValue("script", "path", nic);
-                    def.defEthernet(dev, mac, nicModel.valueOf(model.toUpperCase()), scriptPath, networkRateKBps);
+                    def.defEthernet(dev, mac, NicModel.valueOf(model.toUpperCase()), scriptPath, networkRateKBps);
                 }
                 interfaces.add(def);
             }

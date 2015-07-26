@@ -180,6 +180,7 @@ public class ApiConstants {
     public static final String PARAMS = "params";
     public static final String PARENT_DOMAIN_ID = "parentdomainid";
     public static final String PASSWORD = "password";
+    public static final String SHOULD_UPDATE_PASSWORD = "update_passwd_on_host";
     public static final String NEW_PASSWORD = "new_password";
     public static final String PASSWORD_ENABLED = "passwordenabled";
     public static final String SSHKEY_ENABLED = "sshkeyenabled";
@@ -375,6 +376,7 @@ public class ApiConstants {
     public static final String ISOLATION_METHODS = "isolationmethods";
     public static final String PHYSICAL_NETWORK_ID = "physicalnetworkid";
     public static final String DEST_PHYSICAL_NETWORK_ID = "destinationphysicalnetworkid";
+    public static final String ENABLE = "enable";
     public static final String ENABLED = "enabled";
     public static final String SERVICE_NAME = "servicename";
     public static final String DHCP_RANGE = "dhcprange";
@@ -500,8 +502,10 @@ public class ApiConstants {
     public static final String S3_BUCKET_NAME = "bucket";
     public static final String S3_HTTPS_FLAG = "usehttps";
     public static final String S3_CONNECTION_TIMEOUT = "connectiontimeout";
+    public static final String S3_CONNECTION_TTL = "connectionttl";
     public static final String S3_MAX_ERROR_RETRY = "maxerrorretry";
     public static final String S3_SOCKET_TIMEOUT = "sockettimeout";
+    public static final String S3_USE_TCP_KEEPALIVE = "usetcpkeepalive";
     public static final String INCL_ZONES = "includezones";
     public static final String EXCL_ZONES = "excludezones";
     public static final String SOURCE = "source";
@@ -518,7 +522,7 @@ public class ApiConstants {
     public static final String VMPROFILE_ID = "vmprofileid";
     public static final String VMGROUP_ID = "vmgroupid";
     public static final String CS_URL = "csurl";
-    public static final String IDP_URL = "idpurl";
+    public static final String IDP_ID = "idpid";
     public static final String SCALEUP_POLICY_IDS = "scaleuppolicyids";
     public static final String SCALEDOWN_POLICY_IDS = "scaledownpolicyids";
     public static final String SCALEUP_POLICIES = "scaleuppolicies";

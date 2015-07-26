@@ -19,7 +19,10 @@
 
 package com.cloud.utils;
 
-public class Pair<T, U> {
+import java.io.Serializable;
+
+public class Pair<T, U> implements Serializable {
+    private static final long serialVersionUID = 2L;
     T t;
     U u;
 

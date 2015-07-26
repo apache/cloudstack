@@ -656,13 +656,13 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         if (!isSecondaryStorageVmRequired(dataCenterId)) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Secondary storage vm not required in zone " + dataCenterId + " acc. to zone config");
+                s_logger.debug("Secondary storage vm not required in zone " + dataCenterId + " according to zone config");
             }
             return;
         }
         SecondaryStorageVmVO secStorageVm = null;
         String errorString = null;
-        try{
+        try {
             boolean secStorageVmFromStoppedPool = false;
             secStorageVm = assignSecStorageVmFromStoppedPool(dataCenterId, role);
             if (secStorageVm == null) {
@@ -681,13 +681,13 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                     }
                 } else {
                     if (s_logger.isInfoEnabled()) {
-                        s_logger.info("Unable to acquire synchronization lock to allocate secStorageVm resource for standby capacity, wait for next scan");
+                        s_logger.info("Unable to acquire synchronization lock for secondary storage vm allocation, wait for next scan");
                     }
                     return;
                 }
             } else {
                 if (s_logger.isInfoEnabled()) {
-                    s_logger.info("Found a stopped secondary storage vm, bring it up to running pool. secStorageVm vm id : " + secStorageVm.getId());
+                    s_logger.info("Found a stopped secondary storage vm, starting it. Vm id : " + secStorageVm.getId());
                 }
                 secStorageVmFromStoppedPool = true;
             }
@@ -704,7 +704,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                         }
                     } else {
                         if (s_logger.isInfoEnabled()) {
-                            s_logger.info("Unable to acquire synchronization lock to start secStorageVm for standby capacity, secStorageVm vm id : " + secStorageVm.getId());
+                            s_logger.info("Unable to acquire synchronization lock for starting secondary storage vm id : " + secStorageVm.getId());
                         }
                         return;
                     }
@@ -714,8 +714,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
                 if (secStorageVm == null) {
                     if (s_logger.isInfoEnabled()) {
-                        s_logger.info("Unable to start secondary storage vm for standby capacity, secStorageVm vm Id : " + secStorageVmId +
-                            ", will recycle it and start a new one");
+                        s_logger.info("Unable to start secondary storage vm for standby capacity, vm id : " + secStorageVmId + ", will recycle it and start a new one");
                     }
 
                     if (secStorageVmFromStoppedPool) {
@@ -729,10 +728,10 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                     }
                 }
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             errorString = e.getMessage();
             throw e;
-        }finally{
+        } finally {
             // TODO - For now put all the alerts as creation failure. Distinguish between creation vs start failure in future.
             // Also add failure reason since startvm masks some of them.
             if(secStorageVm == null || secStorageVm.getState() != State.Running)

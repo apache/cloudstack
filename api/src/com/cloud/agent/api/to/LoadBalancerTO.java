@@ -311,6 +311,7 @@ public class LoadBalancerTO {
     }
 
     public static class CounterTO implements Serializable {
+        private static final long serialVersionUID = 2L;
         private final String name;
         private final String source;
         private final String value;
@@ -335,6 +336,7 @@ public class LoadBalancerTO {
     }
 
     public static class ConditionTO implements Serializable {
+        private static final long serialVersionUID = 2L;
         private final long threshold;
         private final String relationalOperator;
         private final CounterTO counter;
@@ -359,6 +361,7 @@ public class LoadBalancerTO {
     }
 
     public static class AutoScalePolicyTO implements Serializable {
+        private static final long serialVersionUID = 2L;
         private final long id;
         private final int duration;
         private final int quietTime;
@@ -401,6 +404,7 @@ public class LoadBalancerTO {
     }
 
     public static class AutoScaleVmProfileTO implements Serializable {
+        private static final long serialVersionUID = 2L;
         private final String zoneId;
         private final String domainId;
         private final String serviceOfferingId;
@@ -481,6 +485,7 @@ public class LoadBalancerTO {
     }
 
     public static class AutoScaleVmGroupTO implements Serializable {
+        private static final long serialVersionUID = 2L;
         private final String uuid;
         private final int minMembers;
         private final int maxMembers;

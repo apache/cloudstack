@@ -38,16 +38,20 @@ public class LibvirtConnection {
     }
 
     static public Connect getConnection(String hypervisorURI) throws LibvirtException {
+        s_logger.debug("Looking for libvirtd connection at: " + hypervisorURI);
         Connect conn = s_connections.get(hypervisorURI);
 
         if (conn == null) {
+            s_logger.info("No existing libvirtd connection found. Opening a new one");
             conn = new Connect(hypervisorURI, false);
+            s_logger.debug("Successfully connected to libvirt at: " + hypervisorURI);
             s_connections.put(hypervisorURI, conn);
         } else {
             try {
                 conn.getVersion();
             } catch (LibvirtException e) {
-                s_logger.debug("Connection with libvirtd is broken, due to " + e.getMessage());
+                s_logger.error("Connection with libvirtd is broken: " + e.getMessage());
+                s_logger.debug("Opening a new libvirtd connection to: " + hypervisorURI);
                 conn = new Connect(hypervisorURI, false);
                 s_connections.put(hypervisorURI, conn);
             }
@@ -66,11 +70,11 @@ public class LibvirtConnection {
                     return conn;
                 }
             } catch (Exception e) {
-                s_logger.debug("can't find connection: " + hypervisor.toString() + ", for vm: " + vmName + ", continue");
+                s_logger.debug("Can not find " + hypervisor.toString() + " connection for Instance: " + vmName + ", continuing.");
             }
         }
 
-        s_logger.debug("can't find which hypervisor the vm used , then use the default hypervisor");
+        s_logger.warn("Can not find a connection for Instance " + vmName + ". Assuming the default connection.");
         // return the default connection
         return getConnection();
     }

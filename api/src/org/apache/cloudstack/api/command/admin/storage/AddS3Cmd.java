@@ -22,11 +22,13 @@ import static com.cloud.user.Account.ACCOUNT_ID_SYSTEM;
 import static org.apache.cloudstack.api.ApiConstants.S3_ACCESS_KEY;
 import static org.apache.cloudstack.api.ApiConstants.S3_BUCKET_NAME;
 import static org.apache.cloudstack.api.ApiConstants.S3_CONNECTION_TIMEOUT;
+import static org.apache.cloudstack.api.ApiConstants.S3_CONNECTION_TTL;
 import static org.apache.cloudstack.api.ApiConstants.S3_END_POINT;
 import static org.apache.cloudstack.api.ApiConstants.S3_HTTPS_FLAG;
 import static org.apache.cloudstack.api.ApiConstants.S3_MAX_ERROR_RETRY;
 import static org.apache.cloudstack.api.ApiConstants.S3_SECRET_KEY;
 import static org.apache.cloudstack.api.ApiConstants.S3_SOCKET_TIMEOUT;
+import static org.apache.cloudstack.api.ApiConstants.S3_USE_TCP_KEEPALIVE;
 import static org.apache.cloudstack.api.BaseCmd.CommandType.BOOLEAN;
 import static org.apache.cloudstack.api.BaseCmd.CommandType.INTEGER;
 import static org.apache.cloudstack.api.BaseCmd.CommandType.STRING;
@@ -66,22 +68,28 @@ public final class AddS3Cmd extends BaseCmd {
     private String secretKey;
 
     @Parameter(name = S3_END_POINT, type = STRING, required = false, description = "S3 host name")
-    private final String endPoint = null;
+    private String endPoint;
 
     @Parameter(name = S3_BUCKET_NAME, type = STRING, required = true, description = "name of the template storage bucket")
     private String bucketName;
 
     @Parameter(name = S3_HTTPS_FLAG, type = BOOLEAN, required = false, description = "connect to the S3 endpoint via HTTPS?")
-    private final Boolean httpsFlag = null;
+    private Boolean httpsFlag;
 
     @Parameter(name = S3_CONNECTION_TIMEOUT, type = INTEGER, required = false, description = "connection timeout (milliseconds)")
-    private final Integer connectionTimeout = null;
+    private Integer connectionTimeout;
 
     @Parameter(name = S3_MAX_ERROR_RETRY, type = INTEGER, required = false, description = "maximum number of times to retry on error")
-    private final Integer maxErrorRetry = null;
+    private Integer maxErrorRetry;
 
     @Parameter(name = S3_SOCKET_TIMEOUT, type = INTEGER, required = false, description = "socket timeout (milliseconds)")
-    private final Integer socketTimeout = null;
+    private Integer socketTimeout;
+
+    @Parameter(name = S3_CONNECTION_TTL, type = INTEGER, required = false, description = "connection ttl (milliseconds)")
+    private Integer connectionTtl;
+
+    @Parameter(name = S3_USE_TCP_KEEPALIVE, type = BOOLEAN, required = false, description = "whether tcp keepalive is used")
+    private Boolean useTCPKeepAlive;
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
@@ -103,6 +111,12 @@ public final class AddS3Cmd extends BaseCmd {
         }
         if (getSocketTimeout() != null) {
             dm.put(ApiConstants.S3_SOCKET_TIMEOUT, getSocketTimeout().toString());
+        }
+        if (getConnectionTtl() != null) {
+            dm.put(ApiConstants.S3_CONNECTION_TTL, getConnectionTtl().toString());
+        }
+        if (getUseTCPKeepAlive() != null) {
+            dm.put(ApiConstants.S3_USE_TCP_KEEPALIVE, getUseTCPKeepAlive().toString());
         }
 
 
@@ -168,6 +182,14 @@ public final class AddS3Cmd extends BaseCmd {
             return false;
         }
 
+        if (connectionTtl != null ? !connectionTtl.equals(thatAddS3Cmd.connectionTtl) : thatAddS3Cmd.connectionTtl != null) {
+            return false;
+        }
+
+        if (useTCPKeepAlive != null ? !useTCPKeepAlive.equals(thatAddS3Cmd.useTCPKeepAlive) : thatAddS3Cmd.useTCPKeepAlive != null) {
+            return false;
+        }
+
         return true;
 
     }
@@ -183,6 +205,8 @@ public final class AddS3Cmd extends BaseCmd {
         result = 31 * result + (connectionTimeout != null ? connectionTimeout.hashCode() : 0);
         result = 31 * result + (maxErrorRetry != null ? maxErrorRetry.hashCode() : 0);
         result = 31 * result + (socketTimeout != null ? socketTimeout.hashCode() : 0);
+        result = 31 * result + (connectionTtl != null ? connectionTtl.hashCode() : 0);
+        result = 31 * result + (useTCPKeepAlive != null && useTCPKeepAlive == true ? 1 : 0);
 
         return result;
 
@@ -230,4 +254,11 @@ public final class AddS3Cmd extends BaseCmd {
         return socketTimeout;
     }
 
+    public Integer getConnectionTtl() {
+        return connectionTtl;
+    }
+
+    public Boolean getUseTCPKeepAlive() {
+        return useTCPKeepAlive;
+    }
 }

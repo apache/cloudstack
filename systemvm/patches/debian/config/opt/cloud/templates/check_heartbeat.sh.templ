@@ -22,11 +22,11 @@ STRIKE_FILE="$ROUTER_BIN_PATH/keepalived.strikes"
 
 if [ -e $ROUTER_BIN_PATH/keepalived.ts2 ]
 then
-    lasttime=$(cat $ROUTER_BIN_PATH/keepalived.ts2)
     thistime=$(cat $ROUTER_BIN_PATH/keepalived.ts)
-    diff=$(($thistime - $lasttime))
+    lasttime=$(cat $ROUTER_BIN_PATH/keepalived.ts2)
+    diff=$(($lasttime - $thistime))
     s=0
-    if [ $diff -lt 30 ]
+    if [ $diff -ge 10 ]
     then
         if [ -e $STRIKE_FILE ]
         then
@@ -47,13 +47,14 @@ then
     if [ $s -gt 2 ]
     then
         echo Keepalived process is dead! >> $ROUTER_LOG
-        $ROUTER_BIN_PATH/services.sh stop >> $ROUTER_LOG 2>&1
-        $ROUTER_BIN_PATH/disable_pubip.sh >> $ROUTER_LOG 2>&1
-        $ROUTER_BIN_PATH/primary-backup.sh fault >> $ROUTER_LOG 2>&1
         service keepalived stop >> $ROUTER_LOG 2>&1
         service conntrackd stop >> $ROUTER_LOG 2>&1
-	pkill -9 keepalived >> $ROUTER_LOG 2>&1
-	pkill -9 conntrackd >> $ROUTER_LOG 2>&1
+        
+        #Set fault so we have the same effect as a KeepaliveD fault.
+        python /opt/cloud/bin/master.py --fault
+        
+        pkill -9 keepalived >> $ROUTER_LOG 2>&1
+        pkill -9 conntrackd >> $ROUTER_LOG 2>&1
         echo Status: FAULT \(keepalived process is dead\) >> $ROUTER_LOG
         exit
     fi

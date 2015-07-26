@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command;
 
 import com.cloud.api.response.ApiResponseSerializer;
-import com.cloud.configuration.Config;
 import com.cloud.user.Account;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -28,13 +27,13 @@ import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import org.apache.cloudstack.api.response.LogoutCmdResponse;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.saml.SAML2AuthManager;
-import org.apache.cloudstack.utils.auth.SAMLUtils;
+import org.apache.cloudstack.saml.SAMLPluginConstants;
+import org.apache.cloudstack.saml.SAMLProviderMetadata;
+import org.apache.cloudstack.saml.SAMLUtils;
 import org.apache.log4j.Logger;
 import org.opensaml.DefaultBootstrap;
 import org.opensaml.saml2.core.LogoutRequest;
-import org.opensaml.saml2.core.NameID;
 import org.opensaml.saml2.core.Response;
 import org.opensaml.saml2.core.StatusCode;
 import org.opensaml.xml.ConfigurationException;
@@ -60,8 +59,7 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
 
     @Inject
     ApiServerService _apiServer;
-    @Inject
-    ConfigurationDao _configDao;
+
     SAML2AuthManager _samlAuthManager;
 
     /////////////////////////////////////////////////////
@@ -94,7 +92,7 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
 
         if (session == null) {
             try {
-                resp.sendRedirect(_configDao.getValue(Config.SAMLCloudStackRedirectionUrl.key()));
+                resp.sendRedirect(SAML2AuthManager.SAMLCloudStackRedirectionUrl.value());
             } catch (IOException ignored) {
             }
             return responseString;
@@ -111,7 +109,7 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
 
         if (params != null && params.containsKey("SAMLResponse")) {
             try {
-                final String samlResponse = ((String[])params.get(SAMLUtils.SAML_RESPONSE))[0];
+                final String samlResponse = ((String[])params.get(SAMLPluginConstants.SAML_RESPONSE))[0];
                 Response processedSAMLResponse = SAMLUtils.decodeSAMLResponse(samlResponse);
                 String statusCode = processedSAMLResponse.getStatus().getStatusCode().getValue();
                 if (!statusCode.equals(StatusCode.SUCCESS_URI)) {
@@ -123,25 +121,26 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
                 s_logger.error("SAMLResponse processing error: " + e.getMessage());
             }
             try {
-                resp.sendRedirect(_configDao.getValue(Config.SAMLCloudStackRedirectionUrl.key()));
+                resp.sendRedirect(SAML2AuthManager.SAMLCloudStackRedirectionUrl.value());
             } catch (IOException ignored) {
             }
             return responseString;
         }
 
-        NameID nameId = (NameID) session.getAttribute(SAMLUtils.SAML_NAMEID);
-        String sessionIndex = (String) session.getAttribute(SAMLUtils.SAML_SESSION);
-        if (nameId == null || sessionIndex == null) {
+        String idpId = (String) session.getAttribute(SAMLPluginConstants.SAML_IDPID);
+        SAMLProviderMetadata idpMetadata = _samlAuthManager.getIdPMetadata(idpId);
+        String nameId = (String) session.getAttribute(SAMLPluginConstants.SAML_NAMEID);
+        if (idpMetadata == null || nameId == null || nameId.isEmpty()) {
             try {
-                resp.sendRedirect(_configDao.getValue(Config.SAMLCloudStackRedirectionUrl.key()));
+                resp.sendRedirect(SAML2AuthManager.SAMLCloudStackRedirectionUrl.value());
             } catch (IOException ignored) {
             }
             return responseString;
         }
-        LogoutRequest logoutRequest = SAMLUtils.buildLogoutRequest(_samlAuthManager.getIdpSingleLogOutUrl(), _samlAuthManager.getServiceProviderId(), nameId, sessionIndex);
+        LogoutRequest logoutRequest = SAMLUtils.buildLogoutRequest(idpMetadata.getSloUrl(), _samlAuthManager.getSPMetadata().getEntityId(), nameId);
 
         try {
-            String redirectUrl = _samlAuthManager.getIdpSingleLogOutUrl() + "?SAMLRequest=" + SAMLUtils.encodeSAMLRequest(logoutRequest);
+            String redirectUrl = idpMetadata.getSloUrl() + "?SAMLRequest=" + SAMLUtils.encodeSAMLRequest(logoutRequest);
             resp.sendRedirect(redirectUrl);
         } catch (MarshallingException | IOException e) {
             s_logger.error("SAML SLO error: " + e.getMessage());

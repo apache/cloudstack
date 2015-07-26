@@ -57,17 +57,22 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
     private LdapContextFactory _ldapContextFactory;
 
     @Inject
-    private LdapUserManager _ldapUserManager;
+    private LdapConfiguration _ldapConfiguration;
+
+    @Inject LdapUserManagerFactory _ldapUserManagerFactory;
+
 
     public LdapManagerImpl() {
         super();
     }
 
-    public LdapManagerImpl(final LdapConfigurationDao ldapConfigurationDao, final LdapContextFactory ldapContextFactory, final LdapUserManager ldapUserManager) {
+    public LdapManagerImpl(final LdapConfigurationDao ldapConfigurationDao, final LdapContextFactory ldapContextFactory, final LdapUserManagerFactory ldapUserManagerFactory,
+                           final LdapConfiguration ldapConfiguration) {
         super();
         _ldapConfigurationDao = ldapConfigurationDao;
         _ldapContextFactory = ldapContextFactory;
-        _ldapUserManager = ldapUserManager;
+        _ldapUserManagerFactory = ldapUserManagerFactory;
+        _ldapConfiguration = ldapConfiguration;
     }
 
     @Override
@@ -173,7 +178,7 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
             context = _ldapContextFactory.createBindContext();
 
             final String escapedUsername = LdapUtils.escapeLDAPSearchFilter(username);
-            return _ldapUserManager.getUser(escapedUsername, context);
+            return _ldapUserManagerFactory.getInstance(_ldapConfiguration.getLdapProvider()).getUser(escapedUsername, context);
 
         } catch (NamingException | IOException e) {
             s_logger.debug("ldap Exception: ",e);
@@ -188,7 +193,7 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
         LdapContext context = null;
         try {
             context = _ldapContextFactory.createBindContext();
-            return _ldapUserManager.getUsers(context);
+            return _ldapUserManagerFactory.getInstance(_ldapConfiguration.getLdapProvider()).getUsers(context);
         } catch (NamingException | IOException e) {
             s_logger.debug("ldap Exception: ",e);
             throw new NoLdapUserMatchingQueryException("*");
@@ -202,7 +207,7 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
         LdapContext context = null;
         try {
             context = _ldapContextFactory.createBindContext();
-            return _ldapUserManager.getUsersInGroup(groupName, context);
+            return _ldapUserManagerFactory.getInstance(_ldapConfiguration.getLdapProvider()).getUsersInGroup(groupName, context);
         } catch (NamingException | IOException e) {
             s_logger.debug("ldap NamingException: ",e);
             throw new NoLdapUserMatchingQueryException("groupName=" + groupName);
@@ -230,7 +235,7 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
         try {
             context = _ldapContextFactory.createBindContext();
             final String escapedUsername = LdapUtils.escapeLDAPSearchFilter(username);
-            return _ldapUserManager.getUsers("*" + escapedUsername + "*", context);
+            return _ldapUserManagerFactory.getInstance(_ldapConfiguration.getLdapProvider()).getUsers("*" + escapedUsername + "*", context);
         } catch (NamingException | IOException e) {
             s_logger.debug("ldap Exception: ",e);
             throw new NoLdapUserMatchingQueryException(username);

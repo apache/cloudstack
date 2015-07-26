@@ -20,9 +20,9 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -103,6 +103,7 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.xenserver.resource.wrapper.xenbase.CitrixRequestWrapper;
+import com.cloud.hypervisor.xenserver.resource.wrapper.xenbase.XenServerUtilitiesHelper;
 import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
@@ -257,7 +258,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     protected  String _configDriveIsopath = "/opt/xensource/packages/configdrive_iso/";
     protected  String _configDriveSRName = "ConfigDriveISOs";
-    protected  String _attachIsoDeviceNum = "3";
+    public String _attachIsoDeviceNum = "3";
+
+    protected XenServerUtilitiesHelper xenServerUtilitiesHelper = new XenServerUtilitiesHelper();
 
     protected int _wait;
     // Hypervisor specific params with generic value, may need to be overridden
@@ -271,8 +274,25 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     public CitrixResourceBase() {
     }
 
-    public void addToPwdQueue(final String password) {
+    /**
+     * Replaces the old password with the new password used to connect to the host.
+     *
+     * @param password  - the new host password.
+     * @return the old password.
+     */
+    public String replaceOldPasswdInQueue(final String password) {
+        final String oldPasswd = _password.poll();
         _password.add(password);
+
+        return oldPasswd;
+    }
+
+    public String getPwdFromQueue() {
+        return _password.peek();
+    }
+
+    public XenServerUtilitiesHelper getXenServerUtilitiesHelper() {
+        return xenServerUtilitiesHelper;
     }
 
     protected StorageSubsystemCommandHandler buildStorageHandler() {
@@ -3163,9 +3183,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     public long getVMSnapshotChainSize(final Connection conn, final VolumeObjectTO volumeTo, final String vmName) throws BadServerResponse, XenAPIException, XmlRpcException {
         if (volumeTo.getVolumeType() == Volume.Type.DATADISK) {
-            VDI dataDisk = VDI.getByUuid(conn, volumeTo.getPath());
+            final VDI dataDisk = VDI.getByUuid(conn, volumeTo.getPath());
             if (dataDisk != null) {
-                String dataDiskName = dataDisk.getNameLabel(conn);
+                final String dataDiskName = dataDisk.getNameLabel(conn);
                 if (dataDiskName != null && !dataDiskName.isEmpty()) {
                     volumeTo.setName(dataDiskName);
                 }
@@ -3888,17 +3908,29 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return new ExecutionResult(true, null);
     }
 
-    public void prepareISO(final Connection conn, final String vmName) throws XmlRpcException, XenAPIException {
+    public void prepareISO(final Connection conn, final String vmName,  List<String[]> vmDataList, String configDriveLabel) throws XmlRpcException, XenAPIException {
 
         final Set<VM> vms = VM.getByNameLabel(conn, vmName);
         if (vms == null || vms.size() != 1) {
             throw new CloudRuntimeException("There are " + (vms == null ? "0" : vms.size()) + " VMs named " + vmName);
         }
         final VM vm = vms.iterator().next();
+
+        if (vmDataList != null) {
+            // create SR
+            SR sr =  createLocalIsoSR(conn, _configDriveSRName+getHost().getIp());
+
+            // 1. create vm data files
+            createVmdataFiles(vmName, vmDataList, configDriveLabel);
+
+            // 2. copy config drive iso to host
+            copyConfigDriveIsoToHost(conn, sr, vmName);
+        }
+
         final Set<VBD> vbds = vm.getVBDs(conn);
         for (final VBD vbd : vbds) {
             final VBD.Record vbdr = vbd.getRecord(conn);
-            if (vbdr.type == Types.VbdType.CD && vbdr.empty == false) {
+            if (vbdr.type == Types.VbdType.CD && vbdr.empty == false && vbdr.userdevice.equals(_attachIsoDeviceNum)) {
                 final VDI vdi = vbdr.VDI;
                 final SR sr = vdi.getSR(conn);
                 final Set<PBD> pbds = sr.getPBDs(conn);
@@ -4958,12 +4990,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    public boolean createAndAttachConfigDriveIsoForVM(Connection conn, VM vm, List<String[]> vmDataList, String configDriveLabel) throws XenAPIException, XmlRpcException {
+    public boolean createAndAttachConfigDriveIsoForVM(final Connection conn, final VM vm, final List<String[]> vmDataList, final String configDriveLabel) throws XenAPIException, XmlRpcException {
 
-        String vmName = vm.getNameLabel(conn);
+        final String vmName = vm.getNameLabel(conn);
 
         // create SR
-        SR sr =  createLocalIsoSR(conn, _configDriveSRName+_host.getIp());
+        final SR sr =  createLocalIsoSR(conn, _configDriveSRName+_host.getIp());
         if (sr == null) {
             s_logger.debug("Failed to create local SR for the config drive");
             return false;
@@ -4989,57 +5021,56 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return true;
     }
 
-    public boolean createVmdataFiles(String vmName, List<String[]> vmDataList, String configDriveLabel) {
+    public boolean createVmdataFiles(final String vmName, final List<String[]> vmDataList, final String configDriveLabel) {
 
         // add vm iso to the isolibrary
-        String isoPath = "/tmp/"+vmName+"/configDrive/";
-        String configDriveName = "cloudstack/";
+        final String isoPath = "/tmp/"+vmName+"/configDrive/";
+        final String configDriveName = "cloudstack/";
 
         //create folder for the VM
         //Remove the folder before creating it.
 
         try {
             deleteLocalFolder("/tmp/"+isoPath);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             s_logger.debug("Failed to delete the exiting config drive for vm "+vmName+ " "+ e.getMessage());
-        } catch (Exception e) {
+        } catch (final Exception e) {
             s_logger.debug("Failed to delete the exiting config drive for vm "+vmName+ " "+ e.getMessage());
         }
 
 
         if (vmDataList != null) {
-            for (String[] item : vmDataList) {
-                String dataType = item[0];
-                String fileName = item[1];
-                String content = item[2];
+            for (final String[] item : vmDataList) {
+                final String dataType = item[0];
+                final String fileName = item[1];
+                final String content = item[2];
 
                 // create file with content in folder
 
                 if (dataType != null && !dataType.isEmpty()) {
                     //create folder
-                    String  folder = isoPath+configDriveName+dataType;
+                    final String  folder = isoPath+configDriveName+dataType;
                     if (folder != null && !folder.isEmpty()) {
-                        File dir = new File(folder);
-                        boolean result = true;
+                        final File dir = new File(folder);
+                        final boolean result = true;
 
                         try {
                             if (!dir.exists()) {
                                 dir.mkdirs();
                             }
-                        }catch (SecurityException ex) {
+                        }catch (final SecurityException ex) {
                             s_logger.debug("Failed to create dir "+ ex.getMessage());
                             return false;
                         }
 
                         if (result && content != null && !content.isEmpty()) {
-                            try {
-                                File file = new File(folder+"/"+fileName+".txt");
-                                OutputStreamWriter fw = new OutputStreamWriter(new FileOutputStream(file.getAbsoluteFile()),"UTF-8");
-                                BufferedWriter bw = new BufferedWriter(fw);
+                            File file = new File(folder+"/"+fileName+".txt");
+                            try (OutputStreamWriter fw = new OutputStreamWriter(new FileOutputStream(file.getAbsoluteFile()),"UTF-8");
+                                 BufferedWriter bw = new BufferedWriter(fw);
+                                ) {
                                 bw.write(content);
-                                bw.close();
                                 s_logger.debug("created file: "+ file + " in folder:"+folder);
-                            } catch (IOException ex) {
+                            } catch (final IOException ex) {
                                 s_logger.debug("Failed to create file "+ ex.getMessage());
                                 return false;
                             }
@@ -5053,13 +5084,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String s = null;
         try {
 
-            String cmd =  "mkisofs -iso-level 3 -V "+ configDriveLabel +" -o "+ isoPath+vmName +".iso " + isoPath;
-            Process p = Runtime.getRuntime().exec(cmd);
+            final String cmd =  "mkisofs -iso-level 3 -V "+ configDriveLabel +" -o "+ isoPath+vmName +".iso " + isoPath;
+            final Process p = Runtime.getRuntime().exec(cmd);
 
-            BufferedReader stdInput = new BufferedReader(new
+            final BufferedReader stdInput = new BufferedReader(new
                     InputStreamReader(p.getInputStream(),Charset.defaultCharset()));
 
-            BufferedReader stdError = new BufferedReader(new
+            final BufferedReader stdError = new BufferedReader(new
                     InputStreamReader(p.getErrorStream(),Charset.defaultCharset()));
 
             // read the output from the command
@@ -5072,7 +5103,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 s_logger.debug(s);
             }
             s_logger.debug(" Created config drive ISO using the command " + cmd +" in the host "+ _host.getIp());
-        } catch (IOException e) {
+        } catch (final IOException e) {
             s_logger.debug(e.getMessage());
             return false;
         }
@@ -5080,11 +5111,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return true;
     }
 
-    public boolean copyConfigDriveIsoToHost(Connection conn, SR sr, String vmName) {
+    public boolean copyConfigDriveIsoToHost(final Connection conn, final SR sr, final String vmName) {
 
-        String vmIso = "/tmp/"+vmName+"/configDrive/"+vmName+".iso";
+        final String vmIso = "/tmp/"+vmName+"/configDrive/"+vmName+".iso";
         //scp file into the host
-        com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(_host.getIp(), 22);
+        final com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(_host.getIp(), 22);
 
         try {
             sshConnection.connect(null, 60000, 60000);
@@ -5093,28 +5124,28 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
 
             s_logger.debug("scp config drive iso file "+vmIso +" to host " + _host.getIp() +" path "+_configDriveIsopath);
-            SCPClient scp = new SCPClient(sshConnection);
-            String p = "0755";
+            final SCPClient scp = new SCPClient(sshConnection);
+            final String p = "0755";
 
             scp.put(vmIso, _configDriveIsopath, p);
             sr.scan(conn);
             s_logger.debug("copied config drive iso to host " + _host);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             s_logger.debug("failed to copy configdrive iso " + vmIso + " to host " + _host, e);
             return false;
-        } catch (XmlRpcException e) {
+        } catch (final XmlRpcException e) {
             s_logger.debug("Failed to scan config drive iso SR "+ _configDriveSRName+_host.getIp() + " in host "+ _host, e);
             return false;
         } finally {
             sshConnection.close();
             //clean up the config drive files
 
-            String configDir = "/tmp/"+vmName;
+            final String configDir = "/tmp/"+vmName;
             try {
                 deleteLocalFolder(configDir);
                 s_logger.debug("Successfully cleaned up config drive directory " + configDir
                         + " after copying it to host ");
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 s_logger.debug("Failed to delete config drive folder :" + configDir + " for VM " + vmName + " "
                         + e.getMessage());
             }
@@ -5123,10 +5154,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return true;
     }
 
-    public boolean attachConfigDriveIsoToVm(Connection conn, VM vm) throws XenAPIException, XmlRpcException {
+    public boolean attachConfigDriveIsoToVm(final Connection conn, final VM vm) throws XenAPIException, XmlRpcException {
 
-        String vmName = vm.getNameLabel(conn);
-        String isoURL = _configDriveIsopath + vmName+".iso";
+        final String vmName = vm.getNameLabel(conn);
+        final String isoURL = _configDriveIsopath + vmName+".iso";
         VDI srVdi;
 
         //1. find the vdi of the iso
@@ -5134,16 +5165,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         //3. attach iso to vm
 
         try {
-            Set<VDI> vdis = VDI.getByNameLabel(conn, vmName+".iso");
+            final Set<VDI> vdis = VDI.getByNameLabel(conn, vmName+".iso");
             if (vdis.isEmpty()) {
                 throw new CloudRuntimeException("Could not find ISO with URL: " + isoURL);
             }
             srVdi =  vdis.iterator().next();
 
-        } catch (XenAPIException e) {
+        } catch (final XenAPIException e) {
             s_logger.debug("Unable to get config drive iso: " + isoURL + " due to " + e.toString());
             return false;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             s_logger.debug("Unable to get config drive iso: " + isoURL + " due to " + e.toString());
             return false;
         }
@@ -5151,11 +5182,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         VBD isoVBD = null;
 
         // Find the VM's CD-ROM VBD
-        Set<VBD> vbds = vm.getVBDs(conn);
-        for (VBD vbd : vbds) {
-            Types.VbdType type = vbd.getType(conn);
+        final Set<VBD> vbds = vm.getVBDs(conn);
+        for (final VBD vbd : vbds) {
+            final Types.VbdType type = vbd.getType(conn);
 
-            VBD.Record vbdr = vbd.getRecord(conn);
+            final VBD.Record vbdr = vbd.getRecord(conn);
 
             // if the device exists then attach it
             if (!vbdr.userdevice.equals(_attachIsoDeviceNum) && type == Types.VbdType.CD) {
@@ -5166,14 +5197,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         if (isoVBD == null) {
             //create vbd
-            VBD.Record cfgDriveVbdr = new VBD.Record();
+            final VBD.Record cfgDriveVbdr = new VBD.Record();
             cfgDriveVbdr.VM = vm;
             cfgDriveVbdr.empty = true;
             cfgDriveVbdr.bootable = false;
             cfgDriveVbdr.userdevice = "autodetect";
             cfgDriveVbdr.mode = Types.VbdMode.RO;
             cfgDriveVbdr.type = Types.VbdType.CD;
-            VBD cfgDriveVBD = VBD.create(conn, cfgDriveVbdr);
+            final VBD cfgDriveVBD = VBD.create(conn, cfgDriveVbdr);
             isoVBD = cfgDriveVBD;
 
             s_logger.debug("Created CD-ROM VBD for VM: " + vm);
@@ -5189,7 +5220,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 // Insert the new ISO
                 isoVBD.insert(conn, srVdi);
                 s_logger.debug("Attached config drive iso to vm " + vmName);
-            }catch (XmlRpcException ex) {
+            }catch (final XmlRpcException ex) {
                 s_logger.debug("Failed to attach config drive iso to vm " + vmName);
                 return false;
             }
@@ -5198,7 +5229,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return true;
     }
 
-    public SR createLocalIsoSR(Connection conn, String srName) throws XenAPIException, XmlRpcException {
+    public SR createLocalIsoSR(final Connection conn, final String srName) throws XenAPIException, XmlRpcException {
 
         // if config drive sr already exists then return
         SR sr = getSRByNameLabelandHost(conn, _configDriveSRName+_host.getIp());
@@ -5209,20 +5240,20 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
 
         try{
-            Map<String, String> deviceConfig = new HashMap<String, String>();
+            final Map<String, String> deviceConfig = new HashMap<String, String>();
 
-            com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(_host.getIp(), 22);
+            final com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(_host.getIp(), 22);
             try {
                 sshConnection.connect(null, 60000, 60000);
                 if (!sshConnection.authenticateWithPassword(_username, _password.peek())) {
                     throw new CloudRuntimeException("Unable to authenticate");
                 }
 
-                String cmd = "mkdir -p " + _configDriveIsopath;
+                final String cmd = "mkdir -p " + _configDriveIsopath;
                 if (!SSHCmdHelper.sshExecuteCmd(sshConnection, cmd)) {
                     throw new CloudRuntimeException("Cannot create directory configdrive_iso on XenServer hosts");
                 }
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 throw new CloudRuntimeException("Unable to create iso folder", e);
             } finally {
                 sshConnection.close();
@@ -5231,8 +5262,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             deviceConfig.put("location",  _configDriveIsopath);
             deviceConfig.put("legacy_mode", "true");
-            Host host = Host.getByUuid(conn, _host.getUuid());
-            String type = SRType.ISO.toString();
+            final Host host = Host.getByUuid(conn, _host.getUuid());
+            final String type = SRType.ISO.toString();
             sr = SR.create(conn, host, deviceConfig, new Long(0),  _configDriveIsopath, "iso", type, "iso", false, new HashMap<String, String>());
 
             sr.setNameLabel(conn, srName);
@@ -5241,33 +5272,120 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             sr.scan(conn);
             s_logger.debug("Config drive ISO SR at the path " + _configDriveIsopath  +" got created in host " + _host);
             return sr;
-        } catch (XenAPIException e) {
-            String msg = "createLocalIsoSR failed! mountpoint " + e.toString();
+        } catch (final XenAPIException e) {
+            final String msg = "createLocalIsoSR failed! mountpoint " + e.toString();
             s_logger.warn(msg, e);
             throw new CloudRuntimeException(msg, e);
-        } catch (Exception e) {
-            String msg = "createLocalIsoSR failed! mountpoint:  due to " + e.getMessage();
+        } catch (final Exception e) {
+            final String msg = "createLocalIsoSR failed! mountpoint:  due to " + e.getMessage();
             s_logger.warn(msg, e);
             throw new CloudRuntimeException(msg, e);
         }
 
     }
 
-
-    public void deleteLocalFolder(String directory) throws Exception {
+    public void deleteLocalFolder(final String directory) throws Exception {
         if (directory == null || directory.isEmpty()) {
-            String msg = "Invalid directory path (null/empty) detected. Cannot delete specified directory.";
+            final String msg = "Invalid directory path (null/empty) detected. Cannot delete specified directory.";
             s_logger.debug(msg);
             throw new Exception(msg);
         }
 
         try {
             FileUtils.deleteDirectory(new File(directory));
-        } catch (IOException e) {
+        } catch (final IOException e) {
             // IOException here means failure to delete. Not swallowing it here to
             // let the caller handle with appropriate contextual log message.
             throw e;
         }
+    }
+
+    protected SR getSRByNameLabel(Connection conn, String name) throws BadServerResponse, XenAPIException, XmlRpcException {
+        Set<SR> srs = SR.getByNameLabel(conn, name);
+        SR ressr = null;
+        for (SR sr : srs) {
+            Set<PBD> pbds;
+            pbds = sr.getPBDs(conn);
+            for (PBD pbd : pbds) {
+                PBD.Record pbdr = pbd.getRecord(conn);
+                if (pbdr.host != null) {
+                    ressr = sr;
+                    break;
+                }
+            }
+        }
+        return ressr;
+    }
+
+
+    public boolean attachConfigDriveToMigratedVm(Connection conn, String vmName, String ipAddr) {
+
+        // attach the config drive in destination host
+
+        try {
+            s_logger.debug("Attaching config drive iso device for the VM "+ vmName + " In host "+ ipAddr);
+            Set<VM> vms = VM.getByNameLabel(conn, vmName);
+
+            SR sr = getSRByNameLabel(conn, _configDriveSRName + ipAddr);
+            //Here you will find only two vdis with the <vmname>.iso.
+            //one is from source host and second from dest host
+            Set<VDI> vdis = VDI.getByNameLabel(conn, vmName + ".iso");
+            if (vdis.isEmpty()) {
+                s_logger.debug("Could not find config drive ISO: " + vmName);
+                return false;
+            }
+
+            VDI configdriveVdi = null;
+            for (VDI vdi : vdis) {
+                SR vdiSr = vdi.getSR(conn);
+                if (vdiSr.getUuid(conn).equals(sr.getUuid(conn))) {
+                    //get this vdi to attach to vbd
+                    configdriveVdi = vdi;
+                    s_logger.debug("VDI for the config drive ISO  " + vdi);
+                } else {
+                    // delete the vdi in source host so that the <vmname>.iso file is get removed
+                    s_logger.debug("Removing the source host VDI for the config drive ISO  " + vdi);
+                    vdi.destroy(conn);
+                }
+            }
+
+            if (configdriveVdi == null) {
+                s_logger.debug("Config drive ISO VDI is not found ");
+                return false;
+            }
+
+            for (VM vm : vms) {
+
+                //create vbd
+                VBD.Record cfgDriveVbdr = new VBD.Record();
+                cfgDriveVbdr.VM = vm;
+                cfgDriveVbdr.empty = true;
+                cfgDriveVbdr.bootable = false;
+                cfgDriveVbdr.userdevice = "autodetect";
+                cfgDriveVbdr.mode = Types.VbdMode.RO;
+                cfgDriveVbdr.type = Types.VbdType.CD;
+
+                VBD cfgDriveVBD = VBD.create(conn, cfgDriveVbdr);
+
+                s_logger.debug("Inserting vbd " + configdriveVdi);
+                cfgDriveVBD.insert(conn, configdriveVdi);
+                break;
+
+            }
+
+            return true;
+
+        } catch (BadServerResponse e) {
+            s_logger.warn("Failed to attach config drive ISO to the VM  "+ vmName + " In host " + ipAddr + " due to a bad server response.", e);
+            return false;
+        } catch (XenAPIException e) {
+            s_logger.warn("Failed to attach config drive ISO to the VM  "+ vmName + " In host " + ipAddr + " due to a xapi problem.", e);
+            return false;
+        } catch (XmlRpcException e) {
+            s_logger.warn("Failed to attach config drive ISO to the VM  "+ vmName + " In host " + ipAddr + " due to a problem in a remote call.", e);
+            return false;
+        }
+
     }
 
 }

@@ -25,8 +25,8 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.saml.SAMLPluginConstants;
 import org.apache.cloudstack.saml.SAML2UserAuthenticator;
-import org.apache.cloudstack.utils.auth.SAMLUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -68,8 +68,6 @@ public class SAML2UserAuthenticatorTest {
         account.setId(1L);
 
         UserVO user = new UserVO();
-        user.setUuid(SAMLUtils.createSAMLId("someUID"));
-
         Mockito.when(userAccountDao.getUserAccount(Mockito.anyString(), Mockito.anyLong())).thenReturn(account);
         Mockito.when(userDao.getUser(Mockito.anyLong())).thenReturn(user);
 
@@ -81,9 +79,9 @@ public class SAML2UserAuthenticatorTest {
         Assert.assertFalse(pair.first());
 
         // When there is SAMLRequest in params and user is same as the mocked one
-        params.put(SAMLUtils.SAML_RESPONSE, new Object[]{});
+        params.put(SAMLPluginConstants.SAML_RESPONSE, new String[]{"RandomString"});
         pair = authenticator.authenticate("someUID", "random", 1l, params);
-        Assert.assertTrue(pair.first());
+        Assert.assertFalse(pair.first());
 
         // When there is SAMLRequest in params but username is null
         pair = authenticator.authenticate(null, "random", 1l, params);

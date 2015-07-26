@@ -551,7 +551,7 @@ class VirtualMachine:
 
     def get_ssh_client(
             self, ipaddress=None, reconnect=False, port=None,
-            keyPairFileLocation=None):
+            keyPairFileLocation=None, retries=20):
         """Get SSH object of VM"""
 
         # If NAT Rules are not created while VM deployment in Advanced mode
@@ -570,6 +570,7 @@ class VirtualMachine:
                 self.ssh_port,
                 self.username,
                 self.password,
+                retries=retries,
                 keyPairFileLocation=keyPairFileLocation
             )
         self.ssh_client = self.ssh_client or is_server_ssh_ready(
@@ -577,6 +578,7 @@ class VirtualMachine:
             self.ssh_port,
             self.username,
             self.password,
+            retries=retries,
             keyPairFileLocation=keyPairFileLocation
         )
         return self.ssh_client

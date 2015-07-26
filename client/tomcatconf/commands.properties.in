@@ -26,6 +26,9 @@ logout=15
 samlSso=15
 samlSlo=15
 getSPMetadata=15
+listIdps=15
+authorizeSamlSso=7
+listSamlAuthorization=7
 
 ### Account commands
 createAccount=7
@@ -79,8 +82,8 @@ scaleVirtualMachine=15
 assignVirtualMachine=7
 migrateVirtualMachine=1
 migrateVirtualMachineWithVolume=1
-recoverVirtualMachine=7
-expungeVirtualMachine=7
+recoverVirtualMachine=15
+expungeVirtualMachine=15
 getVirtualMachineUserData=15
 
 #### snapshot commands

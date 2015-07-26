@@ -102,9 +102,18 @@ public final class S3Utils {
             configuration.setSocketTimeout(clientOptions.getSocketTimeout());
         }
 
+        if (clientOptions.getUseTCPKeepAlive() != null) {
+            configuration.setUseTcpKeepAlive(clientOptions.getUseTCPKeepAlive());
+        }
+
+        if (clientOptions.getConnectionTtl() != null) {
+            configuration.setConnectionTTL(clientOptions.getConnectionTtl());
+        }
+
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(format("Creating S3 client with configuration: [protocol: %1$s, connectionTimeOut: " + "%2$s, maxErrorRetry: %3$s, socketTimeout: %4$s]",
-                configuration.getProtocol(), configuration.getConnectionTimeout(), configuration.getMaxErrorRetry(), configuration.getSocketTimeout()));
+            LOGGER.debug(format("Creating S3 client with configuration: [protocol: %1$s, connectionTimeOut: " + "%2$s, maxErrorRetry: %3$s, socketTimeout: %4$s, useTCPKeepAlive: %5$s, connectionTtl: %6$s]",
+                configuration.getProtocol(), configuration.getConnectionTimeout(), configuration.getMaxErrorRetry(), configuration.getSocketTimeout(),
+                configuration.useTcpKeepAlive(), configuration.getConnectionTTL()));
         }
 
         final AmazonS3Client client = new AmazonS3Client(credentials, configuration);
@@ -510,6 +519,7 @@ public final class S3Utils {
         errorMessages.addAll(checkOptionalField("connection timeout", clientOptions.getConnectionTimeout()));
         errorMessages.addAll(checkOptionalField("socket timeout", clientOptions.getSocketTimeout()));
         errorMessages.addAll(checkOptionalField("max error retries", clientOptions.getMaxErrorRetry()));
+        errorMessages.addAll(checkOptionalField("connection ttl", clientOptions.getConnectionTtl()));
 
         return unmodifiableList(errorMessages);
 
@@ -566,6 +576,9 @@ public final class S3Utils {
 
         Integer getSocketTimeout();
 
+        Boolean getUseTCPKeepAlive();
+
+        Integer getConnectionTtl();
     }
 
     public interface ObjectNamingStrategy {

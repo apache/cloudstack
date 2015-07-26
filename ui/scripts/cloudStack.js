@@ -31,9 +31,12 @@
                 sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "events", "regions", "affinityGroups"];
             }
 
-            if (cloudStack.plugins.length) {
-                sections.push('plugins');
-            }
+            $.each(cloudStack.plugins, function(idx, plugin) {
+                if (cloudStack.sections.hasOwnProperty(plugin) && !cloudStack.sections[plugin].showOnNavigation) {
+                    sections.push('plugins');
+                    return false;
+                }
+            });
 
             return sections;
         },
@@ -104,28 +107,11 @@
             // Use this for checking the session, to bypass login screen
             bypassLoginCheck: function(args) { //determine to show or bypass login screen
                 if (g_loginResponse == null) { //show login screen
-                    /*
-                     * Since we no longer store sessionKey in cookie, opening the
-                     * 2nd browser window (of the same domain) will show login screen (i.e. user has to
-                     * enter credentials again) and will cause the 1st browser window session timeout.
-                     */
                     var unBoxCookieValue = function (cookieName) {
-                        var cookieValue = $.cookie(cookieName);
-                        if (cookieValue && cookieValue.length > 2 && cookieValue[0] === '"' && cookieValue[cookieValue.length-1] === '"') {
-                            cookieValue = cookieValue.slice(1, cookieValue.length-1);
-                            $.cookie(cookieName, cookieValue, { expires: 1 });
-                        }
-                        return cookieValue;
+                        return decodeURIComponent($.cookie(cookieName)).replace(/"([^"]+(?="))"/g, '$1');
                     };
-                    unBoxCookieValue('sessionkey');
-                    // if sessionkey cookie exists use this to set g_sessionKey
-                    // and destroy sessionkey cookie
-                    if ($.cookie('sessionkey')) {
-                        g_sessionKey = $.cookie('sessionkey');
-                        $.cookie('sessionkey', null);
-                    } else {
-                        g_sessionKey = unBoxCookieValue('JSESSIONID');
-                    }
+                    // sessionkey is a HttpOnly cookie now, no need to pass as API param
+                    g_sessionKey = null;
                     g_role = unBoxCookieValue('role');
                     g_userid = unBoxCookieValue('userid');
                     g_domainid = unBoxCookieValue('domainid');
@@ -133,7 +119,7 @@
                     g_username = unBoxCookieValue('username');
                     g_userfullname = unBoxCookieValue('userfullname');
                     g_timezone = unBoxCookieValue('timezone');
-                } else { //single-sign-on	(bypass login screen)
+                } else { //single-sign-on (bypass login screen)
                     g_sessionKey = encodeURIComponent(g_loginResponse.sessionkey);
                     g_role = g_loginResponse.type;
                     g_username = g_loginResponse.username;
@@ -141,7 +127,7 @@
                     g_account = g_loginResponse.account;
                     g_domainid = g_loginResponse.domainid;
                     g_userfullname = g_loginResponse.firstname + ' ' + g_loginResponse.lastname;
-                    g_timezone = g_loginResponse.timezone;                    
+                    g_timezone = g_loginResponse.timezone;
                 }
 
                 var userValid = false;
@@ -177,7 +163,25 @@
                         return true;
                     }
                 });
-               
+
+                // Populate IDP list
+                $.ajax({
+                    type: 'GET',
+                    url: createURL('listIdps'),
+                    dataType: 'json',
+                    async: false,
+                    success: function(data, textStatus, xhr) {
+                        if (data && data.listidpsresponse && data.listidpsresponse.idp) {
+                            var idpList = data.listidpsresponse.idp.sort(function (a, b) {
+                                return a.orgName.localeCompare(b.orgName);
+                            });
+                            g_idpList = idpList;
+                        }
+                    },
+                    error: function(xhr) {
+                    },
+                });
+
                 return userValid ? {
                     user: {
                         userid: g_userid,
@@ -224,14 +228,16 @@
                     async: false,
                     success: function(json) {
                         var loginresponse = json.loginresponse;
-                        
-                        g_sessionKey = encodeURIComponent(loginresponse.sessionkey);
+                        // sessionkey is recevied as a HttpOnly cookie
+                        // therefore reset any g_sessionKey value, an explicit
+                        // param in the API call is no longer needed
+                        g_sessionKey = null;
                         g_role = loginresponse.type;
                         g_username = loginresponse.username;
                         g_userid = loginresponse.userid;
                         g_account = loginresponse.account;
                         g_domainid = loginresponse.domainid;
-                        g_timezone = loginresponse.timezone;                        
+                        g_timezone = loginresponse.timezone;
                         g_userfullname = loginresponse.firstname + ' ' + loginresponse.lastname;
 
                         $.cookie('username', g_username, {
@@ -317,7 +323,7 @@
                 $.ajax({
                     url: createURL('logout'),
                     async: false,
-                    success: function() {                        
+                    success: function() {
                         g_sessionKey = null;
                         g_username = null;
                         g_account = null;
@@ -328,15 +334,16 @@
                         g_kvmsnapshotenabled = null;
                         g_regionsecondaryenabled = null;
                         g_loginCmdText = null;
-                        
-                        $.cookie('JSESSIONID', null);
-                        $.cookie('sessionkey', null);
-                        $.cookie('username', null);
-                        $.cookie('account', null);
-                        $.cookie('domainid', null);
-                        $.cookie('role', null);  
-                        $.cookie('timezone', null);
-                        
+
+                        // Remove any cookies
+                        var cookies = document.cookie.split(";");
+                        for (var i = 0; i < cookies.length; i++) {
+                            var cookieName = $.trim(cookies[i].split("=")[0]);
+                            if (['login-option', 'lang'].indexOf(cookieName) < 0) {
+                                $.cookie(cookieName, null);
+                            }
+                        }
+
                         if (onLogoutCallback()) { //onLogoutCallback() will set g_loginResponse(single-sign-on variable) to null, then bypassLoginCheck() will show login screen.
                             document.location.reload(); //when onLogoutCallback() returns true, reload the current document.
                         }
@@ -353,14 +360,34 @@
             },
 
             samlLoginAction: function(args) {
-                $.cookie('JSESSIONID', null);
-                $.cookie('sessionkey', null);
-                $.cookie('username', null);
-                $.cookie('account', null);
-                $.cookie('domainid', null);
-                $.cookie('role', null);
-                $.cookie('timezone', null);
-                window.location.href = createURL('samlSso');
+                g_sessionKey = null;
+                g_username = null;
+                g_account = null;
+                g_domainid = null;
+                g_timezoneoffset = null;
+                g_timezone = null;
+                g_supportELB = null;
+                g_kvmsnapshotenabled = null;
+                g_regionsecondaryenabled = null;
+                g_loginCmdText = null;
+
+                // Remove any cookies
+                var cookies = document.cookie.split(";");
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookieName = $.trim(cookies[i].split("=")[0]);
+                    if (['login-option', 'lang'].indexOf(cookieName) < 0) {
+                        $.cookie(cookieName, null);
+                    }
+                }
+
+                var url = 'samlSso';
+                if (args.data.idpid) {
+                    url = url + '&idpid=' + args.data.idpid;
+                }
+                if (args.data.domain) {
+                    url = url + '&domain=' + args.data.domain;
+                }
+                window.location.href = createURL(url);
             },
 
             // Show cloudStack main UI widget

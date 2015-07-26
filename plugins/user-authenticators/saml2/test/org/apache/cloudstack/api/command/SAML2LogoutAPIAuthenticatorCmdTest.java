@@ -22,9 +22,8 @@ package org.apache.cloudstack.api.command;
 import com.cloud.utils.HttpUtils;
 import org.apache.cloudstack.api.ApiServerService;
 import org.apache.cloudstack.api.auth.APIAuthenticationType;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.saml.SAML2AuthManager;
-import org.apache.cloudstack.utils.auth.SAMLUtils;
+import org.apache.cloudstack.saml.SAMLUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -49,9 +48,6 @@ public class SAML2LogoutAPIAuthenticatorCmdTest {
     SAML2AuthManager samlAuthManager;
 
     @Mock
-    ConfigurationDao configDao;
-
-    @Mock
     HttpSession session;
 
     @Mock
@@ -72,19 +68,10 @@ public class SAML2LogoutAPIAuthenticatorCmdTest {
         managerField.setAccessible(true);
         managerField.set(cmd, samlAuthManager);
 
-        Field configDaoField = SAML2LogoutAPIAuthenticatorCmd.class.getDeclaredField("_configDao");
-        configDaoField.setAccessible(true);
-        configDaoField.set(cmd, configDao);
-
         String spId = "someSPID";
         String url = "someUrl";
         X509Certificate cert = SAMLUtils.generateRandomX509Certificate(SAMLUtils.generateRandomKeyPair());
-        Mockito.when(samlAuthManager.getServiceProviderId()).thenReturn(spId);
-        Mockito.when(samlAuthManager.getIdpSigningKey()).thenReturn(cert);
-        Mockito.when(samlAuthManager.getIdpSingleLogOutUrl()).thenReturn(url);
-        Mockito.when(samlAuthManager.getSpSingleLogOutUrl()).thenReturn(url);
         Mockito.when(session.getAttribute(Mockito.anyString())).thenReturn(null);
-        Mockito.when(configDao.getValue(Mockito.anyString())).thenReturn("someString");
 
         cmd.authenticate("command", null, session, InetAddress.getByName("127.0.0.1"), HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), req, resp);
         Mockito.verify(resp, Mockito.times(1)).sendRedirect(Mockito.anyString());

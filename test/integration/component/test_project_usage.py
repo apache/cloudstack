@@ -109,6 +109,7 @@ class Services:
                                    "name": "SSH",
                                    "alg": "roundrobin",
                                    # Algorithm used for load balancing
+                                   "openfirewall":"false",
                                    "privateport": 22,
                                    "publicport": 2222,
                                 },
@@ -512,6 +513,7 @@ class TestVolumeUsage(cloudstackTestCase):
         cls.services['mode'] = cls.zone.networktype
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.rbdStorageFound = True
+        cls._cleanup = []
         if cls.hypervisor.lower() == 'lxc':
             if not find_storage_pool_type(cls.api_client, storagetype='rbd'):
                 cls.rbdStorageFound = False
@@ -789,7 +791,7 @@ class TestTemplateUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"], required_hardware="false")
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"], required_hardware="true")
     def test_01_template_usage(self):
         """Test Upload/ delete a template and verify correct usage is generated
             for the template uploaded
@@ -997,7 +999,7 @@ class TestISOUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"], required_hardware="false")
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"], required_hardware="true")
     def test_01_ISO_usage(self):
         """Test Create/Delete a ISO and verify its usage is generated correctly
         """
@@ -1265,6 +1267,7 @@ class TestSnapshotUsage(cloudstackTestCase):
         cls.api_client = cls.testClient.getApiClient()
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.snapshotSupported = True
+        cls._cleanup = []
         if cls.hypervisor.lower() in ['hyperv', 'lxc']:
             cls.snapshotSupported = False
             return

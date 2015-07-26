@@ -1072,7 +1072,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
             String installPath = "template/tmpl/" + accountId + "/" + templateId;
             Map<String, String> res = OvmStoragePool.createTemplateFromVolume(_conn, secondaryStorageMountPath, installPath, volumePath, wait);
-            return new CreatePrivateTemplateAnswer(cmd, true, null, res.get("installPath"), Long.valueOf(res.get("virtualSize")), Long.parseLong(res.get("physicalSize")),
+            return new CreatePrivateTemplateAnswer(cmd, true, null, res.get("installPath"), Long.parseLong(res.get("virtualSize")), Long.parseLong(res.get("physicalSize")),
                 res.get("templateFileName"), ImageFormat.RAW);
         } catch (Exception e) {
             s_logger.debug("Create template failed", e);

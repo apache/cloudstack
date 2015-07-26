@@ -271,6 +271,11 @@
                     delete args.informationNotInLdap.ldapGroupName;
                 }
 
+                if (g_idpList == null) {
+                    delete args.informationNotInLdap.samlEnable;
+                    delete args.informationNotInLdap.samlEntity;
+                }
+
                 var informationNotInLdap = cloudStack.dialog.createForm({
                     context: context,
                     noDialog: true,
@@ -287,6 +292,35 @@
                     informationNotInLdapForm.css('background', 'none');
                 }
                 $wizard.find('.manual-account-details').append(informationNotInLdapForm);
+
+                if (g_idpList && g_appendIdpDomain && !ldapStatus) {
+                    var samlChecked = false;
+                    var idpUrl = $wizard.find('select[name=samlEntity]').children(':selected').val();
+                    var appendDomainToUsername = function() {
+                        if (!g_appendIdpDomain) {
+                            return;
+                        }
+                        var username = $wizard.find('input[name=username]').val();
+                        if (username) {
+                            username = username.split('@')[0];
+                        }
+                        if (samlChecked) {
+                            var link = document.createElement('a');
+                            link.setAttribute('href', idpUrl);
+                            $wizard.find('input[name=username]').val(username + "@" + link.host.split('.').splice(-2).join('.'));
+                        } else {
+                            $wizard.find('input[name=username]').val(username);
+                        }
+                    };
+                    $wizard.find('select[name=samlEntity]').change(function() {
+                        idpUrl = $(this).children(':selected').val();
+                        appendDomainToUsername();
+                    });
+                    $wizard.find('input[name=samlEnable]').change(function() {
+                        samlChecked = $(this).context.checked;
+                        appendDomainToUsername();
+                    });
+                }
 
                 return $wizard.dialog({
                     title: ldapStatus ? _l('Add LDAP Account') : _l('label.add.account'),

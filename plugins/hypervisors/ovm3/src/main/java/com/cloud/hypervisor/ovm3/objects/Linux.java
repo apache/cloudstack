@@ -305,6 +305,7 @@ public class Linux extends OvmObject {
                 put(MOUNTPOINT, null);
                 put("Uuid", null);
             }
+            private static final long serialVersionUID = 123L;
         };
 
         public Boolean setDetails(Map<String, Object> fs) {

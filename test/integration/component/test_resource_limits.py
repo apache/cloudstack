@@ -18,7 +18,7 @@
 """
 #Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase,unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (VirtualMachine,
                                          Snapshot,
                                          Template,
@@ -448,8 +448,8 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         # 5. Create 2 snapshot in account 2. Verify account 2 should be able to
         #    create snapshots without any warning
 
-        if self.hypervisor.lower() in ['hyperv']:
-            self.skipTest("Snapshots feature is not supported on Hyper-V")
+        if self.hypervisor.lower() in ['hyperv', 'lxc']:
+            self.skipTest("Snapshots feature is not supported on Hyper-V and LXC")
         self.debug(
             "Updating public IP resource limit for account: %s" %
                                                 self.account_1.name)
@@ -748,6 +748,8 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         #    should be denied to create more than 1 template.
         # 3. Try to create 2 templates in account 2. Verify account 2 should be
         #    able to create template without any error
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("Template feature is not supported on LXC")
 
         try:
             apiclient_account1 = self.testClient.getUserApiClient(
@@ -1134,8 +1136,8 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         #    created
         # 5. Try to create another snapshot in this domain. It should give the
         #    user an appropriate error and an alert should be generated.
-        if self.hypervisor.lower() in ['hyperv']:
-            self.skipTest("Snapshots feature is not supported on Hyper-V")
+        if self.hypervisor.lower() in ['hyperv', 'lxc']:
+            self.skipTest("Snapshots feature is not supported on Hyper-V and LXC")
         self.debug(
             "Updating snapshot resource limits for domain: %s" %
                                         self.account.domainid)
@@ -1271,6 +1273,9 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         #    ready state
         # 4. Try create 3rd template in the domain. It should give the user an
         #    appropriate error and an alert should be generated.
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("Template feature is not supported on LXC")
+
 
         try:
             userapiclient = self.testClient.getUserApiClient(
@@ -1443,7 +1448,7 @@ class TestMaxAccountNetworks(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "advancedns", "simulator",
-                "api", "eip"])
+                "api"])
     def test_maxAccountNetworks(self):
         """Test Limit number of guest account specific networks
         """

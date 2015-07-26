@@ -39,7 +39,7 @@ public class UpdateTemplateCmd extends BaseUpdateTemplateOrIsoCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public Boolean isBootable() {
+    public Boolean getBootable() {
         return null;
     }
 
@@ -52,7 +52,6 @@ public class UpdateTemplateCmd extends BaseUpdateTemplateOrIsoCmd {
         return s_name;
     }
 
-    @SuppressWarnings("unchecked")
     public TemplateResponse getResponse() {
        return null;
     }

@@ -64,7 +64,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceService#updateHost(com.cloud.api.commands.UpdateHostCmd)
      */
     @Override
-    public Host updateHost(UpdateHostCmd cmd) throws NoTransitionException {
+    public Host updateHost(final UpdateHostCmd cmd) throws NoTransitionException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -73,7 +73,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceService#cancelMaintenance(com.cloud.api.commands.CancelMaintenanceCmd)
      */
     @Override
-    public Host cancelMaintenance(CancelMaintenanceCmd cmd) {
+    public Host cancelMaintenance(final CancelMaintenanceCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -82,7 +82,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceService#reconnectHost(com.cloud.api.commands.ReconnectHostCmd)
      */
     @Override
-    public Host reconnectHost(ReconnectHostCmd cmd) {
+    public Host reconnectHost(final ReconnectHostCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -91,7 +91,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceService#discoverCluster(com.cloud.api.commands.AddClusterCmd)
      */
     @Override
-    public List<? extends Cluster> discoverCluster(AddClusterCmd cmd) throws IllegalArgumentException, DiscoveryException, ResourceInUseException {
+    public List<? extends Cluster> discoverCluster(final AddClusterCmd cmd) throws IllegalArgumentException, DiscoveryException, ResourceInUseException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -100,7 +100,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceService#deleteCluster(com.cloud.api.commands.DeleteClusterCmd)
      */
     @Override
-    public boolean deleteCluster(DeleteClusterCmd cmd) {
+    public boolean deleteCluster(final DeleteClusterCmd cmd) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -109,7 +109,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceService#updateCluster(com.cloud.org.Cluster, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
      */
     @Override
-    public Cluster updateCluster(Cluster cluster, String clusterType, String hypervisor, String allocationState, String managedstate) {
+    public Cluster updateCluster(final Cluster cluster, final String clusterType, final String hypervisor, final String allocationState, final String managedstate) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -118,7 +118,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceService#discoverHosts(com.cloud.api.commands.AddHostCmd)
      */
     @Override
-    public List<? extends Host> discoverHosts(AddHostCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
+    public List<? extends Host> discoverHosts(final AddHostCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -127,7 +127,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceService#discoverHosts(com.cloud.api.commands.AddSecondaryStorageCmd)
      */
     @Override
-    public List<? extends Host> discoverHosts(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
+    public List<? extends Host> discoverHosts(final AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -136,16 +136,22 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceService#maintain(com.cloud.api.commands.PrepareForMaintenanceCmd)
      */
     @Override
-    public Host maintain(PrepareForMaintenanceCmd cmd) {
+    public Host maintain(final PrepareForMaintenanceCmd cmd) {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public boolean updateClusterPassword(final UpdateHostPasswordCmd upasscmd) {
+        // TODO Auto-generated method stub
+        return false;
     }
 
     /* (non-Javadoc)
      * @see com.cloud.resource.ResourceService#updateHostPassword(com.cloud.api.commands.UpdateHostPasswordCmd)
      */
     @Override
-    public boolean updateHostPassword(UpdateHostPasswordCmd upasscmd) {
+    public boolean updateHostPassword(final UpdateHostPasswordCmd upasscmd) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -154,7 +160,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceService#getHost(long)
      */
     @Override
-    public Host getHost(long hostId) {
+    public Host getHost(final long hostId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -163,7 +169,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceService#getCluster(java.lang.Long)
      */
     @Override
-    public Cluster getCluster(Long clusterId) {
+    public Cluster getCluster(final Long clusterId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -172,7 +178,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceService#getSupportedHypervisorTypes(long, boolean, java.lang.Long)
      */
     @Override
-    public List<HypervisorType> getSupportedHypervisorTypes(long zoneId, boolean forVirtualRouter, Long podId) {
+    public List<HypervisorType> getSupportedHypervisorTypes(final long zoneId, final boolean forVirtualRouter, final Long podId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -181,7 +187,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#registerResourceEvent(java.lang.Integer, com.cloud.resource.ResourceListener)
      */
     @Override
-    public void registerResourceEvent(Integer event, ResourceListener listener) {
+    public void registerResourceEvent(final Integer event, final ResourceListener listener) {
         // TODO Auto-generated method stub
 
     }
@@ -190,7 +196,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#unregisterResourceEvent(com.cloud.resource.ResourceListener)
      */
     @Override
-    public void unregisterResourceEvent(ResourceListener listener) {
+    public void unregisterResourceEvent(final ResourceListener listener) {
         // TODO Auto-generated method stub
 
     }
@@ -199,7 +205,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#registerResourceStateAdapter(java.lang.String, com.cloud.resource.ResourceStateAdapter)
      */
     @Override
-    public void registerResourceStateAdapter(String name, ResourceStateAdapter adapter) {
+    public void registerResourceStateAdapter(final String name, final ResourceStateAdapter adapter) {
         // TODO Auto-generated method stub
 
     }
@@ -208,7 +214,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#unregisterResourceStateAdapter(java.lang.String)
      */
     @Override
-    public void unregisterResourceStateAdapter(String name) {
+    public void unregisterResourceStateAdapter(final String name) {
         // TODO Auto-generated method stub
 
     }
@@ -217,7 +223,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#createHostAndAgent(java.lang.Long, com.cloud.resource.ServerResource, java.util.Map, boolean, java.util.List, boolean)
      */
     @Override
-    public Host createHostAndAgent(Long hostId, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, boolean forRebalance) {
+    public Host createHostAndAgent(final Long hostId, final ServerResource resource, final Map<String, String> details, final boolean old, final List<String> hostTags, final boolean forRebalance) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -226,7 +232,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#addHost(long, com.cloud.resource.ServerResource, com.cloud.host.Host.Type, java.util.Map)
      */
     @Override
-    public Host addHost(long zoneId, ServerResource resource, Type hostType, Map<String, String> hostDetails) {
+    public Host addHost(final long zoneId, final ServerResource resource, final Type hostType, final Map<String, String> hostDetails) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -235,7 +241,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#createHostVOForConnectedAgent(com.cloud.agent.api.StartupCommand[])
      */
     @Override
-    public HostVO createHostVOForConnectedAgent(StartupCommand[] cmds) {
+    public HostVO createHostVOForConnectedAgent(final StartupCommand[] cmds) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -244,7 +250,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#checkCIDR(com.cloud.dc.HostPodVO, com.cloud.dc.DataCenterVO, java.lang.String, java.lang.String)
      */
     @Override
-    public void checkCIDR(HostPodVO pod, DataCenterVO dc, String serverPrivateIP, String serverPrivateNetmask) {
+    public void checkCIDR(final HostPodVO pod, final DataCenterVO dc, final String serverPrivateIP, final String serverPrivateNetmask) {
         // TODO Auto-generated method stub
 
     }
@@ -253,7 +259,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#fillRoutingHostVO(com.cloud.host.HostVO, com.cloud.agent.api.StartupRoutingCommand, com.cloud.hypervisor.Hypervisor.HypervisorType, java.util.Map, java.util.List)
      */
     @Override
-    public HostVO fillRoutingHostVO(HostVO host, StartupRoutingCommand ssCmd, HypervisorType hyType, Map<String, String> details, List<String> hostTags) {
+    public HostVO fillRoutingHostVO(final HostVO host, final StartupRoutingCommand ssCmd, final HypervisorType hyType, final Map<String, String> details, final List<String> hostTags) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -262,7 +268,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#deleteRoutingHost(com.cloud.host.HostVO, boolean, boolean)
      */
     @Override
-    public void deleteRoutingHost(HostVO host, boolean isForced, boolean forceDestroyStorage) throws UnableDeleteHostException {
+    public void deleteRoutingHost(final HostVO host, final boolean isForced, final boolean forceDestroyStorage) throws UnableDeleteHostException {
         // TODO Auto-generated method stub
 
     }
@@ -271,7 +277,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#executeUserRequest(long, com.cloud.resource.ResourceState.Event)
      */
     @Override
-    public boolean executeUserRequest(long hostId, Event event) throws AgentUnavailableException {
+    public boolean executeUserRequest(final long hostId, final Event event) throws AgentUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
@@ -280,7 +286,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#resourceStateTransitTo(com.cloud.host.Host, com.cloud.resource.ResourceState.Event, long)
      */
     @Override
-    public boolean resourceStateTransitTo(Host host, Event event, long msId) throws NoTransitionException {
+    public boolean resourceStateTransitTo(final Host host, final Event event, final long msId) throws NoTransitionException {
         // TODO Auto-generated method stub
         return false;
     }
@@ -289,7 +295,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#umanageHost(long)
      */
     @Override
-    public boolean umanageHost(long hostId) {
+    public boolean umanageHost(final long hostId) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -298,7 +304,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#maintenanceFailed(long)
      */
     @Override
-    public boolean maintenanceFailed(long hostId) {
+    public boolean maintenanceFailed(final long hostId) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -307,7 +313,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#maintain(long)
      */
     @Override
-    public boolean maintain(long hostId) throws AgentUnavailableException {
+    public boolean maintain(final long hostId) throws AgentUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
@@ -316,7 +322,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#maintain(long)
      */
     @Override
-    public boolean checkAndMaintain(long hostId) {
+    public boolean checkAndMaintain(final long hostId) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -325,7 +331,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#deleteHost(long, boolean, boolean)
      */
     @Override
-    public boolean deleteHost(long hostId, boolean isForced, boolean isForceDeleteStorage) {
+    public boolean deleteHost(final long hostId, final boolean isForced, final boolean isForceDeleteStorage) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -343,7 +349,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#listAllUpAndEnabledHosts(com.cloud.host.Host.Type, java.lang.Long, java.lang.Long, long)
      */
     @Override
-    public List<HostVO> listAllUpAndEnabledHosts(Type type, Long clusterId, Long podId, long dcId) {
+    public List<HostVO> listAllUpAndEnabledHosts(final Type type, final Long clusterId, final Long podId, final long dcId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -352,7 +358,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#listAllHostsInCluster(long)
      */
     @Override
-    public List<HostVO> listAllHostsInCluster(long clusterId) {
+    public List<HostVO> listAllHostsInCluster(final long clusterId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -361,7 +367,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#listHostsInClusterByStatus(long, com.cloud.host.Status)
      */
     @Override
-    public List<HostVO> listHostsInClusterByStatus(long clusterId, Status status) {
+    public List<HostVO> listHostsInClusterByStatus(final long clusterId, final Status status) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -370,7 +376,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#listAllUpAndEnabledHostsInOneZoneByType(com.cloud.host.Host.Type, long)
      */
     @Override
-    public List<HostVO> listAllUpAndEnabledHostsInOneZoneByType(Type type, long dcId) {
+    public List<HostVO> listAllUpAndEnabledHostsInOneZoneByType(final Type type, final long dcId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -379,7 +385,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#listAllHostsInOneZoneByType(com.cloud.host.Host.Type, long)
      */
     @Override
-    public List<HostVO> listAllHostsInOneZoneByType(Type type, long dcId) {
+    public List<HostVO> listAllHostsInOneZoneByType(final Type type, final long dcId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -388,7 +394,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#listAllHostsInAllZonesByType(com.cloud.host.Host.Type)
      */
     @Override
-    public List<HostVO> listAllHostsInAllZonesByType(Type type) {
+    public List<HostVO> listAllHostsInAllZonesByType(final Type type) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -397,7 +403,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#listAvailHypervisorInZone(java.lang.Long, java.lang.Long)
      */
     @Override
-    public List<HypervisorType> listAvailHypervisorInZone(Long hostId, Long zoneId) {
+    public List<HypervisorType> listAvailHypervisorInZone(final Long hostId, final Long zoneId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -406,7 +412,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#findHostByGuid(java.lang.String)
      */
     @Override
-    public HostVO findHostByGuid(String guid) {
+    public HostVO findHostByGuid(final String guid) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -415,7 +421,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#findHostByName(java.lang.String)
      */
     @Override
-    public HostVO findHostByName(String name) {
+    public HostVO findHostByName(final String name) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -424,7 +430,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#getHostStatistics(long)
      */
     @Override
-    public HostStats getHostStatistics(long hostId) {
+    public HostStats getHostStatistics(final long hostId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -433,7 +439,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#getGuestOSCategoryId(long)
      */
     @Override
-    public Long getGuestOSCategoryId(long hostId) {
+    public Long getGuestOSCategoryId(final long hostId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -442,7 +448,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#getHostTags(long)
      */
     @Override
-    public String getHostTags(long hostId) {
+    public String getHostTags(final long hostId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -451,7 +457,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#listByDataCenter(long)
      */
     @Override
-    public List<PodCluster> listByDataCenter(long dcId) {
+    public List<PodCluster> listByDataCenter(final long dcId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -460,7 +466,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#listAllNotInMaintenanceHostsInOneZone(com.cloud.host.Host.Type, java.lang.Long)
      */
     @Override
-    public List<HostVO> listAllNotInMaintenanceHostsInOneZone(Type type, Long dcId) {
+    public List<HostVO> listAllNotInMaintenanceHostsInOneZone(final Type type, final Long dcId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -469,7 +475,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#getDefaultHypervisor(long)
      */
     @Override
-    public HypervisorType getDefaultHypervisor(long zoneId) {
+    public HypervisorType getDefaultHypervisor(final long zoneId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -478,7 +484,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#getAvailableHypervisor(long)
      */
     @Override
-    public HypervisorType getAvailableHypervisor(long zoneId) {
+    public HypervisorType getAvailableHypervisor(final long zoneId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -487,7 +493,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#getMatchingDiscover(com.cloud.hypervisor.Hypervisor.HypervisorType)
      */
     @Override
-    public Discoverer getMatchingDiscover(HypervisorType hypervisorType) {
+    public Discoverer getMatchingDiscover(final HypervisorType hypervisorType) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -496,7 +502,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#findHostByGuid(long, java.lang.String)
      */
     @Override
-    public List<HostVO> findHostByGuid(long dcId, String guid) {
+    public List<HostVO> findHostByGuid(final long dcId, final String guid) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -505,7 +511,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#listAllUpAndEnabledNonHAHosts(com.cloud.host.Host.Type, java.lang.Long, java.lang.Long, long)
      */
     @Override
-    public List<HostVO> listAllUpAndEnabledNonHAHosts(Type type, Long clusterId, Long podId, long dcId) {
+    public List<HostVO> listAllUpAndEnabledNonHAHosts(final Type type, final Long clusterId, final Long podId, final long dcId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -514,7 +520,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.utils.component.Manager#configure(java.lang.String, java.util.Map)
      */
     @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+    public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         // TODO Auto-generated method stub
         return true;
     }
@@ -547,54 +553,54 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     @Override
-    public List<HostVO> listAllUpAndEnabledHostsInOneZoneByHypervisor(HypervisorType type, long dcId) {
+    public List<HostVO> listAllUpAndEnabledHostsInOneZoneByHypervisor(final HypervisorType type, final long dcId) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public List<HostVO> listAllUpAndEnabledHostsInOneZone(long dcId) {
+    public List<HostVO> listAllUpAndEnabledHostsInOneZone(final long dcId) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public boolean releaseHostReservation(Long hostId) {
+    public boolean releaseHostReservation(final Long hostId) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean isGPUDeviceAvailable(long hostId, String groupName, String vgpuType) {
+    public boolean isGPUDeviceAvailable(final long hostId, final String groupName, final String vgpuType) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public GPUDeviceTO getGPUDevice(long hostId, String groupName, String vgpuType) {
+    public GPUDeviceTO getGPUDevice(final long hostId, final String groupName, final String vgpuType) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public List<HostGpuGroupsVO> listAvailableGPUDevice(long hostId, String groupName, String vgpuType) {
+    public List<HostGpuGroupsVO> listAvailableGPUDevice(final long hostId, final String groupName, final String vgpuType) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public void updateGPUDetails(long hostId, HashMap<String, HashMap<String, VgpuTypesInfo>> deviceDetails) {
+    public void updateGPUDetails(final long hostId, final HashMap<String, HashMap<String, VgpuTypesInfo>> deviceDetails) {
         // TODO Auto-generated method stub
     }
 
     @Override
-    public HashMap<String, HashMap<String, VgpuTypesInfo>> getGPUStatistics(HostVO host) {
+    public HashMap<String, HashMap<String, VgpuTypesInfo>> getGPUStatistics(final HostVO host) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public boolean isHostGpuEnabled(long hostId) {
+    public boolean isHostGpuEnabled(final long hostId) {
         // TODO Auto-generated method stub
         return false;
     }

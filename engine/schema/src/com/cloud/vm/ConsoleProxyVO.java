@@ -72,6 +72,7 @@ public class ConsoleProxyVO extends VMInstanceVO implements ConsoleProxy {
                           long accountId, long userId, int activeSession, boolean haEnabled) {
         super(id, serviceOfferingId, name, name, Type.ConsoleProxy, templateId, hypervisorType, guestOSId, domainId, accountId, userId, haEnabled);
         this.activeSession = activeSession;
+        this.dataCenterId = dataCenterId;
     }
 
     protected ConsoleProxyVO() {

@@ -158,6 +158,64 @@
       </build>
     </profile>
     <profile>
+      <!-- saml deploydb property -->
+      <id>deploydb-saml</id>
+      <activation>
+        <property>
+          <name>deploydb-saml</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <dependencies>
+              <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${cs.mysql.version}</version>
+              </dependency>
+            </dependencies>
+            <version>1.2.1</version>
+            <executions>
+              <execution>
+                <phase>process-resources</phase>
+                <id>create-schema-simulator</id>
+                <goals>
+                  <goal>java</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
+              <includePluginDependencies>true</includePluginDependencies>
+              <arguments>
+                <!-- db properties file -->
+                <argument>${basedir}/../utils/conf/db.properties</argument>
+                <argument>${basedir}/../utils/conf/db.properties.override</argument>
+                <!-- simulator sql files -->
+                <argument>${basedir}/developer-saml.sql</argument>
+                <!-- upgrade -->
+                <argument>com.cloud.upgrade.DatabaseUpgradeChecker</argument>
+                <argument>--rootpassword=${db.root.password}</argument>
+              </arguments>
+              <systemProperties>
+                <systemProperty>
+                  <key>catalina.home</key>
+                  <value>${basedir}/../utils</value>
+                </systemProperty>
+                <systemProperty>
+                  <key>paths.script</key>
+                  <value>${basedir}/target/db</value>
+                </systemProperty>
+              </systemProperties>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
       <!-- simulator deploydb property -->
       <id>deploydb-simulator</id>
       <activation>

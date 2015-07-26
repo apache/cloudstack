@@ -75,6 +75,13 @@ public class Ip implements Serializable, Comparable<Ip> {
     public boolean equals(Object obj) {
         if (obj instanceof Ip) {
             return ip == ((Ip)obj).ip;
+        }
+        return false;
+    }
+
+    public boolean isSameAddressAs(Object obj) {
+        if (this.equals(obj)) {
+            return true;
         } else if (obj instanceof String) {
             return ip == NetUtils.ip2Long((String)obj);
         } else if (obj instanceof Long) {
