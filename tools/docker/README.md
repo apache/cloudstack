@@ -1,10 +1,19 @@
-
-# Docker Files
+# Docker Files for Apache CloudStack
 
 Dockerfiles used to build CloudStack images available on Docker hub.
 
 
-## Use images from docker
+## Using images from docker-hub
+
+
+### CloudStack Simulator
+
+CloudStack Simulator if a all on one CloudStack Build including the simulator that mimic Hypervisor. This is usefull to test CloudStack API behavior without having to deploy real hypervisor nodes. CloudStack Simulator is used for tests and CI.
+
+```
+docker pull cloudstack/simulator
+docker run --name simulator -p 8080:8080 -d cloudstack/simulator
+```
 
 ### CloudStack Management-server 
 
@@ -22,16 +31,16 @@ Use Marvin with cloudstack connection thru the API port (8096)
 
 ```
 docker pull cloudstack/marvin
-docker run -ti --rm --name marvin --link acs-sim:8080 cloudstack/marvin
+docker run -ti --rm --name marvin --link simulator:8096 cloudstack/marvin
 ```
 
 Deploy Cloud using marvin:
 
 ```
-docker run -ti --rm --link simulator:8096 python /root/tools/marvin/marvin/deployDataCenter.py -i /root/setup/dev/advanced.cfg
+docker run -ti --rm --link simulator:8096 cloudstack/marvin python /root/tools/marvin/marvin/deployDataCenter.py -i /root/setup/dev/advanced.cfg
 ```
 
-Perform Smoke tests:
+Perform Smoke tests against CloudStack Simulator containter:
 ```
 docker run -ti --rm --link simulator:8096 \
   nosetests-2.7 -v --with-marvin \
@@ -76,9 +85,16 @@ tag:latest = master branch
 
 Build Marvin container usable to deploy cloud in the CloudStack management server container.
 
-
 1. to build the image
 
    ```
    docker build -f Dockerfile.marvin -t cloudstack/marvin ../..
    ```
+
+### Simulator
+
+Build CloudStack with Simulator. this image is an all on one, including the database. Build from source using maven.
+
+```
+docker build -f Dockerfile -t cloudstack/simulator ../..
+```
