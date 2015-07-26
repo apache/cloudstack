@@ -67,6 +67,9 @@ public final class LibvirtCreateCommandWrapper extends CommandWrapper<CreateComm
                 }
             } else {
                 vol = primaryPool.createPhysicalDisk(dskch.getPath(), dskch.getProvisioningType(), dskch.getSize());
+                if (vol == null) {
+                    return new Answer(command, false, " Can't create Physical Disk");//Due to lack of implementation of createPhysicalDisk module in ManagedNfsStorageAdaptor.java class
+                }
             }
             final VolumeTO volume =
                     new VolumeTO(command.getVolumeId(), dskch.getType(), pool.getType(), pool.getUuid(), pool.getPath(), vol.getName(), vol.getName(), disksize, null);
