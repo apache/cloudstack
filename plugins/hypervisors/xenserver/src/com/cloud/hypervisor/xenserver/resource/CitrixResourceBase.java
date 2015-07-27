@@ -1402,6 +1402,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             vbdr.userdevice = Long.toString(volumeTO.getDeviceId());
             vbdr.mode = Types.VbdMode.RW;
             vbdr.type = Types.VbdType.DISK;
+            Long deviceId = volumeTO.getDeviceId();
+            if (deviceId != null) {
+                if (!isDeviceUsed(conn, vm, deviceId) || deviceId.longValue() > 3) {
+                    vbdr.userdevice = deviceId.toString();
+                }
+            }
             VBD.create(conn, vbdr);
         }
         return vm;
