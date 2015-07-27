@@ -99,14 +99,15 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
             QuotaBalanceVO entry = it.next();
             s_logger.info("Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
-            if (entry.getCreditsId() > 0) {
-                lastCredits = lastCredits.add(entry.getCreditBalance());
-            } else {
-                resp.setStartQuota(entry.getCreditBalance().add(lastCredits));
-                break; // add only consecutive credit entries
+            if (lastCredits.compareTo(new BigDecimal(0)) == 0) {
+                resp.setStartQuota(entry.getCreditBalance());
+                resp.setStartDate(startDate);
             }
+            lastCredits = lastCredits.add(entry.getCreditBalance());
+            resp.addCredits(entry);
         }
-        resp.setStartDate(startDate);
+        resp.setEndQuota(lastCredits);
+        resp.setEndDate(_quotaService.computeAdjustedTime(new Date()));
         resp.setObjectName("balance");
         return resp;
     }
