@@ -741,7 +741,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             s_logger.warn(details, e);
         } finally {
             if (srcSr != null) {
-                hypervisorResource.removeSR(conn, srcSr);
+                hypervisorResource.skipOrRemoveSR(conn, srcSr);
             }
             if (!result && destVdi != null) {
                 try {

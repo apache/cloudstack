@@ -4257,6 +4257,34 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
+    protected String skipOrRemoveSR(Connection conn, SR sr) {
+        if (sr == null) {
+            return null;
+        }
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(logX(sr, "Removing SR"));
+        }
+        try {
+            Set<VDI> vdis = sr.getVDIs(conn);
+            for (VDI vdi : vdis) {
+                Map<java.lang.String, Types.VdiOperations> currentOperation = vdi.getCurrentOperations(conn);
+                if (currentOperation == null || currentOperation.size() == 0) {
+                    continue;
+                }
+                return null;
+            }
+            removeSR(conn, sr);
+            return null;
+        } catch (XenAPIException e) {
+            s_logger.warn(logX(sr, "Unable to get current opertions " + e.toString()), e);
+        } catch (XmlRpcException e) {
+            s_logger.warn(logX(sr, "Unable to get current opertions " + e.getMessage()), e);
+        }
+        String msg = "Remove SR failed";
+        s_logger.warn(msg);
+        return msg;
+    }
+
     public void removeSR(final Connection conn, final SR sr) {
         if (sr == null) {
             return;
