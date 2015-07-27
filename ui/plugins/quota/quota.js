@@ -190,11 +190,13 @@ var g_quotaCurrency = '';
                                               statementTableHead.appendTo($('<thead>').appendTo(statementTable));
 
                                               var statementTableBody = $('<tbody>');
-                                              var statementTableBodyRow = $('<tr>');
-                                              $('<td>').html(g_quotaCurrency + startBalance).appendTo(statementTableBodyRow);
-                                              $('<td>').html(startBalanceDate).appendTo(statementTableBodyRow);
-                                              $('<td>').html("Start Quota Balance").appendTo(statementTableBodyRow);
-                                              statementTableBodyRow.appendTo(statementTableBody);
+                                              if (startBalance) {
+                                                  var statementTableBodyRow = $('<tr>');
+                                                  $('<td>').html(g_quotaCurrency + startBalance).appendTo(statementTableBodyRow);
+                                                  $('<td>').html(startBalanceDate).appendTo(statementTableBodyRow);
+                                                  $('<td>').html("Start Quota Balance").appendTo(statementTableBodyRow);
+                                                  statementTableBodyRow.appendTo(statementTableBody);
+                                              }
 
                                               for (var i = 0; i < credits.length; i++) {
                                                   var statementTableBodyRow = $('<tr>');
@@ -209,11 +211,13 @@ var g_quotaCurrency = '';
                                                   statementTableBodyRow.appendTo(statementTableBody);
                                               }
 
-                                              var statementTableBodyRow = $('<tr>');
-                                              $('<td>').html(g_quotaCurrency + endBalance).appendTo(statementTableBodyRow);
-                                              $('<td>').html(endBalanceDate).appendTo(statementTableBodyRow);
-                                              $('<td style="font-weight: bold">').html("Final Quota Balance").appendTo(statementTableBodyRow);
-                                              statementTableBodyRow.appendTo(statementTableBody);
+                                              if (endBalance) {
+                                                  var statementTableBodyRow = $('<tr>');
+                                                  $('<td>').html(g_quotaCurrency + endBalance).appendTo(statementTableBodyRow);
+                                                  $('<td>').html(endBalanceDate).appendTo(statementTableBodyRow);
+                                                  $('<td style="font-weight: bold">').html("Final Quota Balance").appendTo(statementTableBodyRow);
+                                                  statementTableBodyRow.appendTo(statementTableBody);
+                                              }
 
                                               statementTableBody.appendTo(statementTable);
                                           },
@@ -487,7 +491,7 @@ var g_quotaCurrency = '';
                                                   },
                                                   success: function(json) {
                                                       if (json.hasOwnProperty('quotabalanceresponse') && json.quotabalanceresponse.hasOwnProperty('balance')) {
-                                                          $('<p>').html('Current Quota Balance of "' + account + '": ' + g_quotaCurrency + json.quotabalanceresponse.balance.startquota).appendTo(creditStatement);
+                                                          $('<p>').html('Current Quota Balance of "' + account + '": ' + g_quotaCurrency + json.quotabalanceresponse.balance.endquota).appendTo(creditStatement);
                                                       }
                                                   },
                                                   error: function(json) {
@@ -605,8 +609,8 @@ var g_quotaCurrency = '';
                                                   return;
                                               }
                                               var template = json.quotaemailtemplatelistresponse.quotaemailtemplate[0];
-                                              templateSubjectTextArea.val(template.templatesubject.replace(/\\n/g, '\n').replace(/\\"/g, '"'));
-                                              templateBodyTextArea.val(template.templatebody.replace(/\\n/g, '\n').replace(/\\"/g, '"'));
+                                              templateSubjectTextArea.val(template.templatesubject.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/<br>/g, '\n'));
+                                              templateBodyTextArea.val(template.templatebody.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/<br>/g, '\n'));
                                           },
                                           error: function(data) {
                                           }
@@ -616,11 +620,12 @@ var g_quotaCurrency = '';
 
                                   saveTemplateButton.click(function() {
                                       var templateName = templateOptions.find(':selected').val();
-                                      var templateSubject = templateSubjectTextArea.val();
-                                      var templateBody = templateBodyTextArea.val();
+                                      var templateSubject = templateSubjectTextArea.val().replace(/\n/g, '<br>');
+                                      var templateBody = templateBodyTextArea.val().replace(/\n/g, '<br>');
 
                                       $.ajax({
                                           url: createURL('quotaEmailTemplateUpdate'),
+                                          type: "POST",
                                           data: {
                                               templatetype: templateName,
                                               templatesubject: templateSubject,
@@ -642,7 +647,7 @@ var g_quotaCurrency = '';
                                   templateBodyTextArea.appendTo(emailTemplateForm);
                                   saveTemplateButton.appendTo(emailTemplateForm);
                                   $('<hr>').appendTo(emailTemplateForm);
-                                  $('<p>').html("These options can be used in template as ${variable}: quotaBalance, accountName, accountId, accountUsers, domainName, domainId").appendTo(emailTemplateForm);
+                                  $('<p>').html("These options can be used in template as ${variable}: quotaBalance, accountName, accountID, accountUsers, domainName, domainID").appendTo(emailTemplateForm);
 
                                   emailTemplateForm.appendTo(manageTemplatesView);
                                   manageTemplatesView.appendTo($node);
