@@ -258,7 +258,34 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             txn.close();
         }
         TransactionLegacy.open(opendb).close();
+        checkAndSendQuotaAlertEmails();
         return jobResult;
+    }
+
+    private void checkAndSendQuotaAlertEmails() {
+        List <DeferredQuotaEmail> deferredQuotaEmailList = new ArrayList<DeferredQuotaEmail>();
+        final Date currentDate = new Date();
+        final BigDecimal zeroBalance = new BigDecimal(0);
+        final BigDecimal thresholdBalance = new BigDecimal(1000); // FIXME: get value from threshold
+        for (final AccountVO account : _accountDao.listAll()) {
+            QuotaBalanceVO accountBalanceVO = _quotaBalanceDao.findLastBalanceEntry(account.getId(), account.getDomainId(), currentDate);
+            if (accountBalanceVO != null && accountBalanceVO.getCreditBalance() != null) {
+                BigDecimal accountBalance = accountBalanceVO.getCreditBalance();
+                s_logger.debug("Checking and sending email to account: " + accountBalance.toString() + " account=" + account.getAccountName());
+                if (accountBalance.compareTo(zeroBalance) <= 0) {
+                    deferredQuotaEmailList.add(new DeferredQuotaEmail(account, accountBalanceVO, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_EMPTY));
+                    // FIXME: lock account?
+                } else if (accountBalance.compareTo(thresholdBalance) <= 0) {
+                    deferredQuotaEmailList.add(new DeferredQuotaEmail(account, accountBalanceVO, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_LOW));
+                }
+            }
+        }
+
+        // TODO: this could be enqueued in DB and sent later on in a bg thread?
+        for (DeferredQuotaEmail emailToBeSent: deferredQuotaEmailList) {
+            s_logger.debug("Attempting to send email to user: " + emailToBeSent.getAccount().getAccountName());
+            sendQuotaAlert(emailToBeSent);
+        }
     }
 
     @DB
@@ -406,7 +433,15 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         return quota_usage;
     }
 
-    private void sendQuotaAlert(QuotaConfig.QuotaEmailTemplateTypes emailType, AccountVO account, QuotaBalanceVO balance) {
+    private void sendQuotaAlert(AccountVO account, QuotaBalanceVO balance, QuotaConfig.QuotaEmailTemplateTypes emailType) {
+        sendQuotaAlert(new DeferredQuotaEmail(account, balance, emailType));
+    }
+
+    private void sendQuotaAlert(DeferredQuotaEmail emailToBeSent) {
+        final AccountVO account = emailToBeSent.getAccount();
+        final QuotaBalanceVO balance = emailToBeSent.getQuotaBalance();
+        final QuotaConfig.QuotaEmailTemplateTypes emailType = emailToBeSent.getEmailTemplateType();
+
         final List<QuotaEmailTemplatesVO> emailTemplates = _quotaEmailTemplateDao.listAllQuotaEmailTemplates(emailType.toString());
         if (emailTemplates != null && emailTemplates.get(0) != null) {
             final QuotaEmailTemplatesVO emailTemplate = emailTemplates.get(0);
@@ -420,13 +455,16 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
                 userNames += String.format("%s <%s>,", user.getUsername(), user.getEmail());
                 emailRecipients.add(user.getEmail());
             }
+            if (userNames.endsWith(",")) {
+                userNames = userNames.substring(0, userNames.length() - 1);
+            }
 
             final Map<String, String> optionMap = new HashMap<String, String>();
             optionMap.put("accountName", account.getAccountName());
-            optionMap.put("accountId", account.getUuid());
+            optionMap.put("accountID", account.getUuid());
             optionMap.put("accountUsers", userNames);
             optionMap.put("domainName", accountDomain.getName());
-            optionMap.put("domainId", accountDomain.getUuid());
+            optionMap.put("domainID", accountDomain.getUuid());
             optionMap.put("quotaBalance", QuotaConfig.QuotaCurrencySymbol.value() + " " + balance.getCreditBalance().toString());
 
             final StrSubstitutor templateEngine = new StrSubstitutor(optionMap);
@@ -441,6 +479,30 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             s_logger.error(String.format("No quota email template found for type %s, cannot send quota alert email to account %s(%s) ", emailType, account.getAccountName(), account.getUuid()));
         }
     }
+
+    class DeferredQuotaEmail {
+        AccountVO account;
+        QuotaBalanceVO quotaBalance;
+        QuotaConfig.QuotaEmailTemplateTypes emailTemplateType;
+
+        public DeferredQuotaEmail(AccountVO account, QuotaBalanceVO quotaBalance, QuotaConfig.QuotaEmailTemplateTypes emailTemplateType) {
+            this.account = account;
+            this.quotaBalance = quotaBalance;
+            this.emailTemplateType = emailTemplateType;
+        }
+
+        public AccountVO getAccount() {
+            return account;
+        }
+
+        public QuotaBalanceVO getQuotaBalance() {
+            return quotaBalance;
+        }
+
+        public QuotaConfig.QuotaEmailTemplateTypes getEmailTemplateType() {
+            return emailTemplateType;
+        }
+    };
 
     class EmailQuotaAlert {
         private Session _smtpSession;
