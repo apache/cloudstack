@@ -36,13 +36,13 @@ public interface QuotaConfig  {
             "true means all the emails sent out will be stored in local DB, by default it is false", true);
 
     public static final ConfigKey<String> QuotaEnableEnforcement = new ConfigKey<String>("Advanced", String.class, "quota.enable.enforcement", "true",
-            "Enable the usage quota enforcement, i.e. on true exceeding quota the respective account will be locked.", true);
+            "Enable the usage quota enforcement, i.e. on true when exceeding quota the respective account will be locked.", true);
 
     public static final ConfigKey<String> QuotaCurrencySymbol = new ConfigKey<String>("Advanced", String.class, "quota.currency.symbol", "R",
             "The symbol for the currency in use to measure usage.", true);
 
     public static final ConfigKey<String> QuotaLimitCritical = new ConfigKey<String>("Advanced", String.class, "quota.limit.critical", "80",
-            "A percentage limit for quota when it is reached user is sent and alert.", true);
+            "The quota amount when reached, the account users are sent low quota email alerts.", true);
 
     public static final ConfigKey<String> QuotaLimitIncremental = new ConfigKey<String>("Advanced", String.class, "quota.limit.increment", "5",
             "Quota limit incremental", true);

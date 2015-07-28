@@ -19,6 +19,7 @@ package org.apache.cloudstack.quota.job;
 import com.cloud.configuration.Config;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.usage.UsageVO;
@@ -48,6 +49,8 @@ import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
+import org.apache.cloudstack.region.RegionManager;
+import org.apache.cloudstack.region.RegionService;
 import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.log4j.Logger;
@@ -99,6 +102,8 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     private QuotaBalanceDao _quotaBalanceDao;
     @Inject
     private ConfigurationDao _configDao;
+    @Inject
+    private RegionManager _regionMgr;
 
     private TimeZone _usageTimezone;
     private int _aggregationDuration = 0;
@@ -266,24 +271,30 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         List <DeferredQuotaEmail> deferredQuotaEmailList = new ArrayList<DeferredQuotaEmail>();
         final Date currentDate = new Date();
         final BigDecimal zeroBalance = new BigDecimal(0);
-        final BigDecimal thresholdBalance = new BigDecimal(1000); // FIXME: get value from threshold
+        final BigDecimal thresholdBalance = new BigDecimal(QuotaConfig.QuotaLimitCritical.value());
+        final boolean lockAccountEnforcement = QuotaConfig.QuotaEnableEnforcement.value().equalsIgnoreCase("true");
         for (final AccountVO account : _accountDao.listAll()) {
             QuotaBalanceVO accountBalanceVO = _quotaBalanceDao.findLastBalanceEntry(account.getId(), account.getDomainId(), currentDate);
+            //FIXME: Abhi we need to find the current/actual accountBalance?
             if (accountBalanceVO != null && accountBalanceVO.getCreditBalance() != null) {
                 BigDecimal accountBalance = accountBalanceVO.getCreditBalance();
-                s_logger.debug("Checking and sending email to account: " + accountBalance.toString() + " account=" + account.getAccountName());
                 if (accountBalance.compareTo(zeroBalance) <= 0) {
+                    if (lockAccountEnforcement) {
+                        try {
+                            _regionMgr.disableAccount(account.getAccountName(), account.getDomainId(), account.getId(), true);
+                        } catch (ResourceUnavailableException e) {
+                            s_logger.error(String.format("Unable to lock account %s which has exhausted its allocated quota", account.getAccountName()));
+                        }
+                    }
                     deferredQuotaEmailList.add(new DeferredQuotaEmail(account, accountBalanceVO, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_EMPTY));
-                    // FIXME: lock account?
                 } else if (accountBalance.compareTo(thresholdBalance) <= 0) {
                     deferredQuotaEmailList.add(new DeferredQuotaEmail(account, accountBalanceVO, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_LOW));
                 }
             }
         }
 
-        // TODO: this could be enqueued in DB and sent later on in a bg thread?
         for (DeferredQuotaEmail emailToBeSent: deferredQuotaEmailList) {
-            s_logger.debug("Attempting to send email to user: " + emailToBeSent.getAccount().getAccountName());
+            s_logger.debug("Attempting to send quota alert email to users of account: " + emailToBeSent.getAccount().getAccountName());
             sendQuotaAlert(emailToBeSent);
         }
     }
@@ -473,10 +484,10 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             try {
                 _emailQuotaAlert.sendQuotaAlert(emailRecipients, subject, body);
             } catch (Exception e) {
-                s_logger.error(String.format("Unable to send quota alert email to account %s (%s) due to error: %s", account.getAccountName(), account.getUuid(), e));
+                s_logger.error(String.format("Unable to send quota alert email (subject=%s; body=%s) to account %s (%s) recipients (%s) due to error (%s)", subject, body, account.getAccountName(), account.getUuid(), emailRecipients, e));
             }
         } else {
-            s_logger.error(String.format("No quota email template found for type %s, cannot send quota alert email to account %s(%s) ", emailType, account.getAccountName(), account.getUuid()));
+            s_logger.error(String.format("No quota email template found for type %s, cannot send quota alert email to account %s(%s)", emailType, account.getAccountName(), account.getUuid()));
         }
     }
 
