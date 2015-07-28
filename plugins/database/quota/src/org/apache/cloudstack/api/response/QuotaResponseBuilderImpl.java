@@ -17,7 +17,10 @@
 package org.apache.cloudstack.api.response;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.user.Account;
+import com.cloud.user.AccountVO;
 import com.cloud.user.User;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.db.TransactionLegacy;
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
@@ -27,6 +30,7 @@ import org.apache.cloudstack.api.command.QuotaStatementCmd;
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
 import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
 import org.apache.cloudstack.quota.QuotaService;
+import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
 import org.apache.cloudstack.quota.dao.QuotaCreditsDao;
@@ -37,6 +41,7 @@ import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
+import org.apache.cloudstack.region.RegionManager;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -70,6 +75,10 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     private UserDao _userDao;
     @Inject
     private QuotaService _quotaService;
+    @Inject
+    AccountDao _accountDao;
+    @Inject
+    private RegionManager _regionMgr;
 
     @Override
     public QuotaTariffResponse createQuotaTariffResponse(QuotaTariffVO tariff) {
@@ -267,7 +276,16 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             txn.close();
         }
         TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
-        String creditor = "1";
+        final AccountVO account = _accountDao.findById(accountId);
+        if ((_quotaBalanceDao.lastQuotaBalance(accountId, domainId, new Date()).compareTo(new BigDecimal(QuotaConfig.QuotaLimitCritical.value())) > 0)
+                && (account.getState() == Account.State.locked)) {
+            try {
+                _regionMgr.enableAccount(account.getAccountName(), domainId, accountId);
+            } catch (Exception e) {
+                s_logger.error(String.format("Unable to unlock account %s after getting enough quota credits", account.getAccountName()));
+            }
+        }
+        String creditor = String.valueOf(Account.ACCOUNT_ID_SYSTEM);
         User creditorUser = _userDao.getUser(updatedBy);
         if (creditorUser != null) {
             creditor = creditorUser.getUsername();
