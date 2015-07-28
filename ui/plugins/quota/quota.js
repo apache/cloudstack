@@ -58,7 +58,7 @@ var g_quotaCurrency = '';
                                   var generateStatementButton = $('<button id="quota-get-statement-button">').html("Generate Statement");
 
                                   startDateInput.datepicker({
-                                      defaultDate: "+1w",
+                                      defaultDate: new Date(),
                                       changeMonth: true,
                                       dateFormat: "yy-mm-dd",
                                       onClose: function (selectedDate) {
@@ -67,7 +67,7 @@ var g_quotaCurrency = '';
                                   });
 
                                   endDateInput.datepicker({
-                                      defaultDate: "+1w",
+                                      defaultDate: new Date(),
                                       changeMonth: true,
                                       dateFormat: "yy-mm-dd",
                                       onClose: function (selectedDate) {
@@ -325,7 +325,7 @@ var g_quotaCurrency = '';
                                       startDateInput.val(lastDate);
 
                                       startDateInput.datepicker({
-                                          defaultDate: "+1w",
+                                          defaultDate: new Date(),
                                           changeMonth: true,
                                           dateFormat: "yy-mm-dd",
                                           onClose: function (selectedDate) {
@@ -419,7 +419,7 @@ var g_quotaCurrency = '';
                                                               }
                                                           });
                                                           updateTariffForm.find('input[name=effectiveDate]').datepicker({
-                                                              defaultDate: "+1w",
+                                                              defaultDate: new Date(),
                                                               changeMonth: true,
                                                               dateFormat: "yy-mm-dd",
                                                           });
