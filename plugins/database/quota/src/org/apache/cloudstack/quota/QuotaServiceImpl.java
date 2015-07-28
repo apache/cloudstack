@@ -127,13 +127,8 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {
-                QuotaPluginEnabled,QuotaPeriodType, QuotaPeriod,
-                QuotaGenerateActivity, QuotaEmailRecordOutgoing, QuotaEnableEnforcement,
-                QuotaCurrencySymbol, QuotaLimitCritical, QuotaLimitIncremental,
-                QuotaSmtpHost, QuotaSmtpPort, QuotaSmtpTimeout,
-                QuotaSmtpUser, QuotaSmtpPassword,
-                QuotaSmtpAuthType, QuotaSmtpSender };
+        return new ConfigKey<?>[] { QuotaPluginEnabled, QuotaPeriodType, QuotaPeriod, QuotaGenerateActivity, QuotaEmailRecordOutgoing, QuotaEnableEnforcement, QuotaCurrencySymbol, QuotaLimitCritical,
+                QuotaLimitIncremental, QuotaSmtpHost, QuotaSmtpPort, QuotaSmtpTimeout, QuotaSmtpUser, QuotaSmtpPassword, QuotaSmtpAuthType, QuotaSmtpSender };
     }
 
     @Override
@@ -176,7 +171,10 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
             } else {
                 return qbrecords;
             }
-        } else if (startDate.before(endDate)) {
+        } if (endDate.after(new Date())) {
+            throw new InvalidParameterValueException("Incorrect Date Range. End date:" + endDate + " should not be in future. ");
+        }
+        else if (startDate.before(endDate)) {
             Date adjustedEndDate = computeAdjustedTime(endDate);
             s_logger.debug("Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
             List<QuotaBalanceVO> qbrecords = _quotaBalanceDao.findQuotaBalance(accountId, domainId, adjustedStartDate, adjustedEndDate);
@@ -220,13 +218,16 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         if (startDate.after(endDate)) {
             throw new InvalidParameterValueException("Incorrect Date Range. Start date: " + startDate + " is after end date:" + endDate);
         }
+        if (endDate.after(new Date())) {
+            throw new InvalidParameterValueException("Incorrect Date Range. End date:" + endDate + " should not be in future. ");
+        }
+
         Date adjustedStartDate = computeAdjustedTime(startDate);
         Date adjustedEndDate = computeAdjustedTime(endDate);
 
         s_logger.debug("Getting quota records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
         return _quotaUsageDao.findQuotaUsage(accountId, domainId, usageType, adjustedStartDate, adjustedEndDate);
     }
-
 
     @Override
     public Date computeAdjustedTime(final Date date) {

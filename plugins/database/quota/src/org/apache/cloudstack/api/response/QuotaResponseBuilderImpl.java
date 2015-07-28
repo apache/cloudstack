@@ -155,7 +155,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Override
     public QuotaStatementResponse createQuotaStatementResponse(List<QuotaUsageVO> quotaUsage) {
-        if (quotaUsage == null) {
+        if (quotaUsage == null || quotaUsage.size()==0) {
             new InvalidParameterValueException("There is no uage data for period mentioned.");
         }
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
