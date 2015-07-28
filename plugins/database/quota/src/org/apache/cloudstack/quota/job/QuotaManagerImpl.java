@@ -274,10 +274,8 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         final BigDecimal thresholdBalance = new BigDecimal(QuotaConfig.QuotaLimitCritical.value());
         final boolean lockAccountEnforcement = QuotaConfig.QuotaEnableEnforcement.value().equalsIgnoreCase("true");
         for (final AccountVO account : _accountDao.listAll()) {
-            QuotaBalanceVO accountBalanceVO = _quotaBalanceDao.findLastBalanceEntry(account.getId(), account.getDomainId(), currentDate);
-            //FIXME: Abhi we need to find the current/actual accountBalance?
-            if (accountBalanceVO != null && accountBalanceVO.getCreditBalance() != null) {
-                BigDecimal accountBalance = accountBalanceVO.getCreditBalance();
+            final BigDecimal accountBalance = _quotaBalanceDao.lastQuotaBalance(account.getId(), account.getDomainId(), currentDate);
+            if (accountBalance != null) {
                 if (accountBalance.compareTo(zeroBalance) <= 0) {
                     if (lockAccountEnforcement && account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                         try {
@@ -286,9 +284,9 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
                             s_logger.error(String.format("Unable to lock account %s which has exhausted its allocated quota", account.getAccountName()));
                         }
                     }
-                    deferredQuotaEmailList.add(new DeferredQuotaEmail(account, accountBalanceVO, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_EMPTY));
+                    deferredQuotaEmailList.add(new DeferredQuotaEmail(account, accountBalance, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_EMPTY));
                 } else if (accountBalance.compareTo(thresholdBalance) <= 0) {
-                    deferredQuotaEmailList.add(new DeferredQuotaEmail(account, accountBalanceVO, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_LOW));
+                    deferredQuotaEmailList.add(new DeferredQuotaEmail(account, accountBalance, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_LOW));
                 }
             }
         }
@@ -444,13 +442,13 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         return quota_usage;
     }
 
-    private void sendQuotaAlert(AccountVO account, QuotaBalanceVO balance, QuotaConfig.QuotaEmailTemplateTypes emailType) {
+    private void sendQuotaAlert(AccountVO account, BigDecimal balance, QuotaConfig.QuotaEmailTemplateTypes emailType) {
         sendQuotaAlert(new DeferredQuotaEmail(account, balance, emailType));
     }
 
     private void sendQuotaAlert(DeferredQuotaEmail emailToBeSent) {
         final AccountVO account = emailToBeSent.getAccount();
-        final QuotaBalanceVO balance = emailToBeSent.getQuotaBalance();
+        final BigDecimal balance = emailToBeSent.getQuotaBalance();
         final QuotaConfig.QuotaEmailTemplateTypes emailType = emailToBeSent.getEmailTemplateType();
 
         final List<QuotaEmailTemplatesVO> emailTemplates = _quotaEmailTemplateDao.listAllQuotaEmailTemplates(emailType.toString());
@@ -476,7 +474,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             optionMap.put("accountUsers", userNames);
             optionMap.put("domainName", accountDomain.getName());
             optionMap.put("domainID", accountDomain.getUuid());
-            optionMap.put("quotaBalance", QuotaConfig.QuotaCurrencySymbol.value() + " " + balance.getCreditBalance().toString());
+            optionMap.put("quotaBalance", QuotaConfig.QuotaCurrencySymbol.value() + " " + balance.toString());
 
             final StrSubstitutor templateEngine = new StrSubstitutor(optionMap);
             final String subject = templateEngine.replace(emailTemplate.getTemplateSubject());
@@ -493,10 +491,10 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
 
     class DeferredQuotaEmail {
         AccountVO account;
-        QuotaBalanceVO quotaBalance;
+        BigDecimal quotaBalance;
         QuotaConfig.QuotaEmailTemplateTypes emailTemplateType;
 
-        public DeferredQuotaEmail(AccountVO account, QuotaBalanceVO quotaBalance, QuotaConfig.QuotaEmailTemplateTypes emailTemplateType) {
+        public DeferredQuotaEmail(AccountVO account, BigDecimal quotaBalance, QuotaConfig.QuotaEmailTemplateTypes emailTemplateType) {
             this.account = account;
             this.quotaBalance = quotaBalance;
             this.emailTemplateType = emailTemplateType;
@@ -506,7 +504,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             return account;
         }
 
-        public QuotaBalanceVO getQuotaBalance() {
+        public BigDecimal getQuotaBalance() {
             return quotaBalance;
         }
 
