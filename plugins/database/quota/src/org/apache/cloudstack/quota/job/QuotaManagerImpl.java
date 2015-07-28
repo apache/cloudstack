@@ -24,6 +24,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
+import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
@@ -278,7 +279,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             if (accountBalanceVO != null && accountBalanceVO.getCreditBalance() != null) {
                 BigDecimal accountBalance = accountBalanceVO.getCreditBalance();
                 if (accountBalance.compareTo(zeroBalance) <= 0) {
-                    if (lockAccountEnforcement) {
+                    if (lockAccountEnforcement && account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                         try {
                             _regionMgr.disableAccount(account.getAccountName(), account.getDomainId(), account.getId(), true);
                         } catch (ResourceUnavailableException e) {
