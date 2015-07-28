@@ -307,10 +307,11 @@
                     },
                     error: function(XMLHttpRequest) {
                         var errorMsg = parseXMLHttpResponse(XMLHttpRequest);
-                        if (errorMsg.length == 0 && XMLHttpRequest.status == 0)
+                        if (errorMsg.length == 0 && XMLHttpRequest.status == 0) {
                             errorMsg = dictionary['error.unable.to.reach.management.server'];
-                        else
+                        } else if (errorMsg.indexOf('Failed to authenticate') === 0) {
                             errorMsg = _l('error.invalid.username.password'); //override error message
+                        }
                         args.response.error(errorMsg);
                     },
                     beforeSend: function(XMLHttpResponse) {
