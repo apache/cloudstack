@@ -65,7 +65,7 @@ function install_packages() {
     xl2tpd bcrelay ppp ipsec-tools tdb-tools \
     openswan=1:2.6.37-3 \
     xenstore-utils libxenstore3.0 \
-    conntrackd ipvsadm libnetfilter-conntrack3 libnl1 \
+    conntrackd ipvsadm libnetfilter-conntrack3 libnl-3-200 libnl-genl-3-200 \
     ipcalc \
     openjdk-7-jre-headless \
     iptables-persistent \
