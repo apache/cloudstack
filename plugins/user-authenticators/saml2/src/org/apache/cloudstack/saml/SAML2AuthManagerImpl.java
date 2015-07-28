@@ -104,6 +104,10 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
     private int _refreshInterval = SAMLPluginConstants.SAML_REFRESH_INTERVAL;
     private AbstractReloadingMetadataProvider _idpMetaDataProvider;
 
+    public String getSAMLIdentityProviderMetadataURL(){
+        return SAMLIdentityProviderMetadataURL.value();
+    }
+
     @Inject
     private KeystoreDao _ksDao;
 
@@ -119,12 +123,12 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
     @Override
     public boolean start() {
         if (isSAMLPluginEnabled()) {
-            setup();
             s_logger.info("SAML auth plugin loaded");
+            return setup();
         } else {
             s_logger.info("SAML auth plugin not enabled so not loading");
+            return super.start();
         }
-        return super.start();
     }
 
     @Override
@@ -135,7 +139,7 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
         return super.stop();
     }
 
-    private boolean initSP() {
+    protected boolean initSP() {
         KeystoreVO keyStoreVO = _ksDao.findByName(SAMLPluginConstants.SAMLSP_KEYPAIR);
         if (keyStoreVO == null) {
             try {
@@ -338,6 +342,7 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
                 return;
             }
             s_logger.debug("Starting SAML IDP Metadata Refresh Task");
+
             Map <String, SAMLProviderMetadata> metadataMap = new HashMap<String, SAMLProviderMetadata>();
             try {
                 discoverAndAddIdp(_idpMetaDataProvider.getMetadata(), metadataMap);
@@ -358,7 +363,7 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
         }
         _timer = new Timer();
         final HttpClient client = new HttpClient();
-        final String idpMetaDataUrl = SAMLIdentityProviderMetadataURL.value();
+        final String idpMetaDataUrl = getSAMLIdentityProviderMetadataURL();
         if (SAMLTimeout.value() != null && SAMLTimeout.value() > SAMLPluginConstants.SAML_REFRESH_INTERVAL) {
             _refreshInterval = SAMLTimeout.value();
         }
@@ -368,21 +373,31 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
                 _idpMetaDataProvider = new HTTPMetadataProvider(_timer, client, idpMetaDataUrl);
             } else {
                 File metadataFile = PropertiesUtil.findConfigFile(idpMetaDataUrl);
-                s_logger.debug("Provided Metadata is not a URL, trying to read metadata file from local path: " + metadataFile.getAbsolutePath());
-                _idpMetaDataProvider = new FilesystemMetadataProvider(_timer, metadataFile);
+                if (metadataFile == null) {
+                    s_logger.error("Provided Metadata is not a URL, Unable to locate metadata file from local path: " + idpMetaDataUrl);
+                    return false;
+                }
+                else{
+                    s_logger.debug("Provided Metadata is not a URL, trying to read metadata file from local path: " + metadataFile.getAbsolutePath());
+                    _idpMetaDataProvider = new FilesystemMetadataProvider(_timer, metadataFile);
+                }
             }
             _idpMetaDataProvider.setRequireValidMetadata(true);
             _idpMetaDataProvider.setParserPool(new BasicParserPool());
             _idpMetaDataProvider.initialize();
             _timer.scheduleAtFixedRate(new MetadataRefreshTask(), 0, _refreshInterval * 1000);
+
         } catch (MetadataProviderException e) {
             s_logger.error("Unable to read SAML2 IDP MetaData URL, error:" + e.getMessage());
             s_logger.error("SAML2 Authentication may be unavailable");
+            return false;
         } catch (ConfigurationException | FactoryConfigurationError e) {
             s_logger.error("OpenSAML bootstrapping failed: error: " + e.getMessage());
+            return false;
         } catch (NullPointerException e) {
             s_logger.error("Unable to setup SAML Auth Plugin due to NullPointerException" +
                     " please check the SAML global settings: " + e.getMessage());
+            return false;
         }
         return true;
     }
