@@ -277,14 +277,27 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         }
         TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
         final AccountVO account = _accountDao.findById(accountId);
-        if ((_quotaBalanceDao.lastQuotaBalance(accountId, domainId, new Date()).compareTo(new BigDecimal(QuotaConfig.QuotaLimitCritical.value())) > 0)
-                && (account.getState() == Account.State.locked)) {
-            try {
-                _regionMgr.enableAccount(account.getAccountName(), domainId, accountId);
-            } catch (Exception e) {
-                s_logger.error(String.format("Unable to unlock account %s after getting enough quota credits", account.getAccountName()));
+        final boolean lockAccountEnforcement = QuotaConfig.QuotaEnableEnforcement.value().equalsIgnoreCase("true");
+        if (lockAccountEnforcement) {
+            if (_quotaBalanceDao.lastQuotaBalance(accountId, domainId, new Date()).compareTo(new BigDecimal(0)) >= 0) {
+                if (account.getState() == Account.State.locked) {
+                    try {
+                        _regionMgr.enableAccount(account.getAccountName(), domainId, accountId);
+                    } catch (Exception e) {
+                        s_logger.error(String.format("Unable to unlock account %s after getting enough quota credits", account.getAccountName()));
+                    }
+                }
+            } else {
+                if (account.getState() == Account.State.enabled) {
+                    try {
+                        _regionMgr.disableAccount(account.getAccountName(), domainId, accountId, true);
+                    } catch (Exception e) {
+                        s_logger.error(String.format("Unable to lock account %s due to low balance", account.getAccountName()));
+                    }
+                }
             }
         }
+
         String creditor = String.valueOf(Account.ACCOUNT_ID_SYSTEM);
         User creditorUser = _userDao.getUser(updatedBy);
         if (creditorUser != null) {
