@@ -18,8 +18,6 @@ package org.apache.cloudstack.quota.dao;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -27,7 +25,6 @@ import java.util.List;
 import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
-import org.apache.cloudstack.api.response.QuotaBalanceResponse;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.log4j.Logger;
 
@@ -182,10 +179,9 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
         TransactionLegacy.open(opendb).close();
         return trimmedRecords;
     }
-    
 
     @Override
-    public BigDecimal createQuotaLastBalanceResponse(final Long accountId, final Long domainId, Date startDate) {
+    public BigDecimal lastQuotaBalance(final Long accountId, final Long domainId, Date startDate) {
         List<QuotaBalanceVO> quotaBalance = findQuotaBalance(accountId, domainId, startDate);
         if (quotaBalance.size() == 0) {
             new InvalidParameterValueException("There are no balance entries on or before the requested date.");

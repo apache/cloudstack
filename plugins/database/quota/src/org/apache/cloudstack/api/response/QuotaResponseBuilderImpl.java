@@ -84,7 +84,6 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         return response;
     }
 
-
     @Override
     public QuotaBalanceResponse createQuotaBalanceResponse(List<QuotaBalanceVO> quotaBalance, Date startDate, Date endDate) {
         if (quotaBalance.size() == 0) {
@@ -128,7 +127,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Override
     public QuotaStatementResponse createQuotaStatementResponse(List<QuotaUsageVO> quotaUsage) {
-        if (quotaUsage == null || quotaUsage.size()==0) {
+        if (quotaUsage == null || quotaUsage.size() == 0) {
             new InvalidParameterValueException("There is no uage data for period mentioned.");
         }
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
@@ -215,7 +214,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             throw new InvalidParameterValueException("Incorrect effective date for tariff " + effectiveDate + " is less than now " + now);
         }
         QuotaTypes quotaConstant = QuotaTypes.listQuotaTypes().get(quotaType);
-        if (quotaConstant==null) {
+        if (quotaConstant == null) {
             throw new InvalidParameterValueException("Quota type does not exists " + quotaType);
         }
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
@@ -317,7 +316,6 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         }
         return false;
     }
-    
 
     @Override
     public QuotaBalanceResponse createQuotaLastBalanceResponse(List<QuotaBalanceVO> quotaBalance, Date startDate) {
