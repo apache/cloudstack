@@ -30,6 +30,7 @@ import java.util.TimeZone;
 
 import javax.inject.Inject;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -505,7 +506,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
-            tagResponses.add(tagResponse);
+            CollectionUtils.addIgnoreNull(tagResponses,tagResponse);
         }
         snapshotResponse.setTags(tagResponses);
 
@@ -790,7 +791,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
-            tagResponses.add(tagResponse);
+            CollectionUtils.addIgnoreNull(tagResponses,tagResponse);
         }
         ipResponse.setTags(tagResponses);
 
@@ -832,7 +833,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
-            tagResponses.add(tagResponse);
+            CollectionUtils.addIgnoreNull(tagResponses,tagResponse);
         }
         lbResponse.setTags(tagResponses);
 
@@ -1119,7 +1120,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
-            tagResponses.add(tagResponse);
+            CollectionUtils.addIgnoreNull(tagResponses,tagResponse);
         }
         response.setTags(tagResponses);
 
@@ -2072,7 +2073,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
-            tagResponses.add(tagResponse);
+            CollectionUtils.addIgnoreNull(tagResponses,tagResponse);
         }
         response.setTags(tagResponses);
 
@@ -2158,7 +2159,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
-            tagResponses.add(tagResponse);
+            CollectionUtils.addIgnoreNull(tagResponses,tagResponse);
         }
         response.setTags(tagResponses);
 
@@ -2209,7 +2210,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
-            tagResponses.add(tagResponse);
+            CollectionUtils.addIgnoreNull(tagResponses,tagResponse);
         }
         response.setTags(tagResponses);
 
@@ -2645,6 +2646,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public ResourceTagResponse createResourceTagResponse(ResourceTag resourceTag, boolean keyValueOnly) {
         ResourceTagJoinVO rto = ApiDBUtils.newResourceTagView(resourceTag);
+        if(rto == null)
+            return null;
         return ApiDBUtils.newResourceTagResponse(rto, keyValueOnly);
     }
 
@@ -2753,7 +2756,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
-            tagResponses.add(tagResponse);
+            CollectionUtils.addIgnoreNull(tagResponses,tagResponse);
         }
         response.setTags(tagResponses);
         response.setObjectName("vpc");
@@ -2944,7 +2947,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
-            tagResponses.add(tagResponse);
+            CollectionUtils.addIgnoreNull(tagResponses,tagResponse);
         }
         response.setTags(tagResponses);
         response.setObjectName("staticroute");
@@ -3512,7 +3515,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
-            tagResponses.add(tagResponse);
+            CollectionUtils.addIgnoreNull(tagResponses,tagResponse);
         }
         lbResponse.setTags(tagResponses);
 
