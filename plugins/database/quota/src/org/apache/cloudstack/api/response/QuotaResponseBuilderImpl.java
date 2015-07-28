@@ -84,33 +84,6 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         return response;
     }
 
-    @Override
-    public QuotaBalanceResponse createQuotaLastBalanceResponse(List<QuotaBalanceVO> quotaBalance, Date startDate) {
-        if (quotaBalance.size() == 0) {
-            new InvalidParameterValueException("There are no balance entries on or before the requested date.");
-        }
-        Collections.sort(quotaBalance, new Comparator<QuotaBalanceVO>() {
-            public int compare(QuotaBalanceVO o1, QuotaBalanceVO o2) {
-                return o2.getUpdatedOn().compareTo(o1.getUpdatedOn()); // desc
-            }
-        });
-        QuotaBalanceResponse resp = new QuotaBalanceResponse();
-        BigDecimal lastCredits = new BigDecimal(0);
-        for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
-            QuotaBalanceVO entry = it.next();
-            s_logger.info("Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
-            if (lastCredits.compareTo(new BigDecimal(0)) == 0) {
-                resp.setStartQuota(entry.getCreditBalance());
-                resp.setStartDate(startDate);
-            }
-            lastCredits = lastCredits.add(entry.getCreditBalance());
-            resp.addCredits(entry);
-        }
-        resp.setEndQuota(lastCredits);
-        resp.setEndDate(_quotaService.computeAdjustedTime(new Date()));
-        resp.setObjectName("balance");
-        return resp;
-    }
 
     @Override
     public QuotaBalanceResponse createQuotaBalanceResponse(List<QuotaBalanceVO> quotaBalance, Date startDate, Date endDate) {
@@ -343,6 +316,35 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             return _quotaEmailTemplateDao.updateQuotaEmailTemplate(template);
         }
         return false;
+    }
+    
+
+    @Override
+    public QuotaBalanceResponse createQuotaLastBalanceResponse(List<QuotaBalanceVO> quotaBalance, Date startDate) {
+        if (quotaBalance.size() == 0) {
+            new InvalidParameterValueException("There are no balance entries on or before the requested date.");
+        }
+        Collections.sort(quotaBalance, new Comparator<QuotaBalanceVO>() {
+            public int compare(QuotaBalanceVO o1, QuotaBalanceVO o2) {
+                return o2.getUpdatedOn().compareTo(o1.getUpdatedOn()); // desc
+            }
+        });
+        QuotaBalanceResponse resp = new QuotaBalanceResponse();
+        BigDecimal lastCredits = new BigDecimal(0);
+        for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
+            QuotaBalanceVO entry = it.next();
+            s_logger.info("Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
+            if (lastCredits.compareTo(new BigDecimal(0)) == 0) {
+                resp.setStartQuota(entry.getCreditBalance());
+                resp.setStartDate(startDate);
+            }
+            lastCredits = lastCredits.add(entry.getCreditBalance());
+            resp.addCredits(entry);
+        }
+        resp.setEndQuota(lastCredits);
+        resp.setEndDate(_quotaService.computeAdjustedTime(new Date()));
+        resp.setObjectName("balance");
+        return resp;
     }
 
     @Override

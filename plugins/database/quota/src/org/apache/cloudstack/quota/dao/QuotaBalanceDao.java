@@ -16,6 +16,7 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -36,5 +37,7 @@ public interface QuotaBalanceDao extends GenericDao<QuotaBalanceVO, Long> {
     List<QuotaBalanceVO> findQuotaBalance(Long accountId, Long domainId, Date startDate, Date endDate);
 
     List<QuotaBalanceVO> findQuotaBalance(Long accountId, Long domainId, Date startDate);
+
+    BigDecimal createQuotaLastBalanceResponse(Long accountId, Long domainId, Date startDate);
 
 }
