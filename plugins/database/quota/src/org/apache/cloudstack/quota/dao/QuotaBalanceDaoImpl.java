@@ -181,6 +181,11 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
     }
 
     @Override
+    public BigDecimal lastQuotaBalance(final Long accountId, final Long domainId) {
+        return lastQuotaBalance(accountId, domainId, new Date());
+    }
+
+    @Override
     public BigDecimal lastQuotaBalance(final Long accountId, final Long domainId, Date startDate) {
         List<QuotaBalanceVO> quotaBalance = findQuotaBalance(accountId, domainId, startDate);
         if (quotaBalance.size() == 0) {
