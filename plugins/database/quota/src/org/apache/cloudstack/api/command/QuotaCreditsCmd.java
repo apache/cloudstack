@@ -87,7 +87,7 @@ public class QuotaCreditsCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, null, true);
+        Long accountId = _accountService.getActiveAccountByName(accountName, domainId).getAccountId();
         if (accountId == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "The account does not exists or has been removed/disabled");
         }

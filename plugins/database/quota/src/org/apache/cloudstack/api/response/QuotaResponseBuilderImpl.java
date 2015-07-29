@@ -109,9 +109,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         boolean consecutive=true;
         for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
             QuotaBalanceVO entry = it.next();
-            // s_logger.info("Date=" + entry.getUpdatedOn().toGMTString() +
-            // " balance=" + entry.getCreditBalance() + " credit=" +
-            // entry.getCreditsId());
+            s_logger.info("Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
             if (entry.getCreditsId() > 0) {
                 if (consecutive){
                     lastCredits = lastCredits.add(entry.getCreditBalance());
