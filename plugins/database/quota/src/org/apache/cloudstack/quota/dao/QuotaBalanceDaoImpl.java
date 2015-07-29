@@ -108,6 +108,7 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
     @SuppressWarnings("deprecation")
     @Override
     public List<QuotaBalanceVO> findQuotaBalance(final Long accountId, final Long domainId, final Date startDate, final Date endDate) {
+    // TODO account for series of credits around boundaries
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
 
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);

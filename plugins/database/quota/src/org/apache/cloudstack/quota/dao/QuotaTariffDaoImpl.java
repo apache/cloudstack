@@ -70,7 +70,9 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         // Switch back
         TransactionLegacy.open(opendb).close();
         if (result.size() > 0) {
-            //s_logger.info(onOrBeforeDate.toGMTString() + "quota type " + quotaType + " , effective Date=" + result.get(0).getEffectiveOn() + " val=" + result.get(0).getCurrencyValue());
+            // s_logger.info(onOrBeforeDate.toGMTString() + "quota type " +
+            // quotaType + " , effective Date=" + result.get(0).getEffectiveOn()
+            // + " val=" + result.get(0).getCurrencyValue());
             return result.get(0);
         } else {
             s_logger.info("Missing quota type " + quotaType);
@@ -92,8 +94,11 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
                 List<QuotaTariffVO> result = search(sc, filter);
                 if (result.size() > 0) {
                     tariffs.add(result.get(0));
-                    //s_logger.info(onOrBeforeDate.toGMTString() + "quota type " + resp.getDescription() + " , effective Date=" + result.get(0).getEffectiveOn() + " val="
-                            //+ result.get(0).getCurrencyValue());
+                    // s_logger.info(onOrBeforeDate.toGMTString() +
+                    // "quota type " + resp.getDescription() +
+                    // " , effective Date=" + result.get(0).getEffectiveOn() +
+                    // " val="
+                    // + result.get(0).getCurrencyValue());
                 }
             }
         } finally {
@@ -107,9 +112,15 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
     @Override
     public boolean updateQuotaTariff(QuotaTariffVO plan) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close(); // Switch to
-                                                                    // Usage DB
-        final boolean result = this.update(plan.getId(), plan);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB); // Switch
+                                                                                    // to
+        boolean result = false;
+        try {
+            // Usage DB
+            result = this.update(plan.getId(), plan);
+        } finally {
+            txn.close();
+        }
         TransactionLegacy.open(opendb).close(); // Switch back
         return result;
     }
@@ -117,10 +128,16 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
     @Override
     public QuotaTariffVO addQuotaTariff(QuotaTariffVO plan) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close(); // Switch to
-        // Usage DB
-        plan.setId(null);
-        final QuotaTariffVO result = this.persist(plan);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB); // Switch
+                                                                                    // to
+        QuotaTariffVO result = null;
+        try {
+            // Usage DB
+            plan.setId(null);
+            result = this.persist(plan);
+        } finally {
+            txn.close();
+        }
         TransactionLegacy.open(opendb).close(); // Switch back
         return result;
     }
