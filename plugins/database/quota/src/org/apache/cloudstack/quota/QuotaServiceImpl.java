@@ -174,7 +174,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         } else if (endDate.after(startOfNextDay(new Date()))) {
             throw new InvalidParameterValueException("Incorrect Date Range. End date:" + endDate + " should not be in future. ");
         } else if (startDate.before(endDate)) {
-            Date adjustedEndDate = startOfNextDay(endDate);
+            Date adjustedEndDate = computeAdjustedTime(startOfNextDay(endDate));
             s_logger.debug("Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
             List<QuotaBalanceVO> qbrecords = _quotaBalanceDao.findQuotaBalance(accountId, domainId, adjustedStartDate, adjustedEndDate);
             s_logger.info("Found records size=" + qbrecords.size());

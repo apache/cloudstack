@@ -112,7 +112,7 @@ public class QuotaBalanceCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, null, true);
+        Long accountId = _accountService.getActiveAccountByName(accountName, domainId).getAccountId();
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
