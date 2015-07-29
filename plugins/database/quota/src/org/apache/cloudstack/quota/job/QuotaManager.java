@@ -16,10 +16,15 @@
 //under the License.
 package org.apache.cloudstack.quota.job;
 
+import com.cloud.user.AccountVO;
 import com.cloud.utils.component.Manager;
+import org.apache.cloudstack.quota.constant.QuotaConfig;
+
+import java.math.BigDecimal;
 
 public interface QuotaManager extends Manager {
 
     boolean calculateQuotaUsage();
+    void sendQuotaAlert(AccountVO account, BigDecimal balance, QuotaConfig.QuotaEmailTemplateTypes emailType);
 
 }

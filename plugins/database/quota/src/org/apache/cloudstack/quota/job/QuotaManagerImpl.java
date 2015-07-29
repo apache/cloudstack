@@ -442,7 +442,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         return quota_usage;
     }
 
-    private void sendQuotaAlert(AccountVO account, BigDecimal balance, QuotaConfig.QuotaEmailTemplateTypes emailType) {
+    public void sendQuotaAlert(AccountVO account, BigDecimal balance, QuotaConfig.QuotaEmailTemplateTypes emailType) {
         sendQuotaAlert(new DeferredQuotaEmail(account, balance, emailType));
     }
 

@@ -587,7 +587,7 @@ var g_quotaCurrency = '';
 
                                   var emailTemplateForm = $('<div class="quota-email-form">');
                                   var templateDropdown = $('<div class="quota-template-dropdown">');
-                                  var templateOptions = $('<select><option value="QUOTA_LOW">Template for accounts with low quota balance</option><option value="QUOTA_EMPTY">Template for accounts with no quota balance</option></select>');
+                                  var templateOptions = $('<select><option value="QUOTA_LOW">Template for accounts with low quota balance</option><option value="QUOTA_EMPTY">Template for accounts with no quota balance that will be locked</option><option value="QUOTA_UNLOCK_ACCOUNT">Template for accounts with enough credits getting unlocked</option></select>');
                                   templateOptions.appendTo($('<p>Select Template: </p>').appendTo(templateDropdown));
                                   $('<br>').appendTo(templateDropdown);
 

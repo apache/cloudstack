@@ -128,8 +128,9 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_email_templates` (
 
 LOCK TABLES `cloud_usage`.`quota_email_templates` WRITE;
 INSERT INTO `cloud_usage`.`quota_email_templates` (`template_name`, `template_subject`, `template_body`) VALUES
- ('QUOTA_LOW', 'Quota Usage Threshold crossed ${accountName}', 'Your account "${accountName}" in the domain "${domainName}" has reached usage threshold, the current balance is ${quotaCurrency} ${quotaValue}'),
- ('QUOTA_EMPTY', 'Quota Exhausted, account ${accountName} is locked now', 'Your account "${accountName}" in the domain "${domainName}" has exhausted allocated quota due to which your account has locked now, please contact the administrator');
+ ('QUOTA_LOW', 'Quota Usage Threshold crossed by your account ${accountName}', 'Your account ${accountName} in the domain ${domainName} has reached quota usage threshold, your current quota balance is ${quotaBalance}.'),
+ ('QUOTA_EMPTY', 'Quota Exhausted, account ${accountName} is locked now', 'Your account ${accountName} in the domain ${domainName} has exhausted allocated quota and has been locked now, please contact the administrator.'),
+ ('QUOTA_UNLOCK_ACCOUNT', 'Quota credits added, account ${accountName} is unlocked now', 'Your account ${accountName} in the domain ${domainName} has enough quota credits now with the current balance of ${quotaBalance}. Your account has been unlocked now.');
 UNLOCK TABLES;
 
 CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_sent_emails` (
