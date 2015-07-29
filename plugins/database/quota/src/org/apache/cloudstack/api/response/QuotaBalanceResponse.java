@@ -124,7 +124,7 @@ public class QuotaBalanceResponse extends BaseResponse {
         QuotaCreditsResponse cr = new QuotaCreditsResponse();
         cr.setCredits(credit.getCreditBalance());
         cr.setUpdatedOn(credit.getUpdatedOn());
-        credits.add(cr);
+        credits.add(0, cr);
     }
 
     public Date getStartDate() {

@@ -171,11 +171,10 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
             } else {
                 return qbrecords;
             }
-        } if (endDate.after(new Date())) {
+        } else if (endDate.after(startOfNextDay(new Date()))) {
             throw new InvalidParameterValueException("Incorrect Date Range. End date:" + endDate + " should not be in future. ");
-        }
-        else if (startDate.before(endDate)) {
-            Date adjustedEndDate = computeAdjustedTime(endDate);
+        } else if (startDate.before(endDate)) {
+            Date adjustedEndDate = startOfNextDay(endDate);
             s_logger.debug("Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
             List<QuotaBalanceVO> qbrecords = _quotaBalanceDao.findQuotaBalance(accountId, domainId, adjustedStartDate, adjustedEndDate);
             s_logger.info("Found records size=" + qbrecords.size());
@@ -187,6 +186,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         } else {
             throw new InvalidParameterValueException("Incorrect Date Range. Start date: " + startDate + " is after end date:" + endDate);
         }
+
     }
 
     @Override
@@ -215,18 +215,16 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         }
         TransactionLegacy.open(opendb).close();
 
+        endDate = startOfNextDay(endDate);
         if (startDate.after(endDate)) {
             throw new InvalidParameterValueException("Incorrect Date Range. Start date: " + startDate + " is after end date:" + endDate);
         }
-        if (endDate.after(new Date())) {
+        if (endDate.after(startOfNextDay(new Date()))) {
             throw new InvalidParameterValueException("Incorrect Date Range. End date:" + endDate + " should not be in future. ");
         }
 
-        Date adjustedStartDate = computeAdjustedTime(startDate);
-        Date adjustedEndDate = computeAdjustedTime(endDate);
-
-        s_logger.debug("Getting quota records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
-        return _quotaUsageDao.findQuotaUsage(accountId, domainId, usageType, adjustedStartDate, adjustedEndDate);
+        s_logger.debug("Getting quota records for account: " + accountId + ", domainId: " + domainId + ", between " + startDate + " and " + endDate);
+        return _quotaUsageDao.findQuotaUsage(accountId, domainId, usageType, startDate, endDate);
     }
 
     @Override
@@ -252,6 +250,24 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         calTS.add(Calendar.MILLISECOND, -1 * timezoneOffset);
 
         return calTS.getTime();
+    }
+
+    @Override
+    public Date startOfNextDay(Date dt) {
+        Calendar c = Calendar.getInstance();
+        c.setTime(dt);
+        c.add(Calendar.DATE, 1);
+        dt = c.getTime();
+        return dt;
+    }
+
+    @Override
+    public Date startOfNextDay() {
+        Calendar c = Calendar.getInstance();
+        c.setTime(new Date());
+        c.add(Calendar.DATE, 1);
+        Date dt = c.getTime();
+        return dt;
     }
 
 }

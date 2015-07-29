@@ -104,31 +104,31 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         }
         Collections.sort(quotaBalance, new Comparator<QuotaBalanceVO>() {
             public int compare(QuotaBalanceVO o1, QuotaBalanceVO o2) {
-                return o1.getUpdatedOn().compareTo(o2.getUpdatedOn()); // asc
+                return o2.getUpdatedOn().compareTo(o1.getUpdatedOn()); // desc
             }
         });
 
         QuotaBalanceResponse resp = new QuotaBalanceResponse();
         BigDecimal lastCredits = new BigDecimal(0);
-        boolean consecutive=true;
+        boolean consecutive = true;
         for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
             QuotaBalanceVO entry = it.next();
-            s_logger.info("Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
+            s_logger.info("createQuotaBalanceResponse: Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
             if (entry.getCreditsId() > 0) {
-                if (consecutive){
+                if (consecutive) {
                     lastCredits = lastCredits.add(entry.getCreditBalance());
                 }
                 resp.addCredits(entry);
                 it.remove();
-            }
-            else {
-                consecutive= false;
+            } else {
+                consecutive = false;
             }
         }
 
         if (quotaBalance.size() > 0) {
-            QuotaBalanceVO startItem = quotaBalance.get(0);
-            QuotaBalanceVO endItem = quotaBalance.get(quotaBalance.size() - 1);
+            // order is desc last item is the start item
+            QuotaBalanceVO startItem = quotaBalance.get(quotaBalance.size() - 1);
+            QuotaBalanceVO endItem = quotaBalance.get(0);
             resp.setStartDate(startDate);
             resp.setStartQuota(startItem.getCreditBalance());
             resp.setEndDate(endDate);
@@ -216,7 +216,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
                 result.add(tariffPlan);
             }
         } else {
-            result = _quotaTariffDao.listAllTariffPlans(now);
+            result = _quotaTariffDao.listAllTariffPlans(_quotaService.startOfNextDay(now));
         }
         return result;
     }
@@ -287,7 +287,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
         final AccountVO account = _accountDao.findById(accountId);
         final boolean lockAccountEnforcement = QuotaConfig.QuotaEnableEnforcement.value().equalsIgnoreCase("true");
-        final BigDecimal currentAccountBalance = _quotaBalanceDao.lastQuotaBalance(accountId, domainId, new Date());
+        final BigDecimal currentAccountBalance = _quotaBalanceDao.lastQuotaBalance(accountId, domainId, _quotaService.startOfNextDay());
         if (lockAccountEnforcement && (currentAccountBalance.compareTo(new BigDecimal(0)) >= 0)) {
             if (account.getState() == Account.State.locked) {
                 try {
@@ -372,7 +372,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             resp.addCredits(entry);
         }
         resp.setEndQuota(lastCredits);
-        resp.setEndDate(_quotaService.computeAdjustedTime(new Date()));
+        resp.setEndDate(_quotaService.computeAdjustedTime(_quotaService.startOfNextDay()));
         resp.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
         resp.setObjectName("balance");
         return resp;

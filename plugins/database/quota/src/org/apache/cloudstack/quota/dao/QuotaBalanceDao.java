@@ -40,6 +40,4 @@ public interface QuotaBalanceDao extends GenericDao<QuotaBalanceVO, Long> {
 
     BigDecimal lastQuotaBalance(Long accountId, Long domainId, Date startDate);
 
-    BigDecimal lastQuotaBalance(Long accountId, Long domainId);
-
 }

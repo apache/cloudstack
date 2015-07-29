@@ -163,7 +163,7 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
             // get records before startDate to find start balance
             for (Iterator<QuotaBalanceVO> it = quotaUsageRecords.iterator(); it.hasNext();) {
                 QuotaBalanceVO entry = it.next();
-                s_logger.info("Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
+                s_logger.info("findQuotaBalance Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
                 if (entry.getCreditsId() > 0) {
                     trimmedRecords.add(entry);
                 } else {
@@ -182,11 +182,6 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
     }
 
     @Override
-    public BigDecimal lastQuotaBalance(final Long accountId, final Long domainId) {
-        return lastQuotaBalance(accountId, domainId, new Date());
-    }
-
-    @Override
     public BigDecimal lastQuotaBalance(final Long accountId, final Long domainId, Date startDate) {
         List<QuotaBalanceVO> quotaBalance = findQuotaBalance(accountId, domainId, startDate);
         if (quotaBalance.size() == 0) {
@@ -195,7 +190,7 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
         BigDecimal finalBalance = new BigDecimal(0);
         for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
             QuotaBalanceVO entry = it.next();
-            s_logger.info("Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
+            s_logger.info("lastQuotaBalance Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
             finalBalance.add(entry.getCreditBalance());
         }
         return finalBalance;

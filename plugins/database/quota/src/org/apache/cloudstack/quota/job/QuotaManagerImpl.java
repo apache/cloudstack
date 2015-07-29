@@ -39,6 +39,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.sun.mail.smtp.SMTPMessage;
 import com.sun.mail.smtp.SMTPSSLTransport;
 import com.sun.mail.smtp.SMTPTransport;
+
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
@@ -66,10 +67,12 @@ import javax.mail.Session;
 import javax.mail.URLName;
 import javax.mail.internet.InternetAddress;
 import javax.naming.ConfigurationException;
+
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -268,8 +271,8 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     }
 
     private void checkAndSendQuotaAlertEmails() {
-        List <DeferredQuotaEmail> deferredQuotaEmailList = new ArrayList<DeferredQuotaEmail>();
-        final Date currentDate = new Date();
+        List<DeferredQuotaEmail> deferredQuotaEmailList = new ArrayList<DeferredQuotaEmail>();
+        final Date currentDate = startOfNextDay();
         final BigDecimal zeroBalance = new BigDecimal(0);
         final BigDecimal thresholdBalance = new BigDecimal(QuotaConfig.QuotaLimitCritical.value());
         final boolean lockAccountEnforcement = QuotaConfig.QuotaEnableEnforcement.value().equalsIgnoreCase("true");
@@ -291,7 +294,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             }
         }
 
-        for (DeferredQuotaEmail emailToBeSent: deferredQuotaEmailList) {
+        for (DeferredQuotaEmail emailToBeSent : deferredQuotaEmailList) {
             s_logger.debug("Attempting to send quota alert email to users of account: " + emailToBeSent.getAccount().getAccountName());
             sendQuotaAlert(emailToBeSent);
         }
@@ -460,7 +463,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
 
             String userNames = "";
             final List<String> emailRecipients = new ArrayList<String>();
-            for (UserVO user: usersInAccount) {
+            for (UserVO user : usersInAccount) {
                 userNames += String.format("%s <%s>,", user.getUsername(), user.getEmail());
                 emailRecipients.add(user.getEmail());
             }
@@ -482,7 +485,8 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             try {
                 _emailQuotaAlert.sendQuotaAlert(emailRecipients, subject, body);
             } catch (Exception e) {
-                s_logger.error(String.format("Unable to send quota alert email (subject=%s; body=%s) to account %s (%s) recipients (%s) due to error (%s)", subject, body, account.getAccountName(), account.getUuid(), emailRecipients, e));
+                s_logger.error(String.format("Unable to send quota alert email (subject=%s; body=%s) to account %s (%s) recipients (%s) due to error (%s)", subject, body, account.getAccountName(),
+                        account.getUuid(), emailRecipients, e));
             }
         } else {
             s_logger.error(String.format("No quota email template found for type %s, cannot send quota alert email to account %s(%s)", emailType, account.getAccountName(), account.getUuid()));
@@ -568,7 +572,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
                 msg.setSender(new InternetAddress(_emailSender, _emailSender));
                 msg.setFrom(new InternetAddress(_emailSender, _emailSender));
 
-                for (String email: emails) {
+                for (String email : emails) {
                     if (email != null && !email.isEmpty()) {
                         try {
                             InternetAddress address = new InternetAddress(email, email);
@@ -597,6 +601,14 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
                 throw new CloudRuntimeException("Unable to send quota alert email");
             }
         }
+    }
+
+    public Date startOfNextDay() {
+        Calendar c = Calendar.getInstance();
+        c.setTime(new Date());
+        c.add(Calendar.DATE, 1);
+        Date dt = c.getTime();
+        return dt;
     }
 
 }
