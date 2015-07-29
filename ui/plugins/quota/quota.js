@@ -585,7 +585,7 @@ var g_quotaCurrency = '';
 
                                   var emailTemplateForm = $('<div class="quota-email-form">');
                                   var templateDropdown = $('<div class="quota-template-dropdown">');
-                                  var templateOptions = $('<select><option value="QUOTA_LOW">Template for accounts with low quota balance</option><option value="QUOTA_EMPTY">Template for accounts with no quota balance that will be locked</option><option value="QUOTA_UNLOCK_ACCOUNT">Template for accounts with enough credits getting unlocked</option></select>');
+                                  var templateOptions = $('<select><option value="QUOTA_LOW">Template for accounts with low quota balance</option><option value="QUOTA_EMPTY">Template for accounts with no quota balance that will be locked</option><option value="QUOTA_UNLOCK_ACCOUNT">Template for accounts with enough credits getting unlocked</option><option value="QUOTA_STATEMENT">Template for quota statement</option><</select>');
                                   templateOptions.appendTo($('<p>Select Template: </p>').appendTo(templateDropdown));
                                   $('<br>').appendTo(templateDropdown);
 
@@ -645,7 +645,7 @@ var g_quotaCurrency = '';
                                   templateBodyTextArea.appendTo(emailTemplateForm);
                                   saveTemplateButton.appendTo(emailTemplateForm);
                                   $('<hr>').appendTo(emailTemplateForm);
-                                  $('<p>').html("These options can be used in template as ${variable}: quotaBalance, accountName, accountID, accountUsers, domainName, domainID").appendTo(emailTemplateForm);
+                                  $('<p>').html("These options can be used in template as ${variable}: quotaBalance, quotaUsage, accountName, accountID, accountUsers, domainName, domainID").appendTo(emailTemplateForm);
 
                                   emailTemplateForm.appendTo(manageTemplatesView);
                                   manageTemplatesView.appendTo($node);

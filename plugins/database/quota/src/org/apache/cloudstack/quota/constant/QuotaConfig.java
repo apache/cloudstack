@@ -69,6 +69,6 @@ public interface QuotaConfig  {
             "Sender of quota alert email (will be in the From header of the email)", true);
 
     enum QuotaEmailTemplateTypes {
-        QUOTA_LOW, QUOTA_EMPTY, QUOTA_UNLOCK_ACCOUNT
+        QUOTA_LOW, QUOTA_EMPTY, QUOTA_UNLOCK_ACCOUNT, QUOTA_STATEMENT
     }
 }
