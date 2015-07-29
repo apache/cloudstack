@@ -163,11 +163,9 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             snapshot.id,
             "Check resource id in list resources call"
         )
-        self.assertNotEqual(
-            snapshots[0].zoneid,
-            None,
-            "Check zone id is returned in list snapshots response"
-        )
+
+        self.assertIsNotNone(snapshots[0].zoneid,
+                             "Zone id is not none in listSnapshots")
         self.assertEqual(
             snapshots[0].zoneid,
             self.zone.id,
