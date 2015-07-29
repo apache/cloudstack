@@ -26,18 +26,6 @@ var g_quotaCurrency = '';
               return true;
           },
           show: function() {
-            $.ajax({
-                url: createURL('listConfigurations'),
-                data: {
-                    name: 'quota.currency.symbol'
-                },
-                success: function(json) {
-                    if (json.hasOwnProperty('listconfigurationsresponse') && json.listconfigurationsresponse.hasOwnProperty('configuration')) {
-                        g_quotaCurrency = json.listconfigurationsresponse.configuration[0].value + ' ';
-                    }
-                }
-            });
-
             var $quotaView = $('<div class="quota-container detail-view ui-tabs ui-widget ui-widget-content ui-corner-all">');
             var $toolbar = $('<div class="toolbar"><div class="section-switcher reduced-hide"><div class="section-select"><label>Quota Management</label></div></div></div>');
             var $tabs = $('<ul class="ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all">');
@@ -112,6 +100,9 @@ var g_quotaCurrency = '';
                                               var statement = json.quotastatementresponse.statement;
                                               var totalQuota = statement.totalquota;
                                               var quotaUsage = statement.quotausage;
+                                              if (statement.currency) {
+                                                  g_quotaCurrency = statement.currency;
+                                              }
 
                                               generatedStatement.empty();
                                               $("<br><hr>").appendTo(generatedStatement);
@@ -175,6 +166,9 @@ var g_quotaCurrency = '';
                                               var startBalanceDate = statement.startdate;
                                               var endBalance = statement.endquota;
                                               var endBalanceDate = statement.enddate;
+                                              if (statement.currency) {
+                                                  g_quotaCurrency = statement.currency;
+                                              }
 
                                               generatedBalanceStatement.empty();
                                               $("<br>").appendTo(generatedBalanceStatement);
@@ -356,6 +350,10 @@ var g_quotaCurrency = '';
                                           data: {startdate: startDate },
                                           success: function(json) {
                                               var items = json.quotatarifflistresponse.quotatariff;
+                                              if (items.constructor === Array && items[0].currency) {
+                                                  g_quotaCurrency = items[0].currency;
+                                              }
+
                                               var tariffTableBody = $('<tbody>');
 
                                               for (var i = 0; i < items.length; i++) {

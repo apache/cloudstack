@@ -193,12 +193,12 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             prev = quotaRecord;
             usage = usage.add(quotaRecord.getQuotaUsed());
         }
+        TransactionLegacy.open(opendb).close();
 
         statement.setLineItem(items);
         statement.setTotalQuota(totalUsage);
         statement.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
         statement.setObjectName("statement");
-        TransactionLegacy.open(opendb).close();
         return statement;
     }
 
