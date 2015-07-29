@@ -63,6 +63,10 @@ public class QuotaBalanceResponse extends BaseResponse {
     @Param(description = "end date")
     private Date endDate = null;
 
+    @SerializedName("currency")
+    @Param(description = "currency")
+    private String currency;
+
     public QuotaBalanceResponse() {
         super();
         credits = new ArrayList<QuotaCreditsResponse>();
@@ -139,4 +143,11 @@ public class QuotaBalanceResponse extends BaseResponse {
         this.endDate = endDate;
     }
 
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
 }

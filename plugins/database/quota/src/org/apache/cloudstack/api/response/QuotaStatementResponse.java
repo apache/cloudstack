@@ -55,6 +55,10 @@ public class QuotaStatementResponse  extends BaseResponse {
     @Param(description = "end date")
     private Date endDate = null;
 
+    @SerializedName("currency")
+    @Param(description = "currency")
+    private String currency;
+
     public QuotaStatementResponse() {
         super();
     }
@@ -114,5 +118,13 @@ public class QuotaStatementResponse  extends BaseResponse {
 
     public void setTotalQuota(BigDecimal totalQuota) {
         this.totalQuota = totalQuota.setScale(2, RoundingMode.HALF_EVEN);
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
     }
 }

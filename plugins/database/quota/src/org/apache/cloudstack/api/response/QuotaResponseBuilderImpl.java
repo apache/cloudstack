@@ -93,6 +93,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         response.setTariffValue(tariff.getCurrencyValue());
         response.setEffectiveOn(tariff.getEffectiveOn());
         response.setDescription(tariff.getDescription());
+        response.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
         return response;
     }
 
@@ -136,7 +137,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             resp.setStartQuota(new BigDecimal(0));
             resp.setEndQuota(new BigDecimal(0));
         }
-
+        resp.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
         resp.setObjectName("balance");
         return resp;
     }
@@ -195,6 +196,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
         statement.setLineItem(items);
         statement.setTotalQuota(totalUsage);
+        statement.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
         statement.setObjectName("statement");
         TransactionLegacy.open(opendb).close();
         return statement;
@@ -371,6 +373,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         }
         resp.setEndQuota(lastCredits);
         resp.setEndDate(_quotaService.computeAdjustedTime(new Date()));
+        resp.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
         resp.setObjectName("balance");
         return resp;
     }

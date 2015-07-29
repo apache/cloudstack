@@ -54,6 +54,10 @@ public class QuotaTariffResponse extends BaseResponse {
     @Param(description = "description")
     private String description;
 
+    @SerializedName("currency")
+    @Param(description = "currency")
+    private String currency;
+
     public QuotaTariffResponse() {
         super();
         this.setObjectName("quotatariff");
@@ -120,4 +124,11 @@ public class QuotaTariffResponse extends BaseResponse {
         this.effectiveOn = effectiveOn;
     }
 
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
 }
