@@ -98,7 +98,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
 
     public NiciraNvpGuestNetworkGuru() {
         super();
-        _isolationMethods = new IsolationMethod[] {IsolationMethod.STT};
+        _isolationMethods = new IsolationMethod[] {IsolationMethod.STT, IsolationMethod.VXLAN};
     }
 
     @Override
@@ -115,7 +115,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public Network design(final NetworkOffering offering, final DeploymentPlan plan, final Network userSpecified, final Account owner) {
-        // Check of the isolation type of the related physical network is STT
+        // Check of the isolation type of the related physical network is supported
         PhysicalNetworkVO physnet = physicalNetworkDao.findById(plan.getPhysicalNetworkId());
         DataCenter dc = _dcDao.findById(plan.getDataCenterId());
         if (!canHandle(offering, dc.getNetworkType(), physnet)) {
@@ -130,7 +130,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
         }
         s_logger.debug("Nicira Nvp " + devices.get(0).getUuid() + " found on physical network " + physnet.getId());
 
-        s_logger.debug("Physical isolation type is STT, asking GuestNetworkGuru to design this network");
+        s_logger.debug("Physical isolation type is supported, asking GuestNetworkGuru to design this network");
         NetworkVO networkObject = (NetworkVO)super.design(offering, plan, userSpecified, owner);
         if (networkObject == null) {
             return null;
