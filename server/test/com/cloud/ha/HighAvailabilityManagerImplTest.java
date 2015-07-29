@@ -16,8 +16,13 @@
 // under the License.
 package com.cloud.ha;
 
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.inject.Inject;
 
@@ -41,6 +46,7 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.ha.dao.HighAvailabilityDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
@@ -126,5 +132,32 @@ public class HighAvailabilityManagerImplTest {
         Mockito.when(_podDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(HostPodVO.class));
         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(DataCenterVO.class));
         highAvailabilityManager.scheduleRestartForVmsOnHost(hostVO, true);
+    }
+
+    @Test
+    public void investigateHostStatusSuccess() {
+        Mockito.when(_hostDao.findById(Mockito.anyLong())).thenReturn(hostVO);
+        // Set the list of investigators, CheckOnAgentInvestigator suffices for now
+        Investigator investigator = Mockito.mock(CheckOnAgentInvestigator.class);
+        List<Investigator> investigators = new ArrayList<Investigator>();
+        investigators.add(investigator);
+        highAvailabilityManager.setInvestigators(investigators);
+        // Mock isAgentAlive to return host status as Down
+        Mockito.when(investigator.isAgentAlive(hostVO)).thenReturn(Status.Down);
+
+        assertTrue(highAvailabilityManager.investigate(1l) == Status.Down);
+    }
+
+    @Test
+    public void investigateHostStatusFailure() {
+        Mockito.when(_hostDao.findById(Mockito.anyLong())).thenReturn(hostVO);
+        // Set the list of investigators, CheckOnAgentInvestigator suffices for now
+        // Also no need to mock isAgentAlive() as actual implementation returns null
+        Investigator investigator = Mockito.mock(CheckOnAgentInvestigator.class);
+        List<Investigator> investigators = new ArrayList<Investigator>();
+        investigators.add(investigator);
+        highAvailabilityManager.setInvestigators(investigators);
+
+        assertNull(highAvailabilityManager.investigate(1l));
     }
 }

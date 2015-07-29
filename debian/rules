@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 # -*- makefile -*-
-VERSION := $(shell mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -v "\[")
+VERSION := $(shell cat pom.xml |sed '22!d'| cut -d'>' -f2 |cut -d'<' -f1)
 PACKAGE = $(shell dh_listpackages|head -n 1|cut -d '-' -f 1)
 SYSCONFDIR = "/etc"
 DESTDIR = "debian/tmp"

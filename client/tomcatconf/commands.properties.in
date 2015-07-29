@@ -82,8 +82,8 @@ scaleVirtualMachine=15
 assignVirtualMachine=7
 migrateVirtualMachine=1
 migrateVirtualMachineWithVolume=1
-recoverVirtualMachine=7
-expungeVirtualMachine=7
+recoverVirtualMachine=15
+expungeVirtualMachine=15
 getVirtualMachineUserData=15
 
 #### snapshot commands

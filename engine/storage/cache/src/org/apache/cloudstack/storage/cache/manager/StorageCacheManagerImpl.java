@@ -20,10 +20,10 @@ package org.apache.cloudstack.storage.cache.manager;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Date;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -41,8 +41,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
@@ -52,6 +52,7 @@ import org.apache.cloudstack.storage.cache.allocator.StorageCacheAllocator;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 
+import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.configuration.Config;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.NumbersUtil;
@@ -61,8 +62,6 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
-
-import com.cloud.agent.api.to.DataObjectType;
 
 public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
     private static final Logger s_logger = Logger.getLogger(StorageCacheManagerImpl.class);
@@ -227,7 +226,6 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
         final Object lock;
         final DataObjectType type = data.getType();
         final String typeName;
-        final DataStoreRole role = store.getRole();
         final long storeId = store.getId();
         final long dataId = data.getId();
 

@@ -30,7 +30,6 @@ import java.util.Properties;
 
 import javax.annotation.PostConstruct;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.jasypt.encryption.pbe.config.SimpleStringPBEConfig;
@@ -83,15 +82,12 @@ public class EncryptionSecretKeyChecker {
             if(is == null) {  //This is means we are not able to load key file from the classpath.
               throw new CloudRuntimeException(s_keyFile + " File containing secret key not found in the classpath: ");
             }
-            BufferedReader in = null;
-            try {
-                in = new BufferedReader(new InputStreamReader(is));
+
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(is));) {
                 secretKey = in.readLine();
                 //Check for null or empty secret key
             } catch (IOException e) {
                 throw new CloudRuntimeException("Error while reading secret key from: " + s_keyFile, e);
-            } finally {
-                IOUtils.closeQuietly(in);
             }
 
             if (secretKey == null || secretKey.isEmpty()) {
@@ -104,30 +100,24 @@ public class EncryptionSecretKeyChecker {
                 throw new CloudRuntimeException("Environment variable " + s_envKey + " is not set or empty");
             }
         } else if (encryptionType.equals("web")) {
-            ServerSocket serverSocket = null;
             int port = 8097;
-            try {
-                serverSocket = new ServerSocket(port);
+            try (ServerSocket serverSocket = new ServerSocket(port);) {
+                s_logger.info("Waiting for admin to send secret key on port " + port);
+                try (
+                        Socket clientSocket = serverSocket.accept();
+                        PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+                        BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                    ) {
+                    String inputLine;
+                    if ((inputLine = in.readLine()) != null) {
+                        secretKey = inputLine;
+                    }
+                } catch (IOException e) {
+                    throw new CloudRuntimeException("Accept failed on " + port);
+                }
             } catch (IOException ioex) {
                 throw new CloudRuntimeException("Error initializing secret key reciever", ioex);
             }
-            s_logger.info("Waiting for admin to send secret key on port " + port);
-            Socket clientSocket = null;
-            try {
-                clientSocket = serverSocket.accept();
-            } catch (IOException e) {
-                throw new CloudRuntimeException("Accept failed on " + port);
-            }
-            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            String inputLine;
-            if ((inputLine = in.readLine()) != null) {
-                secretKey = inputLine;
-            }
-            out.close();
-            in.close();
-            clientSocket.close();
-            serverSocket.close();
         } else {
             throw new CloudRuntimeException("Invalid encryption type: " + encryptionType);
         }
