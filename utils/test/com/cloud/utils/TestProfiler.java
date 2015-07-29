@@ -111,6 +111,6 @@ public class TestProfiler extends Log4jEnabledTestCase {
 
         // We are measuring the elapsed time in 2 consecutive calls of System.nanoTime()
         // That's the same as 0.002 milliseconds or 2000 nanoseconds.
-        Assert.assertTrue("It took more than 2 microseconds between 2 consecutive calls to System.nanoTime().", nanoTime2 - nanoTime1 <= 2000);
+        Assert.assertTrue("Expected exactly 2 but it took more than 3 microseconds between 2 consecutive calls to System.nanoTime().", nanoTime2 - nanoTime1 <= 3000);
     }
 }
