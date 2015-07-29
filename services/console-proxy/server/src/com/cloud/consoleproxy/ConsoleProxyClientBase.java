@@ -260,18 +260,6 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
         if (s_logger.isTraceEnabled())
             s_logger.trace("Ajax client start, frame buffer w: " + width + ", " + height);
 
-        /*
-                int retry = 0;
-                tracker.initCoverageTest();
-                while(!tracker.hasFullCoverage() && retry < 10) {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                    }
-                    retry++;
-                }
-        */
-
         List<TileInfo> tiles = tracker.scan(true);
         String imgUrl = prepareAjaxImage(tiles, true);
         String updateUrl = prepareAjaxSession(true);
