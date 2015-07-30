@@ -326,6 +326,7 @@ public class MessageBusBase implements MessageBus {
                             try {
                                 wait();
                             } catch (InterruptedException e) {
+                                s_logger.debug("[ignored] interupted while guarding re-entrance on message bus.");
                             }
                         } else {
                             break;

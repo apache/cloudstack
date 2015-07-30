@@ -230,6 +230,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
+                s_logger.debug("[ignored] Console proxy was interupted while waiting for viewer to become ready.");
             }
         }
         return false;
@@ -341,6 +342,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
                 try {
                     tileDirtyEvent.wait(3000);
                 } catch (InterruptedException e) {
+                    s_logger.debug("[ignored] Console proxy ajax update was interupted while waiting for viewer to become ready.");
                 }
             }
         }

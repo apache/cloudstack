@@ -111,6 +111,7 @@ public class ConsoleProxyGCThread extends Thread {
             try {
                 Thread.sleep(5000);
             } catch (InterruptedException ex) {
+                s_logger.debug("[ignored] Console proxy was interupted during GC.");
             }
         }
     }
