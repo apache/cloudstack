@@ -114,11 +114,15 @@ public class NiciraNvpGuestNetworkGuruTest {
         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
 
         final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT"}));
+        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT", "VXLAN"}));
         when(physnet.getId()).thenReturn(NETWORK_ID);
 
         when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(true);
 
+        assertTrue(guru.canHandle(offering, NetworkType.Advanced, physnet) == true);
+
+        // Supported: IsolationMethod == VXLAN
+        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VXLAN"}));
         assertTrue(guru.canHandle(offering, NetworkType.Advanced, physnet) == true);
 
         // Not supported TrafficType != Guest
@@ -134,7 +138,7 @@ public class NiciraNvpGuestNetworkGuruTest {
         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
         assertFalse(guru.canHandle(offering, NetworkType.Basic, physnet) == true);
 
-        // Not supported: IsolationMethod != STT
+        // Not supported: IsolationMethod != STT, VXLAN
         when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VLAN"}));
         assertFalse(guru.canHandle(offering, NetworkType.Advanced, physnet) == true);
 
@@ -144,7 +148,7 @@ public class NiciraNvpGuestNetworkGuruTest {
     public void testDesign() {
         final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
         when(physnetdao.findById((Long)any())).thenReturn(physnet);
-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT"}));
+        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT", "VXLAN"}));
         when(physnet.getId()).thenReturn(NETWORK_ID);
 
         final NiciraNvpDeviceVO device = mock(NiciraNvpDeviceVO.class);
@@ -171,7 +175,7 @@ public class NiciraNvpGuestNetworkGuruTest {
     public void testDesignNoElementOnPhysicalNetwork() {
         final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
         when(physnetdao.findById((Long)any())).thenReturn(physnet);
-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT"}));
+        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT", "VXLAN"}));
         when(physnet.getId()).thenReturn(NETWORK_ID);
 
         mock(NiciraNvpDeviceVO.class);
@@ -217,7 +221,7 @@ public class NiciraNvpGuestNetworkGuruTest {
     public void testDesignNoConnectivityInOffering() {
         final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
         when(physnetdao.findById((Long)any())).thenReturn(physnet);
-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT"}));
+        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT", "VXLAN"}));
         when(physnet.getId()).thenReturn(NETWORK_ID);
 
         final NiciraNvpDeviceVO device = mock(NiciraNvpDeviceVO.class);
@@ -243,7 +247,7 @@ public class NiciraNvpGuestNetworkGuruTest {
     public void testImplement() throws InsufficientVirtualNetworkCapacityException {
         final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
         when(physnetdao.findById((Long)any())).thenReturn(physnet);
-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT"}));
+        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT", "VXLAN"}));
         when(physnet.getId()).thenReturn(NETWORK_ID);
 
         final NiciraNvpDeviceVO device = mock(NiciraNvpDeviceVO.class);
@@ -412,7 +416,7 @@ public class NiciraNvpGuestNetworkGuruTest {
     public void testShutdown() throws InsufficientVirtualNetworkCapacityException, URISyntaxException {
         final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
         when(physnetdao.findById((Long)any())).thenReturn(physnet);
-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT"}));
+        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT", "VXLAN"}));
         when(physnet.getId()).thenReturn(NETWORK_ID);
 
         final NiciraNvpDeviceVO device = mock(NiciraNvpDeviceVO.class);
