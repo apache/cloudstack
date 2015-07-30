@@ -106,8 +106,8 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Runna
     private QuotaBalanceDao _quotaBalanceDao;
     @Inject
     private ConfigurationDao _configDao;
-    //@Inject
-    //private AccountManager _accountMgr;
+    // @Inject
+    // private AccountManager _accountMgr;
 
     private TimeZone _usageTimezone;
     private int _aggregationDuration = 0;
@@ -117,6 +117,8 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Runna
     final static BigDecimal s_hoursInMonth = new BigDecimal(30 * 24);
     final static BigDecimal s_minutesInMonth = new BigDecimal(30 * 24 * 60);
     final static BigDecimal s_gb = new BigDecimal(1024 * 1024 * 1024);
+
+    int _pid = 0;
 
     public QuotaManagerImpl() {
         super();
@@ -164,6 +166,34 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Runna
         _emailQuotaAlert = new EmailQuotaAlert(smtpHost, smtpPort, useAuth, smtpUsername, smtpPassword, emailSender, smtpDebug);
 
         return true;
+    }
+
+    @Override
+    public boolean start() {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Starting Quota Manager");
+        }
+        _pid = Integer.parseInt(System.getProperty("pid"));
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Stopping Quota Manager");
+        }
+        return true;
+    }
+
+    @Override
+    public void run() {
+        (new ManagedContextRunnable() {
+            @Override
+            protected void runInContext() {
+                System.out.println("Running Quota thread .....");
+                calculateQuotaUsage();
+            }
+        }).run();
     }
 
     @Override
@@ -620,11 +650,11 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Runna
 
     private Account disableAccount(String accountName, Long domainId, Long accountId, Boolean lockRequested) throws ConcurrentOperationException, ResourceUnavailableException {
         Account account = null;
-        //if (lockRequested) {
-            //account = _accountMgr.lockAccount(accountName, domainId, accountId);
-        //} else {
-            //account = _accountMgr.disableAccount(accountName, domainId, accountId);
-        //}
+        // if (lockRequested) {
+        // account = _accountMgr.lockAccount(accountName, domainId, accountId);
+        // } else {
+        // account = _accountMgr.disableAccount(accountName, domainId, accountId);
+        // }
         return account;
     }
 
@@ -634,17 +664,6 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Runna
         c.add(Calendar.DATE, 1);
         Date dt = c.getTime();
         return dt;
-    }
-
-    @Override
-    public void run() {
-        (new ManagedContextRunnable() {
-            @Override
-            protected void runInContext() {
-                System.out.println("Strating Quota thread .....");
-                calculateQuotaUsage();
-            }
-        }).run();
     }
 
 }
