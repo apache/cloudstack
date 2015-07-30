@@ -33,7 +33,7 @@
 }
 
 .quota-element {
-    margin: 8px;
+    margin: 5px;
     margin-left: 13px;
 }
 
@@ -46,7 +46,8 @@
 .quota-button {
     border:1px solid #0077c7; -webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px;
     font-size:11px;
-    padding: 6px;
+    padding: 8px;
+    margin-top: 12px;
     text-shadow: -1px -1px 0 rgba(0,0,0,0.3);font-weight:bold; color: #FFFFFF;
     background-color: #0099FF; background-image: -webkit-gradient(linear, left top, left bottom, from(#0099FF), to(#004FF7));
     background-image: -webkit-linear-gradient(top, #0099FF, #004FF7);

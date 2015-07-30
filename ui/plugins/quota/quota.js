@@ -38,11 +38,11 @@ var g_quotaCurrency = '';
                                   var generatedStatement = $('<div class="quota-generated-statement">');
                                   var generatedBalanceStatement = $('<div class="quota-generated-balance-statement">');
 
-                                  var statementForm = $('<div class="quota-statement">');
+                                  var statementForm = $('<div class="quota-statement select-container">');
                                   var domainDropdown = $('<div class="quota-domain-dropdown quota-element">');
                                   var accountDropdown = $('<div class="quota-account-dropdown quota-element">');
-                                  var startDateInput = $('<input type="text" class="quota-input" id="quota-statement-start-date">');
-                                  var endDateInput = $('<input type="text" class="quota-input" id="quota-statement-end-date">');
+                                  var startDateInput = $('<input type="text" class="quota-input" id="quota-statement-start-date" style="margin-left: 13px">');
+                                  var endDateInput = $('<input type="text" class="quota-input" id="quota-statement-end-date" style="margin-left: 13px">');
                                   var generateStatementButton = $('<button class="quota-element quota-button" id="quota-get-statement-button">').html("Generate Statement");
 
                                   startDateInput.datepicker({
@@ -132,7 +132,6 @@ var g_quotaCurrency = '';
                                                   } else {
                                                       statementTableBodyRow.addClass('odd');
                                                   }
-                                                  console.log(quotaUsage[i]);
                                                   $('<td>').html(quotaUsage[i].name).appendTo(statementTableBodyRow);
                                                   $('<td>').html(quotaUsage[i].unit).appendTo(statementTableBodyRow);
                                                   $('<td>').html(g_quotaCurrency + quotaUsage[i].quota).appendTo(statementTableBodyRow);
@@ -170,7 +169,7 @@ var g_quotaCurrency = '';
                                               generatedBalanceStatement.empty();
                                               $("<br>").appendTo(generatedBalanceStatement);
 
-                                              $('<p class="quota-bold">').html("<br>Quota Balance Statement:").appendTo(generatedBalanceStatement);
+                                              $('<p class="quota-bold">').html("<br>Quota Balance Statement").appendTo(generatedBalanceStatement);
                                               var statementTable = $('<table>');
                                               statementTable.appendTo($('<div class="data-table">').appendTo(generatedBalanceStatement));
 
@@ -223,8 +222,11 @@ var g_quotaCurrency = '';
 
                                   domainDropdown.appendTo(statementForm);
                                   accountDropdown.appendTo(statementForm);
-                                  startDateInput.appendTo($('<p class="quota-bold quota-element">Start Date: </p>').appendTo(statementForm));
-                                  endDateInput.appendTo($('<p class="quota-bold quota-element">End Date: </p>').appendTo(statementForm));
+                                  $('<p class="quota-bold quota-element">').html('Start Date').appendTo(statementForm);
+                                  startDateInput.appendTo(statementForm);
+                                  $('<p class="quota-bold quota-element">').html('End Date').appendTo(statementForm);
+                                  endDateInput.appendTo(statementForm);
+                                  $('<br>').appendTo(statementForm);
 
                                   generateStatementButton.appendTo(statementForm);
 
@@ -238,16 +240,16 @@ var g_quotaCurrency = '';
                                           data : data,
                                           success: function(json) {
                                               accountDropdown.empty();
+                                              $('<p class="quota-bold" style="margin-bottom: 5px">').html('Account').appendTo(accountDropdown);
                                               if (json.hasOwnProperty('listaccountsresponse') && json.listaccountsresponse.hasOwnProperty('account')) {
                                                   var accounts = json.listaccountsresponse.account;
-                                                  var dropdown = $('<select>');
+                                                  var dropdown = $('<select class="quota-input">');
                                                   for (var i = 0; i < accounts.length; i++) {
                                                       $('<option value="' + accounts[i].id + '">' + accounts[i].name + '</option>').appendTo(dropdown);
                                                   }
-                                                  $('<span class="quota-bold">Account: </span>').appendTo(accountDropdown);
                                                   dropdown.appendTo(accountDropdown);
                                               } else {
-                                                  $('<span class="quota-text"><span class="quota-bold">Accounts:</span> No accounts found in the selected domain</span>').appendTo(accountDropdown);
+                                                  $('<span class="quota-text">No accounts found in the selected domain</span>').appendTo(accountDropdown);
                                               }
                                           },
                                           error: function(data) {
@@ -263,21 +265,20 @@ var g_quotaCurrency = '';
                                           },
                                           success: function(json) {
                                               var domains = json.listdomainsresponse.domain;
-                                              var dropdown = $('<select>');
+                                              $('<p class="quota-bold" style="margin-bottom: 5px">').html('Domain').appendTo(domainDropdown);
+                                              var dropdown = $('<select class="quota-input">');
                                               if (domains.length > 1) {
                                                   $('<option value="">--- Select Domain ---</option>').appendTo(dropdown);
                                               }
                                               for (var i = 0; i < domains.length; i++) {
                                                   $('<option value="' + domains[i].id + '">' + domains[i].name + '</option>').appendTo(dropdown);
                                               }
-                                              $('<span class="quota-bold">Domain: </span>').appendTo(domainDropdown);
                                               dropdown.appendTo(domainDropdown);
 
                                               dropdown.change(function() {
                                                   var selectedDomainId = $(this).find(':selected').val();
                                                   if (!selectedDomainId) {
                                                       accountDropdown.empty();
-                                                      $('<span class="quota-text"><span class="quota-bold">Accounts:</span> Select a valid domain to start with</span>').appendTo(accountDropdown);
                                                       return;
                                                   }
                                                   accountLister(selectedDomainId);
@@ -311,7 +312,9 @@ var g_quotaCurrency = '';
 
                                   var renderDateForm = function(lastDate) {
                                       var startDateInput = $('<input type="text" class="quota-input" id="quota-tariff-startdate">');
-                                      startDateInput.val(lastDate);
+                                      if (lastDate) {
+                                          startDateInput.val(lastDate);
+                                      }
 
                                       startDateInput.datepicker({
                                           defaultDate: new Date(),
@@ -326,7 +329,7 @@ var g_quotaCurrency = '';
                                               renderTariffTable(selectedDate);
                                           }
                                       });
-                                      startDateInput.appendTo($('<br><span class="quota-element quota-bold">').html('Effective Date: ').appendTo(tariffViewList));
+                                      startDateInput.appendTo($('<br><span class="quota-element quota-bold">').html('Effective Date ').appendTo(tariffViewList));
                                   };
 
                                   var renderTariffTable = function(startDate) {
@@ -363,7 +366,7 @@ var g_quotaCurrency = '';
 
                                                   if (isAdmin()) {
                                                       var valueCell = $('<td class="value actions">');
-                                                      var value = $('<span>').html(g_quotaCurrency + items[i].tariffValue);
+                                                      var value = $('<span class="quota-element">').html(g_quotaCurrency + items[i].tariffValue);
                                                       value.appendTo(valueCell);
                                                       valueCell.appendTo(tariffTableBodyRow);
 
@@ -447,7 +450,7 @@ var g_quotaCurrency = '';
                                   var creditForm = $('<div class="quota-credit">');
                                   var domainDropdown = $('<div class="quota-domain-dropdown quota-element">');
                                   var accountDropdown = $('<div class="quota-account-dropdown quota-element">');
-                                  var quotaValueInput = $('<input class="quota-input" type="text">');
+                                  var quotaValueInput = $('<input class="quota-input" type="text" style="margin-left: 12px">');
                                   var addCreditButton = $('<button class="quota-element quota-button" id="quota-add-credit-button">').html("Add Credit");
 
                                   addCreditButton.click(function() {
@@ -459,8 +462,10 @@ var g_quotaCurrency = '';
                                       var account = accountDropdown.find("select :selected").val();
                                       var quotaValue = quotaValueInput.val();
 
-                                      if (!quotaValue) {
+                                      if (!quotaValue || !account) {
                                           creditStatement.empty();
+                                          $('<br>').appendTo(creditStatement);
+                                          $('<p class="quota-element">').html('Please select domain/account and enter valid credit/debit value').appendTo(creditStatement);
                                           return;
                                       }
 
@@ -475,7 +480,7 @@ var g_quotaCurrency = '';
                                               quotaValueInput.val('');
                                               creditStatement.empty();
                                               if (json.quotacreditsresponse.quotacredits.currency) {
-                                                  g_quotaCurrency = json.quotacreditsresponse.quotacredits.currency;
+                                                  g_quotaCurrency = json.quotacreditsresponse.quotacredits.currency.trim() + ' ';
                                               }
                                               $('<hr>').appendTo(creditStatement);
                                               $('<p class="quota-bold">').html('Credit amount ' + g_quotaCurrency + json.quotacreditsresponse.quotacredits.credits + ' added to the account ' + account).appendTo(creditStatement);
@@ -495,13 +500,18 @@ var g_quotaCurrency = '';
                                               });
                                           },
                                           error: function(json) {
+                                              cloudStack.dialog.notice({
+                                                  message: parseXMLHttpResponse(json)
+                                              });
                                           }
                                       });
                                   });
 
                                   domainDropdown.appendTo(creditForm);
                                   accountDropdown.appendTo(creditForm);
-                                  quotaValueInput.appendTo($('<p class="quota-bold quota-element">Quota Credit Value: </p>').appendTo(creditForm));
+                                  $('<p class="quota-bold quota-element">').html('Value').appendTo(creditForm);
+                                  quotaValueInput.appendTo(creditForm);
+                                  $('<br>').appendTo(creditForm);
 
                                   addCreditButton.appendTo(creditForm);
 
@@ -515,16 +525,16 @@ var g_quotaCurrency = '';
                                           data : data,
                                           success: function(json) {
                                               accountDropdown.empty();
+                                              $('<p class="quota-bold">').html('Account').appendTo(accountDropdown);
                                               if (json.hasOwnProperty('listaccountsresponse') && json.listaccountsresponse.hasOwnProperty('account')) {
                                                   var accounts = json.listaccountsresponse.account;
-                                                  var dropdown = $('<select>');
+                                                  var dropdown = $('<select class="quota-input">');
                                                   for (var i = 0; i < accounts.length; i++) {
                                                       $('<option value="' + accounts[i].name + '">' + accounts[i].name + '</option>').appendTo(dropdown);
                                                   }
-                                                  $('<span class="quota-bold">Account: </span>').appendTo(accountDropdown);
                                                   dropdown.appendTo(accountDropdown);
                                               } else {
-                                                  $('<span><span class="quota-bold">Accounts:</span> No accounts found in the selected domain</span>').appendTo(accountDropdown);
+                                                  $('<span>No accounts found in the selected domain</span>').appendTo(accountDropdown);
                                               }
                                           },
                                           error: function(data) {
@@ -540,22 +550,21 @@ var g_quotaCurrency = '';
                                               listall: true
                                           },
                                           success: function(json) {
+                                              $('<p class="quota-bold">').html('Domain').appendTo(domainDropdown);
                                               var domains = json.listdomainsresponse.domain;
-                                              var dropdown = $('<select>');
+                                              var dropdown = $('<select class="quota-input">');
                                               if (domains.length > 1) {
                                                   $('<option value="">--- Select Domain ---</option>').appendTo(dropdown);
                                               }
                                               for (var i = 0; i < domains.length; i++) {
                                                   $('<option value="' + domains[i].id + '">' + domains[i].name + '</option>').appendTo(dropdown);
                                               }
-                                              $('<span class="quota-bold">Domain: </span>').appendTo(domainDropdown);
                                               dropdown.appendTo(domainDropdown);
 
                                               dropdown.change(function() {
                                                   var selectedDomainId = $(this).find(':selected').val();
                                                   if (!selectedDomainId) {
                                                       accountDropdown.empty();
-                                                      $('<span><span class="quota-bold">Accounts:</span> Select a valid domain to start with</span>').appendTo(accountDropdown);
                                                       return;
                                                   }
                                                   accountLister(selectedDomainId);
@@ -582,11 +591,13 @@ var g_quotaCurrency = '';
 
                                   var emailTemplateForm = $('<div class="quota-email-form">');
                                   var templateDropdown = $('<div class="quota-template-dropdown">');
-                                  var templateOptions = $('<select><option value="QUOTA_LOW">Template for accounts with low quota balance</option><option value="QUOTA_EMPTY">Template for accounts with no quota balance that will be locked</option><option value="QUOTA_UNLOCK_ACCOUNT">Template for accounts with enough credits getting unlocked</option><option value="QUOTA_STATEMENT">Template for quota statement</option><</select>');
-                                  templateOptions.appendTo($('<p class="quota-bold quota-element">Select Template: </p>').appendTo(templateDropdown));
+                                  var templateOptions = $('<select class="quota-input" style="margin: 0px 0px 5px 11px"><option value="QUOTA_LOW">Template for accounts with low quota balance</option><option value="QUOTA_EMPTY">Template for accounts with no quota balance that will be locked</option><option value="QUOTA_UNLOCK_ACCOUNT">Template for accounts with enough credits getting unlocked</option><option value="QUOTA_STATEMENT">Template for quota statement</option><</select>');
+                                  $('<p class="quota-bold quota-element">').html('Email Template').appendTo(templateDropdown);
+                                  templateOptions.appendTo(templateDropdown);
+                                  //templateOptions.appendTo($('<p class="quota-bold quota-element">Email Template</p>').appendTo(templateDropdown));
 
-                                  var templateSubjectTextArea = $('<textarea id="quota-template-subjectarea" class="quota-input" style="margin: 0px 0px 15px 10px; font-size: 12px">');
-                                  var templateBodyTextArea = $('<textarea id="quota-template-bodyarea" class="quota-input" style="height: 250px; margin: 0px 0px 15px 10px; font-size: 12px"></textarea>');
+                                  var templateSubjectTextArea = $('<textarea id="quota-template-subjectarea" class="quota-input" style="margin: 0px 0px 10px 12px; font-size: 12px">');
+                                  var templateBodyTextArea = $('<textarea id="quota-template-bodyarea" class="quota-input" style="height: 250px; margin: 0px 0px 10px 12px; font-size: 12px"></textarea>');
                                   var saveTemplateButton = $('<button class="quota-button quota-element" id="quota-save-template-button">').html("Save Template");
 
                                   templateOptions.change(function() {
@@ -635,9 +646,9 @@ var g_quotaCurrency = '';
                                   });
 
                                   templateDropdown.appendTo(emailTemplateForm);
-                                  $('<p class="quota-bold quota-element">').html('Email Template Subject:').appendTo(emailTemplateForm);
+                                  $('<p class="quota-bold quota-element">').html('Email Template Subject').appendTo(emailTemplateForm);
                                   templateSubjectTextArea.appendTo(emailTemplateForm);
-                                  $('<p class="quota-bold quota-element">').html('Email Template Body:').appendTo(emailTemplateForm);
+                                  $('<p class="quota-bold quota-element">').html('Email Template Body').appendTo(emailTemplateForm);
                                   templateBodyTextArea.appendTo(emailTemplateForm);
                                   saveTemplateButton.appendTo(emailTemplateForm);
                                   $('<hr>').appendTo(emailTemplateForm);
