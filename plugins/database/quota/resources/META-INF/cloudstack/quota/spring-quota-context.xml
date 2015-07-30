@@ -26,13 +26,6 @@
                       http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 
     <bean id="QuotaService" class="org.apache.cloudstack.quota.QuotaServiceImpl" />
-    <bean id="QuotaManager" class="org.apache.cloudstack.quota.job.QuotaManagerImpl" />
-    <bean id="QuotaTariffDao" class="org.apache.cloudstack.quota.dao.QuotaTariffDaoImpl" />
-    <bean id="QuotaBalanceDao" class="org.apache.cloudstack.quota.dao.QuotaBalanceDaoImpl"/>
-    <bean id="QuotaCreditsDao" class="org.apache.cloudstack.quota.dao.QuotaCreditsDaoImpl"/>
-    <bean id="QuotaEmailTemplatesDao" class="org.apache.cloudstack.quota.dao.QuotaEmailTemplatesDaoImpl"/>
-    <bean id="QuotaSentEmailDao" class="org.apache.cloudstack.quota.dao.QuotaSentEmailsDaoImpl"/>
-    <bean id="QuotaUsageDao" class="org.apache.cloudstack.quota.dao.QuotaUsageDaoImpl"/>
     <bean id="QuotaResponseBuilder" class="org.apache.cloudstack.api.response.QuotaResponseBuilderImpl"/>
 
 </beans>

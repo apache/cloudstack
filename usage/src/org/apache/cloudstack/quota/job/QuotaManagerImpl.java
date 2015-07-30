@@ -16,15 +16,14 @@
 //under the License.
 package org.apache.cloudstack.quota.job;
 
-import com.cloud.configuration.Config;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.user.Account;
+//import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
@@ -41,6 +40,7 @@ import com.sun.mail.smtp.SMTPSSLTransport;
 import com.sun.mail.smtp.SMTPTransport;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
@@ -51,7 +51,8 @@ import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
-import org.apache.cloudstack.region.RegionManager;
+import org.apache.cloudstack.quota.vo.ServiceOfferingVO;
+import org.apache.cloudstack.quota.dao.ServiceOfferingDao;
 import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.log4j.Logger;
@@ -82,7 +83,7 @@ import java.util.TimeZone;
 
 @Component
 @Local(value = QuotaManager.class)
-public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
+public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Runnable {
     private static final Logger s_logger = Logger.getLogger(QuotaManagerImpl.class.getName());
 
     @Inject
@@ -105,8 +106,8 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     private QuotaBalanceDao _quotaBalanceDao;
     @Inject
     private ConfigurationDao _configDao;
-    @Inject
-    private RegionManager _regionMgr;
+    //@Inject
+    //private AccountManager _accountMgr;
 
     private TimeZone _usageTimezone;
     private int _aggregationDuration = 0;
@@ -121,11 +122,25 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         super();
     }
 
+    private void mergeConfigs(Map<String, String> dbParams, Map<String, Object> xmlParams) {
+        for (Map.Entry<String, Object> param : xmlParams.entrySet()) {
+            dbParams.put(param.getKey(), (String) param.getValue());
+        }
+    }
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        String timeZoneStr = _configDao.getValue(Config.UsageAggregationTimezone.toString());
-        String aggregationRange = _configDao.getValue(Config.UsageStatsJobAggregationRange.toString());
+
+        Map<String, String> configs = _configDao.getConfiguration(params);
+
+        if (params != null) {
+            mergeConfigs(configs, params);
+        }
+
+        String aggregationRange = configs.get("usage.stats.job.aggregation.range");
+        String timeZoneStr = configs.get("usage.aggregation.timezone");
+
         if (timeZoneStr == null) {
             timeZoneStr = "GMT";
         }
@@ -282,7 +297,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
                 if (accountBalance.compareTo(zeroBalance) <= 0) {
                     if (lockAccountEnforcement && account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                         try {
-                            _regionMgr.disableAccount(account.getAccountName(), account.getDomainId(), account.getId(), true);
+                            disableAccount(account.getAccountName(), account.getDomainId(), account.getId(), true);
                         } catch (ResourceUnavailableException e) {
                             s_logger.error(String.format("Unable to lock account %s which has exhausted its allocated quota", account.getAccountName()));
                         }
@@ -603,12 +618,33 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         }
     }
 
+    private Account disableAccount(String accountName, Long domainId, Long accountId, Boolean lockRequested) throws ConcurrentOperationException, ResourceUnavailableException {
+        Account account = null;
+        //if (lockRequested) {
+            //account = _accountMgr.lockAccount(accountName, domainId, accountId);
+        //} else {
+            //account = _accountMgr.disableAccount(accountName, domainId, accountId);
+        //}
+        return account;
+    }
+
     public Date startOfNextDay() {
         Calendar c = Calendar.getInstance();
         c.setTime(new Date());
         c.add(Calendar.DATE, 1);
         Date dt = c.getTime();
         return dt;
+    }
+
+    @Override
+    public void run() {
+        (new ManagedContextRunnable() {
+            @Override
+            protected void runInContext() {
+                System.out.println("Strating Quota thread .....");
+                calculateQuotaUsage();
+            }
+        }).run();
     }
 
 }

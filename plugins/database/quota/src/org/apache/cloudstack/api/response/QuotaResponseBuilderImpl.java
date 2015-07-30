@@ -36,7 +36,6 @@ import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
 import org.apache.cloudstack.quota.dao.QuotaCreditsDao;
 import org.apache.cloudstack.quota.dao.QuotaEmailTemplatesDao;
 import org.apache.cloudstack.quota.dao.QuotaTariffDao;
-import org.apache.cloudstack.quota.job.QuotaManager;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
@@ -76,8 +75,6 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     private UserDao _userDao;
     @Inject
     private QuotaService _quotaService;
-    @Inject
-    private QuotaManager _quotaMgr;
     @Inject
     AccountDao _accountDao;
     @Inject
@@ -292,7 +289,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             if (account.getState() == Account.State.locked) {
                 try {
                     _regionMgr.enableAccount(account.getAccountName(), domainId, accountId);
-                    _quotaMgr.sendQuotaAlert(account, currentAccountBalance, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_UNLOCK_ACCOUNT);
+                    //_quotaMgr.sendQuotaAlert(account, currentAccountBalance, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_UNLOCK_ACCOUNT);
                 } catch (Exception e) {
                     s_logger.error(String.format("Unable to unlock account %s after getting enough quota credits", account.getAccountName()));
                 }

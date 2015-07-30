@@ -19,6 +19,7 @@ package com.cloud.usage;
 import java.io.File;
 import java.io.FileNotFoundException;
 
+import org.apache.cloudstack.quota.job.QuotaManager;
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.daemon.DaemonInitException;
@@ -36,6 +37,7 @@ public class UsageServer implements Daemon {
     public static final String Name = "usage-server";
 
     private UsageManager mgr;
+    private QuotaManager qmgr;
     private ClassPathXmlApplicationContext appContext;
 
     /**
@@ -66,6 +68,14 @@ public class UsageServer implements Daemon {
         mgr = appContext.getBean(UsageManager.class);
 
         if (mgr != null) {
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("UsageServer ready...");
+            }
+        }
+
+        qmgr = appContext.getBean(QuotaManager.class);
+
+        if (qmgr != null) {
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("UsageServer ready...");
             }
