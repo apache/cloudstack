@@ -380,7 +380,6 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
 
     @Override
     public List<StoragePoolVO> findZoneWideStoragePoolsByTags(long dcId, String[] tags) {
-        List<StoragePoolVO> storagePools = null;
         if (tags == null || tags.length == 0) {
             QueryBuilder<StoragePoolVO> sc = QueryBuilder.create(StoragePoolVO.class);
             sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
@@ -399,17 +398,20 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
             sql.append(ZoneWideDetailsSqlSuffix);
             TransactionLegacy txn = TransactionLegacy.currentTxn();
             try (PreparedStatement pstmt = txn.prepareStatement(sql.toString());){
-                int i=0;
-                for (Map.Entry<String, String> detail : details.entrySet()) {
-                    pstmt.setString(++i,detail.getKey());
-                    pstmt.setString(++i,detail.getValue());
-                }
                 List<StoragePoolVO> pools = new ArrayList<StoragePoolVO>();
                 if (pstmt != null) {
-                    i = 1;
+                    int i = 1;
+
                     pstmt.setLong(i++, dcId);
                     pstmt.setString(i++, ScopeType.ZONE.toString());
+
+                    for (Map.Entry<String, String> detail : details.entrySet()) {
+                        pstmt.setString(i++, detail.getKey());
+                        pstmt.setString(i++, detail.getValue());
+                    }
+
                     pstmt.setInt(i++, details.size());
+
                     try(ResultSet rs = pstmt.executeQuery();) {
                         while (rs.next()) {
                             pools.add(toEntityBean(rs, false));
