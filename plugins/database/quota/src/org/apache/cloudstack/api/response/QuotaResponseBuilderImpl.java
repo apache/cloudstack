@@ -302,7 +302,9 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             creditor = creditorUser.getUsername();
         }
         TransactionLegacy.open(opendb).close();
-        return new QuotaCreditsResponse(result, creditor);
+        QuotaCreditsResponse response = new QuotaCreditsResponse(result, creditor);
+        response.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
+        return response;
     }
 
     private QuotaEmailTemplateResponse createQuotaEmailResponse(QuotaEmailTemplatesVO template) {

@@ -40,6 +40,10 @@ public class QuotaCreditsResponse extends BaseResponse {
     @Param(description = "the account name of the admin who updated the credits")
     private Date updatedOn;
 
+    @SerializedName("currency")
+    @Param(description = "currency")
+    private String currency;
+
     public QuotaCreditsResponse() {
         super();
     }
@@ -77,4 +81,11 @@ public class QuotaCreditsResponse extends BaseResponse {
         this.updatedOn = updatedOn;
     }
 
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
 }
