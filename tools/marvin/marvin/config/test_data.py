@@ -837,7 +837,7 @@ test_data = {
         "displaytext": "xs",
         "name": "xs",
         "passwordenabled": False,
-        "url": "http://10.147.28.7/templates/ttylinux_pv.vhd",
+        "url": "http://10.147.28.7/templates/ttylinux_pv.vhd.bz2",
         "format": "VHD"
     },
     "security_group": {"name": "custom_Sec_Grp"},
