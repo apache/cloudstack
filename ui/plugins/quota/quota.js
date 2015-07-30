@@ -101,7 +101,7 @@ var g_quotaCurrency = '';
                                               var totalQuota = statement.totalquota;
                                               var quotaUsage = statement.quotausage;
                                               if (statement.currency) {
-                                                  g_quotaCurrency = statement.currency;
+                                                  g_quotaCurrency = statement.currency.trim() + ' ';
                                               }
 
                                               generatedStatement.empty();
@@ -167,7 +167,7 @@ var g_quotaCurrency = '';
                                               var endBalance = statement.endquota;
                                               var endBalanceDate = statement.enddate;
                                               if (statement.currency) {
-                                                  g_quotaCurrency = statement.currency;
+                                                  g_quotaCurrency = statement.currency.trim() + ' ';
                                               }
 
                                               generatedBalanceStatement.empty();
@@ -351,7 +351,7 @@ var g_quotaCurrency = '';
                                           success: function(json) {
                                               var items = json.quotatarifflistresponse.quotatariff;
                                               if (items.constructor === Array && items[0].currency) {
-                                                  g_quotaCurrency = items[0].currency;
+                                                  g_quotaCurrency = items[0].currency.trim() + ' ';
                                               }
 
                                               var tariffTableBody = $('<tbody>');
@@ -423,7 +423,7 @@ var g_quotaCurrency = '';
                                                           });
                                                       });
                                                   } else {
-                                                      $('<td>').html(items[i].tariffValue).appendTo(tariffTableBodyRow);
+                                                      $('<td>').html(g_quotaCurrency + items[i].tariffValue).appendTo(tariffTableBodyRow);
                                                   }
                                                   $('<td>').html(items[i].description).appendTo(tariffTableBodyRow);
                                                   tariffTableBodyRow.appendTo(tariffTableBody);
