@@ -48,6 +48,8 @@ public class UIScenarioTest extends AbstractSeleniumTestCase {
                     if (selenium.isVisible("//div/p[@id='after_action_info']"))
                         break;
                 } catch (Exception e) {
+                    s_logger.info("[ignored]"
+                            + "error during visibility test after start vm: " + e.getLocalizedMessage());
                 }
                 Thread.sleep(10000);
             }
@@ -64,6 +66,8 @@ public class UIScenarioTest extends AbstractSeleniumTestCase {
                     if (selenium.isVisible("//div/p[@id='after_action_info']"))
                         break;
                 } catch (Exception e) {
+                    s_logger.info("[ignored]"
+                            + "error during visibility test after stop vm: " + e.getLocalizedMessage());
                 }
                 Thread.sleep(10000);
             }

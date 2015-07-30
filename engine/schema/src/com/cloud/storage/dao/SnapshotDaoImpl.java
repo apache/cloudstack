@@ -41,12 +41,12 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
-import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -208,6 +208,8 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
                 return rs.getLong(1);
             }
         } catch (Exception ex) {
+            s_logger.info("[ignored]"
+                    + "caught something while getting sec. host id: " + ex.getLocalizedMessage());
         }
         return null;
     }
@@ -276,7 +278,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
 
     @Override
     public List<SnapshotVO> listByInstanceId(long instanceId, Snapshot.State... status) {
-        SearchCriteria<SnapshotVO> sc = this.InstanceIdSearch.create();
+        SearchCriteria<SnapshotVO> sc = InstanceIdSearch.create();
 
         if (status != null && status.length != 0) {
             sc.setParameters("status", (Object[])status);
@@ -289,7 +291,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
 
     @Override
     public List<SnapshotVO> listByStatus(long volumeId, Snapshot.State... status) {
-        SearchCriteria<SnapshotVO> sc = this.StatusSearch.create();
+        SearchCriteria<SnapshotVO> sc = StatusSearch.create();
         sc.setParameters("volumeId", volumeId);
         sc.setParameters("status", (Object[])status);
         return listBy(sc, null);
@@ -311,7 +313,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
 
     @Override
     public List<SnapshotVO> listAllByStatus(Snapshot.State... status) {
-        SearchCriteria<SnapshotVO> sc = this.StatusSearch.create();
+        SearchCriteria<SnapshotVO> sc = StatusSearch.create();
         sc.setParameters("status", (Object[])status);
         return listBy(sc, null);
     }

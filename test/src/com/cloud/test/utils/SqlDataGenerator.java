@@ -42,7 +42,8 @@ public class SqlDataGenerator {
             out.flush();
             out.close();
         } catch (Exception e) {
-
+            s_logger.info("[ignored]"
+                    + "error during sql generation: " + e.getLocalizedMessage());
         }
     }
 }

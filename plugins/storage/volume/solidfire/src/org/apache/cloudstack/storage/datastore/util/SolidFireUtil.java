@@ -38,9 +38,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
@@ -53,11 +50,15 @@ import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.BasicClientConnectionManager;
-
-import org.apache.cloudstack.utils.security.SSLUtils;
+import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.utils.security.SSLUtils;
 
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
@@ -68,6 +69,7 @@ import com.cloud.user.AccountDetailsDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SolidFireUtil {
+    private static final Logger s_logger = Logger.getLogger(SolidFireUtil.class);
     public static final String PROVIDER_NAME = "SolidFire";
     public static final String SHARED_PROVIDER_NAME = "SolidFireShared";
 
@@ -1272,7 +1274,7 @@ public class SolidFireUtil {
         }
 
         private static final class VolumeToDeleteParams {
-            private long volumeID;
+            private final long volumeID;
 
             private VolumeToDeleteParams(final long lVolumeId) {
                 volumeID = lVolumeId;
@@ -1291,7 +1293,7 @@ public class SolidFireUtil {
         }
 
         private static final class VolumeToPurgeParams {
-            private long volumeID;
+            private final long volumeID;
 
             private VolumeToPurgeParams(final long lVolumeId) {
                 volumeID = lVolumeId;
@@ -1309,8 +1311,8 @@ public class SolidFireUtil {
         }
 
         private static final class SnapshotToCreateParams {
-            private long volumeID;
-            private String name;
+            private final long volumeID;
+            private final String name;
 
             private SnapshotToCreateParams(final long lVolumeId, final String snapshotName) {
                 volumeID = lVolumeId;
@@ -1330,7 +1332,7 @@ public class SolidFireUtil {
         }
 
         private static final class SnapshotToDeleteParams {
-            private long snapshotID;
+            private final long snapshotID;
 
             private SnapshotToDeleteParams(final long lSnapshotId) {
                 snapshotID = lSnapshotId;
@@ -1348,8 +1350,8 @@ public class SolidFireUtil {
         }
 
         private static final class RollbackToInitiateParams {
-            private long volumeID;
-            private long snapshotID;
+            private final long volumeID;
+            private final long snapshotID;
 
             private RollbackToInitiateParams(final long lVolumeId, final long lSnapshotId) {
                 volumeID = lVolumeId;
@@ -1368,9 +1370,9 @@ public class SolidFireUtil {
         }
 
         private static final class CloneToCreateParams {
-            private long volumeID;
-            private long snapshotID;
-            private String name;
+            private final long volumeID;
+            private final long snapshotID;
+            private final String name;
 
             private CloneToCreateParams(final long lVolumeId, final long lSnapshotId, final String cloneName) {
                 volumeID = lVolumeId;
@@ -1456,7 +1458,7 @@ public class SolidFireUtil {
         }
 
         private static final class AccountToRemoveParams {
-            private long accountID;
+            private final long accountID;
 
             private AccountToRemoveParams(final long lAccountId) {
                 accountID = lAccountId;
@@ -1565,7 +1567,7 @@ public class SolidFireUtil {
         }
 
         private static final class VagToDeleteParams {
-            private long volumeAccessGroupID;
+            private final long volumeAccessGroupID;
 
             private VagToDeleteParams(final long lVagId) {
                 volumeAccessGroupID = lVagId;
@@ -1772,6 +1774,8 @@ public class SolidFireUtil {
                 try {
                     httpClient.getConnectionManager().shutdown();
                 } catch (Exception t) {
+                    s_logger.info("[ignored]"
+                            + "error shutting down http client: " + t.getLocalizedMessage());
                 }
             }
         }

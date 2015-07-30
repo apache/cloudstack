@@ -70,32 +70,6 @@ public class AddVpnUserCmdTest extends TestCase {
         };
     }
 
-    /*
-     * @Test public void testExecuteVpnUserNotFound() {
-     *
-     * EntityManager entityManager = Mockito.mock(EntityManager.class);
-     *
-     * Mockito.when(entityManager.findById(VpnUser.class,
-     * Mockito.anyLong())).thenReturn(null);
-     *
-     * addVpnUserCmd._entityMgr = entityManager; try { addVpnUserCmd.execute();
-     * } catch (Exception e) { }
-     *
-     * }
-     *
-     *
-     * @Test public void testExecuteVpnUserFound() {
-     *
-     * EntityManager entityManager = Mockito.mock(EntityManager.class);
-     * addVpnUserCmd._entityMgr = entityManager;
-     *
-     * VpnUser vpnUser = Mockito.mock(VpnUser.class);
-     * Mockito.when(entityManager.findById(VpnUser.class,
-     * Mockito.anyLong())).thenReturn(vpnUser); addVpnUserCmd.execute();
-     *
-     * }
-     */
-
     @Test
     public void testCreateSuccess() {
 

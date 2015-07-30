@@ -221,6 +221,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             try {
                 Thread.sleep(_pauseInterval * 1000);
             } catch (InterruptedException e) {
+                s_logger.debug("[ignored] interupted while retry cmd.");
             }
 
             s_logger.debug("Retrying...");

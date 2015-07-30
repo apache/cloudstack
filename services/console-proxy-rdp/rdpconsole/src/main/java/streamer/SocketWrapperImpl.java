@@ -16,18 +16,9 @@
 // under the License.
 package streamer;
 
-import org.apache.cloudstack.utils.security.SSLUtils;
-import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
-import streamer.debug.MockServer;
-import streamer.debug.MockServer.Packet;
-import streamer.ssl.SSLState;
-import streamer.ssl.TrustAllX509TrustManager;
+import static streamer.debug.MockServer.Packet.PacketType.CLIENT;
+import static streamer.debug.MockServer.Packet.PacketType.SERVER;
 
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -35,10 +26,24 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.HashMap;
 
-import static streamer.debug.MockServer.Packet.PacketType.CLIENT;
-import static streamer.debug.MockServer.Packet.PacketType.SERVER;
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.utils.security.SSLUtils;
+import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
+
+import streamer.debug.MockServer;
+import streamer.debug.MockServer.Packet;
+import streamer.ssl.SSLState;
+import streamer.ssl.TrustAllX509TrustManager;
 
 public class SocketWrapperImpl extends PipelineImpl implements SocketWrapper {
+    private static final Logger s_logger = Logger.getLogger(SocketWrapperImpl.class);
 
     protected InputStreamSource source;
     protected OutputStreamSink sink;
@@ -172,19 +177,27 @@ public class SocketWrapperImpl extends PipelineImpl implements SocketWrapper {
         try {
             handleEvent(Event.STREAM_CLOSE, Direction.IN);
         } catch (Exception e) {
+            s_logger.info("[ignored]"
+                    + "error sending input close event: " + e.getLocalizedMessage());
         }
         try {
             handleEvent(Event.STREAM_CLOSE, Direction.OUT);
         } catch (Exception e) {
+            s_logger.info("[ignored]"
+                    + "error sending output close event: " + e.getLocalizedMessage());
         }
         try {
             if (sslSocket != null)
                 sslSocket.close();
         } catch (Exception e) {
+            s_logger.info("[ignored]"
+                    + "error closing ssl socket: " + e.getLocalizedMessage());
         }
         try {
             socket.close();
         } catch (Exception e) {
+            s_logger.info("[ignored]"
+                    + "error closing socket: " + e.getLocalizedMessage());
         }
     }
 

@@ -20,6 +20,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
+
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
@@ -166,25 +167,35 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 TransactionLegacy txn = TransactionLegacy.currentTxn();
 
-                PreparedStatement pstmt = null;
-                try {
-                    pstmt = txn.prepareAutoCloseStatement(
+                try (
+                        PreparedStatement pstmt = txn
+                                .prepareAutoCloseStatement(
                             "DELETE FROM vm_work_job WHERE id IN (SELECT id FROM async_job WHERE (job_dispatcher='VmWorkJobPlaceHolder' OR job_dispatcher='VmWorkJobDispatcher') AND job_init_msid=?)");
+                ) {
                     pstmt.setLong(1, msid);
 
                     pstmt.execute();
                 } catch (SQLException e) {
+                    s_logger.info("[ignored]"
+                            + "SQL failed to delete vm work job: " + e.getLocalizedMessage());
                 } catch (Throwable e) {
+                    s_logger.info("[ignored]"
+                            + "caught an error during delete vm work job: " + e.getLocalizedMessage());
                 }
 
-                try {
-                    pstmt = txn.prepareAutoCloseStatement(
+                try (
+                        PreparedStatement pstmt = txn.prepareAutoCloseStatement(
                             "DELETE FROM async_job WHERE (job_dispatcher='VmWorkJobPlaceHolder' OR job_dispatcher='VmWorkJobDispatcher') AND job_init_msid=?");
+                ) {
                     pstmt.setLong(1, msid);
 
                     pstmt.execute();
                 } catch (SQLException e) {
+                    s_logger.info("[ignored]"
+                            + "SQL failed to delete async job: " + e.getLocalizedMessage());
                 } catch (Throwable e) {
+                    s_logger.info("[ignored]"
+                            + "caught an error during delete async job: " + e.getLocalizedMessage());
                 }
             }
         });

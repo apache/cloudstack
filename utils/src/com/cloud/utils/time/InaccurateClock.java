@@ -95,10 +95,7 @@ public class InaccurateClock extends StandardMBean implements InaccurateClockMBe
             try {
                 time = System.currentTimeMillis();
             } catch (Throwable th) {
-                try {
-                    s_logger.error("Unable to time", th);
-                } catch (Throwable th2) {
-                }
+                s_logger.error("Unable to time", th);
             }
         }
     }
