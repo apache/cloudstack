@@ -1323,6 +1323,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             // publishing to individual users is irrelevant
             throw new InvalidParameterValueException("Update template permissions is an invalid operation on template " + template.getName());
         }
+        //Only admin or owner of the template should be able to change its permissions
+        if (caller.getId() != owner.getId() && !isAdmin) {
+            throw new InvalidParameterValueException("Unable to grant permission to account " + caller.getAccountName() + " as it is neither admin nor owner or the template");
+        }
 
         VMTemplateVO updatedTemplate = _tmpltDao.createForUpdate();
 
