@@ -35,12 +35,11 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.UserVmDetailsDao;
 
 @Component
-@Local(value = { ServiceOfferingDao.class })
+@Local(value = {ServiceOfferingDao.class})
 @DB()
 public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Long> implements ServiceOfferingDao {
     protected static final Logger s_logger = Logger.getLogger(ServiceOfferingDaoImpl.class);
@@ -106,8 +105,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         assert offering.getUniqueName() != null : "how are you going to find this later if you don't set it?";
         ServiceOfferingVO vo = findByName(offering.getUniqueName());
         if (vo != null) {
-            // check invalid CPU speed in system service offering, set it to
-            // default value of 500 Mhz if 0 CPU speed is found
+            // check invalid CPU speed in system service offering, set it to default value of 500 Mhz if 0 CPU speed is found
             if (vo.getSpeed() <= 0) {
                 vo.setSpeed(500);
                 update(vo.getId(), vo);
@@ -237,21 +235,8 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         if (customParameters.containsKey(UsageEventVO.DynamicParameters.memory.name())) {
             dummyoffering.setRamSize(Integer.parseInt(customParameters.get(UsageEventVO.DynamicParameters.memory.name())));
         }
-        return dummyoffering;
-    }
 
-    @Override
-    public ServiceOfferingVO findServiceOffering(final Long vmId, final long serviceOfferingId) {
-        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
-        ServiceOfferingVO result;
-        try {
-            result = findById(vmId, serviceOfferingId);
-        } finally {
-            txn.close();
-        }
-        TransactionLegacy.open(opendb).close();
-        return result;
+        return dummyoffering;
     }
 
 }

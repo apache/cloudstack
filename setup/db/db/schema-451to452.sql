@@ -25,14 +25,6 @@ DELETE FROM `cloud`.`configuration` WHERE name like 'saml%' and component='manag
 
 ALTER TABLE `cloud`.`user` ADD COLUMN `external_entity` text DEFAULT NULL COMMENT "reference to external federation entity";
 
-ALTER TABLE `cloud_usage`.`account` 
-ADD COLUMN `quota_enforce` INT(1) NULL AFTER `default`,
-ADD COLUMN `quota_balance` DECIMAL(15,2) NULL AFTER `quota_enforce`,
-ADD COLUMN `quota_min_balance` DECIMAL(15,2) NULL AFTER `quota_balance`;
-ADD COLUMN `quota_balance_date` DATETIME NULL AFTER `quota_min_balance`,
-ADD COLUMN `quota_alert_date` DATETIME NULL AFTER `quota_balance_date`;
-
-
 DROP TABLE IF EXISTS `cloud`.`saml_token`;
 CREATE TABLE `cloud`.`saml_token` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
@@ -44,10 +36,16 @@ CREATE TABLE `cloud`.`saml_token` (
   CONSTRAINT `fk_saml_token__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-
 -- Quota
 
 ALTER TABLE `cloud_usage`.`cloud_usage` ADD COLUMN `quota_calculated` tinyint(1) DEFAULT 0 COMMENT "quota calculation status";
+
+ALTER TABLE `cloud_usage`.`account`
+ADD COLUMN `quota_enforce` INT(1) NULL AFTER `default`,
+ADD COLUMN `quota_balance` DECIMAL(15,2) NULL AFTER `quota_enforce`,
+ADD COLUMN `quota_min_balance` DECIMAL(15,2) NULL AFTER `quota_balance`,
+ADD COLUMN `quota_balance_date` DATETIME NULL AFTER `quota_min_balance`,
+ADD COLUMN `quota_alert_date` DATETIME NULL AFTER `quota_balance_date`;
 
 CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_tariff` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,

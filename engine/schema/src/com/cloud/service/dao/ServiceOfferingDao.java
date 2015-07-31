@@ -49,6 +49,4 @@ public interface ServiceOfferingDao extends GenericDao<ServiceOfferingVO, Long> 
     boolean isDynamic(long serviceOfferingId);
 
     ServiceOfferingVO getcomputeOffering(ServiceOfferingVO serviceOffering, Map<String, String> customParameters);
-
-    ServiceOfferingVO findServiceOffering(Long vmId, long serviceOfferingId);
 }
