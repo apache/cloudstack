@@ -34,6 +34,7 @@ import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
 import org.apache.cloudstack.api.command.QuotaStatementCmd;
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
 import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
+import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -74,6 +75,8 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
     private ConfigurationDao _configDao;
     @Inject
     private QuotaBalanceDao _quotaBalanceDao;
+    @Inject
+    private QuotaResponseBuilder _respBldr;
 
     private TimeZone _usageTimezone;
     private int _aggregationDuration = 0;
@@ -158,10 +161,11 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
 
         startDate = startDate == null ? new Date() : startDate;
 
-        Date adjustedStartDate = computeAdjustedTime(startDate);
 
         if (endDate == null) {
-            s_logger.debug("Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", on or before " + adjustedStartDate);
+            // adjust start date to end of day as there is no end date
+            Date adjustedStartDate = computeAdjustedTime(_respBldr.startOfNextDay(startDate));
+            s_logger.debug("getQuotaBalance1: Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", on or before " + adjustedStartDate);
             List<QuotaBalanceVO> qbrecords = _quotaBalanceDao.findQuotaBalance(accountId, domainId, adjustedStartDate);
             s_logger.info("Found records size=" + qbrecords.size());
             if (qbrecords.size() == 0) {
@@ -169,20 +173,24 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
             } else {
                 return qbrecords;
             }
-        } else if (endDate.after(startOfNextDay(new Date()))) {
-            throw new InvalidParameterValueException("Incorrect Date Range. End date:" + endDate + " should not be in future. ");
-        } else if (startDate.before(endDate)) {
-            Date adjustedEndDate = computeAdjustedTime(startOfNextDay(endDate));
-            s_logger.debug("Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
-            List<QuotaBalanceVO> qbrecords = _quotaBalanceDao.findQuotaBalance(accountId, domainId, adjustedStartDate, adjustedEndDate);
-            s_logger.info("Found records size=" + qbrecords.size());
-            if (qbrecords.size() == 0) {
-                throw new InvalidParameterValueException("Incorrect Date range there are no quota records between these dates start date " + adjustedStartDate + " and end date:" + endDate);
+        }
+        else {
+            Date adjustedStartDate = computeAdjustedTime(startDate);
+            if (endDate.after(_respBldr.startOfNextDay())) {
+                throw new InvalidParameterValueException("Incorrect Date Range. End date:" + endDate + " should not be in future. ");
+            } else if (startDate.before(endDate)) {
+                Date adjustedEndDate = computeAdjustedTime(endDate);
+                s_logger.debug("getQuotaBalance2: Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
+                List<QuotaBalanceVO> qbrecords = _quotaBalanceDao.findQuotaBalance(accountId, domainId, adjustedStartDate, adjustedEndDate);
+                s_logger.info("getQuotaBalance3: Found records size=" + qbrecords.size());
+                if (qbrecords.size() == 0) {
+                    throw new InvalidParameterValueException("Incorrect Date range there are no quota records between these dates start date " + adjustedStartDate + " and end date:" + endDate);
+                } else {
+                    return qbrecords;
+                }
             } else {
-                return qbrecords;
+                throw new InvalidParameterValueException("Incorrect Date Range. Start date: " + startDate + " is after end date:" + endDate);
             }
-        } else {
-            throw new InvalidParameterValueException("Incorrect Date Range. Start date: " + startDate + " is after end date:" + endDate);
         }
 
     }
@@ -213,16 +221,16 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         }
         TransactionLegacy.open(opendb).close();
 
-        endDate = startOfNextDay(endDate);
         if (startDate.after(endDate)) {
             throw new InvalidParameterValueException("Incorrect Date Range. Start date: " + startDate + " is after end date:" + endDate);
         }
-        if (endDate.after(startOfNextDay(new Date()))) {
+        if (endDate.after(_respBldr.startOfNextDay())) {
             throw new InvalidParameterValueException("Incorrect Date Range. End date:" + endDate + " should not be in future. ");
         }
-
+        Date adjustedEndDate = computeAdjustedTime(endDate);
+        Date adjustedStartDate = computeAdjustedTime(startDate);
         s_logger.debug("Getting quota records for account: " + accountId + ", domainId: " + domainId + ", between " + startDate + " and " + endDate);
-        return _quotaUsageDao.findQuotaUsage(accountId, domainId, usageType, startDate, endDate);
+        return _quotaUsageDao.findQuotaUsage(accountId, domainId, usageType, adjustedStartDate, adjustedEndDate);
     }
 
     @Override
@@ -248,24 +256,6 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         calTS.add(Calendar.MILLISECOND, -1 * timezoneOffset);
 
         return calTS.getTime();
-    }
-
-    @Override
-    public Date startOfNextDay(Date dt) {
-        Calendar c = Calendar.getInstance();
-        c.setTime(dt);
-        c.add(Calendar.DATE, 1);
-        dt = c.getTime();
-        return dt;
-    }
-
-    @Override
-    public Date startOfNextDay() {
-        Calendar c = Calendar.getInstance();
-        c.setTime(new Date());
-        c.add(Calendar.DATE, 1);
-        Date dt = c.getTime();
-        return dt;
     }
 
 }

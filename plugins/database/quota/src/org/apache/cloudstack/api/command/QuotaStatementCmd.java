@@ -97,7 +97,7 @@ public class QuotaStatementCmd extends BaseCmd {
     }
 
     public Date getEndDate() {
-        return endDate;
+        return _responseBuilder.startOfNextDay(endDate == null ? new Date() : endDate);
     }
 
     public void setEndDate(Date endDate) {

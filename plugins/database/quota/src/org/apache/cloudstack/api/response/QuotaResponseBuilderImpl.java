@@ -23,6 +23,7 @@ import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.db.TransactionLegacy;
+
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
@@ -48,8 +49,10 @@ import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -202,18 +205,16 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     @Override
     public List<QuotaTariffVO> listQuotaTariffPlans(final QuotaTariffListCmd cmd) {
         List<QuotaTariffVO> result = new ArrayList<QuotaTariffVO>();
-        Date now = cmd.getStartDate();
-        if (now == null) {
-            now = _quotaService.computeAdjustedTime(new Date());
-        }
-        s_logger.info("Now=" + now.toGMTString() + " quotatype=" + cmd.getUsageType());
+        Date effectiveDate = cmd.getEffectiveDate() == null ?  new Date() : cmd.getEffectiveDate();
+        Date adjustedEffectiveDate = _quotaService.computeAdjustedTime(effectiveDate);
+        s_logger.info("Effective datec=" + effectiveDate + " quotatype=" + cmd.getUsageType() + " Adjusted date=" + adjustedEffectiveDate);
         if (cmd.getUsageType() != null) {
-            QuotaTariffVO tariffPlan = _quotaTariffDao.findTariffPlanByUsageType(cmd.getUsageType(), now);
+            QuotaTariffVO tariffPlan = _quotaTariffDao.findTariffPlanByUsageType(cmd.getUsageType(), adjustedEffectiveDate);
             if (tariffPlan != null) {
                 result.add(tariffPlan);
             }
         } else {
-            result = _quotaTariffDao.listAllTariffPlans(_quotaService.startOfNextDay(now));
+            result = _quotaTariffDao.listAllTariffPlans(adjustedEffectiveDate);
         }
         return result;
     }
@@ -276,6 +277,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
             QuotaCreditsVO credits = new QuotaCreditsVO(accountId, domainId, new BigDecimal(amount), updatedBy);
+            s_logger.info("addQuotaCredits: Depositing " + amount + " on adjusted date " + despositedOn);
             credits.setUpdatedOn(despositedOn);
             result = _quotaCreditsDao.saveCredits(credits);
         } finally {
@@ -284,12 +286,12 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
         final AccountVO account = _accountDao.findById(accountId);
         final boolean lockAccountEnforcement = QuotaConfig.QuotaEnableEnforcement.value().equalsIgnoreCase("true");
-        final BigDecimal currentAccountBalance = _quotaBalanceDao.lastQuotaBalance(accountId, domainId, _quotaService.startOfNextDay());
+        final BigDecimal currentAccountBalance = _quotaBalanceDao.lastQuotaBalance(accountId, domainId, startOfNextDay(despositedOn));
         if (lockAccountEnforcement && (currentAccountBalance.compareTo(new BigDecimal(0)) >= 0)) {
             if (account.getState() == Account.State.locked) {
                 try {
                     _regionMgr.enableAccount(account.getAccountName(), domainId, accountId);
-                    //_quotaMgr.sendQuotaAlert(account, currentAccountBalance, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_UNLOCK_ACCOUNT);
+                    // _quotaMgr.sendQuotaAlert(account, currentAccountBalance, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_UNLOCK_ACCOUNT);
                 } catch (Exception e) {
                     s_logger.error(String.format("Unable to unlock account %s after getting enough quota credits", account.getAccountName()));
                 }
@@ -353,25 +355,15 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         if (quotaBalance.size() == 0) {
             new InvalidParameterValueException("There are no balance entries on or before the requested date.");
         }
-        Collections.sort(quotaBalance, new Comparator<QuotaBalanceVO>() {
-            public int compare(QuotaBalanceVO o1, QuotaBalanceVO o2) {
-                return o2.getUpdatedOn().compareTo(o1.getUpdatedOn()); // desc
-            }
-        });
         QuotaBalanceResponse resp = new QuotaBalanceResponse();
         BigDecimal lastCredits = new BigDecimal(0);
         for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
             QuotaBalanceVO entry = it.next();
-            s_logger.info("Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
-            if (lastCredits.compareTo(new BigDecimal(0)) == 0) {
-                resp.setStartQuota(entry.getCreditBalance());
-                resp.setStartDate(startDate);
-            }
+            s_logger.info("createQuotaLastBalanceResponse Date=" + entry.getUpdatedOn() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
             lastCredits = lastCredits.add(entry.getCreditBalance());
-            resp.addCredits(entry);
         }
-        resp.setEndQuota(lastCredits);
-        resp.setEndDate(_quotaService.computeAdjustedTime(_quotaService.startOfNextDay()));
+        resp.setStartQuota(lastCredits);
+        resp.setStartDate(_quotaService.computeAdjustedTime(startDate));
         resp.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
         resp.setObjectName("balance");
         return resp;
@@ -385,6 +377,24 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     @Override
     public List<QuotaBalanceVO> getQuotaBalance(QuotaBalanceCmd cmd) {
         return _quotaService.getQuotaBalance(cmd.getAccountId(), cmd.getAccountName(), cmd.getDomainId(), cmd.getStartDate(), cmd.getEndDate());
+    }
+
+    @Override
+    public Date startOfNextDay(Date dt) {
+        Calendar c = Calendar.getInstance();
+        c.setTime(dt);
+        c.add(Calendar.DATE, 1);
+        dt = c.getTime();
+        return dt;
+    }
+
+    @Override
+    public Date startOfNextDay() {
+        Calendar c = Calendar.getInstance();
+        c.setTime(new Date());
+        c.add(Calendar.DATE, 1);
+        Date dt = c.getTime();
+        return dt;
     }
 
 }

@@ -55,4 +55,8 @@ public interface QuotaResponseBuilder {
     List<QuotaEmailTemplateResponse> listQuotaEmailTemplates(QuotaEmailTemplateListCmd cmd);
 
     boolean updateQuotaEmailTemplate(QuotaEmailTemplateUpdateCmd cmd);
+
+    Date startOfNextDay(Date dt);
+
+    Date startOfNextDay();
 }

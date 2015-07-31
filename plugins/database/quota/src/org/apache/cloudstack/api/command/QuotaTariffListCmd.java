@@ -46,7 +46,7 @@ public class QuotaTariffListCmd extends BaseListCmd {
     private Integer usageType;
 
     @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, required = false, description = "The effective start date on/after which the quota tariff is effective and older tariffs are no longer used for the usage type. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-03.")
-    private Date startDate;
+    private Date effectiveDate;
 
     public QuotaTariffListCmd() {
         super();
@@ -78,8 +78,8 @@ public class QuotaTariffListCmd extends BaseListCmd {
         return Account.ACCOUNT_ID_SYSTEM;
     }
 
-    public Date getStartDate() {
-        return startDate;
+    public Date getEffectiveDate() {
+        return effectiveDate;
     }
 
     public Integer getUsageType() {

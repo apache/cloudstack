@@ -86,7 +86,7 @@ public class QuotaBalanceCmd extends BaseCmd {
     }
 
     public Date getEndDate() {
-        return endDate;
+        return endDate == null ? null : _responseBuilder.startOfNextDay(endDate);
     }
 
     public void setEndDate(Date endDate) {

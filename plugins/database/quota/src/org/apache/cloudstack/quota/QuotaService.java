@@ -32,7 +32,4 @@ public interface QuotaService extends PluggableService {
 
     Date computeAdjustedTime(Date date);
 
-    Date startOfNextDay(Date dt);
-
-    Date startOfNextDay();
 }

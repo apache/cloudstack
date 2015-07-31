@@ -48,20 +48,20 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         searchUsageType.done();
 
         listAllIncludedUsageType = createSearchBuilder();
-        listAllIncludedUsageType.and("onorbeforedate", listAllIncludedUsageType.entity().getEffectiveOn(), SearchCriteria.Op.LTEQ);
+        listAllIncludedUsageType.and("onorafter", listAllIncludedUsageType.entity().getEffectiveOn(), SearchCriteria.Op.GTEQ);
         listAllIncludedUsageType.and("quotatype", listAllIncludedUsageType.entity().getUsageType(), SearchCriteria.Op.EQ);
         listAllIncludedUsageType.done();
     }
 
     @Override
-    public QuotaTariffVO findTariffPlanByUsageType(final int quotaType, final Date onOrBeforeDate) {
+    public QuotaTariffVO findTariffPlanByUsageType(final int quotaType, final Date effectiveDate) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         List<QuotaTariffVO> result = null;
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
             final Filter filter = new Filter(QuotaTariffVO.class, "effectiveOn", false, 0L, 1L);
             final SearchCriteria<QuotaTariffVO> sc = listAllIncludedUsageType.create();
-            sc.setParameters("onorbeforedate", onOrBeforeDate);
+            sc.setParameters("onorafter", effectiveDate);
             sc.setParameters("quotatype", quotaType);
             result = search(sc, filter);
         } finally {
@@ -70,9 +70,7 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         // Switch back
         TransactionLegacy.open(opendb).close();
         if (result.size() > 0) {
-            // s_logger.info(onOrBeforeDate.toGMTString() + "quota type " +
-            // quotaType + " , effective Date=" + result.get(0).getEffectiveOn()
-            // + " val=" + result.get(0).getCurrencyValue());
+            s_logger.info("findTariffPlanByUsageType: " + effectiveDate + "quota type " + quotaType  + " val=" + result.get(0).getCurrencyValue());
             return result.get(0);
         } else {
             s_logger.info("Missing quota type " + quotaType);
@@ -81,24 +79,20 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
     }
 
     @Override
-    public List<QuotaTariffVO> listAllTariffPlans(final Date onOrBeforeDate) {
+    public List<QuotaTariffVO> listAllTariffPlans(final Date effectiveDate) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         List<QuotaTariffVO> tariffs = new ArrayList<QuotaTariffVO>();
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
             final Filter filter = new Filter(QuotaTariffVO.class, "effectiveOn", false, 0L, 1L);
             final SearchCriteria<QuotaTariffVO> sc = listAllIncludedUsageType.create();
-            sc.setParameters("onorbeforedate", onOrBeforeDate);
+            sc.setParameters("onorafter", effectiveDate);
             for (Integer quotaType : QuotaTypes.listQuotaTypes().keySet()) {
                 sc.setParameters("quotatype", quotaType);
                 List<QuotaTariffVO> result = search(sc, filter);
                 if (result.size() > 0) {
                     tariffs.add(result.get(0));
-                    // s_logger.info(onOrBeforeDate.toGMTString() +
-                    // "quota type " + resp.getDescription() +
-                    // " , effective Date=" + result.get(0).getEffectiveOn() +
-                    // " val="
-                    // + result.get(0).getCurrencyValue());
+                    s_logger.info("listAllTariffPlans onorafter" + effectiveDate +  "quota type " + result.get(0).getDescription() + " , effective Date=" + result.get(0).getEffectiveOn() + " val=" + result.get(0).getCurrencyValue());
                 }
             }
         } finally {
