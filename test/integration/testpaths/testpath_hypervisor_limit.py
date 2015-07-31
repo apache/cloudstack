@@ -28,7 +28,9 @@ from marvin.lib.base import (Account,
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template,
-                               list_virtual_machines
+                               list_virtual_machines,
+                               list_ssvms,
+                               list_routers
                                )
 
 
@@ -58,9 +60,6 @@ class TestMaxHyperviosrLimit(cloudstackTestCase):
             cls.testdata["ostype"])
 
         cls._cleanup = []
-        hostList = Host.list(cls.apiclient, zoneid=cls.zone.id, type="Routing")
-        cls.host = Host(hostList[0].__dict__)
-        Host.update(cls.apiclient, id=cls.host.id, hosttags="host1")
         try:
             cls.skiptest = False
             if cls.hypervisor.lower() not in ['xenserver']:
@@ -128,20 +127,48 @@ class TestMaxHyperviosrLimit(cloudstackTestCase):
     def test_check_hypervisor_max_limit_effect(self):
         """ Test hypervisor max limits effect
 
-        # 1. Read exsiting count of VM's on the host 
-                and modify maxguestlimit of the host by exsiting count + 4
+        # 1. Read exsiting count of VM's on the host including SSVM and VR
+                and modify maxguestcount accordingly
         # 2. Deploy a VM
         # 2. Try to deploy another vm
         # 3. Verify that second VM
                 deployment fails (2 SSVMs 1 VR VM and 1 deployed VM)
         """
 
+        hostList = Host.list(
+            self.apiclient,
+            zoneid=self.zone.id,
+            type="Routing")
+        event_validation_result = validateList(hostList)
+        self.assertEqual(
+            event_validation_result[0],
+            PASS,
+            "host list validation failed due to %s" %
+            event_validation_result[2])
+
+        self.host = Host(hostList[0])
+        Host.update(self.apiclient, id=self.host.id, hosttags="host1")
+
         # Step 1
+        # List VM's , SSVM's and VR on selected host
         listVm = list_virtual_machines(self.apiclient,
                                        hostid=self.host.id)
-        vmCount = len(listVm)
-        # Increament vm count by 4(2 SSVMs 1 VR VM and 1 deployed VM)
-        newValue = vmCount + 4
+
+        listssvm = list_ssvms(self.apiclient,
+                              hostid=self.host.id)
+
+        listvr = list_routers(self.apiclient,
+                              hostid=self.host.id)
+
+        newValue = 1
+        if listVm is not None:
+            newValue = len(listVm) + newValue
+
+        if listssvm is not None:
+            newValue = len(listssvm) + newValue
+
+        if listvr is not None:
+            newValue = len(listvr) + newValue
 
         qresultset = self.dbclient.execute(
             "select hypervisor_version from host where uuid='%s'" %
