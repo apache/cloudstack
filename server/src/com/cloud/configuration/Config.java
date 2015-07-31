@@ -814,7 +814,14 @@ public enum Config {
             "600",
             "Time Interval to fetch the LB health check states (in sec)",
             null),
-
+    NCCCmdTimeOut(
+            "Advanced",
+            ManagementServer.class,
+            Long.class,
+            "ncc.command.timeout",
+            "600000", // 10 minutes
+            "Command Timeout Interval (in millisec)",
+            null),
     DirectAttachNetworkEnabled(
             "Advanced",
             ManagementServer.class,
