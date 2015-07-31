@@ -1354,6 +1354,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         //Derive the domain id from the template owner as updateTemplatePermissions is not cross domain operation
         Account owner = _accountMgr.getAccount(ownerId);
         final Domain domain = _domainDao.findById(owner.getDomainId());
+        //Only admin or owner of the template should be able to change its permissions
+        if (caller.getId() != owner.getId() && !isAdmin) {
+            throw new InvalidParameterValueException("Unable to grant permission to account " + caller.getAccountName() + " as it is neither admin nor owner or the template");
+        }
         if ("add".equalsIgnoreCase(operation)) {
             final List<String> accountNamesFinal = accountNames;
             final List<Long> accountIds = new ArrayList<Long>();
