@@ -28,7 +28,7 @@ from marvin.lib.base import (Account,
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template,
-                              )
+                               )
 
 from marvin.sshClient import SshClient
 import time
@@ -41,7 +41,7 @@ class TestSameVMName(cloudstackTestCase):
         testClient = super(TestSameVMName, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.testdata = testClient.getParsedTestDataConfig()
-
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
@@ -59,6 +59,7 @@ class TestSameVMName(cloudstackTestCase):
 
             if cls.hypervisor.lower() not in ['vmware']:
                 cls.skiptest = True
+                return
 
             # Create an account
             cls.account_1 = Account.create(
@@ -82,7 +83,7 @@ class TestSameVMName(cloudstackTestCase):
                 UserName=cls.account_2.name,
                 DomainName=cls.account_2.domain
             )
-           # Create Service offering
+            # Create Service offering
             cls.service_offering = ServiceOffering.create(
                 cls.apiclient,
                 cls.testdata["service_offering"],
@@ -103,11 +104,11 @@ class TestSameVMName(cloudstackTestCase):
         """Restart management server"""
 
         sshClient = SshClient(
-                cls.mgtSvrDetails["mgtSvrIp"],
-                22,
-                cls.mgtSvrDetails["user"],
-                cls.mgtSvrDetails["passwd"]
-                )
+            cls.mgtSvrDetails["mgtSvrIp"],
+            22,
+            cls.mgtSvrDetails["user"],
+            cls.mgtSvrDetails["passwd"]
+        )
         command = "service cloudstack-management restart"
         sshClient.execute(command)
 
@@ -124,8 +125,10 @@ class TestSameVMName(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
-        if self.skiptest: 
-            self.skipTest("This test is to be checked on VMWare only  Hence, skip for %s"  % self.hypervisor)
+        if self.skiptest:
+            self.skipTest(
+                "This test is to be checked on VMWare only  \
+                    Hence, skip for %s" % self.hypervisor)
 
     def tearDown(self):
         try:
@@ -136,11 +139,11 @@ class TestSameVMName(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic"])
     def test_vms_with_same_name(self):
-        """ Test vm deployment with same name 
+        """ Test vm deployment with same name
 
         # 1. Deploy a VM on with perticular name from account_1
         # 2. Try to deploy another vm with same name from account_2
-        # 3. Verify that second VM deployment fails 
+        # 3. Verify that second VM deployment fails
 
         """
         # Step 1
@@ -160,8 +163,8 @@ class TestSameVMName(cloudstackTestCase):
             self.RestartServer()
             time.sleep(120)
 
-        self.testdata["small"]["displayname"]="TestName"
-        self.testdata["small"]["name"]="TestName"
+        self.testdata["small"]["displayname"] = "TestName"
+        self.testdata["small"]["name"] = "TestName"
         VirtualMachine.create(
             self.userapiclient_1,
             self.testdata["small"],
