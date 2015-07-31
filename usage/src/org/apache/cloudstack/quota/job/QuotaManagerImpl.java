@@ -43,10 +43,12 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
+import org.apache.cloudstack.quota.dao.QuotaAccountDao;
 import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
 import org.apache.cloudstack.quota.dao.QuotaEmailTemplatesDao;
 import org.apache.cloudstack.quota.dao.QuotaTariffDao;
 import org.apache.cloudstack.quota.dao.QuotaUsageDao;
+import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
@@ -88,6 +90,8 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Runna
 
     @Inject
     private AccountDao _accountDao;
+    @Inject
+    private QuotaAccountDao _quotaAcc;
     @Inject
     private UserDao _userDao;
     @Inject
@@ -292,14 +296,26 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Runna
                             }
 
                             QuotaBalanceVO newbalance = new QuotaBalanceVO(account.getAccountId(), account.getDomainId(), aggrUsage, endDate);
-                            // s_logger.info("Balance entry=" + aggrUsage +
-                            // " on Date=" + endDate);
+                            // s_logger.info("Balance entry=" + aggrUsage + " on Date=" + endDate);
                             _quotaBalanceDao.persist(newbalance);
                             aggrUsage = new BigDecimal(0);
                         }
                         startDate = entry.getStartDate();
                         endDate = entry.getEndDate();
                         aggrUsage = aggrUsage.subtract(entry.getQuotaUsed());
+                    }
+                    // update is quota_accounts
+                    QuotaAccountVO quota_account = _quotaAcc.findById(account.getAccountId());
+                    if (quota_account == null) {
+                        quota_account = new QuotaAccountVO(account.getAccountId());
+                        quota_account.setQuotaBalance(aggrUsage);
+                        quota_account.setQuotaBalanceDate(endDate);
+                        _quotaAcc.persist(quota_account);
+                    }
+                    else {
+                        quota_account.setQuotaBalance(aggrUsage);
+                        quota_account.setQuotaBalanceDate(endDate);
+                        _quotaAcc.update(account.getAccountId(), quota_account);
                     }
                 }// balance processed
             } // END ACCOUNT

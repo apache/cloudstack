@@ -40,12 +40,21 @@ CREATE TABLE `cloud`.`saml_token` (
 
 ALTER TABLE `cloud_usage`.`cloud_usage` ADD COLUMN `quota_calculated` tinyint(1) DEFAULT 0 COMMENT "quota calculation status";
 
-ALTER TABLE `cloud_usage`.`account`
-ADD COLUMN `quota_enforce` INT(1) NULL AFTER `default`,
-ADD COLUMN `quota_balance` DECIMAL(15,2) NULL AFTER `quota_enforce`,
-ADD COLUMN `quota_min_balance` DECIMAL(15,2) NULL AFTER `quota_balance`,
-ADD COLUMN `quota_balance_date` DATETIME NULL AFTER `quota_min_balance`,
-ADD COLUMN `quota_alert_date` DATETIME NULL AFTER `quota_balance_date`;
+DROP TABLE IF EXISTS `cloud_usage`.`quota_account`;
+CREATE TABLE `quota_account` (
+      `account_id` int(11) NOT NULL,
+      `quota_balance` decimal(15,2) NOT NULL,
+      `quota_balance_date` datetime NOT NULL,
+      `quota_enforce` int(1) DEFAULT NULL,
+      `quota_min_balance` decimal(15,2) DEFAULT NULL,
+      `quota_alert_date` datetime DEFAULT NULL,
+      `quota_alert_type` int(11) DEFAULT NULL,
+      PRIMARY KEY (`account_id`),
+  CONSTRAINT `account_id` FOREIGN KEY (`account_id`) REFERENCES `cloud_usage`.`account` (`quota_enforce`)
+  ON DELETE NO ACTION
+  ON UPDATE NO ACTION
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
 
 CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_tariff` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
