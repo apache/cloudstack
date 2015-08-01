@@ -22,4 +22,10 @@ import com.cloud.utils.db.GenericDao;
 
 public interface QuotaAccountDao extends GenericDao<QuotaAccountVO, Long> {
 
+    QuotaAccountVO findById(Long id);
+
+    QuotaAccountVO persist(QuotaAccountVO entity);
+
+    boolean update(Long id, QuotaAccountVO entity);
+
 }

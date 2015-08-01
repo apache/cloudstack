@@ -22,9 +22,40 @@ import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = { QuotaAccountDao.class })
 public class QuotaAccountDaoImpl extends GenericDaoBase<QuotaAccountVO, Long> implements QuotaAccountDao {
+
+    @Override
+    public QuotaAccountVO findById(Long id){
+        QuotaAccountVO result=null;
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
+        result = findById(id);
+        TransactionLegacy.open(opendb).close();
+        return result;
+    }
+
+    @Override
+    public QuotaAccountVO persist(QuotaAccountVO entity){
+        QuotaAccountVO result=null;
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
+        result = persist(entity);
+        TransactionLegacy.open(opendb).close();
+        return result;
+    }
+
+    @Override
+    public boolean update(Long id, QuotaAccountVO entity){
+        boolean result=false;
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
+        result=update(id, entity);
+        TransactionLegacy.open(opendb).close();
+        return result;
+    }
 
 }

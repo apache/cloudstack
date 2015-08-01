@@ -29,7 +29,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 @Entity
-@Table(name = "quota_balance")
+@Table(name = "quota_account")
 public class QuotaAccountVO implements InternalIdentity {
 
     private static final long serialVersionUID = -7112846845287653210L;
