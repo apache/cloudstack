@@ -48,7 +48,7 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         searchUsageType.done();
 
         listAllIncludedUsageType = createSearchBuilder();
-        listAllIncludedUsageType.and("onorafter", listAllIncludedUsageType.entity().getEffectiveOn(), SearchCriteria.Op.GTEQ);
+        listAllIncludedUsageType.and("onorbefore", listAllIncludedUsageType.entity().getEffectiveOn(), SearchCriteria.Op.LTEQ);
         listAllIncludedUsageType.and("quotatype", listAllIncludedUsageType.entity().getUsageType(), SearchCriteria.Op.EQ);
         listAllIncludedUsageType.done();
     }
@@ -61,7 +61,7 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         try {
             final Filter filter = new Filter(QuotaTariffVO.class, "effectiveOn", false, 0L, 1L);
             final SearchCriteria<QuotaTariffVO> sc = listAllIncludedUsageType.create();
-            sc.setParameters("onorafter", effectiveDate);
+            sc.setParameters("onorbefore", effectiveDate);
             sc.setParameters("quotatype", quotaType);
             result = search(sc, filter);
         } finally {
@@ -86,13 +86,13 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         try {
             final Filter filter = new Filter(QuotaTariffVO.class, "effectiveOn", false, 0L, 1L);
             final SearchCriteria<QuotaTariffVO> sc = listAllIncludedUsageType.create();
-            sc.setParameters("onorafter", effectiveDate);
+            sc.setParameters("onorbefore", effectiveDate);
             for (Integer quotaType : QuotaTypes.listQuotaTypes().keySet()) {
                 sc.setParameters("quotatype", quotaType);
                 List<QuotaTariffVO> result = search(sc, filter);
                 if (result.size() > 0) {
                     tariffs.add(result.get(0));
-                    s_logger.info("listAllTariffPlans onorafter" + effectiveDate +  "quota type " + result.get(0).getDescription() + " , effective Date=" + result.get(0).getEffectiveOn() + " val=" + result.get(0).getCurrencyValue());
+                    s_logger.info("listAllTariffPlans onorbefore" + effectiveDate +  "quota type " + result.get(0).getDescription() + " , effective Date=" + result.get(0).getEffectiveOn() + " val=" + result.get(0).getCurrencyValue());
                 }
             }
         } finally {
