@@ -58,6 +58,9 @@ public class QuotaAccountVO implements InternalIdentity {
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date quotaAlertDate = null;
 
+    public QuotaAccountVO() {
+    }
+
     public QuotaAccountVO(Long accountId) {
         super();
         this.accountId = accountId;

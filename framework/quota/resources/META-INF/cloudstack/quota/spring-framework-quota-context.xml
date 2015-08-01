@@ -18,6 +18,7 @@
                       http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 
 	<bean id="QuotaTariffDao" class="org.apache.cloudstack.quota.dao.QuotaTariffDaoImpl" />
+    <bean id="QuotaAccountDao" class="org.apache.cloudstack.quota.dao.QuotaAccountDaoImpl" />
 	<bean id="QuotaBalanceDao" class="org.apache.cloudstack.quota.dao.QuotaBalanceDaoImpl" />
 	<bean id="QuotaCreditsDao" class="org.apache.cloudstack.quota.dao.QuotaCreditsDaoImpl" />
 	<bean id="QuotaEmailTemplatesDao"
