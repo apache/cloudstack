@@ -98,19 +98,9 @@ public class Upgrade306to307 extends Upgrade30xBase implements DbUpgrade {
             pstmt.executeUpdate();
         } catch (SQLException e) {
         } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (rs1 != null) {
-                    rs1.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
+            closeAutoCloseable(rs);
+            closeAutoCloseable(rs1);
+            closeAutoCloseable(pstmt);
         }
     }
 

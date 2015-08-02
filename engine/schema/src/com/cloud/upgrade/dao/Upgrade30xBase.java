@@ -27,7 +27,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public abstract class Upgrade30xBase implements DbUpgrade {
+public abstract class Upgrade30xBase extends LegacyDbUpgrade implements DbUpgrade {
 
     final static Logger s_logger = Logger.getLogger(Upgrade30xBase.class);
 
@@ -46,18 +46,8 @@ public abstract class Upgrade30xBase implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to fetch network label from configuration", e);
         } finally {
-            if (rs != null) {
-                try {
-                    rs.close();
-                } catch (SQLException e) {
-                }
-            }
-            if (pstmt != null) {
-                try {
-                    pstmt.close();
-                } catch (SQLException e) {
-                }
-            }
+            closeAutoCloseable(rs);
+            closeAutoCloseable(pstmt);
         }
         return networkLabel;
     }
@@ -117,19 +107,8 @@ public abstract class Upgrade30xBase implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while adding PhysicalNetworks", e);
         } finally {
-            if (pstmtUpdate != null) {
-                try {
-                    pstmtUpdate.close();
-                } catch (SQLException e) {
-                }
-            }
-            if (pstmt2 != null) {
-                try {
-                    pstmt2.close();
-                } catch (SQLException e) {
-                }
-            }
-
+            closeAutoCloseable(pstmt2);
+            closeAutoCloseable(pstmtUpdate);
         }
     }
 
@@ -152,12 +131,7 @@ public abstract class Upgrade30xBase implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while adding PhysicalNetworks", e);
         } finally {
-            if (pstmtUpdate != null) {
-                try {
-                    pstmtUpdate.close();
-                } catch (SQLException e) {
-                }
-            }
+            closeAutoCloseable(pstmtUpdate);
         }
     }
 
@@ -204,18 +178,8 @@ public abstract class Upgrade30xBase implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while adding default Security Group Provider", e);
         } finally {
-            if (pstmtUpdate != null) {
-                try {
-                    pstmtUpdate.close();
-                } catch (SQLException e) {
-                }
-            }
-            if (pstmt2 != null) {
-                try {
-                    pstmt2.close();
-                } catch (SQLException e) {
-                }
-            }
+            closeAutoCloseable(pstmt2);
+            closeAutoCloseable(pstmtUpdate);
         }
     }
 
@@ -261,18 +225,8 @@ public abstract class Upgrade30xBase implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while adding PhysicalNetworks", e);
         } finally {
-            if (pstmtUpdate != null) {
-                try {
-                    pstmtUpdate.close();
-                } catch (SQLException e) {
-                }
-            }
-            if (pstmt2 != null) {
-                try {
-                    pstmt2.close();
-                } catch (SQLException e) {
-                }
-            }
+            closeAutoCloseable(pstmt2);
+            closeAutoCloseable(pstmtUpdate);
         }
     }
 
@@ -299,12 +253,7 @@ public abstract class Upgrade30xBase implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while adding PhysicalNetworks", e);
         } finally {
-            if (pstmtUpdate != null) {
-                try {
-                    pstmtUpdate.close();
-                } catch (SQLException e) {
-                }
-            }
+            closeAutoCloseable(pstmtUpdate);
         }
 
     }
