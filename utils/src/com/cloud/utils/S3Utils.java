@@ -103,17 +103,19 @@ public final class S3Utils {
         }
 
         if (clientOptions.getUseTCPKeepAlive() != null) {
-            configuration.setUseTcpKeepAlive(clientOptions.getUseTCPKeepAlive());
+            //configuration.setUseTcpKeepAlive(clientOptions.getUseTCPKeepAlive());
+            LOGGER.debug("useTCPKeepAlive not supported by old AWS SDK");
         }
 
         if (clientOptions.getConnectionTtl() != null) {
-            configuration.setConnectionTTL(clientOptions.getConnectionTtl());
+            //configuration.setConnectionTTL(clientOptions.getConnectionTtl());
+            LOGGER.debug("connectionTtl not supported by old AWS SDK");
         }
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug(format("Creating S3 client with configuration: [protocol: %1$s, connectionTimeOut: " + "%2$s, maxErrorRetry: %3$s, socketTimeout: %4$s, useTCPKeepAlive: %5$s, connectionTtl: %6$s]",
                 configuration.getProtocol(), configuration.getConnectionTimeout(), configuration.getMaxErrorRetry(), configuration.getSocketTimeout(),
-                configuration.useTcpKeepAlive(), configuration.getConnectionTTL()));
+                -1, -1));
         }
 
         final AmazonS3Client client = new AmazonS3Client(credentials, configuration);
