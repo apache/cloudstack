@@ -75,13 +75,6 @@
                             </div>
                         </div>
 
-                        <div id="saml-login">
-                            <div class="field domain">
-                                <label for="saml-domain"><fmt:message key="label.domain"/></label>
-                                <input id="saml-domain" type="text" name="saml-domain" />
-                            </div>
-                        </div>
-
                         <div id="login-submit">
                             <!-- Submit (login) -->
                             <input id="login-submit" type="submit" value="<fmt:message key="label.login"/>" />

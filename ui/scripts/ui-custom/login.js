@@ -122,8 +122,7 @@
             } else if (selectedLogin === 'saml') {
                 // SAML
                 args.samlLoginAction({
-                    data: {'idpid': $login.find('#login-options').find(':selected').val(),
-                          'domain': $login.find('#saml-domain').val()}
+                    data: {'idpid': $login.find('#login-options').find(':selected').val()}
                 });
             }
             return false;
@@ -133,16 +132,13 @@
         var toggleLoginView = function (selectedOption) {
             $login.find('#login-submit').show();
             if (selectedOption === '') {
-                    $login.find('#saml-login').hide();
                     $login.find('#cloudstack-login').hide();
                     $login.find('#login-submit').hide();
                     selectedLogin = 'none';
             } else if (selectedOption === 'cloudstack-login') {
-                    $login.find('#saml-login').hide();
                     $login.find('#cloudstack-login').show();
                     selectedLogin = 'cloudstack';
             } else {
-                    $login.find('#saml-login').show();
                     $login.find('#cloudstack-login').hide();
                     selectedLogin = 'saml';
             }
@@ -160,14 +156,12 @@
         $login.find('#login-dropdown').hide();
         $login.find('#login-submit').show();
         $login.find('#cloudstack-login').show();
-        $login.find('#saml-login').hide();
 
         // If any IdP servers were set, SAML is enabled
         if (g_idpList && g_idpList.length > 0) {
             $login.find('#login-dropdown').show();
             $login.find('#login-submit').hide();
             $login.find('#cloudstack-login').hide();
-            $login.find('#saml-login').hide();
 
             $login.find('#login-options')
                 .append($('<option>', {
