@@ -29,6 +29,7 @@ getSPMetadata=15
 listIdps=15
 authorizeSamlSso=7
 listSamlAuthorization=7
+listAndSwitchSamlAccount=15
 
 ### Account commands
 createAccount=7
