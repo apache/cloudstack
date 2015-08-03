@@ -62,7 +62,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
                     "ostype"]
 
             cls.services["domainid"] = cls.domain.id
-            cls.services["server_without_disk"]["zoneid"] = cls.zone.id
+            cls.services["small"]["zoneid"] = cls.zone.id
             cls.services["templates"]["ostypeid"] = template.ostypeid
             cls.services["zoneid"] = cls.zone.id
 
@@ -81,7 +81,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             cls.virtual_machine = cls.virtual_machine_with_disk = \
                 VirtualMachine.create(
                     cls.apiclient,
-                    cls.services["server_without_disk"],
+                    cls.services["small"],
                     templateid=template.id,
                     accountid=cls.account.name,
                     domainid=cls.account.domainid,

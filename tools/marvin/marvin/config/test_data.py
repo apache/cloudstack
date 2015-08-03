@@ -370,16 +370,6 @@ test_data = {
         "name": "testvm3",
         "displayname": "Test VM3",
     },
-    "server_without_disk": {
-        "displayname": "Test VM-No Disk",
-        "username": "root",
-        "password": "password",
-        "ssh_port": 22,
-        "hypervisor": 'XenServer',
-        "privateport": 22,
-        "publicport": 22,
-        "protocol": 'TCP',
-    },
     "shared_network": {
         "name": "MySharedNetwork - Test",
         "displaytext": "MySharedNetwork",
@@ -984,16 +974,6 @@ test_data = {
         "gateway": "10.2.1.1",
         "netmask": "255.255.255.192"
     },
-    "server": {
-        "displayname": "TestVM",
-        "username": "root",
-        "password": "password",
-        "ssh_port": 22,
-        "hypervisor": 'XenServer',
-        "privateport": 22,
-        "publicport": 22,
-        "protocol": 'TCP'
-    },
     "privateport": 22,
     "publicport": 22,
     "protocol": 'TCP',
@@ -1104,28 +1084,6 @@ test_data = {
             # ensure unique username generated each time
             "password": "password",
         },
-        "vgpu260q":  # Create a virtual machine instance with vgpu type as 260q
-            {
-                "displayname": "testserver",
-                "username": "root",  # VM creds for SSH
-                "password": "password",
-                "ssh_port": 22,
-                "hypervisor": 'XenServer',
-                "privateport": 22,
-                "publicport": 22,
-                "protocol": 'TCP',
-            },
-        "vgpu140q":  # Create a virtual machine instance with vgpu type as 140q
-            {
-                "displayname": "testserver",
-                "username": "root",
-                "password": "password",
-                "ssh_port": 22,
-                "hypervisor": 'XenServer',
-                "privateport": 22,
-                "publicport": 22,
-                "protocol": 'TCP',
-            },
         "service_offerings":
             {
                 "GRID K260Q":
