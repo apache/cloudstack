@@ -34,6 +34,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.quota.job.QuotaAlertManager;
 import org.apache.cloudstack.quota.job.QuotaManager;
 import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.log4j.Logger;
@@ -146,6 +147,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private UsageVMSnapshotDao _usageVMSnapshotDao;
     @Inject
     private QuotaManager _quotaManager;
+    @Inject
+    private QuotaAlertManager _alertManager;
 
     private String _version = null;
     private final Calendar _jobExecTime = Calendar.getInstance();
@@ -380,6 +383,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             parse(job, startDate, endDate);
             // after usage is calculated run quota calculations
             _quotaManager.calculateQuotaUsage();
+            // run alert manager
+            _alertManager.checkAndSendQuotaAlertEmails();
         } else {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Not owner of usage job, skipping...");

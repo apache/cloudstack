@@ -18,8 +18,8 @@ package org.apache.cloudstack.quota.job;
 
 import com.cloud.utils.component.Manager;
 
-public interface QuotaManager extends Manager {
+public interface QuotaAlertManager extends Manager {
 
-    boolean calculateQuotaUsage();
+    public void checkAndSendQuotaAlertEmails();
 
 }
