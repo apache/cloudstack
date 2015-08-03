@@ -18,14 +18,13 @@ package org.apache.cloudstack.quota.job;
 
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.user.Account;
 //import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
+import com.cloud.user.Account.State;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.DateUtil;
@@ -110,8 +109,6 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Runna
     private QuotaBalanceDao _quotaBalanceDao;
     @Inject
     private ConfigurationDao _configDao;
-    // @Inject
-    // private AccountManager _accountMgr;
 
     private TimeZone _usageTimezone;
     private int _aggregationDuration = 0;
@@ -311,8 +308,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Runna
                         quota_account.setQuotaBalance(aggrUsage);
                         quota_account.setQuotaBalanceDate(endDate);
                         _quotaAcc.persist(quota_account);
-                    }
-                    else {
+                    } else {
                         quota_account.setQuotaBalance(aggrUsage);
                         quota_account.setQuotaBalanceDate(endDate);
                         _quotaAcc.update(account.getAccountId(), quota_account);
@@ -342,11 +338,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Runna
             if (accountBalance != null) {
                 if (accountBalance.compareTo(zeroBalance) <= 0) {
                     if (lockAccountEnforcement && account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-                        try {
-                            disableAccount(account.getAccountName(), account.getDomainId(), account.getId(), true);
-                        } catch (ResourceUnavailableException e) {
-                            s_logger.error(String.format("Unable to lock account %s which has exhausted its allocated quota", account.getAccountName()));
-                        }
+                        lockAccount(account.getId());
                     }
                     deferredQuotaEmailList.add(new DeferredQuotaEmail(account, accountBalance, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_EMPTY));
                 } else if (accountBalance.compareTo(thresholdBalance) <= 0) {
@@ -664,16 +656,6 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Runna
         }
     }
 
-    private Account disableAccount(String accountName, Long domainId, Long accountId, Boolean lockRequested) throws ConcurrentOperationException, ResourceUnavailableException {
-        Account account = null;
-        // if (lockRequested) {
-        // account = _accountMgr.lockAccount(accountName, domainId, accountId);
-        // } else {
-        // account = _accountMgr.disableAccount(accountName, domainId, accountId);
-        // }
-        return account;
-    }
-
     public Date startOfNextDay() {
         Calendar c = Calendar.getInstance();
         c.setTime(new Date());
@@ -682,4 +664,39 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Runna
         return dt;
     }
 
+    protected boolean lockAccount(long accountId) {
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+        TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
+        boolean success = false;
+        Account account = _accountDao.findById(accountId);
+        if (account != null) {
+            if (account.getState().equals(State.locked)) {
+                return true; // already locked, no-op
+            } else if (account.getState().equals(State.enabled)) {
+                AccountVO acctForUpdate = _accountDao.createForUpdate();
+                acctForUpdate.setState(State.locked);
+                success = _accountDao.update(Long.valueOf(accountId), acctForUpdate);
+            } else {
+                if (s_logger.isInfoEnabled()) {
+                    s_logger.info("Attempting to lock a non-enabled account, current state is " + account.getState() + " (accountId: " + accountId + "), locking failed.");
+                }
+            }
+        } else {
+            s_logger.warn("Failed to lock account " + accountId + ", account not found.");
+        }
+        TransactionLegacy.open(opendb).close();
+        return success;
+    }
+
+    public boolean enableAccount(long accountId) {
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+        TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
+        boolean success = false;
+        AccountVO acctForUpdate = _accountDao.createForUpdate();
+        acctForUpdate.setState(State.enabled);
+        acctForUpdate.setNeedsCleanup(false);
+        success = _accountDao.update(Long.valueOf(accountId), acctForUpdate);
+        TransactionLegacy.open(opendb).close();
+        return success;
+    }
 }

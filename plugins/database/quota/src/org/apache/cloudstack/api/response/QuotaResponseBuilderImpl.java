@@ -355,6 +355,9 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         if (quotaBalance.size() == 0) {
             new InvalidParameterValueException("There are no balance entries on or before the requested date.");
         }
+        if (startDate == null){
+            startDate = new Date();
+        }
         QuotaBalanceResponse resp = new QuotaBalanceResponse();
         BigDecimal lastCredits = new BigDecimal(0);
         for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
