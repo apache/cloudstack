@@ -75,7 +75,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             cls._cleanup.append(cls.account)
             cls.service_offering = ServiceOffering.create(
                 cls.apiclient,
-                cls.services["service_offerings"]
+                cls.services["service_offerings"]["tiny"]
             )
             cls._cleanup.append(cls.service_offering)
             cls.virtual_machine = cls.virtual_machine_with_disk = \

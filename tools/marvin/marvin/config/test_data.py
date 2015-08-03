@@ -89,12 +89,6 @@ test_data = {
         "memory": 256,  # In MBs
     },
     "service_offerings": {
-        "name": "Tiny Instance",
-        "displaytext": "Tiny Instance",
-        "cpunumber": 1,
-        "cpuspeed": 100,
-        "memory": 128,
-
         "tiny": {
             "name": "Tiny Instance",
             "displaytext": "Tiny Instance",

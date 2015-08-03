@@ -79,7 +79,7 @@ class TestRouterServices(cloudstackTestCase):
         )
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offerings"]
+            cls.services["service_offerings"]["tiny"]
         )
         cls.vm_1 = VirtualMachine.create(
             cls.apiclient,

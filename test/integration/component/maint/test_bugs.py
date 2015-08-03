@@ -68,7 +68,7 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
             # Creating Disk offering, Service Offering and Account
             cls.service_offering = ServiceOffering.create(
                 cls.apiClient,
-                cls.services["service_offerings"]
+                cls.services["service_offerings"]["tiny"]
             )
             cls.account = Account.create(
                 cls.api_client,

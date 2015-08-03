@@ -107,13 +107,13 @@ def storage_check(self, type, value):
 
 def create_system_so(self, offering_type, storage_type):
     """Create system offerings """
-    self.testdata["service_offerings"]["issystem"] = "true"
-    self.testdata["service_offerings"]["systemvmtype"] = offering_type
-    self.testdata["service_offerings"]["storagetype"] = storage_type
+    self.testdata["service_offerings"]["tiny"]["issystem"] = "true"
+    self.testdata["service_offerings"]["tiny"]["systemvmtype"] = offering_type
+    self.testdata["service_offerings"]["tiny"]["storagetype"] = storage_type
 
     service_offering = ServiceOffering.create(
         self.apiclient,
-        self.testdata["service_offerings"]
+        self.testdata["service_offerings"]["tiny"]
     )
 
     if service_offering is None:
@@ -136,32 +136,32 @@ def create_system_so(self, offering_type, storage_type):
 
     self.assertEqual(
         list_service_response[0].cpunumber,
-        self.testdata["service_offerings"]["cpunumber"],
+        self.testdata["service_offerings"]["tiny"]["cpunumber"],
         "Check server id in createServiceOffering"
     )
     self.assertEqual(
         list_service_response[0].cpuspeed,
-        self.testdata["service_offerings"]["cpuspeed"],
+        self.testdata["service_offerings"]["tiny"]["cpuspeed"],
         "Check cpuspeed in createServiceOffering"
     )
     self.assertEqual(
         list_service_response[0].displaytext,
-        self.testdata["service_offerings"]["displaytext"],
+        self.testdata["service_offerings"]["tiny"]["displaytext"],
         "Check server displaytext in createServiceOfferings"
     )
     self.assertEqual(
         list_service_response[0].memory,
-        self.testdata["service_offerings"]["memory"],
+        self.testdata["service_offerings"]["tiny"]["memory"],
         "Check memory in createServiceOffering"
     )
     self.assertEqual(
         list_service_response[0].name,
-        self.testdata["service_offerings"]["name"],
+        self.testdata["service_offerings"]["tiny"]["name"],
         "Check name in createServiceOffering"
     )
     self.assertEqual(
         list_service_response[0].storagetype,
-        self.testdata["service_offerings"]["storagetype"],
+        self.testdata["service_offerings"]["tiny"]["storagetype"],
         "Check storagetype in createServiceOffering"
     )
     self._cleanup.append(service_offering)
