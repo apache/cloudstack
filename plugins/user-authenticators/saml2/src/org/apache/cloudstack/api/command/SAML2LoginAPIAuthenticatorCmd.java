@@ -17,13 +17,11 @@
 package org.apache.cloudstack.api.command;
 
 import com.cloud.api.response.ApiResponseSerializer;
-import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
 import com.cloud.user.DomainManager;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserAccountVO;
 import com.cloud.user.dao.UserAccountDao;
-import com.cloud.utils.HttpUtils;
 import com.cloud.utils.db.EntityManager;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -64,7 +62,6 @@ import org.opensaml.xml.validation.ValidationException;
 import org.xml.sax.SAXException;
 
 import javax.inject.Inject;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -197,7 +194,6 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                 }
 
                 String username = null;
-                Long domainId = null;
                 Issuer issuer = processedSAMLResponse.getIssuer();
                 SAMLProviderMetadata spMetadata = _samlAuthManager.getSPMetadata();
                 SAMLProviderMetadata idpMetadata = _samlAuthManager.getIdPMetadata(issuer.getValue());
@@ -206,9 +202,6 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                 s_logger.debug("Received SAMLResponse in response to id=" + responseToId);
                 SAMLTokenVO token = _samlAuthManager.getToken(responseToId);
                 if (token != null) {
-                    if (token.getDomainId() != null) {
-                        domainId = token.getDomainId();
-                    }
                     if (!(token.getEntity().equalsIgnoreCase(issuer.getValue()))) {
                         throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, _apiServer.getSerializedApiError(ApiErrorCode.ACCOUNT_ERROR.getHttpCode(),
                                 "The SAML response contains Issuer Entity ID that is different from the original SAML request",
@@ -300,17 +293,9 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                 UserAccount userAccount = null;
                 List<UserAccountVO> possibleUserAccounts = _userAccountDao.getAllUsersByNameAndEntity(username, issuer.getValue());
                 if (possibleUserAccounts != null && possibleUserAccounts.size() > 0) {
-                    if (possibleUserAccounts.size() == 1) {
-                        userAccount = possibleUserAccounts.get(0);
-                    } else if (possibleUserAccounts.size() > 1) {
-                        if (domainId != null) {
-                            userAccount = _userAccountDao.getUserAccount(username, domainId);
-                        } else {
-                            throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, _apiServer.getSerializedApiError(ApiErrorCode.ACCOUNT_ERROR.getHttpCode(),
-                                    "You have accounts in multiple domains, please re-login by specifying the domain you want to log into.",
-                                    params, responseType));
-                        }
-                    }
+                    // By default, log into the first user account
+                    // Users can switch to other allowed accounts later
+                    userAccount = possibleUserAccounts.get(0);
                 }
 
                 if (userAccount == null || userAccount.getExternalEntity() == null || !_samlAuthManager.isUserAuthorized(userAccount.getId(), issuer.getValue())) {
@@ -324,21 +309,11 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                         if (_apiServer.verifyUser(userAccount.getId())) {
                             LoginCmdResponse loginResponse = (LoginCmdResponse) _apiServer.loginUser(session, userAccount.getUsername(), userAccount.getUsername() + userAccount.getSource().toString(),
                                     userAccount.getDomainId(), null, remoteAddress, params);
-                            resp.addCookie(new Cookie("userid", URLEncoder.encode(loginResponse.getUserId(), HttpUtils.UTF_8)));
-                            resp.addCookie(new Cookie("domainid", URLEncoder.encode(loginResponse.getDomainId(), HttpUtils.UTF_8)));
-                            resp.addCookie(new Cookie("role", URLEncoder.encode(loginResponse.getType(), HttpUtils.UTF_8)));
-                            resp.addCookie(new Cookie("username", URLEncoder.encode(loginResponse.getUsername(), HttpUtils.UTF_8)));
-                            resp.addCookie(new Cookie("account", URLEncoder.encode(loginResponse.getAccount(), HttpUtils.UTF_8)));
-                            String timezone = loginResponse.getTimeZone();
-                            if (timezone != null) {
-                                resp.addCookie(new Cookie("timezone", URLEncoder.encode(timezone, HttpUtils.UTF_8)));
-                            }
-                            resp.addCookie(new Cookie("userfullname", URLEncoder.encode(loginResponse.getFirstName() + " " + loginResponse.getLastName(), HttpUtils.UTF_8).replace("+", "%20")));
-                            resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly", ApiConstants.SESSIONKEY, loginResponse.getSessionKey()));
+                            SAMLUtils.setupSamlUserCookies(loginResponse, resp);
                             resp.sendRedirect(SAML2AuthManager.SAMLCloudStackRedirectionUrl.value());
                             return ApiResponseSerializer.toSerializedString(loginResponse, responseType);
                         }
-                    } catch (final CloudAuthenticationException ignored) {
+                    } catch (final Exception ignored) {
                     }
                 }
             }

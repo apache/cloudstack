@@ -267,7 +267,7 @@ public class GetServiceProviderMetaDataCmd extends BaseCmd implements APIAuthent
             }
         }
         if (_samlAuthManager == null) {
-            s_logger.error("No suitable Pluggable Authentication Manager found for SAML2 Login Cmd");
+            s_logger.error("No suitable Pluggable Authentication Manager found for SAML2 getSPMetadata Cmd");
         }
     }
 }

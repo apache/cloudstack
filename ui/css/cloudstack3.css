@@ -9657,7 +9657,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
 }
 
 /*** View switcher (drop-down)*/
-.project-switcher {
+.project-switcher, .domain-switcher {
   float: left;
   width: 223px;
   padding: 9px 17px 0 19px;
@@ -9668,7 +9668,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   border-radius: 4px;
 }
 
-.project-switcher label {
+.project-switcher label, .domain-switcher label {
   top: 29px;
   color: #FFFFFF;
   font-size: 13px;
@@ -9677,7 +9677,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   margin-top: 5px;
 }
 
-.project-switcher select {
+.project-switcher select, .domain-switcher select {
   width: 70%;
   float: left;
   margin-top: 0px;

@@ -20,6 +20,8 @@
 package org.apache.cloudstack.saml;
 
 import com.cloud.utils.HttpUtils;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.response.LoginCmdResponse;
 import org.apache.log4j.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.x509.X509V1CertificateGenerator;
@@ -62,6 +64,8 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.security.auth.x500.X500Principal;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -350,6 +354,20 @@ public class SAMLUtils {
         certGen.setPublicKey(keyPair.getPublic());
         certGen.setSignatureAlgorithm("SHA256WithRSAEncryption");
         return certGen.generate(keyPair.getPrivate(), "BC");
+    }
+
+    public static void setupSamlUserCookies(final LoginCmdResponse loginResponse, final HttpServletResponse resp) throws IOException {
+        resp.addCookie(new Cookie("userid", URLEncoder.encode(loginResponse.getUserId(), HttpUtils.UTF_8)));
+        resp.addCookie(new Cookie("domainid", URLEncoder.encode(loginResponse.getDomainId(), HttpUtils.UTF_8)));
+        resp.addCookie(new Cookie("role", URLEncoder.encode(loginResponse.getType(), HttpUtils.UTF_8)));
+        resp.addCookie(new Cookie("username", URLEncoder.encode(loginResponse.getUsername(), HttpUtils.UTF_8)));
+        resp.addCookie(new Cookie("account", URLEncoder.encode(loginResponse.getAccount(), HttpUtils.UTF_8)));
+        String timezone = loginResponse.getTimeZone();
+        if (timezone != null) {
+            resp.addCookie(new Cookie("timezone", URLEncoder.encode(timezone, HttpUtils.UTF_8)));
+        }
+        resp.addCookie(new Cookie("userfullname", URLEncoder.encode(loginResponse.getFirstName() + " " + loginResponse.getLastName(), HttpUtils.UTF_8).replace("+", "%20")));
+        resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly", ApiConstants.SESSIONKEY, loginResponse.getSessionKey()));
     }
 
 }

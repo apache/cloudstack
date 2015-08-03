@@ -75,13 +75,6 @@
                             </div>
                         </div>
 
-                        <div id="saml-login">
-                            <div class="field domain">
-                                <label for="saml-domain"><fmt:message key="label.domain"/></label>
-                                <input id="saml-domain" type="text" name="saml-domain" />
-                            </div>
-                        </div>
-
                         <div id="login-submit">
                             <!-- Submit (login) -->
                             <input id="login-submit" type="submit" value="<fmt:message key="label.login"/>" />
@@ -1841,6 +1834,7 @@
         <script type="text/javascript" src="scripts/docs.js"></script>
         <script type="text/javascript" src="scripts/vm_snapshots.js"></script>
         <script type="text/javascript" src="scripts/ui-custom/projectSelect.js"></script>
+        <script type="text/javascript" src="scripts/ui-custom/saml.js"></script>
 
         <!-- Plugin/module API -->
         <script type="text/javascript" src="scripts/ui-custom/pluginListing.js"></script>
