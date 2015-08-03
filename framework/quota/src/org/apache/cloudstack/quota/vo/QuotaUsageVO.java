@@ -82,6 +82,18 @@ public class QuotaUsageVO implements InternalIdentity {
         this.endDate = endDate;
     }
 
+    public QuotaUsageVO(QuotaUsageVO toclone) {
+        super();
+        this.usageItemId = toclone.usageItemId;
+        this.zoneId = toclone.zoneId;
+        this.accountId = toclone.accountId;
+        this.domainId = toclone.domainId;
+        this.usageType = toclone.usageType;
+        this.quotaUsed = toclone.quotaUsed;
+        this.startDate = toclone.startDate;
+        this.endDate = toclone.endDate;
+    }
+
     public Long getZoneId() {
         return zoneId;
     }

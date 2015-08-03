@@ -143,13 +143,26 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     }
 
     @Override
-    public QuotaStatementResponse createQuotaStatementResponse(List<QuotaUsageVO> quotaUsage) {
+    public QuotaStatementResponse createQuotaStatementResponse(final List<QuotaUsageVO> quotaUsage) {
         if (quotaUsage == null || quotaUsage.size() == 0) {
             new InvalidParameterValueException("There is no uage data for period mentioned.");
         }
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         QuotaStatementResponse statement = new QuotaStatementResponse();
+
+        HashMap<Integer, QuotaTariffVO> quotaTariffMap = new HashMap<Integer, QuotaTariffVO>();
+        List<QuotaTariffVO> result = _quotaTariffDao.listAll();
+
+        for (QuotaTariffVO quotaTariff : result) {
+            quotaTariffMap.put(quotaTariff.getUsageType(), quotaTariff);
+            // add dummy record for each usage type
+            QuotaUsageVO dummy = new QuotaUsageVO(quotaUsage.get(0));
+            dummy.setUsageType(quotaTariff.getUsageType());
+            dummy.setQuotaUsed(new BigDecimal(0));
+            quotaUsage.add(dummy);
+        }
+
         Collections.sort(quotaUsage, new Comparator<QuotaUsageVO>() {
             public int compare(QuotaUsageVO o1, QuotaUsageVO o2) {
                 if (o1.getUsageType() == o2.getUsageType())
@@ -157,12 +170,6 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
                 return o1.getUsageType() < o2.getUsageType() ? -1 : 1;
             }
         });
-
-        HashMap<Integer, QuotaTariffVO> quotaTariffMap = new HashMap<Integer, QuotaTariffVO>();
-        List<QuotaTariffVO> result = _quotaTariffDao.listAll();
-        for (QuotaTariffVO quotaTariff : result) {
-            quotaTariffMap.put(quotaTariff.getUsageType(), quotaTariff);
-        }
 
         List<QuotaStatementItemResponse> items = new ArrayList<QuotaStatementItemResponse>();
         QuotaStatementItemResponse lineitem;
@@ -172,6 +179,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         quotaUsage.add(new QuotaUsageVO());// boundary
         QuotaUsageVO prev = quotaUsage.get(0);
         for (final QuotaUsageVO quotaRecord : quotaUsage) {
+            s_logger.info("createQuotaStatementResponse Type=" + quotaRecord.getUsageType() + " usage=" + usage + " name" + quotaRecord.getUsageItemId());
             if (type != quotaRecord.getUsageType()) {
                 if (type != -1) {
                     lineitem = new QuotaStatementItemResponse();
@@ -205,7 +213,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     @Override
     public List<QuotaTariffVO> listQuotaTariffPlans(final QuotaTariffListCmd cmd) {
         List<QuotaTariffVO> result = new ArrayList<QuotaTariffVO>();
-        Date effectiveDate = cmd.getEffectiveDate() == null ?  new Date() : cmd.getEffectiveDate();
+        Date effectiveDate = cmd.getEffectiveDate() == null ? new Date() : cmd.getEffectiveDate();
         Date adjustedEffectiveDate = _quotaService.computeAdjustedTime(effectiveDate);
         s_logger.info("Effective datec=" + effectiveDate + " quotatype=" + cmd.getUsageType() + " Adjusted date=" + adjustedEffectiveDate);
         if (cmd.getUsageType() != null) {
@@ -291,7 +299,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             if (account.getState() == Account.State.locked) {
                 try {
                     _regionMgr.enableAccount(account.getAccountName(), domainId, accountId);
-                    // _quotaMgr.sendQuotaAlert(account, currentAccountBalance, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_UNLOCK_ACCOUNT);
+                    //_quotaMgr.sendQuotaAlert(account, currentAccountBalance, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_UNLOCK_ACCOUNT);
                 } catch (Exception e) {
                     s_logger.error(String.format("Unable to unlock account %s after getting enough quota credits", account.getAccountName()));
                 }
@@ -355,7 +363,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         if (quotaBalance.size() == 0) {
             new InvalidParameterValueException("There are no balance entries on or before the requested date.");
         }
-        if (startDate == null){
+        if (startDate == null) {
             startDate = new Date();
         }
         QuotaBalanceResponse resp = new QuotaBalanceResponse();
