@@ -563,74 +563,47 @@ public class Upgrade410to420 implements DbUpgrade {
 
     //update the cluster_details table with default overcommit ratios.
     private void updateOverCommitRatioClusterDetails(Connection conn) {
-        PreparedStatement pstmt = null;
-        PreparedStatement pstmt1 = null;
-        PreparedStatement pstmt2 = null;
-        PreparedStatement pstmt3 = null;
-        ResultSet rs1 = null;
-        ResultSet rscpu_global = null;
-        ResultSet rsmem_global = null;
-        try {
-            pstmt = conn.prepareStatement("select id, hypervisor_type from `cloud`.`cluster` WHERE removed IS NULL");
-            pstmt1 = conn.prepareStatement("INSERT INTO `cloud`.`cluster_details` (cluster_id, name, value)  VALUES(?, 'cpuOvercommitRatio', ?)");
-            pstmt2 = conn.prepareStatement("INSERT INTO `cloud`.`cluster_details` (cluster_id, name, value)  VALUES(?, 'memoryOvercommitRatio', ?)");
-            pstmt3 = conn.prepareStatement("select value from `cloud`.`configuration` where name=?");
-            pstmt3.setString(1, "cpu.overprovisioning.factor");
-            rscpu_global = pstmt3.executeQuery();
+        try (
+                PreparedStatement pstmt = conn.prepareStatement("select id, hypervisor_type from `cloud`.`cluster` WHERE removed IS NULL");
+                PreparedStatement pstmt1 = conn.prepareStatement("INSERT INTO `cloud`.`cluster_details` (cluster_id, name, value)  VALUES(?, 'cpuOvercommitRatio', ?)");
+                PreparedStatement pstmt2 = conn.prepareStatement("INSERT INTO `cloud`.`cluster_details` (cluster_id, name, value)  VALUES(?, 'memoryOvercommitRatio', ?)");
+                PreparedStatement pstmt3 = conn.prepareStatement("select value from `cloud`.`configuration` where name=?");) {
             String global_cpu_overprovisioning_factor = "1";
-            if (rscpu_global.next())
-                global_cpu_overprovisioning_factor = rscpu_global.getString(1);
-            pstmt3.setString(1, "mem.overprovisioning.factor");
-            rsmem_global = pstmt3.executeQuery();
             String global_mem_overprovisioning_factor = "1";
-            if (rsmem_global.next())
-                global_mem_overprovisioning_factor = rsmem_global.getString(1);
-            rs1 = pstmt.executeQuery();
-
-            while (rs1.next()) {
-                long id = rs1.getLong(1);
-                String hypervisor_type = rs1.getString(2);
-                if (HypervisorType.VMware.toString().equalsIgnoreCase(hypervisor_type)) {
-                    pstmt1.setLong(1, id);
-                    pstmt1.setString(2, global_cpu_overprovisioning_factor);
-                    pstmt1.execute();
-                    pstmt2.setLong(1, id);
-                    pstmt2.setString(2, global_mem_overprovisioning_factor);
-                    pstmt2.execute();
-                } else {
-                    //update cluster_details table with the default overcommit ratios.
-                    pstmt1.setLong(1,id);
-                    pstmt1.setString(2,global_cpu_overprovisioning_factor);
-                    pstmt1.execute();
-                    pstmt2.setLong(1, id);
-                    pstmt2.setString(2, "1");
-                    pstmt2.execute();
+            pstmt3.setString(1, "cpu.overprovisioning.factor");
+            try (ResultSet rscpu_global = pstmt3.executeQuery();) {
+                if (rscpu_global.next())
+                    global_cpu_overprovisioning_factor = rscpu_global.getString(1);
+            }
+            pstmt3.setString(1, "mem.overprovisioning.factor");
+            try (ResultSet rsmem_global = pstmt3.executeQuery();) {
+                if (rsmem_global.next())
+                    global_mem_overprovisioning_factor = rsmem_global.getString(1);
+            }
+            try (ResultSet rs1 = pstmt.executeQuery();) {
+                while (rs1.next()) {
+                    long id = rs1.getLong(1);
+                    String hypervisor_type = rs1.getString(2);
+                    if (HypervisorType.VMware.toString().equalsIgnoreCase(hypervisor_type)) {
+                        pstmt1.setLong(1, id);
+                        pstmt1.setString(2, global_cpu_overprovisioning_factor);
+                        pstmt1.execute();
+                        pstmt2.setLong(1, id);
+                        pstmt2.setString(2, global_mem_overprovisioning_factor);
+                        pstmt2.execute();
+                    } else {
+                        //update cluster_details table with the default overcommit ratios.
+                        pstmt1.setLong(1, id);
+                        pstmt1.setString(2, global_cpu_overprovisioning_factor);
+                        pstmt1.execute();
+                        pstmt2.setLong(1, id);
+                        pstmt2.setString(2, "1");
+                        pstmt2.execute();
+                    }
                 }
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update cluster_details with default overcommit ratios.", e);
-        } finally {
-            try {
-                if (rs1 != null) {
-                    rs1.close();
-                }
-                if (rsmem_global != null) {
-                    rsmem_global.close();
-                }
-                if (rscpu_global != null) {
-                    rscpu_global.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-                if (pstmt2 != null) {
-                    pstmt2.close();
-                }
-                if (pstmt3 != null) {
-                    pstmt3.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 
@@ -846,94 +819,75 @@ public class Upgrade410to420 implements DbUpgrade {
     }
 
     private void updateNonLegacyZones(Connection conn, List<Long> zones) {
-        PreparedStatement clustersQuery = null;
-        PreparedStatement clusterDetailsQuery = null;
-        PreparedStatement pstmt = null;
-        ResultSet clusters = null;
-        ResultSet clusterDetails = null;
-        ResultSet dcInfo = null;
         try {
             for (Long zoneId : zones) {
                 s_logger.debug("Discovered non-legacy zone " + zoneId + ". Processing the zone to associate with VMware datacenter.");
 
                 // All clusters in a non legacy zone will belong to the same VMware DC, hence pick the first cluster
-                clustersQuery = conn.prepareStatement("select id from `cloud`.`cluster` where removed is NULL AND data_center_id=?");
-                clustersQuery.setLong(1, zoneId);
-                clusters = clustersQuery.executeQuery();
-                clusters.next();
-                Long clusterId = clusters.getLong("id");
+                try (PreparedStatement clustersQuery = conn.prepareStatement("select id from `cloud`.`cluster` where removed is NULL AND data_center_id=?");) {
+                    clustersQuery.setLong(1, zoneId);
+                    try (ResultSet clusters = clustersQuery.executeQuery();) {
+                        clusters.next();
+                        Long clusterId = clusters.getLong("id");
 
-                // Get VMware datacenter details from cluster_details table
-                String user = null;
-                String password = null;
-                String url = null;
-                clusterDetailsQuery = conn.prepareStatement("select name, value from `cloud`.`cluster_details` where cluster_id=?");
-                clusterDetailsQuery.setLong(1, clusterId);
-                clusterDetails = clusterDetailsQuery.executeQuery();
-                while (clusterDetails.next()) {
-                    String key = clusterDetails.getString(1);
-                    String value = clusterDetails.getString(2);
-                    if (key.equalsIgnoreCase("username")) {
-                        user = value;
-                    } else if (key.equalsIgnoreCase("password")) {
-                        password = value;
-                    } else if (key.equalsIgnoreCase("url")) {
-                        url = value;
+                        // Get VMware datacenter details from cluster_details table
+                        String user = null;
+                        String password = null;
+                        String url = null;
+                        try (PreparedStatement clusterDetailsQuery = conn.prepareStatement("select name, value from `cloud`.`cluster_details` where cluster_id=?");) {
+                            clusterDetailsQuery.setLong(1, clusterId);
+                            try (ResultSet clusterDetails = clusterDetailsQuery.executeQuery();) {
+                                while (clusterDetails.next()) {
+                                    String key = clusterDetails.getString(1);
+                                    String value = clusterDetails.getString(2);
+                                    if (key.equalsIgnoreCase("username")) {
+                                        user = value;
+                                    } else if (key.equalsIgnoreCase("password")) {
+                                        password = value;
+                                    } else if (key.equalsIgnoreCase("url")) {
+                                        url = value;
+                                    }
+                                }
+                                String[] tokens = url.split("/"); // url format - http://vcenter/dc/cluster
+                                String vc = tokens[2];
+                                String dcName = tokens[3];
+                                String guid = dcName + "@" + vc;
+
+                                try (PreparedStatement insertVmWareDC = conn
+                                        .prepareStatement("INSERT INTO `cloud`.`vmware_data_center` (uuid, name, guid, vcenter_host, username, password) values(?, ?, ?, ?, ?, ?)");) {
+                                    insertVmWareDC.setString(1, UUID.randomUUID().toString());
+                                    insertVmWareDC.setString(2, dcName);
+                                    insertVmWareDC.setString(3, guid);
+                                    insertVmWareDC.setString(4, vc);
+                                    insertVmWareDC.setString(5, user);
+                                    insertVmWareDC.setString(6, password);
+                                    insertVmWareDC.executeUpdate();
+                                }
+                                try (PreparedStatement selectVmWareDC = conn.prepareStatement("SELECT id FROM `cloud`.`vmware_data_center` where guid=?");) {
+                                    selectVmWareDC.setString(1, guid);
+                                    try (ResultSet vmWareDcInfo = selectVmWareDC.executeQuery();) {
+                                        Long vmwareDcId = -1L;
+                                        if (vmWareDcInfo.next()) {
+                                            vmwareDcId = vmWareDcInfo.getLong("id");
+                                        }
+
+                                        try (PreparedStatement insertMapping = conn
+                                                .prepareStatement("INSERT INTO `cloud`.`vmware_data_center_zone_map` (zone_id, vmware_data_center_id) values(?, ?)");) {
+                                            insertMapping.setLong(1, zoneId);
+                                            insertMapping.setLong(2, vmwareDcId);
+                                            insertMapping.executeUpdate();
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
-                String[] tokens = url.split("/"); // url format - http://vcenter/dc/cluster
-                String vc = tokens[2];
-                String dcName = tokens[3];
-                String guid = dcName + "@" + vc;
-
-                pstmt = conn.prepareStatement("INSERT INTO `cloud`.`vmware_data_center` (uuid, name, guid, vcenter_host, username, password) values(?, ?, ?, ?, ?, ?)");
-                pstmt.setString(1, UUID.randomUUID().toString());
-                pstmt.setString(2, dcName);
-                pstmt.setString(3, guid);
-                pstmt.setString(4, vc);
-                pstmt.setString(5, user);
-                pstmt.setString(6, password);
-                pstmt.executeUpdate();
-
-                pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`vmware_data_center` where guid=?");
-                pstmt.setString(1, guid);
-                dcInfo = pstmt.executeQuery();
-                Long vmwareDcId = -1L;
-                if (dcInfo.next()) {
-                    vmwareDcId = dcInfo.getLong("id");
-                }
-
-                pstmt = conn.prepareStatement("INSERT INTO `cloud`.`vmware_data_center_zone_map` (zone_id, vmware_data_center_id) values(?, ?)");
-                pstmt.setLong(1, zoneId);
-                pstmt.setLong(2, vmwareDcId);
-                pstmt.executeUpdate();
             }
         } catch (SQLException e) {
             String msg = "Unable to update non legacy zones." + e.getMessage();
             s_logger.error(msg);
             throw new CloudRuntimeException(msg, e);
-        } finally {
-            try {
-                if (clustersQuery != null) {
-                    clustersQuery.close();
-                }
-                if (clusterDetails != null) {
-                    clusterDetails.close();
-                }
-                if (clusterDetailsQuery != null) {
-                    clusterDetailsQuery.close();
-                }
-                if (clusters != null) {
-                    clusters.close();
-                }
-                if (dcInfo != null) {
-                    dcInfo.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 
@@ -1086,129 +1040,131 @@ public class Upgrade410to420 implements DbUpgrade {
 
         s_logger.debug("Updating network ACLs");
 
-        PreparedStatement pstmt = null;
-        PreparedStatement pstmtDelete = null;
-        ResultSet rs = null;
-        ResultSet rsAcls = null;
-        ResultSet rsCidr = null;
-
         //1,2 are default acl Ids, start acl Ids from 3
         long nextAclId = 3;
+        String sqlSelectNetworkIds = "SELECT id, vpc_id, uuid FROM `cloud`.`networks` where vpc_id is not null and removed is null";
+        String sqlSelectFirewallRules = "SELECT id, uuid, start_port, end_port, state, protocol, icmp_code, icmp_type, created, traffic_type FROM `cloud`.`firewall_rules` where network_id = ? and purpose = 'NetworkACL'";
+        String sqlInsertNetworkAcl = "INSERT INTO `cloud`.`network_acl` (id, uuid, vpc_id, description, name) values (?, UUID(), ? , ?, ?)";
+        String sqlSelectFirewallCidrs = "SELECT id, source_cidr FROM `cloud`.`firewall_rules_cidrs` where firewall_rule_id = ?";
+        String sqlDeleteFirewallCidr = "DELETE FROM `cloud`.`firewall_rules_cidrs` where id = ?";
+        String sqlInsertNetworkAclItem = "INSERT INTO `cloud`.`network_acl_item` (uuid, acl_id, start_port, end_port, state, protocol, icmp_code, icmp_type, created, traffic_type, cidr, number, action) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )";
+        String sqlDeleteFirewallRules = "DELETE FROM `cloud`.`firewall_rules` where id = ?";
+        String sqlUpdateNetworks = "UPDATE `cloud`.`networks` set network_acl_id=? where id=?";
 
-        try {
+        try (
+                PreparedStatement pstmtSelectNetworkIds = conn.prepareStatement(sqlSelectNetworkIds);
+                PreparedStatement pstmtUpdate = conn.prepareStatement(sqlUpdateNetworks);
+                PreparedStatement pstmtInsertNetworkAclItem = conn.prepareStatement(sqlInsertNetworkAclItem);
+                PreparedStatement pstmtSelectFirewallRules = conn.prepareStatement(sqlSelectFirewallRules);
+                PreparedStatement pstmtInsertNetworkAcl = conn.prepareStatement(sqlInsertNetworkAcl);
+                PreparedStatement pstmtSelectFirewallCidrs = conn.prepareStatement(sqlSelectFirewallCidrs);
+                PreparedStatement pstmtDeleteFirewallCidr = conn.prepareStatement(sqlDeleteFirewallCidr);
+                PreparedStatement pstmtDeleteFirewallRules = conn.prepareStatement(sqlDeleteFirewallRules);
+                ResultSet rsNetworkIds = pstmtSelectNetworkIds.executeQuery();) {
             //Get all VPC tiers
-            pstmt = conn.prepareStatement("SELECT id, vpc_id, uuid FROM `cloud`.`networks` where vpc_id is not null and removed is null");
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                Long networkId = rs.getLong(1);
+            while (rsNetworkIds.next()) {
+                Long networkId = rsNetworkIds.getLong(1);
                 s_logger.debug("Updating network ACLs for network: " + networkId);
-                Long vpcId = rs.getLong(2);
-                String tierUuid = rs.getString(3);
-                pstmt =
-                        conn.prepareStatement("SELECT id, uuid, start_port, end_port, state, protocol, icmp_code, icmp_type, created, traffic_type FROM `cloud`.`firewall_rules` where network_id = ? and purpose = 'NetworkACL'");
-                pstmt.setLong(1, networkId);
-                rsAcls = pstmt.executeQuery();
+                Long vpcId = rsNetworkIds.getLong(2);
+                String tierUuid = rsNetworkIds.getString(3);
+                pstmtSelectFirewallRules.setLong(1, networkId);
                 boolean hasAcls = false;
                 Long aclId = null;
                 int number = 1;
-                while (rsAcls.next()) {
-                    if (!hasAcls) {
-                        hasAcls = true;
-                        aclId = nextAclId++;
-                        //create ACL for the tier
-                        s_logger.debug("Creating network ACL for tier: " + tierUuid);
-                        pstmt = conn.prepareStatement("INSERT INTO `cloud`.`network_acl` (id, uuid, vpc_id, description, name) values (?, UUID(), ? , ?, ?)");
-                        pstmt.setLong(1, aclId);
-                        pstmt.setLong(2, vpcId);
-                        pstmt.setString(3, "ACL for tier " + tierUuid);
-                        pstmt.setString(4, "tier_" + tierUuid);
-                        pstmt.executeUpdate();
-                    }
-
-                    Long fwRuleId = rsAcls.getLong(1);
-                    String cidr = null;
-                    //get cidr from firewall_rules_cidrs
-                    pstmt = conn.prepareStatement("SELECT id, source_cidr FROM `cloud`.`firewall_rules_cidrs` where firewall_rule_id = ?");
-                    pstmt.setLong(1, fwRuleId);
-                    rsCidr = pstmt.executeQuery();
-                    while (rsCidr.next()) {
-                        Long cidrId = rsCidr.getLong(1);
-                        String sourceCidr = rsCidr.getString(2);
-                        if (cidr == null) {
-                            cidr = sourceCidr;
-                        } else {
-                            cidr += "," + sourceCidr;
+                try (ResultSet rsAcls = pstmtSelectFirewallRules.executeQuery();) {
+                    while (rsAcls.next()) {
+                        if (!hasAcls) {
+                            hasAcls = true;
+                            aclId = nextAclId++;
+                            //create ACL for the tier
+                            s_logger.debug("Creating network ACL for tier: " + tierUuid);
+                            pstmtInsertNetworkAcl.setLong(1, aclId);
+                            pstmtInsertNetworkAcl.setLong(2, vpcId);
+                            pstmtInsertNetworkAcl.setString(3, "ACL for tier " + tierUuid);
+                            pstmtInsertNetworkAcl.setString(4, "tier_" + tierUuid);
+                            pstmtInsertNetworkAcl.executeUpdate();
                         }
-                        //Delete cidr entry
-                        pstmtDelete = conn.prepareStatement("DELETE FROM `cloud`.`firewall_rules_cidrs` where id = ?");
-                        pstmtDelete.setLong(1, cidrId);
-                        pstmtDelete.executeUpdate();
-                    }
 
-                    String aclItemUuid = rsAcls.getString(2);
-                    //Move acl to network_acl_item table
-                    s_logger.debug("Moving firewall rule: " + aclItemUuid);
-                    pstmt =
-                            conn.prepareStatement("INSERT INTO `cloud`.`network_acl_item` (uuid, acl_id, start_port, end_port, state, protocol, icmp_code, icmp_type, created, traffic_type, cidr, number, action) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )");
-                    //uuid
-                    pstmt.setString(1, aclItemUuid);
-                    //aclId
-                    pstmt.setLong(2, aclId);
-                    //Start port
-                    Integer startPort = rsAcls.getInt(3);
-                    if (rsAcls.wasNull()) {
-                        pstmt.setNull(3, Types.INTEGER);
-                    } else {
-                        pstmt.setLong(3, startPort);
-                    }
-                    //End port
-                    Integer endPort = rsAcls.getInt(4);
-                    if (rsAcls.wasNull()) {
-                        pstmt.setNull(4, Types.INTEGER);
-                    } else {
-                        pstmt.setLong(4, endPort);
-                    }
-                    //State
-                    String state = rsAcls.getString(5);
-                    pstmt.setString(5, state);
-                    //protocol
-                    String protocol = rsAcls.getString(6);
-                    pstmt.setString(6, protocol);
-                    //icmp_code
-                    Integer icmpCode = rsAcls.getInt(7);
-                    if (rsAcls.wasNull()) {
-                        pstmt.setNull(7, Types.INTEGER);
-                    } else {
-                        pstmt.setLong(7, icmpCode);
-                    }
+                        Long fwRuleId = rsAcls.getLong(1);
+                        String cidr = null;
+                        //get cidr from firewall_rules_cidrs
+                        pstmtSelectFirewallCidrs.setLong(1, fwRuleId);
+                        try (ResultSet rsCidr = pstmtSelectFirewallCidrs.executeQuery();) {
+                            while (rsCidr.next()) {
+                                Long cidrId = rsCidr.getLong(1);
+                                String sourceCidr = rsCidr.getString(2);
+                                if (cidr == null) {
+                                    cidr = sourceCidr;
+                                } else {
+                                    cidr += "," + sourceCidr;
+                                }
+                                //Delete cidr entry
+                                pstmtDeleteFirewallCidr.setLong(1, cidrId);
+                                pstmtDeleteFirewallCidr.executeUpdate();
+                            }
+                        }
+                        String aclItemUuid = rsAcls.getString(2);
+                        //Move acl to network_acl_item table
+                        s_logger.debug("Moving firewall rule: " + aclItemUuid);
+                        //uuid
+                        pstmtInsertNetworkAclItem.setString(1, aclItemUuid);
+                        //aclId
+                        pstmtInsertNetworkAclItem.setLong(2, aclId);
+                        //Start port
+                        Integer startPort = rsAcls.getInt(3);
+                        if (rsAcls.wasNull()) {
+                            pstmtInsertNetworkAclItem.setNull(3, Types.INTEGER);
+                        } else {
+                            pstmtInsertNetworkAclItem.setLong(3, startPort);
+                        }
+                        //End port
+                        Integer endPort = rsAcls.getInt(4);
+                        if (rsAcls.wasNull()) {
+                            pstmtInsertNetworkAclItem.setNull(4, Types.INTEGER);
+                        } else {
+                            pstmtInsertNetworkAclItem.setLong(4, endPort);
+                        }
+                        //State
+                        String state = rsAcls.getString(5);
+                        pstmtInsertNetworkAclItem.setString(5, state);
+                        //protocol
+                        String protocol = rsAcls.getString(6);
+                        pstmtInsertNetworkAclItem.setString(6, protocol);
+                        //icmp_code
+                        Integer icmpCode = rsAcls.getInt(7);
+                        if (rsAcls.wasNull()) {
+                            pstmtInsertNetworkAclItem.setNull(7, Types.INTEGER);
+                        } else {
+                            pstmtInsertNetworkAclItem.setLong(7, icmpCode);
+                        }
 
-                    //icmp_type
-                    Integer icmpType = rsAcls.getInt(8);
-                    if (rsAcls.wasNull()) {
-                        pstmt.setNull(8, Types.INTEGER);
-                    } else {
-                        pstmt.setLong(8, icmpType);
+                        //icmp_type
+                        Integer icmpType = rsAcls.getInt(8);
+                        if (rsAcls.wasNull()) {
+                            pstmtInsertNetworkAclItem.setNull(8, Types.INTEGER);
+                        } else {
+                            pstmtInsertNetworkAclItem.setLong(8, icmpType);
+                        }
+
+                        //created
+                        Date created = rsAcls.getDate(9);
+                        pstmtInsertNetworkAclItem.setDate(9, created);
+                        //traffic type
+                        String trafficType = rsAcls.getString(10);
+                        pstmtInsertNetworkAclItem.setString(10, trafficType);
+
+                        //cidr
+                        pstmtInsertNetworkAclItem.setString(11, cidr);
+                        //number
+                        pstmtInsertNetworkAclItem.setInt(12, number++);
+                        //action
+                        pstmtInsertNetworkAclItem.setString(13, "Allow");
+                        pstmtInsertNetworkAclItem.executeUpdate();
+
+                        //Delete firewall rule
+                        pstmtDeleteFirewallRules.setLong(1, fwRuleId);
+                        pstmtDeleteFirewallRules.executeUpdate();
                     }
-
-                    //created
-                    Date created = rsAcls.getDate(9);
-                    pstmt.setDate(9, created);
-                    //traffic type
-                    String trafficType = rsAcls.getString(10);
-                    pstmt.setString(10, trafficType);
-
-                    //cidr
-                    pstmt.setString(11, cidr);
-                    //number
-                    pstmt.setInt(12, number++);
-                    //action
-                    pstmt.setString(13, "Allow");
-                    pstmt.executeUpdate();
-
-                    //Delete firewall rule
-                    pstmtDelete = conn.prepareStatement("DELETE FROM `cloud`.`firewall_rules` where id = ?");
-                    pstmtDelete.setLong(1, fwRuleId);
-                    pstmtDelete.executeUpdate();
                 }
                 if (!hasAcls) {
                     //no network ACls for this network.
@@ -1216,30 +1172,13 @@ public class Upgrade410to420 implements DbUpgrade {
                     aclId = NetworkACL.DEFAULT_DENY;
                 }
                 //Assign acl to network
-                pstmt = conn.prepareStatement("UPDATE `cloud`.`networks` set network_acl_id=? where id=?");
-                pstmt.setLong(1, aclId);
-                pstmt.setLong(2, networkId);
-                pstmt.executeUpdate();
+                pstmtUpdate.setLong(1, aclId);
+                pstmtUpdate.setLong(2, networkId);
+                pstmtUpdate.executeUpdate();
             }
             s_logger.debug("Done updating network ACLs ");
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to move network acls from firewall rules table to network_acl_item table", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (rsAcls != null) {
-                    rsAcls.close();
-                }
-                if (rsCidr != null) {
-                    rsCidr.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 
