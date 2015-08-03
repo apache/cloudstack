@@ -451,6 +451,8 @@ var g_quotaCurrency = '';
                                   var domainDropdown = $('<div class="quota-domain-dropdown quota-element">');
                                   var accountDropdown = $('<div class="quota-account-dropdown quota-element">');
                                   var quotaValueInput = $('<input class="quota-input" type="text" style="margin-left: 12px">');
+                                  var quotaThresholdInput = $('<input class="quota-input" type="text" style="margin-left: 12px">');
+                                  var quotaThresholdLockCheckbox = $('<input class="quota-input quota-element" type="checkbox" style="margin-left: 12px" checked>');
                                   var addCreditButton = $('<button class="quota-element quota-button" id="quota-add-credit-button">').html("Add Credit");
 
                                   addCreditButton.click(function() {
@@ -461,6 +463,8 @@ var g_quotaCurrency = '';
                                       }
                                       var account = accountDropdown.find("select :selected").val();
                                       var quotaValue = quotaValueInput.val();
+                                      var quotaThreshold = quotaThresholdInput.val();
+                                      var isLockedOptionSelected = quotaThresholdLockCheckbox.is(':checked');
 
                                       if (!quotaValue || !account) {
                                           creditStatement.empty();
@@ -474,7 +478,9 @@ var g_quotaCurrency = '';
                                           data: {
                                               account: account,
                                               domainid: domainId,
-                                              value: quotaValue
+                                              value: quotaValue,
+                                              quota_enforce: isLockedOptionSelected,
+                                              min_balance: quotaThreshold
                                           },
                                           success: function(json) {
                                               quotaValueInput.val('');
@@ -509,10 +515,14 @@ var g_quotaCurrency = '';
 
                                   domainDropdown.appendTo(creditForm);
                                   accountDropdown.appendTo(creditForm);
-                                  $('<p class="quota-bold quota-element">').html('Value').appendTo(creditForm);
+                                  $('<p class="quota-bold quota-element">').html('Credit Value').appendTo(creditForm);
                                   quotaValueInput.appendTo(creditForm);
+                                  $('<p class="quota-bold quota-element">').html('Account Minimum Threshold').appendTo(creditForm);
+                                  quotaThresholdInput.appendTo(creditForm);
                                   $('<br>').appendTo(creditForm);
-
+                                  quotaThresholdLockCheckbox.appendTo(creditForm);
+                                  $('<span class="quota-bold">').html('Lock account when quota balance is less than minimum threshold').appendTo(creditForm);
+                                  $('<br>').appendTo(creditForm);
                                   addCreditButton.appendTo(creditForm);
 
                                   var accountLister = function(selectedDomainId) {
