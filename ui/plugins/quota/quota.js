@@ -498,7 +498,7 @@ var g_quotaCurrency = '';
                                                   },
                                                   success: function(json) {
                                                       if (json.hasOwnProperty('quotabalanceresponse') && json.quotabalanceresponse.hasOwnProperty('balance')) {
-                                                          $('<p class="quota-bold">').html('Current Quota Balance of "' + account + '": ' + g_quotaCurrency + json.quotabalanceresponse.balance.endquota).appendTo(creditStatement);
+                                                          $('<p class="quota-bold">').html('Current Quota Balance of "' + account + '": ' + g_quotaCurrency + json.quotabalanceresponse.balance.startquota).appendTo(creditStatement);
                                                       }
                                                   },
                                                   error: function(json) {
