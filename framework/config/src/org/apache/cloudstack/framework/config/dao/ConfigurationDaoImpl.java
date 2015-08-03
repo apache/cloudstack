@@ -17,7 +17,6 @@
 package org.apache.cloudstack.framework.config.dao;
 
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,10 +25,9 @@ import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 
 import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.crypt.DBEncryptionUtil;
