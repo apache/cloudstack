@@ -27,7 +27,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public abstract class Upgrade30xBase extends LegacyDbUpgrade implements DbUpgrade {
+public abstract class Upgrade30xBase extends LegacyDbUpgrade {
 
     final static Logger s_logger = Logger.getLogger(Upgrade30xBase.class);
 
