@@ -41,7 +41,7 @@ CREATE TABLE `cloud`.`saml_token` (
 ALTER TABLE `cloud_usage`.`cloud_usage` ADD COLUMN `quota_calculated` tinyint(1) DEFAULT 0 COMMENT "quota calculation status";
 
 DROP TABLE IF EXISTS `cloud_usage`.`quota_account`;
-CREATE TABLE `quota_account` (
+CREATE TABLE `cloud_usage`.`quota_account` (
       `account_id` int(11) NOT NULL,
       `quota_balance` decimal(15,2) NULL,
       `quota_balance_date` datetime NULL,
@@ -71,29 +71,29 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_tariff` (
 
 
 LOCK TABLES `cloud_usage`.`quota_tariff` WRITE;
-INSERT INTO `cloud_usage`.`quota_tariff` (`usage_type`, `usage_name`, `usage_unit`, `usage_discriminator`, `currency_value`, `include`, `effective_on`,  `updated_on`, `updated_by`) VALUES
- (1,'RUNNING_VM','Compute-Month','',0.00,1,'2010-05-04', '2010-05-04',1),
- (2,'ALLOCATED_VM','Compute-Month','',0.00,1,'2010-05-04', '2010-05-04',1),
- (3,'IP_ADDRESS','IP-Month','',0.00,1,'2010-05-04', '2010-05-04',1),
- (4,'NETWORK_BYTES_SENT','GB','',0.00,1,'2010-05-04', '2010-05-04',1),
- (5,'NETWORK_BYTES_RECEIVED','GB','',0.00,1,'2010-05-04', '2010-05-04',1),
- (6,'VOLUME','GB-Month','',0.00,1,'2010-05-04', '2010-05-04',1),
- (7,'TEMPLATE','GB-Month','',0.00,1,'2010-05-04', '2010-05-04',1),
- (8,'ISO','GB-Month','',0.00,1,'2010-05-04', '2010-05-04',1),
- (9,'SNAPSHOT','GB-Month','',0.00,1,'2010-05-04', '2010-05-04',1),
- (10,'SECURITY_GROUP','Policy-Month','',0.00,1,'2010-05-04', '2010-05-04',1),
- (11,'LOAD_BALANCER_POLICY','Policy-Month','',0.00,1,'2010-05-04', '2010-05-04',1),
- (12,'PORT_FORWARDING_RULE','Policy-Month','',0.00,1,'2010-05-04', '2010-05-04',1),
- (13,'NETWORK_OFFERING','Policy-Month','',0.00,1,'2010-05-04', '2010-05-04',1),
- (14,'VPN_USERS','Policy-Month','',0.00,1,'2010-05-04', '2010-05-04',1),
- (15,'CPU_SPEED','Compute-Month','100MHz',0.00,1,'2010-05-04', '2010-05-04',1),
- (16,'vCPU','Compute-Month','1VCPU',0.00,1,'2010-05-04', '2010-05-04',1),
- (17,'MEMORY','Compute-Month','1MB',0.00,1,'2010-05-04', '2010-05-04',1),
- (21,'VM_DISK_IO_READ','GB','1',0.00,1,'2010-05-04', '2010-05-04',1),
- (22,'VM_DISK_IO_WRITE','GB','1',0.00,1,'2010-05-04', '2010-05-04',1),
- (23,'VM_DISK_BYTES_READ','GB','1',0.00,1,'2010-05-04', '2010-05-04',1),
- (24,'VM_DISK_BYTES_WRITE','GB','1',0.00,1,'2010-05-04', '2010-05-04',1),
- (25,'VM_SNAPSHOT','GB-Month','',0.00,1,'2010-05-04', '2010-05-04',1);
+INSERT INTO `cloud_usage`.`quota_tariff` (`usage_type`, `usage_name`, `usage_unit`, `usage_discriminator`, `currency_value`, `effective_on`,  `updated_on`, `updated_by`) VALUES
+ (1,'RUNNING_VM','Compute-Month','',0.00,'2010-05-04', '2010-05-04',1),
+ (2,'ALLOCATED_VM','Compute-Month','',0.00,'2010-05-04', '2010-05-04',1),
+ (3,'IP_ADDRESS','IP-Month','',0.00,'2010-05-04', '2010-05-04',1),
+ (4,'NETWORK_BYTES_SENT','GB','',0.00,'2010-05-04', '2010-05-04',1),
+ (5,'NETWORK_BYTES_RECEIVED','GB','',0.00,'2010-05-04', '2010-05-04',1),
+ (6,'VOLUME','GB-Month','',0.00,'2010-05-04', '2010-05-04',1),
+ (7,'TEMPLATE','GB-Month','',0.00,'2010-05-04', '2010-05-04',1),
+ (8,'ISO','GB-Month','',0.00,'2010-05-04', '2010-05-04',1),
+ (9,'SNAPSHOT','GB-Month','',0.00,'2010-05-04', '2010-05-04',1),
+ (10,'SECURITY_GROUP','Policy-Month','',0.00,'2010-05-04', '2010-05-04',1),
+ (11,'LOAD_BALANCER_POLICY','Policy-Month','',0.00,'2010-05-04', '2010-05-04',1),
+ (12,'PORT_FORWARDING_RULE','Policy-Month','',0.00,'2010-05-04', '2010-05-04',1),
+ (13,'NETWORK_OFFERING','Policy-Month','',0.00,'2010-05-04', '2010-05-04',1),
+ (14,'VPN_USERS','Policy-Month','',0.00,'2010-05-04', '2010-05-04',1),
+ (15,'CPU_SPEED','Compute-Month','100MHz',0.00,'2010-05-04', '2010-05-04',1),
+ (16,'vCPU','Compute-Month','1VCPU',0.00,'2010-05-04', '2010-05-04',1),
+ (17,'MEMORY','Compute-Month','1MB',0.00,'2010-05-04', '2010-05-04',1),
+ (21,'VM_DISK_IO_READ','GB','1',0.00,'2010-05-04', '2010-05-04',1),
+ (22,'VM_DISK_IO_WRITE','GB','1',0.00,'2010-05-04', '2010-05-04',1),
+ (23,'VM_DISK_BYTES_READ','GB','1',0.00,'2010-05-04', '2010-05-04',1),
+ (24,'VM_DISK_BYTES_WRITE','GB','1',0.00,'2010-05-04', '2010-05-04',1),
+ (25,'VM_SNAPSHOT','GB-Month','',0.00,'2010-05-04', '2010-05-04',1);
 UNLOCK TABLES;
 
 CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_credits` (
