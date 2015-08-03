@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
-public class Upgrade301to302 implements DbUpgrade {
+public class Upgrade301to302 extends LegacyDbUpgrade {
     final static Logger s_logger = Logger.getLogger(Upgrade301to302.class);
 
     @Override
@@ -150,18 +150,9 @@ public class Upgrade301to302 implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update shared networks due to exception while executing query " + pstmt, e);
         } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (rs1 != null) {
-                    rs1.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
+            closeAutoCloseable(rs);
+            closeAutoCloseable(rs1);
+            closeAutoCloseable(pstmt);
         }
     }
 
@@ -177,55 +168,34 @@ public class Upgrade301to302 implements DbUpgrade {
 
         DbUpgradeUtils.dropKeysIfExist(conn, "cloud.vm_instance", keys, true);
         DbUpgradeUtils.dropKeysIfExist(conn, "cloud.vm_instance", keys, false);
-        PreparedStatement pstmt = null;
-        try {
-            pstmt =
+        try (
+                PreparedStatement pstmt =
                 conn.prepareStatement("ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__last_host_id` FOREIGN KEY (`last_host_id`) REFERENCES `host` (`id`)");
+            ){
             pstmt.executeUpdate();
-            pstmt.close();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to insert foreign key in vm_instance table ", e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 
     private void changeEngine(Connection conn) {
         s_logger.debug("Fixing engine and row_format for op_lock and op_nwgrp_work tables");
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`op_lock` ENGINE=MEMORY, ROW_FORMAT = FIXED");
+        String sqlOpLock = "ALTER TABLE `cloud`.`op_lock` ENGINE=MEMORY, ROW_FORMAT = FIXED";
+        try (
+                PreparedStatement pstmt = conn.prepareStatement(sqlOpLock);
+            ) {
             pstmt.executeUpdate();
-            pstmt.close();
         } catch (Exception e) {
-            s_logger.debug("Failed do execute the statement " + pstmt + ", moving on as it's not critical fix");
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
+            s_logger.debug("Failed do execute the statement " + sqlOpLock + ", moving on as it's not critical fix");
         }
 
-        try {
-            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`op_nwgrp_work` ENGINE=MEMORY, ROW_FORMAT = FIXED");
+        String sqlOpNwgrpWork = "ALTER TABLE `cloud`.`op_nwgrp_work` ENGINE=MEMORY, ROW_FORMAT = FIXED";
+        try  (
+                PreparedStatement pstmt = conn.prepareStatement(sqlOpNwgrpWork);
+             ) {
             pstmt.executeUpdate();
-            pstmt.close();
         } catch (Exception e) {
-            s_logger.debug("Failed do execute the statement " + pstmt + ", moving on as it's not critical fix");
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
+            s_logger.debug("Failed do execute the statement " + sqlOpNwgrpWork + ", moving on as it's not critical fix");
         }
     }
 

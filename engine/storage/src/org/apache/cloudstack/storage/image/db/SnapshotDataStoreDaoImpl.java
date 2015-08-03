@@ -221,26 +221,20 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     @Override
     public SnapshotDataStoreVO findLatestSnapshotForVolume(Long volumeId, DataStoreRole role) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            pstmt = txn.prepareStatement(findLatestSnapshot);
+        try (
+                PreparedStatement pstmt = txn.prepareStatement(findLatestSnapshot);
+            ){
             pstmt.setString(1, role.toString());
             pstmt.setLong(2, volumeId);
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                long sid = rs.getLong(1);
-                long snid = rs.getLong(3);
-                return findByStoreSnapshot(role, sid, snid);
+            try (ResultSet rs = pstmt.executeQuery();) {
+                while (rs.next()) {
+                    long sid = rs.getLong(1);
+                    long snid = rs.getLong(3);
+                    return findByStoreSnapshot(role, sid, snid);
+                }
             }
         } catch (SQLException e) {
             s_logger.debug("Failed to find latest snapshot for volume: " + volumeId + " due to: "  + e.toString());
-        } finally {
-            try {
-                if (pstmt != null)
-                    pstmt.close();
-            } catch (SQLException e) {
-            }
         }
         return null;
     }
@@ -248,26 +242,20 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     @Override
     public SnapshotDataStoreVO findOldestSnapshotForVolume(Long volumeId, DataStoreRole role) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            pstmt = txn.prepareStatement(findOldestSnapshot);
+        try (
+                PreparedStatement pstmt = txn.prepareStatement(findOldestSnapshot);
+            ){
             pstmt.setString(1, role.toString());
             pstmt.setLong(2, volumeId);
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                long sid = rs.getLong(1);
-                long snid = rs.getLong(3);
-                return findByStoreSnapshot(role, sid, snid);
+            try (ResultSet rs = pstmt.executeQuery();) {
+                while (rs.next()) {
+                    long sid = rs.getLong(1);
+                    long snid = rs.getLong(3);
+                    return findByStoreSnapshot(role, sid, snid);
+                }
             }
         } catch (SQLException e) {
             s_logger.debug("Failed to find oldest snapshot for volume: " + volumeId + " due to: "  + e.toString());
-        } finally {
-            try {
-                if (pstmt != null)
-                    pstmt.close();
-            } catch (SQLException e) {
-            }
         }
         return null;
     }
@@ -276,27 +264,21 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     @DB
     public SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long volumeId) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            pstmt = txn.prepareStatement(parentSearch);
+        try (
+                PreparedStatement pstmt = txn.prepareStatement(parentSearch);
+            ){
             pstmt.setLong(1, storeId);
             pstmt.setString(2, role.toString());
             pstmt.setLong(3, volumeId);
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                long sid = rs.getLong(1);
-                long snid = rs.getLong(3);
-                return findByStoreSnapshot(role, sid, snid);
+            try (ResultSet rs = pstmt.executeQuery();) {
+                while (rs.next()) {
+                    long sid = rs.getLong(1);
+                    long snid = rs.getLong(3);
+                    return findByStoreSnapshot(role, sid, snid);
+                }
             }
         } catch (SQLException e) {
             s_logger.debug("Failed to find parent snapshot: " + e.toString());
-        } finally {
-            try {
-                if (pstmt != null)
-                    pstmt.close();
-            } catch (SQLException e) {
-            }
         }
         return null;
     }

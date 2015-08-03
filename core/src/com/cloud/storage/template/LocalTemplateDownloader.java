@@ -123,6 +123,7 @@ public class LocalTemplateDownloader extends TemplateDownloaderBase implements T
                 try {
                     fic.close();
                 } catch (IOException e) {
+                    s_logger.info("[ignore] error while closing file input channel.");
                 }
             }
 
@@ -130,6 +131,7 @@ public class LocalTemplateDownloader extends TemplateDownloaderBase implements T
                 try {
                     foc.close();
                 } catch (IOException e) {
+                    s_logger.info("[ignore] error while closing file output channel.");
                 }
             }
 
@@ -137,6 +139,7 @@ public class LocalTemplateDownloader extends TemplateDownloaderBase implements T
                 try {
                     fis.close();
                 } catch (IOException e) {
+                    s_logger.info("[ignore] error while closing file input stream.");
                 }
             }
 
@@ -144,6 +147,7 @@ public class LocalTemplateDownloader extends TemplateDownloaderBase implements T
                 try {
                     fos.close();
                 } catch (IOException e) {
+                    s_logger.info("[ignore] error while closing file output stream.");
                 }
             }
 
