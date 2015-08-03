@@ -16,32 +16,25 @@
 // under the License.
 package com.cloud.upgrade;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.TreeMap;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+
 import com.cloud.maint.Version;
 import com.cloud.upgrade.dao.DbUpgrade;
-import com.cloud.upgrade.dao.Upgrade217to218;
-import com.cloud.upgrade.dao.Upgrade218to22;
-import com.cloud.upgrade.dao.Upgrade218to224DomainVlans;
-import com.cloud.upgrade.dao.Upgrade2210to2211;
-import com.cloud.upgrade.dao.Upgrade2211to2212;
-import com.cloud.upgrade.dao.Upgrade2212to2213;
-import com.cloud.upgrade.dao.Upgrade2213to2214;
-import com.cloud.upgrade.dao.Upgrade2214to30;
-import com.cloud.upgrade.dao.Upgrade221to222;
-import com.cloud.upgrade.dao.Upgrade222to224;
-import com.cloud.upgrade.dao.Upgrade224to225;
-import com.cloud.upgrade.dao.Upgrade225to226;
-import com.cloud.upgrade.dao.Upgrade227to228;
-import com.cloud.upgrade.dao.Upgrade228to229;
-import com.cloud.upgrade.dao.Upgrade229to2210;
-import com.cloud.upgrade.dao.Upgrade301to302;
-import com.cloud.upgrade.dao.Upgrade302to303;
-import com.cloud.upgrade.dao.Upgrade302to40;
-import com.cloud.upgrade.dao.Upgrade303to304;
-import com.cloud.upgrade.dao.Upgrade304to305;
-import com.cloud.upgrade.dao.Upgrade305to306;
-import com.cloud.upgrade.dao.Upgrade306to307;
-import com.cloud.upgrade.dao.Upgrade307to410;
-import com.cloud.upgrade.dao.Upgrade30to301;
 import com.cloud.upgrade.dao.Upgrade40to41;
 import com.cloud.upgrade.dao.Upgrade410to420;
 import com.cloud.upgrade.dao.Upgrade420to421;
@@ -57,8 +50,6 @@ import com.cloud.upgrade.dao.Upgrade444to450;
 import com.cloud.upgrade.dao.Upgrade450to451;
 import com.cloud.upgrade.dao.Upgrade451to452;
 import com.cloud.upgrade.dao.Upgrade452to460;
-import com.cloud.upgrade.dao.UpgradeSnapshot217to224;
-import com.cloud.upgrade.dao.UpgradeSnapshot223to224;
 import com.cloud.upgrade.dao.VersionDao;
 import com.cloud.upgrade.dao.VersionDaoImpl;
 import com.cloud.upgrade.dao.VersionVO;
@@ -68,23 +59,6 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.ScriptRunner;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.log4j.Logger;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.TreeMap;
 
 @Local(value = {SystemIntegrityChecker.class})
 public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
@@ -97,111 +71,6 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
     public DatabaseUpgradeChecker() {
         _dao = new VersionDaoImpl();
-
-        _upgradeMap.put("2.1.7", new DbUpgrade[] {new Upgrade217to218(), new Upgrade218to22(), new Upgrade221to222(),
-            new UpgradeSnapshot217to224(), new Upgrade222to224(), new Upgrade224to225(), new Upgrade225to226(),
-            new Upgrade227to228(), new Upgrade228to229(), new Upgrade229to2210(), new Upgrade2210to2211(),
-            new Upgrade2211to2212(), new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30(),
-            new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420(),
-            new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(),
-            new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
-
-        _upgradeMap.put("2.1.8", new DbUpgrade[] {new Upgrade218to22(), new Upgrade221to222(), new UpgradeSnapshot217to224(),
-            new Upgrade222to224(), new Upgrade218to224DomainVlans(), new Upgrade224to225(), new Upgrade225to226(),
-            new Upgrade227to228(), new Upgrade228to229(), new Upgrade229to2210(), new Upgrade2210to2211(),
-            new Upgrade2211to2212(), new Upgrade2212to2213(), new Upgrade2213to2214(),
-            new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(),
-            new Upgrade410to420(), new Upgrade420to421(),
-            new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
-
-        _upgradeMap.put("2.1.9", new DbUpgrade[] {new Upgrade218to22(), new Upgrade221to222(), new UpgradeSnapshot217to224(),
-            new Upgrade222to224(), new Upgrade218to224DomainVlans(), new Upgrade224to225(), new Upgrade225to226(),
-            new Upgrade227to228(), new Upgrade228to229(), new Upgrade229to2210(), new Upgrade2210to2211(),
-            new Upgrade2211to2212(), new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30(),
-            new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420(),
-            new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(),
-            new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
-
-        _upgradeMap.put("2.2.1", new DbUpgrade[] {new Upgrade221to222(), new UpgradeSnapshot223to224(), new Upgrade222to224(),
-            new Upgrade224to225(), new Upgrade225to226(), new Upgrade227to228(), new Upgrade228to229(),
-            new Upgrade229to2210(), new Upgrade2210to2211(), new Upgrade2211to2212(), new Upgrade2212to2213(),
-            new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(),
-            new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(),
-            new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
-
-        _upgradeMap.put("2.2.2", new DbUpgrade[] {new Upgrade222to224(), new UpgradeSnapshot223to224(), new Upgrade224to225(),
-            new Upgrade225to226(), new Upgrade227to228(), new Upgrade228to229(), new Upgrade229to2210(),
-            new Upgrade2210to2211(), new Upgrade2211to2212(), new Upgrade2212to2213(), new Upgrade2213to2214(),
-            new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(),
-            new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
-
-        _upgradeMap.put("2.2.3", new DbUpgrade[] {new Upgrade222to224(), new UpgradeSnapshot223to224(), new Upgrade224to225(),
-            new Upgrade225to226(), new Upgrade227to228(), new Upgrade228to229(), new Upgrade229to2210(),
-            new Upgrade2210to2211(), new Upgrade2211to2212(), new Upgrade2212to2213(), new Upgrade2213to2214(),
-            new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(),
-            new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
-
-        _upgradeMap.put("2.2.4", new DbUpgrade[] {new Upgrade224to225(), new Upgrade225to226(), new Upgrade227to228(),
-            new Upgrade228to229(), new Upgrade229to2210(), new Upgrade2210to2211(), new Upgrade2211to2212(),
-            new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(),
-            new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(),
-            new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
-
-        _upgradeMap.put("2.2.5", new DbUpgrade[] {new Upgrade225to226(), new Upgrade227to228(), new Upgrade228to229(),
-            new Upgrade229to2210(), new Upgrade2210to2211(), new Upgrade2211to2212(), new Upgrade2212to2213(),
-            new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(),
-            new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(),
-            new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
-
-        _upgradeMap.put("2.2.6", new DbUpgrade[] {new Upgrade227to228(), new Upgrade228to229(), new Upgrade229to2210(),
-            new Upgrade2210to2211(), new Upgrade2211to2212(), new Upgrade2212to2213(), new Upgrade2213to2214(),
-            new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(),
-            new Upgrade410to420(), new Upgrade420to421(),
-            new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
-
-        _upgradeMap.put("2.2.7", new DbUpgrade[] {new Upgrade227to228(), new Upgrade228to229(), new Upgrade229to2210(),
-            new Upgrade2210to2211(), new Upgrade2211to2212(), new Upgrade2212to2213(),
-            new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(),
-            new Upgrade410to420(),
-            new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(),
-            new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
-
-        _upgradeMap.put("2.2.8", new DbUpgrade[] {new Upgrade228to229(), new Upgrade229to2210(), new Upgrade2210to2211(),
-            new Upgrade2211to2212(), new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30()
-            , new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(),
-            new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
-
-        _upgradeMap.put("2.2.9", new DbUpgrade[] {new Upgrade229to2210(), new Upgrade2210to2211(), new Upgrade2211to2212(),
-            new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(),
-            new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(),
-            new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
-
-        _upgradeMap.put("2.2.10", new DbUpgrade[] {new Upgrade2210to2211(), new Upgrade2211to2212(), new Upgrade2212to2213(),
-            new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(),
-            new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(),
-            new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
-
-        _upgradeMap.put("2.2.12", new DbUpgrade[] {new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30(),
-            new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(),
-            new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
-
-        _upgradeMap.put("2.2.13", new DbUpgrade[] {new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(),
-            new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(),
-            new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
-
-        _upgradeMap.put("2.2.14", new DbUpgrade[] {new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(),
-            new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(),
-            new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
-
-        _upgradeMap.put("3.0.0", new DbUpgrade[] {new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(),
-            new Upgrade40to41(), new Upgrade410to420(),
-            new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
-
-        _upgradeMap.put("3.0.1", new DbUpgrade[] {new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(),
-            new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
-
-        _upgradeMap.put("3.0.2", new DbUpgrade[] {new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(),
-            new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
 
         _upgradeMap.put("4.0.0", new DbUpgrade[] {new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
 
@@ -238,31 +107,6 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         _upgradeMap.put("4.5.1", new DbUpgrade[] {new Upgrade451to452(), new Upgrade452to460()});
 
         _upgradeMap.put("4.5.2", new DbUpgrade[] {new Upgrade452to460()});
-
-        //CP Upgrades
-        _upgradeMap.put("3.0.3", new DbUpgrade[] {new Upgrade303to304(), new Upgrade304to305(), new Upgrade305to306(), new Upgrade306to307(), new Upgrade307to410(),
-            new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
-
-        _upgradeMap.put("3.0.4", new DbUpgrade[] {new Upgrade304to305(), new Upgrade305to306(), new Upgrade306to307(), new Upgrade307to410(), new Upgrade410to420(),
-            new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
-
-        _upgradeMap.put("3.0.5", new DbUpgrade[] {new Upgrade305to306(), new Upgrade306to307(), new Upgrade307to410(), new Upgrade410to420(), new Upgrade420to421(),
-            new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
-
-        _upgradeMap.put("3.0.6", new DbUpgrade[] {new Upgrade306to307(), new Upgrade307to410(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(),
-            new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
-
-        _upgradeMap.put("3.0.7", new DbUpgrade[] {new Upgrade307to410(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
-
-        _upgradeMap.put("2.2.15", new DbUpgrade[] {new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(),
-            new Upgrade302to303(), new Upgrade303to304(), new Upgrade304to305(), new Upgrade305to306(), new Upgrade306to307(), new Upgrade307to410(),
-            new Upgrade410to420(),
-            new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
-
-        _upgradeMap.put("2.2.16", new DbUpgrade[] {new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(),
-            new Upgrade302to303(), new Upgrade303to304(), new Upgrade304to305(), new Upgrade305to306(), new Upgrade306to307(), new Upgrade307to410(),
-            new Upgrade410to420(),
-            new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460()});
     }
 
     protected void runScript(Connection conn, File file) {
@@ -341,21 +185,6 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
                 upgrade.performDataMigration(conn);
                 boolean upgradeVersion = true;
-
-                if (upgrade.getUpgradedVersion().equals("2.1.8")) {
-                    // we don't have VersionDao in 2.1.x
-                    upgradeVersion = false;
-                } else if (upgrade.getUpgradedVersion().equals("2.2.4")) {
-                    try(PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM version WHERE version='2.2.4'");
-                            ResultSet rs = pstmt.executeQuery();) {
-                        // specifically for domain vlan update from 2.1.8 to 2.2.4
-                        if (rs.next()) {
-                            upgradeVersion = false;
-                        }
-                    } catch (SQLException e) {
-                        throw new CloudRuntimeException("Unable to update the version table", e);
-                    }
-                }
 
                 if (upgradeVersion) {
                     VersionVO version = new VersionVO(upgrade.getUpgradedVersion());
