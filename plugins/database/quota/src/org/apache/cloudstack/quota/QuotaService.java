@@ -32,4 +32,8 @@ public interface QuotaService extends PluggableService {
 
     Date computeAdjustedTime(Date date);
 
+    void setLockAccount(Long accountId, Boolean state);
+
+    void setMinBalance(Long accountId, Double balance);
+
 }

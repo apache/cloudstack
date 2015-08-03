@@ -40,8 +40,10 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.constant.QuotaConfig;
+import org.apache.cloudstack.quota.dao.QuotaAccountDao;
 import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
 import org.apache.cloudstack.quota.dao.QuotaUsageDao;
+import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 import org.apache.cloudstack.utils.usage.UsageUtils;
@@ -67,6 +69,8 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
 
     @Inject
     private AccountDao _accountDao;
+    @Inject
+    private QuotaAccountDao _quotaAcc;
     @Inject
     private QuotaUsageDao _quotaUsageDao;
     @Inject
@@ -161,7 +165,6 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
 
         startDate = startDate == null ? new Date() : startDate;
 
-
         if (endDate == null) {
             // adjust start date to end of day as there is no end date
             Date adjustedStartDate = computeAdjustedTime(_respBldr.startOfNextDay(startDate));
@@ -173,8 +176,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
             } else {
                 return qbrecords;
             }
-        }
-        else {
+        } else {
             Date adjustedStartDate = computeAdjustedTime(startDate);
             if (endDate.after(_respBldr.startOfNextDay())) {
                 throw new InvalidParameterValueException("Incorrect Date Range. End date:" + endDate + " should not be in future. ");
@@ -256,6 +258,32 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         calTS.add(Calendar.MILLISECOND, -1 * timezoneOffset);
 
         return calTS.getTime();
+    }
+
+    @Override
+    public void setLockAccount(Long accountId, Boolean state) {
+        QuotaAccountVO acc = _quotaAcc.findById(accountId);
+        if (acc == null) {
+            acc = new QuotaAccountVO(accountId);
+            acc.setQuotaEnforce(state ? 1 : 0);
+            _quotaAcc.persist(acc);
+        } else {
+            acc.setQuotaEnforce(state ? 1 : 0);
+            _quotaAcc.update(accountId, acc);
+        }
+    }
+
+    @Override
+    public void setMinBalance(Long accountId, Double balance) {
+        QuotaAccountVO acc = _quotaAcc.findById(accountId);
+        if (acc == null) {
+            acc = new QuotaAccountVO(accountId);
+            acc.setQuotaMinBalance(new BigDecimal(balance));
+            _quotaAcc.persist(acc);
+        } else {
+            acc.setQuotaMinBalance(new BigDecimal(balance));
+            _quotaAcc.update(accountId, acc);
+        }
     }
 
 }

@@ -43,8 +43,8 @@ ALTER TABLE `cloud_usage`.`cloud_usage` ADD COLUMN `quota_calculated` tinyint(1)
 DROP TABLE IF EXISTS `cloud_usage`.`quota_account`;
 CREATE TABLE `quota_account` (
       `account_id` int(11) NOT NULL,
-      `quota_balance` decimal(15,2) NOT NULL,
-      `quota_balance_date` datetime NOT NULL,
+      `quota_balance` decimal(15,2) NULL,
+      `quota_balance_date` datetime NULL,
       `quota_enforce` int(1) DEFAULT NULL,
       `quota_min_balance` decimal(15,2) DEFAULT NULL,
       `quota_alert_date` datetime DEFAULT NULL,

@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.QuotaCreditsResponse;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.quota.QuotaService;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -37,6 +38,9 @@ public class QuotaCreditsCmd extends BaseCmd {
 
     @Inject
     QuotaResponseBuilder _responseBuilder;
+
+    @Inject
+    QuotaService _quotaService;
 
     public static final Logger s_logger = Logger.getLogger(QuotaStatementCmd.class.getName());
 
@@ -50,6 +54,28 @@ public class QuotaCreditsCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.VALUE, type = CommandType.DOUBLE, required = true, description = "Value of the credits to be added+, subtracted-")
     private Double value;
+
+    @Parameter(name = "min_balance", type = CommandType.DOUBLE, required = false, description = "Minimum balance threshold of the account")
+    private Double minBalance;
+
+    @Parameter(name = "quota_enforce", type = CommandType.BOOLEAN, required = false, description = "Account for which quota enforce is set to false will not be locked when there is no credit balance")
+    private Boolean quotaEnforce;
+
+    public Double getMinBalance() {
+        return minBalance;
+    }
+
+    public void setMinBalance(Double minBalance) {
+        this.minBalance = minBalance;
+    }
+
+    public Boolean getQuotaEnforce() {
+        return quotaEnforce;
+    }
+
+    public void setQuotaEnforce(Boolean quotaEnforce) {
+        this.quotaEnforce = quotaEnforce;
+    }
 
     public String getAccountName() {
         return accountName;
@@ -79,7 +105,6 @@ public class QuotaCreditsCmd extends BaseCmd {
         super();
     }
 
-
     @Override
     public String getCommandName() {
         return s_name;
@@ -93,6 +118,15 @@ public class QuotaCreditsCmd extends BaseCmd {
         }
         if (value == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please send a valid non-empty quota value");
+        }
+        if (getQuotaEnforce() != null) {
+            _quotaService.setLockAccount(accountId, getQuotaEnforce());
+        }
+        if (getMinBalance() != null) {
+            _quotaService.setMinBalance(accountId, getMinBalance());
+        }
+        else {
+            _quotaService.setMinBalance(accountId, 0.2 * value);
         }
 
         final QuotaCreditsResponse response = _responseBuilder.addQuotaCredits(accountId, domainId, value, CallContext.current().getCallingUserId());

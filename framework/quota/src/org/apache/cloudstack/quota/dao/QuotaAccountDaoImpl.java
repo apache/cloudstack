@@ -33,7 +33,7 @@ public class QuotaAccountDaoImpl extends GenericDaoBase<QuotaAccountVO, Long> im
         QuotaAccountVO result=null;
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
-        result = findById(id);
+        result = super.findById(id);
         TransactionLegacy.open(opendb).close();
         return result;
     }
@@ -43,7 +43,7 @@ public class QuotaAccountDaoImpl extends GenericDaoBase<QuotaAccountVO, Long> im
         QuotaAccountVO result=null;
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
-        result = persist(entity);
+        result = super.persist(entity);
         TransactionLegacy.open(opendb).close();
         return result;
     }
@@ -53,7 +53,7 @@ public class QuotaAccountDaoImpl extends GenericDaoBase<QuotaAccountVO, Long> im
         boolean result=false;
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
-        result=update(id, entity);
+        result=super.update(id, entity);
         TransactionLegacy.open(opendb).close();
         return result;
     }
