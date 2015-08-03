@@ -110,18 +110,15 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
         QuotaBalanceResponse resp = new QuotaBalanceResponse();
         BigDecimal lastCredits = new BigDecimal(0);
-        boolean consecutive = true;
         for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
             QuotaBalanceVO entry = it.next();
             s_logger.info("createQuotaBalanceResponse: Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
             if (entry.getCreditsId() > 0) {
-                if (consecutive) {
-                    lastCredits = lastCredits.add(entry.getCreditBalance());
-                }
+                lastCredits = lastCredits.add(entry.getCreditBalance());
                 resp.addCredits(entry);
                 it.remove();
             } else {
-                consecutive = false;
+                break;
             }
         }
 
@@ -145,7 +142,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     @Override
     public QuotaStatementResponse createQuotaStatementResponse(final List<QuotaUsageVO> quotaUsage) {
         if (quotaUsage == null || quotaUsage.size() == 0) {
-            new InvalidParameterValueException("There is no uage data for period mentioned.");
+            throw new InvalidParameterValueException("There is no uage data for period mentioned.");
         }
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
