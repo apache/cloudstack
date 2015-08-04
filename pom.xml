@@ -715,8 +715,8 @@
               <exclude>README.md</exclude>
               <exclude>INSTALL.md</exclude>
               <exclude>CONTRIBUTING.md</exclude>
-              <exclude>Dockerfile</exclude>
-              <exclude>supervisord.conf</exclude>
+              <exclude>tools/docker/Dockerfile</exclude>
+              <exclude>tools/docker/supervisord.conf</exclude>
               <exclude>.idea/</exclude>
               <exclude>**/*.log</exclude>
               <exclude>**/*.patch</exclude>
@@ -841,7 +841,7 @@
               <exclude>tools/ngui/static/js/lib/*</exclude>
               <exclude>**/.checkstyle</exclude>
               <exclude>scripts/installer/windows/acs_license.rtf</exclude>
-	      <exclude>**/*.md</exclude>
+	            <exclude>**/*.md</exclude>
             </excludes>
           </configuration>
         </plugin>
