@@ -23,9 +23,11 @@ import java.awt.image.DataBufferInt;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import com.cloud.consoleproxy.util.Logger;
 import com.cloud.consoleproxy.vnc.VncScreenDescription;
 
 public class RawRect extends AbstractRect {
+    private static final Logger s_logger = Logger.getLogger(RawRect.class);
     private final int[] buf;
 
     public RawRect(VncScreenDescription screen, int x, int y, int width, int height, DataInputStream is) throws IOException {
@@ -50,26 +52,27 @@ public class RawRect extends AbstractRect {
 
         switch (dataBuf.getDataType()) {
 
-            case DataBuffer.TYPE_INT: {
-                // We chose RGB888 model, so Raster will use DataBufferInt type
-                DataBufferInt dataBuffer = (DataBufferInt)dataBuf;
+        case DataBuffer.TYPE_INT: {
+            // We chose RGB888 model, so Raster will use DataBufferInt type
+            DataBufferInt dataBuffer = (DataBufferInt)dataBuf;
 
-                int imageWidth = image.getWidth();
-                int imageHeight = image.getHeight();
+            int imageWidth = image.getWidth();
+            int imageHeight = image.getHeight();
 
-                // Paint rectangle directly on buffer, line by line
-                int[] imageBuffer = dataBuffer.getData();
-                for (int srcLine = 0, dstLine = y; srcLine < height && dstLine < imageHeight; srcLine++, dstLine++) {
-                    try {
-                        System.arraycopy(buf, srcLine * width, imageBuffer, x + dstLine * imageWidth, width);
-                    } catch (IndexOutOfBoundsException e) {
-                    }
+            // Paint rectangle directly on buffer, line by line
+            int[] imageBuffer = dataBuffer.getData();
+            for (int srcLine = 0, dstLine = y; srcLine < height && dstLine < imageHeight; srcLine++, dstLine++) {
+                try {
+                    System.arraycopy(buf, srcLine * width, imageBuffer, x + dstLine * imageWidth, width);
+                } catch (IndexOutOfBoundsException e) {
+                    s_logger.info("[ignored] buffer overflow!?!", e);
                 }
-                break;
             }
+            break;
+        }
 
-            default:
-                throw new RuntimeException("Unsupported data buffer in buffered image: expected data buffer of type int (DataBufferInt). Actual data buffer type: " +
+        default:
+            throw new RuntimeException("Unsupported data buffer in buffered image: expected data buffer of type int (DataBufferInt). Actual data buffer type: " +
                     dataBuf.getClass().getSimpleName());
         }
     }
