@@ -110,15 +110,18 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
         QuotaBalanceResponse resp = new QuotaBalanceResponse();
         BigDecimal lastCredits = new BigDecimal(0);
+        boolean consecutive = true;
         for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
             QuotaBalanceVO entry = it.next();
             s_logger.info("createQuotaBalanceResponse: Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
             if (entry.getCreditsId() > 0) {
-                lastCredits = lastCredits.add(entry.getCreditBalance());
+                if (consecutive) {
+                    lastCredits = lastCredits.add(entry.getCreditBalance());
+                }
                 resp.addCredits(entry);
                 it.remove();
             } else {
-                break;
+                consecutive = false;
             }
         }
 
