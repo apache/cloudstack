@@ -16,11 +16,15 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
+import java.util.List;
+
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 
 import com.cloud.utils.db.GenericDao;
 
 public interface QuotaAccountDao extends GenericDao<QuotaAccountVO, Long> {
+
+    List<QuotaAccountVO> listAll();
 
     QuotaAccountVO findById(Long id);
 

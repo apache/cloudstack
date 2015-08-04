@@ -112,7 +112,7 @@ public class QuotaAccountVO implements InternalIdentity {
     }
 
     public Date getQuotaAlertDate() {
-        return quotaAlertDate == null ? new Date() : quotaAlertDate;
+        return quotaAlertDate;
     }
 
     public void setQuotaAlertDate(Date quotaAlertDate) {

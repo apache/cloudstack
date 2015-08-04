@@ -16,6 +16,8 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
+import java.util.List;
+
 import javax.ejb.Local;
 
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
@@ -29,8 +31,18 @@ import com.cloud.utils.db.TransactionLegacy;
 public class QuotaAccountDaoImpl extends GenericDaoBase<QuotaAccountVO, Long> implements QuotaAccountDao {
 
     @Override
-    public QuotaAccountVO findById(Long id){
-        QuotaAccountVO result=null;
+    public List<QuotaAccountVO> listAll() {
+        List<QuotaAccountVO> result = null;
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
+        result = super.listAll();
+        TransactionLegacy.open(opendb).close();
+        return result;
+    }
+
+    @Override
+    public QuotaAccountVO findById(Long id) {
+        QuotaAccountVO result = null;
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         result = super.findById(id);
@@ -39,8 +51,8 @@ public class QuotaAccountDaoImpl extends GenericDaoBase<QuotaAccountVO, Long> im
     }
 
     @Override
-    public QuotaAccountVO persist(QuotaAccountVO entity){
-        QuotaAccountVO result=null;
+    public QuotaAccountVO persist(QuotaAccountVO entity) {
+        QuotaAccountVO result = null;
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         result = super.persist(entity);
@@ -49,11 +61,11 @@ public class QuotaAccountDaoImpl extends GenericDaoBase<QuotaAccountVO, Long> im
     }
 
     @Override
-    public boolean update(Long id, QuotaAccountVO entity){
-        boolean result=false;
+    public boolean update(Long id, QuotaAccountVO entity) {
+        boolean result = false;
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
-        result=super.update(id, entity);
+        result = super.update(id, entity);
         TransactionLegacy.open(opendb).close();
         return result;
     }

@@ -65,6 +65,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 @Component
 @Local(value = QuotaAlertManager.class)
@@ -91,6 +92,8 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
     final static BigDecimal s_minutesInMonth = new BigDecimal(30 * 24 * 60);
     final static BigDecimal s_gb = new BigDecimal(1024 * 1024 * 1024);
 
+    boolean _smtpDebug = false;
+
     int _pid = 0;
 
     public QuotaAlertManagerImpl() {
@@ -113,16 +116,15 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
             mergeConfigs(configs, params);
         }
 
-        final String smtpHost = QuotaConfig.QuotaSmtpHost.value();
-        int smtpPort = NumbersUtil.parseInt(QuotaConfig.QuotaSmtpPort.value(), 25);
-        String useAuthStr = QuotaConfig.QuotaSmtpAuthType.value();
+        final String smtpHost = configs.get(QuotaConfig.QuotaSmtpHost.key());
+        int smtpPort = NumbersUtil.parseInt(configs.get(QuotaConfig.QuotaSmtpPort.key()), 25);
+        String useAuthStr = configs.get(QuotaConfig.QuotaSmtpAuthType.key());
         boolean useAuth = ((useAuthStr != null) && Boolean.parseBoolean(useAuthStr));
-        String smtpUsername = QuotaConfig.QuotaSmtpUser.value();
-        String smtpPassword = QuotaConfig.QuotaSmtpPassword.value();
-        String emailSender = QuotaConfig.QuotaSmtpSender.value();
-        _lockAccountEnforcement = QuotaConfig.QuotaEnableEnforcement.value().equalsIgnoreCase("true");
-        boolean smtpDebug = false;
-        _emailQuotaAlert = new EmailQuotaAlert(smtpHost, smtpPort, useAuth, smtpUsername, smtpPassword, emailSender, smtpDebug);
+        String smtpUsername = configs.get(QuotaConfig.QuotaSmtpUser.key());
+        String smtpPassword = configs.get(QuotaConfig.QuotaSmtpPassword.key());
+        String emailSender = configs.get(QuotaConfig.QuotaSmtpSender.key());
+        _lockAccountEnforcement = configs.get(QuotaConfig.QuotaEnableEnforcement.key()).equalsIgnoreCase("true");
+        _emailQuotaAlert = new EmailQuotaAlert(smtpHost, smtpPort, useAuth, smtpUsername, smtpPassword, emailSender, _smtpDebug);
 
         return true;
     }
@@ -149,7 +151,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         (new ManagedContextRunnable() {
             @Override
             protected void runInContext() {
-                System.out.println("Running Quota thread .....");
+                System.out.println("Running Quota Alert thread .....");
                 checkAndSendQuotaAlertEmails();
             }
         }).run();
@@ -169,18 +171,18 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
             BigDecimal thresholdBalance = quotaAccount.getQuotaMinBalance();
             if (accountBalance != null) {
                 AccountVO account = _accountDao.findById(quotaAccount.getId());
-                s_logger.info("checkAndSendQuotaAlertEmails accId=" + quotaAccount.getId() + " domId=" + account.getDomainId() + "threshold=" + thresholdBalance + " locakable=" + lockable);
+                //s_logger.info("Check id " + account.getId() + " bal="+ accountBalance + " alertDate"+ alertDate + " diff" + getDifferenceDays(new Date(), alertDate));
                 if (accountBalance.compareTo(zeroBalance) <= 0) {
-                    if (_lockAccountEnforcement && lockable == 1) {
+                    if (_lockAccountEnforcement && (lockable == 1)) {
                         if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                             lockAccount(account.getId());
                         }
                     }
-                    if (balanceDate.compareTo(alertDate) > 0) {
+                    if (alertDate == null || (balanceDate.after(alertDate) && getDifferenceDays(alertDate, new Date()) > 1)) {
                         deferredQuotaEmailList.add(new DeferredQuotaEmail(account, quotaAccount, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_EMPTY));
                     }
                 } else if (accountBalance.compareTo(thresholdBalance) <= 0) {
-                    if (balanceDate.compareTo(alertDate) > 0) {
+                    if (alertDate == null || (balanceDate.after(alertDate) && getDifferenceDays(alertDate, new Date()) > 1)) {
                         deferredQuotaEmailList.add(new DeferredQuotaEmail(account, quotaAccount, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_LOW));
                     }
                 }
@@ -226,6 +228,9 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
             optionMap.put("domainName", accountDomain.getName());
             optionMap.put("domainID", accountDomain.getUuid());
             optionMap.put("quotaBalance", QuotaConfig.QuotaCurrencySymbol.value() + " " + balance.toString());
+
+            //s_logger.info("accountName" + account.getAccountName() + "accountID" + account.getUuid() + "accountUsers" + userNames + "domainName" + accountDomain.getName() + "domainID"
+                    //+ accountDomain.getUuid());
 
             final StrSubstitutor templateEngine = new StrSubstitutor(optionMap);
             final String subject = templateEngine.replace(emailTemplate.getTemplateSubject());
@@ -353,7 +358,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
                 smtpTrans.sendMessage(msg, msg.getAllRecipients());
                 smtpTrans.close();
             } else {
-                throw new CloudRuntimeException("Unable to send quota alert email");
+                throw new CloudRuntimeException("Unable to create smtp session.");
             }
         }
     }
@@ -364,6 +369,11 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         c.add(Calendar.DATE, 1);
         Date dt = c.getTime();
         return dt;
+    }
+
+    public static long getDifferenceDays(Date d1, Date d2) {
+        long diff = d2.getTime() - d1.getTime();
+        return TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
     }
 
     protected boolean lockAccount(long accountId) {
@@ -401,4 +411,5 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         TransactionLegacy.open(opendb).close();
         return success;
     }
+
 }
