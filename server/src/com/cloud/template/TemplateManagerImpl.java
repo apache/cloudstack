@@ -269,9 +269,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     MessageBus _messageBus;
 
     private boolean _disableExtraction = false;
-    private ExecutorService _preloadExecutor;
-
     private List<TemplateAdapter> _adapters;
+
+    ExecutorService _preloadExecutor;
 
     @Inject
     private StorageCacheManager cacheMgr;
