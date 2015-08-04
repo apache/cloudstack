@@ -354,10 +354,15 @@ public final class S3Utils {
         ListObjectsRequest listObjectsRequest = new ListObjectsRequest().withBucketName(bucketName).withPrefix(directory + SEPARATOR);
 
         ObjectListing ol = client.listObjects(listObjectsRequest);
-        while (ol != null && ol.isTruncated()) {
+        if(ol.isTruncated()) {
+            do {
+                objects.addAll(ol.getObjectSummaries());
+                listObjectsRequest.setMarker(ol.getNextMarker());
+                ol = client.listObjects(listObjectsRequest);
+            } while (ol.isTruncated());
+        }
+        else {
             objects.addAll(ol.getObjectSummaries());
-            listObjectsRequest.setMarker(ol.getNextMarker());
-            ol = client.listObjects(listObjectsRequest);
         }
 
         if (objects.isEmpty()) {
