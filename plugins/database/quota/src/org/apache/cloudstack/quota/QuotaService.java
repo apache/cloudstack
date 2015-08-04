@@ -28,7 +28,7 @@ public interface QuotaService extends PluggableService {
 
     List<QuotaUsageVO> getQuotaUsage(Long accountId, String accountName, Long domainId, Integer usageType, Date startDate, Date endDate);
 
-    List<QuotaBalanceVO> getQuotaBalance(Long accountId, String accountName, Long domainId, Date startDate, Date endDate);
+    List<QuotaBalanceVO> findQuotaBalanceVO(Long accountId, String accountName, Long domainId, Date startDate, Date endDate);
 
     Date computeAdjustedTime(Date date);
 

@@ -127,7 +127,9 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
                 return new ArrayList<QuotaBalanceVO>();
             }
             quotaUsageRecords = listBy(sc);
-            quotaUsageRecords.addAll(findQuotaBalance(accountId, domainId, startDate));
+            if (quotaUsageRecords.size() == 0) {
+                quotaUsageRecords.addAll(lastQuotaBalanceVO(accountId, domainId, startDate));
+            }
         } finally {
             txn.close();
         }
@@ -136,9 +138,10 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
         return quotaUsageRecords;
     }
 
+
     @SuppressWarnings("deprecation")
     @Override
-    public List<QuotaBalanceVO> findQuotaBalance(final Long accountId, final Long domainId, final Date startDate) {
+    public List<QuotaBalanceVO> lastQuotaBalanceVO(final Long accountId, final Long domainId, final Date pivotDate) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
 
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
@@ -155,8 +158,8 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
             if (domainId != null) {
                 sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
             }
-            if ((startDate != null)) {
-                sc.addAnd("updatedOn", SearchCriteria.Op.LTEQ, startDate);
+            if ((pivotDate != null)) {
+                sc.addAnd("updatedOn", SearchCriteria.Op.LTEQ, pivotDate);
             }
             quotaUsageRecords = search(sc, filter);
 
@@ -182,7 +185,7 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
 
     @Override
     public BigDecimal lastQuotaBalance(final Long accountId, final Long domainId, Date startDate) {
-        List<QuotaBalanceVO> quotaBalance = findQuotaBalance(accountId, domainId, startDate);
+        List<QuotaBalanceVO> quotaBalance = lastQuotaBalanceVO(accountId, domainId, startDate);
         if (quotaBalance.size() == 0) {
             new InvalidParameterValueException("There are no balance entries on or before the requested date.");
         }

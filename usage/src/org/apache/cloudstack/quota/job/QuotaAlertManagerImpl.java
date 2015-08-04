@@ -157,9 +157,11 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
 
     @Override
     public void checkAndSendQuotaAlertEmails() {
+        s_logger.info("Running checkAndSendQuotaAlertEmails");
         List<DeferredQuotaEmail> deferredQuotaEmailList = new ArrayList<DeferredQuotaEmail>();
         final BigDecimal zeroBalance = new BigDecimal(0);
         for (final QuotaAccountVO quotaAccount : _quotaAcc.listAll()) {
+            s_logger.info("checkAndSendQuotaAlertEmails accId=" + quotaAccount.getId());
             BigDecimal accountBalance = quotaAccount.getQuotaBalance();
             Date balanceDate = quotaAccount.getQuotaBalanceDate();
             Date alertDate = quotaAccount.getQuotaAlertDate();

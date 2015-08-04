@@ -175,7 +175,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         BigDecimal totalUsage = new BigDecimal(0);
         quotaUsage.add(new QuotaUsageVO());// boundary
         QuotaUsageVO prev = quotaUsage.get(0);
-        s_logger.info("createQuotaStatementResponse record count=" + quotaUsage.size());
+        //s_logger.info("createQuotaStatementResponse record count=" + quotaUsage.size());
         for (final QuotaUsageVO quotaRecord : quotaUsage) {
             //s_logger.info("createQuotaStatementResponse Type=" + quotaRecord.getUsageType() + " usage=" + usage + " name" + quotaRecord.getUsageItemId());
             if (type != quotaRecord.getUsageType()) {
@@ -385,7 +385,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Override
     public List<QuotaBalanceVO> getQuotaBalance(QuotaBalanceCmd cmd) {
-        return _quotaService.getQuotaBalance(cmd.getAccountId(), cmd.getAccountName(), cmd.getDomainId(), cmd.getStartDate(), cmd.getEndDate());
+        return _quotaService.findQuotaBalanceVO(cmd.getAccountId(), cmd.getAccountName(), cmd.getDomainId(), cmd.getStartDate(), cmd.getEndDate());
     }
 
     @Override

@@ -137,7 +137,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
     }
 
     @Override
-    public List<QuotaBalanceVO> getQuotaBalance(Long accountId, String accountName, Long domainId, Date startDate, Date endDate) {
+    public List<QuotaBalanceVO> findQuotaBalanceVO(Long accountId, String accountName, Long domainId, Date startDate, Date endDate) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
 
@@ -169,7 +169,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
             // adjust start date to end of day as there is no end date
             Date adjustedStartDate = computeAdjustedTime(_respBldr.startOfNextDay(startDate));
             s_logger.debug("getQuotaBalance1: Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", on or before " + adjustedStartDate);
-            List<QuotaBalanceVO> qbrecords = _quotaBalanceDao.findQuotaBalance(accountId, domainId, adjustedStartDate);
+            List<QuotaBalanceVO> qbrecords = _quotaBalanceDao.lastQuotaBalanceVO(accountId, domainId, adjustedStartDate);
             s_logger.info("Found records size=" + qbrecords.size());
             if (qbrecords.size() == 0) {
                 throw new InvalidParameterValueException("Incorrect Date there are no quota records before this date " + adjustedStartDate);
