@@ -228,7 +228,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Runna
                     }
                 } while ((usageRecords != null) && !usageRecords.first().isEmpty());
                 // list of quotas for this account
-                s_logger.info("Quota entries size = " + quotalistforaccount.size());
+                s_logger.info("Quota entries size = " + quotalistforaccount.size() + ", accId" + account.getAccountId() + ", domId" + account.getDomainId());
                 if (quotalistforaccount.size() > 0) { // balance to be processed
                     quotalistforaccount.add(new QuotaUsageVO());
                     Date startDate = quotalistforaccount.get(0).getStartDate();
@@ -261,6 +261,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Runna
                     }
                     // update is quota_accounts
                     QuotaAccountVO quota_account = _quotaAcc.findById(account.getAccountId());
+                    s_logger.info("Updating quota account bal=" + aggrUsage + " date=" + endDate);
                     if (quota_account == null) {
                         quota_account = new QuotaAccountVO(account.getAccountId());
                         quota_account.setQuotaBalance(aggrUsage);

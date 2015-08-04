@@ -154,6 +154,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private final Calendar _jobExecTime = Calendar.getInstance();
     private int _aggregationDuration = 0;
     private int _sanityCheckInterval = 0;
+    private boolean _runQuota=false;
     String _hostname = null;
     int _pid = 0;
     TimeZone _usageTimezone = TimeZone.getTimeZone("GMT");;
@@ -207,6 +208,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         String execTimeZone = configs.get("usage.execution.timezone");
         String aggreagationTimeZone = configs.get("usage.aggregation.timezone");
         String sanityCheckInterval = configs.get("usage.sanity.check.interval");
+        String quotaEnable = configs.get("quota.enable.service");
+        _runQuota = Boolean.valueOf(quotaEnable == null ? "false" : quotaEnable );
         if (sanityCheckInterval != null) {
             _sanityCheckInterval = Integer.parseInt(sanityCheckInterval);
         }
@@ -381,10 +384,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             }
 
             parse(job, startDate, endDate);
-            // after usage is calculated run quota calculations
-            _quotaManager.calculateQuotaUsage();
-            // run alert manager
-            _alertManager.checkAndSendQuotaAlertEmails();
+            if (_runQuota){
+                // after usage is calculated run quota calculations
+                _quotaManager.calculateQuotaUsage();
+                // run alert manager
+                _alertManager.checkAndSendQuotaAlertEmails();
+            }
         } else {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Not owner of usage job, skipping...");

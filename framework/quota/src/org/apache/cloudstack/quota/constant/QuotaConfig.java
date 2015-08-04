@@ -23,15 +23,6 @@ public interface QuotaConfig  {
     public static final ConfigKey<Boolean> QuotaPluginEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "quota.enable.service", "false",
             "Indicates whether Quota plugin is enabled or not", true);
 
-    public static final ConfigKey<String> QuotaPeriodType = new ConfigKey<String>("Advanced", String.class, "quota.period.type", "2",
-            "Quota period type: 1 for every x days, 2 for certain day of the month, 3 for yearly on activation day - default quota usage reporting cycl", true);
-
-    public static final ConfigKey<String> QuotaPeriod = new ConfigKey<String>("Advanced", String.class, "quota.period.config", "15",
-            "The period config in number of days for the quota period type", true);
-
-    public static final ConfigKey<String> QuotaGenerateActivity = new ConfigKey<String>("Advanced", String.class, "quota.activity.generate", "true",
-            "Set true to enable a detailed log of the quota usage, rating and billing activity, on daily basis. Valid values (true, false)", true);
-
     public static final ConfigKey<String> QuotaEmailRecordOutgoing = new ConfigKey<String>("Advanced", String.class, "quota.email.outgoing.record", "false",
             "true means all the emails sent out will be stored in local DB, by default it is false", true);
 
@@ -40,12 +31,6 @@ public interface QuotaConfig  {
 
     public static final ConfigKey<String> QuotaCurrencySymbol = new ConfigKey<String>("Advanced", String.class, "quota.currency.symbol", "R",
             "The symbol for the currency in use to measure usage.", true);
-
-    public static final ConfigKey<String> QuotaLimitCritical = new ConfigKey<String>("Advanced", String.class, "quota.limit.critical", "80",
-            "The quota amount when reached, the account users are sent low quota email alerts.", true);
-
-    public static final ConfigKey<String> QuotaLimitIncremental = new ConfigKey<String>("Advanced", String.class, "quota.limit.increment", "5",
-            "Quota limit incremental", true);
 
     public static final ConfigKey<String> QuotaSmtpHost = new ConfigKey<String>("Advanced", String.class, "quota.usage.smtp.host", "",
             "Quota SMTP host for quota related emails", true);

@@ -37,8 +37,9 @@ import com.sun.mail.smtp.SMTPTransport;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.quota.constant.QuotaConfig;
-import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
+import org.apache.cloudstack.quota.dao.QuotaAccountDao;
 import org.apache.cloudstack.quota.dao.QuotaEmailTemplatesDao;
+import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.log4j.Logger;
@@ -73,17 +74,18 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
     @Inject
     private AccountDao _accountDao;
     @Inject
+    private QuotaAccountDao _quotaAcc;
+    @Inject
     private UserDao _userDao;
     @Inject
     private DomainDao _domainDao;
     @Inject
     private QuotaEmailTemplatesDao _quotaEmailTemplateDao;
     @Inject
-    private QuotaBalanceDao _quotaBalanceDao;
-    @Inject
     private ConfigurationDao _configDao;
 
     private EmailQuotaAlert _emailQuotaAlert;
+    private boolean _lockAccountEnforcement = false;
 
     final static BigDecimal s_hoursInMonth = new BigDecimal(30 * 24);
     final static BigDecimal s_minutesInMonth = new BigDecimal(30 * 24 * 60);
@@ -118,6 +120,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         String smtpUsername = QuotaConfig.QuotaSmtpUser.value();
         String smtpPassword = QuotaConfig.QuotaSmtpPassword.value();
         String emailSender = QuotaConfig.QuotaSmtpSender.value();
+        _lockAccountEnforcement = QuotaConfig.QuotaEnableEnforcement.value().equalsIgnoreCase("true");
         boolean smtpDebug = false;
         _emailQuotaAlert = new EmailQuotaAlert(smtpHost, smtpPort, useAuth, smtpUsername, smtpPassword, emailSender, smtpDebug);
 
@@ -155,20 +158,29 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
     @Override
     public void checkAndSendQuotaAlertEmails() {
         List<DeferredQuotaEmail> deferredQuotaEmailList = new ArrayList<DeferredQuotaEmail>();
-        final Date currentDate = startOfNextDay();
         final BigDecimal zeroBalance = new BigDecimal(0);
-        final BigDecimal thresholdBalance = new BigDecimal(QuotaConfig.QuotaLimitCritical.value());
-        final boolean lockAccountEnforcement = QuotaConfig.QuotaEnableEnforcement.value().equalsIgnoreCase("true");
-        for (final AccountVO account : _accountDao.listAll()) {
-            final BigDecimal accountBalance = _quotaBalanceDao.lastQuotaBalance(account.getId(), account.getDomainId(), currentDate);
+        for (final QuotaAccountVO quotaAccount : _quotaAcc.listAll()) {
+            BigDecimal accountBalance = quotaAccount.getQuotaBalance();
+            Date balanceDate = quotaAccount.getQuotaBalanceDate();
+            Date alertDate = quotaAccount.getQuotaAlertDate();
+            int lockable = quotaAccount.getQuotaEnforce();
+            BigDecimal thresholdBalance = quotaAccount.getQuotaMinBalance();
             if (accountBalance != null) {
+                AccountVO account = _accountDao.findById(quotaAccount.getId());
+                s_logger.info("checkAndSendQuotaAlertEmails accId=" + quotaAccount.getId() + " domId=" + account.getDomainId() + "threshold=" + thresholdBalance + " locakable=" + lockable);
                 if (accountBalance.compareTo(zeroBalance) <= 0) {
-                    if (lockAccountEnforcement && account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-                        lockAccount(account.getId());
+                    if (_lockAccountEnforcement && lockable == 1) {
+                        if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                            lockAccount(account.getId());
+                        }
                     }
-                    deferredQuotaEmailList.add(new DeferredQuotaEmail(account, accountBalance, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_EMPTY));
+                    if (balanceDate.compareTo(alertDate) > 0) {
+                        deferredQuotaEmailList.add(new DeferredQuotaEmail(account, quotaAccount, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_EMPTY));
+                    }
                 } else if (accountBalance.compareTo(thresholdBalance) <= 0) {
-                    deferredQuotaEmailList.add(new DeferredQuotaEmail(account, accountBalance, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_LOW));
+                    if (balanceDate.compareTo(alertDate) > 0) {
+                        deferredQuotaEmailList.add(new DeferredQuotaEmail(account, quotaAccount, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_LOW));
+                    }
                 }
             }
         }
@@ -179,8 +191,8 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         }
     }
 
-    public void sendQuotaAlert(AccountVO account, BigDecimal balance, QuotaConfig.QuotaEmailTemplateTypes emailType) {
-        sendQuotaAlert(new DeferredQuotaEmail(account, balance, emailType));
+    public void sendQuotaAlert(AccountVO account, QuotaAccountVO quotaAccount, QuotaConfig.QuotaEmailTemplateTypes emailType) {
+        sendQuotaAlert(new DeferredQuotaEmail(account, quotaAccount, emailType));
     }
 
     private void sendQuotaAlert(DeferredQuotaEmail emailToBeSent) {
@@ -218,6 +230,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
             final String body = templateEngine.replace(emailTemplate.getTemplateBody());
             try {
                 _emailQuotaAlert.sendQuotaAlert(emailRecipients, subject, body);
+                emailToBeSent.sentSuccessfully();
             } catch (Exception e) {
                 s_logger.error(String.format("Unable to send quota alert email (subject=%s; body=%s) to account %s (%s) recipients (%s) due to error (%s)", subject, body, account.getAccountName(),
                         account.getUuid(), emailRecipients, e));
@@ -229,12 +242,12 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
 
     class DeferredQuotaEmail {
         AccountVO account;
-        BigDecimal quotaBalance;
+        QuotaAccountVO quotaAccount;
         QuotaConfig.QuotaEmailTemplateTypes emailTemplateType;
 
-        public DeferredQuotaEmail(AccountVO account, BigDecimal quotaBalance, QuotaConfig.QuotaEmailTemplateTypes emailTemplateType) {
+        public DeferredQuotaEmail(AccountVO account, QuotaAccountVO quotaAccount, QuotaConfig.QuotaEmailTemplateTypes emailTemplateType) {
             this.account = account;
-            this.quotaBalance = quotaBalance;
+            this.quotaAccount = quotaAccount;
             this.emailTemplateType = emailTemplateType;
         }
 
@@ -243,11 +256,17 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         }
 
         public BigDecimal getQuotaBalance() {
-            return quotaBalance;
+            return quotaAccount.getQuotaBalance();
         }
 
         public QuotaConfig.QuotaEmailTemplateTypes getEmailTemplateType() {
             return emailTemplateType;
+        }
+
+        public void sentSuccessfully() {
+            quotaAccount.setQuotaAlertDate(new Date());
+            quotaAccount.setQuotaAlertType(emailTemplateType.ordinal());
+            _quotaAcc.update(quotaAccount.getAccountId(), quotaAccount);
         }
     };
 

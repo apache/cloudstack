@@ -80,7 +80,7 @@ public class QuotaAccountVO implements InternalIdentity {
     }
 
     public Integer getQuotaEnforce() {
-        return quotaEnforce;
+        return quotaEnforce == null ? 0 : quotaEnforce;
     }
 
     public void setQuotaEnforce(Integer quotaEnforce) {
@@ -96,7 +96,7 @@ public class QuotaAccountVO implements InternalIdentity {
     }
 
     public BigDecimal getQuotaMinBalance() {
-        return quotaMinBalance;
+        return quotaMinBalance == null ? new BigDecimal(0) : quotaMinBalance;
     }
 
     public void setQuotaMinBalance(BigDecimal quotaMinBalance) {
@@ -112,7 +112,7 @@ public class QuotaAccountVO implements InternalIdentity {
     }
 
     public Date getQuotaAlertDate() {
-        return quotaAlertDate;
+        return quotaAlertDate == null ? new Date() : quotaAlertDate;
     }
 
     public void setQuotaAlertDate(Date quotaAlertDate) {

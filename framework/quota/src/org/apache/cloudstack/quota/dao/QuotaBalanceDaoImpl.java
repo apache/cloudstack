@@ -168,8 +168,7 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
                     trimmedRecords.add(entry);
                 } else {
                     trimmedRecords.add(entry);
-                    break; // add only consecutive credit entries and last
-                           // balance entry
+                    break; // add only consecutive credit entries and last balance entry
                 }
             }
 
