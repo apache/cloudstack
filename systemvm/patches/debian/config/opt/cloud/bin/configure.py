@@ -459,7 +459,7 @@ class CsSite2SiteVpn(CsDataBag):
         file.addeq(" keyexchange=ike")
         file.addeq(" ike=%s" % obj['ike_policy'])
         file.addeq(" ikelifetime=%s" % self.convert_sec_to_h(obj['ike_lifetime']))
-        file.addeq(" esp=%s" % self.convert_sec_to_h(obj['esp_lifetime']))
+        file.addeq(" esp=%s" % self.convert_sec_to_h(obj['esp_policy']))
         file.addeq(" salifetime=%s" % self.convert_sec_to_h(obj['esp_lifetime']))
         file.addeq(" pfs=%s" % CsHelper.bool_to_yn(obj['dpd']))
         file.addeq(" keyingtries=2")
