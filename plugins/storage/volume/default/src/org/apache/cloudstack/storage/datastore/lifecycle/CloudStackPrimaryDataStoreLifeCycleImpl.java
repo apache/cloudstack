@@ -29,6 +29,8 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -40,7 +42,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -188,6 +189,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         try {
           hostPath = URLDecoder.decode(uri.getPath(), "UTF-8");
         } catch (UnsupportedEncodingException e) {
+            s_logger.error("[ignored] we are on a platform not supporting \"UTF-8\"!?!", e);
         }
         if (hostPath == null) { // if decoding fails, use getPath() anyway
             hostPath = uri.getPath();
