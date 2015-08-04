@@ -24,6 +24,8 @@ import com.cloud.agent.api.CheckRouterAnswer;
 import com.cloud.agent.api.CheckRouterCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
+import com.cloud.agent.api.CopyFileInVmAnswer;
+import com.cloud.agent.api.CopyFileInVmCommand;
 import com.cloud.agent.api.CreateVMSnapshotCommand;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
 import com.cloud.agent.api.FenceCommand;
@@ -78,6 +80,8 @@ public interface MockVmManager extends Manager {
     Answer getVmStats(GetVmStatsCommand cmd);
 
     CheckSshAnswer checkSshCommand(CheckSshCommand cmd);
+
+    CopyFileInVmAnswer copyFileInVmCommand(CopyFileInVmCommand cmd);
 
     Answer setVmData(VmDataCommand cmd);
 

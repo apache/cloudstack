@@ -3466,6 +3466,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
+    public GuestOSCategoryVO getGuestOsCategory(final Long guestOsCategoryId) {
+        return _guestOSCategoryDao.findById(guestOsCategoryId);
+    }
+
+    @Override
     public GuestOSHypervisorVO getGuestOsHypervisor(final Long guestOsHypervisorId) {
         return _guestOSHypervisorDao.findById(guestOsHypervisorId);
     }

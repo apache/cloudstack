@@ -26,6 +26,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.CopyFileInVmAnswer;
+import com.cloud.agent.api.CopyFileInVmCommand;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.storage.command.AttachCommand;
@@ -284,9 +286,12 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
             return execute((StopCommand) cmd);
         } else if (clazz == RebootCommand.class) {
             return execute((RebootCommand) cmd);
+        } else if (clazz == CopyFileInVmCommand.class) {
+            return execute((CopyFileInVmCommand)cmd);
+        } else {
+            LOGGER.debug("Can't find class for executeRequest " + cmd.getClass() + ", is your direct call missing?");
+            return Answer.createUnsupportedCommandAnswer(cmd);
         }
-        LOGGER.debug("Can't find class for executeRequest " + cmd.getClass() +", is your direct call missing?");
-        return Answer.createUnsupportedCommandAnswer(cmd);
     }
 
     @Override
@@ -587,6 +592,12 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
         } finally {
             hypervisorsupport.setVmState(vmName, State.Running);
         }
+    }
+
+    private CopyFileInVmAnswer execute(CopyFileInVmCommand cmd) {
+        //this method needs to be implemented later to actually copy files
+        //this is here so that console proxy vm deployment doesn't fail
+        return new CopyFileInVmAnswer(cmd);
     }
 
     @Override

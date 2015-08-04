@@ -91,6 +91,14 @@ public class ConsoleProxyHttpHandlerHelper {
                     map.put("username", param.getUsername());
                 if (param.getPassword() != null)
                     map.put("password", param.getPassword());
+                if(param.getGuestos() != null)
+                    map.put("guestos", param.getGuestos());
+                if(param.getGuestosDisplayName() != null)
+                    map.put("guestosDisplayName", param.getGuestosDisplayName());
+                if(param.getHypervisor() != null)
+                    map.put("hypervisor", param.getHypervisor());
+                if(param.getHypervisorVersion() != null)
+                    map.put("hypervisorVersion", param.getHypervisorVersion());
             } else {
                 s_logger.error("Unable to decode token");
             }
@@ -114,5 +122,9 @@ public class ConsoleProxyHttpHandlerHelper {
         map.remove("hypervHost");
         map.remove("username");
         map.remove("password");
+        map.remove("guestos");
+        map.remove("guestosDisplayName");
+        map.remove("hypervisor");
+        map.remove("hypervisorVersion");
     }
 }

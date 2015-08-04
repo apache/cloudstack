@@ -1733,6 +1733,7 @@
         <script src="lib/jquery.md5.js" type="text/javascript" ></script>
         <script src="lib/require.js" type="text/javascript"></script>
 
+        <script type="text/javascript" src="scripts/consoleKeyboardOptions.js"></script>
         <!-- localized messages -->
         <script type="text/javascript">
             var $head = $('head');
@@ -1794,10 +1795,9 @@
 
             // Inject translated keyboard options
             var keyboardDropdown = $($.find('#keyboard-options'));
-            keyboardDropdown.append($('<option>', {value: 'us', text: translate('label.standard.us.keyboard')}));
-            keyboardDropdown.append($('<option>', {value: 'uk', text: translate('label.uk.keyboard')}));
-            keyboardDropdown.append($('<option>', {value: 'jp', text: translate('label.japanese.keyboard')}));
-            keyboardDropdown.append($('<option>', {value: 'sc', text: translate('label.simplified.chinese.keyboard')}));
+            for (var key in keyboardOptions) {
+                keyboardDropdown.append($('<option>', {value: key, text: translate(keyboardOptions[key])}));
+            }
         </script>
 
         <script src="lib/excanvas.js" type="text/javascript"></script>

@@ -511,6 +511,12 @@
                 <copy todir="${basedir}/target/generated-webapp/WEB-INF/classes/scripts">
                   <fileset dir="${basedir}/../scripts"/>
                 </copy>
+                <copy todir="${basedir}/target/generated-webapp/WEB-INF/classes/systemvm/js">
+                  <fileset dir="${basedir}/../systemvm/js">
+                    <include name="ajaxkeys.js"/>
+                    <include name="ajaxviewer.js"/>
+                  </fileset>
+                </copy>
                 <!-- CLOUDSTACK-1304 -->
                 <chmod perm="755"
                   file="${basedir}/target/generated-webapp/WEB-INF/classes/scripts/**" type="both"/>

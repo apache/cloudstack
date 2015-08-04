@@ -242,7 +242,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
     }
 
     @Override
-    public String onAjaxClientStart(String title, List<String> languages, String guest) {
+    public String onAjaxClientStart(String title, List<String> languages) {
         updateFrontEndActivityTime();
 
         if (!waitForViewerReady())
@@ -275,13 +275,12 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
             i++;
         }
 
-        return getAjaxViewerPageContent(sbTileSequence.toString(), imgUrl, updateUrl, width, height, tileWidth, tileHeight, title,
-            ConsoleProxy.keyboardType == ConsoleProxy.KEYBOARD_RAW, languages, guest, this.clientParam.getLocale());
+        return getAjaxViewerPageContent(sbTileSequence.toString(), imgUrl, updateUrl, width, height, tileWidth, tileHeight, title, languages, clientParam.getLocale(),
+                clientParam.getGuestos(), clientParam.getGuestosDisplayName(), clientParam.getHypervisor(), clientParam.getHypervisorVersion());
     }
 
-    private String getAjaxViewerPageContent(String tileSequence, String imgUrl, String updateUrl, int width, int height, int tileWidth, int tileHeight, String title,
-        boolean rawKeyboard, List<String> languages, String guest, String locale) {
-
+    private String getAjaxViewerPageContent(String tileSequence, String imgUrl, String updateUrl, int width, int height, int tileWidth, int tileHeight,
+            String title, List<String> languages, String locale, String guestos, String guestosDisplayName, String hypervisor, String hypervisorVersion) {
         StringBuffer sbLanguages = new StringBuffer("");
         if (languages != null) {
             for (String lang : languages) {
@@ -292,6 +291,9 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
             }
         }
 
+        if(locale == null || locale.isEmpty()) {
+            locale = "us";
+        }
         String[] content =
             new String[] {"<html>", "<head>", "<script type=\"text/javascript\" language=\"javascript\" src=\"/resource/js/jquery.js\"></script>",
                 "<script type=\"text/javascript\" language=\"javascript\" src=\"/resource/js/cloud.logger.js\"></script>",
@@ -305,16 +307,15 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
                 "<a href=\"#\" cmd=\"sendCtrlEsc\">",
                 "<span><img align=\"left\" src=\"/resource/images/winlog.png\" alt=\"Ctrl-Esc\" style=\"width:16px;height:16px\"/>Ctrl-Esc</span>", "</a>", "</li>",
 
-                "<li class=\"pulldown\">", "<a href=\"#\">",
-                "<span><img align=\"left\" src=\"/resource/images/winlog.png\" alt=\"Keyboard\" style=\"width:16px;height:16px\"/>Keyboard</span>", "</a>", "<ul>",
-                "<li><a href=\"#\" cmd=\"keyboard_us\"><span>Standard (US) keyboard</span></a></li>",
-                "<li><a href=\"#\" cmd=\"keyboard_uk\"><span>UK keyboard</span></a></li>",
-                "<li><a href=\"#\" cmd=\"keyboard_jp\"><span>Japanese keyboard</span></a></li>",
-                "<li><a href=\"#\" cmd=\"keyboard_fr\"><span>French AZERTY keyboard</span></a></li>", "</ul>", "</li>", "</ul>",
+                "<li>",
+                "<span><img align=\"left\" src=\"/resource/images/winlog.png\" alt=\"Keyboard\" style=\"width:16px;height:16px;margin-top:7px\"/>",
+                "<label id=\"keyboard_label\"  style=\"color: white\">Keyboard: </label>",
+                "<script type=\"text/javascript\" language=\"javascript\">getLocaleDescription('" + locale + "')</script></span> </li></ul>",
                 "<span id=\"light\" class=\"dark\" cmd=\"toggle_logwin\"></span>", "</div>", "<div id=\"main_panel\" tabindex=\"1\"></div>",
                 "<script language=\"javascript\">", "var acceptLanguages = '" + sbLanguages.toString() + "';", "var tileMap = [ " + tileSequence + " ];",
-                "var ajaxViewer = new AjaxViewer('main_panel', '" + imgUrl + "', '" + updateUrl + "', '" + locale + "', '" + guest + "', tileMap, ",
-                String.valueOf(width) + ", " + String.valueOf(height) + ", " + String.valueOf(tileWidth) + ", " + String.valueOf(tileHeight) + ");",
+                "var ajaxViewer = new AjaxViewer('main_panel', '" + imgUrl + "', '" + updateUrl + "', '" + locale + "', '" + guestos + "', '" + guestosDisplayName +
+                        "', '" + hypervisor + "', '" + hypervisorVersion + "', tileMap, ", String.valueOf(width) + ", " + String.valueOf(height) + ", " +
+                    String.valueOf(tileWidth) + ", " + String.valueOf(tileHeight) + ");",
 
                 "$(function() {", "ajaxViewer.start();", "});",
 

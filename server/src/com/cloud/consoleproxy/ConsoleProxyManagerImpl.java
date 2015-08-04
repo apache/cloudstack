@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.consoleproxy;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,6 +31,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.CopyFileInVmCommand;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -50,7 +53,6 @@ import com.cloud.agent.api.ConsoleProxyLoadReportCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupProxyCommand;
-import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.manager.Commands;
@@ -1475,19 +1477,39 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         CheckSshCommand check = new CheckSshCommand(profile.getInstanceName(), controlNic.getIPv4Address(), 3922);
         cmds.addCommand("checkSsh", check);
 
+        try {
+            File uiFiles = new File("systemvm/js");
+            if (!uiFiles.exists()) {
+                uiFiles = new File("/usr/share/cloudstack-common/systemvm/js");
+            }
+            if (uiFiles.exists() && uiFiles.isDirectory()) {
+                CopyFileInVmCommand copyFile = new CopyFileInVmCommand(uiFiles.getCanonicalPath(), "/usr/local/cloud/systemvm/js", controlNic.getIPv4Address());
+                cmds.addCommand("copyFile", copyFile);
+            } else {
+                s_logger.error("Couldn't locate localization files for console proxy");
+                return false;
+            }
+        } catch (IOException e) {
+            s_logger.error("Failed to copy localization files for console proxy: " + e.getMessage());
+        }
+
         return true;
     }
 
     @Override
     public boolean finalizeStart(VirtualMachineProfile profile, long hostId, Commands cmds, ReservationContext context) {
-        CheckSshAnswer answer = (CheckSshAnswer)cmds.getAnswer("checkSsh");
-        if (answer == null || !answer.getResult()) {
-            if (answer != null) {
-                s_logger.warn("Unable to ssh to the VM: " + answer.getDetails());
-            } else {
-                s_logger.warn("Unable to ssh to the VM: null answer");
+        for(Answer answer : cmds.getAnswers()) {
+            if(answer == null || !answer.getResult()) {
+                if (answer != null) {
+                    s_logger.warn("Unable to ssh to the VM: " + answer.getDetails());
+                } else {
+                    s_logger.warn("Unable to ssh to the VM: null answer");
+                }
+                if(cmds.getAnswer("copyFile") == answer) {
+                    continue;
+                }
+                return false;
             }
-            return false;
         }
 
         try {

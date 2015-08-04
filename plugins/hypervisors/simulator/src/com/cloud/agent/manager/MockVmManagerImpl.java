@@ -25,6 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.CopyFileInVmAnswer;
+import com.cloud.agent.api.CopyFileInVmCommand;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -366,6 +368,9 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     public CheckSshAnswer checkSshCommand(final CheckSshCommand cmd) {
         return new CheckSshAnswer(cmd);
     }
+
+    @Override
+    public CopyFileInVmAnswer copyFileInVmCommand(CopyFileInVmCommand cmd) { return new CopyFileInVmAnswer(cmd);}
 
     @Override
     public MigrateAnswer migrate(final MigrateCommand cmd, final SimulatorInfo info) {

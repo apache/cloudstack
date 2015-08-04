@@ -214,7 +214,7 @@ def createFileInDomr(session, args):
         util.pread2(['rm',src_filepath])
         txt = 'succ#' + txt
     except:
-        logging.debug("failed to copy file " + src_filepath + " from host to VR with ip " + domrip)
+        logging.debug("failed to copy file " + src_filepath + " from host to domr with ip " + domrip)
         txt = 'fail#' + txt
     return txt
 

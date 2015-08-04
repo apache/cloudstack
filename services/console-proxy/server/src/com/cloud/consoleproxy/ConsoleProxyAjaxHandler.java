@@ -85,6 +85,10 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
         String hypervHost = queryMap.get("hypervHost");
         String username = queryMap.get("username");
         String password = queryMap.get("password");
+        String guestos = queryMap.get("guestos");
+        String guestosDisplayName = queryMap.get("guestosDisplayName");
+        String hypervisor = queryMap.get("hypervisor");
+        String hypervisorVersion = queryMap.get("hypervisorVersion");
 
         if (tag == null)
             tag = "";
@@ -136,6 +140,10 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
             param.setHypervHost(hypervHost);
             param.setUsername(username);
             param.setPassword(password);
+            param.setGuestos(guestos);
+            param.setGuestosDisplayName(guestosDisplayName);
+            param.setHypervisorVersion(hypervisorVersion);
+            param.setHypervisor(hypervisor);
 
             viewer = ConsoleProxy.getAjaxVncViewer(param, ajaxSessionIdStr);
         } catch (Exception e) {
@@ -179,8 +187,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
                     s_logger.debug("Ajax request indicates a fresh client start");
 
                 String title = queryMap.get("t");
-                String guest = queryMap.get("guest");
-                handleClientStart(t, viewer, title != null ? title : "", guest);
+                handleClientStart(t, viewer, title != null ? title : "");
             } else {
 
                 if (s_logger.isTraceEnabled())
@@ -377,9 +384,9 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
         }
     }
 
-    private void handleClientStart(HttpExchange t, ConsoleProxyClient viewer, String title, String guest) throws IOException {
+    private void handleClientStart(HttpExchange t, ConsoleProxyClient viewer, String title) throws IOException {
         List<String> languages = t.getRequestHeaders().get("Accept-Language");
-        String response = viewer.onAjaxClientStart(title, languages, guest);
+        String response = viewer.onAjaxClientStart(title, languages);
 
         Headers hds = t.getResponseHeaders();
         hds.set("Content-Type", "text/html");

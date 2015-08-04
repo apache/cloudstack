@@ -18,6 +18,7 @@ package com.cloud.server;
 
 import com.cloud.host.DetailVO;
 import com.cloud.host.HostVO;
+import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.utils.Pair;
@@ -54,6 +55,8 @@ public interface ManagementServer extends ManagementService, PluggableService {
     String getConsoleAccessUrlRoot(long vmId);
 
     GuestOSVO getGuestOs(Long guestOsId);
+
+    public GuestOSCategoryVO getGuestOsCategory(final Long guestOsCategoryId);
 
     GuestOSHypervisorVO getGuestOsHypervisor(Long guestOsHypervisorId);
 

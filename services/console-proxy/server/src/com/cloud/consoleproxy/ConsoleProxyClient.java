@@ -44,7 +44,7 @@ public interface ConsoleProxyClient {
 
     Image getClientScaledImage(int width, int height);                  // client thumbnail support
 
-    String onAjaxClientStart(String title, List<String> languages, String guest);
+    String onAjaxClientStart(String title, List<String> languages);
 
     String onAjaxClientUpdate();
 

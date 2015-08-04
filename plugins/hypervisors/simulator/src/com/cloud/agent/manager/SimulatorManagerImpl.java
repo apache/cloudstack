@@ -26,6 +26,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.CopyFileInVmCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
@@ -288,6 +289,8 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                     answer = _mockVmMgr.startVM((StartCommand)cmd, info);
                 } else if (cmd instanceof CheckSshCommand) {
                     answer = _mockVmMgr.checkSshCommand((CheckSshCommand)cmd);
+                } else if (cmd instanceof CopyFileInVmCommand) {
+                    answer = _mockVmMgr.copyFileInVmCommand((CopyFileInVmCommand)cmd);
                 } else if (cmd instanceof CheckVirtualMachineCommand) {
                     answer = _mockVmMgr.checkVmState((CheckVirtualMachineCommand)cmd);
                 } else if (cmd instanceof SetStaticNatRulesCommand) {

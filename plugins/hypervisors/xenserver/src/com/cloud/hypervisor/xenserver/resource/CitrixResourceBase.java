@@ -4526,7 +4526,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
 
         vm.setMemoryDynamicRange(conn, newDynamicMemoryMin, newDynamicMemoryMax);
-        vm.setVCPUsNumberLive(conn, (long) vmSpec.getCpus());
+        vm.setVCPUsNumberLive(conn, (long)vmSpec.getCpus());
 
         final Integer speed = vmSpec.getMinSpeed();
         if (speed != null) {
@@ -5114,8 +5114,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     public void waitForTask(final Connection c, final Task task, final long pollInterval, final long timeout) throws XenAPIException, XmlRpcException, TimeoutException {
         final long beginTime = System.currentTimeMillis();
         if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Task " + task.getNameLabel(c) + " (" + task.getUuid(c) + ") sent to " + c.getSessionReference() + " is pending completion with a " + timeout
-                    + "ms timeout");
+            s_logger.trace(
+                    "Task " + task.getNameLabel(c) + " (" + task.getUuid(c) + ") sent to " + c.getSessionReference() + " is pending completion with a " + timeout + "ms timeout");
         }
         while (task.getStatus(c) == Types.TaskStatusType.PENDING) {
             try {
@@ -5533,4 +5533,20 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     }
 
+    public ExecutionResult copyFileInVm(String vmIp, File file, String dest) {
+        final Connection conn = getConnection();
+        final String hostPath = "/tmp/";
+
+        s_logger.debug("Copying file to VM with ip " + vmIp + " using host " + _host.getIp());
+        try {
+            SshHelper.scpTo(_host.getIp(), 22, _username, null, _password.peek(), hostPath, file.getCanonicalPath(), null);
+        } catch (final Exception e) {
+            s_logger.warn("Fail to copy file into host " + _host.getIp() + " failed with exception " + e.getMessage().toString());
+        }
+
+        final String rc = callHostPlugin(conn, "vmops", "createFileInDomr", "domrip", vmIp, "srcfilepath", hostPath + file.getName(), "dstfilepath", dest);
+        s_logger.debug("File " + file.getName() + " got copied in VM, ip " + vmIp);
+
+        return new ExecutionResult(rc.startsWith("succ#"), rc.substring(5));
+    }
 }

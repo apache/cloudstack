@@ -16,7 +16,21 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 */
+/*
+ * Below associative array contains the list of keyboard types which shares most of the keys with standard (US) keyboard
+ * e.g. UK, french
+ * If your keyboard type shares most of keys with standard (US) keyboard add it here
+ */
+var cookedKeyboardTypes = {"us": 'Standard (US) keyboard',
+        "uk": 'UK keyboard',
+        "fr": 'Clavier AZERTY Fran\u00e7ais'}
 
+/*
+ * Below associative array contains the list of raw keyboard types e.g. Japanese, Simplified Chinese
+ * If your keyboard type falls in this category add it here
+ */
+var rawKeyboardTypes = {"jp": '\u65e5\u672c\u8a9e\u30ad\u30fc\u30dc\u30fc\u30c9',
+        "sc": '\u7b80\u4f53\u4e2d\u6587\u952e\u76d8'}
 /*
  * This var contains the limited keyboard translation tables.
  * This is the table that users can modify to make special keyboard to work properly.
@@ -25,6 +39,42 @@ under the License.
 
 //client event type. corresponds to events in ajaxviewer.
 
+//
+// RAW keyboard
+//      Primarily translates KeyDown/KeyUp event, either as is (if there is no mapping entry)
+//      or through mapped result.
+//
+//      For KeyPress event, it translates it only if there exist a mapping entry
+//      in jsX11KeysymMap map and the entry meets the condition
+//
+// COOKED keyboard
+//      Primarily translates KeyPress event, either as is or through mapped result
+//      It translates KeyDown/KeyUp only there exists a mapping entry, or if there
+//      is no mapping entry, translate when certain modifier key is pressed (i.e.,
+//      CTRL or ALT key
+//
+// Mapping entry types
+//      direct      :   will be directly mapped into the entry value with the same event type
+//      boolean     :   only valid for jsX11KeysymMap, existence of this type, no matter true or false
+//                      in value, corresponding KeyDown/KeyUp event will be masked
+//      array       :   contains a set of conditional mapping entry
+//
+// Conditional mapping entry
+//
+//      {
+//          type: <event type>, code: <mapped key code>, modifiers: <modifiers>,
+//          shift : <shift state match condition>,      -- match on shift state
+//          guestos : <guest os match condition>,       -- match on guestos type
+//          browser: <browser type match condition>,    -- match on browser
+//          browserVersion: <brower version match condition>    -- match on browser version
+//          guestosDisplayName: <guest os display name condition>   -- matches on specific version of guest os
+//                              provide the guest os display name substring to uniquely identify version
+//                              for example if guestosDisplayName CentOS 5.2 (32-bit), then to match this condition
+//                              give unique substring to identify like 5.2 or CentOS 5.2 etc.
+//          hypervisor: <hypervisor match condition>    --match on hypervisor
+//          hypervisorVersion: <hypervisor version match condition> --match on hypervisor version
+//      }
+//
 
 //use java AWT key modifier masks
 JS_KEY_BACKSPACE = 8;
@@ -73,16 +123,16 @@ JS_KEY_F9 = 120;
 JS_KEY_F10 = 121;
 JS_KEY_F11 = 122;
 JS_KEY_F12 = 123;
-JS_KEY_SEMI_COLON = 186;			// ;
-JS_KEY_COMMA = 188;				// ,
-JS_KEY_DASH = 189;				// -
-JS_KEY_PERIOD = 190;				// .
-JS_KEY_FORWARD_SLASH = 191;		// /
-JS_KEY_GRAVE_ACCENT = 192;		// `
-JS_KEY_OPEN_BRACKET = 219;		// [
-JS_KEY_BACK_SLASH = 220;			// \
-JS_KEY_CLOSE_BRACKET = 221;		// ]
-JS_KEY_SINGLE_QUOTE = 222;		// '
+JS_KEY_SEMI_COLON = 186;        // ;
+JS_KEY_COMMA = 188;             // ,
+JS_KEY_DASH = 189;              // -
+JS_KEY_PERIOD = 190;            // .
+JS_KEY_FORWARD_SLASH = 191;     // /
+JS_KEY_GRAVE_ACCENT = 192;      // `
+JS_KEY_OPEN_BRACKET = 219;      // [
+JS_KEY_BACK_SLASH = 220;        // \
+JS_KEY_CLOSE_BRACKET = 221;     // ]
+JS_KEY_SINGLE_QUOTE = 222;      // '
 
 
 //X11 keysym definitions
@@ -122,7 +172,7 @@ X11_KEY_ADD = 0x2b;
 X11_KEY_OPEN_BRACKET = 0x5b;
 X11_KEY_CLOSE_BRACKET = 0x5d;
 X11_KEY_BACK_SLASH = 0x7c;
-X11_KEY_REVERSE_SOLIUS = 0x5c;			// another back slash (back slash on JP keyboard)
+X11_KEY_REVERSE_SOLIUS = 0x5c;      // another back slash (back slash on JP keyboard)
 X11_KEY_SINGLE_QUOTE = 0x22;
 X11_KEY_COMMA = 0x3c;
 X11_KEY_PERIOD = 0x3e;
@@ -142,9 +192,9 @@ X11_KEY_NUMPAD8 = 0x38;
 X11_KEY_NUMPAD9 = 0x39;
 X11_KEY_DECIMAL_POINT = 0x2e;
 X11_KEY_DIVIDE = 0x3f;
-X11_KEY_TILDE = 0x7e;				// ~
-X11_KEY_CIRCUMFLEX_ACCENT = 0x5e;	// ^
-X11_KEY_YEN_MARK = 0xa5;				// Japanese YEN mark
+X11_KEY_TILDE = 0x7e;               // ~
+X11_KEY_CIRCUMFLEX_ACCENT = 0x5e;   // ^
+X11_KEY_YEN_MARK = 0xa5;            // Japanese YEN mark
 X11_KEY_ASTERISK = 0x2a;
 X11_KEY_KP_0 = 0xFFB0;
 X11_KEY_KP_1 = 0xFFB1;
@@ -168,7 +218,7 @@ KEYBOARD_TYPE_FR = "fr";
 
 //JP keyboard type
 
-var	keyboardTables = [
+var keyboardTables = [
            {tindex: 0, keyboardType: KEYBOARD_TYPE_COOKED, mappingTable:
                {X11: [  {keycode: 226, entry: X11_KEY_REVERSE_SOLIUS},
 
@@ -198,89 +248,89 @@ var	keyboardTables = [
            }, {tindex: 1, keyboardType: KEYBOARD_TYPE_JP, mappingTable:
            // intialize keyboard mapping for RAW keyboard
            {X11: [
-                  {keycode: JS_KEY_CAPSLOCK,			entry : X11_KEY_CAPSLOCK},
-                  {keycode: JS_KEY_BACKSPACE,			entry : X11_KEY_BACKSPACE},
-                  {keycode: JS_KEY_TAB,					entry : X11_KEY_TAB},
-                  {keycode: JS_KEY_ENTER,				entry : X11_KEY_ENTER},
-                  {keycode: JS_KEY_ESCAPE,				entry : X11_KEY_ESCAPE},
-                  {keycode: JS_KEY_INSERT,				entry : X11_KEY_INSERT},
-                  {keycode: JS_KEY_DELETE,				entry : X11_KEY_DELETE},
-                  {keycode: JS_KEY_HOME,				entry : X11_KEY_HOME},
-                  {keycode: JS_KEY_END,					entry : X11_KEY_END},
-                  {keycode: JS_KEY_PAGEUP,				entry : X11_KEY_PAGEUP},
-                  {keycode: JS_KEY_PAGEDOWN,			entry : X11_KEY_PAGEDOWN},
-                  {keycode: JS_KEY_LEFT,				entry : X11_KEY_LEFT},
-                  {keycode: JS_KEY_UP,					entry : X11_KEY_UP},
-                  {keycode: JS_KEY_RIGHT,				entry : X11_KEY_RIGHT},
-                  {keycode: JS_KEY_DOWN,				entry : X11_KEY_DOWN},
-                  {keycode: JS_KEY_F1,					entry : X11_KEY_F1},
-                  {keycode: JS_KEY_F2,					entry : X11_KEY_F2},
-                  {keycode: JS_KEY_F3,					entry : X11_KEY_F3},
-                  {keycode: JS_KEY_F4,					entry : X11_KEY_F4},
-                  {keycode: JS_KEY_F5,					entry : X11_KEY_F5},
-                  {keycode: JS_KEY_F6,					entry : X11_KEY_F6},
-                  {keycode: JS_KEY_F7,					entry : X11_KEY_F7},
-                  {keycode: JS_KEY_F8,					entry : X11_KEY_F8},
-                  {keycode: JS_KEY_F9,					entry : X11_KEY_F9},
-                  {keycode: JS_KEY_F10,					entry : X11_KEY_F10},
-                  {keycode: JS_KEY_F11,					entry : X11_KEY_F11},
-                  {keycode: JS_KEY_F12,					entry : X11_KEY_F12},
-                  {keycode: JS_KEY_SHIFT,				entry : X11_KEY_SHIFT},
-                  {keycode: JS_KEY_CTRL,				entry : X11_KEY_CTRL},
-                  {keycode: JS_KEY_ALT,					entry : X11_KEY_ALT},
-                  //{keycode: JS_KEY_GRAVE_ACCENT,		entry : X11_KEY_GRAVE_ACCENT},
+                  {keycode: JS_KEY_CAPSLOCK,            entry : X11_KEY_CAPSLOCK},
+                  {keycode: JS_KEY_BACKSPACE,           entry : X11_KEY_BACKSPACE},
+                  {keycode: JS_KEY_TAB,                 entry : X11_KEY_TAB},
+                  {keycode: JS_KEY_ENTER,               entry : X11_KEY_ENTER},
+                  {keycode: JS_KEY_ESCAPE,              entry : X11_KEY_ESCAPE},
+                  {keycode: JS_KEY_INSERT,              entry : X11_KEY_INSERT},
+                  {keycode: JS_KEY_DELETE,              entry : X11_KEY_DELETE},
+                  {keycode: JS_KEY_HOME,                entry : X11_KEY_HOME},
+                  {keycode: JS_KEY_END,                 entry : X11_KEY_END},
+                  {keycode: JS_KEY_PAGEUP,              entry : X11_KEY_PAGEUP},
+                  {keycode: JS_KEY_PAGEDOWN,            entry : X11_KEY_PAGEDOWN},
+                  {keycode: JS_KEY_LEFT,                entry : X11_KEY_LEFT},
+                  {keycode: JS_KEY_UP,                  entry : X11_KEY_UP},
+                  {keycode: JS_KEY_RIGHT,               entry : X11_KEY_RIGHT},
+                  {keycode: JS_KEY_DOWN,                entry : X11_KEY_DOWN},
+                  {keycode: JS_KEY_F1,                  entry : X11_KEY_F1},
+                  {keycode: JS_KEY_F2,                  entry : X11_KEY_F2},
+                  {keycode: JS_KEY_F3,                  entry : X11_KEY_F3},
+                  {keycode: JS_KEY_F4,                  entry : X11_KEY_F4},
+                  {keycode: JS_KEY_F5,                  entry : X11_KEY_F5},
+                  {keycode: JS_KEY_F6,                  entry : X11_KEY_F6},
+                  {keycode: JS_KEY_F7,                  entry : X11_KEY_F7},
+                  {keycode: JS_KEY_F8,                  entry : X11_KEY_F8},
+                  {keycode: JS_KEY_F9,                  entry : X11_KEY_F9},
+                  {keycode: JS_KEY_F10,                 entry : X11_KEY_F10},
+                  {keycode: JS_KEY_F11,                 entry : X11_KEY_F11},
+                  {keycode: JS_KEY_F12,                 entry : X11_KEY_F12},
+                  {keycode: JS_KEY_SHIFT,               entry : X11_KEY_SHIFT},
+                  {keycode: JS_KEY_CTRL,                entry : X11_KEY_CTRL},
+                  {keycode: JS_KEY_ALT,                 entry : X11_KEY_ALT},
+                  //{keycode: JS_KEY_GRAVE_ACCENT,      entry : X11_KEY_GRAVE_ACCENT},
                   //[192 / 64 = "' @"]
-                  {keycode: 192,	entry : 0x40,	guestos: "windows",	browser: "IE"},
-                  {keycode: 64,		entry : 0x40,	guestos: "windows",	browser: "Firefox"},
-                  //{keycode: JS_KEY_ADD,					entry : X11_KEY_ADD},
+                  {keycode: 192,    entry : 0x40,   guestos: "windows", browser: "IE"},
+                  {keycode: 64,     entry : 0x40,   guestos: "windows", browser: "Firefox"},
+                  //{keycode: JS_KEY_ADD,                   entry : X11_KEY_ADD},
                   //[187 / 59 = "; +"]
-                  {keycode: 187,	entry : 0x3b,	guestos: "windows",	browser: "IE"},
-                  {keycode: 59,		entry : 0x3b,	guestos: "windows",	browser: "Firefox"},
-                  //{keycode: JS_KEY_OPEN_BRACKET,		entry : X11_KEY_OPEN_BRACKET},
+                  {keycode: 187,    entry : 0x3b,   guestos: "windows", browser: "IE"},
+                  {keycode: 59,     entry : 0x3b,   guestos: "windows", browser: "Firefox"},
+                  //{keycode: JS_KEY_OPEN_BRACKET,      entry : X11_KEY_OPEN_BRACKET},
                   //[219 = "[{"]
-                  {keycode: 219,	entry : 0x5b,	guestos: "windows",	browser: "IE"},
-                  {keycode: 219,	entry : 0x5b,	guestos: "windows",	browser: "Firefox"},
-                  //{keycode: JS_KEY_CLOSE_BRACKET,		entry : X11_KEY_CLOSE_BRACKET},
+                  {keycode: 219,    entry : 0x5b,   guestos: "windows", browser: "IE"},
+                  {keycode: 219,    entry : 0x5b,   guestos: "windows", browser: "Firefox"},
+                  //{keycode: JS_KEY_CLOSE_BRACKET,     entry : X11_KEY_CLOSE_BRACKET},
                   //[221 = "]}"]
-                  {keycode: 221,	entry : 0x5d,	guestos: "windows",	browser: "IE"},
-                  {keycode: 221,	entry : 0x5d,	guestos: "windows",	browser: "Firefox"},
-                  {keycode: JS_KEY_BACK_SLASH,		entry : X11_KEY_BACK_SLASH,	guestos: "windows"},
-                  //{keycode: JS_KEY_SINGLE_QUOTE,		entry : X11_KEY_SINGLE_QUOTE},
+                  {keycode: 221,    entry : 0x5d,   guestos: "windows", browser: "IE"},
+                  {keycode: 221,    entry : 0x5d,   guestos: "windows", browser: "Firefox"},
+                  {keycode: JS_KEY_BACK_SLASH,      entry : X11_KEY_BACK_SLASH, guestos: "windows"},
+                  //{keycode: JS_KEY_SINGLE_QUOTE,      entry : X11_KEY_SINGLE_QUOTE},
                   //[222 / 160 = "~^"]
-                  {keycode: 222,	entry : 0x5e,	guestos: "windows",	browser: "IE"},
-                  {keycode: 160,	entry : 0x5e,	guestos: "windows",	browser: "Firefox"},
+                  {keycode: 222,    entry : 0x5e,   guestos: "windows", browser: "IE"},
+                  {keycode: 160,    entry : 0x5e,   guestos: "windows", browser: "Firefox"},
                   //[173 = "-=" ] specific to Firefox browser
-                  {keycode: 173,	entry : 0x2d,	guestos: "windows",	browser: "Firefox"},
-                  {keycode: JS_KEY_COMMA,				entry : X11_KEY_COMMA, guestos: "windows"},
-                  {keycode: JS_KEY_PERIOD, 				entry : X11_KEY_PERIOD, guestos: "windows"},
-                  {keycode: JS_KEY_FORWARD_SLASH,		entry : X11_KEY_FORWARD_SLASH, guestos: "windows"},
-                  {keycode: JS_KEY_DASH,				entry : X11_KEY_DASH, guestos: "windows"},
-                  {keycode: JS_KEY_SEMI_COLON,			entry : 0x3a,	guestos: "windows"},
-                  {keycode: JS_KEY_NUMPAD0,				entry : X11_KEY_NUMPAD0, guestos: "windows"},
-                  {keycode: JS_KEY_NUMPAD1,				entry : X11_KEY_NUMPAD1, guestos: "windows"},
-                  {keycode: JS_KEY_NUMPAD2,				entry : X11_KEY_NUMPAD2, guestos: "windows"},
-                  {keycode: JS_KEY_NUMPAD3,				entry : X11_KEY_NUMPAD3, guestos: "windows"},
-                  {keycode: JS_KEY_NUMPAD4,				entry : X11_KEY_NUMPAD4, guestos: "windows"},
-                  {keycode: JS_KEY_NUMPAD5,				entry : X11_KEY_NUMPAD5, guestos: "windows"},
-                  {keycode: JS_KEY_NUMPAD6,				entry : X11_KEY_NUMPAD6, guestos: "windows"},
-                  {keycode: JS_KEY_NUMPAD7,				entry : X11_KEY_NUMPAD7, guestos: "windows"},
-                  {keycode: JS_KEY_NUMPAD8,				entry : X11_KEY_NUMPAD8, guestos: "windows"},
-                  {keycode: JS_KEY_NUMPAD9,				entry : X11_KEY_NUMPAD9, guestos: "windows"},
-                  {keycode: JS_KEY_DECIMAL_POINT,		entry : X11_KEY_PERIOD, guestos: "windows"},
-                  {keycode: JS_KEY_DIVIDE,				entry : 0xffaf, guestos: "windows"},
-                  {keycode: JS_KEY_MULTIPLY,			entry : 0xffaa, guestos: "windows"},
-                  {keycode: JS_KEY_ADD,					entry : 0xffab, guestos: "windows"},
-                  {keycode: JS_KEY_SUBSTRACT,			entry : 0xffad, guestos: "windows"},
+                  {keycode: 173,    entry : 0x2d,   guestos: "windows", browser: "Firefox"},
+                  {keycode: JS_KEY_COMMA,               entry : X11_KEY_COMMA, guestos: "windows"},
+                  {keycode: JS_KEY_PERIOD,              entry : X11_KEY_PERIOD, guestos: "windows"},
+                  {keycode: JS_KEY_FORWARD_SLASH,       entry : X11_KEY_FORWARD_SLASH, guestos: "windows"},
+                  {keycode: JS_KEY_DASH,                entry : X11_KEY_DASH, guestos: "windows"},
+                  {keycode: JS_KEY_SEMI_COLON,          entry : 0x3a,   guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD0,             entry : X11_KEY_NUMPAD0, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD1,             entry : X11_KEY_NUMPAD1, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD2,             entry : X11_KEY_NUMPAD2, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD3,             entry : X11_KEY_NUMPAD3, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD4,             entry : X11_KEY_NUMPAD4, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD5,             entry : X11_KEY_NUMPAD5, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD6,             entry : X11_KEY_NUMPAD6, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD7,             entry : X11_KEY_NUMPAD7, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD8,             entry : X11_KEY_NUMPAD8, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD9,             entry : X11_KEY_NUMPAD9, guestos: "windows"},
+                  {keycode: JS_KEY_DECIMAL_POINT,       entry : X11_KEY_PERIOD, guestos: "windows"},
+                  {keycode: JS_KEY_DIVIDE,              entry : 0xffaf, guestos: "windows"},
+                  {keycode: JS_KEY_MULTIPLY,            entry : 0xffaa, guestos: "windows"},
+                  {keycode: JS_KEY_ADD,                 entry : 0xffab, guestos: "windows"},
+                  {keycode: JS_KEY_SUBSTRACT,           entry : 0xffad, guestos: "windows"},
                   //Kanji Key = 243 / 244
-                  {keycode: 243,	entry : 0x7e,	browser: "IE"},
-                  {keycode: 244,	entry : 0x7e,	browser: "IE"},
+                  {keycode: 243,    entry : 0x7e,   browser: "IE"},
+                  {keycode: 244,    entry : 0x7e,   browser: "IE"},
                   //Caps Lock = 240
-                  {keycode: 240,			entry : 0xffe5},
+                  {keycode: 240,            entry : 0xffe5},
                   //[186 / 58 = "~^"]
-                  {keycode: 186,	entry : 0x3a, guestos: "windows", browser: "IE"},
-                  {keycode: 58,		entry : 0x3a, guestos: "windows",	browser: "Firefox"},
+                  {keycode: 186,    entry : 0x3a, guestos: "windows", browser: "IE"},
+                  {keycode: 58,     entry : 0x3a, guestos: "windows",   browser: "Firefox"},
                   //[226 = "_"]
-                  {keycode: 226,	entry : 0x5f, guestos: "windows"},
+                  {keycode: 226,    entry : 0x5f, guestos: "windows"},
                   ],
                   keyPress: [
                              // These mappings are for japanese guestOS. it is recommended that admin should deploy
@@ -293,23 +343,23 @@ var	keyboardTables = [
                  {X11: [],
                   keyPress: [
                           //[34 = "]
-                          {keycode: 34,		entry: 0x40,	guestos: "windows"},
+                          {keycode: 34,     entry: 0x40,    guestos: "windows"},
                           //[35 = #]
-                          {keycode: 35,		entry: 0x5c,	guestos: "windows"},
+                          {keycode: 35,     entry: 0x5c,    guestos: "windows"},
                           // [64 = @]
-                          {keycode: 64,		entry: 0x22,	guestos: "windows"},
+                          {keycode: 64,     entry: 0x22,    guestos: "windows"},
                           // [92 = \]
-                          {keycode: 92,		entry: 0xa6,	guestos: "windows"},
+                          {keycode: 92,     entry: 0xa6,    guestos: "windows"},
                           // [124 = |]
-                          {keycode: 124,	entry: 0xa6,	guestos: "windows"},
+                          {keycode: 124,    entry: 0xa6,    guestos: "windows"},
                           // [126 = ~]
-                          {keycode: 126,	entry: 0x7c,	guestos: "windows"},
+                          {keycode: 126,    entry: 0x7c,    guestos: "windows"},
                           // [163 = £]
-                          {keycode: 163,	entry: 0x23,	guestos: "windows"},
+                          {keycode: 163,    entry: 0x23,    guestos: "windows"},
                           // [172 = ¬]
-                          {keycode: 172,	entry: 0x7e,	guestos: "windows"},
+                          {keycode: 172,    entry: 0x7e,    guestos: "windows"},
                           // [166 = ¦]
-                          {keycode: 166,	entry: [{type : KEY_DOWN, code : 0x60, modifiers : 896, shift : false}],	guestos: "windows"}
+                          {keycode: 166,    entry: [{type : KEY_DOWN, code : 0x60, modifiers : 896, shift : false}],    guestos: "windows"}
                           ]
            }
            },

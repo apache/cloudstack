@@ -37,6 +37,13 @@ public class ConsoleProxyClientParam {
     private String username;
     private String password;
 
+    //Below parameters are needed to help implement keyboard
+    private String guestos;
+    //display name contains version specific details which may be needed for keyboard mappings
+    private String guestosDisplayName;
+    private String hypervisor;
+    private String hypervisorVersion;
+
     public ConsoleProxyClientParam() {
         clientHostPort = 0;
     }
@@ -142,5 +149,37 @@ public class ConsoleProxyClientParam {
 
     public String getPassword() {
         return password;
+    }
+
+    public String getGuestos() {
+        return guestos;
+    }
+
+    public void setGuestos(String guestos) {
+        this.guestos = guestos;
+    }
+
+    public String getGuestosDisplayName() {
+        return guestosDisplayName;
+    }
+
+    public void setGuestosDisplayName(String guestosDisplayName) {
+        this.guestosDisplayName = guestosDisplayName;
+    }
+
+    public String getHypervisor() {
+        return hypervisor;
+    }
+
+    public void setHypervisor(String hypervisor) {
+        this.hypervisor = hypervisor;
+    }
+
+    public String getHypervisorVersion() {
+        return hypervisorVersion;
+    }
+
+    public void setHypervisorVersion(String hypervisorVersion) {
+        this.hypervisorVersion = hypervisorVersion;
     }
 }

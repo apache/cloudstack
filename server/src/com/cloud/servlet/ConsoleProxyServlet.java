@@ -35,6 +35,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.cloud.storage.GuestOSCategoryVO;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -461,14 +462,17 @@ public class ConsoleProxyServlet extends HttpServlet {
             param.setClientTunnelSession(parsedHostInfo.third());
         }
 
-        sb.append("/ajax?token=" + encryptor.encryptObject(ConsoleProxyClientParam.class, param));
-
-        // for console access, we need guest OS type to help implement keyboard
+        // for console access, we need below parameters to help implement keyboard
         long guestOs = vm.getGuestOSId();
         GuestOSVO guestOsVo = _ms.getGuestOs(guestOs);
-        if (guestOsVo.getCategoryId() == 6)
-            sb.append("&guest=windows");
+        GuestOSCategoryVO guestOSCategoryVO = _ms.getGuestOsCategory(guestOsVo.getCategoryId());
+        param.setGuestos(guestOSCategoryVO.getName());
+        param.setGuestosDisplayName(guestOsVo.getDisplayName());
 
+        param.setHypervisor(hostVo.getHypervisorType().name());
+        param.setHypervisorVersion(hostVo.getHypervisorVersion());
+
+        sb.append("/ajax?token=" + encryptor.encryptObject(ConsoleProxyClientParam.class, param));
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Compose console url: " + sb.toString());
         }
