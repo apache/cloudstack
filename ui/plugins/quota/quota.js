@@ -180,7 +180,7 @@ var g_quotaCurrency = '';
                                               statementTableHead.appendTo($('<thead>').appendTo(statementTable));
 
                                               var statementTableBody = $('<tbody>');
-                                              if (startBalance) {
+                                              if (typeof startBalance !== 'undefined') {
                                                   var statementTableBodyRow = $('<tr>');
                                                   $('<td>').html("Start Quota Balance").appendTo(statementTableBodyRow);
                                                   $('<td>').html(startBalanceDate).appendTo(statementTableBodyRow);
@@ -201,7 +201,7 @@ var g_quotaCurrency = '';
                                                   statementTableBodyRow.appendTo(statementTableBody);
                                               }
 
-                                              if (endBalance) {
+                                              if (typeof endBalance !== 'undefined') {
                                                   var statementTableBodyRow = $('<tr>');
                                                   $('<td class="quota-bold">').html("Final Quota Balance").appendTo(statementTableBodyRow);
                                                   $('<td>').html(endBalanceDate).appendTo(statementTableBodyRow);
