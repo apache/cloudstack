@@ -77,6 +77,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private static final Logger s_logger = Logger.getLogger(SolidFirePrimaryDataStoreDriver.class);
     private static final int s_lockTimeInSeconds = 300;
+    private static final int s_lowestHypervisorSnapshotReserve = 10;
 
     @Inject private AccountDao _accountDao;
     @Inject private AccountDetailsDao _accountDetailsDao;
@@ -352,9 +353,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         Integer hypervisorSnapshotReserve = volume.getHypervisorSnapshotReserve();
 
         if (hypervisorSnapshotReserve != null) {
-            if (hypervisorSnapshotReserve < 50) {
-                hypervisorSnapshotReserve = 50;
-            }
+            hypervisorSnapshotReserve = Math.max(hypervisorSnapshotReserve, s_lowestHypervisorSnapshotReserve);
 
             volumeSize += volumeSize * (hypervisorSnapshotReserve / 100f);
         }
