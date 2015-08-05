@@ -58,6 +58,10 @@ public class QuotaAccountVO implements InternalIdentity {
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date quotaAlertDate = null;
 
+    @Column(name = "last_statement_date")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date lastStatementDate = null;
+
     public QuotaAccountVO() {
     }
 
@@ -125,6 +129,14 @@ public class QuotaAccountVO implements InternalIdentity {
 
     public void setQuotaBalanceDate(Date quotaBalanceDate) {
         this.quotaBalanceDate = quotaBalanceDate;
+    }
+
+    public Date getLastStatementDate() {
+        return lastStatementDate;
+    }
+
+    public void setLastStatementDate(Date lastStatementDate) {
+        this.lastStatementDate = lastStatementDate;
     }
 
 }

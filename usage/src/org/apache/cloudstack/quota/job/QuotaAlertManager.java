@@ -22,4 +22,6 @@ public interface QuotaAlertManager extends Manager {
 
     public void checkAndSendQuotaAlertEmails();
 
+    void sendMonthlyStatement();
+
 }

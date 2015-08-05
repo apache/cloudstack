@@ -150,7 +150,15 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Runna
             @Override
             protected void runInContext() {
                 System.out.println("Running Quota thread .....");
-                calculateQuotaUsage();
+                try {
+                    calculateQuotaUsage();
+                }
+                catch (Exception e){
+                    s_logger.fatal("Exception received while calculating quota " + e.getMessage());
+                    if (s_logger.isDebugEnabled()){
+                        e.printStackTrace();
+                    }
+                }
             }
         }).run();
     }

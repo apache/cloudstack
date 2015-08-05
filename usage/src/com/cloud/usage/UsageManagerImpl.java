@@ -389,6 +389,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 _quotaManager.calculateQuotaUsage();
                 // run alert manager
                 _alertManager.checkAndSendQuotaAlertEmails();
+                // run monthly statement
+                _alertManager.sendMonthlyStatement();
             }
         } else {
             if (s_logger.isDebugEnabled()) {

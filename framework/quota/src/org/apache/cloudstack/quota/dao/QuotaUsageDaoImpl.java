@@ -16,6 +16,7 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -45,6 +46,16 @@ public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implem
         for (QuotaUsageVO usageRecord : records) {
             persist(usageRecord);
         }
+    }
+
+    @Override
+    public BigDecimal findTotalQuotaUsage(final Long accountId, final Long domainId, final Integer usageType, final Date startDate, final Date endDate) {
+        List<QuotaUsageVO> quotaUsage = findQuotaUsage(accountId, domainId, null, startDate, endDate);
+        BigDecimal total = new BigDecimal(0);
+        for (final QuotaUsageVO quotaRecord : quotaUsage) {
+            total = total.add(quotaRecord.getQuotaUsed());
+        }
+        return total;
     }
 
     @SuppressWarnings("deprecation")

@@ -67,7 +67,8 @@ public class QuotaUsageVO implements InternalIdentity {
     public QuotaUsageVO() {
         usageType=-1;
         quotaUsed = new BigDecimal(0);
-        endDate = startDate = new Date();
+        endDate =  new Date();
+        startDate = new Date();
     }
 
     public QuotaUsageVO(Long usageItemId,  Long zoneId, Long accountId, Long domainId, int usageType, BigDecimal quotaUsed, Date startDate, Date endDate) {

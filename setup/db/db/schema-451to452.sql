@@ -40,8 +40,7 @@ CREATE TABLE `cloud`.`saml_token` (
 
 ALTER TABLE `cloud_usage`.`cloud_usage` ADD COLUMN `quota_calculated` tinyint(1) DEFAULT 0 COMMENT "quota calculation status";
 
-DROP TABLE IF EXISTS `cloud_usage`.`quota_account`;
-CREATE TABLE `cloud_usage`.`quota_account` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_account` (
       `account_id` int(11) NOT NULL,
       `quota_balance` decimal(15,2) NULL,
       `quota_balance_date` datetime NULL,
@@ -49,6 +48,7 @@ CREATE TABLE `cloud_usage`.`quota_account` (
       `quota_min_balance` decimal(15,2) DEFAULT NULL,
       `quota_alert_date` datetime DEFAULT NULL,
       `quota_alert_type` int(11) DEFAULT NULL,
+      `last_statement_date` datetime DEFAULT NULL,
       PRIMARY KEY (`account_id`),
   CONSTRAINT `account_id` FOREIGN KEY (`account_id`) REFERENCES `cloud_usage`.`account` (`quota_enforce`)
   ON DELETE NO ACTION
@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_tariff` (
 
 
 LOCK TABLES `cloud_usage`.`quota_tariff` WRITE;
-INSERT INTO `cloud_usage`.`quota_tariff` (`usage_type`, `usage_name`, `usage_unit`, `usage_discriminator`, `currency_value`, `effective_on`,  `updated_on`, `updated_by`) VALUES
+INSERT IGNORE INTO `cloud_usage`.`quota_tariff` (`usage_type`, `usage_name`, `usage_unit`, `usage_discriminator`, `currency_value`, `effective_on`,  `updated_on`, `updated_by`) VALUES
  (1,'RUNNING_VM','Compute-Month','',0.00,'2010-05-04', '2010-05-04',1),
  (2,'ALLOCATED_VM','Compute-Month','',0.00,'2010-05-04', '2010-05-04',1),
  (3,'IP_ADDRESS','IP-Month','',0.00,'2010-05-04', '2010-05-04',1),
@@ -142,7 +142,7 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_email_templates` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 LOCK TABLES `cloud_usage`.`quota_email_templates` WRITE;
-INSERT INTO `cloud_usage`.`quota_email_templates` (`template_name`, `template_subject`, `template_body`) VALUES
+INSERT IGNORE INTO `cloud_usage`.`quota_email_templates` (`template_name`, `template_subject`, `template_body`) VALUES
  ('QUOTA_LOW', 'Quota Usage Threshold crossed by your account ${accountName}', 'Your account ${accountName} in the domain ${domainName} has reached quota usage threshold, your current quota balance is ${quotaBalance}.'),
  ('QUOTA_EMPTY', 'Quota Exhausted, account ${accountName} is locked now', 'Your account ${accountName} in the domain ${domainName} has exhausted allocated quota and has been locked now, please contact the administrator.'),
  ('QUOTA_UNLOCK_ACCOUNT', 'Quota credits added, account ${accountName} is unlocked now', 'Your account ${accountName} in the domain ${domainName} has enough quota credits now with the current balance of ${quotaBalance}. Your account has been unlocked now.'),
