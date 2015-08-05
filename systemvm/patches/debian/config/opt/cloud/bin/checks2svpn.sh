@@ -22,7 +22,7 @@ then
     exit 1
 fi
 
-ipsec auto --status | grep vpn-$1 > /tmp/vpn-$1.status
+ipsec status | grep vpn-$1 > /tmp/vpn-$1.status
 
 cat /tmp/vpn-$1.status | grep "ISAKMP SA established" > /dev/null
 isakmpok=$?
