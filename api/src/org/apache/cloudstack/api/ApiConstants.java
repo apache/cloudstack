@@ -267,6 +267,7 @@ public class ApiConstants {
     public static final String USERNAME = "username";
     public static final String USER_SECURITY_GROUP_LIST = "usersecuritygrouplist";
     public static final String USE_VIRTUAL_NETWORK = "usevirtualnetwork";
+    public static final String Update_IN_SEQUENCE ="updateinsequence";
     public static final String VALUE = "value";
     public static final String VIRTUAL_MACHINE_ID = "virtualmachineid";
     public static final String VIRTUAL_MACHINE_IDS = "virtualmachineids";

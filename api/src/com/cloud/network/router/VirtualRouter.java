@@ -26,6 +26,10 @@ public interface VirtualRouter extends VirtualMachine {
         VIRTUAL_ROUTER, LB, INTERNAL_LB_VM
     }
 
+    public enum UpdateState {
+        UPDATE_NEEDED, UPDATE_IN_PROGRESS, UPDATE_COMPLETE, UPDATE_FAILED
+    }
+
     Role getRole();
 
     boolean getIsRedundantRouter();

@@ -36,6 +36,12 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.Networks;
+
+import com.cloud.network.dao.NetworkDetailsDao;
+import com.cloud.network.element.RedundantResource;
+import com.cloud.vm.dao.DomainRouterDao;
+import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMNetworkMapVO;
@@ -50,7 +56,6 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.region.PortableIpDao;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -107,7 +112,6 @@ import com.cloud.network.NetworkMigrationResponder;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkStateListener;
-import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
@@ -265,8 +269,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     MessageBus _messageBus;
     @Inject
     VMNetworkMapDao _vmNetworkMapDao;
+    @Inject
+    DomainRouterDao _rotuerDao;
 
     List<NetworkGuru> networkGurus;
+
 
     public List<NetworkGuru> getNetworkGurus() {
         return networkGurus;
@@ -350,6 +357,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     PortableIpDao _portableIpDao;
     @Inject
     ConfigDepot _configDepot;
+    @Inject
+    NetworkDetailsDao _networkDetailsDao;
 
     protected StateMachine2<Network.State, Network.Event, Network> _stateMachine;
     ScheduledExecutorService _executor;
@@ -1270,6 +1279,46 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
         return true;
     }
+
+    @Override
+    public boolean canUpdateInSequence(Network network){
+        List<Provider> providers = getNetworkProviders(network.getId());
+        //check if the there are no service provider other than virtualrouter.
+        for(Provider provider :providers){
+            if(provider!=Provider.VirtualRouter)
+                throw new UnsupportedOperationException("Cannot update the network resources in sequence when providers other than virtualrouter are used");
+        }
+        return true;
+    }
+
+    @Override
+    public void configureUpdateInSequence(Network network) {
+        List<Provider> providers = getNetworkProviders(network.getId());
+        for (NetworkElement element : networkElements) {
+            if (providers.contains(element.getProvider())) {
+                if (element instanceof RedundantResource) {
+                    ((RedundantResource) element).configureResource(network);
+                }
+            }
+        }
+    }
+
+    @Override
+    public int getResourceCount(Network network){
+        List<Provider> providers = getNetworkProviders(network.getId());
+        int resourceCount=0;
+        for (NetworkElement element : networkElements) {
+            if (providers.contains(element.getProvider())) {
+                //currently only one element implements the redundant resource interface
+                if (element instanceof RedundantResource) {
+                    resourceCount= ((RedundantResource) element).getResourceCount(network);
+                    break;
+                    }
+                }
+            }
+        return resourceCount;
+        }
+
 
     @DB
     protected void updateNic(final NicVO nic, final long networkId, final int count) {
