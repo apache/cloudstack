@@ -149,15 +149,3 @@ INSERT IGNORE INTO `cloud_usage`.`quota_email_templates` (`template_name`, `temp
  ('QUOTA_STATEMENT', 'Quota Statement for your account ${accountName}', 'Monthly quota statement of your account ${accountName} in the domain ${domainName}:<br>Balance = ${quotaBalance}<br>Total Usage = ${quotaUsage}.');
 UNLOCK TABLES;
 
-CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_sent_emails` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `from_address` varchar(1024) NOT NULL,
-  `to_address` varchar(1024) NOT NULL,
-  `cc_address` varchar(1024) DEFAULT NULL,
-  `bcc_address` varchar(1024) DEFAULT NULL,
-  `send_date` datetime NOT NULL,
-  `subject` varchar(1024) NOT NULL,
-  `mail_text` longtext NOT NULL,
-  `version` int(11) DEFAULT '0',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
