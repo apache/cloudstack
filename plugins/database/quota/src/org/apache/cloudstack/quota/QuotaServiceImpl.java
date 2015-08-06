@@ -115,6 +115,9 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
     @Override
     public List<Class<?>> getCommands() {
         final List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        if (!isQuotaServiceEnabled()) {
+            return cmdList;
+        }
         cmdList.add(QuotaStatementCmd.class);
         cmdList.add(QuotaBalanceCmd.class);
         cmdList.add(QuotaTariffListCmd.class);
@@ -132,8 +135,12 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { QuotaPluginEnabled, QuotaEmailRecordOutgoing, QuotaEnableEnforcement, QuotaCurrencySymbol, QuotaSmtpHost, QuotaSmtpPort, QuotaSmtpTimeout, QuotaSmtpUser,
+        return new ConfigKey<?>[] { QuotaPluginEnabled, QuotaEnableEnforcement, QuotaCurrencySymbol, QuotaSmtpHost, QuotaSmtpPort, QuotaSmtpTimeout, QuotaSmtpUser,
                 QuotaSmtpPassword, QuotaSmtpAuthType, QuotaSmtpSender };
+    }
+
+    public Boolean isQuotaServiceEnabled() {
+        return QuotaPluginEnabled.value();
     }
 
     @Override

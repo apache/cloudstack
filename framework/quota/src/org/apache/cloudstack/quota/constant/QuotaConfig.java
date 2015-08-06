@@ -23,9 +23,6 @@ public interface QuotaConfig  {
     public static final ConfigKey<Boolean> QuotaPluginEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "quota.enable.service", "false",
             "Indicates whether Quota plugin is enabled or not", true);
 
-    public static final ConfigKey<String> QuotaEmailRecordOutgoing = new ConfigKey<String>("Advanced", String.class, "quota.email.outgoing.record", "false",
-            "true means all the emails sent out will be stored in local DB, by default it is false", true);
-
     public static final ConfigKey<String> QuotaEnableEnforcement = new ConfigKey<String>("Advanced", String.class, "quota.enable.enforcement", "true",
             "Enable the usage quota enforcement, i.e. on true when exceeding quota the respective account will be locked.", true);
 
