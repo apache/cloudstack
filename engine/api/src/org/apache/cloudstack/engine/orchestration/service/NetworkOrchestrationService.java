@@ -224,4 +224,10 @@ public interface NetworkOrchestrationService {
     boolean resourceCountNeedsUpdate(NetworkOffering ntwkOff, ACLType aclType);
 
     void prepareAllNicsForMigration(VirtualMachineProfile vm, DeployDestination dest);
+
+    boolean canUpdateInSequence(Network network);
+
+    void configureUpdateInSequence(Network network);
+
+    int getResourceCount(Network network);
 }

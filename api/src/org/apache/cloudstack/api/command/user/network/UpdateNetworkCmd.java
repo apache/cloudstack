@@ -75,6 +75,9 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.GUEST_VM_CIDR, type = CommandType.STRING, description = "CIDR for guest VMs, CloudStack allocates IPs to guest VMs only from this CIDR")
     private String guestVmCidr;
 
+    @Parameter(name =ApiConstants.Update_IN_SEQUENCE, type=CommandType.BOOLEAN, description = "if true, we will update the routers one after the other. applicable only for redundant router based networks using virtual router as provider")
+    private Boolean updateInSequence;
+
     @Parameter(name = ApiConstants.DISPLAY_NETWORK,
                type = CommandType.BOOLEAN,
  description = "an optional field, whether to the display the network to the end user or not.", authorized = {RoleType.Admin})
@@ -119,6 +122,13 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd {
         return displayNetwork;
     }
 
+    public Boolean getUpdateInSequence(){
+        if(updateInSequence ==null)
+            return false;
+        else
+            return updateInSequence;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -149,7 +159,7 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd {
 
         Network result =
             _networkService.updateGuestNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount, callerUser, getNetworkDomain(), getNetworkOfferingId(),
-                getChangeCidr(), getGuestVmCidr(), getDisplayNetwork(), getCustomId());
+                getChangeCidr(), getGuestVmCidr(), getDisplayNetwork(), getCustomId(), getUpdateInSequence());
 
         if (result != null) {
             NetworkResponse response = _responseGenerator.createNetworkResponse(ResponseView.Restricted, result);

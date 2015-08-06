@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.network.dao.NetworkDetailsDao;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -78,6 +79,8 @@ public class RouterDeploymentDefinitionTestBase {
     protected DomainRouterDao mockRouterDao;
     @Mock
     protected NetworkHelper mockNetworkHelper;
+    @Mock
+    protected NetworkDetailsDao networkDetailsDao;
     @Mock
     protected VpcNetworkHelperImpl vpcNwHelper;
     @Mock
