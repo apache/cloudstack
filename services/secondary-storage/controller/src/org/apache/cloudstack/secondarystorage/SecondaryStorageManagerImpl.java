@@ -31,6 +31,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.configuration.ConfigurationManagerImpl;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 
 import org.apache.cloudstack.context.CallContext;
@@ -242,7 +243,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     private int _secStorageVmMtuSize;
 
     private String _instance;
-    private boolean _useLocalStorage;
     private boolean _useSSlCopy;
     private String _httpProxy;
     private String _allowedInternalSites;
@@ -573,13 +573,17 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             throw new CloudRuntimeException("Not able to find the System templates or not downloaded in zone " + dataCenterId);
         }
 
+        ServiceOfferingVO serviceOffering = _serviceOffering;
+        if (serviceOffering == null) {
+            serviceOffering = _offeringDao.findDefaultSystemOffering(ServiceOffering.ssvmDefaultOffUniqueName, ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenterId));
+        }
         SecondaryStorageVmVO secStorageVm =
-            new SecondaryStorageVmVO(id, _serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,
-                systemAcct.getDomainId(), systemAcct.getId(), role, _serviceOffering.getOfferHA());
+            new SecondaryStorageVmVO(id, serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,
+                systemAcct.getDomainId(), systemAcct.getId(), role, serviceOffering.getOfferHA());
         secStorageVm.setDynamicallyScalable(template.isDynamicallyScalable());
         secStorageVm = _secStorageVmDao.persist(secStorageVm);
         try {
-            _itMgr.allocate(name, template, _serviceOffering, networks, plan, null);
+            _itMgr.allocate(name, template, serviceOffering, networks, plan, null);
             secStorageVm = _secStorageVmDao.findById(secStorageVm.getId());
         } catch (InsufficientCapacityException e) {
             s_logger.warn("InsufficientCapacity", e);
@@ -759,14 +763,20 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 return false;
             }
 
-            List<Pair<Long, Integer>> l = _storagePoolHostDao.getDatacenterStoragePoolHostInfo(dataCenterId, !_useLocalStorage);
+            boolean useLocalStorage = false;
+            Boolean useLocal = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenterId);
+            if (useLocal != null) {
+                useLocalStorage = useLocal.booleanValue();
+            }
+            List<Pair<Long, Integer>> l = _storagePoolHostDao.getDatacenterStoragePoolHostInfo(dataCenterId, !useLocalStorage);
+
             if (l != null && l.size() > 0 && l.get(0).second().intValue() > 0) {
                 return true;
             } else {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Primary storage is not ready, wait until it is ready to launch secondary storage vm. dcId: " + dataCenterId +
-                        " system.vm.use.local.storage: " + _useLocalStorage +
-                        "If you want to use local storage to start ssvm, need to set system.vm.use.local.storage to true");
+                        ", " + ConfigurationManagerImpl.SystemVMUseLocalStorage.key() + ": " + useLocalStorage + ". " +
+                        "If you want to use local storage to start SSVM, need to set " + ConfigurationManagerImpl.SystemVMUseLocalStorage.key() + " to true");
                 }
             }
 
@@ -871,15 +881,12 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         if(_serviceOffering == null || !_serviceOffering.getSystemUse()){
             int ramSize = NumbersUtil.parseInt(_configDao.getValue("ssvm.ram.size"), DEFAULT_SS_VM_RAMSIZE);
             int cpuFreq = NumbersUtil.parseInt(_configDao.getValue("ssvm.cpu.mhz"), DEFAULT_SS_VM_CPUMHZ);
-            _useLocalStorage = Boolean.parseBoolean(configs.get(DataCenter.SystemVMUseLocalStorageCK));
-            _serviceOffering =
-                new ServiceOfferingVO("System Offering For Secondary Storage VM", 1, ramSize, cpuFreq, null, null, false, null,
-                        Storage.ProvisioningType.THIN,  _useLocalStorage, true, null, true, VirtualMachine.Type.SecondaryStorageVm, true);
-            _serviceOffering.setUniqueName(ServiceOffering.ssvmDefaultOffUniqueName);
-            _serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
+            List<ServiceOfferingVO> offerings = _offeringDao.createSystemServiceOfferings("System Offering For Secondary Storage VM",
+                    ServiceOffering.ssvmDefaultOffUniqueName, 1, ramSize, cpuFreq, null, null, false, null,
+                    Storage.ProvisioningType.THIN, true, null, true, VirtualMachine.Type.SecondaryStorageVm, true);
 
             // this can sometimes happen, if DB is manually or programmatically manipulated
-            if (_serviceOffering == null) {
+            if (offerings == null || offerings.size() < 2) {
                 String msg = "Data integrity problem : System Offering For Secondary Storage VM has been removed?";
                 s_logger.error(msg);
                 throw new ConfigurationException(msg);

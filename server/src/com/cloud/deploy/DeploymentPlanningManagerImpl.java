@@ -31,6 +31,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.utils.fsm.StateMachine2;
 import org.apache.log4j.Logger;
 
@@ -46,8 +47,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
@@ -134,7 +133,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = {DeploymentPlanningManager.class})
 public class DeploymentPlanningManagerImpl extends ManagerBase implements DeploymentPlanningManager, Manager, Listener,
-StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
+StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
     private static final Logger s_logger = Logger.getLogger(DeploymentPlanningManagerImpl.class);
     @Inject
@@ -755,16 +754,6 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         return false;
     }
 
-    @Override
-    public String getConfigComponentName() {
-        return DeploymentPlanningManagerImpl.class.getSimpleName();
-    }
-
-    @Override
-    public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {DataCenter.UseSystemVMLocalStorage};
-    }
-
     class HostReservationReleaseChecker extends ManagedContextTimerTask {
         @Override
         protected void runInContext() {
@@ -1294,21 +1283,13 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             boolean useLocalStorage = false;
             if (vmProfile.getType() != VirtualMachine.Type.User) {
                 DataCenterVO zone = _dcDao.findById(plan.getDataCenterId());
-                // It should not happen to have a "null" zone here. There can be NO instance if there is NO zone,
-                // so this part of the code would never be reached if no zone has been created.
-                // Added the check and the comment just to make it clear.
-                boolean zoneUsesLocalStorage = zone != null ? zone.isLocalStorageEnabled() : false;
-                boolean ssvmUseLocalStorage = DataCenter.UseSystemVMLocalStorage.value();
-                if (zone != null) {
-                    ssvmUseLocalStorage = DataCenter.UseSystemVMLocalStorage.valueIn(plan.getDataCenterId());
+                assert (zone != null) : "Invalid zone in deployment plan";
+                Boolean useLocalStorageForSystemVM = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(zone.getId());
+                if (useLocalStorageForSystemVM != null) {
+                    useLocalStorage = useLocalStorageForSystemVM.booleanValue();
+                    s_logger.debug("System VMs will use " + (useLocalStorage ? "local" : "shared") + " storage for zone id=" + plan.getDataCenterId());
                 }
-                s_logger.debug("Checking if we need local storage for systemvms is needed for zone id=" + plan.getDataCenterId() + " with system.vm.use.local.storage=" + ssvmUseLocalStorage);
-                // Local storage is used for the NON User VMs if, and only if, the Zone is marked to use local storage AND
-                // the global settings (ssvmUseLocalStorage) is set to true. Otherwise, the global settings won't be applied.
-                if (ssvmUseLocalStorage && zoneUsesLocalStorage) {
-                    useLocalStorage = true;
-                    s_logger.debug("SystemVMs will use local storage for zone id=" + plan.getDataCenterId());
-                }
+
             } else {
                 useLocalStorage = diskOffering.getUseLocalStorage();
 
