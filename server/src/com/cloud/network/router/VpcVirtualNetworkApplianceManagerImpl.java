@@ -32,6 +32,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.configuration.ConfigurationManagerImpl;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.service.ServiceOfferingVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -210,8 +213,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
             Long offeringId = _vpcOffDao.findById(vpc.getVpcOfferingId()).getServiceOfferingId();
             if (offeringId == null) {
-                offeringId = _offering.getId();
+                ServiceOfferingVO serviceOffering = _serviceOfferingDao.findDefaultSystemOffering(ServiceOffering.routerDefaultOffUniqueName, ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId()));
+                offeringId = serviceOffering.getId();
             }
+
             //3) Deploy Virtual Router
             List<? extends PhysicalNetwork> pNtwks = _pNtwkDao.listByZone(vpc.getZoneId());
 

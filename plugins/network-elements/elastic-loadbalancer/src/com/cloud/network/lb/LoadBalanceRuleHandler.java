@@ -27,6 +27,9 @@ import java.util.Random;
 
 import javax.inject.Inject;
 
+import com.cloud.configuration.ConfigurationManagerImpl;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.service.dao.ServiceOfferingDao;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -140,15 +143,15 @@ public class LoadBalanceRuleHandler {
     private PhysicalNetworkServiceProviderDao _physicalProviderDao;
     @Inject
     private VirtualRouterProviderDao _vrProviderDao;
+    @Inject
+    private ServiceOfferingDao _serviceOfferingDao;
 
     static final private String ELB_VM_NAME_PREFIX = "l";
 
-    private final ServiceOfferingVO _elasticLbVmOffering;
     private final String _instance;
     private final Account _systemAcct;
 
-    public LoadBalanceRuleHandler(ServiceOfferingVO elasticLbVmOffering, String instance, Account systemAcct) {
-        this._elasticLbVmOffering = elasticLbVmOffering;
+    public LoadBalanceRuleHandler(String instance, Account systemAcct) {
         this._instance = instance;
         this._systemAcct = systemAcct;
     }
@@ -272,12 +275,13 @@ public class LoadBalanceRuleHandler {
                     throw new CloudRuntimeException("Cannot find virtual router provider " + typeString + " as service provider " + provider.getId());
                 }
 
-                elbVm = new DomainRouterVO(id, _elasticLbVmOffering.getId(), vrProvider.getId(), VirtualMachineName.getSystemVmName(id, _instance, ELB_VM_NAME_PREFIX),
+                ServiceOfferingVO elasticLbVmOffering = _serviceOfferingDao.findDefaultSystemOffering(ServiceOffering.elbVmDefaultOffUniqueName, ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId()));
+                elbVm = new DomainRouterVO(id, elasticLbVmOffering.getId(), vrProvider.getId(), VirtualMachineName.getSystemVmName(id, _instance, ELB_VM_NAME_PREFIX),
                         template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), false, 0, false, RedundantState.UNKNOWN,
-                        _elasticLbVmOffering.getOfferHA(), false, VirtualMachine.Type.ElasticLoadBalancerVm, null);
+                        elasticLbVmOffering.getOfferHA(), false, VirtualMachine.Type.ElasticLoadBalancerVm, null);
                 elbVm.setRole(Role.LB);
                 elbVm = _routerDao.persist(elbVm);
-                _itMgr.allocate(elbVm.getInstanceName(), template, _elasticLbVmOffering, networks, plan, null);
+                _itMgr.allocate(elbVm.getInstanceName(), template, elasticLbVmOffering, networks, plan, null);
                 elbVm = _routerDao.findById(elbVm.getId());
                 //TODO: create usage stats
             }

@@ -31,6 +31,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -268,6 +269,8 @@ public class VirtualRouterElementTest {
                 VirtualMachine.Type.DomainRouter,
                 /* defaultUse */ false);
         when(_serviceOfferingDao.findById(0L)).thenReturn(svcoff);
+        when(_serviceOfferingDao.findByName(Matchers.anyString())).thenReturn(svcoff);
+        when(_serviceOfferingDao.findDefaultSystemOffering(Matchers.anyString(), Matchers.anyBoolean())).thenReturn(svcoff);
         DomainRouterVO router = new DomainRouterVO(/* id */ 1L,
                 /* serviceOfferingId */ 1L,
                 /* elementId */ 0L,
