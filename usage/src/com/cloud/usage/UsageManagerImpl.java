@@ -34,8 +34,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.quota.job.QuotaAlertManager;
-import org.apache.cloudstack.quota.job.QuotaManager;
+import org.apache.cloudstack.quota.QuotaAlertManager;
+import org.apache.cloudstack.quota.QuotaManager;
 import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -385,12 +385,24 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
             parse(job, startDate, endDate);
             if (_runQuota){
-                // after usage is calculated run quota calculations
-                _quotaManager.calculateQuotaUsage();
-                // run alert manager
-                _alertManager.checkAndSendQuotaAlertEmails();
-                // run monthly statement
-                _alertManager.sendMonthlyStatement();
+                try {
+                    _quotaManager.calculateQuotaUsage();
+                }
+                catch (Exception e){
+                    s_logger.fatal("Exception received while calculating quota " + e.getMessage());
+                    if (s_logger.isDebugEnabled()){
+                        e.printStackTrace();
+                    }
+                }
+                try {
+                    _alertManager.checkAndSendQuotaAlertEmails();
+                    _alertManager.sendMonthlyStatement();
+                } catch (Exception e) {
+                    s_logger.fatal("Exception received while sending alerts " + e.getMessage());
+                    if (s_logger.isDebugEnabled()) {
+                        e.printStackTrace();
+                    }
+                }
             }
         } else {
             if (s_logger.isDebugEnabled()) {

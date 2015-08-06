@@ -34,8 +34,8 @@
       org.apache.cloudstack.quota.constant, org.apache.cloudstack.quota.dao, org.apache.cloudstack.quota.vo">
 	</context:component-scan>
 
-	<bean id="QuotaManager" class="org.apache.cloudstack.quota.job.QuotaManagerImpl" />
-    <bean id="QuotaAlertManager" class="org.apache.cloudstack.quota.job.QuotaAlertManagerImpl" />
+	<bean id="QuotaManager" class="org.apache.cloudstack.quota.QuotaManagerImpl" />
+    <bean id="QuotaAlertManager" class="org.apache.cloudstack.quota.QuotaAlertManagerImpl" />
 
 	<!-- @DB support -->
 	<bean id="transactionContextBuilder" class="com.cloud.utils.db.TransactionContextBuilder" />

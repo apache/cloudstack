@@ -14,7 +14,7 @@
 //KIND, either express or implied.  See the License for the
 //specific language governing permissions and limitations
 //under the License.
-package org.apache.cloudstack.quota.job;
+package org.apache.cloudstack.quota;
 
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -35,7 +35,6 @@ import com.sun.mail.smtp.SMTPSSLTransport;
 import com.sun.mail.smtp.SMTPTransport;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.quota.constant.QuotaConfig.QuotaEmailTemplateTypes;
 import org.apache.cloudstack.quota.dao.QuotaAccountDao;
@@ -67,12 +66,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 @Component
 @Local(value = QuotaAlertManager.class)
-public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertManager, Runnable {
+public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertManager {
     private static final Logger s_logger = Logger.getLogger(QuotaAlertManagerImpl.class.getName());
 
     @Inject
@@ -96,7 +94,6 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
     final static BigDecimal s_hoursInMonth = new BigDecimal(30 * 24);
     final static BigDecimal s_minutesInMonth = new BigDecimal(30 * 24 * 60);
     final static BigDecimal s_gb = new BigDecimal(1024 * 1024 * 1024);
-    private TimeZone _usageTimezone;
 
     boolean _smtpDebug = false;
 
@@ -132,12 +129,6 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         _lockAccountEnforcement = configs.get(QuotaConfig.QuotaEnableEnforcement.key()).equalsIgnoreCase("true");
         _emailQuotaAlert = new EmailQuotaAlert(smtpHost, smtpPort, useAuth, smtpUsername, smtpPassword, emailSender, _smtpDebug);
 
-        String timeZoneStr = _configDao.getValue("usage.aggregation.timezone");
-        if (timeZoneStr == null) {
-            timeZoneStr = "GMT";
-        }
-        _usageTimezone = TimeZone.getTimeZone(timeZoneStr);
-
         return true;
     }
 
@@ -156,25 +147,6 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
             s_logger.info("Stopping Alert Manager");
         }
         return true;
-    }
-
-    @Override
-    public void run() {
-        (new ManagedContextRunnable() {
-            @Override
-            protected void runInContext() {
-                System.out.println("Running Quota Alert thread .....");
-                try {
-                    checkAndSendQuotaAlertEmails();
-                    sendMonthlyStatement();
-                } catch (Exception e) {
-                    s_logger.fatal("Exception received while sending alerts " + e.getMessage());
-                    if (s_logger.isDebugEnabled()) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }).run();
     }
 
     @SuppressWarnings("deprecation")

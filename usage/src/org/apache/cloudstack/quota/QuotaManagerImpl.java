@@ -14,7 +14,7 @@
 //KIND, either express or implied.  See the License for the
 //specific language governing permissions and limitations
 //under the License.
-package org.apache.cloudstack.quota.job;
+package org.apache.cloudstack.quota;
 
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
@@ -29,7 +29,6 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.TransactionLegacy;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.dao.QuotaAccountDao;
 import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
@@ -60,7 +59,7 @@ import java.util.TimeZone;
 
 @Component
 @Local(value = QuotaManager.class)
-public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Runnable {
+public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     private static final Logger s_logger = Logger.getLogger(QuotaManagerImpl.class.getName());
 
     @Inject
@@ -142,25 +141,6 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager, Runna
             s_logger.info("Stopping Quota Manager");
         }
         return true;
-    }
-
-    @Override
-    public void run() {
-        (new ManagedContextRunnable() {
-            @Override
-            protected void runInContext() {
-                System.out.println("Running Quota thread .....");
-                try {
-                    calculateQuotaUsage();
-                }
-                catch (Exception e){
-                    s_logger.fatal("Exception received while calculating quota " + e.getMessage());
-                    if (s_logger.isDebugEnabled()){
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }).run();
     }
 
     @Override
