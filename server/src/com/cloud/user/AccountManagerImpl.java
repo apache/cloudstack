@@ -2179,8 +2179,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 if (s_logger.isInfoEnabled()) {
                     s_logger.info("User " + username + " in domain " + domainName + " is disabled/locked (or account is disabled/locked)");
                 }
-                throw new CloudAuthenticationException("User " + username + " in domain " + domainName + " is disabled/locked (or account is disabled/locked)");
-                // return null;
+                throw new CloudAuthenticationException("User " + username + " (or their account) in domain " + domainName + " is disabled/locked. Please contact the administrator.");
             }
             // Whenever the user is able to log in successfully, reset the login attempts to zero
             if (!isInternalAccount(userAccount.getId()))

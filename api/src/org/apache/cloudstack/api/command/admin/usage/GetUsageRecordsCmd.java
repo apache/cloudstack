@@ -38,6 +38,7 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listUsageRecords", description = "Lists usage records for accounts", responseObject = UsageRecordResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class GetUsageRecordsCmd extends BaseListCmd {
+
     public static final Logger s_logger = Logger.getLogger(GetUsageRecordsCmd.class.getName());
 
     private static final String s_name = "listusagerecordsresponse";
@@ -111,6 +112,30 @@ public class GetUsageRecordsCmd extends BaseListCmd {
     public String getUsageId() {
         return usageId;
     }
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
+    }
+
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
+    }
+
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
+    }
+
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
+    }
+
+    public void setUsageId(String usageId) {
+        this.usageId = usageId;
+    }
+
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

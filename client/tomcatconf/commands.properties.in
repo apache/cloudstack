@@ -782,3 +782,14 @@ listOpenDaylightControllers=1
 
 ### GloboDNS commands
 addGloboDnsHost=1
+
+### Quota Service
+quotaRefresh=1
+quotaStatement=15
+quotaBalance=15
+quotaTariffList=15
+quotaTariffUpdate=1
+quotaCredits=1
+quotaEmailTemplateList=1
+quotaEmailTemplateUpdate=1
+

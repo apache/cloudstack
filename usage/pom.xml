@@ -36,9 +36,25 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-framework-quota</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>commons-daemon</groupId>
       <artifactId>commons-daemon</artifactId>
     </dependency>
+     <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+      <version>${cs.mysql.version}</version>
+      <scope>provided</scope>
+    </dependency>
+     <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>1.7.7</version>
+      </dependency>
     <dependency>
       <groupId>javax.mail</groupId>
       <artifactId>mail</artifactId>
@@ -48,6 +64,11 @@
       <artifactId>dbunit</artifactId>
       <version>2.4.9</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>${cs.commons-lang3.version}</version>
     </dependency>
   </dependencies>
   <build>

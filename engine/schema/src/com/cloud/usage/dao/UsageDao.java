@@ -53,4 +53,6 @@ public interface UsageDao extends GenericDao<UsageVO, Long> {
     void saveVmDiskStats(List<VmDiskStatisticsVO> vmDiskStats);
 
     void saveUsageRecords(List<UsageVO> usageRecords);
+
+    Pair<List<? extends UsageVO>, Integer> getUsageRecordsPendingQuotaAggregation(long accountId, long domainId);
 }

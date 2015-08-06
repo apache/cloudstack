@@ -90,6 +90,7 @@
     <module>network-elements/internal-loadbalancer</module>
     <module>network-elements/vxlan</module>
     <module>network-elements/globodns</module>
+    <module>database/quota</module>
   </modules>
 
   <dependencies>

@@ -103,6 +103,17 @@ public class UsageVO implements Usage, InternalIdentity {
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date endDate = null;
 
+    @Column(name = "quota_calculated")
+    private Integer quotaCalculated = null;
+
+    public Integer getQuotaCalculated() {
+        return quotaCalculated;
+    }
+
+    public void setQuotaCalculated(Integer quotaCalculated) {
+        this.quotaCalculated = quotaCalculated;
+    }
+
     public UsageVO() {
     }
 
