@@ -25,6 +25,9 @@ import javax.inject.Inject;
 import javax.naming.NamingException;
 import javax.naming.ldap.LdapContext;
 
+import org.apache.cloudstack.api.command.LinkDomainToLdapCmd;
+import org.apache.cloudstack.api.response.LinkDomainToLdapResponse;
+import org.apache.cloudstack.ldap.dao.LdapTrustMapDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -60,6 +63,9 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
     private LdapConfiguration _ldapConfiguration;
 
     @Inject LdapUserManagerFactory _ldapUserManagerFactory;
+
+    @Inject
+    LdapTrustMapDao _ldapTrustMapDao;
 
 
     public LdapManagerImpl() {
@@ -168,6 +174,7 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
         cmdList.add(LdapImportUsersCmd.class);
         cmdList.add(LDAPConfigCmd.class);
         cmdList.add(LDAPRemoveCmd.class);
+        cmdList.add(LinkDomainToLdapCmd.class);
         return cmdList;
     }
 
@@ -242,5 +249,12 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
         } finally {
             closeContext(context);
         }
+    }
+
+    @Override
+    public LinkDomainToLdapResponse linkDomainToLdap(Long domainId, String type, String name) {
+        // TODO Auto-generated method stub
+        LdapTrustMapVO ldapTrustMapVO = _ldapTrustMapDao.persist(new LdapTrustMapVO(domainId, type, name));
+        return null;
     }
 }

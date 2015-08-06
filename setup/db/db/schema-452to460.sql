@@ -399,3 +399,13 @@ CREATE TABLE `cloud`.`external_bigswitch_bcf_devices` (
   CONSTRAINT `fk_external_bigswitch_bcf_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`ldap_trust_map` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `domain_id` bigint unsigned NOT NULL,
+  `type` varchar(10) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_ldap_trust_map__domain_id` (`id`),
+  KEY `fk_ldap_trust_map__domain_id` (`domain_id`),
+  CONSTRAINT `fk_ldap_trust_map__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

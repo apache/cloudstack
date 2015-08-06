@@ -20,8 +20,10 @@ package org.apache.cloudstack.api.command;
 
 import javax.inject.Inject;
 
+import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -32,7 +34,8 @@ import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "linkDomainToLdap", description = "link an existing cloudstack domain to group or OU in ldap", responseObject = LinkDomainToLdapResponse.class, since = "4.6.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "linkDomainToLdap", description = "link an existing cloudstack domain to group or OU in ldap", responseObject = LinkDomainToLdapResponse.class, since = "4.6.0",
+    requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class LinkDomainToLdapCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(LinkDomainToLdapCmd.class.getName());
     private static final String s_name = "linkdomaintoldapresponse";
@@ -55,7 +58,14 @@ public class LinkDomainToLdapCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException {
         // TODO Auto-generated method stub
-
+        try {
+            LinkDomainToLdapResponse response = _ldapManager.linkDomainToLdap(domainId, type, name);
+            response.setObjectName("LinkDomainToLdap");
+            response.setResponseName(getCommandName());
+            setResponseObject(response);
+        } catch (final InvalidParameterValueException e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.toString());
+        }
     }
 
     @Override

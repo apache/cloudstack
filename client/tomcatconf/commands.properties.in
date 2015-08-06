@@ -771,6 +771,7 @@ deleteLdapConfiguration=3
 listLdapUsers=3
 ldapCreateAccount=3
 importLdapUsers=3
+linkDomainToLdap=3
 
 
 #### juniper-contrail commands

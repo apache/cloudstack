@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.response.LdapUserResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.PluggableService;
+import org.apache.cloudstack.api.response.LinkDomainToLdapResponse;
 
 public interface LdapManager extends PluggableService {
 
@@ -49,4 +50,6 @@ public interface LdapManager extends PluggableService {
     Pair<List<? extends LdapConfigurationVO>, Integer> listConfigurations(LdapListConfigurationCmd cmd);
 
     List<LdapUser> searchUsers(String query) throws NoLdapUserMatchingQueryException;
+
+    LinkDomainToLdapResponse linkDomainToLdap(Long domainId, String type, String name);
 }
