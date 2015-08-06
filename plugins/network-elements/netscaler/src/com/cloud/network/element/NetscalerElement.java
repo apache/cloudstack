@@ -76,10 +76,9 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
-import com.cloud.host.HostVO;
 import com.cloud.host.Host.Type;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.ExternalLoadBalancerDeviceManager;
@@ -123,6 +122,7 @@ import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.network.rules.LoadBalancerContainer;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.NumbersUtil;
@@ -188,6 +188,8 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     IpAddressManager _ipAddrMgr;
     @Inject
     NetworkOrchestrationService _networkService;
+    @Inject
+    NetworkOfferingDao _networkOfferingDao = null;
 
     private boolean canHandle(Network config, Service service) {
         DataCenter zone = _dcDao.findById(config.getDataCenterId());
@@ -251,28 +253,28 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     }
 
     public HostVO allocateNCCResourceForNetwork(Network guestConfig) throws ConfigurationException {
-
-        //TODO get the NCCVO details and creat the server resource
+        Map<String, String> _configs;
         List<NetScalerControlCenterVO> ncc =  _netscalerControlCenterDao.listAll();
         HostVO hostVO = null;
+        Map<String, Object> params ;
         if(ncc.size() > 0) {
             NetScalerControlCenterVO nccVO = ncc.get(0);
             String ipAddress = nccVO.getNccip();
             Map hostDetails = new HashMap<String, String>();
-            String hostName =  "NetscalerControlCenter";//getExternalLoadBalancerResourceGuid("NetscalerControlCenter");
+            String hostName =  "NetscalerControlCenter";
             hostDetails.put("name", hostName);
             hostDetails.put("guid", UUID.randomUUID().toString());
-            hostDetails.put("zoneId", guestConfig.getDataCenterId());
+            hostDetails.put("zoneId", Long.toString(guestConfig.getDataCenterId()));
             hostDetails.put("ip", ipAddress);
             hostDetails.put("username", nccVO.getUsername());
             hostDetails.put("password", nccVO.getPassword());
             hostDetails.put("deviceName", "netscaler control center");
+            hostDetails.put("cmdTimeOut", Long.toString(NumbersUtil.parseInt(_configDao.getValue(Config.NCCCmdTimeOut.key()), 600000)));
             ServerResource resource = new NetScalerControlCenterResource();
             resource.configure(hostName, hostDetails);
-            final Host host = _resourceMgr.addHost(1, resource, Host.Type.NetScalerControlCenter, hostDetails);
+            final Host host = _resourceMgr.addHost(guestConfig.getDataCenterId(), resource, Host.Type.NetScalerControlCenter, hostDetails);
             hostVO = _hostDao.findById(host.getId());
         }
-        //resource.configure(hostName, hostDetails);
         return hostVO;
     }
 
@@ -304,26 +306,22 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             s_logger.debug("Allocated Netscaler Control Center device:" + lbDeviceVO.getId() + " for the network: " + guestConfig.getId());
         } else {
             // find the load balancer device allocated for the network
-            ExternalLoadBalancerDeviceVO lbDeviceVO = getExternalLoadBalancerForNetwork(guestConfig);
+
+            HostVO lbDeviceVO = null;
+            // on restart network, device could have been allocated already, skip allocation if a device is assigned
+            lbDeviceVO = getNetScalerControlCenterForNetwork(guestConfig);
             if (lbDeviceVO == null) {
                 s_logger.warn("Network shutdwon requested on external load balancer element, which did not implement the network."
                     + " Either network implement failed half way through or already network shutdown is completed. So just returning.");
                 return true;
             }
 
-            netscalerControlCenter = _hostDao.findById(lbDeviceVO.getHostId());
+            netscalerControlCenter = _hostDao.findById(lbDeviceVO.getId());
             assert (netscalerControlCenter != null) : "There is no device assigned to this network how did shutdown network ended up here??";
         }
         JSONObject networkDetails = new JSONObject();
         JSONObject networkPayload = new JSONObject();
-        /*
 
-        Implement network details:
-        url: <ip>/cs/cca/networks
-
-        json payload:
-        { “network”: {"id":<val>, "vlan":<val>, "cidr":<val>, "gateway":<val>, "servicepackage_id":<val>, "zone_id":<val>, "region_id":<val>, "name":<val> }}
-        */
         String selfIp = null;
         try {
             networkDetails.put("id", guestConfig.getId());
@@ -333,6 +331,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             networkDetails.put("servicepackage_id", offering.getServicePackage());
             networkDetails.put("zone_id", zoneId);
             networkDetails.put("account_id", guestConfig.getAccountId());
+            networkDetails.put("add", Boolean.toString(add));
             selfIp = _ipAddrMgr.acquireGuestIpAddress(guestConfig, null);
             if (selfIp == null) {
                 String msg = "failed to acquire guest IP address so not implementing the network on the NetscalerControlCenter";
@@ -343,7 +342,6 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             //TODO region is hardcoded make it dynamic
             networkDetails.put("region_id", 1);
             networkDetails.put("name", guestConfig.getName());
-
             networkPayload.put("network", networkDetails);
         } catch (JSONException e) {
             // TODO Auto-generated catch block
@@ -351,8 +349,8 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         }
 
         NetScalerImplementNetworkCommand cmd = new NetScalerImplementNetworkCommand(zoneId, netscalerControlCenter.getId(), networkPayload.toString());
+        Answer answer = _agentMgr.easySend(netscalerControlCenter.getId(), cmd);
          if(add) {
-             Answer answer = _agentMgr.easySend(netscalerControlCenter.getId(), cmd);
              //TODO After getting the answer check with the job id and do poll on the job and then save the selfip or acquired guest ip to the Nics table
              if(answer != null ) {
                  if (add) {
@@ -360,6 +358,13 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
                      _networkService.savePlaceholderNic(guestConfig, selfIp, null, null);
                  }
              }
+         } else {
+          // release the self-ip obtained from guest network
+             /*Nic selfipNic = getPlaceholderNic(guestConfig);
+             _nicDao.remove(selfipNic.getId());*/
+             // release the load balancer allocated for the network
+             return true;
+             //write code to remove the self nic or the clean up work
          }
         // Send a command to the external load balancer to implement or shutdown the guest network
 /*        long guestVlanTag = Long.parseLong(BroadcastDomainType.getValue(guestConfig.getBroadcastUri()));
@@ -454,11 +459,24 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         }
 
         try {
-            return manageGuestNetworkWithExternalLoadBalancer(false, guestConfig);
+
+            NetworkOffering networkOffering = _networkOfferingDao.findById(guestConfig.getNetworkOfferingId());
+            if(networkOffering.getServicePackage() == null) {
+                return manageGuestNetworkWithExternalLoadBalancer(true, guestConfig);
+            } else {
+                // if the network offering has service package implement it with Netscaler Control Center
+                return manageGuestNetworkWithNetscalerControlCenter(false, guestConfig, networkOffering);
+                //return true;
+            }
+            //return manageGuestNetworkWithExternalLoadBalancer(false, guestConfig);
         } catch (InsufficientCapacityException capacityException) {
             // TODO: handle out of capacity exception gracefully in case of multple providers available
             return false;
+        } catch (ConfigurationException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
+        return false;
     }
 
     @Override
@@ -1315,42 +1333,39 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     @Override
     @DB
     public NetScalerControlCenterVO registerNetscalerControlCenter(RegisterNetscalerControlCenterCmd cmd) {
-        // make a connection and then check it.
+
         final RegisterNetscalerControlCenterCmd cmdinfo = cmd;
         String ipAddress = cmd.getIpaddress();
         Map hostDetails = new HashMap<String, String>();
-        String hostName =  "NetscalerControlCenter";//getExternalLoadBalancerResourceGuid("NetscalerControlCenter");
+        String hostName =  "NetscalerControlCenter";
         hostDetails.put("name", hostName);
         hostDetails.put("guid", UUID.randomUUID().toString());
-        //TODO change this zoneid to dynamic value
+        List<DataCenterVO> dcVO = _dcDao.listEnabledZones();
+        if(dcVO.size() == 0) {
+            throw new CloudRuntimeException("There is no single enabled zone. Please add a zone, enable it and then add Netscaler ControlCenter");
+        }
         hostDetails.put("zoneId", "1");
         hostDetails.put("ip", ipAddress);
         hostDetails.put("username", cmd.getUsername());
         hostDetails.put("password", cmd.getPassword());
-        hostDetails.put("deviceName", "netscaler control center");
-
+        hostDetails.put("deviceName", "Netscaler ControlCenter");
+        ServerResource resource = new NetScalerControlCenterResource();
         try {
-            ServerResource resource = new NetScalerControlCenterResource();
+
             resource.configure(hostName, hostDetails);
-
-            final Host host = _resourceMgr.addHost(1, resource, Host.Type.NetScalerControlCenter, hostDetails);
-            if (host != null) {
-
-                return Transaction.execute(new TransactionCallback<NetScalerControlCenterVO>() {
-                    @Override
-                    public NetScalerControlCenterVO doInTransaction(TransactionStatus status) {
-                NetScalerControlCenterVO nccVO = new NetScalerControlCenterVO(host.getId(), cmdinfo.getUsername(), cmdinfo.getPassword(),
-                        cmdinfo.getIpaddress(), cmdinfo.getNumretries());
-                        _netscalerControlCenterDao.persist(nccVO);
-                        DetailVO hostDetail = new DetailVO(host.getId(), ApiConstants.NETSCALER_CONTROLCENTER_ID , String.valueOf(nccVO.getId()));
-                        _hostDetailDao.persist(hostDetail);
-                        return nccVO;
-                    }
-                });
-            } else {
-                throw new CloudRuntimeException("Failed to add load balancer device due to internal error.");
-            }
+            return Transaction.execute(new TransactionCallback<NetScalerControlCenterVO>() {
+                @Override
+                public NetScalerControlCenterVO doInTransaction(TransactionStatus status) {
+                    NetScalerControlCenterVO nccVO = new NetScalerControlCenterVO(cmdinfo.getUsername(), cmdinfo.getPassword(),
+                            cmdinfo.getIpaddress(), cmdinfo.getNumretries());
+                    _netscalerControlCenterDao.persist(nccVO);
+                    /*DetailVO hostDetail = new DetailVO(host.getId(), ApiConstants.NETSCALER_CONTROLCENTER_ID , String.valueOf(nccVO.getId()));
+                    _hostDetailDao.persist(hostDetail);*/
+                    return nccVO;
+                }
+            });
         } catch (ConfigurationException e) {
+            resource = null;
             throw new CloudRuntimeException(e.getMessage());
         }
     }
