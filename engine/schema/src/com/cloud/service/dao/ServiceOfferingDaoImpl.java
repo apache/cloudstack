@@ -25,6 +25,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
+import com.cloud.storage.Storage;
+import com.cloud.vm.VirtualMachine;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -109,6 +111,13 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
             if (vo.getSpeed() <= 0) {
                 vo.setSpeed(500);
                 update(vo.getId(), vo);
+            }
+            if (!vo.getUniqueName().endsWith("-Local")) {
+                if (vo.getUseLocalStorage()) {
+                    vo.setUniqueName(vo.getUniqueName() + "-Local");
+                    vo.setName(vo.getName() + " - Local Storage");
+                    update(vo.getId(), vo);
+                }
             }
             return vo;
         }
@@ -237,5 +246,49 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         }
 
         return dummyoffering;
+    }
+
+    @Override
+    public List<ServiceOfferingVO> createSystemServiceOfferings(String name, String uniqueName, int cpuCount, int ramSize, int cpuSpeed,
+                                                                Integer rateMbps, Integer multicastRateMbps, boolean offerHA, String displayText, Storage.ProvisioningType provisioningType,
+                                                                boolean recreatable, String tags, boolean systemUse, VirtualMachine.Type vmType, boolean defaultUse) {
+        List<ServiceOfferingVO> list = new ArrayList<ServiceOfferingVO>();
+        ServiceOfferingVO offering = new ServiceOfferingVO(name, cpuCount, ramSize, cpuSpeed, rateMbps, multicastRateMbps, offerHA, displayText,
+                provisioningType, false, recreatable, tags, systemUse, vmType, defaultUse);
+        offering.setUniqueName(uniqueName);
+        offering = persistSystemServiceOffering(offering);
+        if (offering != null) {
+            list.add(offering);
+        }
+
+        boolean useLocal = true;
+        if (offering.getUseLocalStorage()) { // if 1st one is already local then 2nd needs to be shared
+            useLocal = false;
+        }
+
+        offering = new ServiceOfferingVO(name + (useLocal ? " - Local Storage" : ""), cpuCount, ramSize, cpuSpeed, rateMbps, multicastRateMbps, offerHA, displayText,
+                provisioningType, useLocal, recreatable, tags, systemUse, vmType, defaultUse);
+        offering.setUniqueName(uniqueName + (useLocal ? "-Local" : ""));
+        offering = persistSystemServiceOffering(offering);
+        if (offering != null) {
+            list.add(offering);
+        }
+
+        return list;
+    }
+
+    @Override
+    public ServiceOfferingVO findDefaultSystemOffering(String offeringName, Boolean useLocalStorage) {
+        String name = offeringName;
+        if (useLocalStorage != null && useLocalStorage.booleanValue()) {
+            name += "-Local";
+        }
+        ServiceOfferingVO serviceOffering = findByName(name);
+        if (serviceOffering == null) {
+            String message = "System service offering " + name + " not found";
+            s_logger.error(message);
+            throw new CloudRuntimeException(message);
+        }
+        return serviceOffering;
     }
 }
