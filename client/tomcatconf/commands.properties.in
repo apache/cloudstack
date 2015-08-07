@@ -783,7 +783,6 @@ listOpenDaylightControllers=1
 addGloboDnsHost=1
 
 ### Quota Service
-quotaRefresh=1
 quotaStatement=15
 quotaBalance=15
 quotaTariffList=15
