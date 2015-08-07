@@ -4407,7 +4407,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 s_logger.info("Schedule a router reboot task as router " + vo.getId() + " is powered-on out-of-band. we need to reboot to refresh network rules");
                 _executor.schedule(new RebootTask(vo.getId()), 1000, TimeUnit.MICROSECONDS);
         } else {
-            if (isOutOfBandMigrated(opaque)) {
+            if (isOutOfBandMigrated(opaque) && (vo.getType() == VirtualMachine.Type.DomainRouter)) {
                 final String title = "Router has been migrated out of band: " + vo.getInstanceName();
                 final String context =
                         "An out of band migration of router " + vo.getInstanceName() + "(" + vo.getUuid() + ") was detected. No automated action was performed.";
