@@ -29,10 +29,9 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 
 /**
- * NetScalerPodVO contains information about a EIP deployment where on datacenter L3 router a PBR (policy
- * based routing) is setup between a POD's subnet IP range to a NetScaler device. This VO object
- * represents a mapping between a POD and NetScaler device where PBR is setup.
- *
+ * NetScalerControlCenterVO contains information about a NetScaler Control Center(NCC) such as Username,
+ * Password used for login, the NCC IP and maximum number of unsuccessful tries a user can make.
+ * By using this information CloudStack can access the NCC.
  */
 @Entity
 @Table(name = "external_netscaler_controlcenter")

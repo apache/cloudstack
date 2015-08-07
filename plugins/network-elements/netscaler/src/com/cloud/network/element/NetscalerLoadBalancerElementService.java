@@ -17,25 +17,31 @@
 package com.cloud.network.element;
 
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.api.commands.AddNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.ConfigureNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.DeleteNetscalerControlCenterCmd;
 import com.cloud.api.commands.DeleteNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.DeleteServicePackageOfferingCmd;
+import com.cloud.api.commands.DeployNetscalerVpxCmd;
 import com.cloud.api.commands.ListNetscalerControlCenterCmd;
 import com.cloud.api.commands.ListNetscalerLoadBalancerNetworksCmd;
 import com.cloud.api.commands.ListNetscalerLoadBalancersCmd;
 import com.cloud.api.commands.ListRegisteredServicePackageCmd;
 import com.cloud.api.commands.RegisterNetscalerControlCenterCmd;
 import com.cloud.api.commands.RegisterServicePackageCmd;
-import com.cloud.api.response.NetscalerLoadBalancerResponse;
 import com.cloud.api.response.NetScalerServicePackageResponse;
 import com.cloud.api.response.NetscalerControlCenterResponse;
+import com.cloud.api.response.NetscalerLoadBalancerResponse;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetScalerControlCenterVO;
 import com.cloud.network.NetScalerServicePackageVO;
 import com.cloud.network.Network;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
+import com.cloud.network.router.VirtualRouter;
+import com.cloud.user.Account;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -135,4 +141,7 @@ public interface NetscalerLoadBalancerElementService extends PluggableService {
 
     public NetScalerControlCenterVO registerNetscalerControlCenter(RegisterNetscalerControlCenterCmd registerNetscalerControlCenterCmd);
 
+    public Map<String, Object> deployNetscalerServiceVm(DeployNetscalerVpxCmd cmd);
+
+    public VirtualRouter stopNetscalerServiceVm(Long id, boolean forced, Account callingAccount, long callingUserId) throws ConcurrentOperationException, ResourceUnavailableException;
 }

@@ -28,20 +28,19 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.cloudstack.api.response.SuccessResponse;
-
-import com.cloud.api.response.NetScalerServicePackageResponse;
+import com.cloud.api.response.NetscalerControlCenterResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.network.element.NetscalerLoadBalancerElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "deleteServicePackageOffering", responseObject = SuccessResponse.class, description = "Delete Service Package")
-public class DeleteServicePackageOfferingCmd extends BaseCmd {
+@APICommand(name = "deleteNetscalerControlCenter", responseObject = SuccessResponse.class, description = "Delete Netscaler Control Center")
+public class DeleteNetscalerControlCenterCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(DeleteServicePackageOfferingCmd.class.getName());
-    private static final String s_name = "deleteServicePackage";
+    private static final String s_name = "deleteNetscalerControlCenter";
     @Inject
     NetscalerLoadBalancerElementService _netsclarLbService;
 
@@ -49,30 +48,34 @@ public class DeleteServicePackageOfferingCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.STRING, entityType = NetScalerServicePackageResponse.class, required = true, description = "the service offering ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.STRING, entityType = NetscalerControlCenterResponse.class, required = true, description = "Netscaler Control Center ID")
     private String ID;
 
     @Override
     public void execute() throws ServerApiException, ConcurrentOperationException, EntityExistsException {
         SuccessResponse response = new SuccessResponse();
         try {
-            boolean result = _netsclarLbService.deleteServicePackageOffering(this);
-
+            boolean result = _netsclarLbService.deleteNetscalerControlCenter(this);
             if (response != null && result) {
-                response.setDisplayText("Deleted Successfully");
+                response.setDisplayText("Netscaler Control Center Deleted Successfully");
                 response.setSuccess(result);
                 response.setResponseName(getCommandName());
-                this.setResponseObject(response);
+                setResponseObject(response);
             }
         } catch (CloudRuntimeException runtimeExcp) {
             response.setDisplayText(runtimeExcp.getMessage());
             response.setSuccess(false);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
             return;
         } catch (Exception e) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete Service Package due to internal error.");
+            e.printStackTrace();
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
+    }
+
+    public String setId(String iD) {
+        return ID = iD;
     }
 
     public String getId() {

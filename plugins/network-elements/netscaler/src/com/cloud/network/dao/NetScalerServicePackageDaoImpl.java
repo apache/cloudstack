@@ -40,11 +40,9 @@ public class NetScalerServicePackageDaoImpl extends GenericDaoBase<NetScalerServ
         super();
 
         podIdSearch = createSearchBuilder();
-        //podIdSearch.and("pod_id", podIdSearch.entity().getPodId(), Op.EQ);
         podIdSearch.done();
 
         deviceIdSearch = createSearchBuilder();
-        //deviceIdSearch.and("netscalerDeviceId", deviceIdSearch.entity().getNetscalerDeviceId(), Op.EQ);
         deviceIdSearch.done();
     }
 
@@ -62,4 +60,11 @@ public class NetScalerServicePackageDaoImpl extends GenericDaoBase<NetScalerServ
         return search(sc, null);
     }
 
+    @Override
+    public void removeAll() {
+        List<NetScalerServicePackageVO> list_NetScalerServicePackageVO = this.listAll();
+        for (NetScalerServicePackageVO row : list_NetScalerServicePackageVO) {
+            this.remove(row.getId());
+        }
+    }
 }

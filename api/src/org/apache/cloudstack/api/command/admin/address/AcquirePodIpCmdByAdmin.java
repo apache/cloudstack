@@ -32,7 +32,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 
-@APICommand(name = "acquirePodIpAddresses", description = "Allocates IP addresses in respective Pod of a Zone", responseObject = AcquirePodIpCmdResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "acquirePodIpAddress", description = "Allocates IP addresses in respective Pod of a Zone", responseObject = AcquirePodIpCmdResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AcquirePodIpCmdByAdmin extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(AcquirePodIpCmdByAdmin.class.getName());
@@ -42,27 +42,29 @@ public class AcquirePodIpCmdByAdmin extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of the  zone in which your pod lies")
-    private Long zoneId;
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.STRING, entityType = ZoneResponse.class, required = true, description = "the ID of the  zone")
+    private String zoneId;
 
-    @Parameter(name = ApiConstants.GUEST_CIDR_ADDRESS, type = CommandType.STRING, entityType = ZoneResponse.class, required = false, description = "CIDR for finding Pod")
-    private String cidr;
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.STRING, entityType = ZoneResponse.class, required = false, description = "Pod ID")
+    private String podId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    private long getZoneId() {
+    private String getZoneId() {
         return zoneId;
     }
 
-    private String getCidr() {
-        return cidr;
+    public String getPodId() {
+        return podId;
     }
+
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+
 
     @Override
     public String getCommandName() {
@@ -71,12 +73,12 @@ public class AcquirePodIpCmdByAdmin extends BaseCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, ResourceAllocationException, ConcurrentOperationException {
-        AcquirePodIpCmdResponse pod_ip = null;
-        pod_ip = _networkService.allocatePodIp(_accountService.getAccount(getEntityOwnerId()), getZoneId(), getCidr());
-        if (pod_ip != null) {
-            pod_ip.setResponseName(getCommandName());
-            pod_ip.setObjectName(getCommandName());
-            setResponseObject(pod_ip);
+        AcquirePodIpCmdResponse podIp = null;
+        podIp = _networkService.allocatePodIp(_accountService.getAccount(getEntityOwnerId()), getZoneId(), getPodId());
+        if (podIp != null) {
+            podIp.setResponseName(getCommandName());
+            podIp.setObjectName(getCommandName());
+            setResponseObject(podIp);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to assign IP address");
         }
