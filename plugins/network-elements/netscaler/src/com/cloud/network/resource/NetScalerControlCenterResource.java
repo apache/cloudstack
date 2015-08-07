@@ -17,14 +17,12 @@
 package com.cloud.network.resource;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -37,7 +35,6 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -56,7 +53,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.BasicClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
-import org.bouncycastle.openssl.PEMWriter;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.citrix.netscaler.nitro.exception.nitro_exception;
@@ -64,7 +61,6 @@ import com.citrix.netscaler.nitro.resource.base.base_response;
 import com.citrix.netscaler.nitro.resource.config.autoscale.autoscaleaction;
 import com.citrix.netscaler.nitro.resource.config.autoscale.autoscalepolicy;
 import com.citrix.netscaler.nitro.resource.config.autoscale.autoscaleprofile;
-import com.citrix.netscaler.nitro.resource.config.basic.server_service_binding;
 import com.citrix.netscaler.nitro.resource.config.basic.service_lbmonitor_binding;
 import com.citrix.netscaler.nitro.resource.config.basic.servicegroup;
 import com.citrix.netscaler.nitro.resource.config.basic.servicegroup_lbmonitor_binding;
@@ -100,7 +96,6 @@ import com.citrix.netscaler.nitro.service.nitro_service;
 import com.citrix.netscaler.nitro.util.filtervalue;
 import com.citrix.sdx.nitro.resource.config.ns.ns;
 import com.citrix.sdx.nitro.resource.config.xen.xen_nsvpx_image;
-import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -144,7 +139,6 @@ import com.cloud.agent.api.to.LoadBalancerTO.StickinessPolicyTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
-import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.resource.ServerResource;
 import com.cloud.serializer.GsonHelper;
@@ -153,7 +147,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.utils.security.CertificateHelper;
 import com.cloud.utils.ssh.SshHelper;
 
 /*class NitroError {
@@ -178,6 +171,7 @@ public class NetScalerControlCenterResource implements ServerResource {
     private String _publicInterface;
     private String _privateInterface;
     private Integer _numRetries;
+    private Long _nccCmdTimeout;
     private String _guid;
     private boolean _inline;
     private boolean _isSdx;
@@ -194,7 +188,7 @@ public class NetScalerControlCenterResource implements ServerResource {
     protected Gson _gson;
     private final String _objectNamePathSep = "-";
     final String protocol="https";
-
+    private static String nccsession;
     // interface to interact with VPX and MPX devices
     com.citrix.netscaler.nitro.service.nitro_service _netscalerService;
 
@@ -206,6 +200,17 @@ public class NetScalerControlCenterResource implements ServerResource {
     public NetScalerControlCenterResource() {
         _gson = GsonHelper.getGsonLogger();
     }
+
+
+    public static String get_nccsession() {
+        return nccsession;
+    }
+
+
+    public static void set_nccsession(String nccsession) {
+        NetScalerControlCenterResource.nccsession = nccsession;
+    }
+
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -221,11 +226,6 @@ public class NetScalerControlCenterResource implements ServerResource {
                 throw new ConfigurationException("Unable to find zone Id  in the configuration parameters");
             }
 
-/*            _physicalNetworkId = (String)params.get("physicalNetworkId");
-            if (_physicalNetworkId == null) {
-                throw new ConfigurationException("Unable to find physical network id in the configuration parameters");
-            }
-*/
             _ip = (String)params.get("ip");
             if (_ip == null) {
                 throw new ConfigurationException("Unable to find IP address in the configuration parameters");
@@ -252,23 +252,25 @@ public class NetScalerControlCenterResource implements ServerResource {
             if (_deviceName == null) {
                 throw new ConfigurationException("Unable to find the device name in the configuration parameters");
             }
+            _nccCmdTimeout = NumbersUtil.parseLong((String)params.get("numretries"), 600000);
 
             // validate device configuration parameters
-            String response = login();
+            login();
+            /*String response =
             if(response == null) {
                 throw new ConfigurationException("No Response Received from the NetScalerControlCenter Device");
             } else {
                 jsonResponse = new JSONObject(response);
               org.json.JSONArray loginResponse = jsonResponse.getJSONArray("login");
-              //loginResponse.getJSONObject(0);
               _sessionid = jsonResponse.getJSONArray("login").getJSONObject(0).getString("sessionid");
-            }
-            // Make GET request with the new session to verify
-            s_logger.debug("Making Request to get all Service packages");
-            getServicePackages();
+            }*/
+
             return true;
-        } catch (Exception e) {
+        } catch (ConfigurationException e) {
             throw new ConfigurationException(e.getMessage());
+        } catch (ExecutionException e) {
+            s_logger.debug("Execution Exception :" +  e.getMessage());
+            throw new ConfigurationException("Failed to add the device. Please check the device is NCC and It is reachable from Management Server.");
         }
     }
 
@@ -320,8 +322,9 @@ public class NetScalerControlCenterResource implements ServerResource {
         }
     }
 
-    private String login() throws ExecutionException {
+    private synchronized String login() throws ExecutionException{// , ConfigurationException {
         String result = null;
+        JSONObject jsonResponse = null;
         try {
             // If a previous session was open, log it out.
             //logout();
@@ -339,12 +342,26 @@ public class NetScalerControlCenterResource implements ServerResource {
             jsonBody.put("login", jsonCredentials);
 
             result = postHttpRequest(jsonBody.toString(), agentUri, _sessionid);
-            s_logger.debug("NCC Device got Added:: " + result);
+            if (result == null) {
+                throw new ConfigurationException("No Response Received from the NetScalerControlCenter Device");
+            } else {
+                jsonResponse = new JSONObject(result);
+                org.json.JSONArray loginResponse = jsonResponse.getJSONArray("login");
+                _sessionid = jsonResponse.getJSONArray("login").getJSONObject(0).getString("sessionid");
+                s_logger.debug("New Session id from NCC :" + _sessionid);
+                set_nccsession(_sessionid);
+                s_logger.debug("session on Static Session variable" + get_nccsession());
+            }
+            s_logger.debug("Login to NCC Device response :: " + result);
             return result;
             } catch (URISyntaxException e) {
                 String errMsg = "Could not generate URI for Hyper-V agent";
                 s_logger.error(errMsg, e);
 
+            } catch (JSONException e) {
+                s_logger.debug("JSON Exception :" +  e.getMessage());
+                //throw new ConfigurationException("Failed to add the device. Please check the device is NCC and It is reachable from Management Server.");
+                throw new ExecutionException("Failed to log in to NCC device at " + _ip + " due to " + e.getMessage());
             } catch (Exception e) {
             throw new ExecutionException("Failed to log in to NCC device at " + _ip + " due to " + e.getMessage());
         }
@@ -406,6 +423,75 @@ public class NetScalerControlCenterResource implements ServerResource {
         return new MaintainAnswer(cmd);
     }
 
+    private String queryAsyncJob(String jobId) {
+        String result = null;
+        try {
+            // If a previous session was open, log it out.
+            //logout();
+/*            Polling for async tasks:
+                URL: http://10.102.31.78/admin/v1/journalcontexts/ <job-id>
+                Rwsponse:
+
+                {
+                  "journalcontext": {
+                    "id": "ctxt-6cfd63ba-b4d2-413d-af2d-caa6f1dc5cd9",
+                    "start_time": "2015-07-16T09:47:50.596664",
+                    "end_time": "2015-07-16T09:47:50.636356",
+                    "name": "Update devices",
+                    "service_name": "admin",
+                    "is_default": false,
+                    "scopes": [],
+                    "status": "Finished",
+                    "message": "Done"
+                  }
+                }
+*/
+
+            URI agentUri = null;
+            //String url = protocol + "://" + _ip +"/nitro/v2/config/login";
+            agentUri =
+                    new URI("https", null, _ip, DEFAULT_PORT,
+                            "/admin/v1/journalcontexts/" + jobId, null, null);
+
+            org.json.JSONObject jsonBody = new JSONObject();
+
+            long startTick = System.currentTimeMillis();
+            while (System.currentTimeMillis() - startTick <  _nccCmdTimeout) {
+                result = getHttpRequest(jsonBody.toString(), agentUri, _sessionid);
+                JSONObject response = new JSONObject(result);
+                if(response != null ) {
+                    s_logger.debug("Job Status result for ["+jobId + "]:: " + result + " Tick and currentTime :" +  System.currentTimeMillis() +" -" + startTick + "job cmd timeout :" +_nccCmdTimeout);
+                    String status = response.getJSONObject("journalcontext").getString("status");
+                    s_logger.debug("Job Status Progress Status ["+ jobId + "]:: " + status);
+                    switch(status) {
+                    case "Finished":
+                            return status;
+                    case "In Progress":
+                        break;
+                    case "ERROR, ROLLBACK_IN_PROGRESS":
+                        break;
+                        //return status;
+                    case "ERROR, ROLLBACK_COMPLETED":
+                        break;
+                        //return status;
+                    case "ERROR, ROLLBACK_FAILED":
+                        break;
+                        //return status;
+                    }
+                }
+            }
+
+            //s_logger.debug("List of Service Packages in NCC:: " + result);
+            //return result;
+        } catch (URISyntaxException e) {
+            String errMsg = "Could not generate URI for NetScaler ControlCenter";
+            s_logger.error(errMsg, e);
+
+        } catch (Exception e) {
+            //throw new ExecutionException("Failed to log in to NCC device at " + _ip + " due to " + e.getMessage());
+        }
+        return result;
+    }
     private synchronized Answer execute(NetScalerImplementNetworkCommand cmd, int numRetries) {
         String result = null;
         try {
@@ -417,16 +503,35 @@ public class NetScalerControlCenterResource implements ServerResource {
             //url: <ip>/cs/cca/networks
             agentUri =
                     new URI("https", null, _ip, DEFAULT_PORT,
-                            "/cs/cca/networks", null, null);
+                            "/cs/cca/v1/networks", null, null);
             org.json.JSONObject jsonBody = new JSONObject(cmd.getDetails());
             s_logger.debug("Sending Network Implement to NCC:: " + jsonBody);
             result = postHttpRequest(jsonBody.toString(), agentUri, _sessionid);
             s_logger.debug("Result of Network Implement to NCC:: " + result);
-            //return result;
+            result = queryAsyncJob(result);
+            s_logger.debug("Done query async of network implement request :: " + result);
+            return new Answer(cmd, true, "Successfully allocated device");
             } catch (URISyntaxException e) {
-                String errMsg = "Could not generate URI for Hyper-V agent";
+                String errMsg = "Could not generate URI for NetScaler ControlCenter ";
                 s_logger.error(errMsg, e);
+            } catch (ExecutionException e) {
+                if(e.getMessage().equalsIgnoreCase("NOTFOUND")) {
+                    return new Answer(cmd, true, "Successfully unallocated the device");
+                } else {
+                    if (shouldRetry(numRetries)) {
+                        s_logger.debug("Retrying the command NetScalerImplementNetworkCommand retry count: " + numRetries );
+                        return retry(cmd, numRetries);
+                    } else {
+                        return new Answer(cmd, false, e.getMessage());
+                    }
+                }
             } catch (Exception e) {
+                if (shouldRetry(numRetries)) {
+                    s_logger.debug("Retrying the command NetScalerImplementNetworkCommand retry count: " + numRetries );
+                    return retry(cmd, numRetries);
+                } else {
+                    return new Answer(cmd, false, e.getMessage());
+                }
             }
 
         return Answer.createUnsupportedCommandAnswer(cmd);
@@ -539,8 +644,16 @@ public class NetScalerControlCenterResource implements ServerResource {
             if (loadBalancers == null) {
                 return new Answer(cmd);
             }
+            JSONObject jsonCmd = new JSONObject(cmd);
+            URI agentUri = null;
+            //String url = protocol + "://" + _ip +"/nitro/v2/config/login";
+            agentUri =
+                    new URI("https", null, _ip, DEFAULT_PORT,
+                            "/nitro/v2/config/" + "login", null, null);
 
-            for (LoadBalancerTO loadBalancer : loadBalancers) {
+            s_logger.debug("LB config cmd: " + jsonCmd.toString());
+            String result = postHttpRequest(jsonCmd.toString(), agentUri, _sessionid);
+            /*for (LoadBalancerTO loadBalancer : loadBalancers) {
                 String srcIp = loadBalancer.getSrcIp();
                 int srcPort = loadBalancer.getSrcPort();
                 String lbProtocol = getNetScalerProtocol(loadBalancer);
@@ -565,305 +678,11 @@ public class NetScalerControlCenterResource implements ServerResource {
                     }
                 }
 
-                if (!loadBalancer.isRevoked() && destinationsToAdd) {
-
-                    // create a load balancing virtual server
-                    addLBVirtualServer(nsVirtualServerName, srcIp, srcPort, lbAlgorithm, lbProtocol, loadBalancer.getStickinessPolicies(), null);
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Created load balancing virtual server " + nsVirtualServerName + " on the Netscaler device");
-                    }
-
-                    // create a new monitor
-                    HealthCheckPolicyTO[] healthCheckPolicies = loadBalancer.getHealthCheckPolicies();
-                    if ((healthCheckPolicies != null) && (healthCheckPolicies.length > 0) && (healthCheckPolicies[0] != null)) {
-
-                        for (HealthCheckPolicyTO healthCheckPolicyTO : healthCheckPolicies) {
-                            if (!healthCheckPolicyTO.isRevoked()) {
-                                addLBMonitor(nsMonitorName, lbProtocol, healthCheckPolicyTO);
-                                hasMonitor = true;
-                            } else {
-                                deleteMonitor = true;
-                                hasMonitor = false;
-                            }
-                        }
-
-                    }
-
-                    for (DestinationTO destination : loadBalancer.getDestinations()) {
-
-                        String nsServerName = generateNSServerName(destination.getDestIp());
-                        String nsServiceName = generateNSServiceName(destination.getDestIp(), destination.getDestPort());
-                        if (!destination.isRevoked()) {
-                            // add a new destination to deployed load balancing rule
-
-                            // add a new server
-                            if (!nsServerExists(nsServerName)) {
-                                com.citrix.netscaler.nitro.resource.config.basic.server nsServer = new com.citrix.netscaler.nitro.resource.config.basic.server();
-                                nsServer.set_name(nsServerName);
-                                nsServer.set_ipaddress(destination.getDestIp());
-                                apiCallResult = com.citrix.netscaler.nitro.resource.config.basic.server.add(_netscalerService, nsServer);
-                                if ((apiCallResult.errorcode != 0) && (apiCallResult.errorcode != NitroError.NS_RESOURCE_EXISTS)) {
-                                    throw new ExecutionException("Failed to add server " + destination.getDestIp() + " due to" + apiCallResult.message);
-                                }
-                            }
-
-                            // create a new service using the server added
-                            if (!nsServiceExists(nsServiceName)) {
-                                com.citrix.netscaler.nitro.resource.config.basic.service newService = new com.citrix.netscaler.nitro.resource.config.basic.service();
-                                newService.set_name(nsServiceName);
-                                newService.set_port(destination.getDestPort());
-                                newService.set_servername(nsServerName);
-                                newService.set_state("ENABLED");
-                                if(lbProtocol.equalsIgnoreCase(NetUtils.SSL_PROTO)) {
-                                    newService.set_servicetype(NetUtils.HTTP_PROTO);
-                                } else {
-                                    newService.set_servicetype(lbProtocol);
-                                }
-
-                                apiCallResult = com.citrix.netscaler.nitro.resource.config.basic.service.add(_netscalerService, newService);
-                                if (apiCallResult.errorcode != 0) {
-                                    throw new ExecutionException("Failed to create service " + nsServiceName + " using server " + nsServerName + " due to" +
-                                            apiCallResult.message);
-                                }
-                            }
-
-                            //bind service to load balancing virtual server
-                            if (!nsServiceBindingExists(nsVirtualServerName, nsServiceName)) {
-                                com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding svcBinding =
-                                        new com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding();
-                                svcBinding.set_name(nsVirtualServerName);
-                                svcBinding.set_servicename(nsServiceName);
-                                apiCallResult = com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding.add(_netscalerService, svcBinding);
-
-                                if (apiCallResult.errorcode != 0) {
-                                    throw new ExecutionException("Failed to bind service: " + nsServiceName + " to the lb virtual server: " + nsVirtualServerName +
-                                            " on Netscaler device");
-                                }
-                            }
-
-                            // After binding the service to the LB Vserver
-                            // successfully, bind the created monitor to the
-                            // service.
-                            if (hasMonitor) {
-                                if (!isServiceBoundToMonitor(nsServiceName, nsMonitorName)) {
-                                    bindServiceToMonitor(nsServiceName, nsMonitorName);
-                                }
-                            } else {
-                                // check if any monitor created by CS is already
-                                // existing, if yes, unbind it from services and
-                                // delete it.
-                                if (nsMonitorExist(nsMonitorName)) {
-                                    // unbind the service from the monitor and
-                                    // delete the monitor
-                                    unBindServiceToMonitor(nsServiceName, nsMonitorName);
-                                    deleteMonitor = true;
-                                }
-
-                            }
-
-                            if (sslCert != null && lbProtocol.equalsIgnoreCase(NetUtils.SSL_PROTO)) {
-                                if (sslCert.isRevoked()) {
-                                    deleteCert = true;
-                                } else {
-
-                                    // If there is a chain, that should go first to the NS
-
-                                    String previousCertKeyName = null;
-
-                                    if (sslCert.getChain() != null) {
-                                        List<Certificate> chainList = CertificateHelper.parseChain(sslCert.getChain());
-                                        // go from ROOT to intermediate CAs
-                                        for (Certificate intermediateCert : Lists.reverse(chainList)) {
-
-                                            String fingerPrint = CertificateHelper.generateFingerPrint(intermediateCert);
-                                            String intermediateCertKeyName = generateSslCertKeyName(fingerPrint);
-                                            String intermediateCertFileName = intermediateCertKeyName + ".pem";
-
-                                            if (!SSL.isSslCertKeyPresent(_netscalerService, intermediateCertKeyName)) {
-                                                intermediateCert.getEncoded();
-                                                StringWriter textWriter = new StringWriter();
-                                                PEMWriter pemWriter = new PEMWriter(textWriter);
-                                                pemWriter.writeObject(intermediateCert);
-                                                pemWriter.flush();
-
-                                                SSL.uploadCert(_ip, _username, _password, intermediateCertFileName, textWriter.toString().getBytes());
-                                                SSL.createSslCertKey(_netscalerService, intermediateCertFileName, null, intermediateCertKeyName, null);
-                                            }
-
-                                            if (previousCertKeyName != null && !SSL.certLinkExists(_netscalerService, intermediateCertKeyName, previousCertKeyName)) {
-                                                SSL.linkCerts(_netscalerService, intermediateCertKeyName, previousCertKeyName);
-                                            }
-
-                                            previousCertKeyName = intermediateCertKeyName;
-                                        }
-                                    }
-
-                                    String certFilename = generateSslCertName(sslCert.getFingerprint()) + ".pem"; //netscaler uses ".pem" format for "bundle" files
-                                    String keyFilename = generateSslKeyName(sslCert.getFingerprint()) + ".pem"; //netscaler uses ".pem" format for "bundle" files
-                                    String certKeyName = generateSslCertKeyName(sslCert.getFingerprint());
-
-                                    ByteArrayOutputStream certDataStream = new ByteArrayOutputStream();
-                                    certDataStream.write(sslCert.getCert().getBytes());
-
-                                    if (!SSL.isSslCertKeyPresent(_netscalerService, certKeyName)) {
-
-                                        SSL.uploadCert(_ip, _username, _password, certFilename, certDataStream.toByteArray());
-                                        SSL.uploadKey(_ip, _username, _password, keyFilename, sslCert.getKey().getBytes());
-                                        SSL.createSslCertKey(_netscalerService, certFilename, keyFilename, certKeyName, sslCert.getPassword());
-                                    }
-
-                                    if (previousCertKeyName != null && !SSL.certLinkExists(_netscalerService, certKeyName, previousCertKeyName)) {
-                                        SSL.linkCerts(_netscalerService, certKeyName, previousCertKeyName);
-                                    }
-
-                                    SSL.bindCertKeyToVserver(_netscalerService, certKeyName, nsVirtualServerName);
-                                }
-
-                            }
-
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Successfully added LB destination: " + destination.getDestIp() + ":" + destination.getDestPort() + " to load balancer " +
-                                        srcIp + ":" + srcPort);
-                            }
-
-                        } else {
-                            // remove a destination from the deployed load balancing rule
-                            com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding[] serviceBindings =
-                                    com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding.get(_netscalerService, nsVirtualServerName);
-                            if (serviceBindings != null) {
-                                for (com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding binding : serviceBindings) {
-                                    if (nsServiceName.equalsIgnoreCase(binding.get_servicename())) {
-                                        // delete the binding
-                                        apiCallResult = com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding.delete(_netscalerService, binding);
-                                        if (apiCallResult.errorcode != 0) {
-                                            throw new ExecutionException("Failed to delete the binding between the virtual server: " + nsVirtualServerName +
-                                                    " and service:" + nsServiceName + " due to" + apiCallResult.message);
-                                        }
-
-                                        // check if service is bound to any other virtual server
-                                        if (!isServiceBoundToVirtualServer(nsServiceName)) {
-                                            // no lb virtual servers are bound to this service so delete it
-                                            apiCallResult = com.citrix.netscaler.nitro.resource.config.basic.service.delete(_netscalerService, nsServiceName);
-                                            if (apiCallResult.errorcode != 0) {
-                                                throw new ExecutionException("Failed to delete service: " + nsServiceName + " due to " + apiCallResult.message);
-                                            }
-                                        }
-
-                                        // delete the server if there is no associated services
-                                        server_service_binding[] services = server_service_binding.get(_netscalerService, nsServerName);
-                                        if ((services == null) || (services.length == 0)) {
-                                            apiCallResult = com.citrix.netscaler.nitro.resource.config.basic.server.delete(_netscalerService, nsServerName);
-                                            if (apiCallResult.errorcode != 0) {
-                                                throw new ExecutionException("Failed to remove server:" + nsServerName + " due to " + apiCallResult.message);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    // delete the implemented load balancing rule and its destinations
-                    lbvserver lbserver = getVirtualServerIfExisits(nsVirtualServerName);
-                    if (lbserver != null) {
-                        //unbind the all services associated with this virtual server
-                        com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding[] serviceBindings =
-                                com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding.get(_netscalerService, nsVirtualServerName);
-
-                        if (serviceBindings != null) {
-                            for (com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding binding : serviceBindings) {
-                                String serviceName = binding.get_servicename();
-                                apiCallResult = com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding.delete(_netscalerService, binding);
-                                if (apiCallResult.errorcode != 0) {
-                                    throw new ExecutionException("Failed to unbind service from the lb virtual server: " + nsVirtualServerName + " due to " +
-                                            apiCallResult.message);
-                                }
-
-                                com.citrix.netscaler.nitro.resource.config.basic.service svc =
-                                        com.citrix.netscaler.nitro.resource.config.basic.service.get(_netscalerService, serviceName);
-                                String nsServerName = svc.get_servername();
-
-                                // check if service is bound to any other virtual server
-                                if (!isServiceBoundToVirtualServer(serviceName)) {
-                                    // no lb virtual servers are bound to this service so delete it
-                                    apiCallResult = com.citrix.netscaler.nitro.resource.config.basic.service.delete(_netscalerService, serviceName);
-                                    if (apiCallResult.errorcode != 0) {
-                                        throw new ExecutionException("Failed to delete service: " + serviceName + " due to " + apiCallResult.message);
-                                    }
-                                }
-
-                                //delete the server if no more services attached
-                                server_service_binding[] services = server_service_binding.get(_netscalerService, nsServerName);
-                                if ((services == null) || (services.length == 0)) {
-                                    apiCallResult = com.citrix.netscaler.nitro.resource.config.basic.server.delete(_netscalerService, nsServerName);
-                                    if (apiCallResult.errorcode != 0) {
-                                        throw new ExecutionException("Failed to remove server:" + nsServerName + " due to " + apiCallResult.message);
-                                    }
-                                }
-                            }
-                        }
-                        removeLBVirtualServer(nsVirtualServerName);
-                        deleteMonitor = true;
-                        deleteCert = true;
-                    }
-                }
-                if (deleteMonitor) {
-                    removeLBMonitor(nsMonitorName);
-                }
-                if (sslCert != null && deleteCert) {
-
-                    String certFilename = generateSslCertName(sslCert.getFingerprint()) + ".pem"; //netscaler uses ".pem" format for "bundle" files
-                    String keyFilename = generateSslKeyName(sslCert.getFingerprint()) + ".pem"; //netscaler uses ".pem" format for "bundle" files
-                    String certKeyName = generateSslCertKeyName(sslCert.getFingerprint());
-
-                    // unbind before deleting
-                    if (nsVirtualServerExists(nsVirtualServerName) &&
-                            SSL.isSslCertKeyPresent(_netscalerService, certKeyName) &&
-                            SSL.isBoundToVserver(_netscalerService, certKeyName, nsVirtualServerName)) {
-                        SSL.unbindCertKeyFromVserver(_netscalerService, certKeyName, nsVirtualServerName);
-                    }
-
-                    if (SSL.isSslCertKeyPresent(_netscalerService, certKeyName)) {
-
-                        SSL.deleteSslCertKey(_netscalerService, certKeyName);
-                        SSL.deleteCertFile(_ip, _username, _password, certFilename);
-                        SSL.deleteKeyFile(_ip, _username, _password, keyFilename);
-                    }
-
-                    /*
-                     * Check and delete intermediate certs:
-                     * we can delete an intermediate cert if no other
-                     * cert references it as the athority
-                     */
-
-                    if (sslCert.getChain() != null) {
-                        List<Certificate> chainList = CertificateHelper.parseChain(sslCert.getChain());
-                        //go from intermediate CAs to ROOT
-                        for (Certificate intermediateCert : chainList) {
-
-                            String fingerPrint = CertificateHelper.generateFingerPrint(intermediateCert);
-                            String intermediateCertKeyName = generateSslCertKeyName(fingerPrint);
-                            String intermediateCertFileName = intermediateCertKeyName + ".pem";
-
-                            if (SSL.isSslCertKeyPresent(_netscalerService, intermediateCertKeyName) &&
-                                    !SSL.isCaforCerts(_netscalerService, intermediateCertKeyName)) {
-                                SSL.deleteSslCertKey(_netscalerService, intermediateCertKeyName);
-                                SSL.deleteCertFile(_ip, _username, _password, intermediateCertFileName);
-                            } else {
-                                break;// if this cert has another certificate as a child then stop at this point because we need the whole chain
-                            }
-
-                        }
-                    }
-                }
-
-            }
-
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("Successfully executed resource LoadBalancerConfigCommand: " + _gson.toJson(cmd));
-            }
+            }*/
 
-            saveConfiguration();
+            //saveConfiguration();
             return new Answer(cmd);
         } catch (ExecutionException e) {
             s_logger.error("Failed to execute LoadBalancerConfigCommand due to ", e);
@@ -3641,13 +3460,23 @@ public class NetScalerControlCenterResource implements ServerResource {
     }
 
     private boolean shouldRetry(int numRetries) {
+        //JSONObject jsonResponse = null;
         try {
             if (numRetries > 0) {
                 login();
+                /*if (response == null) {
+                    throw new ConfigurationException("No Response Received from the NetScalerControlCenter Device");
+                } else {
+                    jsonResponse = new JSONObject(response);
+                    org.json.JSONArray loginResponse = jsonResponse.getJSONArray("login");
+                    _sessionid = jsonResponse.getJSONArray("login").getJSONObject(0).getString("sessionid");
+                }*/
                 return true;
             }
         } catch (Exception e) {
-            s_logger.error("Failed to log in to Netscaler device at " + _ip + " due to " + e.getMessage());
+            s_logger.error("Failed to log in to Netscaler ControlCenter device at " + _ip + " due to " + e.getMessage());
+            return false;
+            //throw new ConfigurationException("No Response Received from the NetScalerControlCenter Device");
         }
         return false;
     }
@@ -3766,8 +3595,22 @@ public class NetScalerControlCenterResource implements ServerResource {
         return null;
     }
 
+    private boolean refreshNCCConnection() {
+        boolean ret = false;
+        try {
+            login();
+            return true;
+        } catch (ExecutionException ex) {
+            s_logger.error("Login to NCC failed", ex);
+        }
+        return ret;
+    }
+
     @Override
     public PingCommand getCurrentStatus(long id) {
+        /*if (!refreshNCCConnection()) {
+            return null;
+        }*/
         return new PingCommand(Host.Type.NetScalerControlCenter, id);
     }
 
@@ -3881,7 +3724,7 @@ public class NetScalerControlCenterResource implements ServerResource {
         return httpClient;
     }
 
-    public static String getHttpRequest(final String jsonCmd, final URI agentUri, String sessionID) {
+    public static String getHttpRequest(final String jsonCmd, final URI agentUri, String sessionID) throws ExecutionException {
         // Using Apache's HttpClient for HTTP POST
         // Java-only approach discussed at on StackOverflow concludes with
         // comment to use Apache HttpClient
@@ -3923,7 +3766,8 @@ public class NetScalerControlCenterResource implements ServerResource {
             } else if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
                 String errMsg = "Failed send to " + agentUri.toString() + " : HTTP error code : " + response.getStatusLine().getStatusCode();
                 s_logger.error(errMsg);
-                return null;
+                throw new ExecutionException("UNAUTHORIZED");
+                //return null;
             } else {
                 result = EntityUtils.toString(response.getEntity());
                 String logResult = cleanPassword(StringEscapeUtils.unescapeJava(result));
@@ -3941,7 +3785,7 @@ public class NetScalerControlCenterResource implements ServerResource {
         return result;
     }
 
-    public static String postHttpRequest(final String jsonCmd, final URI agentUri, String sessionID) {
+    public static String postHttpRequest(final String jsonCmd, final URI agentUri, String sessionID) throws ExecutionException {
         // Using Apache's HttpClient for HTTP POST
         // Java-only approach discussed at on StackOverflow concludes with
         // comment to use Apache HttpClient
@@ -3954,7 +3798,7 @@ public class NetScalerControlCenterResource implements ServerResource {
 
         // Create request
         HttpClient httpClient = getHttpClient();
-/*        TrustStrategy easyStrategy = new TrustStrategy() {
+        TrustStrategy easyStrategy = new TrustStrategy() {
             @Override
             public boolean isTrusted(X509Certificate[] chain, String authType)
                     throws CertificateException {
@@ -3977,7 +3821,7 @@ public class NetScalerControlCenterResource implements ServerResource {
         } catch (KeyStoreException e) {
             s_logger.error("failed to initialize http client " + e.getMessage());
         }
-*/
+
         String result = null;
 
         // TODO: are there timeout settings and worker thread settings to tweak?
@@ -3998,15 +3842,25 @@ public class NetScalerControlCenterResource implements ServerResource {
             // Unsupported commands will not route.
             if (response.getStatusLine().getStatusCode() == HttpStatus.SC_NOT_FOUND) {
                 String errMsg = "Failed to send : HTTP error code : " + response.getStatusLine().getStatusCode();
-                s_logger.error(errMsg);
+                throw new ExecutionException("NOT_FOUND");
+                /*s_logger.error(errMsg);
                 String unsupportMsg = "Unsupported command " + agentUri.getPath() + ".  Are you sure you got the right type of" + " server?";
                 Answer ans = new UnsupportedAnswer(null, unsupportMsg);
-                s_logger.error(ans);
-                result = s_gson.toJson(new Answer[] {ans});
-            } else if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+                s_logger.error(ans);*/
+                //result = s_gson.toJson(new Answer[] {ans});
+            } else if ((response.getStatusLine().getStatusCode() != HttpStatus.SC_OK ) && (response.getStatusLine().getStatusCode() != HttpStatus.SC_CREATED )) {
                 String errMsg = "Failed send to " + agentUri.toString() + " : HTTP error code : " + response.getStatusLine().getStatusCode();
                 s_logger.error(errMsg);
-                return null;
+                throw new ExecutionException("UNAUTHORIZED");
+                //return null;
+            } else if (response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
+                //Successfully created the resource in the NCC, Now get the Job ID and send to the response
+                // make login request and store new session id
+                throw new ExecutionException("UNAUTHORIZED");
+            } else if (response.getStatusLine().getStatusCode() == HttpStatus.SC_CREATED) {
+                //Successfully created the resource in the NCC, Now get the Job ID and send to the response
+                result = response.getFirstHeader("Job_id").getValue();
+                //"jobid : " +
             } else {
                 result = EntityUtils.toString(response.getEntity());
                 String logResult = cleanPassword(StringEscapeUtils.unescapeJava(result));

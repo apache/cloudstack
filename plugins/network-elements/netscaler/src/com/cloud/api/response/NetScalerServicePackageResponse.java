@@ -24,6 +24,7 @@ import com.cloud.network.NetScalerServicePackageVO;
 import com.cloud.serializer.Param;
 
 public class NetScalerServicePackageResponse extends BaseResponse {
+
     @SerializedName(ApiConstants.ID)
     @Param(description = "Service Package UUID")
     private String id;
@@ -36,7 +37,8 @@ public class NetScalerServicePackageResponse extends BaseResponse {
     @Param(description = "Description of Service Package")
     private String description;
 
-    public NetScalerServicePackageResponse() {}
+    public NetScalerServicePackageResponse() {
+    }
 
     public NetScalerServicePackageResponse(NetScalerServicePackageVO servicePackage) {
         this.id = servicePackage.getUuid();

@@ -53,6 +53,7 @@ import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
@@ -63,6 +64,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.host.Host.Type;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.Network.Provider;
@@ -101,6 +103,7 @@ import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.StaticNatImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
@@ -864,6 +867,21 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         return nic;
     }
 
+    private boolean isNccServiceProvider(Network network) {
+        NetworkOffering networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        if(networkOffering.getServicePackage() != null ) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    public HostVO getNetScalerControlCenterForNetwork(Network guestConfig) {
+        long zoneId = guestConfig.getDataCenterId();
+        return _hostDao.findByTypeNameAndZoneId(zoneId, "NetscalerControlCenter", Type.NetScalerControlCenter);
+    }
+
     @Override
     public boolean applyLoadBalancerRules(Network network, List<LoadBalancingRule> loadBalancingRules) throws ResourceUnavailableException {
         // Find the external load balancer in this zone
@@ -874,13 +892,21 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             return true;
         }
 
-        ExternalLoadBalancerDeviceVO lbDeviceVO = getExternalLoadBalancerForNetwork(network);
-        if (lbDeviceVO == null) {
-            s_logger.warn("There is no external load balancer device assigned to this network either network is not implement are already shutdown so just returning");
-            return true;
+        HostVO externalLoadBalancer = null;
+
+        if(isNccServiceProvider(network)) {
+            externalLoadBalancer  = getNetScalerControlCenterForNetwork(network);
+        } else {
+            ExternalLoadBalancerDeviceVO lbDeviceVO = getExternalLoadBalancerForNetwork(network);
+            if (lbDeviceVO == null) {
+                s_logger.warn("There is no external load balancer device assigned to this network either network is not implement are already shutdown so just returning");
+                return true;
+            } else {
+                externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
+            }
         }
 
-        HostVO externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
+
 
         boolean externalLoadBalancerIsInline = _networkMgr.isNetworkInlineMode(network);
 
@@ -900,6 +926,13 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             String algorithm = rule.getAlgorithm();
             String uuid = rule.getUuid();
             String srcIp = rule.getSourceIp().addr();
+            String srcIpVlan = null;
+            //IpAddress ipAddress =  _networkModel.getPublicIpAddress(rule.getSourceIp().addr(), network.getDataCenterId()).getVlanId();
+            Long vlanid =  _networkModel.getPublicIpAddress(rule.getSourceIp().addr(), network.getDataCenterId()).getVlanId();
+            if(vlanid != null ) {
+              VlanVO publicVlan =   _vlanDao.findById(vlanid);
+              srcIpVlan =  publicVlan.getVlanTag();
+            }
             int srcPort = rule.getSourcePortStart();
             List<LbDestination> destinations = rule.getDestinations();
 
@@ -921,6 +954,8 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 LoadBalancerTO loadBalancer =
                     new LoadBalancerTO(uuid, srcIp, srcPort, protocol, algorithm, revoked, false, inline, destinations, rule.getStickinessPolicies(),
                         rule.getHealthCheckPolicies(), rule.getLbSslCert(), rule.getLbProtocol());
+                loadBalancer.setNetworkId(network.getId());
+                loadBalancer.setSrcIpVlan(srcIpVlan);
                 if (rule.isAutoScaleConfig()) {
                     loadBalancer.setAutoScaleVmGroup(rule.getAutoScaleVmGroup());
                 }
