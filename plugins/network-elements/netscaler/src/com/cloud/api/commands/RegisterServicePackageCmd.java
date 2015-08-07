@@ -33,8 +33,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.element.NetscalerLoadBalancerElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "registerNetscalerServicePackage", responseObject = NetScalerServicePackageResponse.class,
-    description = "Registers NCC Service Package")
+@APICommand(name = "registerNetscalerServicePackage", responseObject = NetScalerServicePackageResponse.class, description = "Registers NCC Service Package")
 public class RegisterServicePackageCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(RegisterServicePackageCmd.class.getName());
@@ -50,10 +49,10 @@ public class RegisterServicePackageCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name of the service Package.")
     private String spName;
 
-    @Parameter(name = ApiConstants.DESCRIPTION , type = CommandType.STRING, required = true, description = "Description of Service Package")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, required = true, description = "Description of Service Package")
     private String description;
 
-/*    @Override
+    /*    @Override
     public String getEventType() {
         return EventTypes.EVENT_NETSCALER_SERVICEPACKAGE_ADD;
     }
@@ -62,12 +61,11 @@ public class RegisterServicePackageCmd extends BaseCmd {
     public String getEventDescription() {
         return "Adding Netscaler Service Package";
     }
-*/
+     */
     @Override
     public void execute() throws ServerApiException, ConcurrentOperationException, EntityExistsException {
         try {
-            NetScalerServicePackageResponse response =  _netsclarLbService.registerNetscalerServicePackage(this);
-
+            NetScalerServicePackageResponse response = _netsclarLbService.registerNetscalerServicePackage(this);
             if (response != null) {
                 //NetScalerServicePackageResponse response = _netsclarLbService.createNetscalerServicePackageResponse(servicePackageVO);
                 response.setObjectName("netscalerservicepackage");
@@ -81,7 +79,7 @@ public class RegisterServicePackageCmd extends BaseCmd {
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());
         } catch (EntityExistsException runtimeExcp) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR , "Service Pacakge Already Exists with Name " + getSpName() );
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Service Pacakge Already Exists with Name " + getSpName());
         }
 
     }
