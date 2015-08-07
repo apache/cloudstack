@@ -2019,7 +2019,6 @@
                     },
                     //NFS, SMB (end)
 
-
                     //SMB (begin)
                     smbDomain: {
                         label: 'label.smb.domain',
@@ -2110,7 +2109,6 @@
                         isHidden: true
                     },
                     //S3 (end)
-
 
                     //Swift (begin)
                     url: {
@@ -4159,27 +4157,6 @@
                         array1.push("&username=" + todb(args.data.cluster.vCenterUsername));
                         array1.push("&password=" + todb(args.data.cluster.vCenterPassword));
 
-                        //dvswitch is enabled
-                        /*
-                        if (args.data.cluster.vSwitchPublicType != "")
-                            array1.push('&publicvswitchtype=' + args.data.cluster.vSwitchPublicType);
-                        */
-
-                        /*
-                        if (args.data.cluster.vSwitchPublicName != "")
-                            array1.push("&publicvswitchname=" + args.data.cluster.vSwitchPublicName);
-                        */
-
-                        /*
-                        if (args.data.cluster.vSwitchGuestType != "")
-                            array1.push('&guestvswitchtype=' + args.data.cluster.vSwitchGuestType);
-                        */
-
-                        /*
-                        if (args.data.cluster.vSwitchGuestName != "")
-                            array1.push("&guestvswitchname=" + args.data.cluster.vSwitchGuestName);
-                        */
-
                         if (args.data.cluster.vsmipaddress != null && args.data.cluster.vsmipaddress.length > 0) {
                             array1.push('&vsmipaddress=' + args.data.cluster.vsmipaddress);
                         }
@@ -4354,8 +4331,6 @@
                     } else {
                         addHostAjax();
                     }
-
-
                 },
 
                 addPrimaryStorage: function(args) {
