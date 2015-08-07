@@ -268,7 +268,7 @@ var addGuestNetworkDialog = {
                                     if (items != null) {
                                         for (var i = 0; i < items.length; i++) {
                                             if (items[i].networktype == 'Advanced') {
-                                                addGuestNetworkDialog.zoneObjs.push(items[i]); 
+                                                addGuestNetworkDialog.zoneObjs.push(items[i]);
                                             }
                                         }
                                     }
@@ -294,7 +294,7 @@ var addGuestNetworkDialog = {
                         if ('physicalNetworks' in args.context) { //Infrastructure menu > zone detail > guest traffic type > network tab (only shown in advanced zone) > add guest network dialog
                             addGuestNetworkDialog.physicalNetworkObjs = args.context.physicalNetworks;
                         } else { //Network menu > guest network section > add guest network dialog
-                            var selectedZoneId = args.$form.find('.form-item[rel=zoneId]').find('select').val();                           
+                            var selectedZoneId = args.$form.find('.form-item[rel=zoneId]').find('select').val();
                             if (selectedZoneId != undefined && selectedZoneId.length > 0) {
 	                            $.ajax({
 	                                url: createURL('listPhysicalNetworks'),
@@ -302,7 +302,7 @@ var addGuestNetworkDialog = {
 	                                    zoneid: selectedZoneId
 	                                },
 	                                async: false,
-	                                success: function(json) {                                    
+	                                success: function(json) {
 	                                	var items = [];
 	                                	var physicalnetworks = json.listphysicalnetworksresponse.physicalnetwork;
 	                                	if (physicalnetworks != null) {
@@ -313,7 +313,7 @@ var addGuestNetworkDialog = {
 	                                	    			physicalnetworkid: physicalnetworks[i].id
 	                                	    		},
 	                                	    		async: false,
-	                                	    		success: function(json) {                                	    			
+	                                	    		success: function(json) {
 	                                	    			var traffictypes = json.listtraffictypesresponse.traffictype;
 	                                	    			if (traffictypes != null) {
 	                                	    				for (var k = 0; k < traffictypes.length; k++) {
@@ -322,13 +322,13 @@ var addGuestNetworkDialog = {
 	                                	    						break;
 	                                	    					}
 	                                	    				}
-	                                	    			} 
+	                                	    			}
 	                                	    		}
 	                                	    	});
-	                                	    }	
-	                                	}  
-	                                	
-	                                	addGuestNetworkDialog.physicalNetworkObjs = items;                                	
+	                                	    }
+	                                	}
+
+	                                	addGuestNetworkDialog.physicalNetworkObjs = items;
 	                                }
 	                            });
                             }
@@ -536,14 +536,14 @@ var addGuestNetworkDialog = {
                     label: 'label.network.offering',
                     docID: 'helpGuestNetworkZoneNetworkOffering',
                     dependsOn: ['zoneId', 'physicalNetworkId', 'scope'],
-                    select: function(args) {                    	
+                    select: function(args) {
                     	if(args.$form.find('.form-item[rel=zoneId]').find('select').val() == null || args.$form.find('.form-item[rel=zoneId]').find('select').val().length == 0) {
                     		args.response.success({
                                 data: null
                             });
                     		return;
                     	}
-                    	
+
                         var data = {
                             state: 'Enabled',
                             zoneid: args.$form.find('.form-item[rel=zoneId]').find('select').val()
@@ -977,7 +977,7 @@ cloudStack.converters = {
     convertBytes: function(bytes) {
 	    if (bytes == undefined)
 	    	return '';
-	
+
         if (bytes < 1024 * 1024) {
             return (bytes / 1024).toFixed(2) + " KB";
         } else if (bytes < 1024 * 1024 * 1024) {
@@ -1030,20 +1030,20 @@ cloudStack.converters = {
 
             if (g_timezoneoffset != null) {
                 localDate = disconnected.getTimePlusTimezoneOffset(g_timezoneoffset);
-            } else {                
+            } else {
             	var browserDate = new Date();
-            	var browserTimezoneoffset = browserDate.getTimezoneOffset();            	
-            	if (browserTimezoneoffset == undefined || isNaN(browserTimezoneoffset) ) {            		
+            	var browserTimezoneoffset = browserDate.getTimezoneOffset();
+            	if (browserTimezoneoffset == undefined || isNaN(browserTimezoneoffset) ) {
             		localDate = disconnected.toUTCString();
             	} else {
             		g_timezoneoffset = (browserTimezoneoffset/60) * (-1);
             		localDate = disconnected.getTimePlusTimezoneOffset(g_timezoneoffset);
-            	}       
+            	}
             }
         }
         return localDate;
     },
-    toBooleanText: function(booleanValue) {    	
+    toBooleanText: function(booleanValue) {
         var text1;
     	if (booleanValue == true) {
     		text1 = "Yes";
@@ -1052,7 +1052,7 @@ cloudStack.converters = {
         } else { //booleanValue == undefined
         	text1 = "";
         }
-    	return text1;        
+    	return text1;
     },
     convertHz: function(hz) {
         if (hz == null)
@@ -1239,13 +1239,13 @@ cloudStack.converters = {
     }
 }
 
-function isModuleIncluded(moduleName) {    
+function isModuleIncluded(moduleName) {
     for(var moduleIndex = 0; moduleIndex < cloudStack.modules.length; moduleIndex++) {
         if (cloudStack.modules[moduleIndex] == moduleName) {
-            return true;            
-            break;            
+            return true;
+            break;
         }
-    }    
+    }
     return false;
 }
 
@@ -1313,7 +1313,7 @@ var addExtraPropertiesToGuestNetworkObject = function(jsonObj) {
         jsonObj.vlan = jsonObj.broadcasturi.replace("vlan://", "");
     }
     if(jsonObj.vxlan == null && jsonObj.broadcasturi != null && jsonObj.broadcasturi.substring(0,8) == "vxlan://") {
-        jsonObj.vxlan = jsonObj.broadcasturi.replace("vxlan://", "");   	
+        jsonObj.vxlan = jsonObj.broadcasturi.replace("vxlan://", "");
     }
 }
 
@@ -1324,7 +1324,7 @@ var addExtraPropertiesToUcsBladeObject = function(jsonObj) {
 	jsonObj.bladeid = array1[2];
 }
 
-var processPropertiesInImagestoreObject = function(jsonObj) {	
+var processPropertiesInImagestoreObject = function(jsonObj) {
 	if (jsonObj.url != undefined) {
 		var url = jsonObj.url; //e.g. 'cifs://10.1.1.1/aaa/aaa2/aaa3?user=bbb&password=ccc&domain=ddd'
 		var passwordIndex = url.indexOf('&password='); //38
@@ -1332,7 +1332,7 @@ var processPropertiesInImagestoreObject = function(jsonObj) {
 		if (passwordIndex >= 0) {
 			jsonObj.url = url.substring(0, passwordIndex) + url.substring(domainIndex); //remove '&password=ccc' from jsonObj.url
 		}
-	}	
+	}
 }
 
 //find service object in network object
@@ -1390,12 +1390,12 @@ var processPropertiesInImagestoreObject = function(jsonObj) {
         if (server.indexOf('://') == -1) {
         	url += 'cifs://';
         }
-        
+
         url += (server + path);
-               
+
         return url;
     }
-    
+
     function presetupURL(server, path) {
         var url;
         if (server.indexOf("://") == -1)
@@ -1499,11 +1499,11 @@ var processPropertiesInImagestoreObject = function(jsonObj) {
         }
         return vmName;
     }
-  
+
 var timezoneMap = new Object();
 timezoneMap["Etc/GMT+12"] = "Etc/GMT+12 [GMT-12:00]";
 timezoneMap["Etc/GMT+11"] = "Etc/GMT+11 [GMT-11:00]";
-timezoneMap["Pacific/Midway"] = "Pacific/Midway [Samoa Standard Time]"; 
+timezoneMap["Pacific/Midway"] = "Pacific/Midway [Samoa Standard Time]";
 timezoneMap["Pacific/Niue"] = "Pacific/Niue [Niue Time]";
 timezoneMap["Pacific/Pago_Pago"] = "Pacific/Pago_Pago [Samoa Standard Time]";
 timezoneMap["Pacific/Samoa"] = "Pacific/Samoa [Samoa Standard Time]";
@@ -2256,7 +2256,7 @@ cloudStack.api = {
                             args.response.error(parseXMLHttpResponse(json));
                         }
                     });
-            	}            	
+            	}
             }
         };
     }

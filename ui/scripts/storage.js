@@ -330,7 +330,7 @@
                                             });
                                         }
 
-                                    },                                      
+                                    },
                                     diskOffering: {
                                         label: 'Custom Disk Offering',
                                         docID: 'helpVolumeDiskOffering',
@@ -347,7 +347,7 @@
                                                         description: ''
                                                     }];
                                                     $(diskofferingObjs).each(function() {
-                                                    	if (this.iscustomized == true) {                                                    	
+                                                    	if (this.iscustomized == true) {
 	                                                        items.push({
 	                                                            id: this.id,
 	                                                            description: this.displaytext
@@ -360,7 +360,7 @@
                                                 }
                                             });
                                         }
-                                    },                                    
+                                    },
                                     diskOffering: {
                                         label: 'Custom Disk Offering',
                                         docID: 'helpVolumeDiskOffering',
@@ -377,7 +377,7 @@
                                                         description: ''
                                                     }];
                                                     $(diskofferingObjs).each(function() {
-                                                    	if (this.iscustomized == true) {                                                    	
+                                                    	if (this.iscustomized == true) {
 	                                                        items.push({
 	                                                            id: this.id,
 	                                                            description: this.displaytext
@@ -390,7 +390,7 @@
                                                 }
                                             });
                                         }
-                                    },      
+                                    },
                                     checksum: {
                                         docID: 'helpUploadVolumeChecksum',
                                         label: 'label.md5.checksum'
@@ -406,12 +406,12 @@
                                     url: args.data.url
                                 };
 
-                                if (args.data.diskOffering != '' && args.data.diskOffering.length > 0) {                                	
+                                if (args.data.diskOffering != '' && args.data.diskOffering.length > 0) {
                                 	$.extend(data, {
                                 		diskofferingid: args.data.diskOffering
                                     });
                                 }
-                                                                
+
                                 if (args.data.checksum != null && args.data.checksum.length > 0) {
                                     $.extend(data, {
                                         checksum: args.data.checksum
@@ -445,7 +445,7 @@
                                 poll: pollAsyncJobResult
                             }
                         },
-                                                
+
                         uploadVolumefromLocal: {
                             isHeader: true,
                             label: 'Upload from Local',
@@ -462,7 +462,7 @@
                                 fileUpload: {
                                     getURL: function(args) {
                                         args.data = args.formData;
-                                        
+
                                         var data = {
                                             name: args.data.name,
                                             zoneId: args.data.availabilityZone,
@@ -475,7 +475,7 @@
                                                 checksum: args.data.checksum
                                             });
                                         }
-                                        
+
                                         $.ajax({
                                             url: createURL('getUploadParamsForVolume'),
                                             data: data,
@@ -506,7 +506,7 @@
                                             args.response.success();
                                         }
                                     }
-                                },                                
+                                },
                                 fields: {
                                     volumeFileUpload: {
                                         label: 'local file',
@@ -584,7 +584,7 @@
                             notification: {
                                 poll: pollAsyncJobResult
                             }
-                        }                        
+                        }
                     },
 
                     advSearchFields: {
@@ -686,12 +686,12 @@
                                 $.extend(data, {
                                     virtualMachineId: args.context.instances[0].id
                                 });
-                            }                           
+                            }
                             if ("primarystorages" in args.context) {
                                 $.extend(data, {
                                 	storageid: args.context.primarystorages[0].id
                                 });
-                            }                           
+                            }
                         }
 
                         $.ajax({
@@ -804,7 +804,7 @@
                                             isBoolean: true,
                                             isHidden: function(args) {
                                                 if (args.context.volumes[0].quiescevm == true)
-                                                    return false;   
+                                                    return false;
                                                         else
                                                 	return true;
                                             }
@@ -1137,7 +1137,7 @@
                                                         hypervisor: args.context.volumes[0].hypervisor
                                                     });
                                                 }
-                                                
+
                                                 $(['Running', 'Stopped']).each(function() {
                                                     $.ajax({
                                                         url: createURL('listVirtualMachines'),
@@ -1147,11 +1147,11 @@
                                                         async: false,
                                                         success: function(json) {
                                                             var instanceObjs = json.listvirtualmachinesresponse.virtualmachine;
-                                                            $(instanceObjs).each(function() {                                                                
+                                                            $(instanceObjs).each(function() {
                                                                 items.push({
                                                                     id: this.id,
                                                                     description: this.displayname ? this.displayname : this.name
-                                                                });                                                                                                                                
+                                                                });
                                                             });
                                                         }
                                                     });
@@ -1285,12 +1285,12 @@
                                     title: 'label.create.template',
                                     preFilter: cloudStack.preFilter.createTemplate,
                                     desc: '',
-                                    preFilter: function(args) {                                    	
-                                    	if (args.context.volumes[0].hypervisor == "XenServer") {     
-	                                    	if (isAdmin()) {                                            
+                                    preFilter: function(args) {
+                                    	if (args.context.volumes[0].hypervisor == "XenServer") {
+	                                    	if (isAdmin()) {
 	                                            args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').css('display', 'inline-block');
-	                                        } 
-                                    	}                                    	
+	                                        }
+                                    	}
                                     },
                                     fields: {
                                         name: {
@@ -1304,24 +1304,24 @@
                                             validation: {
                                                 required: true
                                             }
-                                        },                                        
+                                        },
                                         xenserverToolsVersion61plus: {
                                             label: 'label.xenserver.tools.version.61.plus',
                                             isBoolean: true,
-                                            isChecked: function (args) {                                            	
+                                            isChecked: function (args) {
                                             	var b = false;
-                                            	var vmObj;                                            	                                        	
+                                            	var vmObj;
                                             	$.ajax({
                                             		url: createURL("listVirtualMachines"),
                                             		data: {
                                             			id: args.context.volumes[0].virtualmachineid
                                             		},
                                             		async: false,
-                                            		success: function(json) {                                            			
+                                            		success: function(json) {
                                             			vmObj = json.listvirtualmachinesresponse.virtualmachine[0];
-                                            		}                                            		
-                                            	});                                            	
-                                            	if (vmObj == undefined) { //e.g. VM has failed over                                            		
+                                            		}
+                                            	});
+                                            	if (vmObj == undefined) { //e.g. VM has failed over
                                             		if (isAdmin()) {
                                                         $.ajax({
                                                             url: createURL('listConfigurations'),
@@ -1336,18 +1336,18 @@
                                                             }
                                                         });
                                                     }
-                                            	} else {                                            		
+                                            	} else {
                                             		 if ('details' in vmObj && 'hypervisortoolsversion' in vmObj.details) {
                                                          if (vmObj.details.hypervisortoolsversion == 'xenserver61')
                                                              b = true;
                                                          else
                                                              b = false;
                                                      }
-                                            	}                                         	                                  
+                                            	}
                                                 return b;
                                             },
                                             isHidden: true
-                                        },                                       
+                                        },
                                         osTypeId: {
                                             label: 'label.os.type',
                                             select: function(args) {
@@ -1406,17 +1406,17 @@
                                             isfeatured: (args.data.isFeatured == "on")
                                         });
                                     }
-                                                                        
-                                    //XenServer only (starts here)                                    
+
+                                    //XenServer only (starts here)
                                     if (args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').length > 0) {
 	                                    if (args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').css("display") != "none") {
 	                                        $.extend(data, {
 	                                            'details[0].hypervisortoolsversion': (args.data.xenserverToolsVersion61plus == "on") ? "xenserver61" : "xenserver56"
 	                                        });
 	                                    }
-                                    }                                    
-                                    //XenServer only (ends here)     
-                                                                        
+                                    }
+                                    //XenServer only (ends here)
+
                                     $.ajax({
                                         url: createURL('createTemplate'),
                                         data: data,
@@ -1580,8 +1580,8 @@
                                                         return;
 
                                                     var $form = $(this).closest('form');
-                                                                                                        
-                                                    var $shrinkok = $form.find('.form-item[rel=shrinkok]');                                                    
+
+                                                    var $shrinkok = $form.find('.form-item[rel=shrinkok]');
                                                     //unit of args.context.volumes[0].size is "byte"
                                                     //unit of selectedDiskOfferingObj.disksize is "gigabyte" ("GB"), so transfer it into "byte" by multiply (1024 * 1024 * 1024)
                                                     if (args.context.volumes[0].size > selectedDiskOfferingObj.disksize * (1024 * 1024 * 1024)) { //if original disk size  > new disk size
@@ -1589,7 +1589,7 @@
                                                     } else {
                                                         $shrinkok.hide();
                                                     }
-                                                                                                       
+
                                                     var $newsize = $form.find('.form-item[rel=newsize]');
                                                     if (selectedDiskOfferingObj.iscustomized == true) {
                                                         $newsize.css('display', 'inline-block');
@@ -1642,11 +1642,11 @@
                                 },
                                 action: function(args) {
                                     var array1 = [];
-                                                                        
-                                    if(args.$form.find('.form-item[rel=shrinkok]').css("display") != "none") {                                    	
-                                        array1.push("&shrinkok=" + (args.data.shrinkok == "on"));                                        
-                                    }                                    
-                                    
+
+                                    if(args.$form.find('.form-item[rel=shrinkok]').css("display") != "none") {
+                                        array1.push("&shrinkok=" + (args.data.shrinkok == "on"));
+                                    }
+
                                     var newDiskOffering = args.data.newdiskoffering;
                                     var newSize;
                                     if (selectedDiskOfferingObj.iscustomized == true) {
@@ -1838,13 +1838,13 @@
                                         dataType: "json",
                                         async: true,
                                         success: function(json) {
-                                            var jsonObj = json.listvolumesresponse.volume[0];   
-                                                                                                                                 
+                                            var jsonObj = json.listvolumesresponse.volume[0];
+
                                             $(window).trigger('cloudStack.module.sharedFunctions.addExtraProperties', {
                                             	obj: jsonObj,
                                             	objType: "Volume"
                                             });
-                                                                                        
+
                                             args.response.success({
                                                 actionFilter: volumeActionfilter,
                                                 data: jsonObj
@@ -2129,9 +2129,9 @@
                                             validation: {
                                                 required: true
                                             }
-                                        },                                        
+                                        },
                                         zoneid: {
-                                            label: 'label.availability.zone',  
+                                            label: 'label.availability.zone',
                                             isHidden: true,
                                             select: function(args) {
                                                 $.ajax({
@@ -2139,11 +2139,11 @@
                                                     dataType: "json",
                                                     async: true,
                                                     success: function(json) {
-                                                        var zoneObjs = json.listzonesresponse.zone;                                                        
+                                                        var zoneObjs = json.listzonesresponse.zone;
                                                         var items = [{
                                                             id: '',
                                                             description: ''
-                                                        }];                                                        
+                                                        }];
                                                         if (zoneObjs != null) {
                                                         	for (i = 0; i < zoneObjs.length; i++) {
                                                         		items.push({
@@ -2151,14 +2151,14 @@
                                                         			description: zoneObjs[i].name
                                                         		});
                                                         	}
-                                                        }     
-                                                        args.response.success({                                                            
+                                                        }
+                                                        args.response.success({
                                                             data: items
                                                         });
                                                     }
                                                 });
                                             }
-                                        }                                        
+                                        }
                                     }
                                 },
                                 action: function(args) {
@@ -2166,13 +2166,13 @@
                                         snapshotid: args.context.snapshots[0].id,
                                         name: args.data.name
                                     };
-                                    
-                                    if (args.$form.find('.form-item[rel=zoneid]').css("display") != "none" && args.data.zoneid != '') {                                    
+
+                                    if (args.$form.find('.form-item[rel=zoneid]').css("display") != "none" && args.data.zoneid != '') {
 	                                    $.extend(data, {
 	                                    	zoneId: args.data.zoneid
-	                                    });   
-                                    }                                    
-                                    
+	                                    });
+                                    }
+
                                     $.ajax({
                                         url: createURL('createVolume'),
                                         data: data,
@@ -2329,22 +2329,22 @@
             return ["remove"];
         }
 
-        if (jsonObj.hypervisor != "Ovm" && jsonObj.state == "Ready") {        	
-        	if (jsonObj.hypervisor == 'KVM') { 
-        		if (jsonObj.vmstate == 'Running') {        			
+        if (jsonObj.hypervisor != "Ovm" && jsonObj.state == "Ready") {
+        	if (jsonObj.hypervisor == 'KVM') {
+        		if (jsonObj.vmstate == 'Running') {
         			if (g_kvmsnapshotenabled == true) { //"kvm.snapshot.enabled" flag should be taken to account only when snapshot is being created for Running vm (CLOUDSTACK-4428)
             			allowedActions.push("takeSnapshot");
         	            allowedActions.push("recurringSnapshot");
-            		}         			
+            		}
         		} else {
         			allowedActions.push("takeSnapshot");
     	            allowedActions.push("recurringSnapshot");
-        		}        		
+        		}
         	} else {
         		allowedActions.push("takeSnapshot");
 	            allowedActions.push("recurringSnapshot");
         	}
-        	            
+
             if (jsonObj.type == "DATADISK") {
                 allowedActions.push("resize");
             }

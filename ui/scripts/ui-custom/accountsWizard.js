@@ -209,10 +209,10 @@
                         		            }
                         		        ]
                         		    }
-                        		};                 
-                        	*/       	
+                        		};
+                        	*/
                         	//for testing only (end)
-                        	
+
                             if (json.ldapuserresponse.count > 0) {
                                 $(json.ldapuserresponse.LdapUser).each(function() {
                                     var $result = $('<tr>');

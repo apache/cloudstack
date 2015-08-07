@@ -61,7 +61,7 @@
                             }
 
                             args.form.fields.quiescevm.isChecked = true;
-                            
+
                             return false;
                         }
                     }
@@ -69,7 +69,7 @@
             },
             action: function(args) {
                 var instances = args.context.instances;
-                
+
                 $(instances).map(function(index, instance) {
                     var array1 = [];
                     array1.push("&snapshotmemory=" + (args.data.snapshotMemory == "on"));
@@ -103,7 +103,7 @@
                         error: function(json) {
                             args.response.error(parseXMLHttpResponse(json));
                         }
-                    });       
+                    });
                 });
 
             },
@@ -118,10 +118,10 @@
                 isMultiSelectAction: true
             });
         }
-        
+
         return action;
-    };    
-    
+    };
+
     cloudStack.sections.instances = {
         title: 'label.instances',
         id: 'instances',
@@ -616,7 +616,7 @@
                         label: 'label.action.destroy.instance',
                         compactLabel: 'label.destroy',
                         createForm: {
-                            title: 'label.action.destroy.instance', 
+                            title: 'label.action.destroy.instance',
                             desc: 'label.action.destroy.instance',
 			    isWarning: true,
                             preFilter: function(args) {
@@ -633,31 +633,31 @@
                                     isChecked: false
                                 }
                             }
-                        },                        
-                        messages: {                            
+                        },
+                        messages: {
                             notification: function(args) {
                                 return 'label.action.destroy.instance';
                             }
                         },
-                        action: function(args) {                        	
+                        action: function(args) {
                         	var data = {
-                        		id: args.context.instances[0].id		
-                        	};                        	
+                        		id: args.context.instances[0].id
+                        	};
                         	if (args.data.expunge == 'on') {
                         		$.extend(data, {
                         			expunge: true
                         		});
-                        	}                        	
+                        	}
                             $.ajax({
                                 url: createURL('destroyVirtualMachine'),
-                                data: data,                                
+                                data: data,
                                 success: function(json) {
                                     var jid = json.destroyvirtualmachineresponse.jobid;
                                     args.response.success({
                                         _custom: {
                                             jobId: jid,
-                                            getUpdatedItem: function(json) {                                            	
-                                            	if ('virtualmachine' in json.queryasyncjobresultresponse.jobresult) //destroy without expunge                                            	
+                                            getUpdatedItem: function(json) {
+                                            	if ('virtualmachine' in json.queryasyncjobresultresponse.jobresult) //destroy without expunge
                                                     return json.queryasyncjobresultresponse.jobresult.virtualmachine;
                                             	else //destroy with expunge
                                             		return { 'toRemove': true };
@@ -765,19 +765,19 @@
                                 url: createURL("restoreVirtualMachine&virtualmachineid=" + args.context.instances[0].id),
                                 dataType: "json",
                                 async: true,
-                                success: function(json) {                                    
-                                	var jid = json.restorevmresponse.jobid;                                    	
+                                success: function(json) {
+                                	var jid = json.restorevmresponse.jobid;
                                 	args.response.success({
                                         _custom: {
                                             jobId: jid,
-                                            getUpdatedItem: function(json) {                                         
+                                            getUpdatedItem: function(json) {
                                                 return json.queryasyncjobresultresponse.jobresult.virtualmachine;
                                             },
                                             getActionFilter: function() {
                                                 return vmActionfilter;
                                             }
                                         }
-                                    });                          	
+                                    });
                                 }
                             });
 
@@ -951,11 +951,11 @@
                                     });
                                 }
                             });
-                            
-                            
+
+
                             //***** addResourceDetail *****
-                            //XenServer only (starts here)                               
-			                if(args.$detailView.find('form').find('div .detail-group').find('.xenserverToolsVersion61plus').length > 0) {	  					                	
+                            //XenServer only (starts here)
+			                if(args.$detailView.find('form').find('div .detail-group').find('.xenserverToolsVersion61plus').length > 0) {
 			                	$.ajax({
 			                		url: createURL('addResourceDetail'),
 			                		data: {
@@ -964,7 +964,7 @@
 			                			'details[0].key': 'hypervisortoolsversion',
 			                			'details[0].value': (args.data.xenserverToolsVersion61plus == "on") ? 'xenserver61' : 'xenserver56'
 			                		},
-			                		success: function(json) {			                			
+			                		success: function(json) {
 			                			 var jobId = json.addResourceDetailresponse.jobid;
                                          var addResourceDetailIntervalID = setInterval(function() {
                                              $.ajax({
@@ -972,33 +972,33 @@
                                                  dataType: "json",
                                                  success: function(json) {
                                                      var result = json.queryasyncjobresultresponse;
-                                                     
+
                                                      if (result.jobstatus == 0) {
                                                          return; //Job has not completed
                                                      } else {
                                                          clearInterval(addResourceDetailIntervalID);
 
-                                                         if (result.jobstatus == 1) {                                                        	 
-                                                        	 //do nothing                                                        	 
+                                                         if (result.jobstatus == 1) {
+                                                        	 //do nothing
                                                          } else if (result.jobstatus == 2) {
                                                         	 cloudStack.dialog.notice({
                                                                  message: _s(result.jobresult.errortext)
-                                                             });                                                             
+                                                             });
                                                          }
                                                      }
                                                  },
-                                                 error: function(XMLHttpResponse) {                                                    
+                                                 error: function(XMLHttpResponse) {
                                                      cloudStack.dialog.notice({
                                                          message: parseXMLHttpResponse(XMLHttpResponse)
-                                                     });                                                          
+                                                     });
                                                  }
                                              });
-                                         }, g_queryAsyncJobResultInterval);			                			   
+                                         }, g_queryAsyncJobResultInterval);
 			                		}
-			                	});  					                					                	               
-						    }				      
-					        //XenServer only (ends here)  	
-                            
+			                	});
+						    }
+					        //XenServer only (ends here)
+
                         }
                     },
 
@@ -1233,17 +1233,17 @@
                                 },
                                 osTypeId: {
                                     label: 'label.os.type',
-                                    select: function(args) {                                   
-                                    	if (ostypeObjs == undefined) {                                     	
+                                    select: function(args) {
+                                    	if (ostypeObjs == undefined) {
 	                                        $.ajax({
 	                                            url: createURL("listOsTypes"),
 	                                            dataType: "json",
 	                                            async: false,
-	                                            success: function(json) {	                                            	
-	                                            	ostypeObjs = json.listostypesresponse.ostype;	
+	                                            success: function(json) {
+	                                            	ostypeObjs = json.listostypesresponse.ostype;
 	                                            }
 	                                        });
-                                    	}                                    	
+                                    	}
                                     	var items = [];
                                         $(ostypeObjs).each(function() {
                                             items.push({
@@ -1253,7 +1253,7 @@
                                         });
                                         args.response.success({
                                             data: items
-                                        });                                    	
+                                        });
                                     }
                                 },
                                 isPublic: {
@@ -1493,12 +1493,12 @@
                         createForm: {
                             title: 'label.change.service.offering',
                             desc: function(args) {
-                            	var description = '';                            	
-                            	var vmObj = args.jsonObj;                            	
+                            	var description = '';
+                            	var vmObj = args.jsonObj;
                             	if (vmObj.state == 'Running' && vmObj.hypervisor == 'VMware') {
                             		description = 'message.read.admin.guide.scaling.up';
-                            	}                             
-                                return description;                  	                
+                            	}
+                                return description;
                             },
                             fields: {
                             	serviceofferingid: {
@@ -1511,7 +1511,7 @@
                                             async: true,
                                             success: function(json) {
                                             	serviceofferingObjs = json.listserviceofferingsresponse.serviceoffering;
-                                                var items = [];                                              
+                                                var items = [];
                                                 if (serviceofferingObjs != null) {
                                                 	for (var i = 0; i < serviceofferingObjs.length; i++) {
                                                 		items.push({
@@ -1519,33 +1519,33 @@
                                                             description: serviceofferingObjs[i].name
                                                         });
                                                 	}
-                                                }                                               
+                                                }
                                                 args.response.success({
                                                     data: items
                                                 });
                                             }
                                         });
-                                        
+
                                         args.$select.change(function(){
                                         	var $form = $(this).closest('form');
-                                            
+
                                             var serviceofferingid = $(this).val();
                                             if (serviceofferingid == null || serviceofferingid.length == 0)
                                                 return;
-                                           
+
                                             var items = [];
                                             var selectedServiceofferingObj;
                                             if (serviceofferingObjs != null) {
                                             	for (var i = 0; i < serviceofferingObjs.length; i++) {
                                             		if (serviceofferingObjs[i].id == serviceofferingid) {
                                             			selectedServiceofferingObj = serviceofferingObjs[i];
-                                            			break; 
+                                            			break;
                                             		}
                                             	}
-                                            }                                            
-                                            if (selectedServiceofferingObj == undefined) 
-                                            	return;                                                  
-                                            
+                                            }
+                                            if (selectedServiceofferingObj == undefined)
+                                            	return;
+
                                             if (selectedServiceofferingObj.iscustomized == true) {
                                             	$form.find('.form-item[rel=cpuSpeed]').css('display', 'inline-block');
                                             	$form.find('.form-item[rel=cpuNumber]').css('display', 'inline-block');
@@ -1557,9 +1557,9 @@
                                             }
                                         });
                                     }
-                                },                               
+                                },
                                 cpuSpeed: {
-                                	label: 'label.cpu.mhz',                                    
+                                	label: 'label.cpu.mhz',
                                     validation: {
                                         required: true,
                                         number: true
@@ -1567,7 +1567,7 @@
                                     isHidden: true
                                 },
                                 cpuNumber: {
-                                	label: 'label.num.cpu.cores',                                   
+                                	label: 'label.num.cpu.cores',
                                     validation: {
                                         required: true,
                                         number: true
@@ -1575,13 +1575,13 @@
                                     isHidden: true
                                 },
                                 memory: {
-                                	label: 'label.memory.mb',                                   
+                                	label: 'label.memory.mb',
                                     validation: {
                                         required: true,
                                         number: true
                                     },
                                     isHidden: true
-                                }      
+                                }
                             }
                         },
 
@@ -1589,24 +1589,24 @@
                         	var data = {
                         		id: args.context.instances[0].id,
                         		serviceofferingid: args.data.serviceofferingid
-                        	};       
-                        	                        	
+                        	};
+
                         	if (args.$form.find('.form-item[rel=cpuSpeed]').is(':visible')) {
                                 $.extend(data, {
-                                	'details[0].cpuSpeed': args.data.cpuSpeed 
+                                	'details[0].cpuSpeed': args.data.cpuSpeed
                                 });
-                            }                        	
+                            }
                         	if (args.$form.find('.form-item[rel=cpuNumber]').is(':visible')) {
                                 $.extend(data, {
                                 	'details[0].cpuNumber': args.data.cpuNumber
                                 });
-                            }                        	
+                            }
                         	if (args.$form.find('.form-item[rel=memory]').is(':visible')) {
                                 $.extend(data, {
                                 	'details[0].memory': args.data.memory
                                 });
-                            }                        	
-                        	
+                            }
+
                             $.ajax({
                                 url: createURL('scaleVirtualMachine'),
                                 data: data,
@@ -1640,7 +1640,7 @@
                             poll: pollAsyncJobResult
                         }
                     },
-                  
+
                     resetSSHKeyForVirtualMachine: {
                         label: 'Reset SSH Key Pair',
                         createForm: {
@@ -1732,18 +1732,18 @@
                             poll: pollAsyncJobResult
                         }
                     },
- 
+
                     assignVmToAnotherAccount: {
                         label: 'label.assign.instance.another',
                         createForm: {
                             title: 'label.assign.instance.another',
-                            fields: {                                
+                            fields: {
                             	domainid: {
                 				    label: 'label.domain',
                 				    validation: {
                                         required: true
                                     },
-                				    select: function(args) {	
+                				    select: function(args) {
                 				    	$.ajax({
             				                url: createURL('listDomains'),
             				                data: {
@@ -1768,7 +1768,7 @@
             				                        data: array1
             				                    });
             				                }
-            				            });				                   				                 
+            				            });
                 				    }
                 				},
                 				account: {
@@ -1776,22 +1776,22 @@
                 				    validation: {
                                         required: true
                                     }
-                				}		
+                				}
                             }
                         },
-                        action: function(args) {                            
+                        action: function(args) {
                             $.ajax({
                                 url: createURL('assignVirtualMachine'),
                                 data: {
                                     virtualmachineid: args.context.instances[0].id,
                                     domainid: args.data.domainid,
                                     account: args.data.account
-                                },                                
-                                success: function(json) {   
-                                    var item = json.assignvirtualmachineresponse.virtualmachine;                                     
+                                },
+                                success: function(json) {
+                                    var item = json.assignvirtualmachineresponse.virtualmachine;
                                     args.response.success({
                                         data: item
-                                    });                                    
+                                    });
                                 }
                             });
                         },
@@ -1805,8 +1805,8 @@
                                 args.complete();
                             }
                         }
-                    },                    
-                    
+                    },
+
                     viewConsole: {
                         label: 'label.view.console',
                         action: {
@@ -1835,36 +1835,36 @@
                             } else {
                                 hiddenFields = ["hypervisor", 'xenserverToolsVersion61plus'];
                             }
-                            
+
                             if ('instances' in args.context && args.context.instances[0].hypervisor != 'XenServer') {
                           	    hiddenFields.push('xenserverToolsVersion61plus');
                             }
-                            
-                            if ('instances' in args.context && args.context.instances[0].guestosid != undefined) {                        
+
+                            if ('instances' in args.context && args.context.instances[0].guestosid != undefined) {
                             	if (ostypeObjs == undefined) {
 	                            	$.ajax({
 	                                    url: createURL("listOsTypes"),
 	                                    dataType: "json",
 	                                    async: false,
-	                                    success: function(json) {	                                    	
-	                                    	ostypeObjs = json.listostypesresponse.ostype;		                                    	
+	                                    success: function(json) {
+	                                    	ostypeObjs = json.listostypesresponse.ostype;
 	                                    }
 	                                });
-                            	}                            	
+                            	}
                             	if (ostypeObjs != undefined) {
                             		var ostypeName;
                             		for (var i = 0; i < ostypeObjs.length; i++) {
-                            			if (ostypeObjs[i].id == args.context.instances[0].guestosid) {                            				
+                            			if (ostypeObjs[i].id == args.context.instances[0].guestosid) {
                             				ostypeName = ostypeObjs[i].description;
                             				break;
                             			}
-                            		}                            		
-                            		if (ostypeName == undefined || ostypeName.indexOf("Win") == -1) {                            			
+                            		}
+                            		if (ostypeName == undefined || ostypeName.indexOf("Win") == -1) {
                             			hiddenFields.push('xenserverToolsVersion61plus');
-                            		}                            		
+                            		}
                             	}
                             }
-                            
+
                             if (!args.context.instances[0].publicip) {
                                 hiddenFields.push('publicip');
                             }
@@ -1920,17 +1920,17 @@
                             guestosid: {
                                 label: 'label.os.type',
                                 isEditable: true,
-                                select: function(args) {                                
-                                    if (ostypeObjs == undefined) {                                	
+                                select: function(args) {
+                                    if (ostypeObjs == undefined) {
 	                                	$.ajax({
 	                                        url: createURL("listOsTypes"),
 	                                        dataType: "json",
 	                                        async: false,
-	                                        success: function(json) {	                                       
-	                                        	ostypeObjs = json.listostypesresponse.ostype;	 
+	                                        success: function(json) {
+	                                        	ostypeObjs = json.listostypesresponse.ostype;
 	                                        }
 	                                    });
-                                    }                                    
+                                    }
                                     var items = [];
                                     $(ostypeObjs).each(function() {
                                         items.push({
@@ -1959,7 +1959,7 @@
                                 },
                                 converter: cloudStack.converters.toBooleanText
                             },
-                            
+
                             /*
 								isoid: {
                   label: 'label.attached.iso',
@@ -2045,7 +2045,7 @@
                                     var jsonObj;
                                     if (json.listvirtualmachinesresponse.virtualmachine != null && json.listvirtualmachinesresponse.virtualmachine.length > 0)
                                         jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];
-                                    else if (isAdmin()) 
+                                    else if (isAdmin())
                                         jsonObj = $.extend(args.context.instances[0], {
                                             state: "Expunged"
                                         }); //after root/domain admin expunge a VM, listVirtualMachines API will no longer returns this expunged VM to all users.
@@ -2060,12 +2060,12 @@
                                         else
                                             jsonObj.xenserverToolsVersion61plus = false;
                                     }
-                                                                           
+
                                     $(window).trigger('cloudStack.module.sharedFunctions.addExtraProperties', {
                                     	obj: jsonObj,
                                     	objType: "UserVM"
                                     });
-                                                                       
+
                                     args.response.success({
                                         actionFilter: vmActionfilter,
                                         data: jsonObj
@@ -2100,7 +2100,7 @@
                                             label: 'label.network',
                                             select: function(args) {
                                             	var data1 = {
-                                            		zoneid: args.context.instances[0].zoneid	
+                                            		zoneid: args.context.instances[0].zoneid
                                             	};
                                             	if (isAdmin()) {
                                             		$.extend(data1, {
@@ -2111,7 +2111,7 @@
                                             			account: args.context.instances[0].account,
                                                         domainid: args.context.instances[0].domainid
                                             		});
-                                            	}     
+                                            	}
                                                 $.ajax({
                                                     url: createURL('listNetworks'),
                                                     data: data1,
@@ -2322,7 +2322,7 @@
                                                     secondaryips: secondaryips
                                                 })
                                             }
-                                                
+
                                             var name = 'NIC ' + (index + 1);
                                             if (nic.isdefault) {
                                                 name += ' (' + _l('label.default') + ')';
@@ -2442,19 +2442,19 @@
         } else if (jsonObj.state == 'Running') {
             allowedActions.push("stop");
             allowedActions.push("restart");
-            
-            if ((jsonObj.hypervisor != 'KVM' || g_kvmsnapshotenabled == true) 
+
+            if ((jsonObj.hypervisor != 'KVM' || g_kvmsnapshotenabled == true)
             		&& (jsonObj.hypervisor != 'LXC')) {
                 allowedActions.push("snapshot");
             }
-            
-            allowedActions.push("destroy");            
+
+            allowedActions.push("destroy");
             allowedActions.push("reinstall");
-             
+
             //when userVm is running, scaleUp is not supported for KVM, LXC
             if (jsonObj.hypervisor != 'KVM' && jsonObj.hypervisor != 'LXC') {
             	allowedActions.push("scaleUp");
-            }              
+            }
 
             if (isAdmin())
                 allowedActions.push("migrate");
@@ -2476,13 +2476,13 @@
             allowedActions.push("start");
             allowedActions.push("destroy");
             allowedActions.push("reinstall");
-            
-            if ((jsonObj.hypervisor != 'KVM' || g_kvmsnapshotenabled == true) 
+
+            if ((jsonObj.hypervisor != 'KVM' || g_kvmsnapshotenabled == true)
             		&& (jsonObj.hypervisor != 'LXC')) {
                 allowedActions.push("snapshot");
             }
-            
-            allowedActions.push("scaleUp");  //when vm is stopped, scaleUp is supported for all hypervisors 
+
+            allowedActions.push("scaleUp");  //when vm is stopped, scaleUp is supported for all hypervisors
             allowedActions.push("changeAffinity");
 
             if (isAdmin())
@@ -2493,11 +2493,11 @@
             } else {
                 allowedActions.push("detachISO");
             }
-            allowedActions.push("resetPassword");            
+            allowedActions.push("resetPassword");
             if (jsonObj.hypervisor == "BareMetal") {
                 allowedActions.push("createTemplate");
             }
-            
+
             if (isAdmin() || isDomainAdmin()) {
                 allowedActions.push("assignVmToAnotherAccount");
             }

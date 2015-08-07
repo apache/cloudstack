@@ -296,21 +296,21 @@
             var hypervisor = getData($trafficType.closest('.zone-wizard')).zone.hypervisor;
             var zoneType = getData($trafficType.closest('.zone-wizard')).zone.networkType;
             var fields;
-            
+
             if (hypervisor == 'VMware') {
             	fields = {
             		vSwitchName: {
 	                    label: 'label.vswitch.name' ,
 	                    defaultValue: trafficData.vSwitchName
 	                },
-	                vlanId: { 
+	                vlanId: {
 	                        label: 'label.vlan.id',
 	                	defaultValue: trafficData.vlanId
-	                }	                
-	            };  
-            	
+	                }
+	            };
+
             	if(zoneType == 'Advanced') {
-	            	if($trafficType.hasClass('guest') || $trafficType.hasClass('public')) {            		
+	            	if($trafficType.hasClass('guest') || $trafficType.hasClass('public')) {
 	            		if(trafficData.vSwitchType == null) {
 	            			 var useDvs = false;
 	                         $.ajax({
@@ -324,9 +324,9 @@
 	                                     useDvs = true;
 	                                 }
 	                             }
-	                         });    
-	                         if (useDvs == true) { 
-	                        	 var useNexusDvs = false;                                            
+	                         });
+	                         if (useDvs == true) {
+	                        	 var useNexusDvs = false;
 	                             $.ajax({
 	                                 url: createURL('listConfigurations'),
 	                                 data: {
@@ -345,17 +345,17 @@
 	                             } else {
 	                            	 trafficData.vSwitchType = 'vmwaredvs';
 	                            	 fields.vSwitchName.defaultValue = 'dvSwitch0';
-	                             }   
+	                             }
 	                         } else { //useDvs == false
 	                        	 trafficData.vSwitchType = 'vmwaresvs';
 	                        	 fields.vSwitchName.defaultValue = 'vSwitch0';
-	                         }                         
+	                         }
 	            		}
-	            		
+
 	            		$.extend(fields, {
 	            		    vSwitchType: {
 	                                label: 'label.vSwitch.type',
-	            		        select: function (args) {            		        	
+	            		        select: function (args) {
 	            		            args.response.success({
 	            		                data: [{
 	            		                    id: 'nexusdvs',
@@ -371,10 +371,10 @@
 	            		        },
 	    		                defaultValue: trafficData.vSwitchType
 	            		    }
-	            		});   
-	            	}  
+	            		});
+	            	}
             	}
-            } else {    
+            } else {
 	            fields = {
 	                label: {
 	                    label: hypervisor + ' ' + _l('label.traffic.label'),
@@ -390,7 +390,7 @@
                     fields: fields
                 },
 
-                after: function(args) {               
+                after: function(args) {
                     $trafficType.data('traffic-type-data', args.data);
                 }
             });

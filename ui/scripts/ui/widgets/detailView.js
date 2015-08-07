@@ -239,7 +239,7 @@
                                         		 cloudStack.dialog.notice({
                                                      message: messages.complete(args2.data)
                                                  });
-                                        	} 
+                                        	}
                                         }
                                         if (additional && additional.complete) additional.complete($.extend(true, args, {
                                             $detailView: $detailView
@@ -387,31 +387,31 @@
                 }
             });
         },
-            
+
         destroy: function($detailView, args) {
             var tab = args.tabs[args.activeTab];
             var isMultiple = tab.multiple;
 
             uiActions.standard($detailView, args, {
                 noRefresh: true,
-                complete: function(args, args2) {                   	
-                	if ((!('id' in args2.data)) && ('toRemove' in args2.data) && (args2.data.toRemove == true)) {   
+                complete: function(args, args2) {
+                	if ((!('id' in args2.data)) && ('toRemove' in args2.data) && (args2.data.toRemove == true)) {
 	                    if (isMultiple && $detailView.is(':visible')) {
 	                        $detailView.find('.refresh').click(); // Reload tab
 	                    } else {
 	                        var $browser = $('#browser .container');
 	                        var $panel = $detailView.closest('.panel');
-	
+
 	                        if ($detailView.is(':visible')) {
 	                            $browser.cloudBrowser('selectPanel', {
 	                                panel: $panel.prev()
 	                            });
 	                        }
-	
+
 	                        if ($detailView.data("list-view-row") != null) {
 	                            var $row = $detailView.data('list-view-row');
 	                            var $tbody = $row.closest('tbody');
-	
+
 	                            $row.remove();
 	                            if (!$tbody.find('tr').size()) {
 	                                $("<tr>").addClass('empty').append(
@@ -427,8 +427,8 @@
                 }
             });
         },
-       
-        
+
+
         /**
          * Convert editable fields to text boxes; clicking again saves data
          *

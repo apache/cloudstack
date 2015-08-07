@@ -481,32 +481,32 @@
                             path: 'regions.lbUnderGSLB',
                             label: 'label.gslb.assigned.lb'
                         },
-                        actions: {                            
+                        actions: {
                         	edit: {
                                 label: 'label.edit',
-                                action: function(args) {                                	
+                                action: function(args) {
                                     var data = {
                                     	id: args.context.GSLB[0].id,
                                     	description: args.data.description,
                                     	gslblbmethod: args.data.gslblbmethod
-                                    };                                    
+                                    };
                                     $.ajax({
                                         url: createURL('updateGlobalLoadBalancerRule'),
                                         data: data,
-                                        success: function(json) {                                        	
-                                            var jid = json.updategloballoadbalancerruleresponse.jobid;                                           
+                                        success: function(json) {
+                                            var jid = json.updategloballoadbalancerruleresponse.jobid;
                                             args.response.success({
                                                 _custom: {
                                                     jobId: jid
                                                 }
-                                            });                                            
+                                            });
                                         }
                                     });
-                                },                                
+                                },
                                 notification: {
                                     poll: pollAsyncJobResult
                                 }
-                            },                        	
+                            },
                         	remove: {
                                 label: 'label.gslb.delete',
                                 messages: {
