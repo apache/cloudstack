@@ -1960,15 +1960,6 @@
                                 converter: cloudStack.converters.toBooleanText
                             },
 
-                            /*
-                                isoid: {
-                  label: 'label.attached.iso',
-                  isEditable: false,
-                  converter: function(isoid) {
-                    return cloudStack.converters.toBooleanText(isoid != null);
-                  }
-                },
-                                */
                             isoname: {
                                 label: 'label.attached.iso'
                             },

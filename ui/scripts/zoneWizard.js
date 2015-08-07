@@ -961,37 +961,15 @@
                                 });
 
                                 if ($(this).val() == "VMware") {
-                                    //$('li[input_sub_group="external"]', $dialogAddCluster).show();
                                     if (dvSwitchEnabled) {
-                                        /*
-                                        $fields.filter('[rel=vSwitchPublicType]').css('display', 'inline-block');
-                                        $form.find('.form-item[rel=vSwitchGuestType]').css('display', 'inline-block');
-
-                                        $form.find('.form-item[rel=vSwitchPublicName]').css('display','inline-block');
-                                        $form.find('.form-item[rel=vSwitchGuestName]').css('display','inline-block');
-
-                                        $form.find('.form-item[rel=overridepublictraffic]').find('input[type=checkbox]').css('display','inline-block');
-                                        $form.find('.form-item[rel=overrideguesttraffic]').find('input[type=checkbox]').css('display','inline-block');
-                                        */
-
                                         $form.find('.form-item[rel=overridepublictraffic]').css('display', 'inline-block');
                                         $form.find('.form-item[rel=overridepublictraffic]').find('input[type=checkbox]').removeAttr('checked');
 
                                         $form.find('.form-item[rel=overrideguesttraffic]').css('display', 'inline-block');
                                         $form.find('.form-item[rel=overrideguesttraffic]').find('input[type=checkbox]').removeAttr('checked');
-
-
-
                                     } else {
-                                        /*
-                                        $form.find('.form-item[rel=vSwitchPublicType]').css('display', 'none');
-                                        $form.find('.form-item[rel=vSwitchGuestType]').css('display', 'none');
-                                        $form.find('.form-item[rel=vSwitchPublicName]').css('display','none');
-                                        $form.find('.form-item[rel=vSwitchGuestName]').css('display','none');
-                                        */
                                         $form.find('.form-item[rel=overridepublictraffic]').css('display', 'none');
                                         $form.find('.form-item[rel=overrideguesttraffic]').css('display', 'none');
-
                                     }
 
                                     $form.find('[rel=vCenterHost]').css('display', 'block');
@@ -1004,7 +982,6 @@
                                     } else {
                                         $vsmFields.css('display', 'none');
                                     }
-                                    //$("#cluster_name_label", $dialogAddCluster).text("vCenter Cluster:");
                                 } else if ($(this).val() == "Ovm3") {
                                     $form.find('.form-item[rel=ovm3pool]').css('display', 'inline-block');
                                     $form.find('.form-item[rel=ovm3pool]').find('input[type=checkbox]').removeAttr('checked');
@@ -1013,22 +990,13 @@
                                     $form.find('.form-item[rel=ovm3cluster]').find('input[type=checkbox]').removeAttr('checked');
                                     $form.find('[rel=ovm3vip]').css('display', 'block');
                                 } else {
-                                    //$('li[input_group="vmware"]', $dialogAddCluster).hide();
-
                                     $form.find('.form-item[rel=overridepublictraffic]').css('display', 'none');
                                     $form.find('.form-item[rel=overrideguesttraffic]').css('display', 'none');
-                                    //$form.find('.form-item[rel=vSwitchPublicType]').css('display', 'none');
-                                    //$form.find('.form-item[rel=vSwitchGuestType]').css('display', 'none');
-                                    //$form.find('.form-item[rel=vSwitchPublicName]').css('display', 'none');
-                                    //$form.find('.form-item[rel=vSwitchGuestName]').css('display', 'none');
-
 
                                     $form.find('[rel=vCenterHost]').css('display', 'none');
                                     $form.find('[rel=vCenterUsername]').css('display', 'none');
                                     $form.find('[rel=vCenterPassword]').css('display', 'none');
                                     $form.find('[rel=vCenterDatacenter]').css('display', 'none');
-
-                                    //$("#cluster_name_label", $dialogAddCluster).text("Cluster:");
                                 }
                             });
                         }
@@ -1075,160 +1043,12 @@
 
                     },
 
-                    /*
-                    vSwitchPublicType: {
-                        label: 'Public Traffic vSwitch Type',
-                        select: function(args) {
-                            var items = []
-                            var vSwitchEnabled = false;
-                            $.ajax({
-                                url: createURL('listConfigurations'),
-                                data: {
-                                    name: 'vmware.use.nexus.vswitch'
-                                },
-                                async: false,
-                                success: function(json) {
-                                    if (json.listconfigurationsresponse.configuration[0].value == 'true') {
-                                        vSwitchEnabled = true;
-                                    }
-                                }
-                            });
-
-                            if (vSwitchEnabled) {
-
-                                items.push({
-                                    id: "nexusdvs",
-                                    description: "Cisco Nexus 1000v Distributed Virtual Switch"
-                                });
-
-                                items.push({
-                                    id: "vmwaresvs",
-                                    description: "VMware vNetwork Standard Virtual Switch"
-                                });
-                                items.push({
-                                    id: "vmwaredvs",
-                                    description: "VMware vNetwork Distributed Virtual Switch"
-                                });
-
-
-
-
-                            }
-
-                            //  items.push({id: " ", description: " "});
-                            else {
-                                items.push({
-                                    id: "vmwaredvs",
-                                    description: "VMware vNetwork Distributed Virtual Switch"
-                                });
-                                items.push({
-                                    id: "vmwaresvs",
-                                    description: "VMware vNetwork Standard Virtual Switch"
-                                });
-                                items.push({
-                                    id: "nexusdvs",
-                                    description: "Cisco Nexus 1000v Distributed Virtual Switch"
-                                });
-
-                            }
-                            args.response.success({
-                                data: items
-                            });
-                        },
-                        isHidden: true,
-                        dependsOn: 'overridepublictraffic'
-                    },
-                    */
-
-                    /*
-                    vSwitchPublicName: {
-                        label: 'Public Traffic vSwitch Name',
-                        dependsOn: 'overridepublictraffic',
-                        isHidden: true
-                    },
-                    */
-
                     overrideguesttraffic: {
                         label: 'label.override.guest.traffic',
                         isBoolean: true,
                         isHidden: true
 
                     },
-
-                    /*
-                    vSwitchGuestType: {
-                        label: 'Guest Traffic vSwitch Type',
-                        select: function(args) {
-                            var items = []
-                            //items.push({ id:" ", description:" "});
-
-                            var vSwitchEnabled = false;
-                            var items = []
-                            $.ajax({
-                                url: createURL('listConfigurations'),
-                                data: {
-                                    name: 'vmware.use.nexus.vswitch'
-                                },
-                                async: false,
-                                success: function(json) {
-                                    if (json.listconfigurationsresponse.configuration[0].value == 'true') {
-                                        vSwitchEnabled = true;
-                                    }
-                                }
-                            });
-
-                            if (vSwitchEnabled) {
-
-                                items.push({
-                                    id: "nexusdvs",
-                                    description: "Cisco Nexus 1000v Distributed Virtual Switch"
-                                });
-                                items.push({
-                                    id: "vmwaresvs",
-                                    description: "VMware vNetwork Standard Virtual Switch"
-                                });
-                                items.push({
-                                    id: "vmwaredvs",
-                                    description: "VMware vNetwork Distributed Virtual Switch"
-                                });
-
-
-
-
-                            } else {
-
-                                items.push({
-                                    id: "vmwaredvs",
-                                    description: "VMware vNetwork Distributed Virtual Switch"
-                                });
-                                items.push({
-                                    id: "vmwaresvs",
-                                    description: "VMware vNetwork Standard Virtual Switch"
-                                });
-                                items.push({
-                                    id: "nexusdvs",
-                                    description: "Cisco Nexus 1000v Distributed Virtual Switch"
-                                });
-
-                            }
-                            args.response.success({
-                                data: items
-                            });
-
-                        },
-                        isHidden: true,
-                        dependsOn: 'overrideguesttraffic'
-
-                    },
-                    */
-
-                    /*
-                    vSwitchGuestName: {
-                        label: 'Guest Traffic vSwitch Name',
-                        dependsOn: 'overrideguesttraffic',
-                        isHidden: true
-                    },
-                    */
 
                     //Cisco Nexus Vswitch
                     vsmipaddress: {
@@ -1265,25 +1085,20 @@
                     var $form = args.$form;
 
                     if (selectedClusterObj.hypervisortype == "VMware") {
-                        //$('li[input_group="general"]', $dialogAddHost).hide();
                         $form.find('[rel=hostname]').hide();
                         $form.find('[rel=username]').hide();
                         $form.find('[rel=password]').hide();
 
-                        //$('li[input_group="vmware"]', $dialogAddHost).show();
                         $form.find('[rel=vcenterHost]').css('display', 'block');
 
-                        //$('li[input_group="baremetal"]', $dialogAddHost).hide();
                         $form.find('[rel=baremetalCpuCores]').hide();
                         $form.find('[rel=baremetalCpu]').hide();
                         $form.find('[rel=baremetalMemory]').hide();
                         $form.find('[rel=baremetalMAC]').hide();
 
-                        //$('li[input_group="Ovm"]', $dialogAddHost).hide();
                         $form.find('[rel=agentUsername]').hide();
                         $form.find('[rel=agentPassword]').hide();
 
-                        //$('li[input_group="Ovm3"]', $dialogAddHost).hide();
                         $form.find('.form-item[rel=agentUsername]').hide();
                         $form.find('.form-item[rel=agentPassword]').hide();
                         $form.find('.form-item[rel=agentPort]').hide();
@@ -1291,25 +1106,20 @@
                         $form.find('.form-item[rel=ovm3pool]').hide();
                         $form.find('.form-item[rel=ovm3cluster]').hide();
                     } else if (selectedClusterObj.hypervisortype == "BareMetal") {
-                        //$('li[input_group="general"]', $dialogAddHost).show();
                         $form.find('[rel=hostname]').css('display', 'block');
                         $form.find('[rel=username]').css('display', 'block');
                         $form.find('[rel=password]').css('display', 'block');
 
-                        //$('li[input_group="baremetal"]', $dialogAddHost).show();
                         $form.find('[rel=baremetalCpuCores]').css('display', 'block');
                         $form.find('[rel=baremetalCpu]').css('display', 'block');
                         $form.find('[rel=baremetalMemory]').css('display', 'block');
                         $form.find('[rel=baremetalMAC]').css('display', 'block');
 
-                        //$('li[input_group="vmware"]', $dialogAddHost).hide();
                         $form.find('[rel=vcenterHost]').hide();
 
-                        //$('li[input_group="Ovm"]', $dialogAddHost).hide();
                         $form.find('[rel=agentUsername]').hide();
                         $form.find('[rel=agentPassword]').hide();
 
-                        //$('li[input_group="Ovm3"]', $dialogAddHost).hide();
                         $form.find('.form-item[rel=agentUsername]').hide();
                         $form.find('.form-item[rel=agentPassword]').hide();
                         $form.find('.form-item[rel=agentPort]').hide();
@@ -1317,46 +1127,37 @@
                         $form.find('.form-item[rel=ovm3pool]').hide();
                         $form.find('.form-item[rel=ovm3cluster]').hide();
                     } else if (selectedClusterObj.hypervisortype == "Ovm") {
-                        //$('li[input_group="general"]', $dialogAddHost).show();
                         $form.find('[rel=hostname]').css('display', 'block');
                         $form.find('[rel=username]').css('display', 'block');
                         $form.find('[rel=password]').css('display', 'block');
 
-                        //$('li[input_group="vmware"]', $dialogAddHost).hide();
                         $form.find('[rel=vcenterHost]').hide();
 
-                        //$('li[input_group="baremetal"]', $dialogAddHost).hide();
                         $form.find('[rel=baremetalCpuCores]').hide();
                         $form.find('[rel=baremetalCpu]').hide();
                         $form.find('[rel=baremetalMemory]').hide();
                         $form.find('[rel=baremetalMAC]').hide();
 
-                        //$('li[input_group="Ovm"]', $dialogAddHost).show();
                         $form.find('[rel=agentUsername]').css('display', 'block');
                         $form.find('[rel=agentUsername]').find('input').val("oracle");
                         $form.find('[rel=agentPassword]').css('display', 'block');
 
-                        //$('li[input_group="Ovm3"]', $dialogAddHost).hide();
                         $form.find('.form-item[rel=agentPort]').hide();
                         $form.find('.form-item[rel=ovm3vip]').hide();
                         $form.find('.form-item[rel=ovm3pool]').hide();
                         $form.find('.form-item[rel=ovm3cluster]').hide();
                    } else if (selectedClusterObj.hypervisortype == "Ovm3") {
-                        //$('li[input_group="general"]', $dialogAddHost).show();
                         $form.find('.form-item[rel=hostname]').css('display', 'inline-block');
                         $form.find('.form-item[rel=username]').css('display', 'inline-block');
                         $form.find('.form-item[rel=password]').css('display', 'inline-block');
 
-                        //$('li[input_group="vmware"]', $dialogAddHost).hide();
                         $form.find('.form-item[rel=vcenterHost]').hide();
 
-                        //$('li[input_group="baremetal"]', $dialogAddHost).hide();
                         $form.find('.form-item[rel=baremetalCpuCores]').hide();
                         $form.find('.form-item[rel=baremetalCpu]').hide();
                         $form.find('.form-item[rel=baremetalMemory]').hide();
                         $form.find('.form-item[rel=baremetalMAC]').hide();
 
-                         //$('li[input_group="Ovm3"]', $dialogAddHost).show();
                         $form.find('.form-item[rel=agentUsername]').css('display', 'inline-block');
                         $form.find('.form-item[rel=agentUsername]').find('input').val("oracle");
                         $form.find('.form-item[rel=agentPassword]').css('display', 'inline-block');
@@ -1366,24 +1167,20 @@
                         $form.find('.form-item[rel=ovm3pool]').css('display', 'inline-block');
                         $form.find('.form-item[rel=ovm3cluster]').css('display', 'inline-block');
                     } else {
-                        //$('li[input_group="general"]', $dialogAddHost).show();
                         $form.find('[rel=hostname]').css('display', 'block');
                         $form.find('[rel=username]').css('display', 'block');
                         $form.find('[rel=password]').css('display', 'block');
 
-                        //$('li[input_group="vmware"]', $dialogAddHost).hide();
                         $form.find('[rel=vcenterHost]').hide();
 
-                        //$('li[input_group="baremetal"]', $dialogAddHost).hide();
                         $form.find('[rel=baremetalCpuCores]').hide();
                         $form.find('[rel=baremetalCpu]').hide();
                         $form.find('[rel=baremetalMemory]').hide();
                         $form.find('[rel=baremetalMAC]').hide();
 
-                        //$('li[input_group="Ovm"]', $dialogAddHost).hide();
                         $form.find('[rel=agentUsername]').hide();
                         $form.find('[rel=agentPassword]').hide();
-                        //$('li[input_group="Ovm3"]', $dialogAddHost).hide();
+
                         $form.find('.form-item[rel=agentPort]').hide();
                         $form.find('.form-item[rel=ovm3vip]').hide();
                         $form.find('.form-item[rel=ovm3pool]').hide();

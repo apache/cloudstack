@@ -1060,22 +1060,6 @@
                     isOddRow = true;
                 }
 
-                //???
-                /*
-                 if("pollAgainIfValueIsIn" in value) {
-                 if ((content in value.pollAgainIfValueIsIn) && (value.pollAgainFn != null)) {
-                 //poll again
-                 var intervalKey = setInterval(function() {
-                 var toClearInterval = value.pollAgainFn(context);
-                 if(toClearInterval == true) {
-                 clearInterval(intervalKey);
-                 $('.detail-view .toolbar .button.refresh').click();     //click Refresh button to refresh detailView
-                 }
-                 }, 2000);
-                 }
-                 }
-                 */
-
                 $name.html(_l(value.label));
                 $value.html(_s(content));
                 $value.attr('title', _s(content));

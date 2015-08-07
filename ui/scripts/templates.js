@@ -519,7 +519,6 @@
                                     });
                                 }
 
-
                                 //XenServer only (starts here)
                                 if (args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').css("display") != "none") {
                                     $.extend(data, {
@@ -527,7 +526,6 @@
                                     });
                                 }
                                 //XenServer only (ends here)
-
 
                                 //VMware only (starts here)
                                 if (args.$form.find('.form-item[rel=rootDiskControllerType]').css("display") != "none" && args.data.rootDiskControllerType != "") {
@@ -555,16 +553,6 @@
                                         args.response.success({
                                             data: items[0]
                                         });
-                                        /*
-                     if(items.length > 1) {
-                     for(var i=1; i<items.length; i++) {
-                     var $midmenuItem2 = $("#midmenu_item").clone();
-                     templateToMidmenu(items[i], $midmenuItem2);
-                     bindClickToMidMenu($midmenuItem2, templateToRightPanel, templateGetMidmenuId);
-                     $("#midmenu_container").append($midmenuItem2.show());
-                     }
-                     }
-                     */
                                     },
                                     error: function(XMLHttpResponse) {
                                         var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -2691,13 +2679,6 @@
             allowedActions.push("edit");
 
             allowedActions.push("copyTemplate");
-            /*
-            if(g_regionsecondaryenabled != true) {
-                allowedActions.push("copyTemplate");
-            }
-            */
-
-            //allowedActions.push("createVm"); // For Beta2, this simply doesn't work without a network.
         }
 
         // "Download Template"
@@ -2732,11 +2713,6 @@
             allowedActions.push("edit");
 
             allowedActions.push("copyISO");
-            /*
-            if(g_regionsecondaryenabled != true) {
-                allowedActions.push("copyISO");
-            }
-            */
         }
 
         // "Create VM"

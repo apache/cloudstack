@@ -275,7 +275,7 @@
                                                         });
                                                     } else {
                                                         $newRow = replaceItem($instanceRow,
-                                                            args.data, //$.extend($instanceRow.data('json-obj'), args.data), /* $.extend($instanceRow.data('json-obj'), args.data) causes CLOUDSTACK-4687 */
+                                                            args.data,
                                                             actionFilter);
                                                     }
                                                 } else {

@@ -143,20 +143,6 @@
                     $.extend(vm, { _subselect: $vmRow.find('.subselect select').val() });
                 });
 
-                /*
-                 var array1 = [];
-                 for (var i = 0; i < vms.length; i++) {
-                 array1.push(vms[i].id);
-                 }
-                 var virtualmachineids = array1.join(',');
-                 var inputData = {
-                 id: args.context.internalLoadBalancers[0].id,
-                 virtualmachineids: virtualmachineids
-                 };
-                 */
-                //virtualmachineids parameter has been replaced with vmidipmap parameter, so comment out the lines above.
-
-
                 var inputData = {
                     id: args.context.internalLoadBalancers[0].id
                 };
@@ -176,14 +162,6 @@
                         for (var ipIndex = 0; ipIndex < selectedIPs.length; ipIndex++) {
                             inputData['vmidipmap[' + vmidipmapIndex + '].vmid'] = selectedVMs[vmIndex].id;
 
-                            //"ipAddresses" is not in args.context since this LB rule is under a VPC, not an address.
-                            /*
-                             if (args.context.ipAddresses[0].isportable) {
-                             inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex].split(',')[1];
-                             } else {
-                             inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex];
-                             }
-                             */
                             inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex];
 
                             vmidipmapIndex++;

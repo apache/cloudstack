@@ -53,15 +53,6 @@
                         vmdisplayname: {
                             label: 'label.vm.display.name'
                         }
-
-                        /*
-                        state: {
-                          label: 'State',
-                            indicator: {
-                'Ready': 'on'
-              }
-                        }
-                        */
                     },
 
                     // List view actions
