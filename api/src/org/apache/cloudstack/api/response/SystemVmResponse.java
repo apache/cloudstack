@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
+import java.util.List;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -141,7 +142,13 @@ public class SystemVmResponse extends BaseResponse {
     @Param(description = "the number of active console sessions for the console proxy system vm")
     private Integer activeViewerSessions;
 
-    // private Long objectId;
+    @SerializedName("guestvlan")
+    @Param(description = "guest vlan range")
+    private String guestVlan;
+
+    @SerializedName("publicvlan")
+    @Param(description = "public vlan range")
+    private List<String> publicVlan;
 
     @Override
     public String getObjectId() {
@@ -354,5 +361,21 @@ public class SystemVmResponse extends BaseResponse {
 
     public void setLinkLocalNetmask(String linkLocalNetmask) {
         this.linkLocalNetmask = linkLocalNetmask;
+    }
+
+    public String getGuestVlan() {
+        return guestVlan;
+    }
+
+    public void setGuestVlan(String guestVlan) {
+        this.guestVlan = guestVlan;
+    }
+
+    public List<String> getPublicVlan() {
+        return publicVlan;
+    }
+
+    public void setPublicVlan(List<String> publicVlan) {
+        this.publicVlan = publicVlan;
     }
 }

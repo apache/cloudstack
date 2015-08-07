@@ -30,10 +30,8 @@ import org.apache.cloudstack.api.InternalIdentity;
 import com.cloud.api.commands.RegisterServicePackageCmd;
 
 /**
- * NetScalerPodVO contains information about a EIP deployment where on datacenter L3 router a PBR (policy
- * based routing) is setup between a POD's subnet IP range to a NetScaler device. This VO object
- * represents a mapping between a POD and NetScaler device where PBR is setup.
- *
+ * NetScalerServicePackageVO contains information about service packages from NetScaler Control Center(NCC).
+ * By using the service package, CloudStack can choose the kind of NetScaler offering it wants to use.
  */
 @Entity
 @Table(name = " netscaler_servicepackages")

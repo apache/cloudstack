@@ -171,6 +171,16 @@ known_categories = {
     'StratosphereSsp' : ' Stratosphere SSP',
     'Metrics' : 'Metrics',
     'Infrastructure' : 'Metrics',
+    'listNetscalerControlCenter' : 'Load Balancer',
+    'listRegisteredServicePackages': 'Load Balancer',
+    'listNsVpx' : 'Load Balancer',
+    'destroyNsVPx': 'Load Balancer',
+    'deployNetscalerVpx' : 'Load Balancer',
+    'deleteNetscalerControlCenter' : 'Load Balancer',
+    'stopNetScalerVpx' : 'Load Balancer',
+    'deleteServicePackageOffering' : 'Load Balancer',
+    'destroyNsVpx' : 'Load Balancer',
+    'startNsVpx' : 'Load Balancer'
     }
 
 

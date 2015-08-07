@@ -26,15 +26,15 @@ public class NetScalerImplementNetworkCommand extends Command {
         super();
     }
 
-    private Long dcId;
+    private String dcId;
     private Long hostId;
 
-    public NetScalerImplementNetworkCommand(Long dcId) {
+    public NetScalerImplementNetworkCommand(String dcId) {
         super();
         this.dcId = dcId;
     }
 
-    public NetScalerImplementNetworkCommand(Long dcId, Long hostId, String networkDetails) {
+    public NetScalerImplementNetworkCommand(String dcId, Long hostId, String networkDetails) {
         this(dcId);
         this.hostId = hostId;
         this._networkDetails = networkDetails;
@@ -48,7 +48,7 @@ public class NetScalerImplementNetworkCommand extends Command {
         return _networkDetails;
     }
 
-    public Long getDataCenterId() {
+    public String getDataCenterId() {
         return dcId;
     }
 

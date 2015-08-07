@@ -27,12 +27,13 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -63,8 +64,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
-import com.cloud.host.HostVO;
 import com.cloud.host.Host.Type;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.Network.Provider;
@@ -91,6 +92,7 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.StaticNatServiceProvider;
@@ -111,6 +113,8 @@ import com.cloud.resource.ResourceState;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
@@ -129,8 +133,10 @@ import com.cloud.utils.net.UrlUtil;
 import com.cloud.vm.Nic;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicVO;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase implements ExternalLoadBalancerDeviceManager, ResourceStateAdapter {
 
@@ -194,6 +200,19 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     protected HostPodDao _podDao = null;
     @Inject
     IpAddressManager _ipAddrMgr;
+    @Inject
+    protected
+    VirtualMachineManager _itMgr;
+    @Inject
+    VMInstanceDao _vmDao;
+    @Inject
+    VMTemplateDao _templateDao;
+    @Inject
+    ServiceOfferingDao _serviceOfferingDao;
+    @Inject
+    PhysicalNetworkServiceProviderDao _physicalProviderDao;
+    @Inject
+    VirtualRouterProviderDao _vrProviderDao;
 
     private long _defaultLbCapacity;
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalLoadBalancerDeviceManagerImpl.class);
@@ -867,9 +886,9 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         return nic;
     }
 
-    private boolean isNccServiceProvider(Network network) {
+    public boolean isNccServiceProvider(Network network) {
         NetworkOffering networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        if(networkOffering.getServicePackage() != null ) {
+        if(null!= networkOffering && networkOffering.getServicePackage() != null ) {
             return true;
         }
         else {
@@ -927,11 +946,14 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             String uuid = rule.getUuid();
             String srcIp = rule.getSourceIp().addr();
             String srcIpVlan = null;
-            //IpAddress ipAddress =  _networkModel.getPublicIpAddress(rule.getSourceIp().addr(), network.getDataCenterId()).getVlanId();
+            String srcIpGateway = null;
+            String srcIpNetmask = null;
             Long vlanid =  _networkModel.getPublicIpAddress(rule.getSourceIp().addr(), network.getDataCenterId()).getVlanId();
             if(vlanid != null ) {
               VlanVO publicVlan =   _vlanDao.findById(vlanid);
               srcIpVlan =  publicVlan.getVlanTag();
+              srcIpGateway = publicVlan.getVlanGateway();
+              srcIpNetmask = publicVlan.getVlanNetmask();
             }
             int srcPort = rule.getSourcePortStart();
             List<LbDestination> destinations = rule.getDestinations();
@@ -956,6 +978,8 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                         rule.getHealthCheckPolicies(), rule.getLbSslCert(), rule.getLbProtocol());
                 loadBalancer.setNetworkId(network.getId());
                 loadBalancer.setSrcIpVlan(srcIpVlan);
+                loadBalancer.setSrcIpNetmask(srcIpNetmask);
+                loadBalancer.setSrcIpGateway(srcIpGateway);
                 if (rule.isAutoScaleConfig()) {
                     loadBalancer.setAutoScaleVmGroup(rule.getAutoScaleVmGroup());
                 }
@@ -1197,13 +1221,19 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             return null;
         }
 
-        ExternalLoadBalancerDeviceVO lbDeviceVO = getExternalLoadBalancerForNetwork(network);
-        if (lbDeviceVO == null) {
-            s_logger.warn("There is no external load balancer device assigned to this network either network is not implement are already shutdown so just returning");
-            return null;
-        }
+        HostVO externalLoadBalancer = null;
 
-        HostVO externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
+        if(isNccServiceProvider(network)) {
+            externalLoadBalancer  = getNetScalerControlCenterForNetwork(network);
+        } else {
+            ExternalLoadBalancerDeviceVO lbDeviceVO = getExternalLoadBalancerForNetwork(network);
+            if (lbDeviceVO == null) {
+                s_logger.warn("There is no external load balancer device assigned to this network either network is not implement are already shutdown so just returning");
+                return null;
+            } else {
+                externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
+            }
+        }
 
         boolean externalLoadBalancerIsInline = _networkMgr.isNetworkInlineMode(network);
 
@@ -1253,7 +1283,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 LoadBalancerTO[] loadBalancersForCommand = loadBalancersToApply.toArray(new LoadBalancerTO[numLoadBalancersForCommand]);
                 // LoadBalancerConfigCommand cmd = new
                 // LoadBalancerConfigCommand(loadBalancersForCommand, null);
-                HealthCheckLBConfigCommand cmd = new HealthCheckLBConfigCommand(loadBalancersForCommand);
+                HealthCheckLBConfigCommand cmd = new HealthCheckLBConfigCommand(loadBalancersForCommand, network.getId());
                 long guestVlanTag = Integer.parseInt(BroadcastDomainType.getValue(network.getBroadcastUri()));
                 cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, String.valueOf(guestVlanTag));
 
@@ -1280,4 +1310,5 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         }
         return null;
     }
+
 }

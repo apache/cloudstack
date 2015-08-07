@@ -32,5 +32,5 @@
     <bean id="netscalerElement" class="com.cloud.network.element.NetscalerElement" >
         <property name="name" value="Netscaler"/>
     </bean>
-
+    <bean id="NetScalerVMManager" class="com.cloud.network.vm.NetScalerVMManagerImpl" />
 </beans>

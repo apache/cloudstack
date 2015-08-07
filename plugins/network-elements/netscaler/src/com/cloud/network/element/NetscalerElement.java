@@ -37,8 +37,6 @@ import com.google.gson.Gson;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.admin.address.AcquirePodIpCmdByAdmin;
-import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
@@ -61,12 +59,14 @@ import com.cloud.api.commands.ConfigureNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.DeleteNetscalerControlCenterCmd;
 import com.cloud.api.commands.DeleteNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.DeleteServicePackageOfferingCmd;
+import com.cloud.api.commands.DeployNetscalerVpxCmd;
 import com.cloud.api.commands.ListNetscalerControlCenterCmd;
 import com.cloud.api.commands.ListNetscalerLoadBalancerNetworksCmd;
 import com.cloud.api.commands.ListNetscalerLoadBalancersCmd;
 import com.cloud.api.commands.ListRegisteredServicePackageCmd;
 import com.cloud.api.commands.RegisterNetscalerControlCenterCmd;
 import com.cloud.api.commands.RegisterServicePackageCmd;
+import com.cloud.api.commands.StopNetScalerVMCmd;
 import com.cloud.api.response.NetScalerServicePackageResponse;
 import com.cloud.api.response.NetscalerControlCenterResponse;
 import com.cloud.api.response.NetscalerLoadBalancerResponse;
@@ -79,7 +79,11 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
+import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlan;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
@@ -121,24 +125,26 @@ import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
-//import com.cloud.network.dao.RegisteredServicePackageVO;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.resource.NetScalerControlCenterResource;
 import com.cloud.network.resource.NetscalerResource;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LbStickinessMethod;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.network.rules.LoadBalancerContainer;
 import com.cloud.network.rules.StaticNat;
+import com.cloud.network.vm.NetScalerVMManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
+import com.cloud.user.Account;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
@@ -149,8 +155,9 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
 
-public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider, NetscalerLoadBalancerElementService,
-        ExternalLoadBalancerDeviceManager, IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
+public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
+        implements LoadBalancingServiceProvider, NetscalerLoadBalancerElementService, ExternalLoadBalancerDeviceManager,
+        IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
 
     private static final Logger s_logger = Logger.getLogger(NetscalerElement.class);
     public static final AutoScaleCounterType AutoScaleCounterSnmp = new AutoScaleCounterType("snmp");
@@ -172,10 +179,6 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     DataCenterDao _dcDao;
     @Inject
     ExternalLoadBalancerDeviceDao _lbDeviceDao;
-
-    // @Inject
-    // NetScalerServicePackageDao _lrsPackagesDao;
-
     @Inject
     NetScalerControlCenterDao _netscalerControlCenterDao;
     @Inject
@@ -206,6 +209,8 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     NetworkOrchestrationService _networkService;
     @Inject
     NetworkOfferingDao _networkOfferingDao = null;
+    @Inject
+    NetScalerVMManager _netScalerVMManager;
 
     private boolean canHandle(Network config, Service service) {
         DataCenter zone = _dcDao.findById(config.getDataCenterId());
@@ -256,8 +261,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             } else {
                 // if the network offering has service package implement it with
                 // Netscaler Control Center
-                manageGuestNetworkWithNetscalerControlCenter(true, guestConfig, offering);
-                return true;
+                return manageGuestNetworkWithNetscalerControlCenter(true, guestConfig, offering);
             }
         } catch (InsufficientCapacityException capacityException) {
             throw new ResourceUnavailableException(
@@ -293,7 +297,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             hostDetails.put("zoneId", Long.toString(guestConfig.getDataCenterId()));
             hostDetails.put("ip", ipAddress);
             hostDetails.put("username", nccVO.getUsername());
-            hostDetails.put("password", nccVO.getPassword());
+            hostDetails.put("password", DBEncryptionUtil.decrypt(nccVO.getPassword()));
             hostDetails.put("deviceName", "netscaler control center");
             hostDetails.put("cmdTimeOut", Long.toString(NumbersUtil.parseInt(_configDao.getValue(Config.NCCCmdTimeOut.key()), 600000)));
             ServerResource resource = new NetScalerControlCenterResource();
@@ -362,7 +366,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             networkDetails.put("cidr", guestConfig.getCidr());
             networkDetails.put("gateway", guestConfig.getGateway());
             networkDetails.put("servicepackage_id", offering.getServicePackage());
-            networkDetails.put("zone_id", zoneId);
+            networkDetails.put("zone_id", zone.getUuid());
             networkDetails.put("account_id", guestConfig.getAccountId());
             networkDetails.put("add", Boolean.toString(add));
             selfIp = _ipAddrMgr.acquireGuestIpAddress(guestConfig, null);
@@ -381,152 +385,30 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             e.printStackTrace();
         }
 
-        NetScalerImplementNetworkCommand cmd = new NetScalerImplementNetworkCommand(zoneId, netscalerControlCenter.getId(), networkPayload.toString());
+        NetScalerImplementNetworkCommand cmd = new NetScalerImplementNetworkCommand(zone.getUuid(), netscalerControlCenter.getId(), networkPayload.toString());
         Answer answer = _agentMgr.easySend(netscalerControlCenter.getId(), cmd);
         if (add) {
             //TODO After getting the answer check with the job id and do poll on the job and then save the selfip or acquired guest ip to the Nics table
             if (answer != null) {
-                if (add) {
-                    // Insert a new NIC for this guest network to reserve the self IP
-                    _networkService.savePlaceholderNic(guestConfig, selfIp, null, null);
+                if (answer.getResult() == true) {
+                    if (add) {
+                        // Insert a new NIC for this guest network to reserve the self IP
+                        _networkService.savePlaceholderNic(guestConfig, selfIp, null, null);
+                    }
+                } else {
+                    return false;
                 }
             }
         } else {
-            // release the self-ip obtained from guest network
-            /*Nic selfipNic = getPlaceholderNic(guestConfig);
-            _nicDao.remove(selfipNic.getId());*/
-            // release the load balancer allocated for the network
-            return true;
-            //write code to remove the self nic or the clean up work
-        }
-        // Send a command to the external load balancer to implement or shutdown the guest network
-        /*        long guestVlanTag = Long.parseLong(BroadcastDomainType.getValue(guestConfig.getBroadcastUri()));
-        String selfIp = null;
-        String guestVlanNetmask = NetUtils.cidr2Netmask(guestConfig.getCidr());
-        Integer networkRate = _networkModel.getNetworkRate(guestConfig.getId(), null);
-        if (add) {
-            // on restart network, network could have already been implemented. If already implemented then return
-            Nic selfipNic = getPlaceholderNic(guestConfig);
-            if (selfipNic != null) {
-                return true;
-            }
-            // Acquire a self-ip address from the guest network IP address range
-            selfIp = _ipAddrMgr.acquireGuestIpAddress(guestConfig, null);
-            if (selfIp == null) {
-                String msg = "failed to acquire guest IP address so not implementing the network on the external load balancer ";
-                s_logger.error(msg);
-                throw new InsufficientNetworkCapacityException(msg, Network.class, guestConfig.getId());
-            }
-        } else {
-            // get the self-ip used by the load balancer
-            Nic selfipNic = getPlaceholderNic(guestConfig);
-            if (selfipNic == null) {
-                s_logger.warn("Network shutdwon requested on external load balancer element, which did not implement the network."
-                    + " Either network implement failed half way through or already network shutdown is completed. So just returning.");
-                return true;
-            }
-            selfIp = selfipNic.getIp4Address();
-        }
-        */
-        // It's a hack, using isOneToOneNat field for indicate if it's inline or not
-        /*        boolean inline = _networkMgr.isNetworkInlineMode(guestConfig);
-        IpAddressTO ip =
-            new IpAddressTO(guestConfig.getAccountId(), null, add, false, true, String.valueOf(guestVlanTag), selfIp, guestVlanNetmask, null, networkRate, inline);
-        IpAddressTO[] ips = new IpAddressTO[1];
-        ips[0] = ip;
-        IpAssocCommand cmd = new IpAssocCommand(ips);
-        Answer answer = _agentMgr.easySend(netscalerControlCenter.getId(), cmd);
-        */
-        /*        if (answer == null || !answer.getResult()) {
-            String action = add ? "implement" : "shutdown";
-            String answerDetails = (answer != null) ? answer.getDetails() : null;
-            answerDetails = (answerDetails != null) ? " due to " + answerDetails : "";
-            String msg = "External load balancer was unable to " + action + " the guest network on the external load balancer in zone " + zone.getName() + answerDetails;
-            s_logger.error(msg);
-            throw new ResourceUnavailableException(msg, Network.class, guestConfig.getId());
-        }
-        =======
-        NetScalerImplementNetworkCommand cmd = new NetScalerImplementNetworkCommand(zoneId,
-                netscalerControlCenter.getId(), networkPayload.toString());
-        >>>>>>> Stashed changes
-        if (add) {
-            Answer answer = _agentMgr.easySend(netscalerControlCenter.getId(), cmd);
-            // TODO After getting the answer check with the job id and do poll
-            // on the job and then save the selfip or acquired guest ip to the
-            // Nics table
             if (answer != null) {
-                if (add) {
-                    // Insert a new NIC for this guest network to reserve the
-                    // self IP
-                    _networkService.savePlaceholderNic(guestConfig, selfIp, null, null);
+                if (answer.getResult() == true) {
+                    return true;
+                } else {
+                    return false;
                 }
             }
+            return false;
         }
-        // Send a command to the external load balancer to implement or shutdown
-        // the guest network
-        /*
-         * long guestVlanTag =
-         * Long.parseLong(BroadcastDomainType.getValue(guestConfig.
-         * getBroadcastUri())); String selfIp = null; String guestVlanNetmask =
-         * NetUtils.cidr2Netmask(guestConfig.getCidr()); Integer networkRate =
-         * _networkModel.getNetworkRate(guestConfig.getId(), null); if (add) {
-         * // on restart network, network could have already been implemented.
-         * If already implemented then return Nic selfipNic =
-         * getPlaceholderNic(guestConfig); if (selfipNic != null) { return true;
-         * } // Acquire a self-ip address from the guest network IP address
-         * range selfIp = _ipAddrMgr.acquireGuestIpAddress(guestConfig, null);
-         * if (selfIp == null) { String msg =
-         * "failed to acquire guest IP address so not implementing the network on the external load balancer "
-         * ; s_logger.error(msg); throw new
-         * InsufficientNetworkCapacityException(msg, Network.class,
-         * guestConfig.getId()); } } else { // get the self-ip used by the load
-         * balancer Nic selfipNic = getPlaceholderNic(guestConfig); if
-         * (selfipNic == null) { s_logger.warn(
-         * "Network shutdwon requested on external load balancer element, which did not implement the network."
-         * +
-         * " Either network implement failed half way through or already network shutdown is completed. So just returning."
-         * ); return true; } selfIp = selfipNic.getIp4Address(); }
-         */
-        // It's a hack, using isOneToOneNat field for indicate if it's inline or
-        // not
-        /*
-         * boolean inline = _networkMgr.isNetworkInlineMode(guestConfig);
-         * IpAddressTO ip = new IpAddressTO(guestConfig.getAccountId(), null,
-         * add, false, true, String.valueOf(guestVlanTag), selfIp,
-         * guestVlanNetmask, null, networkRate, inline); IpAddressTO[] ips = new
-         * IpAddressTO[1]; ips[0] = ip; IpAssocCommand cmd = new
-         * IpAssocCommand(ips); Answer answer =
-         * _agentMgr.easySend(netscalerControlCenter.getId(), cmd);
-         */
-        /*
-         * if (answer == null || !answer.getResult()) { String action = add ?
-         * "implement" : "shutdown"; String answerDetails = (answer != null) ?
-         * answer.getDetails() : null; answerDetails = (answerDetails != null) ?
-         * " due to " + answerDetails : ""; String msg =
-         * "External load balancer was unable to " + action +
-         * " the guest network on the external load balancer in zone " +
-         * zone.getName() + answerDetails; s_logger.error(msg); throw new
-         * ResourceUnavailableException(msg, Network.class,
-         * guestConfig.getId()); } if (add) { // Insert a new NIC for this guest
-         * network to reserve the self IP
-         * _networkMgr.savePlaceholderNic(guestConfig, selfIp, null, null); }
-         * else { // release the self-ip obtained from guest network Nic
-         * selfipNic = getPlaceholderNic(guestConfig);
-         * _nicDao.remove(selfipNic.getId()); // release the load balancer
-         * allocated for the network boolean releasedLB =
-         * freeLoadBalancerForNetwork(guestConfig); if (!releasedLB) { String
-         * msg =
-         * "Failed to release the external load balancer used for the network: "
-         * + guestConfig.getId(); s_logger.error(msg); } } if
-         * (s_logger.isDebugEnabled()) { Account account =
-         * _accountDao.findByIdIncludingRemoved(guestConfig.getAccountId());
-         * String action = add ? "implemented" : "shut down"; s_logger.debug(
-         * "External load balancer has " + action +
-         * " the guest network for account " + account.getAccountName() +
-         * "(id = " + account.getAccountId() + ") with VLAN tag " +
-         * guestVlanTag); }
-         */
-
         return true;
     }
 
@@ -557,9 +439,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             } else {
                 // if the network offering has service package implement it with Netscaler Control Center
                 return manageGuestNetworkWithNetscalerControlCenter(false, guestConfig, networkOffering);
-                //return true;
             }
-            //return manageGuestNetworkWithExternalLoadBalancer(false, guestConfig);
         } catch (InsufficientCapacityException capacityException) {
             // TODO: handle out of capacity exception gracefully in case of
             // multple providers available
@@ -618,7 +498,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
 
         // Specifies that load balancing rules can be made for either TCP or UDP
         // traffic
-        lbCapabilities.put(Capability.SupportedProtocols, "tcp,udp");
+        lbCapabilities.put(Capability.SupportedProtocols, "tcp,udp,http");
 
         // Specifies that this element can measure network usage on a per public
         // IP basis
@@ -896,8 +776,8 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         cmdList.add(ListNetscalerControlCenterCmd.class);
         cmdList.add(DeleteServicePackageOfferingCmd.class);
         cmdList.add(DeleteNetscalerControlCenterCmd.class);
-        cmdList.add(ReleasePodIpCmdByAdmin.class);
-        cmdList.add(AcquirePodIpCmdByAdmin.class);
+        cmdList.add(DeployNetscalerVpxCmd.class);
+        cmdList.add(StopNetScalerVMCmd.class);
         return cmdList;
     }
 
@@ -974,17 +854,25 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     @Override
     public boolean deleteServicePackageOffering(DeleteServicePackageOfferingCmd cmd) throws CloudRuntimeException {
         NetScalerServicePackageVO result = null;
-        boolean flag;
+        boolean flag=false;
         try {
             result = _netscalerServicePackageDao.findByUuid(cmd.getId());
+            if (result == null)
+                throw new CloudRuntimeException("Record does not Exists in the Table");
+
+            if(_networkOfferingDao.isUsingServicePackage(result.getUuid()))
+            {
+                throw new CloudRuntimeException("Network offering is using the service package. First delete the NeworkOffering and then delete ServicePackage");
+            }
+
             flag = _netscalerServicePackageDao.remove(result.getId());
+
         } catch (Exception e) {
             if (e instanceof InvalidParameterValueException)
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.getMessage());
-            else if (result == null)
-                throw new CloudRuntimeException("Record does not Exists in the Table");
             else
-                throw new CloudRuntimeException("Network offering is using the service package. First delete the nework offering and then delete ServicePackage");
+               throw e;
+
         }
         return flag;
 
@@ -998,10 +886,13 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         if (result == null)
             throw new CloudRuntimeException("External Netscaler Control Center Table does not contain record with this ID");
         else {
-            List<Long> id_set_1 = _networkOfferingDao.listServicePackageUuid();
-            if (id_set_1.size() != 0) {
-                List<NetworkVO> id_set_2 = _networkDao.listNetworkOfferingId(id_set_1);
-                if (id_set_2 != null && id_set_2.size() != 0)
+            //ID list of Network Offering which are not removed and have service Package Uuid field not null.
+            List<Long> servicePackageId_list = _networkOfferingDao.listNetworkOfferingID();
+
+            if (servicePackageId_list.size() != 0) {
+                //VO list of Networks  which are using Network Offering.
+                List<NetworkVO> networkVO_list = _networkDao.listNetworkVO(servicePackageId_list);
+                if (networkVO_list != null && networkVO_list.size() != 0)
                     throw new CloudRuntimeException(
                             "ServicePackages published by NetScalerControlCenter are being used by NetworkOfferings. Try deleting NetworkOffering with ServicePackages and then delete NetScalerControlCenter.");
             }
@@ -1016,25 +907,23 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         _netscalerControlCenterDao.remove(result.getId());
 
         //Removal of  NCC from Host Table
-        SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
-        sc.addAnd("type", SearchCriteria.Op.EQ, Host.Type.NetScalerControlCenter);
-        List<HostVO> ncc_list = _hostDao.search(sc, null);
-
+        List<HostVO> ncc_list = _hostDao.listAll();
         if (ncc_list == null) {
             throw new CloudRuntimeException("Could not find Netscaler Control Center in Database");
         }
         for (HostVO ncc : ncc_list) {
-            try {
-                // put the host in maintenance state in order for it to be deleted
-                ncc.setResourceState(ResourceState.Maintenance);
-                _hostDao.update(ncc.getId(), ncc);
-                _resourceMgr.deleteHost(ncc.getId(), false, false);
-            } catch (Exception e) {
-                s_logger.debug(e);
-                return false;
+            if (ncc.getType().equals(Host.Type.NetScalerControlCenter)) {
+                try {
+                    // put the host in maintenance state in order for it to be deleted
+                    ncc.setResourceState(ResourceState.Maintenance);
+                    _hostDao.update(ncc.getId(), ncc);
+                    _resourceMgr.deleteHost(ncc.getId(), false, false);
+                } catch (Exception e) {
+                    s_logger.debug(e);
+                    return false;
+                }
             }
         }
-
         return true;
     }
 
@@ -1415,7 +1304,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             int numLoadBalancersForCommand = loadBalancersToApply.size();
             LoadBalancerTO[] loadBalancersForCommand = loadBalancersToApply
                     .toArray(new LoadBalancerTO[numLoadBalancersForCommand]);
-            HealthCheckLBConfigCommand cmd = new HealthCheckLBConfigCommand(loadBalancersForCommand);
+            HealthCheckLBConfigCommand cmd = new HealthCheckLBConfigCommand(loadBalancersForCommand, network.getId());
             HostVO externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
             answer = (HealthCheckLBConfigAnswer)_agentMgr.easySend(externalLoadBalancer.getId(), cmd);
             return answer.getLoadBalancers();
@@ -1566,6 +1455,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_NETSCALER_SERVICEPACKAGE_ADD, eventDescription = "Registering NetScaler Service Package")
     public NetScalerServicePackageResponse registerNetscalerServicePackage(RegisterServicePackageCmd cmd) {
         NetScalerServicePackageVO servicePackage = new NetScalerServicePackageVO(cmd);
         NetScalerServicePackageResponse response = null;
@@ -1577,6 +1467,9 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     @Override
     @DB
     public NetScalerControlCenterVO registerNetscalerControlCenter(RegisterNetscalerControlCenterCmd cmd) {
+
+        if (_netscalerControlCenterDao.listAll() != null && _netscalerControlCenterDao.listAll().size() != 0)
+            throw new CloudRuntimeException("One Netscaler Control Center already exist in the DataBase. At a time only one Netscaler Control Center is allowed");
 
         final RegisterNetscalerControlCenterCmd cmdinfo = cmd;
         String ipAddress = cmd.getIpaddress();
@@ -1599,11 +1492,9 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             return Transaction.execute(new TransactionCallback<NetScalerControlCenterVO>() {
                 @Override
                 public NetScalerControlCenterVO doInTransaction(TransactionStatus status) {
-                    NetScalerControlCenterVO nccVO = new NetScalerControlCenterVO(cmdinfo.getUsername(), cmdinfo.getPassword(),
+                    NetScalerControlCenterVO nccVO = new NetScalerControlCenterVO(cmdinfo.getUsername(), DBEncryptionUtil.encrypt(cmdinfo.getPassword()),
                             cmdinfo.getIpaddress(), cmdinfo.getNumretries());
                     _netscalerControlCenterDao.persist(nccVO);
-                    /*DetailVO hostDetail = new DetailVO(host.getId(), ApiConstants.NETSCALER_CONTROLCENTER_ID , String.valueOf(nccVO.getId()));
-                    _hostDetailDao.persist(hostDetail);*/
                     return nccVO;
                 }
             });
@@ -1611,5 +1502,28 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             resource = null;
             throw new CloudRuntimeException(e.getMessage());
         }
+    }
+
+    @Override
+    public Map<String,Object> deployNetscalerServiceVm(DeployNetscalerVpxCmd cmd) {
+        DataCenter zone = _dcDao.findById(cmd.getZoneId());
+        DeployDestination dest = new DeployDestination(zone, null, null, null);
+        Map<String,Object> resp = new HashMap<String, Object>();
+        Long templateId = cmd.getTemplateId();
+        Long serviceOfferingId = cmd.getServiceOfferingId();
+        DeploymentPlan plan = new DataCenterDeployment(dest.getDataCenter().getId());
+        try {
+             resp =  _netScalerVMManager.deployNsVpx(cmd.getAccount(), dest, plan, serviceOfferingId, templateId);
+        } catch (InsufficientCapacityException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return resp;
+    }
+
+    @Override
+    public VirtualRouter stopNetscalerServiceVm(Long id, boolean forced, Account callingAccount, long callingUserId) throws ConcurrentOperationException,
+            ResourceUnavailableException {
+        return _netScalerVMManager.stopNetScalerVm(id, forced, callingAccount, callingUserId);
     }
 }

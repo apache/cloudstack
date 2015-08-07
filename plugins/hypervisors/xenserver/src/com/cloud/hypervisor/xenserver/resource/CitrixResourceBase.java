@@ -86,6 +86,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.utils.ssh.SshHelper;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.trilead.ssh2.SCPClient;
 import com.xensource.xenapi.Bond;
@@ -1319,6 +1320,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         vmr.VCPUsAtStartup = (long) vmSpec.getCpus();
         vmr.consoles.clear();
+        vmr.xenstoreData.clear();
+        //Add xenstore data for the NetscalerVM
+        if(vmSpec.getType()== VirtualMachine.Type.NetScalerVm) {
+            NicTO mgmtNic = vmSpec.getNics()[0];
+            if(mgmtNic != null ) {
+                Map<String, String> xenstoreData = new HashMap<String, String>(3);
+                xenstoreData.put("vm-data/ip", mgmtNic.getIp().toString().trim());
+                xenstoreData.put("vm-data/gateway", mgmtNic.getGateway().toString().trim());
+                xenstoreData.put("vm-data/netmask", mgmtNic.getNetmask().toString().trim());
+                vmr.xenstoreData = xenstoreData;
+            }
+        }
 
         final VM vm = VM.create(conn, vmr);
         if (s_logger.isDebugEnabled()) {
@@ -1329,8 +1342,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         final Integer speed = vmSpec.getMinSpeed();
         if (speed != null) {
-
-            int cpuWeight = _maxWeight; // cpu_weight
+        int cpuWeight = _maxWeight; // cpu_weight
             int utilization = 0; // max CPU cap, default is unlimited
 
             // weight based allocation, CPU weight is calculated per VCPU
