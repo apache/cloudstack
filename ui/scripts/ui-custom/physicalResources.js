@@ -61,7 +61,7 @@
                             );
 
                             $li.appendTo($socketInfo);
-                        });                        
+                        });
                     }
                 }
             });

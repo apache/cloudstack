@@ -262,7 +262,7 @@
                                             if ($.inArray(trafficType.dependsOn, validTrafficTypes) == -1) { //if its dependsOn is not a valid traffic type, either
                                                 return true; //skip this item
                                             }
-                                            //else, if its dependsOn is a valid traffic type, continue to Make list item	(e.g. providers.dependsOn is 'guest')
+                                            //else, if its dependsOn is a valid traffic type, continue to Make list item    (e.g. providers.dependsOn is 'guest')
                                         } else {
                                             return true; //if it doesn't have dependsOn, skip this item
                                         }

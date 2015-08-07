@@ -235,11 +235,11 @@
                                         }
 
                                         if (messages.complete) {
-                                        	if( messages.complete(args2.data) != null && messages.complete(args2.data).length > 0) {
-                                        		 cloudStack.dialog.notice({
+                                            if( messages.complete(args2.data) != null && messages.complete(args2.data).length > 0) {
+                                                 cloudStack.dialog.notice({
                                                      message: messages.complete(args2.data)
                                                  });
-                                        	} 
+                                            }
                                         }
                                         if (additional && additional.complete) additional.complete($.extend(true, args, {
                                             $detailView: $detailView
@@ -311,7 +311,7 @@
                     if (messages && messages.confirm) {
                         cloudStack.dialog.confirm({
                             message: messages.confirm(messageArgs),
-			    isWarning: messages.isWarning,
+                isWarning: messages.isWarning,
                             action: function() {
                                 performAction({
                                     id: id
@@ -387,48 +387,48 @@
                 }
             });
         },
-            
+
         destroy: function($detailView, args) {
             var tab = args.tabs[args.activeTab];
             var isMultiple = tab.multiple;
 
             uiActions.standard($detailView, args, {
                 noRefresh: true,
-                complete: function(args, args2) {                   	
-                	if ((!('id' in args2.data)) && ('toRemove' in args2.data) && (args2.data.toRemove == true)) {   
-	                    if (isMultiple && $detailView.is(':visible')) {
-	                        $detailView.find('.refresh').click(); // Reload tab
-	                    } else {
-	                        var $browser = $('#browser .container');
-	                        var $panel = $detailView.closest('.panel');
-	
-	                        if ($detailView.is(':visible')) {
-	                            $browser.cloudBrowser('selectPanel', {
-	                                panel: $panel.prev()
-	                            });
-	                        }
-	
-	                        if ($detailView.data("list-view-row") != null) {
-	                            var $row = $detailView.data('list-view-row');
-	                            var $tbody = $row.closest('tbody');
-	
-	                            $row.remove();
-	                            if (!$tbody.find('tr').size()) {
-	                                $("<tr>").addClass('empty').append(
-	                                    $("<td>").html(_l('label.no.data'))
-	                                ).appendTo($tbody);
-	                            }
-	                            $tbody.closest('table').dataTable('refresh');
-	                        }
-	                    }
-                	}  else {
-                		$detailView.find('.refresh').click(); // Reload tab
-                	}
+                complete: function(args, args2) {
+                    if ((!('id' in args2.data)) && ('toRemove' in args2.data) && (args2.data.toRemove == true)) {
+                        if (isMultiple && $detailView.is(':visible')) {
+                            $detailView.find('.refresh').click(); // Reload tab
+                        } else {
+                            var $browser = $('#browser .container');
+                            var $panel = $detailView.closest('.panel');
+
+                            if ($detailView.is(':visible')) {
+                                $browser.cloudBrowser('selectPanel', {
+                                    panel: $panel.prev()
+                                });
+                            }
+
+                            if ($detailView.data("list-view-row") != null) {
+                                var $row = $detailView.data('list-view-row');
+                                var $tbody = $row.closest('tbody');
+
+                                $row.remove();
+                                if (!$tbody.find('tr').size()) {
+                                    $("<tr>").addClass('empty').append(
+                                        $("<td>").html(_l('label.no.data'))
+                                    ).appendTo($tbody);
+                                }
+                                $tbody.closest('table').dataTable('refresh');
+                            }
+                        }
+                    }  else {
+                        $detailView.find('.refresh').click(); // Reload tab
+                    }
                 }
             });
         },
-       
-        
+
+
         /**
          * Convert editable fields to text boxes; clicking again saves data
          *
@@ -1059,22 +1059,6 @@
                 } else if (key != 'name') {
                     isOddRow = true;
                 }
-
-                //???
-                /*
-				 if("pollAgainIfValueIsIn" in value) {
-				 if ((content in value.pollAgainIfValueIsIn) && (value.pollAgainFn != null)) {
-				 //poll again
-				 var intervalKey = setInterval(function() {
-				 var toClearInterval = value.pollAgainFn(context);
-				 if(toClearInterval == true) {
-				 clearInterval(intervalKey);
-				 $('.detail-view .toolbar .button.refresh').click();	 //click Refresh button to refresh detailView
-				 }
-				 }, 2000);
-				 }
-				 }
-				 */
 
                 $name.html(_l(value.label));
                 $value.html(_s(content));

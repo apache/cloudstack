@@ -136,15 +136,15 @@
                     dataType: "json",
                     async: false,
                     success: function(json) {
-                        g_capabilities = json.listcapabilitiesresponse.capability;                        
-                        g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean   
-                        g_kvmsnapshotenabled = json.listcapabilitiesresponse.capability.kvmsnapshotenabled; //boolean          
-                        g_regionsecondaryenabled = json.listcapabilitiesresponse.capability.regionsecondaryenabled; //boolean    
+                        g_capabilities = json.listcapabilitiesresponse.capability;
+                        g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean
+                        g_kvmsnapshotenabled = json.listcapabilitiesresponse.capability.kvmsnapshotenabled; //boolean
+                        g_regionsecondaryenabled = json.listcapabilitiesresponse.capability.regionsecondaryenabled; //boolean
                         if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
-                            g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean                            
+                            g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
                         }
                         g_userProjectsEnabled = json.listcapabilitiesresponse.capability.allowusercreateprojects;
-                       
+
 
                         g_cloudstackversion = json.listcapabilitiesresponse.capability.cloudstackversion;
 
@@ -251,7 +251,7 @@
                         });
                         $.cookie('role', g_role, {
                             expires: 1
-                        });                        
+                        });
                         $.cookie('timezone', g_timezone, {
                             expires: 1
                         });
@@ -268,14 +268,14 @@
                             async: false,
                             success: function(json) {
                                 g_capabilities = json.listcapabilitiesresponse.capability;
-                                g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean      
-                                g_kvmsnapshotenabled = json.listcapabilitiesresponse.capability.kvmsnapshotenabled; //boolean           
-                                g_regionsecondaryenabled = json.listcapabilitiesresponse.capability.regionsecondaryenabled; //boolean                               
+                                g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean
+                                g_kvmsnapshotenabled = json.listcapabilitiesresponse.capability.kvmsnapshotenabled; //boolean
+                                g_regionsecondaryenabled = json.listcapabilitiesresponse.capability.regionsecondaryenabled; //boolean
                                 if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
-                                    g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean                                    
+                                    g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
                                 }
                                 g_userProjectsEnabled = json.listcapabilitiesresponse.capability.allowusercreateprojects;
-                                
+
 
                                 g_cloudstackversion = json.listcapabilitiesresponse.capability.cloudstackversion;
 
@@ -300,7 +300,7 @@
                                 args.response.error();
                             }
                         });
-                       
+
                         // Get project configuration
                         // TEMPORARY -- replace w/ output of capability response, etc., once implemented
                         window.g_projectsInviteRequired = false;
@@ -462,6 +462,6 @@
 
         cloudStack.uiCustom.login(loginArgs);
 
-        document.title = _l('label.app.name');            
+        document.title = _l('label.app.name');
     });
 })(cloudStack, jQuery);
