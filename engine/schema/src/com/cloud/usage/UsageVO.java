@@ -104,7 +104,7 @@ public class UsageVO implements Usage, InternalIdentity {
     private Date endDate = null;
 
     @Column(name = "quota_calculated")
-    private Integer quotaCalculated = null;
+    private Integer quotaCalculated = 0;
 
     public Integer getQuotaCalculated() {
         return quotaCalculated;

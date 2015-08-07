@@ -470,8 +470,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             if (domainId != -1) {
                 sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
             }
-            sc.addAnd("quotaCalculated", SearchCriteria.Op.NULL);
-            sc.addOr("quotaCalculated", SearchCriteria.Op.EQ, 0);
+            sc.addAnd("quotaCalculated", SearchCriteria.Op.NEQ, 1);
             if (s_logger.isDebugEnabled()){
                 s_logger.debug("Getting usage records" + usageFilter.getOrderBy());
             }
