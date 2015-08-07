@@ -475,7 +475,8 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
         if (domainId != -1) {
             sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
         }
-        sc.addAnd("quotaCalculated", SearchCriteria.Op.NEQ, 1);
+        sc.addAnd("quotaCalculated", SearchCriteria.Op.NULL);
+        sc.addOr("quotaCalculated", SearchCriteria.Op.EQ, 0);
         s_logger.debug("Getting usage records" + usageFilter.getOrderBy());
         Pair<List<UsageVO>, Integer> usageRecords = searchAndCountAllRecords(sc, usageFilter);
         TransactionLegacy.open(opendb).close();
