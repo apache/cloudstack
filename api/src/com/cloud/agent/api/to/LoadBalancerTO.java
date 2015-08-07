@@ -45,6 +45,8 @@ public class LoadBalancerTO {
     boolean revoked;
     boolean alreadyAdded;
     boolean inline;
+    String srcIpVlan;
+    Long networkId;
     DestinationTO[] destinations;
     private StickinessPolicyTO[] stickinessPolicies;
     private HealthCheckPolicyTO[] healthCheckPolicies;
@@ -192,6 +194,22 @@ public class LoadBalancerTO {
 
     public LbSslCert getSslCert() {
         return this.sslCert;
+    }
+
+    public String getSrcIpVlan() {
+        return srcIpVlan;
+    }
+
+    public void setSrcIpVlan(String srcIpVlan) {
+        this.srcIpVlan = srcIpVlan;
+    }
+
+    public Long getNetworkId() {
+        return networkId;
+    }
+
+    public void setNetworkId(long id) {
+        this.networkId = id;
     }
 
     public static class StickinessPolicyTO {

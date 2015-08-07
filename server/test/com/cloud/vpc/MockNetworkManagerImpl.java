@@ -907,8 +907,30 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
+<<<<<<< db052a96b18391ae5f972960d1f496f5396b8684
     public List<? extends NicSecondaryIp> listVmNicSecondaryIps(ListNicsCmd listNicsCmd) {
         return null;
+=======
+    public AcquirePodIpCmdResponse allocatePodIp(Account ipOwner, long zoneId, String cidr) throws ResourceAllocationException, ConcurrentOperationException {
+
+        Account caller = CallContext.current().getCallingAccount();
+        long callerUserId = CallContext.current().getCallingUserId();
+        DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
+
+        if (zone == null)
+            throw new InvalidParameterValueException("Invalid zone Id is Null");
+        if (_accountMgr.checkAccessAndSpecifyAuthority(caller, zoneId) != zoneId)
+            throw new InvalidParameterValueException("Caller does not have permission for this Zone" + "(" + zoneId + ")");
+        if (s_logger.isDebugEnabled())
+            s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
+        return _ipAddrMgr.allocatePodIp(zoneId, cidr);
+    }
+
+    @Override
+    public boolean releasePodIp(ReleasePodIpCmdByAdmin ip) throws CloudRuntimeException {
+        _ipAddrMgr.releasePodIp(ip.getId());
+        return true;
+>>>>>>> CLOUDSTACK-8672 : NCC Integration with CloudStack.
     }
 
 }
