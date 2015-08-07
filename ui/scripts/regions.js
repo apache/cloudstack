@@ -197,7 +197,7 @@
                                     var region = args.context.regions[0];
 
                                     /* e.g.
-                  region.endpoint	== "http://localhost:8080/client/"
+                  region.endpoint    == "http://localhost:8080/client/"
                   document.location.href == "http://localhost:8080/client/#"
                   */
                                     /*
@@ -482,13 +482,13 @@
                             label: 'label.gslb.assigned.lb'
                         },
                         actions: {
-                        	edit: {
+                            edit: {
                                 label: 'label.edit',
                                 action: function(args) {
                                     var data = {
-                                    	id: args.context.GSLB[0].id,
-                                    	description: args.data.description,
-                                    	gslblbmethod: args.data.gslblbmethod
+                                        id: args.context.GSLB[0].id,
+                                        description: args.data.description,
+                                        gslblbmethod: args.data.gslblbmethod
                                     };
                                     $.ajax({
                                         url: createURL('updateGlobalLoadBalancerRule'),
@@ -507,7 +507,7 @@
                                     poll: pollAsyncJobResult
                                 }
                             },
-                        	remove: {
+                            remove: {
                                 label: 'label.gslb.delete',
                                 messages: {
                                     confirm: function(args) {
@@ -956,8 +956,8 @@
                                     $.ajax({
                                         url: createURL('removeFromGlobalLoadBalancerRule'),
                                         data: {
-                                        	id: args.context.GSLB[0].id,
-                                        	loadbalancerrulelist: args.context.lbUnderGSLB[0].id
+                                            id: args.context.GSLB[0].id,
+                                            loadbalancerrulelist: args.context.lbUnderGSLB[0].id
                                         },
                                         success: function(json) {
                                             var jid = json.removefromloadbalancerruleresponse.jobid;

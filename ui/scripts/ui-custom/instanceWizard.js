@@ -1137,18 +1137,18 @@
                     // Next button
                     if ($target.closest('div.button.next').size()) {
                         //step 2 - select template/ISO
-                    	if($activeStep.hasClass('select-iso')) {
-                    		if ($activeStep.find('.content:visible input:checked').size() == 0) {
-	                            cloudStack.dialog.notice({
-	                                message: 'message.step.1.continue'
-	                            });
-	                            return false;
-	                        }
-	                        $(window).trigger("cloudStack.module.instanceWizard.clickNextButton", {
-	                        	$form: $form,
-                            	currentStep: 2
+                        if($activeStep.hasClass('select-iso')) {
+                            if ($activeStep.find('.content:visible input:checked').size() == 0) {
+                                cloudStack.dialog.notice({
+                                    message: 'message.step.1.continue'
+                                });
+                                return false;
+                            }
+                            $(window).trigger("cloudStack.module.instanceWizard.clickNextButton", {
+                                $form: $form,
+                                currentStep: 2
                             });
-                    	}
+                        }
 
                         //step 6 - select network
                         if ($activeStep.find('.wizard-step-conditional.select-network:visible').size() > 0) {

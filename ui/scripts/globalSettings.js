@@ -242,9 +242,9 @@
                     id: 'baremetalRct',
                     label: 'label.baremetal.rack.configuration',
                     fields: {
-                    	id: {
-                    		label: 'label.id'
-                    	},
+                        id: {
+                            label: 'label.id'
+                        },
                         url: {
                             label: 'label.url'
                         }
@@ -254,11 +254,11 @@
                         listViewDataProvider(args, data);
 
                         $.ajax({
-                        	url: createURL("listBaremetalRct"),
-                        	data: data,
-                        	success: function(json) {
-                        		args.response.success({ data: json.listbaremetalrctresponse.baremetalrct });
-                        	}
+                            url: createURL("listBaremetalRct"),
+                            data: data,
+                            success: function(json) {
+                                args.response.success({ data: json.listbaremetalrctresponse.baremetalrct });
+                            }
                         });
                     },
                     actions: {
@@ -282,13 +282,13 @@
                             },
                             action: function(args) {
                                 $.ajax({
-                                	url: createURL("addBaremetalRct"),
-                                	data: {
-                                		baremetalrcturl: args.data.url
-                                	},
-                                	success: function(json) {
-                                		var jid = json.addbaremetalrctresponse.jobid
-                                		args.response.success({
+                                    url: createURL("addBaremetalRct"),
+                                    data: {
+                                        baremetalrcturl: args.data.url
+                                    },
+                                    success: function(json) {
+                                        var jid = json.addbaremetalrctresponse.jobid
+                                        args.response.success({
                                             _custom: {
                                                 jobId: jid,
                                                 getUpdatedItem: function(json) {
@@ -296,7 +296,7 @@
                                                 }
                                             }
                                         });
-                                	}
+                                    }
                                 });
                             },
                             notification: {
@@ -306,9 +306,9 @@
                     },
 
                     detailView: {
-                    	name: "details",
-                    	actions: {
-                    		remove: {
+                        name: "details",
+                        actions: {
+                            remove: {
                                 label: 'label.delete.baremetal.rack.configuration',
                                 messages: {
                                     confirm: function(args) {
@@ -326,7 +326,7 @@
                                         url: createURL('deleteBaremetalRct'),
                                         data: data,
                                         success: function(json) {
-                                        	var jid = json.deletebaremetalrctresponse.jobid;
+                                            var jid = json.deletebaremetalrctresponse.jobid;
                                             args.response.success({
                                                 _custom: {
                                                     jobId: jid
@@ -339,14 +339,14 @@
                                     poll: pollAsyncJobResult
                                 }
                             }
-                    	},
-                    	tabs: {
+                        },
+                        tabs: {
                             details: {
                                 title: 'label.details',
                                 fields: [{
-                                	id: {
-                                		label: 'label.id'
-                                	},
+                                    id: {
+                                        label: 'label.id'
+                                    },
                                     url: {
                                         label: 'label.url'
                                     }
@@ -356,11 +356,11 @@
                                         id: args.context.baremetalRct[0].id
                                     };
                                     $.ajax({
-                                    	url: createURL("listBaremetalRct"),
-                                    	data: data,
-                                    	success: function(json) {
-                                    		args.response.success({ data: json.listbaremetalrctresponse.baremetalrct[0] });
-                                    	}
+                                        url: createURL("listBaremetalRct"),
+                                        data: data,
+                                        success: function(json) {
+                                            args.response.success({ data: json.listbaremetalrctresponse.baremetalrct[0] });
+                                        }
                                     });
                                 }
                             }

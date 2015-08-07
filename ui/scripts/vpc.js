@@ -127,10 +127,10 @@
                 }
             }),
             action: function(args) {
-            	/*
-            	 * path 1: Network > VPC (list) > click "Configure" > pick an internal LB tier > click "Internal LB" (list) > click on a grid row (Details tab) > click "Assign VMs" tab > click Assign VMs" button on top of list
-            	 * path 2: Network > VPC (list) > click "Configure" > pick an internal LB tier > click "Internal LB" (list) > "QuickView" on a grid row > click "Assign VMs" button in QuickView
-            	 */
+                /*
+                 * path 1: Network > VPC (list) > click "Configure" > pick an internal LB tier > click "Internal LB" (list) > click on a grid row (Details tab) > click "Assign VMs" tab > click Assign VMs" button on top of list
+                 * path 2: Network > VPC (list) > click "Configure" > pick an internal LB tier > click "Internal LB" (list) > "QuickView" on a grid row > click "Assign VMs" button in QuickView
+                 */
                 var $rows = $(':ui-dialog .list-view tbody tr');
                 var vms = args.context.instances;
 
@@ -1193,9 +1193,9 @@
                         }
                     },
                     dataProvider: function(args) {
-                    	var data = {
-                    		vpcid: args.context.vpc[0].id
-                    	};
+                        var data = {
+                            vpcid: args.context.vpc[0].id
+                        };
                         listViewDataProvider(args, data);
 
                         $.ajax({
@@ -3099,7 +3099,7 @@
                                 if (args.context.networks[0].type == "Isolated") { //Isolated network
                                     cloudStack.dialog.confirm({
                                         message: 'message.confirm.current.guest.CIDR.unchanged',
-                                        action: function() { //"Yes"	button is clicked
+                                        action: function() { //"Yes"    button is clicked
                                             array1.push("&changecidr=false");
                                             $.ajax({
                                                 url: createURL("updateNetwork&id=" + args.context.networks[0].id + array1.join("")),
@@ -3352,25 +3352,25 @@
                 },
 
                 tabFilter: function(args) {
-                	var hiddenTabs = ['ipAddresses', 'acl']; // Disable IP address tab; it is redundant with 'view all' button
+                    var hiddenTabs = ['ipAddresses', 'acl']; // Disable IP address tab; it is redundant with 'view all' button
 
-                	var networkOfferingHavingELB = false;
+                    var networkOfferingHavingELB = false;
                     var services = args.context.networks[0].service;
                     if(services != null) {
-                    	for(var i = 0; i < services.length; i++) {
-                    		if (services[i].name == "Lb") {
-                    			var capabilities = services[i].capability;
-                    			if(capabilities != null) {
-                    				for(var k = 0; k < capabilities.length; k++) {
-                    					if(capabilities[k].name == "ElasticLb") {
-                    						networkOfferingHavingELB = true;
-                    						break;
-                    					}
-                    				}
-                    			}
+                        for(var i = 0; i < services.length; i++) {
+                            if (services[i].name == "Lb") {
+                                var capabilities = services[i].capability;
+                                if(capabilities != null) {
+                                    for(var k = 0; k < capabilities.length; k++) {
+                                        if(capabilities[k].name == "ElasticLb") {
+                                            networkOfferingHavingELB = true;
+                                            break;
+                                        }
+                                    }
+                                }
                                 break;
                             }
-                    	}
+                        }
                     }
                     if (networkOfferingHavingELB == false) {
                         hiddenTabs.push("addloadBalancer");

@@ -342,7 +342,7 @@
 
                     virtualRouterCount: function (data) {
                         var data2 = {
-                        	listAll: true,
+                            listAll: true,
                             page: 1,
                             pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                         };
@@ -361,18 +361,18 @@
                                 if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
                                 var data3 = {
                                     listAll: true,
-	                                    projectid: -1,
+                                        projectid: -1,
                                     page: 1,
                                     pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                                 };
                                 $.ajax({
                                     url: createURL('listRouters'),
                                     data: data3,
-	                                    async: false,
+                                        async: false,
                                     success: function (json) {
-	                                        total2 = json.listroutersresponse.count ? json.listroutersresponse.count : 0;
-	                                    }
-	                                });
+                                            total2 = json.listroutersresponse.count ? json.listroutersresponse.count : 0;
+                                        }
+                                    });
                                 }
 
                                         dataFns.capacity($.extend(data, {
@@ -432,7 +432,7 @@
                                         var returnedHostCount = 0;
                                         var returnedHostCpusocketsSum = 0;
 
-                                    	var callListHostsWithPage = function() {
+                                        var callListHostsWithPage = function() {
                                             $.ajax({
                                                 url: createURL('listHosts'),
                                                 async: false,
@@ -459,13 +459,13 @@
 
                                                     if (returnedHostCount < totalHostCount) {
                                                         currentPage++;
-                                        				callListHostsWithPage();
+                                                        callListHostsWithPage();
                                                     }
                                                 }
                                             });
                                         }
 
-                                    	callListHostsWithPage();
+                                        callListHostsWithPage();
 
                                         socketCount += returnedHostCpusocketsSum;
                                     })
@@ -1342,9 +1342,9 @@
                                         success: function (json) {
                                             selectedPhysicalNetworkObj = json.listphysicalnetworksresponse.physicalnetwork[0];
 
-                                            //	var startVlan, endVlan;
+                                            //    var startVlan, endVlan;
                                             var vlan = selectedPhysicalNetworkObj.vlan;
-                                            /*	if(vlan != null && vlan.length > 0) {
+                                            /*    if(vlan != null && vlan.length > 0) {
                                             if(vlan.indexOf("-") != -1) {
                                             var vlanArray = vlan.split("-");
                                             startVlan = vlanArray[0];
@@ -1648,7 +1648,7 @@
                                                             cloudStack.dialog.confirm({
                                                                 message: 'message.confirm.current.guest.CIDR.unchanged',
                                                                 action: function () {
-                                                                    //"Yes"	button is clicked
+                                                                    //"Yes"    button is clicked
                                                                     array1.push("&changecidr=false");
                                                                     $.ajax({
                                                                         url: createURL("updateNetwork&id=" + args.context.networks[0].id + array1.join("")),
@@ -1971,8 +1971,8 @@
                                                             addExtraPropertiesToGuestNetworkObject(selectedGuestNetworkObj);
 
                                                             $(window).trigger('cloudStack.module.sharedFunctions.addExtraProperties', {
-                                                            	obj: selectedGuestNetworkObj,
-                                                            	objType: "Network"
+                                                                obj: selectedGuestNetworkObj,
+                                                                objType: "Network"
                                                             });
 
                                                             args.response.success({
@@ -2418,7 +2418,7 @@
                                                 $.ajax({
                                                     url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                                     data: data2,
-	                                                    async: false,
+                                                        async: false,
                                                     success: function (json) {
                                                         var items = json.listroutersresponse.router ?
                                                         json.listroutersresponse.router:[];
@@ -2426,8 +2426,8 @@
                                                         $(items).map(function (index, item) {
                                                             routers.push(item);
                                                         });
-	                                                    }
-	                                                });
+                                                        }
+                                                    });
                                                 }
 
                                                         args.response.success({
@@ -3515,14 +3515,14 @@
                                                     url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                                     dataType: 'json',
                                                     data: data2,
-	                                                    async: false,
+                                                        async: false,
                                                     success: function (json) {
                                                         var items = json.listroutersresponse.router;
                                                         $(items).map(function (index, item) {
                                                             routers.push(item);
                                                         });
-	                                                    }
-	                                                });
+                                                        }
+                                                    });
                                                 }
 
                                                         args.response.success({
@@ -5824,7 +5824,7 @@
                             }
                         }
                     },
-					// Brocade Vcs provider detail view
+                    // Brocade Vcs provider detail view
                     brocadeVcs: {
                         type: 'detailView',
                         id: 'brocadeVcsProvider',
@@ -6919,247 +6919,247 @@
                     },
                     // Nuage Vsp provider detail view
                     nuageVsp: {
-	                     type: 'detailView',
-	                     id: 'nuageVspProvider',
-	                     label: 'label.nuageVsp',
-	                     viewAll: {
-	                         label: 'label.devices',
-	                         path: '_zone.nuageVspDevices'
-	                     },
-	                     tabs: {
-	                         details: {
-	                             title: 'label.details',
-	                             fields: [{
-	                                 name: {
-	                                     label: 'label.name'
-	                                 }
-	                             }, {
-	                                 state: {
-	                                     label: 'label.state'
-	                                 }
-	                             }],
-	                             dataProvider: function(args) {
-	                                 refreshNspData("NuageVsp");
-	                                 var providerObj;
-	                                 $(nspHardcodingArray).each(function() {
-	                                     if (this.id == "nuageVsp") {
-	                                         providerObj = this;
-	                                         return false; //break each loop
-	                                     }
-	                                 });
-	                                 args.response.success({
-	                                     data: providerObj,
-	                                     actionFilter: networkProviderActionFilter('nuageVsp')
-	                                 });
-	                             }
-	                         }
-	                     },
-	                     actions: {
-	                         add: {
-	                             label: 'label.add.NuageVsp.device',
-	                             createForm: {
-	                                 title: 'label.add.NuageVsp.device',
-	                                 preFilter: function(args) {},
-	                                 fields: {
-	                                     hostname: {
-	                                         label: 'label.host.name',
-	                                         validation: {
-	                                             required: true
-	                                         },
-	                                         docID: 'helpVspHostname'
-	                                     },
-	                                     username: {
-	                                         label: 'label.username',
-	                                         validation: {
-	                                             required: true
-	                                         },
-	                                         docID: 'helpVspUsername'
-	                                     },
-	                                     password: {
-	                                         label: 'label.password',
-	                                         isPassword: true,
-	                                         validation: {
-	                                             required: true
-	                                         },
-	                                         docID: 'helpVspPassword'
-	                                     },
-	                                     port: {
-	                                         label: 'label.port',
-	                                         validation: {
-	                                             required: false,
-	                                             number: true
-	                                         },
-	                                         docID: 'helpVspPort'
-	                                     },
-	                                     apiversion: {
-	                                         label: 'label.api.version',
-	                                         defaultValue: 'v1_0',
-	                                         validation: {
-	                                             required: true
-	                                         },
-	                                         docID: 'helpVspApiVersion'
-	                                     },
-	                                     retrycount: {
-	                                         label: 'label.numretries',
-	                                         defaultValue: '4',
-	                                         validation: {
-	                                             required: true,
-	                                             number: true
-	                                         },
-	                                         docID: 'helpVspRetries'
-	                                     },
-	                                     retryinterval: {
-	                                         label: 'label.retry.interval',
-	                                         defaultValue: '60',
-	                                         validation: {
-	                                             required: false,
-	                                             number: true
-	                                         },
-	                                         docID: 'helpVspRetryInterval'
-	                                     }
-	                                 }
-	                             },
-	                             action: function(args) {
-	                                 if (nspMap["nuageVsp"] == null) {
-	                                     $.ajax({
-	                                         url: createURL("addNetworkServiceProvider&name=NuageVsp&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
-	                                         dataType: "json",
-	                                         async: true,
-	                                         success: function(json) {
-	                                             var jobId = json.addnetworkserviceproviderresponse.jobid;
-	                                             var addNuageVspProviderIntervalID = setInterval(function() {
-	                                                 $.ajax({
-	                                                     url: createURL("queryAsyncJobResult&jobId=" + jobId),
-	                                                     dataType: "json",
-	                                                     success: function(json) {
-	                                                         var result = json.queryasyncjobresultresponse;
-	                                                         if (result.jobstatus == 0) {
-	                                                             return; //Job has not completed
-	                                                         } else {
-	                                                             clearInterval(addNuageVspProviderIntervalID);
-	                                                             if (result.jobstatus == 1) {
-	                                                                 nspMap["nuageVsp"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
-	                                                                 addNuageVspDevice(args, selectedPhysicalNetworkObj, "addNuageVspDevice", "addnuagevspdeviceresponse", "nuagevspdevice")
-	                                                             } else if (result.jobstatus == 2) {
-	                                                                 alert("addNetworkServiceProvider&name=NuageVsp failed. Error: " + _s(result.jobresult.errortext));
-	                                                             }
-	                                                         }
-	                                                     },
-	                                                     error: function(XMLHttpResponse) {
-	                                                         var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-	                                                         alert("addNetworkServiceProvider&name=NuageVsp failed. Error: " + errorMsg);
-	                                                     }
-	                                                 });
-	                                             }, g_queryAsyncJobResultInterval);
-	                                         }
-	                                     });
-	                                 } else {
-	                                     addNuageVspDevice(args, selectedPhysicalNetworkObj, "addNuageVspDevice", "addnuagevspdeviceresponse", "nuagevspdevice")
-	                                 }
-	                             },
-	                             messages: {
-	                                 notification: function(args) {
-	                                     return 'label.add.NuageVsp.device';
-	                                 }
-	                             },
-	                             notification: {
-	                                 poll: pollAsyncJobResult
-	                             }
-	                         },
-	                         enable: {
-	                             label: 'label.enable.provider',
-	                             action: function(args) {
-	                                 $.ajax({
-	                                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["nuageVsp"].id + "&state=Enabled"),
-	                                     dataType: "json",
-	                                     success: function(json) {
-	                                         var jid = json.updatenetworkserviceproviderresponse.jobid;
-	                                         args.response.success({
-	                                             _custom: {
-	                                                 jobId: jid,
-	                                                 getUpdatedItem: function(json) {
-	                                                     $(window).trigger('cloudStack.fullRefresh');
-	                                                 }
-	                                             }
-	                                         });
-	                                     }
-	                                 });
-	                             },
-	                             messages: {
-	                                 confirm: function(args) {
-	                                     return 'message.confirm.enable.provider';
-	                                 },
-	                                 notification: function() {
-	                                     return 'label.enable.provider';
-	                                 }
-	                             },
-	                             notification: {
-	                                 poll: pollAsyncJobResult
-	                             }
-	                         },
-	                         disable: {
-	                             label: 'label.disable.provider',
-	                             action: function(args) {
-	                                 $.ajax({
-	                                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["nuageVsp"].id + "&state=Disabled"),
-	                                     dataType: "json",
-	                                     success: function(json) {
-	                                         var jid = json.updatenetworkserviceproviderresponse.jobid;
-	                                         args.response.success({
-	                                             _custom: {
-	                                                 jobId: jid,
-	                                                 getUpdatedItem: function(json) {
-	                                                     $(window).trigger('cloudStack.fullRefresh');
-	                                                 }
-	                                             }
-	                                         });
-	                                     }
-	                                 });
-	                             },
-	                             messages: {
-	                                 confirm: function(args) {
-	                                     return 'message.confirm.disable.provider';
-	                                 },
-	                                 notification: function() {
-	                                     return 'label.disable.provider';
-	                                 }
-	                             },
-	                             notification: {
-	                                 poll: pollAsyncJobResult
-	                             }
-	                         },
-	                         destroy: {
-	                             label: 'label.shutdown.provider',
-	                             action: function(args) {
-	                                 $.ajax({
-	                                     url: createURL("deleteNetworkServiceProvider&id=" + nspMap["nuageVsp"].id),
-	                                     dataType: "json",
-	                                     success: function(json) {
-	                                         var jid = json.deletenetworkserviceproviderresponse.jobid;
-	                                         args.response.success({
-	                                             _custom: {
-	                                                 jobId: jid
-	                                             }
-	                                         });
+                         type: 'detailView',
+                         id: 'nuageVspProvider',
+                         label: 'label.nuageVsp',
+                         viewAll: {
+                             label: 'label.devices',
+                             path: '_zone.nuageVspDevices'
+                         },
+                         tabs: {
+                             details: {
+                                 title: 'label.details',
+                                 fields: [{
+                                     name: {
+                                         label: 'label.name'
+                                     }
+                                 }, {
+                                     state: {
+                                         label: 'label.state'
+                                     }
+                                 }],
+                                 dataProvider: function(args) {
+                                     refreshNspData("NuageVsp");
+                                     var providerObj;
+                                     $(nspHardcodingArray).each(function() {
+                                         if (this.id == "nuageVsp") {
+                                             providerObj = this;
+                                             return false; //break each loop
+                                         }
+                                     });
+                                     args.response.success({
+                                         data: providerObj,
+                                         actionFilter: networkProviderActionFilter('nuageVsp')
+                                     });
+                                 }
+                             }
+                         },
+                         actions: {
+                             add: {
+                                 label: 'label.add.NuageVsp.device',
+                                 createForm: {
+                                     title: 'label.add.NuageVsp.device',
+                                     preFilter: function(args) {},
+                                     fields: {
+                                         hostname: {
+                                             label: 'label.host.name',
+                                             validation: {
+                                                 required: true
+                                             },
+                                             docID: 'helpVspHostname'
+                                         },
+                                         username: {
+                                             label: 'label.username',
+                                             validation: {
+                                                 required: true
+                                             },
+                                             docID: 'helpVspUsername'
+                                         },
+                                         password: {
+                                             label: 'label.password',
+                                             isPassword: true,
+                                             validation: {
+                                                 required: true
+                                             },
+                                             docID: 'helpVspPassword'
+                                         },
+                                         port: {
+                                             label: 'label.port',
+                                             validation: {
+                                                 required: false,
+                                                 number: true
+                                             },
+                                             docID: 'helpVspPort'
+                                         },
+                                         apiversion: {
+                                             label: 'label.api.version',
+                                             defaultValue: 'v1_0',
+                                             validation: {
+                                                 required: true
+                                             },
+                                             docID: 'helpVspApiVersion'
+                                         },
+                                         retrycount: {
+                                             label: 'label.numretries',
+                                             defaultValue: '4',
+                                             validation: {
+                                                 required: true,
+                                                 number: true
+                                             },
+                                             docID: 'helpVspRetries'
+                                         },
+                                         retryinterval: {
+                                             label: 'label.retry.interval',
+                                             defaultValue: '60',
+                                             validation: {
+                                                 required: false,
+                                                 number: true
+                                             },
+                                             docID: 'helpVspRetryInterval'
+                                         }
+                                     }
+                                 },
+                                 action: function(args) {
+                                     if (nspMap["nuageVsp"] == null) {
+                                         $.ajax({
+                                             url: createURL("addNetworkServiceProvider&name=NuageVsp&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                                             dataType: "json",
+                                             async: true,
+                                             success: function(json) {
+                                                 var jobId = json.addnetworkserviceproviderresponse.jobid;
+                                                 var addNuageVspProviderIntervalID = setInterval(function() {
+                                                     $.ajax({
+                                                         url: createURL("queryAsyncJobResult&jobId=" + jobId),
+                                                         dataType: "json",
+                                                         success: function(json) {
+                                                             var result = json.queryasyncjobresultresponse;
+                                                             if (result.jobstatus == 0) {
+                                                                 return; //Job has not completed
+                                                             } else {
+                                                                 clearInterval(addNuageVspProviderIntervalID);
+                                                                 if (result.jobstatus == 1) {
+                                                                     nspMap["nuageVsp"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                                                                     addNuageVspDevice(args, selectedPhysicalNetworkObj, "addNuageVspDevice", "addnuagevspdeviceresponse", "nuagevspdevice")
+                                                                 } else if (result.jobstatus == 2) {
+                                                                     alert("addNetworkServiceProvider&name=NuageVsp failed. Error: " + _s(result.jobresult.errortext));
+                                                                 }
+                                                             }
+                                                         },
+                                                         error: function(XMLHttpResponse) {
+                                                             var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                             alert("addNetworkServiceProvider&name=NuageVsp failed. Error: " + errorMsg);
+                                                         }
+                                                     });
+                                                 }, g_queryAsyncJobResultInterval);
+                                             }
+                                         });
+                                     } else {
+                                         addNuageVspDevice(args, selectedPhysicalNetworkObj, "addNuageVspDevice", "addnuagevspdeviceresponse", "nuagevspdevice")
+                                     }
+                                 },
+                                 messages: {
+                                     notification: function(args) {
+                                         return 'label.add.NuageVsp.device';
+                                     }
+                                 },
+                                 notification: {
+                                     poll: pollAsyncJobResult
+                                 }
+                             },
+                             enable: {
+                                 label: 'label.enable.provider',
+                                 action: function(args) {
+                                     $.ajax({
+                                         url: createURL("updateNetworkServiceProvider&id=" + nspMap["nuageVsp"].id + "&state=Enabled"),
+                                         dataType: "json",
+                                         success: function(json) {
+                                             var jid = json.updatenetworkserviceproviderresponse.jobid;
+                                             args.response.success({
+                                                 _custom: {
+                                                     jobId: jid,
+                                                     getUpdatedItem: function(json) {
+                                                         $(window).trigger('cloudStack.fullRefresh');
+                                                     }
+                                                 }
+                                             });
+                                         }
+                                     });
+                                 },
+                                 messages: {
+                                     confirm: function(args) {
+                                         return 'message.confirm.enable.provider';
+                                     },
+                                     notification: function() {
+                                         return 'label.enable.provider';
+                                     }
+                                 },
+                                 notification: {
+                                     poll: pollAsyncJobResult
+                                 }
+                             },
+                             disable: {
+                                 label: 'label.disable.provider',
+                                 action: function(args) {
+                                     $.ajax({
+                                         url: createURL("updateNetworkServiceProvider&id=" + nspMap["nuageVsp"].id + "&state=Disabled"),
+                                         dataType: "json",
+                                         success: function(json) {
+                                             var jid = json.updatenetworkserviceproviderresponse.jobid;
+                                             args.response.success({
+                                                 _custom: {
+                                                     jobId: jid,
+                                                     getUpdatedItem: function(json) {
+                                                         $(window).trigger('cloudStack.fullRefresh');
+                                                     }
+                                                 }
+                                             });
+                                         }
+                                     });
+                                 },
+                                 messages: {
+                                     confirm: function(args) {
+                                         return 'message.confirm.disable.provider';
+                                     },
+                                     notification: function() {
+                                         return 'label.disable.provider';
+                                     }
+                                 },
+                                 notification: {
+                                     poll: pollAsyncJobResult
+                                 }
+                             },
+                             destroy: {
+                                 label: 'label.shutdown.provider',
+                                 action: function(args) {
+                                     $.ajax({
+                                         url: createURL("deleteNetworkServiceProvider&id=" + nspMap["nuageVsp"].id),
+                                         dataType: "json",
+                                         success: function(json) {
+                                             var jid = json.deletenetworkserviceproviderresponse.jobid;
+                                             args.response.success({
+                                                 _custom: {
+                                                     jobId: jid
+                                                 }
+                                             });
 
-	                                         $(window).trigger('cloudStack.fullRefresh');
-	                                     }
-	                                 });
-	                             },
-	                             messages: {
-	                                 confirm: function(args) {
-	                                     return 'message.confirm.shutdown.provider';
-	                                 },
-	                                 notification: function(args) {
-	                                     return 'label.shutdown.provider';
-	                                 }
-	                             },
-	                             notification: {
-	                                 poll: pollAsyncJobResult
-	                             }
-	                         }
-	                     }
-	                },
+                                             $(window).trigger('cloudStack.fullRefresh');
+                                         }
+                                     });
+                                 },
+                                 messages: {
+                                     confirm: function(args) {
+                                         return 'message.confirm.shutdown.provider';
+                                     },
+                                     notification: function(args) {
+                                         return 'label.shutdown.provider';
+                                     }
+                                 },
+                                 notification: {
+                                     poll: pollAsyncJobResult
+                                 }
+                             }
+                         }
+                    },
                     Opendaylight: {
                         type: 'detailView',
                         id: 'openDaylightProvider',
@@ -8221,8 +8221,8 @@
                                                     selectedZoneObj = json.listzonesresponse.zone[0];
 
                                                     $(window).trigger('cloudStack.module.sharedFunctions.addExtraProperties', {
-                                                    	obj: selectedZoneObj,
-                                                    	objType: "Zone"
+                                                        obj: selectedZoneObj,
+                                                        objType: "Zone"
                                                     });
 
                                                     $.ajax({
@@ -9195,14 +9195,14 @@
                                                             }
                                                         }
                                                         if (accountIsNotSpecifiedInAdvSearch) {
-				                                            /*
-				                                             * In project view, the first listRotuers API(without projectid=-1) will return the same objects as the second listRouters API(with projectid=-1),
-				                                             * because in project view, all API calls are appended with projectid=[projectID].
-				                                             * Therefore, we only call the second listRouters API(with projectid=-1) in non-project view.
-				                                             */
-				                                            if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
+                                                            /*
+                                                             * In project view, the first listRotuers API(without projectid=-1) will return the same objects as the second listRouters API(with projectid=-1),
+                                                             * because in project view, all API calls are appended with projectid=[projectID].
+                                                             * Therefore, we only call the second listRouters API(with projectid=-1) in non-project view.
+                                                             */
+                                                            if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
                                                             $.ajax({
-					                                                url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + "&projectid=-1"),
+                                                                    url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + "&projectid=-1"),
                                                                 async: false,
                                                                 success: function (json) {
                                                                     var items = json.listroutersresponse.router ? json.listroutersresponse.router:[];
@@ -9215,10 +9215,10 @@
                                                         }
                                                     }
 
-			                                            args.response.success({
-			                                                actionFilter: routerActionfilter,
-			                                                data: $(routers).map(mapRouterType)
-			                                            });
+                                                        args.response.success({
+                                                            actionFilter: routerActionfilter,
+                                                            data: $(routers).map(mapRouterType)
+                                                        });
                                                     }
                                                 });
 
@@ -9273,31 +9273,31 @@
                                     }
                                 },
                                 dataProvider: function (args) {
-                                	var array1 = [];
+                                    var array1 = [];
 
-                                	// ***** non XenServer (begin) *****
-					var hypervisors = ["Hyperv", "KVM", "VMware", "BareMetal", "LXC", "Ovm3"];
+                                    // ***** non XenServer (begin) *****
+                    var hypervisors = ["Hyperv", "KVM", "VMware", "BareMetal", "LXC", "Ovm3"];
 
-                                        	var supportSocketHypervisors = {
+                                            var supportSocketHypervisors = {
                                                 "Hyperv": 1,
                                                 "KVM": 1,
                                                 "VMware": 1,
                                                 "Ovm3": 1
-                                        	};
+                                            };
 
-                                	for (var h = 0; h < hypervisors.length; h++) {
+                                    for (var h = 0; h < hypervisors.length; h++) {
                                                     var totalHostCount = 0;
                                                     var currentPage = 1;
                                                     var returnedHostCount = 0;
                                                     var returnedHostCpusocketsSum = 0;
 
-                                    	var callListHostsWithPage = function() {
+                                        var callListHostsWithPage = function() {
                                                         $.ajax({
                                                             url: createURL('listHosts'),
                                                             async: false,
                                                             data: {
                                                                 type: 'routing',
-                                        			hypervisor: hypervisors[h],
+                                                    hypervisor: hypervisors[h],
                                                                 page: currentPage,
                                                                 pagesize: pageSize //global variable
                                                             },
@@ -9318,112 +9318,112 @@
 
                                                                 if (returnedHostCount < totalHostCount) {
                                                                     currentPage++;
-                                        				callListHostsWithPage();
+                                                        callListHostsWithPage();
                                                                 }
                                                             }
                                                         });
                                                     }
 
-                                    	callListHostsWithPage();
+                                        callListHostsWithPage();
 
-                                    	if ((hypervisors[h] in supportSocketHypervisors) == false) {
-                                                		returnedHostCpusocketsSum = 'N/A';
-                                                	}
+                                        if ((hypervisors[h] in supportSocketHypervisors) == false) {
+                                                        returnedHostCpusocketsSum = 'N/A';
+                                                    }
 
-                                    	var hypervisorName = hypervisors[h];
-                                    	if (hypervisorName == "Hyperv") {
-                                    		hypervisorName = "Hyper-V";
-                                    	}
+                                        var hypervisorName = hypervisors[h];
+                                        if (hypervisorName == "Hyperv") {
+                                            hypervisorName = "Hyper-V";
+                                        }
 
-                                    	array1.push({
+                                        array1.push({
                                             hypervisor: hypervisorName,
                                                         hosts: totalHostCount,
                                                         sockets: returnedHostCpusocketsSum
                                             });
                                         }
-                                	// ***** non XenServer (end) *****
+                                    // ***** non XenServer (end) *****
 
 
-                                	// ***** XenServer (begin) *****
-                                	var totalHostCount = 0;
-                                	var currentPage = 1;
-                                	var returnedHostCount = 0;
+                                    // ***** XenServer (begin) *****
+                                    var totalHostCount = 0;
+                                    var currentPage = 1;
+                                    var returnedHostCount = 0;
 
-                                	var returnedHostCountForXenServer650 = 0;  //'XenServer 6.5.0'
-                                	var returnedHostCpusocketsSumForXenServer650 = 0;
+                                    var returnedHostCountForXenServer650 = 0;  //'XenServer 6.5.0'
+                                    var returnedHostCpusocketsSumForXenServer650 = 0;
 
-                                	var returnedHostCountForXenServer620 = 0;  //'XenServer 6.2.0'
-                                	var returnedHostCpusocketsSumForXenServer620 = 0;
+                                    var returnedHostCountForXenServer620 = 0;  //'XenServer 6.2.0'
+                                    var returnedHostCpusocketsSumForXenServer620 = 0;
 
-                                	var returnedHostCountForXenServer61x = 0;  //'XenServer 6.1.x and before'
+                                    var returnedHostCountForXenServer61x = 0;  //'XenServer 6.1.x and before'
 
-                                	var callListHostsWithPage = function() {
-                                		$.ajax({
-                        					url: createURL('listHosts'),
-                                    		async: false,
-                                    		data: {
-                                    			type: 'routing',
-                                    			hypervisor: 'XenServer',
-                                    			page: currentPage,
-                                    	        pagesize: pageSize //global variable
-                                    		},
-                                    		success: function(json) {
-                                    			if (json.listhostsresponse.count == undefined) {
-                                    				return;
-                                    			}
+                                    var callListHostsWithPage = function() {
+                                        $.ajax({
+                                            url: createURL('listHosts'),
+                                            async: false,
+                                            data: {
+                                                type: 'routing',
+                                                hypervisor: 'XenServer',
+                                                page: currentPage,
+                                                pagesize: pageSize //global variable
+                                            },
+                                            success: function(json) {
+                                                if (json.listhostsresponse.count == undefined) {
+                                                    return;
+                                                }
 
-                                    			totalHostCount = json.listhostsresponse.count;
-                                    			returnedHostCount += json.listhostsresponse.host.length;
+                                                totalHostCount = json.listhostsresponse.count;
+                                                returnedHostCount += json.listhostsresponse.host.length;
 
-                                    			var items = json.listhostsresponse.host;
-                                    			for (var i = 0; i < items.length; i++) {
-                                    				if (items[i].hypervisorversion == "6.5.0") {
-                                    					returnedHostCountForXenServer650 ++;
-                                    					if (items[i].cpusockets != undefined && isNaN(items[i].cpusockets) == false) {
-                                        					returnedHostCpusocketsSumForXenServer650 += items[i].cpusockets;
-                                        				}
-                                    				} else if (items[i].hypervisorversion == "6.2.0") {
-                                    					returnedHostCountForXenServer620 ++;
-                                    					if (items[i].cpusockets != undefined && isNaN(items[i].cpusockets) == false) {
-                                        					returnedHostCpusocketsSumForXenServer620 += items[i].cpusockets;
-                                        				}
-                                    				} else {
-                                    					returnedHostCountForXenServer61x++;
-                                    				}
-                                    			}
+                                                var items = json.listhostsresponse.host;
+                                                for (var i = 0; i < items.length; i++) {
+                                                    if (items[i].hypervisorversion == "6.5.0") {
+                                                        returnedHostCountForXenServer650 ++;
+                                                        if (items[i].cpusockets != undefined && isNaN(items[i].cpusockets) == false) {
+                                                            returnedHostCpusocketsSumForXenServer650 += items[i].cpusockets;
+                                                        }
+                                                    } else if (items[i].hypervisorversion == "6.2.0") {
+                                                        returnedHostCountForXenServer620 ++;
+                                                        if (items[i].cpusockets != undefined && isNaN(items[i].cpusockets) == false) {
+                                                            returnedHostCpusocketsSumForXenServer620 += items[i].cpusockets;
+                                                        }
+                                                    } else {
+                                                        returnedHostCountForXenServer61x++;
+                                                    }
+                                                }
 
-                                    			if (returnedHostCount < totalHostCount) {
-                                    				currentPage++;
-                                    				callListHostsWithPage();
-                                    			}
-                                    		}
-                        				});
-                                	}
+                                                if (returnedHostCount < totalHostCount) {
+                                                    currentPage++;
+                                                    callListHostsWithPage();
+                                                }
+                                            }
+                                        });
+                                    }
 
-                                	callListHostsWithPage();
+                                    callListHostsWithPage();
 
-                                	array1.push({
+                                    array1.push({
                                         hypervisor: 'XenServer 6.5.0',
                                         hosts: returnedHostCountForXenServer650,
                                         sockets: returnedHostCpusocketsSumForXenServer650
                                     });
 
-                                	array1.push({
+                                    array1.push({
                                         hypervisor: 'XenServer 6.2.0',
                                         hosts: returnedHostCountForXenServer620,
                                         sockets: returnedHostCpusocketsSumForXenServer620
                                     });
 
-                                	array1.push({
+                                    array1.push({
                                         hypervisor: 'XenServer 6.1.x and before',
                                         hosts: returnedHostCountForXenServer61x,
                                         sockets: 'N/A'
                                     });
 
-                                	// ***** XenServer (end) *****
+                                    // ***** XenServer (end) *****
 
 
-                                	args.response.success({
+                                    args.response.success({
                                         data: array1
                                     });
 
@@ -9441,17 +9441,17 @@
                 sectionSelect: {
                     label: 'label.select-view',
                     preFilter: function(args) {
-                    	//Only clicking ViewAll Link("view all Virtual Routers") in "Virtual Routers group by XXXXXXX" detailView will have "routerGroupByXXXXXXX" included in args.context
+                        //Only clicking ViewAll Link("view all Virtual Routers") in "Virtual Routers group by XXXXXXX" detailView will have "routerGroupByXXXXXXX" included in args.context
                         if ("routerGroupByZone" in args.context) {
-                        	return ["routerGroupByZone"]; // read-only (i.e. text "group by Zone")
+                            return ["routerGroupByZone"]; // read-only (i.e. text "group by Zone")
                         } else if ( "routerGroupByPod" in args.context) {
-                        	return ["routerGroupByPod"]; // read-only (i.e. text "group by Pod")
+                            return ["routerGroupByPod"]; // read-only (i.e. text "group by Pod")
                         } else if ("routerGroupByCluster" in args.context) {
-                        	return ["routerGroupByCluster"]; // read-only (i.e. text "group by Cluster")
+                            return ["routerGroupByCluster"]; // read-only (i.e. text "group by Cluster")
                         } else if ("routerGroupByAccount" in args.context) {
-                        	return ["routerGroupByAccount"]; // read-only (i.e. text "group by Account")
+                            return ["routerGroupByAccount"]; // read-only (i.e. text "group by Account")
                         } else {
-                        	return ["routerNoGroup", "routerGroupByZone", "routerGroupByPod", "routerGroupByCluster", "routerGroupByAccount"]; //editable dropdown
+                            return ["routerNoGroup", "routerGroupByZone", "routerGroupByPod", "routerGroupByCluster", "routerGroupByAccount"]; //editable dropdown
                         }
                     }
                 },
@@ -9508,24 +9508,24 @@
                                 };
 
                                 if (args.context != undefined) {
-	                                if ("routerGroupByZone" in args.context) {
-	                                    $.extend(data2, {
-	                                        zoneid: args.context.routerGroupByZone[0].id
-	                                    })
-	                                } else if ("routerGroupByPod" in args.context) {
-	                                    $.extend(data2, {
-	                                        podid: args.context.routerGroupByPod[0].id
-	                                    })
-	                                } else if ("routerGroupByCluster" in args.context) {
-	                                    $.extend(data2, {
-	                                        clusterid: args.context.routerGroupByCluster[0].id
-	                                    })
-	                                } else if ("routerGroupByAccount" in args.context) {
-	                                    $.extend(data2, {
-	                                    	 account: args.context.routerGroupByAccount[0].name,
-	                                         domainid: args.context.routerGroupByAccount[0].domainid
-	                                    })
-	                                }
+                                    if ("routerGroupByZone" in args.context) {
+                                        $.extend(data2, {
+                                            zoneid: args.context.routerGroupByZone[0].id
+                                        })
+                                    } else if ("routerGroupByPod" in args.context) {
+                                        $.extend(data2, {
+                                            podid: args.context.routerGroupByPod[0].id
+                                        })
+                                    } else if ("routerGroupByCluster" in args.context) {
+                                        $.extend(data2, {
+                                            clusterid: args.context.routerGroupByCluster[0].id
+                                        })
+                                    } else if ("routerGroupByAccount" in args.context) {
+                                        $.extend(data2, {
+                                             account: args.context.routerGroupByAccount[0].name,
+                                             domainid: args.context.routerGroupByAccount[0].domainid
+                                        })
+                                    }
                                 }
 
                                 var routers =[];
@@ -9550,17 +9550,17 @@
                                      * account parameter(account+domainid) and project parameter(projectid) are not allowed to be passed together to listXXXXXXX API.
                                      * So, remove account parameter(account+domainid) from data2
                                      */
-                                	if ("account" in data2) {
-                                		delete data2.account;
-                                	}
-                                	if ("domainid" in data2) {
-                                		delete data2.domainid;
-                                	}
+                                    if ("account" in data2) {
+                                        delete data2.account;
+                                    }
+                                    if ("domainid" in data2) {
+                                        delete data2.domainid;
+                                    }
 
-                                	$.ajax({
+                                    $.ajax({
                                             url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                             data: data2,
-	                                    async: false,
+                                        async: false,
                                             success: function (json) {
                                                 var items = json.listroutersresponse.router ?
                                                 json.listroutersresponse.router:[];
@@ -9568,8 +9568,8 @@
                                                 $(items).map(function (index, item) {
                                                     routers.push(item);
                                                 });
-	                                    }
-	                                });
+                                        }
+                                    });
                                 }
 
                                                 args.response.success({
@@ -10235,7 +10235,7 @@
                                                 }
                                             },
                                             numberOfRouterRequiresUpgrade: {
-                                            	label: 'label.total.virtual.routers.upgrade'
+                                                label: 'label.total.virtual.routers.upgrade'
                                             }
                                         }],
                                         dataProvider: function (args) {
@@ -10366,7 +10366,7 @@
                                                 }
                                             },
                                             numberOfRouterRequiresUpgrade: {
-                                            	label: 'label.total.virtual.routers.upgrade'
+                                                label: 'label.total.virtual.routers.upgrade'
                                             },
                                             zonename: {
                                                 label: 'label.zone'
@@ -10500,7 +10500,7 @@
                                                 }
                                             },
                                             numberOfRouterRequiresUpgrade: {
-                                            	label: 'label.total.virtual.routers.upgrade'
+                                                label: 'label.total.virtual.routers.upgrade'
                                             },
                                             podname: {
                                                 label: 'label.pod'
@@ -10587,11 +10587,11 @@
                                                             var routerRequiresUpgrade = 0;
 
                                                             var items = json.listroutersresponse.router;
-                	                            			for (var k = 0; k < items.length; k++) {
-                	                            				if (items[k].requiresupgrade) {
-                	                            					routerRequiresUpgrade++;
-                	                            				}
-                	                            			}
+                                                            for (var k = 0; k < items.length; k++) {
+                                                                if (items[k].requiresupgrade) {
+                                                                    routerRequiresUpgrade++;
+                                                                }
+                                                            }
 
                                                             var callListApiWithPage = function () {
                                                                 $.ajax({
@@ -10607,8 +10607,8 @@
                                                                     success: function (json) {
                                                                         routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;
                                                                         var items = json.listroutersresponse.router;
-                            	                            			for (var k = 0; k < items.length; k++) {
-                            	                            				if (items[k].requiresupgrade) {
+                                                                        for (var k = 0; k < items.length; k++) {
+                                                                            if (items[k].requiresupgrade) {
                                                                                 routerRequiresUpgrade++;
                                                                             }
                                                                         }
@@ -10705,7 +10705,7 @@
                                                 }
                                             },
                                             numberOfRouterRequiresUpgrade: {
-                                            	label: 'label.total.virtual.routers.upgrade'
+                                                label: 'label.total.virtual.routers.upgrade'
                                             }
                                         }],
                                         dataProvider: function (args) {
@@ -10728,11 +10728,11 @@
                                                         var routerRequiresUpgrade = 0;
 
                                                         var items = json.listroutersresponse.router;
-            	                            			for (var k = 0; k < items.length; k++) {
-            	                            				if (items[k].requiresupgrade) {
-            	                            					routerRequiresUpgrade++;
-            	                            				}
-            	                            			}
+                                                        for (var k = 0; k < items.length; k++) {
+                                                            if (items[k].requiresupgrade) {
+                                                                routerRequiresUpgrade++;
+                                                            }
+                                                        }
 
                                                         var callListApiWithPage = function () {
                                                             $.ajax({
@@ -10748,8 +10748,8 @@
                                                                 success: function (json) {
                                                                     routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;
                                                                     var items = json.listroutersresponse.router;
-                        	                            			for (var k = 0; k < items.length; k++) {
-                        	                            				if (items[k].requiresupgrade) {
+                                                                    for (var k = 0; k < items.length; k++) {
+                                                                        if (items[k].requiresupgrade) {
                                                                             routerRequiresUpgrade++;
                                                                         }
                                                                     }
@@ -11102,19 +11102,19 @@
                                         serviceOfferingId: {
                                             label: 'label.compute.offering',
                                             select: function (args) {
-                                            	var data1 = {
+                                                var data1 = {
                                                     issystem: 'true',
                                                     virtualmachineid: args.context.systemVMs[0].id
                                                 };
                                                 if (args.context.systemVMs[0].systemvmtype == "secondarystoragevm") {
-                                                	$.extend(data1, {
-                                                		systemvmtype: 'secondarystoragevm'
-                                                	});
+                                                    $.extend(data1, {
+                                                        systemvmtype: 'secondarystoragevm'
+                                                    });
                                                 }
                                                 else if (args.context.systemVMs[0].systemvmtype == "consoleproxy") {
-                                                	$.extend(data1, {
-                                                		systemvmtype: 'consoleproxy'
-                                                	});
+                                                    $.extend(data1, {
+                                                        systemvmtype: 'consoleproxy'
+                                                    });
                                                 }
                                                 $.ajax({
                                                     url: createURL('listServiceOfferings'),
@@ -12564,7 +12564,7 @@
                     }
                 }
             },
-			// BrocadeVcs devices listView
+            // BrocadeVcs devices listView
             brocadeVcsDevices: {
                 id: 'brocadeVcsDevices',
                 title: 'label.devices',
@@ -16046,9 +16046,9 @@
                             enable: {
                                 label: 'label.enable.host',
                                 action: function (args) {
-                                	var data = {
-                                     	id: args.context.hosts[0].id,
-                                     	allocationstate: "Enable"
+                                    var data = {
+                                         id: args.context.hosts[0].id,
+                                         allocationstate: "Enable"
                                     };
                                     $.ajax({
                                         url: createURL("updateHost"),
@@ -16080,9 +16080,9 @@
                             disable: {
                                 label: 'label.disable.host',
                                 action: function (args) {
-                                	var data = {
-                                     	id: args.context.hosts[0].id,
-                                     	allocationstate: "Disable"
+                                    var data = {
+                                         id: args.context.hosts[0].id,
+                                         allocationstate: "Disable"
                                     };
                                     $.ajax({
                                         url: createURL("updateHost"),
@@ -16136,12 +16136,12 @@
                                 },
                                 action: function (args) {
                                     var data = {
-                                    	id: args.context.hosts[0].id
+                                        id: args.context.hosts[0].id
                                     };
                                     if(args.$form.find('.form-item[rel=isForced]').css("display") != "none") {
-                                    	$.extend(data, {
-                                    		forced: (args.data.isForced == "on")
-                                    	});
+                                        $.extend(data, {
+                                            forced: (args.data.isForced == "on")
+                                        });
                                     }
 
                                     $.ajax({
@@ -16155,7 +16155,7 @@
                                             });
 
                                             if (args.context.hosts[0].hypervisor == "XenServer"){
-                                            	cloudStack.dialog.notice({ message: _s("The host has been deleted. Please eject the host from XenServer Pool") })
+                                                cloudStack.dialog.notice({ message: _s("The host has been deleted. Please eject the host from XenServer Pool") })
                                             }
                                         }
                                     });
@@ -16300,7 +16300,7 @@
                                         label: 'label.last.disconnected'
                                         },
                                         cpusockets: {
-                                        	label: 'label.number.of.cpu.sockets'
+                                            label: 'label.number.of.cpu.sockets'
                                     }
                                 }, {
 
@@ -16750,7 +16750,7 @@
                                         select: function (args) {
                                             var clusterId = args.clusterId;
                                             if (clusterId == null || clusterId.length == 0) {
-                                            	args.response.success({
+                                                args.response.success({
                                                     data: []
                                                 });
                                             return;
@@ -19523,10 +19523,10 @@
                             label: 'label.ipv6.end.ip'
                         },
                         gateway: {
-                        	label: 'label.gateway'
+                            label: 'label.gateway'
                         },
                         netmask: {
-                        	label: 'label.netmask'
+                            label: 'label.netmask'
                         }
                     },
 
@@ -19911,7 +19911,7 @@
         }
 
         var dedicated = (args.data.dedicated == "on");
-        //boolean	(true/false)
+        //boolean    (true/false)
         if (isQuestionMarkAdded == false) {
             url.push("?");
             isQuestionMarkAdded = true;
@@ -20059,7 +20059,7 @@
         }
 
         var dedicated = (args.data.dedicated == "on");
-        //boolean	(true/false)
+        //boolean    (true/false)
         if (isQuestionMarkAdded == false) {
             url.push("?");
             isQuestionMarkAdded = true;
@@ -20159,7 +20159,7 @@
         });
     }
 
-	function addBrocadeVcsDevice(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) {
+    function addBrocadeVcsDevice(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) {
         var array1 =[];
         array1.push("&physicalnetworkid=" + physicalNetworkObj.id);
         array1.push("&username=" + todb(args.data.username));
@@ -20959,7 +20959,7 @@
                             case "NiciraNvp":
                             nspMap[ "niciraNvp"] = items[i];
                             break;
-							case "BrocadeVcs":
+                            case "BrocadeVcs":
                             nspMap[ "brocadeVcs"] = items[i];
                             break;
                             case "BigSwitchBcf":
@@ -20998,7 +20998,7 @@
             name: 'Nicira Nvp',
             state: nspMap.niciraNvp ? nspMap.niciraNvp.state: 'Disabled'
         },
-		{
+        {
             id: 'brocadeVcs',
             name: 'Brocade',
             state: nspMap.brocadeVcs ? nspMap.brocadeVcs.state: 'Disabled'
@@ -21087,8 +21087,8 @@
                 id: 'Ovs',
                 name: 'Ovs',
                 state: nspMap.Ovs ? nspMap.Ovs.state: 'Disabled'
-	        });
-	        */
+            });
+            */
         }
     };
 
@@ -21126,106 +21126,106 @@
             }),
             async: false,
             success: function(json) {
-            	if (json.listroutersresponse.count != undefined) {
-            		var routerCountFromAllPages = json.listroutersresponse.count;
-                	var routerCountFromFirstPageToCurrentPage = json.listroutersresponse.router.length;
-                	var routerRequiresUpgrade = 0;
+                if (json.listroutersresponse.count != undefined) {
+                    var routerCountFromAllPages = json.listroutersresponse.count;
+                    var routerCountFromFirstPageToCurrentPage = json.listroutersresponse.router.length;
+                    var routerRequiresUpgrade = 0;
 
-                	var items = json.listroutersresponse.router;
-        			for (var k = 0; k < items.length; k++) {
-        				if (items[k].requiresupgrade) {
-        					routerRequiresUpgrade++;
-        				}
-        			}
+                    var items = json.listroutersresponse.router;
+                    for (var k = 0; k < items.length; k++) {
+                        if (items[k].requiresupgrade) {
+                            routerRequiresUpgrade++;
+                        }
+                    }
 
-                	$.ajax({
-                		url: createURL('listRouters'),
+                    $.ajax({
+                        url: createURL('listRouters'),
                         data: $.extend({}, listRoutersData, {
-                        	page: currentPage,
-                    		projectid: -1
-                    	}),
+                            page: currentPage,
+                            projectid: -1
+                        }),
                         async: false,
                         success: function(json) {
-                        	if (json.listroutersresponse.count != undefined) {
-                        		routerCountFromAllPages += json.listroutersresponse.count;
-                        		groupbyObj.routerCount = routerCountFromAllPages;
+                            if (json.listroutersresponse.count != undefined) {
+                                routerCountFromAllPages += json.listroutersresponse.count;
+                                groupbyObj.routerCount = routerCountFromAllPages;
 
-                            	routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;
+                                routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;
 
-                            	var items = json.listroutersresponse.router;
-                    			for (var k = 0; k < items.length; k++) {
-                    				if (items[k].requiresupgrade) {
-                    					routerRequiresUpgrade++;
-                    				}
-                    			}
-                        	} else {
-                        		groupbyObj.routerCount = routerCountFromAllPages;
-                        	}
+                                var items = json.listroutersresponse.router;
+                                for (var k = 0; k < items.length; k++) {
+                                    if (items[k].requiresupgrade) {
+                                        routerRequiresUpgrade++;
+                                    }
+                                }
+                            } else {
+                                groupbyObj.routerCount = routerCountFromAllPages;
+                            }
                         }
-                	});
+                    });
 
-                	var callListApiWithPage = function() {
-                		$.ajax({
-        					url: createURL('listRouters'),
-                    		async: false,
-                    		data: $.extend({}, listRoutersData, {
-                            	page: currentPage
-                        	}),
-                    		success: function(json) {
-                    			routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;
-                    			var items = json.listroutersresponse.router;
-                    			for (var k = 0; k < items.length; k++) {
-                    				if (items[k].requiresupgrade) {
-                    					routerRequiresUpgrade++;
-                    				}
-                    			}
+                    var callListApiWithPage = function() {
+                        $.ajax({
+                            url: createURL('listRouters'),
+                            async: false,
+                            data: $.extend({}, listRoutersData, {
+                                page: currentPage
+                            }),
+                            success: function(json) {
+                                routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;
+                                var items = json.listroutersresponse.router;
+                                for (var k = 0; k < items.length; k++) {
+                                    if (items[k].requiresupgrade) {
+                                        routerRequiresUpgrade++;
+                                    }
+                                }
 
-                    			$.ajax({
-                    				url: createURL('listRouters'),
-                            		async: false,
-                            		data: $.extend({}, listRoutersData, {
-                            			page: currentPage,
-                                		projectid: -1
-                                	}),
-                            		success: function(json) {
-                            			if (json.listroutersresponse.count != undefined) {
-                                    		routerCountFromAllPages += json.listroutersresponse.count;
-                                    		groupbyObj.routerCount = routerCountFromAllPages;
+                                $.ajax({
+                                    url: createURL('listRouters'),
+                                    async: false,
+                                    data: $.extend({}, listRoutersData, {
+                                        page: currentPage,
+                                        projectid: -1
+                                    }),
+                                    success: function(json) {
+                                        if (json.listroutersresponse.count != undefined) {
+                                            routerCountFromAllPages += json.listroutersresponse.count;
+                                            groupbyObj.routerCount = routerCountFromAllPages;
 
-                                        	routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;
+                                            routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;
 
-	                            			var items = json.listroutersresponse.router;
-	                            			for (var k = 0; k < items.length; k++) {
-	                            				if (items[k].requiresupgrade) {
-	                            					routerRequiresUpgrade++;
-	                            				}
-	                            			}
-                            			} else {
-                                    		groupbyObj.routerCount = routerCountFromAllPages;
-                                    	}
-                            		}
-                    			});
+                                            var items = json.listroutersresponse.router;
+                                            for (var k = 0; k < items.length; k++) {
+                                                if (items[k].requiresupgrade) {
+                                                    routerRequiresUpgrade++;
+                                                }
+                                            }
+                                        } else {
+                                            groupbyObj.routerCount = routerCountFromAllPages;
+                                        }
+                                    }
+                                });
 
-                    			if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
-                    				currentPage++;
-                    				callListApiWithPage();
-                    			}
-                    		}
-        				});
-                	}
+                                if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
+                                    currentPage++;
+                                    callListApiWithPage();
+                                }
+                            }
+                        });
+                    }
 
-                	if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
-        				currentPage++;
-        				callListApiWithPage();
-        			}
+                    if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
+                        currentPage++;
+                        callListApiWithPage();
+                    }
 
-                	groupbyObj.routerRequiresUpgrade = routerRequiresUpgrade;
-                	groupbyObj.numberOfRouterRequiresUpgrade = routerRequiresUpgrade;
-            	} else {
-            		groupbyObj.routerCount = 0;
-            		groupbyObj.routerRequiresUpgrade = 0;
-            		groupbyObj.numberOfRouterRequiresUpgrade = 0;
-            	}
+                    groupbyObj.routerRequiresUpgrade = routerRequiresUpgrade;
+                    groupbyObj.numberOfRouterRequiresUpgrade = routerRequiresUpgrade;
+                } else {
+                    groupbyObj.routerCount = 0;
+                    groupbyObj.routerRequiresUpgrade = 0;
+                    groupbyObj.numberOfRouterRequiresUpgrade = 0;
+                }
             }
         });
     }

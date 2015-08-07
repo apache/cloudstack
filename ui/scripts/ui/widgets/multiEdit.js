@@ -730,7 +730,7 @@
 
                 var itemIp = multiRule._itemIp ? item[multiRule._itemIp] : null;
                 if (itemIp != null) {
-                	 var $itemIp = $('<span>').html(_s(itemIp));
+                     var $itemIp = $('<span>').html(_s(itemIp));
                      $tr.append($('<td>').addClass('state').appendTo($tr).append($itemIp));
                 }
 

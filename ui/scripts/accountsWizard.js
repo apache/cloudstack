@@ -213,7 +213,7 @@
                 if (md5Hashed) {
                     password = $.md5(password);
                 } else {
-                	password = todb(password);
+                    password = todb(password);
                 }
                 array1.push("&password=" + password);
             }
@@ -228,9 +228,9 @@
 
             var accountType = args.data.accounttype;
             if (accountType == "1") { //if "admin" is selected in account type dropdown
-            	if (rootDomainId == undefined || args.data.domainid != rootDomainId ) { //but current login has no visibility to root domain object, or the selected domain is not root domain
+                if (rootDomainId == undefined || args.data.domainid != rootDomainId ) { //but current login has no visibility to root domain object, or the selected domain is not root domain
                     accountType = "2"; // change accountType from root-domain("1") to domain-admin("2")
-            	}
+                }
             }
             array1.push("&accounttype=" + accountType);
 

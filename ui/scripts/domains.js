@@ -21,7 +21,7 @@
 
         // Domain tree
         treeView: {
-		overflowScroll: true,
+        overflowScroll: true,
             // Details
             detailView: {
                 name: 'Domain details',
@@ -111,19 +111,19 @@
 
                             if (args.data.networkdomain != null) { //args.data.networkdomain == undefined means networkdomain field is not editable (when log in as normal user or domain admin)
                                 $.extend(data, {
-                                	networkdomain: args.data.networkdomain
+                                    networkdomain: args.data.networkdomain
                                 });
                             }
 
                             if('name' in data || 'networkdomain' in data)  {
-	                            $.ajax({
-	                                url: createURL("updateDomain"),
-	                                async: false,
-	                                data: data,
-	                                success: function(json) {
-	                                    domainObj = json.updatedomainresponse.domain;
-	                                }
-	                            });
+                                $.ajax({
+                                    url: createURL("updateDomain"),
+                                    async: false,
+                                    data: data,
+                                    success: function(json) {
+                                        domainObj = json.updatedomainresponse.domain;
+                                    }
+                                });
                             }
 
                             if (args.data.vmLimit != null) {
@@ -653,9 +653,9 @@
                 allowedActions.push("delete");
             }
         } else if (isDomainAdmin()) {
-        	if (args.context.domains[0].id != g_domainid) {
-        		allowedActions.push("edit"); //merge updateResourceLimit into edit
-        	}
+            if (args.context.domains[0].id != g_domainid) {
+                allowedActions.push("edit"); //merge updateResourceLimit into edit
+            }
         }
         allowedActions.push("updateResourceCount");
         return allowedActions;

@@ -20,9 +20,9 @@
 (function($, cloudStack, _l, _s) {
     var uiActions = {
         standard: function($instanceRow, args, additional) {
-        	var isAddAction = args.action.isAdd;
+            var isAddAction = args.action.isAdd;
 
-        	var listViewArgs = $instanceRow.closest('div.list-view').data('view-args');
+            var listViewArgs = $instanceRow.closest('div.list-view').data('view-args');
             var notification = args.action.notification ? args.action.notification : {};
             var messages = args.action ? args.action.messages : {};
             var preAction = args.action ? args.action.preAction : {};
@@ -275,7 +275,7 @@
                                                         });
                                                     } else {
                                                         $newRow = replaceItem($instanceRow,
-                                                    	    args.data, //$.extend($instanceRow.data('json-obj'), args.data), /* $.extend($instanceRow.data('json-obj'), args.data) causes CLOUDSTACK-4687 */
+                                                            args.data, //$.extend($instanceRow.data('json-obj'), args.data), /* $.extend($instanceRow.data('json-obj'), args.data) causes CLOUDSTACK-4687 */
                                                             actionFilter);
                                                     }
                                                 } else {
@@ -1208,15 +1208,15 @@
                                 rowActions[actionName]($tr);
                                 var map1 = {};
                                 $tr.closest('tbody').find('tr').each(function() {
-                                	/*
-                                	 * fire only one sorting API call(updateXXXXXXX&sortKey=n&id=UUID) for items who have the same UUID.
-                                	 * e.g. An Template/ISO of multiple zones have the same UUID.
-                                	 */
-                                	var objId = $(this).data('json-obj').id;
-                                	if(!(objId in map1)) {
+                                    /*
+                                     * fire only one sorting API call(updateXXXXXXX&sortKey=n&id=UUID) for items who have the same UUID.
+                                     * e.g. An Template/ISO of multiple zones have the same UUID.
+                                     */
+                                    var objId = $(this).data('json-obj').id;
+                                    if(!(objId in map1)) {
                                     sort($(this), action);
-                                		map1[objId] = 1;
-                                	}
+                                        map1[objId] = 1;
+                                    }
                                 });
                                 $tr.closest('.data-table').dataTable('selectRow', $tr.index());
 
@@ -1238,15 +1238,15 @@
                             rowActions._std($tr, function() {});
                             var map1 = {};
                             $tr.closest('tbody').find('tr').each(function() {
-                            	/*
-                            	 * fire only one sorting API call(updateXXXXXXX&sortKey=n&id=UUID) for items who have the same UUID.
-                            	 * e.g. An Template/ISO of multiple zones have the same UUID.
-                            	 */
-                            	var objId = $(this).data('json-obj').id;
-                            	if(!(objId in map1)) {
+                                /*
+                                 * fire only one sorting API call(updateXXXXXXX&sortKey=n&id=UUID) for items who have the same UUID.
+                                 * e.g. An Template/ISO of multiple zones have the same UUID.
+                                 */
+                                var objId = $(this).data('json-obj').id;
+                                if(!(objId in map1)) {
                                 sort($(this), reorder.moveDrag);
-                            	    map1[objId] = 1;
-                            	}
+                                    map1[objId] = 1;
+                                }
                             });
                         }
                     });

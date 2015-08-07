@@ -161,7 +161,7 @@ var pollAsyncJobResult = function(args) {
         },
         error: function(XMLHttpResponse) {
             args.error({
-            	message: parseXMLHttpResponse(XMLHttpResponse)
+                message: parseXMLHttpResponse(XMLHttpResponse)
             });
         }
     });
@@ -296,41 +296,41 @@ var addGuestNetworkDialog = {
                         } else { //Network menu > guest network section > add guest network dialog
                             var selectedZoneId = args.$form.find('.form-item[rel=zoneId]').find('select').val();
                             if (selectedZoneId != undefined && selectedZoneId.length > 0) {
-	                            $.ajax({
-	                                url: createURL('listPhysicalNetworks'),
-	                                data: {
-	                                    zoneid: selectedZoneId
-	                                },
-	                                async: false,
-	                                success: function(json) {
-	                                	var items = [];
-	                                	var physicalnetworks = json.listphysicalnetworksresponse.physicalnetwork;
-	                                	if (physicalnetworks != null) {
-	                                	    for (var i = 0; i < physicalnetworks.length; i++) {
-	                                	    	$.ajax({
-	                                	    		url: createURL('listTrafficTypes'),
-	                                	    		data: {
-	                                	    			physicalnetworkid: physicalnetworks[i].id
-	                                	    		},
-	                                	    		async: false,
-	                                	    		success: function(json) {
-	                                	    			var traffictypes = json.listtraffictypesresponse.traffictype;
-	                                	    			if (traffictypes != null) {
-	                                	    				for (var k = 0; k < traffictypes.length; k++) {
-	                                	    					if (traffictypes[k].traffictype == 'Guest') {
-	                                	    						items.push(physicalnetworks[i]);
-	                                	    						break;
-	                                	    					}
-	                                	    				}
-	                                	    			}
-	                                	    		}
-	                                	    	});
-	                                	    }
-	                                	}
+                                $.ajax({
+                                    url: createURL('listPhysicalNetworks'),
+                                    data: {
+                                        zoneid: selectedZoneId
+                                    },
+                                    async: false,
+                                    success: function(json) {
+                                        var items = [];
+                                        var physicalnetworks = json.listphysicalnetworksresponse.physicalnetwork;
+                                        if (physicalnetworks != null) {
+                                            for (var i = 0; i < physicalnetworks.length; i++) {
+                                                $.ajax({
+                                                    url: createURL('listTrafficTypes'),
+                                                    data: {
+                                                        physicalnetworkid: physicalnetworks[i].id
+                                                    },
+                                                    async: false,
+                                                    success: function(json) {
+                                                        var traffictypes = json.listtraffictypesresponse.traffictype;
+                                                        if (traffictypes != null) {
+                                                            for (var k = 0; k < traffictypes.length; k++) {
+                                                                if (traffictypes[k].traffictype == 'Guest') {
+                                                                    items.push(physicalnetworks[i]);
+                                                                    break;
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                });
+                                            }
+                                        }
 
-	                                	addGuestNetworkDialog.physicalNetworkObjs = items;
-	                                }
-	                            });
+                                        addGuestNetworkDialog.physicalNetworkObjs = items;
+                                    }
+                                });
                             }
                         }
                         var items = [];
@@ -537,12 +537,12 @@ var addGuestNetworkDialog = {
                     docID: 'helpGuestNetworkZoneNetworkOffering',
                     dependsOn: ['zoneId', 'physicalNetworkId', 'scope'],
                     select: function(args) {
-                    	if(args.$form.find('.form-item[rel=zoneId]').find('select').val() == null || args.$form.find('.form-item[rel=zoneId]').find('select').val().length == 0) {
-                    		args.response.success({
+                        if(args.$form.find('.form-item[rel=zoneId]').find('select').val() == null || args.$form.find('.form-item[rel=zoneId]').find('select').val().length == 0) {
+                            args.response.success({
                                 data: null
                             });
-                    		return;
-                    	}
+                            return;
+                        }
 
                         var data = {
                             state: 'Enabled',
@@ -975,8 +975,8 @@ var roleTypeDomainAdmin = "2";
 
 cloudStack.converters = {
     convertBytes: function(bytes) {
-	    if (bytes == undefined)
-	    	return '';
+        if (bytes == undefined)
+            return '';
 
         if (bytes < 1024 * 1024) {
             return (bytes / 1024).toFixed(2) + " KB";
@@ -1031,28 +1031,28 @@ cloudStack.converters = {
             if (g_timezoneoffset != null) {
                 localDate = disconnected.getTimePlusTimezoneOffset(g_timezoneoffset);
             } else {
-            	var browserDate = new Date();
-            	var browserTimezoneoffset = browserDate.getTimezoneOffset();
-            	if (browserTimezoneoffset == undefined || isNaN(browserTimezoneoffset) ) {
-            		localDate = disconnected.toUTCString();
-            	} else {
-            		g_timezoneoffset = (browserTimezoneoffset/60) * (-1);
-            		localDate = disconnected.getTimePlusTimezoneOffset(g_timezoneoffset);
-            	}
+                var browserDate = new Date();
+                var browserTimezoneoffset = browserDate.getTimezoneOffset();
+                if (browserTimezoneoffset == undefined || isNaN(browserTimezoneoffset) ) {
+                    localDate = disconnected.toUTCString();
+                } else {
+                    g_timezoneoffset = (browserTimezoneoffset/60) * (-1);
+                    localDate = disconnected.getTimePlusTimezoneOffset(g_timezoneoffset);
+                }
             }
         }
         return localDate;
     },
     toBooleanText: function(booleanValue) {
         var text1;
-    	if (booleanValue == true) {
-    		text1 = "Yes";
+        if (booleanValue == true) {
+            text1 = "Yes";
         } else if (booleanValue == false) {
-        	text1 = "No";
+            text1 = "No";
         } else { //booleanValue == undefined
-        	text1 = "";
+            text1 = "";
         }
-    	return text1;
+        return text1;
     },
     convertHz: function(hz) {
         if (hz == null)
@@ -1319,20 +1319,20 @@ var addExtraPropertiesToGuestNetworkObject = function(jsonObj) {
 
 //used by infrastructure page
 var addExtraPropertiesToUcsBladeObject = function(jsonObj) {
-	var array1 = jsonObj.bladedn.split('/');
-	jsonObj.chassis = array1[1];
-	jsonObj.bladeid = array1[2];
+    var array1 = jsonObj.bladedn.split('/');
+    jsonObj.chassis = array1[1];
+    jsonObj.bladeid = array1[2];
 }
 
 var processPropertiesInImagestoreObject = function(jsonObj) {
-	if (jsonObj.url != undefined) {
-		var url = jsonObj.url; //e.g. 'cifs://10.1.1.1/aaa/aaa2/aaa3?user=bbb&password=ccc&domain=ddd'
-		var passwordIndex = url.indexOf('&password='); //38
-		var domainIndex = url.indexOf('&domain=');    //51
-		if (passwordIndex >= 0) {
-			jsonObj.url = url.substring(0, passwordIndex) + url.substring(domainIndex); //remove '&password=ccc' from jsonObj.url
-		}
-	}
+    if (jsonObj.url != undefined) {
+        var url = jsonObj.url; //e.g. 'cifs://10.1.1.1/aaa/aaa2/aaa3?user=bbb&password=ccc&domain=ddd'
+        var passwordIndex = url.indexOf('&password='); //38
+        var domainIndex = url.indexOf('&domain=');    //51
+        if (passwordIndex >= 0) {
+            jsonObj.url = url.substring(0, passwordIndex) + url.substring(domainIndex); //remove '&password=ccc' from jsonObj.url
+        }
+    }
 }
 
 //find service object in network object
@@ -1388,7 +1388,7 @@ var processPropertiesInImagestoreObject = function(jsonObj) {
         }
 
         if (server.indexOf('://') == -1) {
-        	url += 'cifs://';
+            url += 'cifs://';
         }
 
         url += (server + path);
@@ -1427,9 +1427,9 @@ var processPropertiesInImagestoreObject = function(jsonObj) {
         var url;
 
         /*
-	Replace the + and / symbols by - and _ to have URL-safe base64 going to the API
-	It's hacky, but otherwise we'll confuse java.net.URI which splits the incoming URI
-	*/
+    Replace the + and / symbols by - and _ to have URL-safe base64 going to the API
+    It's hacky, but otherwise we'll confuse java.net.URI which splits the incoming URI
+    */
         secret = secret.replace("+", "-");
         secret = secret.replace("/", "_");
 
@@ -2221,12 +2221,12 @@ cloudStack.api = {
                 }
             },
             dataProvider: function(args) {
-            	if (args.jsonObj != undefined) {
-	            	args.response.success({
-	                    data: args.jsonObj.tags
-	                });
-            	} else {
-            		var resourceId = args.context[contextId][0].id;
+                if (args.jsonObj != undefined) {
+                    args.response.success({
+                        data: args.jsonObj.tags
+                    });
+                } else {
+                    var resourceId = args.context[contextId][0].id;
                     var data = {
                         resourceId: resourceId,
                         resourceType: resourceType
@@ -2256,7 +2256,7 @@ cloudStack.api = {
                             args.response.error(parseXMLHttpResponse(json));
                         }
                     });
-            	}
+                }
             }
         };
     }

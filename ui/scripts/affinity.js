@@ -195,7 +195,7 @@
                                 success: function(json) {
                                     var item = json.listaffinitygroupsresponse.affinitygroup[0];
                                     args.response.success({
-                                    	actionFilter: affinitygroupActionfilter,
+                                        actionFilter: affinitygroupActionfilter,
                                         data: item
                                     });
                                 }

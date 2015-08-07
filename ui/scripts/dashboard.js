@@ -29,8 +29,8 @@
             dataProvider: function(args) {
                 var dataFns = {
                     instances: function(data) {
-                    	var totalInstanceCount = 0;
-                    	$.ajax({
+                        var totalInstanceCount = 0;
+                        $.ajax({
                             url: createURL("listVirtualMachines"),
                             data: {
                                 listAll: true,
@@ -39,14 +39,14 @@
                             },
                             async: false,
                             success: function(json) {
-                            	if (json.listvirtualmachinesresponse.count != undefined) {
-                            		totalInstanceCount = json.listvirtualmachinesresponse.count;
-                            	}
+                                if (json.listvirtualmachinesresponse.count != undefined) {
+                                    totalInstanceCount = json.listvirtualmachinesresponse.count;
+                                }
                             }
                         });
 
-                    	var RunningInstanceCount = 0;
-                    	$.ajax({
+                        var RunningInstanceCount = 0;
+                        $.ajax({
                             url: createURL("listVirtualMachines"),
                             data: {
                                 listAll: true,
@@ -56,14 +56,14 @@
                             },
                             async: false,
                             success: function(json) {
-                            	if (json.listvirtualmachinesresponse.count != undefined) {
-                            		RunningInstanceCount = json.listvirtualmachinesresponse.count;
-                            	}
+                                if (json.listvirtualmachinesresponse.count != undefined) {
+                                    RunningInstanceCount = json.listvirtualmachinesresponse.count;
+                                }
                             }
                         });
 
-                    	var stoppedInstanceCount = 0;
-                    	$.ajax({
+                        var stoppedInstanceCount = 0;
+                        $.ajax({
                             url: createURL("listVirtualMachines"),
                             data: {
                                 listAll: true,
@@ -73,9 +73,9 @@
                             },
                             async: false,
                             success: function(json) {
-                            	if (json.listvirtualmachinesresponse.count != undefined) {
-                            		stoppedInstanceCount = json.listvirtualmachinesresponse.count;
-                            	}
+                                if (json.listvirtualmachinesresponse.count != undefined) {
+                                    stoppedInstanceCount = json.listvirtualmachinesresponse.count;
+                                }
                             }
                         });
 
@@ -131,7 +131,7 @@
                                 $.ajax({
                                     url: createURL('listPublicIpAddresses'),
                                     data: {
-                                    	page: 1,
+                                        page: 1,
                                         pageSize: 1
                                     },
                                     success: function(json) {

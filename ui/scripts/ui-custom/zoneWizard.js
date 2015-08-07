@@ -298,89 +298,89 @@
             var fields;
 
             if (hypervisor == 'VMware') {
-            	fields = {
-            		vSwitchName: {
-	                    label: 'label.vswitch.name' ,
-	                    defaultValue: trafficData.vSwitchName
-	                },
-	                vlanId: {
-	                        label: 'label.vlan.id',
-	                	defaultValue: trafficData.vlanId
-	                }
-	            };
+                fields = {
+                    vSwitchName: {
+                        label: 'label.vswitch.name' ,
+                        defaultValue: trafficData.vSwitchName
+                    },
+                    vlanId: {
+                            label: 'label.vlan.id',
+                        defaultValue: trafficData.vlanId
+                    }
+                };
 
-            	if(zoneType == 'Advanced') {
-	            	if($trafficType.hasClass('guest') || $trafficType.hasClass('public')) {
-	            		if(trafficData.vSwitchType == null) {
-	            			 var useDvs = false;
-	                         $.ajax({
-	                             url: createURL('listConfigurations'),
-	                             data: {
-	                                 name: 'vmware.use.dvswitch'
-	                             },
-	                             async: false,
-	                             success: function(json) {
-	                                 if (json.listconfigurationsresponse.configuration[0].value == 'true') {
-	                                     useDvs = true;
-	                                 }
-	                             }
-	                         });
-	                         if (useDvs == true) {
-	                        	 var useNexusDvs = false;
-	                             $.ajax({
-	                                 url: createURL('listConfigurations'),
-	                                 data: {
-	                                     name: 'vmware.use.nexus.vswitch'
-	                                 },
-	                                 async: false,
-	                                 success: function(json) {
-	                                     if (json.listconfigurationsresponse.configuration[0].value == 'true') {
-	                                         useNexusDvs = true;
-	                                     }
-	                                 }
-	                             });
-	                             if (useNexusDvs == true) {
-	                            	 trafficData.vSwitchType = 'nexusdvs';
-	                            	 fields.vSwitchName.defaultValue = 'epp0';
-	                             } else {
-	                            	 trafficData.vSwitchType = 'vmwaredvs';
-	                            	 fields.vSwitchName.defaultValue = 'dvSwitch0';
-	                             }
-	                         } else { //useDvs == false
-	                        	 trafficData.vSwitchType = 'vmwaresvs';
-	                        	 fields.vSwitchName.defaultValue = 'vSwitch0';
-	                         }
-	            		}
+                if(zoneType == 'Advanced') {
+                    if($trafficType.hasClass('guest') || $trafficType.hasClass('public')) {
+                        if(trafficData.vSwitchType == null) {
+                             var useDvs = false;
+                             $.ajax({
+                                 url: createURL('listConfigurations'),
+                                 data: {
+                                     name: 'vmware.use.dvswitch'
+                                 },
+                                 async: false,
+                                 success: function(json) {
+                                     if (json.listconfigurationsresponse.configuration[0].value == 'true') {
+                                         useDvs = true;
+                                     }
+                                 }
+                             });
+                             if (useDvs == true) {
+                                 var useNexusDvs = false;
+                                 $.ajax({
+                                     url: createURL('listConfigurations'),
+                                     data: {
+                                         name: 'vmware.use.nexus.vswitch'
+                                     },
+                                     async: false,
+                                     success: function(json) {
+                                         if (json.listconfigurationsresponse.configuration[0].value == 'true') {
+                                             useNexusDvs = true;
+                                         }
+                                     }
+                                 });
+                                 if (useNexusDvs == true) {
+                                     trafficData.vSwitchType = 'nexusdvs';
+                                     fields.vSwitchName.defaultValue = 'epp0';
+                                 } else {
+                                     trafficData.vSwitchType = 'vmwaredvs';
+                                     fields.vSwitchName.defaultValue = 'dvSwitch0';
+                                 }
+                             } else { //useDvs == false
+                                 trafficData.vSwitchType = 'vmwaresvs';
+                                 fields.vSwitchName.defaultValue = 'vSwitch0';
+                             }
+                        }
 
-	            		$.extend(fields, {
-	            		    vSwitchType: {
-	                                label: 'label.vSwitch.type',
-	            		        select: function (args) {
-	            		            args.response.success({
-	            		                data: [{
-	            		                    id: 'nexusdvs',
-	            		                    description: 'Cisco Nexus 1000v Distributed Virtual Switch'
-	            		                }, {
-	            		                    id: 'vmwaresvs',
-	            		                    description: 'VMware vNetwork Standard Virtual Switch'
-	            		                }, {
-	            		                    id: 'vmwaredvs',
-	            		                    description: 'VMware vNetwork Distributed Virtual Switch'
-	            		                }]
-	            		            });
-	            		        },
-	    		                defaultValue: trafficData.vSwitchType
-	            		    }
-	            		});
-	            	}
-            	}
+                        $.extend(fields, {
+                            vSwitchType: {
+                                    label: 'label.vSwitch.type',
+                                select: function (args) {
+                                    args.response.success({
+                                        data: [{
+                                            id: 'nexusdvs',
+                                            description: 'Cisco Nexus 1000v Distributed Virtual Switch'
+                                        }, {
+                                            id: 'vmwaresvs',
+                                            description: 'VMware vNetwork Standard Virtual Switch'
+                                        }, {
+                                            id: 'vmwaredvs',
+                                            description: 'VMware vNetwork Distributed Virtual Switch'
+                                        }]
+                                    });
+                                },
+                                defaultValue: trafficData.vSwitchType
+                            }
+                        });
+                    }
+                }
             } else {
-	            fields = {
-	                label: {
-	                    label: hypervisor + ' ' + _l('label.traffic.label'),
-	                    defaultValue: trafficData.label
-	                }
-	            };
+                fields = {
+                    label: {
+                        label: hypervisor + ' ' + _l('label.traffic.label'),
+                        defaultValue: trafficData.label
+                    }
+                };
             }
 
             cloudStack.dialog.createForm({
@@ -727,7 +727,7 @@
                             $('<option>').attr({
                                 value: 'L3VPN'
                             }).html('L3VPN'),
-		                    $('<option>').attr({
+                            $('<option>').attr({
                                 value: 'VSP'
                             }).html('VSP'),
                             $('<option>').attr({

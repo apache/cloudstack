@@ -426,53 +426,53 @@
                                             //pop up API response in a dialog box since only updateResourceCount API returns resourcecount (listResourceLimits API does NOT return resourcecount)
                                             var msg = '';
                                             if (resourcecounts != null) {
-                                            	for (var i = 0; i < resourcecounts.length; i++) {
-                                            		switch (resourcecounts[i].resourcetype) {
-                                            		case '0':
-                                            			msg += 'Instance'; //vmLimit
-                                            			break;
-                                            		case '1':
-                                            			msg += 'Public IP'; //ipLimit
-                                            			break;
-                                            		case '2':
-                                            			msg += 'Volume'; //volumeLimit
-                                            			break;
-                                            		case '3':
-                                            		    msg += 'Snapshot'; //snapshotLimit
-                                            		    break;
-                                            		case '4':
-                                            			msg += 'Template'; //templateLimit
-                                            			break;
-                                            		case '5':
-                                            			continue; //resourcetype 5 is not in use. so, skip to next item.
-                                            			break;
-                                            		case '6':
-                                            			msg += 'Network'; //networkLimit
-                                            			break;
-                                            		case '7':
-                                            			msg += 'VPC'; //vpcLimit
-                                            			break;
-                                            		case '8':
-                                            			msg += 'CPU'; //cpuLimit
-                                            			break;
-                                            		case '9':
-                                            			msg += 'Memory'; //memoryLimit
-                                            			break;
-                                            		case '10':
-                                            			msg += 'Primary Storage'; //primaryStorageLimit
-                                            			break;
-                                            		case '11':
-                                            			msg += 'Secondary Storage'; //secondaryStorageLimit
-                                            			break;
-                                            		}
+                                                for (var i = 0; i < resourcecounts.length; i++) {
+                                                    switch (resourcecounts[i].resourcetype) {
+                                                    case '0':
+                                                        msg += 'Instance'; //vmLimit
+                                                        break;
+                                                    case '1':
+                                                        msg += 'Public IP'; //ipLimit
+                                                        break;
+                                                    case '2':
+                                                        msg += 'Volume'; //volumeLimit
+                                                        break;
+                                                    case '3':
+                                                        msg += 'Snapshot'; //snapshotLimit
+                                                        break;
+                                                    case '4':
+                                                        msg += 'Template'; //templateLimit
+                                                        break;
+                                                    case '5':
+                                                        continue; //resourcetype 5 is not in use. so, skip to next item.
+                                                        break;
+                                                    case '6':
+                                                        msg += 'Network'; //networkLimit
+                                                        break;
+                                                    case '7':
+                                                        msg += 'VPC'; //vpcLimit
+                                                        break;
+                                                    case '8':
+                                                        msg += 'CPU'; //cpuLimit
+                                                        break;
+                                                    case '9':
+                                                        msg += 'Memory'; //memoryLimit
+                                                        break;
+                                                    case '10':
+                                                        msg += 'Primary Storage'; //primaryStorageLimit
+                                                        break;
+                                                    case '11':
+                                                        msg += 'Secondary Storage'; //secondaryStorageLimit
+                                                        break;
+                                                    }
 
-                                            		msg += ' Count: ' + resourcecounts[i].resourcecount + ' <br> ';
-                                            	}
+                                                    msg += ' Count: ' + resourcecounts[i].resourcecount + ' <br> ';
+                                                }
                                             }
 
 
                                             cloudStack.dialog.notice({
-                                            	message: msg
+                                                message: msg
                                             });
 
                                             args.response.success();
@@ -655,11 +655,11 @@
                         },
 
                         tabFilter: function(args) {
-                        	var hiddenTabs = [];
-                        	if(!isAdmin()) {
-                        		hiddenTabs.push('settings');
-                        	}
-                        	return hiddenTabs;
+                            var hiddenTabs = [];
+                            if(!isAdmin()) {
+                                hiddenTabs.push('settings');
+                            }
+                            return hiddenTabs;
                         },
 
                         tabs: {
@@ -2001,11 +2001,11 @@
                 allowedActions.push("remove");
             }
         } else { //domain-admin, regular-user
-        	if (jsonObj.username == g_username) { //selected user is self
-        		allowedActions.push("changePassword");
+            if (jsonObj.username == g_username) { //selected user is self
+                allowedActions.push("changePassword");
                 allowedActions.push("generateKeys");
-        	} else if (isDomainAdmin()) { //if selected user is not self, and the current login is domain-admin
-        		allowedActions.push("edit");
+            } else if (isDomainAdmin()) { //if selected user is not self, and the current login is domain-admin
+                allowedActions.push("edit");
                 if (jsonObj.state == "enabled")
                     allowedActions.push("disable");
                 if (jsonObj.state == "disabled")
@@ -2017,7 +2017,7 @@
                 if (g_idpList) {
                     allowedActions.push("configureSamlAuthorization");
                 }
-        	}
+            }
         }
         return allowedActions;
     }

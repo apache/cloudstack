@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 (function(cloudStack, $) {
-	var ostypeObjs;
+    var ostypeObjs;
 
     cloudStack.sections.templates = {
         title: 'label.menu.templates',
@@ -111,7 +111,7 @@
                                 docID: 'helpNetworkOfferingName',
                                 preFilter: cloudStack.preFilter.createTemplate,
                                 fields: {
-                                	url: {
+                                    url: {
                                         label: 'label.url',
                                         docID: 'helpRegisterTemplateURL',
                                         validation: {
@@ -136,41 +136,41 @@
                                         label: 'label.zone',
                                         docID: 'helpRegisterTemplateZone',
                                         select: function(args) {
-                                        	if(g_regionsecondaryenabled == true) {
-                                        		args.response.success({
+                                            if(g_regionsecondaryenabled == true) {
+                                                args.response.success({
                                                     data: [{
                                                         id: -1,
                                                         description: "All Zones"
                                                     }]
                                                 });
-                                        	} else {
-	                                            $.ajax({
-	                                                url: createURL("listZones&available=true"),
-	                                                dataType: "json",
-	                                                async: true,
-	                                                success: function(json) {
-	                                                    var zoneObjs = [];
-	                                                    var items = json.listzonesresponse.zone;
-	                                                    if (items != null) {
-	                                                        for (var i = 0; i < items.length; i++) {
-	                                                            zoneObjs.push({
-	                                                                id: items[i].id,
-	                                                                description: items[i].name
-	                                                            });
-	                                                        }
-	                                                    }
-	                                                    if (isAdmin() && !(cloudStack.context.projects && cloudStack.context.projects[0])) {
-	                                                        zoneObjs.unshift({
-	                                                            id: -1,
-	                                                            description: "All Zones"
-	                                                        });
-	                                                    }
-	                                                    args.response.success({
-	                                                        data: zoneObjs
-	                                                    });
-	                                                }
-	                                            });
-                                        	}
+                                            } else {
+                                                $.ajax({
+                                                    url: createURL("listZones&available=true"),
+                                                    dataType: "json",
+                                                    async: true,
+                                                    success: function(json) {
+                                                        var zoneObjs = [];
+                                                        var items = json.listzonesresponse.zone;
+                                                        if (items != null) {
+                                                            for (var i = 0; i < items.length; i++) {
+                                                                zoneObjs.push({
+                                                                    id: items[i].id,
+                                                                    description: items[i].name
+                                                                });
+                                                            }
+                                                        }
+                                                        if (isAdmin() && !(cloudStack.context.projects && cloudStack.context.projects[0])) {
+                                                            zoneObjs.unshift({
+                                                                id: -1,
+                                                                description: "All Zones"
+                                                            });
+                                                        }
+                                                        args.response.success({
+                                                            data: zoneObjs
+                                                        });
+                                                    }
+                                                });
+                                            }
                                         }
                                     },
                                     hypervisor: {
@@ -184,7 +184,7 @@
                                             var apiCmd;
                                             if (args.zone == -1) { //All Zones
                                                 //apiCmd = "listHypervisors&zoneid=-1"; //"listHypervisors&zoneid=-1" has been changed to return only hypervisors available in all zones (bug 8809)
-                                            	apiCmd = "listHypervisors";
+                                                apiCmd = "listHypervisors";
                                             }
                                             else {
                                                 apiCmd = "listHypervisors&zoneid=" + args.zone;
@@ -218,7 +218,7 @@
 
                                                     $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
                                                 } else if ($(this).val() == "XenServer") {
-                                                	$form.find('.form-item[rel=rootDiskControllerType]').hide();
+                                                    $form.find('.form-item[rel=rootDiskControllerType]').hide();
                                                     $form.find('.form-item[rel=nicAdapterType]').hide();
                                                     $form.find('.form-item[rel=keyboardType]').hide();
 
@@ -401,7 +401,7 @@
                                                     description: 'TAR'
                                                 });
                                             } else if (args.hypervisor == "Hyperv") {
-                                            	items.push({
+                                                items.push({
                                                     id: 'VHD',
                                                     description: 'VHD'
                                                 });
@@ -425,8 +425,8 @@
                                                 dataType: "json",
                                                 async: true,
                                                 success: function(json) {
-                                                	var ostypeObjs = json.listostypesresponse.ostype;
-                                                	args.response.success({
+                                                    var ostypeObjs = json.listostypesresponse.ostype;
+                                                    args.response.success({
                                                         data: ostypeObjs
                                                     });
                                                 }
@@ -792,7 +792,7 @@
                                                     description: 'TAR'
                                                 });
                                             } else if (args.hypervisor == "Hyperv") {
-                                            	items.push({
+                                                items.push({
                                                     id: 'VHD',
                                                     description: 'VHD'
                                                 });
@@ -816,8 +816,8 @@
                                                 dataType: "json",
                                                 async: true,
                                                 success: function(json) {
-                                                	var ostypeObjs = json.listostypesresponse.ostype;
-                                                	args.response.success({
+                                                    var ostypeObjs = json.listostypesresponse.ostype;
+                                                    args.response.success({
                                                         data: ostypeObjs
                                                     });
                                                 }
@@ -1038,49 +1038,49 @@
 
                                     //***** addResourceDetail *****
                                     //XenServer only (starts here)
-  					                if(args.$detailView.find('form').find('div .detail-group').find('.xenserverToolsVersion61plus').length > 0) {
-  					                	$.ajax({
-  					                		url: createURL('addResourceDetail'),
-  					                		data: {
-  					                			resourceType: 'template',
-  					                			resourceId: args.context.templates[0].id,
-  					                			'details[0].key': 'hypervisortoolsversion',
-  					                			'details[0].value': (args.data.xenserverToolsVersion61plus == "on") ? 'xenserver61' : 'xenserver56'
-  					                		},
-  					                		success: function(json) {
-  					                			 var jobId = json.addResourceDetailresponse.jobid;
-  		                                         var addResourceDetailIntervalID = setInterval(function() {
-  		                                             $.ajax({
-  		                                                 url: createURL("queryAsyncJobResult&jobid=" + jobId),
-  		                                                 dataType: "json",
-  		                                                 success: function(json) {
-  		                                                     var result = json.queryasyncjobresultresponse;
+                                      if(args.$detailView.find('form').find('div .detail-group').find('.xenserverToolsVersion61plus').length > 0) {
+                                          $.ajax({
+                                              url: createURL('addResourceDetail'),
+                                              data: {
+                                                  resourceType: 'template',
+                                                  resourceId: args.context.templates[0].id,
+                                                  'details[0].key': 'hypervisortoolsversion',
+                                                  'details[0].value': (args.data.xenserverToolsVersion61plus == "on") ? 'xenserver61' : 'xenserver56'
+                                              },
+                                              success: function(json) {
+                                                   var jobId = json.addResourceDetailresponse.jobid;
+                                                   var addResourceDetailIntervalID = setInterval(function() {
+                                                       $.ajax({
+                                                           url: createURL("queryAsyncJobResult&jobid=" + jobId),
+                                                           dataType: "json",
+                                                           success: function(json) {
+                                                               var result = json.queryasyncjobresultresponse;
 
-  		                                                     if (result.jobstatus == 0) {
-  		                                                         return; //Job has not completed
-  		                                                     } else {
-  		                                                         clearInterval(addResourceDetailIntervalID);
+                                                               if (result.jobstatus == 0) {
+                                                                   return; //Job has not completed
+                                                               } else {
+                                                                   clearInterval(addResourceDetailIntervalID);
 
-  		                                                         if (result.jobstatus == 1) {
-  		                                                        	 //do nothing
-  		                                                         } else if (result.jobstatus == 2) {
-  		                                                        	 cloudStack.dialog.notice({
-  		                                                                 message: "message.XSTools61plus.update.failed" + " " + _s(result.jobresult.errortext)
-  		                                                             });
-  		                                                         }
-  		                                                     }
-  		                                                 },
-  		                                                 error: function(XMLHttpResponse) {
-  		                                                     cloudStack.dialog.notice({
-  		                                                         message: "message.XSTools61plus.update.failed" + " " + parseXMLHttpResponse(XMLHttpResponse)
-  		                                                     });
-  		                                                 }
-  		                                             });
-  		                                         }, g_queryAsyncJobResultInterval);
-  					                		}
-  					                	});
-  								    }
-  							        //XenServer only (ends here)
+                                                                   if (result.jobstatus == 1) {
+                                                                       //do nothing
+                                                                   } else if (result.jobstatus == 2) {
+                                                                       cloudStack.dialog.notice({
+                                                                           message: "message.XSTools61plus.update.failed" + " " + _s(result.jobresult.errortext)
+                                                                       });
+                                                                   }
+                                                               }
+                                                           },
+                                                           error: function(XMLHttpResponse) {
+                                                               cloudStack.dialog.notice({
+                                                                   message: "message.XSTools61plus.update.failed" + " " + parseXMLHttpResponse(XMLHttpResponse)
+                                                               });
+                                                           }
+                                                       });
+                                                   }, g_queryAsyncJobResultInterval);
+                                              }
+                                          });
+                                      }
+                                      //XenServer only (ends here)
 
 
                                     //***** listTemplates *****
@@ -1168,28 +1168,28 @@
                                     }
 
                                     if ('templates' in args.context && args.context.templates[0].ostypeid != undefined) {
-                                    	var ostypeObjs;
-    	                            	$.ajax({
-    	                                    url: createURL("listOsTypes"),
-    	                                    dataType: "json",
-    	                                    async: false,
-    	                                    success: function(json) {
-    	                                    	var ostypeObjs = json.listostypesresponse.ostype;
-    	                                    }
-    	                                });
+                                        var ostypeObjs;
+                                        $.ajax({
+                                            url: createURL("listOsTypes"),
+                                            dataType: "json",
+                                            async: false,
+                                            success: function(json) {
+                                                var ostypeObjs = json.listostypesresponse.ostype;
+                                            }
+                                        });
 
-                                    	if (ostypeObjs != undefined) {
-                                    		var ostypeName;
-                                    		for (var i = 0; i < ostypeObjs.length; i++) {
-                                    			if (ostypeObjs[i].id == args.context.templates[0].ostypeid) {
-                                    				ostypeName = ostypeObjs[i].description;
-                                    				break;
-                                    			}
-                                    		}
-                                    		if (ostypeName == undefined || ostypeName.indexOf("Win") == -1) {
-                                    			hiddenFields.push('xenserverToolsVersion61plus');
-                                    		}
-                                    	}
+                                        if (ostypeObjs != undefined) {
+                                            var ostypeName;
+                                            for (var i = 0; i < ostypeObjs.length; i++) {
+                                                if (ostypeObjs[i].id == args.context.templates[0].ostypeid) {
+                                                    ostypeName = ostypeObjs[i].description;
+                                                    break;
+                                                }
+                                            }
+                                            if (ostypeName == undefined || ostypeName.indexOf("Win") == -1) {
+                                                hiddenFields.push('xenserverToolsVersion61plus');
+                                            }
+                                        }
                                     }
 
                                     return hiddenFields;
@@ -1282,17 +1282,17 @@
                                         label: 'label.os.type',
                                         isEditable: true,
                                         select: function(args) {
-                                        	var ostypeObjs;
+                                            var ostypeObjs;
                                             $.ajax({
                                                 url: createURL("listOsTypes"),
                                                 dataType: "json",
                                                 async: false,
                                                 success: function(json) {
-                                                	ostypeObjs = json.listostypesresponse.ostype;
+                                                    ostypeObjs = json.listostypesresponse.ostype;
                                                 }
                                             });
 
-                                        	var items = [];
+                                            var items = [];
                                             $(ostypeObjs).each(function() {
                                                 items.push({
                                                     id: this.id,
@@ -1347,23 +1347,23 @@
                                     $.ajax({
                                         url: createURL("listTemplates"),
                                         data: {
-                                        	templatefilter: "self",
-                                        	id: args.context.templates[0].id
+                                            templatefilter: "self",
+                                            id: args.context.templates[0].id
                                         },
                                         success: function(json) {
-                                        	var jsonObj = json.listtemplatesresponse.template[0];
+                                            var jsonObj = json.listtemplatesresponse.template[0];
 
-                                        	if ('details' in jsonObj && 'hypervisortoolsversion' in jsonObj.details) {
-                                        	    if (jsonObj.details.hypervisortoolsversion == 'xenserver61')
-                                        	        jsonObj.xenserverToolsVersion61plus = true;
-                                        	    else
-                                        	        jsonObj.xenserverToolsVersion61plus = false;
-                                        	}
+                                            if ('details' in jsonObj && 'hypervisortoolsversion' in jsonObj.details) {
+                                                if (jsonObj.details.hypervisortoolsversion == 'xenserver61')
+                                                    jsonObj.xenserverToolsVersion61plus = true;
+                                                else
+                                                    jsonObj.xenserverToolsVersion61plus = false;
+                                            }
 
-                                        	args.response.success({
-                                        	    actionFilter: templateActionfilter,
-                                        	    data: jsonObj
-                                        	});
+                                            args.response.success({
+                                                actionFilter: templateActionfilter,
+                                                data: jsonObj
+                                            });
                                         }
                                     });
                                 }
@@ -1389,31 +1389,31 @@
 
 
                                     dataProvider: function(args) {  // UI > Templates menu (listing) > select a template from listing > Details tab > Zones tab (listing)
-                                    	$.ajax({
+                                        $.ajax({
                                             url: createURL("listTemplates"),
                                             data: {
-                                            	templatefilter: "self",
-                                            	id: args.context.templates[0].id
+                                                templatefilter: "self",
+                                                id: args.context.templates[0].id
                                             },
                                             success: function(json) {
-                                            	var jsonObjs = json.listtemplatesresponse.template;
+                                                var jsonObjs = json.listtemplatesresponse.template;
 
-                                            	if (jsonObjs != undefined) {
-                                            		for (var i = 0; i < jsonObjs.length; i++) {
-                                            			var jsonObj = jsonObjs[i];
-                                            			if ('details' in jsonObj && 'hypervisortoolsversion' in jsonObj.details) {
-                                                    	    if (jsonObj.details.hypervisortoolsversion == 'xenserver61')
-                                                    	        jsonObj.xenserverToolsVersion61plus = true;
-                                                    	    else
-                                                    	        jsonObj.xenserverToolsVersion61plus = false;
-                                                    	}
-                                            		}
-                                            	}
+                                                if (jsonObjs != undefined) {
+                                                    for (var i = 0; i < jsonObjs.length; i++) {
+                                                        var jsonObj = jsonObjs[i];
+                                                        if ('details' in jsonObj && 'hypervisortoolsversion' in jsonObj.details) {
+                                                            if (jsonObj.details.hypervisortoolsversion == 'xenserver61')
+                                                                jsonObj.xenserverToolsVersion61plus = true;
+                                                            else
+                                                                jsonObj.xenserverToolsVersion61plus = false;
+                                                        }
+                                                    }
+                                                }
 
-                                            	args.response.success({
-                                            	    actionFilter: templateActionfilter,
-                                            	    data: jsonObjs
-                                            	});
+                                                args.response.success({
+                                                    actionFilter: templateActionfilter,
+                                                    data: jsonObjs
+                                                });
                                             }
                                         });
                                     },
@@ -1502,14 +1502,14 @@
                                                  },
                                                  action: function(args) {
                                                      var data = {
-                                                     	id: args.context.templates[0].id,
-                                                     	destzoneid: args.data.destinationZoneId
+                                                         id: args.context.templates[0].id,
+                                                         destzoneid: args.data.destinationZoneId
                                                      };
                                                      $.extend(data, {
                                                          sourcezoneid: args.context.zones[0].zoneid
                                                      });
 
-                                                 	$.ajax({
+                                                     $.ajax({
                                                          url: createURL('copyTemplate'),
                                                          data: data,
                                                          success: function(json) {
@@ -1550,28 +1550,28 @@
                                                 }
 
                                                 if ('templates' in args.context && args.context.templates[0].ostypeid != undefined) {
-                                                	var ostypeObjs;
-                	                            	$.ajax({
-                	                                    url: createURL("listOsTypes"),
-                	                                    dataType: "json",
-                	                                    async: false,
-                	                                    success: function(json) {
-                	                                    	ostypeObjs = json.listostypesresponse.ostype;
-                	                                    }
-                	                                });
+                                                    var ostypeObjs;
+                                                    $.ajax({
+                                                        url: createURL("listOsTypes"),
+                                                        dataType: "json",
+                                                        async: false,
+                                                        success: function(json) {
+                                                            ostypeObjs = json.listostypesresponse.ostype;
+                                                        }
+                                                    });
 
-                                                	if (ostypeObjs != undefined) {
-                                                		var ostypeName;
-                                                		for (var i = 0; i < ostypeObjs.length; i++) {
-                                                			if (ostypeObjs[i].id == args.context.templates[0].ostypeid) {
-                                                				ostypeName = ostypeObjs[i].description;
-                                                				break;
-                                                			}
-                                                		}
-                                                		if (ostypeName == undefined || ostypeName.indexOf("Win") == -1) {
-                                                			hiddenFields.push('xenserverToolsVersion61plus');
-                                                		}
-                                                	}
+                                                    if (ostypeObjs != undefined) {
+                                                        var ostypeName;
+                                                        for (var i = 0; i < ostypeObjs.length; i++) {
+                                                            if (ostypeObjs[i].id == args.context.templates[0].ostypeid) {
+                                                                ostypeName = ostypeObjs[i].description;
+                                                                break;
+                                                            }
+                                                        }
+                                                        if (ostypeName == undefined || ostypeName.indexOf("Win") == -1) {
+                                                            hiddenFields.push('xenserverToolsVersion61plus');
+                                                        }
+                                                    }
                                                 }
 
                                                 return hiddenFields;
@@ -1595,7 +1595,7 @@
                                                 zoneid: {
                                                     label: 'label.zone.id'
                                                 },
-                                            	isready: {
+                                                isready: {
                                                     label: 'state.Ready',
                                                     converter: cloudStack.converters.toBooleanText
                                                 },
@@ -1681,17 +1681,17 @@
                                                     label: 'label.os.type',
                                                     isEditable: true,
                                                     select: function(args) {
-                                                    	var ostypeObjs;
+                                                        var ostypeObjs;
                                                         $.ajax({
                                                             url: createURL("listOsTypes"),
                                                             dataType: "json",
                                                             async: false,
                                                             success: function(json) {
-                                                            	ostypeObjs = json.listostypesresponse.ostype;
+                                                                ostypeObjs = json.listostypesresponse.ostype;
                                                             }
                                                         });
 
-                                                    	var items = [];
+                                                        var items = [];
                                                         $(ostypeObjs).each(function() {
                                                             items.push({
                                                                 id: this.id,
@@ -1737,19 +1737,19 @@
 
 
                                             dataProvider: function(args) {  // UI > Templates menu (listing) > select a template from listing > Details tab > Zones tab (listing) > select a zone from listing > Details tab
-                                            	var jsonObj = args.context.zones[0];
+                                                var jsonObj = args.context.zones[0];
 
-                                            	if ('details' in jsonObj && 'hypervisortoolsversion' in jsonObj.details) {
-                                            	    if (jsonObj.details.hypervisortoolsversion == 'xenserver61')
-                                            	        jsonObj.xenserverToolsVersion61plus = true;
-                                            	    else
-                                            	        jsonObj.xenserverToolsVersion61plus = false;
-                                            	}
+                                                if ('details' in jsonObj && 'hypervisortoolsversion' in jsonObj.details) {
+                                                    if (jsonObj.details.hypervisortoolsversion == 'xenserver61')
+                                                        jsonObj.xenserverToolsVersion61plus = true;
+                                                    else
+                                                        jsonObj.xenserverToolsVersion61plus = false;
+                                                }
 
-                                            	args.response.success({
-                                            	    actionFilter: templateActionfilter,
-                                            	    data: jsonObj
-                                            	});
+                                                args.response.success({
+                                                    actionFilter: templateActionfilter,
+                                                    data: jsonObj
+                                                });
                                             }
                                         }
                                     }}
@@ -1832,41 +1832,41 @@
                                         label: 'label.zone',
                                         docID: 'helpRegisterISOZone',
                                         select: function(args) {
-                                        	if(g_regionsecondaryenabled == true) {
-                                        		args.response.success({
+                                            if(g_regionsecondaryenabled == true) {
+                                                args.response.success({
                                                     data: [{
                                                         id: -1,
                                                         description: "All Zones"
                                                     }]
                                                 });
-                                        	} else {
-	                                            $.ajax({
-	                                                url: createURL("listZones&available=true"),
-	                                                dataType: "json",
-	                                                async: true,
-	                                                success: function(json) {
-	                                                    var zoneObjs = [];
-	                                                    var items = json.listzonesresponse.zone;
-	                                                    if (items != null) {
-	                                                        for (var i = 0; i < items.length; i++) {
-	                                                            zoneObjs.push({
-	                                                                id: items[i].id,
-	                                                                description: items[i].name
-	                                                            });
-	                                                        }
-	                                                    }
-	                                                    if (isAdmin() && !(cloudStack.context.projects && cloudStack.context.projects[0])) {
-	                                                        zoneObjs.unshift({
-	                                                            id: -1,
-	                                                            description: "All Zones"
-	                                                        });
-	                                                    }
-	                                                    args.response.success({
-	                                                        data: zoneObjs
-	                                                    });
-	                                                }
-	                                            });
-                                        	}
+                                            } else {
+                                                $.ajax({
+                                                    url: createURL("listZones&available=true"),
+                                                    dataType: "json",
+                                                    async: true,
+                                                    success: function(json) {
+                                                        var zoneObjs = [];
+                                                        var items = json.listzonesresponse.zone;
+                                                        if (items != null) {
+                                                            for (var i = 0; i < items.length; i++) {
+                                                                zoneObjs.push({
+                                                                    id: items[i].id,
+                                                                    description: items[i].name
+                                                                });
+                                                            }
+                                                        }
+                                                        if (isAdmin() && !(cloudStack.context.projects && cloudStack.context.projects[0])) {
+                                                            zoneObjs.unshift({
+                                                                id: -1,
+                                                                description: "All Zones"
+                                                            });
+                                                        }
+                                                        args.response.success({
+                                                            data: zoneObjs
+                                                        });
+                                                    }
+                                                });
+                                            }
                                         }
                                     },
 
@@ -1886,7 +1886,7 @@
                                             required: true
                                         },
                                         select: function(args) {
-                                        	$.ajax({
+                                            $.ajax({
                                                 url: createURL("listOsTypes"),
                                                 dataType: "json",
                                                 async: true,
@@ -2047,7 +2047,7 @@
                                         break;
                                     case "shared":
                                         $.extend(data, {
-                                        	isofilter: 'shared'
+                                            isofilter: 'shared'
                                         });
                                         break;
                                     case "featured":
@@ -2316,17 +2316,17 @@
                                         label: 'label.os.type',
                                         isEditable: true,
                                         select: function(args) {
-                                        	if (ostypeObjs == undefined) {
-	                                            $.ajax({
-	                                                url: createURL("listOsTypes"),
-	                                                dataType: "json",
-	                                                async: false,
-	                                                success: function(json) {
-	                                                	ostypeObjs = json.listostypesresponse.ostype;
-	                                                }
-	                                            });
-                                        	}
-                                        	var items = [];
+                                            if (ostypeObjs == undefined) {
+                                                $.ajax({
+                                                    url: createURL("listOsTypes"),
+                                                    dataType: "json",
+                                                    async: false,
+                                                    success: function(json) {
+                                                        ostypeObjs = json.listostypesresponse.ostype;
+                                                    }
+                                                });
+                                            }
+                                            var items = [];
                                             $(ostypeObjs).each(function() {
                                                 items.push({
                                                     id: this.id,
@@ -2460,16 +2460,16 @@
                                             },
                                             action: function(args) {
                                                 var data = {
-                                                	id: args.context.isos[0].id,
-                                                	destzoneid: args.data.destinationZoneId
+                                                    id: args.context.isos[0].id,
+                                                    destzoneid: args.data.destinationZoneId
                                                 };
                                                 if (args.context.zones[0].zoneid != undefined) {
                                                     $.extend(data, {
-                                                    	sourcezoneid: args.context.zones[0].zoneid
+                                                        sourcezoneid: args.context.zones[0].zoneid
                                                     });
                                                 }
 
-                                            	$.ajax({
+                                                $.ajax({
                                                     url: createURL('copyIso'),
                                                     data: data,
                                                     success: function(json) {
@@ -2610,17 +2610,17 @@
                                                     label: 'label.os.type',
                                                     isEditable: true,
                                                     select: function(args) {
-                                                    	var ostypeObjs;
+                                                        var ostypeObjs;
                                                         $.ajax({
                                                             url: createURL("listOsTypes"),
                                                             dataType: "json",
                                                             async: false,
                                                             success: function(json) {
-                                                            	ostypeObjs = json.listostypesresponse.ostype;
+                                                                ostypeObjs = json.listostypesresponse.ostype;
                                                             }
                                                         });
 
-                                                    	var items = [];
+                                                        var items = [];
                                                         $(ostypeObjs).each(function() {
                                                             items.push({
                                                                 id: this.id,
@@ -2735,8 +2735,8 @@
             /*
             if(g_regionsecondaryenabled != true) {
                 allowedActions.push("copyISO");
-			}
-			*/
+            }
+            */
         }
 
         // "Create VM"
@@ -2746,7 +2746,7 @@
      if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))  //if neither root-admin, nor item owner
      || jsonObj.isready == false)
      || (jsonObj.bootable == false)
-     || (jsonObj.domainid ==	1 && jsonObj.account ==	"system")
+     || (jsonObj.domainid ==    1 && jsonObj.account ==    "system")
      ) {
        //do nothing
      }

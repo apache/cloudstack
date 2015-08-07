@@ -628,38 +628,38 @@
                 listAll: true
             };
             if (args.projectName) {
-            	data1.keyword = args.projectName;
+                data1.keyword = args.projectName;
             }
 
             var array1 = [];
-        	var page = 1;
+            var page = 1;
             var getNextPage = function() {
-            	var data2 = $.extend({}, data1, {
-            		page: page,
-            		pageSize: 500
-            	});
+                var data2 = $.extend({}, data1, {
+                    page: page,
+                    pageSize: 500
+                });
 
-	            $.ajax({
-	                url: createURL('listProjects', {
-	                    ignoreProject: true
-	                }),
-	                data: data2,
-	                async: false,
-	                success: function(json) {
-	                	var projects = json.listprojectsresponse.project;
-	                	if (projects != undefined) {
-	                		for(var i = 0; i < projects.length; i++) {
-	                			array1.push($.extend(projects[i], {
-	                                displayText: projects[i].displaytext
-	                            }));
-	                		}
-	                	}
-	                	if (array1.length < json.listprojectsresponse.count) {
-	                	    page++;
-	                	    getNextPage();
-	                	}
-	                }
-	            });
+                $.ajax({
+                    url: createURL('listProjects', {
+                        ignoreProject: true
+                    }),
+                    data: data2,
+                    async: false,
+                    success: function(json) {
+                        var projects = json.listprojectsresponse.project;
+                        if (projects != undefined) {
+                            for(var i = 0; i < projects.length; i++) {
+                                array1.push($.extend(projects[i], {
+                                    displayText: projects[i].displaytext
+                                }));
+                            }
+                        }
+                        if (array1.length < json.listprojectsresponse.count) {
+                            page++;
+                            getNextPage();
+                        }
+                    }
+                });
             }
             getNextPage();
             args.response.success({ data: array1 });
