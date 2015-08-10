@@ -139,6 +139,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.Event;
@@ -1243,6 +1244,10 @@ public class ApiDBUtils {
 
     public static Account getVlanAccount(long vlanId) {
         return s_configSvc.getVlanAccount(vlanId);
+    }
+
+    public static Domain getVlanDomain(long vlanId) {
+        return s_configSvc.getVlanDomain(vlanId);
     }
 
     public static boolean isSecurityGroupEnabledInZone(long zoneId) {

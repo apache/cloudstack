@@ -59,6 +59,7 @@ import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
+import com.cloud.dc.dao.DomainVlanMapDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.exception.InvalidParameterValueException;
@@ -115,6 +116,8 @@ public class ConfigurationManagerTest {
     @Mock
     AccountVlanMapDao _accountVlanMapDao;
     @Mock
+    DomainVlanMapDao _domainVlanMapDao;
+    @Mock
     IPAddressDao _publicIpAddressDao;
     @Mock
     DataCenterDao _zoneDao;
@@ -156,6 +159,7 @@ public class ConfigurationManagerTest {
         configurationMgr._accountDao = _accountDao;
         configurationMgr._vlanDao = _vlanDao;
         configurationMgr._accountVlanMapDao = _accountVlanMapDao;
+        configurationMgr._domainVlanMapDao = _domainVlanMapDao;
         configurationMgr._publicIpAddressDao = _publicIpAddressDao;
         configurationMgr._zoneDao = _zoneDao;
         configurationMgr._firewallDao = _firewallDao;
@@ -470,10 +474,11 @@ public class ConfigurationManagerTest {
         when(configurationMgr._vlanDao.findById(anyLong())).thenReturn(vlan);
 
         when(configurationMgr._accountVlanMapDao.listAccountVlanMapsByVlan(anyLong())).thenReturn(null);
+        when(configurationMgr._domainVlanMapDao.listDomainVlanMapsByVlan(anyLong())).thenReturn(null);
         try {
             configurationMgr.releasePublicIpRange(releasePublicIpRangesCmd);
         } catch (Exception e) {
-            Assert.assertTrue(e.getMessage().contains("as it not dedicated to any account"));
+            Assert.assertTrue(e.getMessage().contains("as it not dedicated to any domain and any account"));
         } finally {
             txn.close("runReleaseNonDedicatedPublicIpRange");
         }
@@ -559,15 +564,6 @@ public class ConfigurationManagerTest {
         public long getEntityOwnerId() {
             return 1;
         }
-    }
-
-    @Test
-    public void getVlanAccount() {
-        Mockito.when(_vlanDao.findById(42l)).thenReturn(vlan);
-        Mockito.when(_networkModel.getNetwork(1l)).thenReturn(network);
-        Mockito.when(network.getAccountId()).thenReturn(1l);
-        Mockito.when(_accountMgr.getAccount(1l)).thenReturn(account);
-        Assert.assertNotNull(configurationMgr.getVlanAccount(42l));
     }
 
     @Test

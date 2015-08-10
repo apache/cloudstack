@@ -18,3 +18,15 @@
 --;
 -- Schema upgrade from 4.6.1 to 4.7.0;
 --;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`domain_vlan_map` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+  `domain_id` bigint unsigned NOT NULL COMMENT 'domain id. foreign key to domain table',
+  `vlan_db_id` bigint unsigned NOT NULL COMMENT 'database id of vlan. foreign key to vlan table',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_domain_vlan_map__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain` (`id`) ON DELETE CASCADE,
+  INDEX `i_account_vlan_map__domain_id`(`domain_id`),
+  CONSTRAINT `fk_domain_vlan_map__vlan_id` FOREIGN KEY (`vlan_db_id`) REFERENCES `vlan` (`id`) ON DELETE CASCADE,
+  INDEX `i_account_vlan_map__vlan_id`(`vlan_db_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+

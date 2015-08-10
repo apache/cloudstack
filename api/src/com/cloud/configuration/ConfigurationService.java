@@ -48,6 +48,7 @@ import org.apache.cloudstack.region.PortableIpRange;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
+import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -254,6 +255,8 @@ public interface ConfigurationService {
     boolean deleteNetworkOffering(DeleteNetworkOfferingCmd cmd);
 
     Account getVlanAccount(long vlanId);
+
+    Domain getVlanDomain(long vlanId);
 
     List<? extends NetworkOffering> listNetworkOfferings(TrafficType trafficType, boolean systemOnly);
 

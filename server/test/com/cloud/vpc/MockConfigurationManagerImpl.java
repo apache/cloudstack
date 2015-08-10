@@ -61,6 +61,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
+import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -441,7 +442,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      */
     @Override
     public Vlan createVlanAndPublicIpRange(long zoneId, long networkId, long physicalNetworkId, boolean forVirtualNetwork, Long podId, String startIP, String endIP,
-        String vlanGateway, String vlanNetmask, String vlanId, Account vlanOwner, String startIPv6, String endIPv6, String vlanGatewayv6, String vlanCidrv6)
+        String vlanGateway, String vlanNetmask, String vlanId, Domain domain, Account vlanOwner, String startIPv6, String endIPv6, String vlanGatewayv6, String vlanCidrv6)
         throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException {
         // TODO Auto-generated method stub
         return null;
@@ -522,6 +523,12 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     public boolean releasePublicIpRange(ReleasePublicIpRangeCmd cmd) {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public Domain getVlanDomain(long vlanId) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }
