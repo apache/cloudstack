@@ -618,11 +618,11 @@
                         createForm: {
                             title: 'label.action.destroy.instance',
                             desc: 'label.action.destroy.instance',
-                isWarning: true,
+                            isWarning: true,
                             preFilter: function(args) {
-                                if (isAdmin() || isDomainAdmin()) {
-                                    args.$form.find('.form-item[rel=expunge]').css('display', 'inline-block');
-                                } else {
+                                // Hide the expunge checkbox when the authenticated user
+                                // can't expunge VMs. Related to CLOUDSTACK-8580.
+                                if (! g_allowUserExpungeRecoverVm) {
                                     args.$form.find('.form-item[rel=expunge]').hide();
                                 }
                             },
@@ -2425,11 +2425,15 @@
         var allowedActions = [];
 
         if (jsonObj.state == 'Destroyed') {
-            if (isAdmin() || isDomainAdmin()) {
+            // Display expunge and recover action when authenticated user
+            // is allowed to expunge or recover VMs. Related to CLOUDSTACK-8580.
+            if (g_allowUserExpungeRecoverVm) {
                 allowedActions.push("recover");
             }
-            if (isAdmin() || isDomainAdmin())
+
+            if (g_allowUserExpungeRecoverVm) {
                 allowedActions.push("expunge");
+            }
         } else if (jsonObj.state == 'Running') {
             allowedActions.push("stop");
             allowedActions.push("restart");
@@ -2498,8 +2502,11 @@
         } else if (jsonObj.state == 'Error') {
             allowedActions.push("destroy");
         } else if (jsonObj.state == 'Expunging') {
-            if (isAdmin() || isDomainAdmin())
+            // Display expunge action when authenticated user
+            // is allowed to expunge VMs. Related to CLOUDSTACK-8580.
+            if (g_allowUserExpungeRecoverVm) {
                 allowedActions.push("expunge");
+            }
         }
         return allowedActions;
     }
