@@ -140,12 +140,10 @@ class TestlistTemplates(cloudstackTestCase):
                               max=1000
                               )
         
-        self.testdata["template"]["url"]= "http://10.147.28.7/templates/DOS.vhd.bz2"
-        self.testdata["template"]["format"]="VHD"
         for i in range(0, 850):
             template_created = Template.register(
                 self.apiclient,
-                self.testdata["template"],
+                self.testdata["templateregister"],
                 zoneid=self.zone.id,
                 hypervisor=self.hypervisor,
                 account=self.account.name,
@@ -162,6 +160,11 @@ class TestlistTemplates(cloudstackTestCase):
             page=1,
             account=self.account.name,
             domainid=self.account.domainid)
+        status = validateList(listfirst500template)
+        self.assertEquals(
+                PASS,
+                status[0],
+                "First 500 template list is empty")
         listremainingtemplate = Template.list(
             self.apiclient,
             templatefilter="executable",
@@ -169,6 +172,11 @@ class TestlistTemplates(cloudstackTestCase):
             page=2,
             account=self.account.name,
             domainid=self.account.domainid)
+        status = validateList(listremainingtemplate)
+        self.assertEquals(
+                PASS,
+                status[0],
+                "Next 500 template list is empty")
         listalltemplate = Template.list(
             self.apiclient,
             templatefilter="executable",
@@ -176,6 +184,11 @@ class TestlistTemplates(cloudstackTestCase):
             page=1,
             account=self.account.name,
             domainid=self.account.domainid)
+        status = validateList(listalltemplate)
+        self.assertEquals(
+                PASS,
+                status[0],
+                "entire template list is empty")
         listfirst500template.extend(listremainingtemplate)
         for i, j in zip(listalltemplate,listfirst500template):
             self.assertNotEqual(
@@ -187,7 +200,7 @@ class TestlistTemplates(cloudstackTestCase):
 
 
     @attr(tags=["advanced", "basic"], required_hardware="true")
-    def test_05_template_permissions(self):
+    def test_02_template_permissions(self):
         """
         @Desc: Test to create Public Template by registering or by snapshot and volume when
         Global parameter 'allow.public.user.template' is set to  False
