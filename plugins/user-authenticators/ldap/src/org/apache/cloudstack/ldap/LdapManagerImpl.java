@@ -105,17 +105,14 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
     }
 
     @Override
-    public boolean canAuthenticate(final String username, final String password) {
-        final String escapedUsername = LdapUtils.escapeLDAPSearchFilter(username);
+    public boolean canAuthenticate(final String principal, final String password) {
         try {
-            final LdapUser user = getUser(escapedUsername);
-            final String principal = user.getPrincipal();
             final LdapContext context = _ldapContextFactory.createUserContext(principal, password);
             closeContext(context);
             return true;
-        } catch (NamingException | IOException | NoLdapUserMatchingQueryException e) {
-            s_logger.debug("Exception while doing an LDAP bind for user "+" "+username, e);
-            s_logger.info("Failed to authenticate user: " + username + ". incorrect password.");
+        } catch (NamingException | IOException e) {
+            s_logger.debug("Exception while doing an LDAP bind for user "+" "+principal, e);
+            s_logger.info("Failed to authenticate user: " + principal + ". incorrect password.");
             return false;
         }
     }
@@ -126,7 +123,7 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
                 context.close();
             }
         } catch (final NamingException e) {
-            s_logger.warn(e.getMessage(),e);
+            s_logger.warn(e.getMessage(), e);
         }
     }
 
@@ -196,6 +193,21 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
     }
 
     @Override
+    public LdapUser getUser(final String username, final String type, final String name) throws NoLdapUserMatchingQueryException {
+        LdapContext context = null;
+        try {
+            context = _ldapContextFactory.createBindContext();
+            final String escapedUsername = LdapUtils.escapeLDAPSearchFilter(username);
+            return _ldapUserManagerFactory.getInstance(_ldapConfiguration.getLdapProvider()).getUser(escapedUsername, type, name, context);
+        } catch (NamingException | IOException e) {
+            s_logger.debug("ldap Exception: ",e);
+            throw new NoLdapUserMatchingQueryException("No Ldap User found for username: "+username + "name: " + name + "of type" + type);
+        } finally {
+            closeContext(context);
+        }
+    }
+
+    @Override
     public List<LdapUser> getUsers() throws NoLdapUserMatchingQueryException {
         LdapContext context = null;
         try {
@@ -256,5 +268,10 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
         // TODO Auto-generated method stub
         LdapTrustMapVO ldapTrustMapVO = _ldapTrustMapDao.persist(new LdapTrustMapVO(domainId, type, name));
         return null;
+    }
+
+    @Override
+    public LdapTrustMapVO getDomainLinkedToLdap(long domainId){
+        return _ldapTrustMapDao.findByDomainId(domainId);
     }
 }

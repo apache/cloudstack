@@ -17,6 +17,9 @@
 package org.apache.cloudstack.ldap;
 
 import com.cloud.server.auth.DefaultUserAuthenticator;
+import com.cloud.user.Account;
+import com.cloud.user.AccountService;
+import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.Pair;
@@ -25,6 +28,7 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.Map;
+import java.util.UUID;
 
 public class LdapAuthenticator extends DefaultUserAuthenticator {
     private static final Logger s_logger = Logger.getLogger(LdapAuthenticator.class.getName());
@@ -33,6 +37,8 @@ public class LdapAuthenticator extends DefaultUserAuthenticator {
     private LdapManager _ldapManager;
     @Inject
     private UserAccountDao _userAccountDao;
+    @Inject
+    public AccountService _accountService;
 
     public LdapAuthenticator() {
         super();
@@ -52,22 +58,64 @@ public class LdapAuthenticator extends DefaultUserAuthenticator {
             return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
         }
 
-        final UserAccount user = _userAccountDao.getUserAccount(username, domainId);
+        boolean result = false;
+        ActionOnFailedAuthentication action = null;
 
-        if (user == null) {
-            s_logger.debug("Unable to find user with " + username + " in domain " + domainId);
-            return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
-        } else if (_ldapManager.isLdapEnabled()) {
-            boolean result = _ldapManager.canAuthenticate(username, password);
-            ActionOnFailedAuthentication action = null;
-            if (result == false) {
-                action = ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT;
+        if (_ldapManager.isLdapEnabled()) {
+            LdapTrustMapVO ldapTrustMapVO = _ldapManager.getDomainLinkedToLdap(domainId);
+            if(ldapTrustMapVO != null) {
+                try {
+                    LdapUser ldapUser = _ldapManager.getUser(username, ldapTrustMapVO.getType(), ldapTrustMapVO.getName());
+                    if(!ldapUser.isDisabled()) {
+                        result = _ldapManager.canAuthenticate(ldapUser.getPrincipal(), password);
+                        if(result) {
+                            final UserAccount user = _userAccountDao.getUserAccount(username, domainId);
+                            if (user == null) {
+                                // import user to cloudstack
+                                createCloudStackUserAccount(ldapUser, domainId);
+                            }
+                        }
+                    } else {
+                        //disable user in cloudstack
+                        disableUserInCloudStack(ldapUser, domainId);
+                    }
+                } catch (NoLdapUserMatchingQueryException e) {
+                    s_logger.debug(e.getMessage());
+                }
+
+            } else {
+                //domain is not linked to ldap follow normal authentication
+                final UserAccount user = _userAccountDao.getUserAccount(username, domainId);
+                if(user != null ) {
+                    try {
+                        LdapUser ldapUser = _ldapManager.getUser(username);
+                        if(!ldapUser.isDisabled()) {
+                            result = _ldapManager.canAuthenticate(ldapUser.getPrincipal(), password);
+                        } else {
+                            s_logger.debug("user with principal "+ ldapUser.getPrincipal() + " is disabled in ldap");
+                        }
+                    } catch (NoLdapUserMatchingQueryException e) {
+                        s_logger.debug(e.getMessage());
+                    }
+                }
             }
-            return new Pair<Boolean, ActionOnFailedAuthentication>(result, action);
-
-        } else {
-            return new Pair<Boolean, ActionOnFailedAuthentication>(false, ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
         }
+
+        if (!result) {
+            action = ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT;
+        }
+        return new Pair<Boolean, ActionOnFailedAuthentication>(result, action);
+    }
+
+    private void createCloudStackUserAccount(LdapUser user, long domainId) {
+        String username = user.getUsername();
+        _accountService.createUserAccount(username, "", user.getFirstname(), user.getLastname(), user.getEmail(), "GMT", username, Account.ACCOUNT_TYPE_DOMAIN_ADMIN, domainId,
+                                          username, null, UUID.randomUUID().toString(), UUID.randomUUID().toString(), User.Source.LDAP);
+    }
+
+    private void disableUserInCloudStack(LdapUser ldapUser, long domainId) {
+        final UserAccount user = _userAccountDao.getUserAccount(ldapUser.getUsername(), domainId);
+        _accountService.lockUser(user.getId());
     }
 
     @Override

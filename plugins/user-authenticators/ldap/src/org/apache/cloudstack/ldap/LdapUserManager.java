@@ -32,6 +32,8 @@ public interface LdapUserManager {
 
     public LdapUser getUser(final String username, final LdapContext context) throws NamingException, IOException;
 
+    public LdapUser getUser(final String username, final String type, final String name, final LdapContext context) throws NamingException, IOException;
+
     public List<LdapUser> getUsers(final LdapContext context) throws NamingException, IOException;
 
     public List<LdapUser> getUsers(final String username, final LdapContext context) throws NamingException, IOException;

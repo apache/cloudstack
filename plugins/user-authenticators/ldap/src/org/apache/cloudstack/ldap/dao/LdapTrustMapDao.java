@@ -23,4 +23,5 @@ import org.apache.cloudstack.ldap.LdapTrustMapVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface LdapTrustMapDao extends GenericDao<LdapTrustMapVO, Long> {
+    LdapTrustMapVO findByDomainId(long domainId);
 }

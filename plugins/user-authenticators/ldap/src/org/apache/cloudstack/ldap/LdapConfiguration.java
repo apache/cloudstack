@@ -108,7 +108,8 @@ public class LdapConfiguration implements Configurable{
     }
 
     public String[] getReturnAttributes() {
-        return new String[] {getUsernameAttribute(), getEmailAttribute(), getFirstnameAttribute(), getLastnameAttribute(), getCommonNameAttribute()};
+        return new String[] {getUsernameAttribute(), getEmailAttribute(), getFirstnameAttribute(), getLastnameAttribute(), getCommonNameAttribute(),
+                getUserAccountControlAttribute()};
     }
 
     public int getScope() {
@@ -157,6 +158,10 @@ public class LdapConfiguration implements Configurable{
 
     public String getCommonNameAttribute() {
         return "cn";
+    }
+
+    public String getUserAccountControlAttribute() {
+        return "userAccountControl";
     }
 
     public Long getReadTimeout() {

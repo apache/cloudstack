@@ -31,7 +31,7 @@ public interface LdapManager extends PluggableService {
 
     LdapConfigurationResponse addConfiguration(String hostname, int port) throws InvalidParameterValueException;
 
-    boolean canAuthenticate(String username, String password);
+    boolean canAuthenticate(String principal, String password);
 
     LdapConfigurationResponse createLdapConfigurationResponse(LdapConfigurationVO configuration);
 
@@ -40,6 +40,8 @@ public interface LdapManager extends PluggableService {
     LdapConfigurationResponse deleteConfiguration(String hostname) throws InvalidParameterValueException;
 
     LdapUser getUser(final String username) throws NoLdapUserMatchingQueryException;
+
+    LdapUser getUser(String username, String type, String name) throws NoLdapUserMatchingQueryException;
 
     List<LdapUser> getUsers() throws NoLdapUserMatchingQueryException;
 
@@ -52,4 +54,6 @@ public interface LdapManager extends PluggableService {
     List<LdapUser> searchUsers(String query) throws NoLdapUserMatchingQueryException;
 
     LinkDomainToLdapResponse linkDomainToLdap(Long domainId, String type, String name);
+
+    public LdapTrustMapVO getDomainLinkedToLdap(long domainId);
 }

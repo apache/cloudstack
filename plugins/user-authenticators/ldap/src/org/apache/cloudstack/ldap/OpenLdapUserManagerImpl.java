@@ -63,7 +63,9 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         domain = domain.replace("," + _ldapConfiguration.getBaseDn(), "");
         domain = domain.replace("ou=", "");
 
-        return new LdapUser(username, email, firstname, lastname, principal, domain);
+        boolean disabled = isUserDisabled(result);
+
+        return new LdapUser(username, email, firstname, lastname, principal, domain, disabled);
     }
 
     private String generateSearchFilter(final String username) {
@@ -129,6 +131,43 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
     }
 
     @Override
+    public LdapUser getUser(final String username, final String type, final String name, final LdapContext context) throws NamingException, IOException {
+        String basedn;
+        if("OU".equals(type)) {
+            basedn = name;
+        } else {
+            basedn = _ldapConfiguration.getBaseDn();
+        }
+
+        final StringBuilder userObjectFilter = new StringBuilder();
+        userObjectFilter.append("(objectClass=");
+        userObjectFilter.append(_ldapConfiguration.getUserObject());
+        userObjectFilter.append(")");
+
+        final StringBuilder usernameFilter = new StringBuilder();
+        usernameFilter.append("(");
+        usernameFilter.append(_ldapConfiguration.getUsernameAttribute());
+        usernameFilter.append("=");
+        usernameFilter.append((username == null ? "*" : username));
+        usernameFilter.append(")");
+
+        final StringBuilder memberOfFilter = new StringBuilder();
+        if ("GROUP".equals(type)) {
+            memberOfFilter.append("(memberof=");
+            memberOfFilter.append(name);
+            memberOfFilter.append(")");
+        }
+
+        final StringBuilder searchQuery = new StringBuilder();
+        searchQuery.append("(&");
+        searchQuery.append(userObjectFilter);
+        searchQuery.append(usernameFilter);
+        searchQuery.append(memberOfFilter);
+        searchQuery.append(")");
+
+        return searchUser(basedn, searchQuery.toString(), context);
+    }
+    @Override
     public List<LdapUser> getUsers(final LdapContext context) throws NamingException, IOException {
         return getUsers(null, context);
     }
@@ -191,6 +230,30 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         return searchUsers(null, context);
     }
 
+    protected boolean isUserDisabled(SearchResult result) throws NamingException {
+        return false;
+    }
+
+    public LdapUser searchUser(final String basedn, final String searchString, final LdapContext context) throws NamingException, IOException {
+        final SearchControls searchControls = new SearchControls();
+
+        searchControls.setSearchScope(_ldapConfiguration.getScope());
+        searchControls.setReturningAttributes(_ldapConfiguration.getReturnAttributes());
+
+        NamingEnumeration<SearchResult> results = context.search(basedn, searchString, searchControls);
+        final List<LdapUser> users = new ArrayList<LdapUser>();
+        while (results.hasMoreElements()) {
+            final SearchResult result = results.nextElement();
+                users.add(createUser(result));
+        }
+
+        if (users.size() == 1) {
+            return users.get(0);
+        } else {
+            throw new NamingException("No user found for basedn " + basedn + " and searchString " + searchString);
+        }
+    }
+
     @Override
     public List<LdapUser> searchUsers(final String username, final LdapContext context) throws NamingException, IOException {
 
@@ -212,7 +275,9 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
             results = context.search(basedn, generateSearchFilter(username), searchControls);
             while (results.hasMoreElements()) {
                 final SearchResult result = results.nextElement();
-                users.add(createUser(result));
+                if (!isUserDisabled(result)) {
+                    users.add(createUser(result));
+                }
             }
             Control[] contextControls = context.getResponseControls();
             if (contextControls != null) {

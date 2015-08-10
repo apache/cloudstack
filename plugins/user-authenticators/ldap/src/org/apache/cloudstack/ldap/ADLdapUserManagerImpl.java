@@ -79,4 +79,17 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
         s_logger.debug("group search filter = " + result);
         return result.toString();
     }
+
+    protected boolean isUserDisabled(SearchResult result) throws NamingException {
+        boolean isDisabledUser = false;
+        String userAccountControl = LdapUtils.getAttributeValue(result.getAttributes(), _ldapConfiguration.getUserAccountControlAttribute());
+        if (userAccountControl != null) {
+            int control = Integer.valueOf(userAccountControl);
+            // second bit represents disabled user flag in AD
+            if ((control & 2) > 0) {
+                isDisabledUser = true;
+            }
+        }
+        return isDisabledUser;
+    }
 }
