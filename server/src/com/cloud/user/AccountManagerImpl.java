@@ -2173,6 +2173,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             if (domain != null) {
                 domainName = domain.getName();
             }
+            if (userAccount == null) {
+                _userAccountDao.getUserAccount(username, domainId);
+            }
 
             if (!userAccount.getState().equalsIgnoreCase(Account.State.enabled.toString()) ||
                 !userAccount.getAccountState().equalsIgnoreCase(Account.State.enabled.toString())) {
@@ -2190,6 +2193,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         } else {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to authenticate user with username " + username + " in domain " + domainId);
+            }
+
+            if (userAccount == null) {
+                s_logger.warn("Unable to find an user with username " + username + " in domain " + domainId);
+                return null;
             }
 
             if (userAccount.getState().equalsIgnoreCase(Account.State.enabled.toString())) {

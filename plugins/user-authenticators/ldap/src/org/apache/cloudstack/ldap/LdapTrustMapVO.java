@@ -45,10 +45,18 @@ public class LdapTrustMapVO implements InternalIdentity {
     @Column(name = "domain_id")
     private long domainId;
 
-    public LdapTrustMapVO(long domainId, String type, String name) {
+    @Column(name = "account_type")
+    private short accountType;
+
+
+    public LdapTrustMapVO() {
+    }
+
+    public LdapTrustMapVO(long domainId, String type, String name, short accountType) {
         this.domainId = domainId;
         this.type = type;
         this.name = name;
+        this.accountType = accountType;
     }
 
     @Override
@@ -68,6 +76,7 @@ public class LdapTrustMapVO implements InternalIdentity {
         return domainId;
     }
 
-    public LdapTrustMapVO() {
+    public short getAccountType() {
+        return accountType;
     }
 }

@@ -22,14 +22,12 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.log4j.Logger;
 
 public class LinkDomainToLdapResponse extends BaseResponse {
-    public static final Logger s_logger = Logger.getLogger(LinkDomainToLdapResponse.class.getName());
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "id of the Domain which is linked to LDAP")
-    private String domainId;
+    private long domainId;
 
     @SerializedName(ApiConstants.NAME)
     @Param(description = "name of the group or OU in LDAP which is linked to the domain")
@@ -39,4 +37,30 @@ public class LinkDomainToLdapResponse extends BaseResponse {
     @Param(description = "type of the name in LDAP which is linke to the domain")
     private String type;
 
+    @SerializedName(ApiConstants.ACCOUNT_TYPE)
+    @Param(description = "Type of the account to auto import")
+    private short accountType;
+
+    public LinkDomainToLdapResponse(long domainId, String type, String name, short accountType) {
+        this.domainId = domainId;
+        this.name = name;
+        this.type = type;
+        this.accountType = accountType;
+    }
+
+    public long getDomainId() {
+        return domainId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public short getAccountType() {
+        return accountType;
+    }
 }

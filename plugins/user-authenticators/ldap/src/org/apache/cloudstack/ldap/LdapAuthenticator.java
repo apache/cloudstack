@@ -17,7 +17,6 @@
 package org.apache.cloudstack.ldap;
 
 import com.cloud.server.auth.DefaultUserAuthenticator;
-import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
@@ -62,18 +61,16 @@ public class LdapAuthenticator extends DefaultUserAuthenticator {
         ActionOnFailedAuthentication action = null;
 
         if (_ldapManager.isLdapEnabled()) {
+            final UserAccount user = _userAccountDao.getUserAccount(username, domainId);
             LdapTrustMapVO ldapTrustMapVO = _ldapManager.getDomainLinkedToLdap(domainId);
             if(ldapTrustMapVO != null) {
                 try {
                     LdapUser ldapUser = _ldapManager.getUser(username, ldapTrustMapVO.getType(), ldapTrustMapVO.getName());
                     if(!ldapUser.isDisabled()) {
                         result = _ldapManager.canAuthenticate(ldapUser.getPrincipal(), password);
-                        if(result) {
-                            final UserAccount user = _userAccountDao.getUserAccount(username, domainId);
-                            if (user == null) {
-                                // import user to cloudstack
-                                createCloudStackUserAccount(ldapUser, domainId);
-                            }
+                        if(result && (user == null)) {
+                            // import user to cloudstack
+                            createCloudStackUserAccount(ldapUser, domainId, ldapTrustMapVO.getAccountType());
                         }
                     } else {
                         //disable user in cloudstack
@@ -85,7 +82,6 @@ public class LdapAuthenticator extends DefaultUserAuthenticator {
 
             } else {
                 //domain is not linked to ldap follow normal authentication
-                final UserAccount user = _userAccountDao.getUserAccount(username, domainId);
                 if(user != null ) {
                     try {
                         LdapUser ldapUser = _ldapManager.getUser(username);
@@ -99,18 +95,18 @@ public class LdapAuthenticator extends DefaultUserAuthenticator {
                     }
                 }
             }
+            if (!result && user != null) {
+                action = ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT;
+            }
         }
 
-        if (!result) {
-            action = ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT;
-        }
         return new Pair<Boolean, ActionOnFailedAuthentication>(result, action);
     }
 
-    private void createCloudStackUserAccount(LdapUser user, long domainId) {
+    private void createCloudStackUserAccount(LdapUser user, long domainId, short accountType) {
         String username = user.getUsername();
-        _accountService.createUserAccount(username, "", user.getFirstname(), user.getLastname(), user.getEmail(), "GMT", username, Account.ACCOUNT_TYPE_DOMAIN_ADMIN, domainId,
-                                          username, null, UUID.randomUUID().toString(), UUID.randomUUID().toString(), User.Source.LDAP);
+        _accountService.createUserAccount(username, "", user.getFirstname(), user.getLastname(), user.getEmail(), null, username, accountType, domainId, username, null,
+                                          UUID.randomUUID().toString(), UUID.randomUUID().toString(), User.Source.LDAP);
     }
 
     private void disableUserInCloudStack(LdapUser ldapUser, long domainId) {

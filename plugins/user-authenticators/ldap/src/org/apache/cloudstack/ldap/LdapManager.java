@@ -53,7 +53,7 @@ public interface LdapManager extends PluggableService {
 
     List<LdapUser> searchUsers(String query) throws NoLdapUserMatchingQueryException;
 
-    LinkDomainToLdapResponse linkDomainToLdap(Long domainId, String type, String name);
+    LinkDomainToLdapResponse linkDomainToLdap(Long domainId, String type, String name, short accountType);
 
     public LdapTrustMapVO getDomainLinkedToLdap(long domainId);
 }

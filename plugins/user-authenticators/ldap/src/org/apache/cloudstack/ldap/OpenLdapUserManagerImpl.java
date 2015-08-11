@@ -153,7 +153,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
 
         final StringBuilder memberOfFilter = new StringBuilder();
         if ("GROUP".equals(type)) {
-            memberOfFilter.append("(memberof=");
+            memberOfFilter.append("(").append(getMemberOfAttribute()).append("=");
             memberOfFilter.append(name);
             memberOfFilter.append(")");
         }
@@ -167,6 +167,11 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
 
         return searchUser(basedn, searchQuery.toString(), context);
     }
+
+    protected String getMemberOfAttribute() {
+        return "memberof";
+    }
+
     @Override
     public List<LdapUser> getUsers(final LdapContext context) throws NamingException, IOException {
         return getUsers(null, context);

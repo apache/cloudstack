@@ -32,7 +32,7 @@ import org.apache.log4j.Logger;
 
 public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements LdapUserManager {
     public static final Logger s_logger = Logger.getLogger(ADLdapUserManagerImpl.class.getName());
-    private static final String MICROSOFT_AD_NESTED_MEMBERS_FILTER = "memberOf:1.2.840.113556.1.4.1941";
+    private static final String MICROSOFT_AD_NESTED_MEMBERS_FILTER = "memberOf:1.2.840.113556.1.4.1941:";
 
     @Override
     public List<LdapUser> getUsersInGroup(String groupName, LdapContext context) throws NamingException {
@@ -66,7 +66,7 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
 
         final StringBuilder memberOfFilter = new StringBuilder();
         String groupCnName =  _ldapConfiguration.getCommonNameAttribute() + "=" +groupName + "," +  _ldapConfiguration.getBaseDn();
-        memberOfFilter.append("(" + MICROSOFT_AD_NESTED_MEMBERS_FILTER + ":=");
+        memberOfFilter.append("(" + MICROSOFT_AD_NESTED_MEMBERS_FILTER + "=");
         memberOfFilter.append(groupCnName);
         memberOfFilter.append(")");
 
@@ -91,5 +91,9 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
             }
         }
         return isDisabledUser;
+    }
+
+    protected String getMemberOfAttribute() {
+        return MICROSOFT_AD_NESTED_MEMBERS_FILTER;
     }
 }

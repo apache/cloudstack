@@ -264,10 +264,10 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
     }
 
     @Override
-    public LinkDomainToLdapResponse linkDomainToLdap(Long domainId, String type, String name) {
-        // TODO Auto-generated method stub
-        LdapTrustMapVO ldapTrustMapVO = _ldapTrustMapDao.persist(new LdapTrustMapVO(domainId, type, name));
-        return null;
+    public LinkDomainToLdapResponse linkDomainToLdap(Long domainId, String type, String name, short accountType) {
+        LdapTrustMapVO vo = _ldapTrustMapDao.persist(new LdapTrustMapVO(domainId, type, name, accountType));
+        LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(vo.getDomainId(), vo.getType(), vo.getName(), vo.getAccountType());
+        return response;
     }
 
     @Override

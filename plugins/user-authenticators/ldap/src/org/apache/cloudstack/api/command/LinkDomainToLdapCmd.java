@@ -52,14 +52,17 @@ public class LinkDomainToLdapCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ADMIN, type = CommandType.STRING, required = false, description = "domain admin username in LDAP ")
     private String admin;
 
+    @Parameter(name = ApiConstants.ACCOUNT_TYPE, type = CommandType.SHORT, required = true, description = "Type of the account to auto import. Specify 0 for user, 1 for root " +
+        "admin, and 2 for domain admin")
+    private short accountType;
+
     @Inject
     private LdapManager _ldapManager;
 
     @Override
     public void execute() throws ServerApiException {
-        // TODO Auto-generated method stub
         try {
-            LinkDomainToLdapResponse response = _ldapManager.linkDomainToLdap(domainId, type, name);
+            LinkDomainToLdapResponse response = _ldapManager.linkDomainToLdap(domainId, type, name, accountType);
             response.setObjectName("LinkDomainToLdap");
             response.setResponseName(getCommandName());
             setResponseObject(response);

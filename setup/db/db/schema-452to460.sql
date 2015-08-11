@@ -404,6 +404,7 @@ CREATE TABLE `cloud`.`ldap_trust_map` (
   `domain_id` bigint unsigned NOT NULL,
   `type` varchar(10) NOT NULL,
   `name` varchar(255) NOT NULL,
+  `account_type` int(1) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_ldap_trust_map__domain_id` (`id`),
   KEY `fk_ldap_trust_map__domain_id` (`domain_id`),
