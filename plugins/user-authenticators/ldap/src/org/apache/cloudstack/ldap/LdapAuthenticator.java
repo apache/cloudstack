@@ -17,7 +17,8 @@
 package org.apache.cloudstack.ldap;
 
 import com.cloud.server.auth.DefaultUserAuthenticator;
-import com.cloud.user.AccountService;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
@@ -37,7 +38,7 @@ public class LdapAuthenticator extends DefaultUserAuthenticator {
     @Inject
     private UserAccountDao _userAccountDao;
     @Inject
-    public AccountService _accountService;
+    private AccountManager _accountManager;
 
     public LdapAuthenticator() {
         super();
@@ -68,13 +69,17 @@ public class LdapAuthenticator extends DefaultUserAuthenticator {
                     LdapUser ldapUser = _ldapManager.getUser(username, ldapTrustMapVO.getType(), ldapTrustMapVO.getName());
                     if(!ldapUser.isDisabled()) {
                         result = _ldapManager.canAuthenticate(ldapUser.getPrincipal(), password);
-                        if(result && (user == null)) {
-                            // import user to cloudstack
-                            createCloudStackUserAccount(ldapUser, domainId, ldapTrustMapVO.getAccountType());
+                        if(result) {
+                            if(user == null) {
+                                // import user to cloudstack
+                                createCloudStackUserAccount(ldapUser, domainId, ldapTrustMapVO.getAccountType());
+                            } else {
+                                enableUserInCloudStack(user);
+                            }
                         }
                     } else {
                         //disable user in cloudstack
-                        disableUserInCloudStack(ldapUser, domainId);
+                        disableUserInCloudStack(user);
                     }
                 } catch (NoLdapUserMatchingQueryException e) {
                     s_logger.debug(e.getMessage());
@@ -103,15 +108,22 @@ public class LdapAuthenticator extends DefaultUserAuthenticator {
         return new Pair<Boolean, ActionOnFailedAuthentication>(result, action);
     }
 
+    private void enableUserInCloudStack(UserAccount user) {
+        if(user != null && (user.getState().equalsIgnoreCase(Account.State.disabled.toString()))) {
+            _accountManager.enableUser(user.getId());
+        }
+    }
+
     private void createCloudStackUserAccount(LdapUser user, long domainId, short accountType) {
         String username = user.getUsername();
-        _accountService.createUserAccount(username, "", user.getFirstname(), user.getLastname(), user.getEmail(), null, username, accountType, domainId, username, null,
+        _accountManager.createUserAccount(username, "", user.getFirstname(), user.getLastname(), user.getEmail(), null, username, accountType, domainId, username, null,
                                           UUID.randomUUID().toString(), UUID.randomUUID().toString(), User.Source.LDAP);
     }
 
-    private void disableUserInCloudStack(LdapUser ldapUser, long domainId) {
-        final UserAccount user = _userAccountDao.getUserAccount(ldapUser.getUsername(), domainId);
-        _accountService.lockUser(user.getId());
+    private void disableUserInCloudStack(UserAccount user) {
+        if (user != null) {
+            _accountManager.disableUser(user.getId());
+        }
     }
 
     @Override

@@ -2173,9 +2173,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             if (domain != null) {
                 domainName = domain.getName();
             }
-            if (userAccount == null) {
-                _userAccountDao.getUserAccount(username, domainId);
-            }
+            userAccount = _userAccountDao.getUserAccount(username, domainId);
 
             if (!userAccount.getState().equalsIgnoreCase(Account.State.enabled.toString()) ||
                 !userAccount.getAccountState().equalsIgnoreCase(Account.State.enabled.toString())) {

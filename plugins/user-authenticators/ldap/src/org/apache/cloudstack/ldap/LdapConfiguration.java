@@ -39,6 +39,9 @@ public class LdapConfiguration implements Configurable{
     private static final ConfigKey<String> ldapProvider = new ConfigKey<String>(String.class, "ldap.provider", "Advanced", "openldap", "ldap provider ex:openldap, microsoftad",
                                                                                 true, ConfigKey.Scope.Global, null);
 
+    private static final ConfigKey<Boolean> ldapEnableNestedGroups = new ConfigKey<Boolean>(Boolean.class, "ldap.nested.groups.enable", "Advanced", "true",
+                                                                                            "if true, nested groups will also be queried", true, ConfigKey.Scope.Global, null);
+
     private final static int scope = SearchControls.SUBTREE_SCOPE;
 
     @Inject
@@ -183,6 +186,10 @@ public class LdapConfiguration implements Configurable{
         return provider;
     }
 
+    public boolean isNestedGroupsEnabled() {
+        return ldapEnableNestedGroups.value();
+    }
+
     @Override
     public String getConfigComponentName() {
         return LdapConfiguration.class.getSimpleName();
@@ -190,6 +197,6 @@ public class LdapConfiguration implements Configurable{
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ldapReadTimeout, ldapPageSize, ldapProvider};
+        return new ConfigKey<?>[] {ldapReadTimeout, ldapPageSize, ldapProvider, ldapEnableNestedGroups};
     }
 }
