@@ -230,30 +230,26 @@ public class DbUtil {
     }
 
     public static boolean releaseGlobalLock(String name) {
-        Connection conn = getConnectionForGlobalLocks(name, false);
-        if (conn == null) {
-            s_logger.error("Unable to acquire DB connection for global lock system");
-            assert (false);
-            return false;
-        }
+        try (Connection conn = getConnectionForGlobalLocks(name, false);) {
+            if (conn == null) {
+                s_logger.error("Unable to acquire DB connection for global lock system");
+                assert (false);
+                return false;
+            }
 
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            pstmt = conn.prepareStatement("SELECT COALESCE(RELEASE_LOCK(?), 0)");
-            pstmt.setString(1, name);
-            rs = pstmt.executeQuery();
-            if (rs != null && rs.first())
-                return rs.getInt(1) > 0;
-            s_logger.error("releaseGlobalLock:RELEASE_LOCK() returns unexpected result");
+            try (PreparedStatement pstmt = conn.prepareStatement("SELECT COALESCE(RELEASE_LOCK(?), 0)");) {
+                pstmt.setString(1, name);
+                try (ResultSet rs = pstmt.executeQuery();) {
+                    if (rs != null && rs.first()) {
+                        return rs.getInt(1) > 0;
+                    }
+                    s_logger.error("releaseGlobalLock:RELEASE_LOCK() returns unexpected result");
+                }
+            }
         } catch (SQLException e) {
             s_logger.error("RELEASE_LOCK() throws exception ", e);
         } catch (Throwable e) {
             s_logger.error("RELEASE_LOCK() throws exception ", e);
-        } finally {
-            closeResultSet(rs);
-            closeStatement(pstmt);
-            closeConnection(conn);
         }
         return false;
     }
