@@ -53,6 +53,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     protected final SearchBuilder<StoragePoolVO> DcPodSearch;
     protected final SearchBuilder<StoragePoolVO> DcPodAnyClusterSearch;
     protected final SearchBuilder<StoragePoolVO> DeleteLvmSearch;
+    protected final SearchBuilder<StoragePoolVO> DcLocalStorageSearch;
     protected final GenericSearchBuilder<StoragePoolVO, Long> StatusCountSearch;
 
     @Inject
@@ -115,6 +116,11 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         StatusCountSearch.select(null, Func.COUNT, null);
         StatusCountSearch.done();
 
+        DcLocalStorageSearch = createSearchBuilder();
+        DcLocalStorageSearch.and("datacenterId", DcLocalStorageSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        DcLocalStorageSearch.and("path", DcLocalStorageSearch.entity().getPath(), SearchCriteria.Op.EQ);
+        DcLocalStorageSearch.and("scope", DcLocalStorageSearch.entity().getScope(), SearchCriteria.Op.EQ);
+        DcLocalStorageSearch.done();
     }
 
     @Override
@@ -193,6 +199,16 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         sc.setParameters("uuid", uuid);
 
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<StoragePoolVO> listLocalStoragePoolByPath(long datacenterId, String path) {
+        SearchCriteria<StoragePoolVO> sc = DcLocalStorageSearch.create();
+        sc.setParameters("path", path);
+        sc.setParameters("datacenterId", datacenterId);
+        sc.setParameters("scope", ScopeType.HOST);
+
+        return listBy(sc);
     }
 
     @Override
