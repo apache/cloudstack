@@ -16,12 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class CapabilitiesResponse extends BaseResponse {
@@ -73,6 +72,14 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "Max allowed number of api requests within the specified interval")
     private Integer apiLimitMax;
 
+    @SerializedName("allowuserviewdestroyedvm")
+    @Param(description = "true if the user is allowed to view destroyed virtualmachines, false otherwise", since = "4.6.0")
+    private boolean allowUserViewDestroyedVM;
+
+    @SerializedName("allowuserexpungerecovervm")
+    @Param(description = "true if the user can recover and expunge virtualmachines, false otherwise", since = "4.6.0")
+    private boolean allowUserExpungeRecoverVM;
+
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
@@ -121,4 +128,11 @@ public class CapabilitiesResponse extends BaseResponse {
         this.apiLimitMax = apiLimitMax;
     }
 
+    public void setAllowUserViewDestroyedVM(boolean allowUserViewDestroyedVM) {
+        this.allowUserViewDestroyedVM = allowUserViewDestroyedVM;
+    }
+
+    public void setAllowUserExpungeRecoverVM(boolean allowUserExpungeRecoverVM) {
+        this.allowUserExpungeRecoverVM = allowUserExpungeRecoverVM;
+    }
 }

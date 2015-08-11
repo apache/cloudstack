@@ -30,6 +30,7 @@ var g_supportELB = null;
 var g_kvmsnapshotenabled =  null;
 var g_regionsecondaryenabled = null;
 var g_userPublicTemplateEnabled = "true";
+var g_allowUserExpungeRecoverVm = "false";
 var g_cloudstackversion = null;
 var g_queryAsyncJobResultInterval = 3000;
 var g_idpList = null;
@@ -2332,4 +2333,3 @@ $.validator.addMethod("ipv4cidr", function(value, element) {
 
     return true;
 }, "The specified IPv4 CIDR is invalid.");
-
