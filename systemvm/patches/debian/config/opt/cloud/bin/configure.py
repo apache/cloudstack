@@ -428,7 +428,7 @@ class CsSite2SiteVpn(CsDataBag):
         self.fw.append(["", "front", "-A INPUT -i %s -p udp -m udp --dport 500 -j ACCEPT" % dev])
         self.fw.append(["", "front", "-A INPUT -i %s -p udp -m udp --dport 4500 -j ACCEPT" % dev])
         self.fw.append(["", "front", "-A INPUT -i %s -p esp -j ACCEPT" % dev])
-        self.fw.append(["nat", "front", "-A POSTROUTING -t nat -o %s-m mark --set-xmark 0x525/0xffffffff -j ACCEPT" % dev])
+        self.fw.append(["nat", "front", "-A POSTROUTING -t nat -o %s -m mark --mark 0x525/0xffffffff -j ACCEPT" % dev])
         for net in obj['peer_guest_cidr_list'].lstrip().rstrip().split(','):
             self.fw.append(["mangle", "front",
                             "-A FORWARD -s %s -d %s -j MARK --set-xmark 0x525/0xffffffff" % (obj['local_guest_cidr'], net)])
@@ -478,7 +478,7 @@ class CsSite2SiteVpn(CsDataBag):
             CsHelper.execute("ipsec reload")
             #CsHelper.execute("ipsec --add vpn-%s" % rightpeer)
             if not obj['passive']:
-                CsHelper.execute("ipsec up vpn-%s" % rightpeer)
+                CsHelper.execute("ipsec up vpn-%s &" % rightpeer)
         os.chmod(vpnsecretsfile, 0o400)
 
     def convert_sec_to_h(self, val):
