@@ -34,20 +34,15 @@ public abstract class Upgrade30xBase extends LegacyDbUpgrade {
     protected String getNetworkLabelFromConfig(Connection conn, String name) {
         String sql = "SELECT value FROM `cloud`.`configuration` where name = ?";
         String networkLabel = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            pstmt = conn.prepareStatement(sql);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql);) {
             pstmt.setString(1,name);
-            rs = pstmt.executeQuery();
-            if (rs.next()) {
-                networkLabel = rs.getString(1);
+            try (ResultSet rs = pstmt.executeQuery();) {
+                if (rs.next()) {
+                    networkLabel = rs.getString(1);
+                }
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to fetch network label from configuration", e);
-        } finally {
-            closeAutoCloseable(rs);
-            closeAutoCloseable(pstmt);
         }
         return networkLabel;
     }
