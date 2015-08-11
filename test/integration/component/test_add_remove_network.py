@@ -1010,6 +1010,13 @@ class TestRemoveNetworkFromVirtualMachine(cloudstackTestCase):
         #Try to remove nic 2 from vm1
         try:
             vm1.remove_nic(self.apiclient, self.nics[0].id)
+            vm1_res = VirtualMachine.list(self.apiclient, id=vm1.id)
+            self.assertEqual(validateList(vm1_res)[0], PASS, "invalid listvm response")
+            self.assertEqual(
+                len(vm1_res[0].nic),
+                1,
+                "VM has more than one nic even after removing the 2nd nic"
+            )
         except Exception as e:
             self.fail("Failed to delete the nic from vm")
         return
