@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command;
 
 import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
 import com.cloud.user.DomainManager;
 import com.cloud.user.UserAccount;
@@ -293,28 +294,32 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                 UserAccount userAccount = null;
                 List<UserAccountVO> possibleUserAccounts = _userAccountDao.getAllUsersByNameAndEntity(username, issuer.getValue());
                 if (possibleUserAccounts != null && possibleUserAccounts.size() > 0) {
-                    // By default, log into the first user account
+                    // Log into the first enabled user account
                     // Users can switch to other allowed accounts later
-                    userAccount = possibleUserAccounts.get(0);
+                    for (UserAccountVO possibleUserAccount: possibleUserAccounts) {
+                        if (possibleUserAccount.getAccountState().equals(Account.State.enabled.toString())) {
+                            userAccount = possibleUserAccount;
+                            break;
+                        }
+                    }
                 }
 
                 if (userAccount == null || userAccount.getExternalEntity() == null || !_samlAuthManager.isUserAuthorized(userAccount.getId(), issuer.getValue())) {
                     throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, _apiServer.getSerializedApiError(ApiErrorCode.ACCOUNT_ERROR.getHttpCode(),
-                            "Your authenticated user is not authorized, please contact your administrator",
+                            "Your authenticated user is not authorized for SAML Single Sign-On, please contact your administrator",
                             params, responseType));
                 }
 
-                if (userAccount != null) {
-                    try {
-                        if (_apiServer.verifyUser(userAccount.getId())) {
-                            LoginCmdResponse loginResponse = (LoginCmdResponse) _apiServer.loginUser(session, userAccount.getUsername(), userAccount.getUsername() + userAccount.getSource().toString(),
-                                    userAccount.getDomainId(), null, remoteAddress, params);
-                            SAMLUtils.setupSamlUserCookies(loginResponse, resp);
-                            resp.sendRedirect(SAML2AuthManager.SAMLCloudStackRedirectionUrl.value());
-                            return ApiResponseSerializer.toSerializedString(loginResponse, responseType);
-                        }
-                    } catch (final Exception ignored) {
+                try {
+                    if (_apiServer.verifyUser(userAccount.getId())) {
+                        LoginCmdResponse loginResponse = (LoginCmdResponse) _apiServer.loginUser(session, userAccount.getUsername(), userAccount.getUsername() + userAccount.getSource().toString(),
+                                userAccount.getDomainId(), null, remoteAddress, params);
+                        SAMLUtils.setupSamlUserCookies(loginResponse, resp);
+                        resp.sendRedirect(SAML2AuthManager.SAMLCloudStackRedirectionUrl.value());
+                        return ApiResponseSerializer.toSerializedString(loginResponse, responseType);
                     }
+                } catch (CloudAuthenticationException | IOException exception) {
+                    s_logger.debug("SAML Login failed to log in the user due to: " + exception.getMessage());
                 }
             }
         } catch (IOException e) {

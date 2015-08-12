@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
@@ -50,6 +51,7 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -131,7 +133,14 @@ public class ListAndSwitchSAMLAccountCmd extends BaseCmd implements APIAuthentic
             final User user = _userDao.findByUuid(userUuid);
             final Domain domain = _domainDao.findByUuid(domainUuid);
             final UserAccount nextUserAccount = _accountService.getUserAccountById(user.getId());
-            if (!nextUserAccount.getUsername().equals(currentUserAccount.getUsername())
+            if (nextUserAccount != null && !nextUserAccount.getAccountState().equals(Account.State.enabled.toString())) {
+                throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, _apiServer.getSerializedApiError(ApiErrorCode.PARAM_ERROR.getHttpCode(),
+                        "The requested user account is locked and cannot be switched to, please contact your administrator.",
+                        params, responseType));
+            }
+            if (nextUserAccount == null
+                    || !nextUserAccount.getAccountState().equals(Account.State.enabled.toString())
+                    || !nextUserAccount.getUsername().equals(currentUserAccount.getUsername())
                     || !nextUserAccount.getExternalEntity().equals(currentUserAccount.getExternalEntity())
                     || (nextUserAccount.getDomainId() != domain.getId())
                     || (nextUserAccount.getSource() != User.Source.SAML2)) {
@@ -147,7 +156,8 @@ public class ListAndSwitchSAMLAccountCmd extends BaseCmd implements APIAuthentic
                     resp.sendRedirect(SAML2AuthManager.SAMLCloudStackRedirectionUrl.value());
                     return ApiResponseSerializer.toSerializedString(loginResponse, responseType);
                 }
-            } catch (final Exception ignored) {
+            } catch (CloudAuthenticationException | IOException exception) {
+                s_logger.debug("Failed to switch to request SAML user account due to: " + exception.getMessage());
             }
         } else {
             List<UserAccountVO> switchableAccounts = _userAccountDao.getAllUsersByNameAndEntity(currentUserAccount.getUsername(), currentUserAccount.getExternalEntity());
