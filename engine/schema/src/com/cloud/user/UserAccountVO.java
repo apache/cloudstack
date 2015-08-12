@@ -251,7 +251,7 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
         return accountState;
     }
 
-    public void setAccountDisabled(String accountState) {
+    public void setAccountState(String accountState) {
         this.accountState = accountState;
     }
 
