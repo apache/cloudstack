@@ -29,7 +29,6 @@ function install_vhd_util() {
 function debconf_packages() {
   echo 'sysstat sysstat/enable boolean true' | debconf-set-selections
   echo "strongswan strongswan/install_x509_certificate boolean false" | debconf-set-selections
-  echo "openswan openswan/install_x509_certificate seen true" | debconf-set-selections
   echo "iptables-persistent iptables-persistent/autosave_v4 boolean true" | debconf-set-selections
   echo "iptables-persistent iptables-persistent/autosave_v6 boolean true" | debconf-set-selections
 }
