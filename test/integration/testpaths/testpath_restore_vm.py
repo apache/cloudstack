@@ -22,7 +22,7 @@ Test restore running VM on VMWare with one cluster having 2 Primary Storage
 
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources, validateList
 from marvin.lib.base import (Account,
                              ServiceOffering,
                              VirtualMachine,
@@ -35,7 +35,7 @@ from marvin.lib.common import (get_domain,
                                list_virtual_machines
                                )
 
-from marvin.codes import CLUSTERTAG1, ROOT
+from marvin.codes import CLUSTERTAG1, ROOT, PASS
 import time
 
 
@@ -108,6 +108,12 @@ class TestRestoreVM(cloudstackTestCase):
 
     def tearDown(self):
         try:
+            if self.pools:
+                StoragePool.update(
+                    self.apiclient,
+                    id=self.pools[0].id,
+                    tags="")
+
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -126,6 +132,14 @@ class TestRestoreVM(cloudstackTestCase):
                 zoneid=self.zone.id,
                 scope="CLUSTER")
 
+            status = validateList(self.pools)
+
+            # Step 3
+            self.assertEqual(
+                status[0],
+                PASS,
+                "Check: Failed to list  cluster wide storage pools")
+
             if len(self.pools) < 2:
                 self.skipTest("There must be at atleast two cluster wide\
                 storage pools available in the setup")
@@ -135,14 +149,10 @@ class TestRestoreVM(cloudstackTestCase):
 
         # Adding tags to Storage Pools
         cluster_no = 1
-        self.debug("Storage Pools: %s" % self.pools)
-        for storagePool in self.pools:
-            if storagePool.scope == "CLUSTER":
-                StoragePool.update(
-                    self.apiclient,
-                    id=storagePool.id,
-                    tags=[CLUSTERTAG1[:-1] + repr(cluster_no)])
-                cluster_no += 1
+        StoragePool.update(
+            self.apiclient,
+            id=self.pools[0].id,
+            tags=[CLUSTERTAG1[:-1] + repr(cluster_no)])
 
         self.vm = VirtualMachine.create(
             self.apiclient,
