@@ -358,7 +358,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                     }
                 }
             }
-            s_logger.debug("Cannnot deploy to specified host, returning.");
+            s_logger.debug("Cannot deploy to specified host, returning.");
             return null;
         }
 
