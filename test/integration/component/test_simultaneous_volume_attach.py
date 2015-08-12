@@ -193,7 +193,7 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
                   str(e))
             return FAILED
 
-    @attr(tags = ["advanced", "advancedns", "basic","bpk"], required_hardware="true")
+    @attr(tags = ["advanced", "advancedns", "basic"], required_hardware="true")
     def test_attach_multiple_volumes(self):
         """Attach multiple Volumes simultaneously to a Running VM
         """
@@ -237,6 +237,7 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
         list_volume_response = Volume.list(
                                             self.apiClient,
                                             virtualmachineid=self.virtual_machine.id,
+                                            type="DATADISK",
                                             account=self.account.name,
                                             domainid=self.account.domainid
                                           )
@@ -246,17 +247,8 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
             "Check list response returns a valid list"
         )
 
-        # Extract only the data disks attached to the instance.
-        data_disks_list = [ disk for disk in list_volume_response if disk.type == 'DATADISK']
-
         self.assertEqual(
-            validateList(data_disks_list)[0],
-            PASS,
-            "Check data disk check returns a valid list"
-        )
-
-        self.assertEqual(
-                            len(data_disks_list),
+                            len(list_volume_response),
                             4,
                             "All 4 data disks are not attached to VM Successfully"
                             )
