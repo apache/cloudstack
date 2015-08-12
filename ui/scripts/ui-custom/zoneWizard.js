@@ -1206,7 +1206,7 @@
                 }
 
                 var $nextButton = $wizard.find('.button.next');
-                $nextButton.find('span').html('Next');
+                $nextButton.find('span').html(_l('label.next'));
                 $nextButton.removeClass('final post-launch');
 
                 // Show launch button if last step

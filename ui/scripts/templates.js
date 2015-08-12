@@ -44,7 +44,7 @@
                             label: 'ui.listView.filters.mine'
                         },
                         shared: {
-                            label: 'Shared'
+                            label: 'label.shared'
                         },
                         featured: {
                             label: 'label.featured'
@@ -435,7 +435,7 @@
                                     },
 
                                     isExtractable: {
-                                        label: "extractable",
+                                        label: "label.extractable",
                                         docID: 'helpRegisterTemplateExtractable',
                                         isBoolean: true
                                     },
@@ -1318,7 +1318,7 @@
                                                     }
                                                 },
                                                 isextractable: {
-                                                    label: 'extractable',
+                                                    label: 'label.extractable',
                                                     isBoolean: true,
                                                     isEditable: function() {
                                                         if (isAdmin())
@@ -1335,7 +1335,7 @@
                                                     converter: cloudStack.converters.toBooleanText
                                                 },
                                                 isdynamicallyscalable: {
-                                                    label: 'Dynamically Scalable',
+                                                    label: 'label.dynamically.scalable',
                                                     isBoolean: true,
                                                     isEditable: true,
                                                     converter: cloudStack.converters.toBooleanText
@@ -1469,7 +1469,7 @@
                             label: 'ui.listView.filters.mine'
                         },
                         shared: {
-                            label: 'Shared'
+                            label: 'label.shared'
                         },
                         featured: {
                             label: 'label.featured'
@@ -1600,7 +1600,7 @@
                                     },
 
                                     isExtractable: {
-                                        label: "extractable",
+                                        label: "label.extractable",
                                         docID: 'helpRegisterISOExtractable',
                                         isBoolean: true
                                     },
@@ -2228,7 +2228,7 @@
                                                 }
                                             }, {
                                                 id: {
-                                                    label: 'ID'
+                                                    label: 'label.id'
                                                 },
                                                 zonename: {
                                                     label: 'label.zone.name'
@@ -2261,7 +2261,7 @@
                                                     }
                                                 },
                                                 isextractable: {
-                                                    label: 'extractable',
+                                                    label: 'label.extractable',
                                                     isBoolean: true,
                                                     isEditable: function() {
                                                         if (isAdmin())
