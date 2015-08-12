@@ -19,17 +19,20 @@ package com.cloud.upgrade.dao;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
+
 import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class Upgrade451to452 implements DbUpgrade {
     final static Logger s_logger = Logger.getLogger(Upgrade451to452.class);
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] {"4.5.1", "4.5.2"};
+        return new String[] { "4.5.1", "4.5.2" };
     }
 
     @Override
@@ -48,11 +51,24 @@ public class Upgrade451to452 implements DbUpgrade {
         if (script == null) {
             throw new CloudRuntimeException("Unable to find db/schema-451to452.sql");
         }
-        return new File[] {new File(script)};
+        return new File[] { new File(script) };
     }
 
     @Override
     public void performDataMigration(Connection conn) {
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = conn.prepareStatement("ALTER TABLE `cloud_usage`.`cloud_usage` ADD COLUMN `quota_calculated` tinyint(1) DEFAULT 0 NOT NULL COMMENT 'quota calculation status'");
+            pstmt.executeUpdate();
+            pstmt.close();
+            s_logger.debug("Altered usage table and added column quota_calculated");
+        } catch (SQLException e) {
+            if (e.getMessage().contains("quota_calculated")) {
+                s_logger.debug("Usage table already has a column called quota_calculated");
+            } else {
+                throw new CloudRuntimeException("Unable to create column quota_calculated", e);
+            }
+        }
     }
 
     @Override
@@ -62,6 +78,7 @@ public class Upgrade451to452 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to find db/schema-451to452-cleanup.sql");
         }
 
-        return new File[] {new File(script)};
+        return new File[] { new File(script) };
     }
+
 }

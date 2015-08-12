@@ -38,8 +38,6 @@ CREATE TABLE `cloud`.`saml_token` (
 
 -- Quota
 
-ALTER TABLE `cloud_usage`.`cloud_usage` ADD COLUMN `quota_calculated` tinyint(1) DEFAULT 0 COMMENT "quota calculation status";
-
 CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_account` (
       `account_id` int(11) NOT NULL,
       `quota_balance` decimal(15,2) NULL,
