@@ -22,6 +22,7 @@ import com.cloud.utils.Pair
 import org.apache.cloudstack.ldap.LdapAuthenticator
 import org.apache.cloudstack.ldap.LdapConfigurationVO
 import org.apache.cloudstack.ldap.LdapManager
+import org.apache.cloudstack.ldap.LdapUser
 
 class LdapAuthenticatorSpec extends spock.lang.Specification {
 
@@ -40,7 +41,10 @@ class LdapAuthenticatorSpec extends spock.lang.Specification {
     def "Test failed authentication due to ldap bind being unsuccessful"() {
 		given: "We have an LdapManager, LdapConfiguration, userAccountDao and LdapAuthenticator"
 		def ldapManager = Mock(LdapManager)
+		def ldapUser = Mock(LdapUser)
+		ldapUser.isDisabled() >> false
 		ldapManager.isLdapEnabled() >> true
+		ldapManager.getUser("rmurphy") >> ldapUser
 		ldapManager.canAuthenticate(_, _) >> false
 
 		UserAccountDao userAccountDao = Mock(UserAccountDao)
@@ -72,8 +76,11 @@ class LdapAuthenticatorSpec extends spock.lang.Specification {
 	def "Test successful authentication"() {
 		given: "We have an LdapManager, LdapConfiguration, userAccountDao and LdapAuthenticator"
 		def ldapManager = Mock(LdapManager)
+		def ldapUser = Mock(LdapUser)
+		ldapUser.isDisabled() >> false
 		ldapManager.isLdapEnabled() >> true
 		ldapManager.canAuthenticate(_, _) >> true
+		ldapManager.getUser("rmurphy") >> ldapUser
 
 		UserAccountDao userAccountDao = Mock(UserAccountDao)
 		userAccountDao.getUserAccount(_, _) >> new UserAccountVO()

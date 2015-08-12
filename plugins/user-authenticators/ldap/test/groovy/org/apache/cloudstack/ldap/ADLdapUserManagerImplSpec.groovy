@@ -39,10 +39,11 @@ class ADLdapUserManagerImplSpec extends spock.lang.Specification {
         adLdapUserManager._ldapConfiguration = ldapConfiguration;
     }
 
-    def "test generate AD search filter"() {
+    def "test generate AD search filter with nested groups enabled"() {
         ldapConfiguration.getUserObject() >> "user"
         ldapConfiguration.getCommonNameAttribute() >> "CN"
         ldapConfiguration.getBaseDn() >> "DC=cloud,DC=citrix,DC=com"
+        ldapConfiguration.isNestedGroupsEnabled() >> true
 
         def result = adLdapUserManager.generateADGroupSearchFilter(group);
         expect:
@@ -50,6 +51,20 @@ class ADLdapUserManagerImplSpec extends spock.lang.Specification {
             result == "(&(objectClass=user)(memberOf:1.2.840.113556.1.4.1941:=CN=" + group + ",DC=cloud,DC=citrix,DC=com))"
         where:
             group << ["dev", "dev-hyd"]
+    }
+
+    def "test generate AD search filter with nested groups disabled"() {
+        ldapConfiguration.getUserObject() >> "user"
+        ldapConfiguration.getCommonNameAttribute() >> "CN"
+        ldapConfiguration.getBaseDn() >> "DC=cloud,DC=citrix,DC=com"
+        ldapConfiguration.isNestedGroupsEnabled() >> false
+
+        def result = adLdapUserManager.generateADGroupSearchFilter(group);
+        expect:
+        assert result.contains("memberOf=")
+        result == "(&(objectClass=user)(memberOf=CN=" + group + ",DC=cloud,DC=citrix,DC=com))"
+        where:
+        group << ["dev", "dev-hyd"]
     }
 
     def "test getUsersInGroup null group"() {

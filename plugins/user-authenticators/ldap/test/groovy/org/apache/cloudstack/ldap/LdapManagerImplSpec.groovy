@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.command.LdapDeleteConfigurationCmd
 import org.apache.cloudstack.api.command.LdapImportUsersCmd
 import org.apache.cloudstack.api.command.LdapListUsersCmd
 import org.apache.cloudstack.api.command.LdapUserSearchCmd
+import org.apache.cloudstack.api.command.LinkDomainToLdapCmd
 
 import javax.naming.NamingException
 import javax.naming.ldap.InitialLdapContext
@@ -111,7 +112,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManagerFactory, ldapConfiguration)
         when: "A ldap user response is generated"
         def result = ldapManager.createLdapUserResponse(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org",
-                "engineering"))
+                "engineering", false))
         then: "The result of the response should match the given ldap user"
         result.username == "rmurphy"
         result.email == "rmurphy@test.com"
@@ -131,7 +132,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         ldapUserManagerFactory.getInstance(_) >> ldapUserManager
         ldapContextFactory.createBindContext() >> null
         List<LdapUser> users = new ArrayList<>();
-        users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null))
+        users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null, false))
         ldapUserManager.getUsers(_) >> users;
         def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManagerFactory, ldapConfiguration)
         when: "We search for a group of users"
@@ -149,7 +150,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         def ldapConfiguration = Mock(LdapConfiguration)
         ldapUserManagerFactory.getInstance(_) >> ldapUserManager
         ldapContextFactory.createBindContext() >> null
-        ldapUserManager.getUser(_, _) >> new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null)
+        ldapUserManager.getUser(_, _) >> new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null, false)
         def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManagerFactory, ldapConfiguration)
         when: "We search for a user"
         def result = ldapManager.getUser("rmurphy")
@@ -191,22 +192,6 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         when: "The user attempts to authenticate with a bad password"
         def result = ldapManager.canAuthenticate("rmurphy", "password")
         then: "The authentication fails"
-        result == false
-    }
-
-    def "Test successful failed result from canAuthenticate due to user not found"() {
-        given: "We have an LdapConfigurationDao, LdapContextFactory, LdapUserManager and LdapManager"
-        def ldapConfigurationDao = Mock(LdapConfigurationDaoImpl)
-        def ldapContextFactory = Mock(LdapContextFactory)
-        def ldapUserManager = Mock(LdapUserManager)
-        def ldapUserManagerFactory = Mock(LdapUserManagerFactory)
-        ldapUserManagerFactory.getInstance(_) >> ldapUserManager
-        def ldapConfiguration = Mock(LdapConfiguration)
-        def ldapManager = Spy(LdapManagerImpl, constructorArgs: [ldapConfigurationDao, ldapContextFactory, ldapUserManagerFactory, ldapConfiguration])
-        ldapManager.getUser(_) >> { throw new NamingException() }
-        when: "The user attempts to authenticate and the user is not found"
-        def result = ldapManager.canAuthenticate("rmurphy", "password")
-        then: "the authentication fails"
         result == false
     }
 
@@ -293,7 +278,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         ldapContextFactory.createBindContext() >> null;
 
         List<LdapUser> users = new ArrayList<LdapUser>();
-        users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering"))
+        users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering", false))
         ldapUserManager.getUsers(_, _) >> users;
 
         def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManagerFactory, ldapConfiguration)
@@ -364,6 +349,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         cmdList.add(LdapImportUsersCmd.class);
         cmdList.add(LDAPConfigCmd.class);
         cmdList.add(LDAPRemoveCmd.class);
+        cmdList.add(LinkDomainToLdapCmd.class)
         return cmdList
     }
 
@@ -434,7 +420,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         ldapUserManagerFactory.getInstance(_) >> ldapUserManager
         ldapContextFactory.createBindContext() >> null
         List<LdapUser> users = new ArrayList<>();
-        users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", "engineering"))
+        users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", "engineering", false))
         ldapUserManager.getUsersInGroup("engineering", _) >> users;
         def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManagerFactory, ldapConfiguration)
         when: "We search for a group of users"
