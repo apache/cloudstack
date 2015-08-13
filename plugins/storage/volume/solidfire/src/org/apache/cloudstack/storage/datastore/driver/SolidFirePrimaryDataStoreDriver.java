@@ -309,7 +309,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 }
                 else {
                     SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePool.getId(), _storagePoolDetailsDao);
-                    long lVolumeId = Long.valueOf(volume.getFolder());
+                    long lVolumeId = Long.parseLong(volume.getFolder());
 
                     SolidFireUtil.SolidFireVolume sfVolume = SolidFireUtil.getSolidFireVolume(sfConnection, lVolumeId);
 
