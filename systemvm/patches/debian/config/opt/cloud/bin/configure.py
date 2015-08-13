@@ -428,7 +428,7 @@ class CsSite2SiteVpn(CsDataBag):
         self.fw.append(["", "front", "-A INPUT -i %s -p udp -m udp --dport 500 -j ACCEPT" % dev])
         self.fw.append(["", "front", "-A INPUT -i %s -p udp -m udp --dport 4500 -j ACCEPT" % dev])
         self.fw.append(["", "front", "-A INPUT -i %s -p esp -j ACCEPT" % dev])
-        self.fw.append(["nat", "front", "-A POSTROUTING -t nat -o %s-m mark --set-xmark 0x525/0xffffffff -j ACCEPT" % dev])
+        self.fw.append(["nat", "front", "-A POSTROUTING -t nat -o %s -m mark --mark 0x525 -j ACCEPT" % dev])
         for net in obj['peer_guest_cidr_list'].lstrip().rstrip().split(','):
             self.fw.append(["mangle", "front",
                             "-A FORWARD -s %s -d %s -j MARK --set-xmark 0x525/0xffffffff" % (obj['local_guest_cidr'], net)])
@@ -453,7 +453,7 @@ class CsSite2SiteVpn(CsDataBag):
         file.addeq(" leftsubnet=%s" % obj['local_guest_cidr'])
         file.addeq(" leftnexthop=%s" % obj['local_public_gateway'])
         file.addeq(" right=%s" % rightpeer)
-        file.addeq(" rightsubnets=%s" % peerlist)
+        file.addeq(" rightsubnets={%s}" % peerlist)
         file.addeq(" type=tunnel")
         file.addeq(" authby=secret")
         file.addeq(" keyexchange=ike")
@@ -463,7 +463,7 @@ class CsSite2SiteVpn(CsDataBag):
         file.addeq(" salifetime=%s" % self.convert_sec_to_h(obj['esp_lifetime']))
         file.addeq(" pfs=%s" % CsHelper.bool_to_yn(obj['dpd']))
         file.addeq(" keyingtries=2")
-        file.addeq(" auto=add")
+        file.addeq(" auto=start")
         if obj['dpd']:
             file.addeq("  dpddelay=30")
             file.addeq("  dpdtimeout=120")
