@@ -527,7 +527,9 @@
                     }
                     $input.addClass("disallowSpecialCharacters");
                     $input.datepicker({
-                        dateFormat: 'yy-mm-dd'
+			dateFormat: 'yy-mm-dd',
+			maxDate: field.maxDate,
+			minDate: field.minDate
                     });
 
                 } else if (field.range) { //2 text fields on the same line (e.g. port range: startPort - endPort)

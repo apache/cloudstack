@@ -24,9 +24,14 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -45,29 +50,24 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
     private static final String DELETE_ALL_BY_ACCOUNTID = "DELETE FROM cloud_usage WHERE account_id = ?";
     private static final String DELETE_ALL_BY_INTERVAL = "DELETE FROM cloud_usage WHERE end_date < DATE_SUB(CURRENT_DATE(), INTERVAL ? DAY)";
     private static final String INSERT_ACCOUNT = "INSERT INTO cloud_usage.account (id, account_name, type, domain_id, removed, cleanup_needed) VALUES (?,?,?,?,?,?)";
-    private static final String INSERT_USER_STATS =
-            "INSERT INTO cloud_usage.user_statistics (id, data_center_id, account_id, public_ip_address, device_id, device_type, network_id, net_bytes_received,"
-                    + " net_bytes_sent, current_bytes_received, current_bytes_sent, agg_bytes_received, agg_bytes_sent) VALUES (?,?,?,?,?,?,?,?,?,?, ?, ?, ?)";
+    private static final String INSERT_USER_STATS = "INSERT INTO cloud_usage.user_statistics (id, data_center_id, account_id, public_ip_address, device_id, device_type, network_id, net_bytes_received,"
+            + " net_bytes_sent, current_bytes_received, current_bytes_sent, agg_bytes_received, agg_bytes_sent) VALUES (?,?,?,?,?,?,?,?,?,?, ?, ?, ?)";
 
     private static final String UPDATE_ACCOUNT = "UPDATE cloud_usage.account SET account_name=?, removed=? WHERE id=?";
-    private static final String UPDATE_USER_STATS =
-            "UPDATE cloud_usage.user_statistics SET net_bytes_received=?, net_bytes_sent=?, current_bytes_received=?, current_bytes_sent=?, agg_bytes_received=?, agg_bytes_sent=? WHERE id=?";
+    private static final String UPDATE_USER_STATS = "UPDATE cloud_usage.user_statistics SET net_bytes_received=?, net_bytes_sent=?, current_bytes_received=?, current_bytes_sent=?, agg_bytes_received=?, agg_bytes_sent=? WHERE id=?";
 
     private static final String GET_LAST_ACCOUNT = "SELECT id FROM cloud_usage.account ORDER BY id DESC LIMIT 1";
     private static final String GET_LAST_USER_STATS = "SELECT id FROM cloud_usage.user_statistics ORDER BY id DESC LIMIT 1";
     private static final String GET_PUBLIC_TEMPLATES_BY_ACCOUNTID = "SELECT id FROM cloud.vm_template WHERE account_id = ? AND public = '1' AND removed IS NULL";
 
     private static final String GET_LAST_VM_DISK_STATS = "SELECT id FROM cloud_usage.vm_disk_statistics ORDER BY id DESC LIMIT 1";
-    private static final String INSERT_VM_DISK_STATS =
-            "INSERT INTO cloud_usage.vm_disk_statistics (id, data_center_id, account_id, vm_id, volume_id, net_io_read, net_io_write, current_io_read, "
-                    + "current_io_write, agg_io_read, agg_io_write, net_bytes_read, net_bytes_write, current_bytes_read, current_bytes_write, agg_bytes_read, agg_bytes_write) "
-                    + " VALUES (?,?,?,?,?,?,?,?,?,?, ?, ?, ?, ?,?, ?, ?)";
-    private static final String UPDATE_VM_DISK_STATS =
-            "UPDATE cloud_usage.vm_disk_statistics SET net_io_read=?, net_io_write=?, current_io_read=?, current_io_write=?, agg_io_read=?, agg_io_write=?, "
-                    + "net_bytes_read=?, net_bytes_write=?, current_bytes_read=?, current_bytes_write=?, agg_bytes_read=?, agg_bytes_write=?  WHERE id=?";
+    private static final String INSERT_VM_DISK_STATS = "INSERT INTO cloud_usage.vm_disk_statistics (id, data_center_id, account_id, vm_id, volume_id, net_io_read, net_io_write, current_io_read, "
+            + "current_io_write, agg_io_read, agg_io_write, net_bytes_read, net_bytes_write, current_bytes_read, current_bytes_write, agg_bytes_read, agg_bytes_write) "
+            + " VALUES (?,?,?,?,?,?,?,?,?,?, ?, ?, ?, ?,?, ?, ?)";
+    private static final String UPDATE_VM_DISK_STATS = "UPDATE cloud_usage.vm_disk_statistics SET net_io_read=?, net_io_write=?, current_io_read=?, current_io_write=?, agg_io_read=?, agg_io_write=?, "
+            + "net_bytes_read=?, net_bytes_write=?, current_bytes_read=?, current_bytes_write=?, agg_bytes_read=?, agg_bytes_write=?  WHERE id=?";
     private static final String INSERT_USAGE_RECORDS = "INSERT INTO cloud_usage.cloud_usage (zone_id, account_id, domain_id, description, usage_display, "
-            +
-            "usage_type, raw_usage, vm_instance_id, vm_name, offering_id, template_id, "
+            + "usage_type, raw_usage, vm_instance_id, vm_name, offering_id, template_id, "
             + "usage_id, type, size, network_id, start_date, end_date, virtual_size) VALUES (?,?,?,?,?,?,?,?,?, ?, ?, ?,?,?,?,?,?,?)";
 
     protected final static TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
@@ -213,7 +213,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             txn.start();
             String sql = UPDATE_USER_STATS;
             PreparedStatement pstmt = null;
-            pstmt = txn.prepareAutoCloseStatement(sql);  // in reality I just want CLOUD_USAGE dataSource connection
+            pstmt = txn.prepareAutoCloseStatement(sql); // in reality I just want CLOUD_USAGE dataSource connection
             for (UserStatisticsVO userStat : userStats) {
                 pstmt.setLong(1, userStat.getNetBytesReceived());
                 pstmt.setLong(2, userStat.getNetBytesSent());
@@ -310,7 +310,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             txn.start();
             String sql = UPDATE_VM_DISK_STATS;
             PreparedStatement pstmt = null;
-            pstmt = txn.prepareAutoCloseStatement(sql);  // in reality I just want CLOUD_USAGE dataSource connection
+            pstmt = txn.prepareAutoCloseStatement(sql); // in reality I just want CLOUD_USAGE dataSource connection
             for (VmDiskStatisticsVO vmDiskStat : vmDiskStats) {
                 pstmt.setLong(1, vmDiskStat.getNetIORead());
                 pstmt.setLong(2, vmDiskStat.getNetIOWrite());
@@ -466,5 +466,41 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
         } finally {
             txn.close();
         }
+    }
+
+    public UsageVO persistUsage(final UsageVO usage) {
+        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<UsageVO>() {
+            @Override
+            public UsageVO doInTransaction(final TransactionStatus status) {
+                return persist(usage);
+            }
+        });
+    }
+
+    public Pair<List<? extends UsageVO>, Integer> getUsageRecordsPendingQuotaAggregation(final long accountId, final long domainId) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Getting usage records for account: " + accountId + ", domainId: " + domainId);
+        }
+        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<Pair<List<? extends UsageVO>, Integer>>() {
+            @Override
+            public Pair<List<? extends UsageVO>, Integer> doInTransaction(final TransactionStatus status) {
+                Pair<List<UsageVO>, Integer> usageRecords = new Pair<List<UsageVO>, Integer>(new ArrayList<UsageVO>(), 0);
+                Filter usageFilter = new Filter(UsageVO.class, "startDate", true, 0L, Long.MAX_VALUE);
+                QueryBuilder<UsageVO> qb = QueryBuilder.create(UsageVO.class);
+                if (accountId != -1) {
+                    qb.and(qb.entity().getAccountId(), SearchCriteria.Op.EQ, accountId);
+                }
+                if (domainId != -1) {
+                    qb.and(qb.entity().getDomainId(), SearchCriteria.Op.EQ, domainId);
+                }
+                qb.and(qb.entity().getQuotaCalculated(), SearchCriteria.Op.NEQ, 1);
+                qb.and(qb.entity().getRawUsage(), SearchCriteria.Op.GT, 0);
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Getting usage records" + usageFilter.getOrderBy());
+                }
+                usageRecords = searchAndCountAllRecords(qb.create(), usageFilter);
+                return new Pair<List<? extends UsageVO>, Integer>(usageRecords.first(), usageRecords.second());
+            }
+        });
     }
 }

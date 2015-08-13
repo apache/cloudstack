@@ -35,23 +35,40 @@ public class Transaction {
         if (currentTxn != null) {
             databaseId = currentTxn.getDatabaseId();
         }
-        TransactionLegacy txn = TransactionLegacy.open(name, databaseId, false);
-        try {
-//            if (txn.dbTxnStarted()){
-//                String warnMsg = "Potential Wrong Usage: TRANSACTION.EXECUTE IS WRAPPED INSIDE ANOTHER DB TRANSACTION!";
-//                s_logger.warn(warnMsg, new CloudRuntimeException(warnMsg));
-//            }
+        try (final TransactionLegacy txn = TransactionLegacy.open(name, databaseId, false)) {
             txn.start();
             T result = callback.doInTransaction(STATUS);
             txn.commit();
             return result;
-        } finally {
-            txn.close();
         }
     }
 
     public static <T> T execute(final TransactionCallback<T> callback) {
         return execute(new TransactionCallbackWithException<T, RuntimeException>() {
+            @Override
+            public T doInTransaction(TransactionStatus status) throws RuntimeException {
+                return callback.doInTransaction(status);
+            }
+        });
+    }
+
+    @SuppressWarnings("deprecation")
+    public static <T, E extends Throwable> T execute(final short databaseId, TransactionCallbackWithException<T, E> callback) throws E {
+        String name = "tx-" + counter.incrementAndGet();
+        TransactionLegacy currentTxn = TransactionLegacy.currentTxn(false);
+        short outer_txn_databaseId = (currentTxn != null ? currentTxn.getDatabaseId() : databaseId);
+        try (final TransactionLegacy txn = TransactionLegacy.open(name, databaseId, true)) {
+            txn.start();
+            T result = callback.doInTransaction(STATUS);
+            txn.commit();
+            return result;
+        } finally {
+            TransactionLegacy.open(outer_txn_databaseId).close();
+        }
+    }
+
+    public static <T> T execute(final short databaseId, final TransactionCallback<T> callback) {
+        return execute(databaseId, new TransactionCallbackWithException<T, RuntimeException>() {
             @Override
             public T doInTransaction(TransactionStatus status) throws RuntimeException {
                 return callback.doInTransaction(status);

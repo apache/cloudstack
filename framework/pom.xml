@@ -47,6 +47,7 @@
     <module>rest</module>
     <module>events</module>
     <module>jobs</module>
+    <module>quota</module>
     <module>cluster</module>
     <module>db</module>
     <module>config</module>

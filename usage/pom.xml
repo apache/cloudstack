@@ -36,6 +36,11 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-framework-quota</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>commons-daemon</groupId>
       <artifactId>commons-daemon</artifactId>
     </dependency>
@@ -55,10 +60,6 @@
         <artifactId>slf4j-log4j12</artifactId>
         <version>1.7.7</version>
       </dependency>
-    <dependency>
-      <groupId>javax.mail</groupId>
-      <artifactId>mail</artifactId>
-    </dependency>
     <dependency>
       <groupId>org.dbunit</groupId>
       <artifactId>dbunit</artifactId>

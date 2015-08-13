@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.cloudstack.api.response.UsageTypeResponse;
 
 public class UsageTypes {
+    /* Any changes here should also reflect in cloud_usage.quota_mapping table */
     public static final int RUNNING_VM = 1;
     public static final int ALLOCATED_VM = 2; // used for tracking how long storage has been allocated for a VM
     public static final int IP_ADDRESS = 3;
