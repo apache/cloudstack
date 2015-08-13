@@ -96,7 +96,7 @@ class CsRedundant(object):
                 d = s.replace(".templ", "")
             CsHelper.copy_if_needed(
                 "%s/%s" % (self.CS_TEMPLATES_DIR, s), "%s/%s" % (self.CS_ROUTER_DIR, d))
-        CsHelper.copy_if_needed(
+        CsHelper.copy(
             "%s/%s" % (self.CS_TEMPLATES_DIR, "keepalived.conf.templ"), self.KEEPALIVED_CONF)
         CsHelper.copy_if_needed(
             "%s/%s" % (self.CS_TEMPLATES_DIR, "conntrackd.conf.templ"), self.CONNTRACKD_CONF)
