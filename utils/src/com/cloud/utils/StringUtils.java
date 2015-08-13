@@ -52,7 +52,7 @@ public class StringUtils {
         return Charset.isSupported(UTF8);
     }
 
-    public static Charset getDefaultCharset() {
+    protected static Charset getDefaultCharset() {
         return Charset.defaultCharset();
     }
 
