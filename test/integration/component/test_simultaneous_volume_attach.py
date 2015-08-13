@@ -61,6 +61,7 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
                 # RBD storage type is required for data volumes for LXC
                 cls.invalidStoragePoolType = True
                 return
+
         cls.disk_offering = DiskOffering.create(
                                     cls.apiclient,
                                     cls.services["disk_offering"]
@@ -98,8 +99,6 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
                                     mode=cls.services["mode"]
                                 )
 
-        if cls.hypervisor.lower() == 'lxc' and cls.storage_pools.type.lower() != 'rbd':
-            raise unittest.SkipTest("Data Disk attach for NFS is not supported on LXC")
         #Create volumes (data disks)
         cls.volume1 = Volume.create(
                                    cls.apiclient,
