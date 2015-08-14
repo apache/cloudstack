@@ -69,9 +69,10 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
 
             final KVMPhysicalDisk vol = pool.getPhysicalDisk(volid);
             final String path = vol.getPath();
-            String type = libvirtComputingResource.getResizeScriptType(pool, vol);
+            String type = notifyOnlyType;
 
             if (pool.getType() != StoragePoolType.RBD) {
+                type = libvirtComputingResource.getResizeScriptType(pool, vol);
                 if (type.equals("QCOW2") && shrinkOk) {
                     return new ResizeVolumeAnswer(command, false, "Unable to shrink volumes of type " + type);
                 }
@@ -99,7 +100,6 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
                     }
 
                     v.resize(newSize, flags);
-                    type = notifyOnlyType;
                 } catch (final LibvirtException e) {
                     return new ResizeVolumeAnswer(command, false, e.toString());
                 }
