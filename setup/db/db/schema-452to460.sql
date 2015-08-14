@@ -399,6 +399,3 @@ CREATE TABLE `cloud`.`external_bigswitch_bcf_devices` (
   CONSTRAINT `fk_external_bigswitch_bcf_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-SET foreign_key_checks = 0;
-ALTER TABLE `cloud`.`region` MODIFY `id` int unsigned UNIQUE NOT NULL;
-SET foreign_key_checks = 1;
