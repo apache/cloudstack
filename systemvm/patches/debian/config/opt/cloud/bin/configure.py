@@ -678,9 +678,6 @@ def main(argv):
     red = CsRedundant(config)
     red.set()
 
-    nf = CsNetfilters()
-    nf.compare(config.get_fw())
-
     vpns = CsSite2SiteVpn("site2sitevpn", config)
     vpns.process()
 
@@ -692,6 +689,9 @@ def main(argv):
 
     mon = CsMonitor("monitorservice", config)
     mon.process()
+
+    nf = CsNetfilters()
+    nf.compare(config.get_fw())
 
     # Save iptables configuration - will be loaded on reboot by the iptables-restore that is configured on /etc/rc.local
     CsHelper.save_iptables("iptables-save", "/etc/iptables/router_rules.v4")
