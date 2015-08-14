@@ -24,44 +24,41 @@ import java.util.Map;
 import com.cloud.storage.template.TemplateProp;
 
 public class ModifyStoragePoolAnswer extends Answer {
-    StoragePoolInfo poolInfo;
-    Map<String, TemplateProp> templateInfo;
-    String localDatastoreName = null;
-
-    protected ModifyStoragePoolAnswer() {
-    }
+    private StoragePoolInfo _poolInfo;
+    private Map<String, TemplateProp> _templateInfo;
+    private String _localDatastoreName;
 
     public ModifyStoragePoolAnswer(ModifyStoragePoolCommand cmd, long capacityBytes, long availableBytes, Map<String, TemplateProp> tInfo) {
         super(cmd);
-        this.result = true;
-        this.poolInfo =
-            new StoragePoolInfo(null, cmd.getPool().getHost(), cmd.getPool().getPath(), cmd.getLocalPath(), cmd.getPool().getType(), capacityBytes, availableBytes);
 
-        this.templateInfo = tInfo;
-    }
+        result = true;
 
-    public StoragePoolInfo getPoolInfo() {
-        return poolInfo;
+        _poolInfo = new StoragePoolInfo(null, cmd.getPool().getHost(), cmd.getPool().getPath(), cmd.getLocalPath(), cmd.getPool().getType(), capacityBytes, availableBytes);
+
+        _templateInfo = tInfo;
     }
 
     public void setPoolInfo(StoragePoolInfo poolInfo) {
-        this.poolInfo = poolInfo;
+        _poolInfo = poolInfo;
     }
 
-    public Map<String, TemplateProp> getTemplateInfo() {
-        return templateInfo;
+    public StoragePoolInfo getPoolInfo() {
+        return _poolInfo;
     }
 
     public void setTemplateInfo(Map<String, TemplateProp> templateInfo) {
-        this.templateInfo = templateInfo;
+        _templateInfo = templateInfo;
     }
 
-    public String getLocalDatastoreName() {
-        return localDatastoreName;
+    public Map<String, TemplateProp> getTemplateInfo() {
+        return _templateInfo;
     }
 
     public void setLocalDatastoreName(String localDatastoreName) {
-        this.localDatastoreName = localDatastoreName;
+        _localDatastoreName = localDatastoreName;
     }
 
+    public String getLocalDatastoreName() {
+        return _localDatastoreName;
+    }
 }

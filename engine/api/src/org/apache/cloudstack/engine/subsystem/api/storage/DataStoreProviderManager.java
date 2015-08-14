@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import java.util.List;
+
 import com.cloud.storage.DataStoreProviderApiService;
 import com.cloud.utils.component.Manager;
 
@@ -29,4 +31,6 @@ public interface DataStoreProviderManager extends Manager, DataStoreProviderApiS
     DataStoreProvider getDefaultImageDataStoreProvider();
 
     DataStoreProvider getDefaultCacheDataStoreProvider();
+
+    List<DataStoreProvider> getProviders();
 }

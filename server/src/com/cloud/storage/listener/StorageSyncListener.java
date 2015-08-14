@@ -51,6 +51,10 @@ public class StorageSyncListener implements Listener {
     }
 
     @Override
+    public void processHostAdded(long hostId) {
+    }
+
+    @Override
     public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) {
     }
 
@@ -58,6 +62,14 @@ public class StorageSyncListener implements Listener {
     public boolean processDisconnect(long agentId, Status state) {
         s_logger.debug("Disconnecting");
         return true;
+    }
+
+    @Override
+    public void processHostAboutToBeRemoved(long hostId) {
+    }
+
+    @Override
+    public void processHostRemoved(long hostId, long clusterId) {
     }
 
     @Override

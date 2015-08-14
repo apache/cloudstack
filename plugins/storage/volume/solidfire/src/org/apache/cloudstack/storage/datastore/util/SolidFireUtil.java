@@ -28,6 +28,7 @@ import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,20 +59,27 @@ import com.google.gson.GsonBuilder;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.security.SSLUtils;
 
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.user.AccountDetailVO;
 import com.cloud.user.AccountDetailsDao;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SolidFireUtil {
     private static final Logger s_logger = Logger.getLogger(SolidFireUtil.class);
     public static final String PROVIDER_NAME = "SolidFire";
     public static final String SHARED_PROVIDER_NAME = "SolidFireShared";
+
+    public static final int s_lockTimeInSeconds = 300;
 
     public static final String LOG_PREFIX = "SolidFire: ";
 
@@ -124,6 +132,22 @@ public class SolidFireUtil {
         private final String _clusterAdminPassword;
 
         public SolidFireConnection(String managementVip, int managementPort, String clusterAdminUsername, String clusterAdminPassword) {
+            if (managementVip == null) {
+                throw new CloudRuntimeException("The management VIP cannot be 'null'.");
+            }
+
+            if (managementPort <= 0) {
+                throw new CloudRuntimeException("The management port must be a positive integer.");
+            }
+
+            if (clusterAdminUsername == null) {
+                throw new CloudRuntimeException("The cluster admin username cannot be 'null'.");
+            }
+
+            if (clusterAdminPassword == null) {
+                throw new CloudRuntimeException("The cluster admin password cannot be 'null'.");
+            }
+
             _managementVip = managementVip;
             _managementPort = managementPort;
             _clusterAdminUsername = clusterAdminUsername;
@@ -144,6 +168,22 @@ public class SolidFireUtil {
 
         public String getClusterAdminPassword() {
             return _clusterAdminPassword;
+        }
+
+        @Override
+        public int hashCode() {
+            return _managementVip.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof SolidFireConnection)) {
+                return false;
+            }
+
+            SolidFireConnection sfConnection = (SolidFireConnection)obj;
+
+            return _managementVip.equals(sfConnection.getManagementVip());
         }
     }
 
@@ -238,6 +278,58 @@ public class SolidFireUtil {
         }
     }
 
+    public static void hostAddedToOrRemovedFromCluster(long hostId, long clusterId, boolean added, String storageProvider,
+            ClusterDao clusterDao, ClusterDetailsDao clusterDetailsDao, PrimaryDataStoreDao storagePoolDao, StoragePoolDetailsDao storagePoolDetailsDao, HostDao hostDao) {
+        ClusterVO cluster = clusterDao.findById(clusterId);
+
+        GlobalLock lock = GlobalLock.getInternLock(cluster.getUuid());
+
+        if (!lock.lock(s_lockTimeInSeconds)) {
+            String errMsg = "Couldn't lock the DB on the following string: " + cluster.getUuid();
+
+            s_logger.debug(errMsg);
+
+            throw new CloudRuntimeException(errMsg);
+        }
+
+        try {
+            List<StoragePoolVO> storagePools = storagePoolDao.findPoolsByProvider(storageProvider);
+
+            if (storagePools != null && storagePools.size() > 0) {
+                List<SolidFireUtil.SolidFireConnection> sfConnections = new ArrayList<SolidFireUtil.SolidFireConnection>();
+
+                for (StoragePoolVO storagePool : storagePools) {
+                    ClusterDetailsVO clusterDetail = clusterDetailsDao.findDetail(clusterId, SolidFireUtil.getVagKey(storagePool.getId()));
+
+                    String vagId = clusterDetail != null ? clusterDetail.getValue() : null;
+
+                    if (vagId != null) {
+                        SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePool.getId(), storagePoolDetailsDao);
+
+                        if (!sfConnections.contains(sfConnection)) {
+                            sfConnections.add(sfConnection);
+
+                            SolidFireUtil.SolidFireVag sfVag = SolidFireUtil.getSolidFireVag(sfConnection, Long.parseLong(vagId));
+
+                            List<HostVO> hostsToAddOrRemove = new ArrayList<>();
+                            HostVO hostToAddOrRemove = hostDao.findByIdIncludingRemoved(hostId);
+
+                            hostsToAddOrRemove.add(hostToAddOrRemove);
+
+                            String[] hostIqns = SolidFireUtil.getNewHostIqns(sfVag.getInitiators(), SolidFireUtil.getIqnsFromHosts(hostsToAddOrRemove), added);
+
+                            SolidFireUtil.modifySolidFireVag(sfConnection, sfVag.getId(), hostIqns, sfVag.getVolumeIds());
+                        }
+                    }
+                }
+            }
+        }
+        finally {
+            lock.unlock();
+            lock.releaseRef();
+        }
+    }
+
     public static long placeVolumeInVolumeAccessGroup(SolidFireConnection sfConnection, long sfVolumeId, long storagePoolId,
             String vagUuid, List<HostVO> hosts, ClusterDetailsDao clusterDetailsDao) {
         if (hosts == null || hosts.isEmpty()) {
@@ -264,8 +356,7 @@ public class SolidFireUtil {
 
             long[] volumeIds = getNewVolumeIds(sfVag.getVolumeIds(), sfVolumeId, true);
 
-            SolidFireUtil.modifySolidFireVag(sfConnection, lVagId,
-                sfVag.getInitiators(), volumeIds);
+            SolidFireUtil.modifySolidFireVag(sfConnection, lVagId, sfVag.getInitiators(), volumeIds);
         }
 
         ClusterDetailsVO clusterDetail = new ClusterDetailsVO(hosts.get(0).getClusterId(), getVagKey(storagePoolId), String.valueOf(lVagId));
@@ -289,20 +380,34 @@ public class SolidFireUtil {
         return true;
     }
 
-    public static String[] getNewHostIqns(String[] currentIqns, String[] newIqns) {
-        List<String> lstIqns = new ArrayList<String>();
+    public static String[] getNewHostIqns(String[] iqns, String[] iqnsToAddOrRemove, boolean add) {
+        if (add) {
+            return getNewHostIqnsAdd(iqns, iqnsToAddOrRemove);
+        }
 
-        if (currentIqns != null) {
-            for (String currentIqn : currentIqns) {
-                lstIqns.add(currentIqn);
+        return getNewHostIqnsRemove(iqns, iqnsToAddOrRemove);
+    }
+
+    private static String[] getNewHostIqnsAdd(String[] iqns, String[] iqnsToAdd) {
+        List<String> lstIqns = iqns != null ? new ArrayList<>(Arrays.asList(iqns)) : new ArrayList<String>();
+
+        if (iqnsToAdd != null) {
+            for (String iqnToAdd : iqnsToAdd) {
+                if (!lstIqns.contains(iqnToAdd)) {
+                    lstIqns.add(iqnToAdd);
+                }
             }
         }
 
-        if (newIqns != null) {
-            for (String newIqn : newIqns) {
-                if (!lstIqns.contains(newIqn)) {
-                    lstIqns.add(newIqn);
-                }
+        return lstIqns.toArray(new String[0]);
+    }
+
+    private static String[] getNewHostIqnsRemove(String[] iqns, String[] iqnsToRemove) {
+        List<String> lstIqns = iqns != null ? new ArrayList<>(Arrays.asList(iqns)) : new ArrayList<String>();
+
+        if (iqnsToRemove != null) {
+            for (String iqnToRemove : iqnsToRemove) {
+                lstIqns.remove(iqnToRemove);
             }
         }
 

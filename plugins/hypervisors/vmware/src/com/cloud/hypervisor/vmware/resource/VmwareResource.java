@@ -148,6 +148,8 @@ import com.cloud.agent.api.MigrateWithStorageCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
+import com.cloud.agent.api.ModifyTargetsAnswer;
+import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PingCommand;
@@ -409,6 +411,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((DestroyCommand)cmd);
             } else if (clz == CreateStoragePoolCommand.class) {
                 return execute((CreateStoragePoolCommand)cmd);
+            } else if (clz == ModifyTargetsCommand.class) {
+                answer = execute((ModifyTargetsCommand)cmd);
             } else if (clz == ModifyStoragePoolCommand.class) {
                 answer = execute((ModifyStoragePoolCommand)cmd);
             } else if (clz == DeleteStoragePoolCommand.class) {
@@ -933,7 +937,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
              */
             // Fallback to E1000 if no specific nicAdapter is passed
             VirtualEthernetCardType nicDeviceType = VirtualEthernetCardType.E1000;
-            Map details = cmd.getDetails();
+            Map<String, String> details = cmd.getDetails();
             if (details != null) {
                 nicDeviceType = VirtualEthernetCardType.valueOf((String) details.get("nicAdapter"));
             }
@@ -3527,7 +3531,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     private Answer execute(MigrateVolumeCommand cmd) {
         String volumePath = cmd.getVolumePath();
         StorageFilerTO poolTo = cmd.getPool();
-        Volume.Type volumeType = cmd.getVolumeType();
 
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource MigrateVolumeCommand: " + _gson.toJson(cmd));
@@ -3608,7 +3611,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             // Consolidate VM disks.
             // In case of a linked clone VM, if VM's disks are not consolidated,
             // further volume operations on the ROOT volume such as volume snapshot etc. will result in DB inconsistencies.
-            String apiVersion = HypervisorHostHelper.getVcenterApiVersion(vmMo.getContext());
             if (!vmMo.consolidateVmDisks()) {
                 s_logger.warn("VM disk consolidation failed after storage migration.");
             } else {
@@ -3677,6 +3679,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return new Answer(cmd, true, "success");
     }
 
+    protected Answer execute(ModifyTargetsCommand cmd) {
+        VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+
+        handleTargets(cmd.getAdd(), cmd.getTargets(), (HostMO)hyperHost);
+
+        return new ModifyTargetsAnswer();
+    }
+
     protected Answer execute(ModifyStoragePoolCommand cmd) {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource ModifyStoragePoolCommand: " + _gson.toJson(cmd));
@@ -3690,31 +3700,50 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception("Unsupported storage pool type " + pool.getType());
             }
 
-            ManagedObjectReference morDatastore = null;
-            morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, pool.getUuid());
-            if (morDatastore == null)
-                morDatastore =
-                hyperHost.mountDatastore(pool.getType() == StoragePoolType.VMFS, pool.getHost(), pool.getPort(), pool.getPath(), pool.getUuid().replace("-", ""));
+            ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, pool.getUuid());
+
+            if (morDatastore == null) {
+                morDatastore = hyperHost.mountDatastore(pool.getType() == StoragePoolType.VMFS, pool.getHost(), pool.getPort(), pool.getPath(), pool.getUuid().replace("-", ""));
+            }
 
             assert (morDatastore != null);
+
             DatastoreSummary summary = new DatastoreMO(getServiceContext(), morDatastore).getSummary();
+
             long capacity = summary.getCapacity();
             long available = summary.getFreeSpace();
+
             Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
             ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(cmd, capacity, available, tInfo);
+
             if (cmd.getAdd() && pool.getType() == StoragePoolType.VMFS) {
                 answer.setLocalDatastoreName(morDatastore.getValue());
             }
+
             return answer;
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
                 s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
+
                 invalidateServiceContext();
             }
 
             String msg = "ModifyStoragePoolCommand failed due to " + VmwareHelper.getExceptionMessage(e);
+
             s_logger.error(msg, e);
+
             return new Answer(cmd, false, msg);
+        }
+    }
+
+    private void handleTargets(boolean add, List<Map<String, String>> targets, HostMO host) {
+        if (targets != null && targets.size() > 0) {
+            try {
+                _storageProcessor.handleTargetsForHost(add, targets, host);
+            }
+            catch (Exception ex) {
+                s_logger.warn(ex.getMessage());
+            }
         }
     }
 
@@ -4699,12 +4728,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         } catch (Exception e) {
             return new HashMap<String, HostVmStateReportEntry>();
         }
-    }
-
-    private boolean isVmInCluster(String vmName) throws Exception {
-        VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
-
-        return hyperHost.findVmOnPeerHyperHost(vmName) != null;
     }
 
     protected OptionValue[] configureVnc(OptionValue[] optionsToMerge, VmwareHypervisorHost hyperHost, String vmName, String vncPassword, String keyboardLayout)

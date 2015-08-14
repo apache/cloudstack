@@ -23,13 +23,40 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 
 public class NexentaHostListener implements HypervisorHostListener {
-    private static final Logger logger = Logger.getLogger(NexentaHostListener.class);
+    private static final Logger s_logger = Logger.getLogger(NexentaHostListener.class);
 
-    public boolean hostConnect(long hostId, long poolId) {
+    @Override
+    public boolean hostAdded(long hostId) {
+        s_logger.trace("hostAdded(long) invoked");
+
         return true;
     }
 
+    @Override
+    public boolean hostConnect(long hostId, long poolId) {
+        s_logger.trace("hostConnect(long, long) invoked");
+
+        return true;
+    }
+
+    @Override
     public boolean hostDisconnected(long hostId, long poolId) {
+        s_logger.trace("hostDisconnected(long, long) invoked");
+
+        return true;
+    }
+
+    @Override
+    public boolean hostAboutToBeRemoved(long hostId) {
+        s_logger.trace("hostAboutToBeRemoved(long) invoked");
+
+        return true;
+    }
+
+    @Override
+    public boolean hostRemoved(long hostId, long clusterId) {
+        s_logger.trace("hostRemoved(long) invoked");
+
         return true;
     }
 }

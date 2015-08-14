@@ -18,8 +18,6 @@ package com.cloud.storage;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 
 import com.cloud.agent.Listener;
@@ -39,17 +37,11 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.db.DB;
 
 public class LocalStoragePoolListener implements Listener {
-    private final static Logger s_logger = Logger.getLogger(LocalStoragePoolListener.class);
-    @Inject
-    PrimaryDataStoreDao _storagePoolDao;
-    @Inject
-    StoragePoolHostDao _storagePoolHostDao;
-    @Inject
-    CapacityDao _capacityDao;
-    @Inject
-    StorageManager _storageMgr;
-    @Inject
-    DataCenterDao _dcDao;
+    @Inject private PrimaryDataStoreDao _storagePoolDao;
+    @Inject private StoragePoolHostDao _storagePoolHostDao;
+    @Inject private CapacityDao _capacityDao;
+    @Inject private StorageManager _storageMgr;
+    @Inject private DataCenterDao _dcDao;
 
     @Override
     public int getTimeout() {
@@ -69,6 +61,10 @@ public class LocalStoragePoolListener implements Listener {
     @Override
     public boolean processCommands(long agentId, long seq, Command[] commands) {
         return false;
+    }
+
+    @Override
+    public void processHostAdded(long hostId) {
     }
 
     @Override
@@ -100,6 +96,14 @@ public class LocalStoragePoolListener implements Listener {
     @Override
     public boolean processDisconnect(long agentId, Status state) {
         return false;
+    }
+
+    @Override
+    public void processHostAboutToBeRemoved(long hostId) {
+    }
+
+    @Override
+    public void processHostRemoved(long hostId, long clusterId) {
     }
 
     @Override
