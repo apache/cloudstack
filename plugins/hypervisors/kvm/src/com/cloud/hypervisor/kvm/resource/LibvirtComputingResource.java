@@ -2615,7 +2615,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String msg = null;
         try {
             dm = conn.domainLookupByName(vmName);
-            String vmDef = dm.getXMLDesc(0);
+            // Get XML Dump including the secure information such as VNC password
+            // By passing 1, or VIR_DOMAIN_XML_SECURE flag
+            // https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainXMLFlags
+            String vmDef = dm.getXMLDesc(1);
             final LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
             parser.parseDomainXML(vmDef);
             for (final InterfaceDef nic : parser.getInterfaces()) {
