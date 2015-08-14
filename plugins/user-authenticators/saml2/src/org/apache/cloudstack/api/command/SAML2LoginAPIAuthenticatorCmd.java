@@ -70,8 +70,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.FactoryConfigurationError;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.URLEncoder;
-
 import java.util.List;
 import java.util.Map;
 

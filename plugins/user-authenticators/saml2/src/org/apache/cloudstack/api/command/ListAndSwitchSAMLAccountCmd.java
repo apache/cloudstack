@@ -52,6 +52,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -99,7 +100,7 @@ public class ListAndSwitchSAMLAccountCmd extends BaseCmd implements APIAuthentic
     }
 
     @Override
-    public String authenticate(final String command, final Map<String, Object[]> params, final HttpSession session, final String remoteAddress, final String responseType, final StringBuilder auditTrailSb, final HttpServletRequest req, final HttpServletResponse resp) throws ServerApiException {
+    public String authenticate(final String command, final Map<String, Object[]> params, final HttpSession session, InetAddress remoteAddress, final String responseType, final StringBuilder auditTrailSb, final HttpServletRequest req, final HttpServletResponse resp) throws ServerApiException {
         if (session == null || session.isNew()) {
             throw new ServerApiException(ApiErrorCode.UNAUTHORIZED, _apiServer.getSerializedApiError(ApiErrorCode.UNAUTHORIZED.getHttpCode(),
                     "Only authenticated saml users can request this API",
