@@ -236,7 +236,7 @@ class CsRedundant(object):
             if dev == o.get_device():
                 continue
             logging.info("Bringing public interface %s down" % o.get_device())
-            cmd2 = "ip link set %s up" % o.get_device()
+            cmd2 = "ip link set %s down" % o.get_device()
             CsHelper.execute(cmd2)
             dev = o.get_device()
         cmd = "%s -C %s" % (self.CONNTRACKD_BIN, self.CONNTRACKD_CONF)
@@ -317,8 +317,11 @@ class CsRedundant(object):
         lines = []
         for o in self.address.get_ips():
             if o.needs_vrrp():
-                str = "        %s brd %s dev %s\n" % (
-                    o.get_gateway_cidr(), o.get_broadcast(), o.get_device())
+                cmdline=self.config.get_cmdline_instance()
+                if(cmdline.get_type()=='router'):
+                    str = "        %s brd %s dev %s\n" % (cmdline.get_guest_gw(), o.get_broadcast(), o.get_device())
+                else:
+                    str = "        %s brd %s dev %s\n" % (o.get_ip(), o.get_broadcast(), o.get_device())
                 lines.append(str)
                 self.check_is_up(o.get_device())
         return lines
