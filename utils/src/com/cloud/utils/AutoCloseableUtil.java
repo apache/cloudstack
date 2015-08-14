@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,37 +14,22 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
+package com.cloud.utils;
 
-package com.cloud.utils.exception;
+import org.apache.log4j.Logger;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+public class AutoCloseableUtil {
+    private final static Logger s_logger = Logger.getLogger(AutoCloseableUtil.class);
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-
-import org.junit.Test;
-
-public class ExceptionUtilTest {
-
-    @Test
-    public void test() throws Exception {
-        FileNotFoundException fnfe = new FileNotFoundException();
+    public static void closeAutoCloseable(AutoCloseable ac, String message) {
         try {
-            ExceptionUtil.rethrow(fnfe, IOException.class);
-            fail();
-        } catch (IOException e) {
-            assertTrue("we won !?!", true);
-        }
 
-        ExceptionUtil.rethrow(fnfe, ClassNotFoundException.class);
+            if (ac != null) {
+                ac.close();
+            }
 
-        try {
-            ExceptionUtil.rethrow(fnfe, FileNotFoundException.class);
-            fail();
-        } catch (FileNotFoundException e) {
-            assertTrue("we won !?!", true);
+        } catch (Exception e) {
+            s_logger.warn("[ignored] " + message, e);
         }
     }
 

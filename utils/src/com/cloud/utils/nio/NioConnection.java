@@ -19,6 +19,8 @@
 
 package com.cloud.utils.nio;
 
+import static com.cloud.utils.AutoCloseableUtil.closeAutoCloseable;
+
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
@@ -41,9 +43,9 @@ import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
-import org.apache.cloudstack.utils.security.SSLUtils;
-
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.utils.security.SSLUtils;
 
 import com.cloud.utils.concurrency.NamedThreadFactory;
 
@@ -208,11 +210,8 @@ public abstract class NioConnection implements Runnable {
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("Socket " + socket + " closed on read.  Probably -1 returned: " + e.getMessage());
             }
-            try {
-                socketChannel.close();
-                socket.close();
-            } catch (IOException ignore) {
-            }
+            closeAutoCloseable(socketChannel, "accepting socketChannel");
+            closeAutoCloseable(socket, "opened socket");
             return;
         }
 
@@ -334,6 +333,7 @@ public abstract class NioConnection implements Runnable {
                         try {
                             ((SocketChannel)(todo.key)).close();
                         } catch (IOException ignore) {
+                            s_logger.info("[ignored] socket channel");
                         } finally {
                             Link link = (Link)todo.att;
                             link.terminated();
@@ -420,6 +420,7 @@ public abstract class NioConnection implements Runnable {
                     channel.close();
                 }
             } catch (IOException ignore) {
+                s_logger.info("[ignored] channel");
             }
         }
     }

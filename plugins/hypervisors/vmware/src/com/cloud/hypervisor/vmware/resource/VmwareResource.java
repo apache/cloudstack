@@ -18,6 +18,7 @@ package com.cloud.hypervisor.vmware.resource;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -33,12 +34,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
-import java.io.UnsupportedEncodingException;
 
 import javax.naming.ConfigurationException;
 
@@ -216,8 +215,8 @@ import com.cloud.dc.Vlan;
 import com.cloud.exception.CloudException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
-import com.cloud.hypervisor.guru.VMwareGuru;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.guru.VMwareGuru;
 import com.cloud.hypervisor.vmware.manager.VmwareHostService;
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageMount;
@@ -566,7 +565,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 // we need to spawn a worker VM to attach the volume to and
                 // resize the volume.
                 useWorkerVm = true;
-                vmName = this.getWorkerName(getServiceContext(), cmd, 0);
+                vmName = getWorkerName(getServiceContext(), cmd, 0);
 
                 morDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, poolId);
                 dsMo = new DatastoreMO(hyperHost.getContext(), morDS);
@@ -4803,10 +4802,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         // VM patching/rebooting time that may need
         int retry = _retry;
         while (System.currentTimeMillis() - startTick <= _opsTimeout || --retry > 0) {
-            SocketChannel sch = null;
-            try {
-                s_logger.info("Trying to connect to " + ipAddress);
-                sch = SocketChannel.open();
+            s_logger.info("Trying to connect to " + ipAddress);
+            try (SocketChannel sch = SocketChannel.open();) {
                 sch.configureBlocking(true);
                 sch.socket().setSoTimeout(5000);
 
@@ -4823,13 +4820,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         Thread.sleep(5000);
                     } catch (InterruptedException ex) {
                         s_logger.debug("[ignored] interupted while waiting to retry connect after failure.", e);
-                    }
-                }
-            } finally {
-                if (sch != null) {
-                    try {
-                        sch.close();
-                    } catch (IOException e) {
                     }
                 }
             }

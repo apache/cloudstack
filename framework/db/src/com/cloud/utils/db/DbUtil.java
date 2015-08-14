@@ -43,6 +43,8 @@ import javax.persistence.Transient;
 
 import org.apache.log4j.Logger;
 
+import static com.cloud.utils.AutoCloseableUtil.closeAutoCloseable;
+
 public class DbUtil {
     protected final static Logger s_logger = Logger.getLogger(DbUtil.class);
 
@@ -278,18 +280,6 @@ public class DbUtil {
 
     public static void closeConnection(final Connection connection) {
         closeAutoCloseable(connection, "exception while close connection.");
-    }
-
-    public static void closeAutoCloseable(AutoCloseable ac, String message) {
-        try {
-
-            if (ac != null) {
-                ac.close();
-            }
-
-        } catch (Exception e) {
-            s_logger.warn("[ignored] " + message, e);
-        }
     }
 
 }

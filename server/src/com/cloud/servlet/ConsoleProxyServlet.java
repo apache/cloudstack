@@ -228,12 +228,14 @@ public class ConsoleProxyServlet extends HttpServlet {
         try {
             w = Integer.parseInt(value);
         } catch (NumberFormatException e) {
+            s_logger.info("[ignored] not a number: " + value);
         }
 
         value = req.getParameter("h");
         try {
             h = Integer.parseInt(value);
         } catch (NumberFormatException e) {
+            s_logger.info("[ignored] not a number: " + value);
         }
 
         try {

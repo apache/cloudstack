@@ -125,15 +125,12 @@ public class CreateNetworkOfferingTest extends TestCase {
         assertNotNull("Shared network offering with specifyVlan=true failed to create ", off);
     }
 
-    @Test
+    @Test(expected=InvalidParameterValueException.class)
     public void createSharedNtwkOffWithNoVlan() {
-        try {
-            NetworkOfferingVO off =
+        NetworkOfferingVO off =
                 configMgr.createNetworkOffering("shared", "shared", TrafficType.Guest, null, false, Availability.Optional, 200, null, false, Network.GuestType.Shared,
                     false, null, false, null, true, false, null, false, null, true);
-            assertNull("Shared network offering with specifyVlan=false was created", off);
-        } catch (InvalidParameterValueException ex) {
-        }
+        assertNull("Shared network offering with specifyVlan=false was created", off);
     }
 
     @Test
@@ -145,15 +142,12 @@ public class CreateNetworkOfferingTest extends TestCase {
         assertNotNull("Shared network offering with specifyIpRanges=true failed to create ", off);
     }
 
-    @Test
+    @Test(expected=InvalidParameterValueException.class)
     public void createSharedNtwkOffWithoutSpecifyIpRanges() {
-        try {
-            NetworkOfferingVO off =
+        NetworkOfferingVO off =
                 configMgr.createNetworkOffering("shared", "shared", TrafficType.Guest, null, true, Availability.Optional, 200, null, false, Network.GuestType.Shared,
-                    false, null, false, null, false, false, null, false, null, true);
-            assertNull("Shared network offering with specifyIpRanges=false was created", off);
-        } catch (InvalidParameterValueException ex) {
-        }
+                        false, null, false, null, false, false, null, false, null, true);
+        assertNull("Shared network offering with specifyIpRanges=false was created", off);
     }
 
     //Test Isolated network offerings
@@ -183,19 +177,16 @@ public class CreateNetworkOfferingTest extends TestCase {
 
     }
 
-    @Test
+    @Test(expected=InvalidParameterValueException.class)
     public void createIsolatedNtwkOffWithSpecifyIpRangesAndSourceNat() {
-        try {
-            Map<Service, Set<Provider>> serviceProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();
-            Set<Network.Provider> vrProvider = new HashSet<Network.Provider>();
-            vrProvider.add(Provider.VirtualRouter);
-            serviceProviderMap.put(Network.Service.SourceNat, vrProvider);
-            NetworkOfferingVO off =
+        Map<Service, Set<Provider>> serviceProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();
+        Set<Network.Provider> vrProvider = new HashSet<Network.Provider>();
+        vrProvider.add(Provider.VirtualRouter);
+        serviceProviderMap.put(Network.Service.SourceNat, vrProvider);
+        NetworkOfferingVO off =
                 configMgr.createNetworkOffering("isolated", "isolated", TrafficType.Guest, null, false, Availability.Optional, 200, serviceProviderMap, false,
-                    Network.GuestType.Isolated, false, null, false, null, true, false, null, false, null, true);
-            assertNull("Isolated network offering with specifyIpRanges=true and source nat service enabled, was created", off);
-        } catch (InvalidParameterValueException ex) {
-        }
+                        Network.GuestType.Isolated, false, null, false, null, true, false, null, false, null, true);
+        assertNull("Isolated network offering with specifyIpRanges=true and source nat service enabled, was created", off);
     }
 
     @Test

@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 
@@ -1396,12 +1395,13 @@ public class Upgrade410to420 implements DbUpgrade {
     // Corrects upgrade for deployment with F5 and SRX devices (pre 3.0) to network offering &
     // network service provider paradigm
     private void correctExternalNetworkDevicesSetup(Connection conn) {
-        PreparedStatement zoneSearchStmt = null, pNetworkStmt = null, f5DevicesStmt = null, srxDevicesStmt = null;
-        ResultSet zoneResults = null, pNetworksResults = null, f5DevicesResult = null, srxDevicesResult = null;
+        PreparedStatement pNetworkStmt = null, f5DevicesStmt = null, srxDevicesStmt = null;
+        ResultSet pNetworksResults = null, f5DevicesResult = null, srxDevicesResult = null;
 
-        try {
-            zoneSearchStmt = conn.prepareStatement("SELECT id, networktype FROM `cloud`.`data_center`");
-            zoneResults = zoneSearchStmt.executeQuery();
+        try (
+                PreparedStatement zoneSearchStmt = conn.prepareStatement("SELECT id, networktype FROM `cloud`.`data_center`");
+                ResultSet zoneResults = zoneSearchStmt.executeQuery();
+            ){
             while (zoneResults.next()) {
                 long zoneId = zoneResults.getLong(1);
                 String networkType = zoneResults.getString(2);
@@ -1438,12 +1438,13 @@ public class Upgrade410to420 implements DbUpgrade {
                         }
                     }
 
-                    PreparedStatement fetchSRXNspStmt =
+                    boolean hasSrxNsp = false;
+                    try (PreparedStatement fetchSRXNspStmt =
                             conn.prepareStatement("SELECT id from `cloud`.`physical_network_service_providers` where physical_network_id=" + physicalNetworkId +
                                     " and provider_name = 'JuniperSRX'");
-                    ResultSet rsSRXNSP = fetchSRXNspStmt.executeQuery();
-                    boolean hasSrxNsp = rsSRXNSP.next();
-                    fetchSRXNspStmt.close();
+                            ResultSet rsSRXNSP = fetchSRXNspStmt.executeQuery();) {
+                        hasSrxNsp = rsSRXNSP.next();
+                    }
 
                     // if there is no 'JuniperSRX' physical network service provider added into physical network then
                     // add 'JuniperSRX' as network service provider and add the entry in 'external_firewall_devices'
@@ -1466,24 +1467,8 @@ public class Upgrade410to420 implements DbUpgrade {
             // not the network service provider has been provisioned in to physical network, mark all guest network
             // to be using network offering 'Isolated with external providers'
             fixZoneUsingExternalDevices(conn);
-
-            if (zoneResults != null) {
-                try {
-                    zoneResults.close();
-                } catch (SQLException e) {
-                }
-            }
-
-            if (zoneSearchStmt != null) {
-                try {
-                    zoneSearchStmt.close();
-                } catch (SQLException e) {
-                }
-            }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while adding PhysicalNetworks", e);
-        } finally {
-
         }
     }
 
@@ -1762,39 +1747,37 @@ public class Upgrade410to420 implements DbUpgrade {
 
     // migrate secondary storages NFS from host tables to image_store table
     private void migrateSecondaryStorageToImageStore(Connection conn) {
-        PreparedStatement storeInsert = null;
-        PreparedStatement storeDetailInsert = null;
-        PreparedStatement nfsQuery = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        ResultSet storeInfo = null;
+        String sqlSelectS3Count = "select count(*) from `cloud`.`s3`";
+        String sqlSelectSwiftCount = "select count(*) from `cloud`.`swift`";
+        String sqlInsertStoreDetail = "INSERT INTO `cloud`.`image_store_details` (store_id, name, value) values(?, ?, ?)";
+        String sqlUpdateHostAsRemoved = "UPDATE `cloud`.`host` SET removed = now() WHERE type = 'SecondaryStorage' and removed is null";
 
         s_logger.debug("Migrating secondary storage to image store");
         boolean hasS3orSwift = false;
-        try {
+        try (
+                PreparedStatement pstmtSelectS3Count = conn.prepareStatement(sqlSelectS3Count);
+                PreparedStatement pstmtSelectSwiftCount = conn.prepareStatement(sqlSelectSwiftCount);
+                PreparedStatement storeDetailInsert = conn.prepareStatement(sqlInsertStoreDetail);
+                PreparedStatement storeInsert =
+                        conn.prepareStatement("INSERT INTO `cloud`.`image_store` (id, uuid, name, image_provider_name, protocol, url, data_center_id, scope, role, parent, total_size, created) values(?, ?, ?, 'NFS', 'nfs', ?, ?, 'ZONE', ?, ?, ?, ?)");
+                PreparedStatement nfsQuery =
+                        conn.prepareStatement("select id, uuid, url, data_center_id, parent, total_size, created from `cloud`.`host` where type = 'SecondaryStorage' and removed is null");
+                PreparedStatement pstmtUpdateHostAsRemoved = conn.prepareStatement(sqlUpdateHostAsRemoved);
+                ResultSet rsSelectS3Count = pstmtSelectS3Count.executeQuery();
+                ResultSet rsSelectSwiftCount = pstmtSelectSwiftCount.executeQuery();
+                ResultSet rsNfs = nfsQuery.executeQuery();
+            ) {
             s_logger.debug("Checking if we need to migrate NFS secondary storage to image store or staging store");
             int numRows = 0;
-            pstmt = conn.prepareStatement("select count(*) from `cloud`.`s3`");
-            rs = pstmt.executeQuery();
-            if (rs.next()) {
-                numRows = rs.getInt(1);
+            if (rsSelectS3Count.next()) {
+                numRows = rsSelectS3Count.getInt(1);
             }
-            rs.close();
-            pstmt.close();
+            // check if there is swift storage
+            if (rsSelectSwiftCount.next()) {
+                numRows += rsSelectSwiftCount.getInt(1);
+            }
             if (numRows > 0) {
                 hasS3orSwift = true;
-            } else {
-                // check if there is swift storage
-                pstmt = conn.prepareStatement("select count(*) from `cloud`.`swift`");
-                rs = pstmt.executeQuery();
-                if (rs.next()) {
-                    numRows = rs.getInt(1);
-                }
-                rs.close();
-                pstmt.close();
-                if (numRows > 0) {
-                    hasS3orSwift = true;
-                }
             }
 
             String store_role = "Image";
@@ -1804,23 +1787,15 @@ public class Upgrade410to420 implements DbUpgrade {
 
             s_logger.debug("Migrating NFS secondary storage to " + store_role + " store");
 
-            storeDetailInsert = conn.prepareStatement("INSERT INTO `cloud`.`image_store_details` (store_id, name, value) values(?, ?, ?)");
-
             // migrate NFS secondary storage, for nfs, keep previous host_id as the store_id
-            storeInsert =
-                    conn.prepareStatement("INSERT INTO `cloud`.`image_store` (id, uuid, name, image_provider_name, protocol, url, data_center_id, scope, role, parent, total_size, created) values(?, ?, ?, 'NFS', 'nfs', ?, ?, 'ZONE', ?, ?, ?, ?)");
-            nfsQuery =
-                    conn.prepareStatement("select id, uuid, url, data_center_id, parent, total_size, created from `cloud`.`host` where type = 'SecondaryStorage' and removed is null");
-            rs = nfsQuery.executeQuery();
-
-            while (rs.next()) {
-                Long nfs_id = rs.getLong("id");
-                String nfs_uuid = rs.getString("uuid");
-                String nfs_url = rs.getString("url");
-                String nfs_parent = rs.getString("parent");
-                int nfs_dcid = rs.getInt("data_center_id");
-                Long nfs_totalsize = rs.getObject("total_size") != null ? rs.getLong("total_size") : null;
-                Date nfs_created = rs.getDate("created");
+            while (rsNfs.next()) {
+                Long nfs_id = rsNfs.getLong("id");
+                String nfs_uuid = rsNfs.getString("uuid");
+                String nfs_url = rsNfs.getString("url");
+                String nfs_parent = rsNfs.getString("parent");
+                int nfs_dcid = rsNfs.getInt("data_center_id");
+                Long nfs_totalsize = rsNfs.getObject("total_size") != null ? rsNfs.getLong("total_size") : null;
+                Date nfs_created = rsNfs.getDate("created");
 
                 // insert entry in image_store table and image_store_details
                 // table and store host_id and store_id mapping
@@ -1841,36 +1816,11 @@ public class Upgrade410to420 implements DbUpgrade {
             }
 
             s_logger.debug("Marking NFS secondary storage in host table as removed");
-            pstmt = conn.prepareStatement("UPDATE `cloud`.`host` SET removed = now() WHERE type = 'SecondaryStorage' and removed is null");
-            pstmt.executeUpdate();
-            pstmt.close();
+            pstmtUpdateHostAsRemoved.executeUpdate();
         } catch (SQLException e) {
             String msg = "Unable to migrate secondary storages." + e.getMessage();
             s_logger.error(msg);
             throw new CloudRuntimeException(msg, e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (storeInfo != null) {
-                    storeInfo.close();
-                }
-
-                if (storeInsert != null) {
-                    storeInsert.close();
-                }
-                if (storeDetailInsert != null) {
-                    storeDetailInsert.close();
-                }
-                if (nfsQuery != null) {
-                    nfsQuery.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
         s_logger.debug("Completed migrating secondary storage to image store");
     }
@@ -1947,26 +1897,21 @@ public class Upgrade410to420 implements DbUpgrade {
 
     // migrate secondary storages S3 from s3 tables to image_store table
     private void migrateS3ToImageStore(Connection conn) {
-        PreparedStatement storeInsert = null;
-        PreparedStatement storeDetailInsert = null;
-        PreparedStatement storeQuery = null;
-        PreparedStatement s3Query = null;
-        ResultSet rs = null;
-        ResultSet storeInfo = null;
         Long storeId = null;
         Map<Long, Long> s3_store_id_map = new HashMap<Long, Long>();
 
         s_logger.debug("Migrating S3 to image store");
-        try {
-            storeQuery = conn.prepareStatement("select id from `cloud`.`image_store` where uuid = ?");
-            storeDetailInsert = conn.prepareStatement("INSERT INTO `cloud`.`image_store_details` (store_id, name, value) values(?, ?, ?)");
+        try (
+                PreparedStatement storeQuery = conn.prepareStatement("select id from `cloud`.`image_store` where uuid = ?");
+                PreparedStatement storeDetailInsert = conn.prepareStatement("INSERT INTO `cloud`.`image_store_details` (store_id, name, value) values(?, ?, ?)");
 
-            // migrate S3 to image_store
-            storeInsert = conn.prepareStatement("INSERT INTO `cloud`.`image_store` (uuid, name, image_provider_name, protocol, scope, role, created) " +
-                    "values(?, ?, 'S3', ?, 'REGION', 'Image', ?)");
-            s3Query = conn.prepareStatement("select id, uuid, access_key, secret_key, end_point, bucket, https, connection_timeout, " +
-                    "max_error_retry, socket_timeout, created from `cloud`.`s3`");
-            rs = s3Query.executeQuery();
+                // migrate S3 to image_store
+                PreparedStatement storeInsert = conn.prepareStatement("INSERT INTO `cloud`.`image_store` (uuid, name, image_provider_name, protocol, scope, role, created) " +
+                        "values(?, ?, 'S3', ?, 'REGION', 'Image', ?)");
+                PreparedStatement s3Query = conn.prepareStatement("select id, uuid, access_key, secret_key, end_point, bucket, https, connection_timeout, " +
+                        "max_error_retry, socket_timeout, created from `cloud`.`s3`");
+                ResultSet rs = s3Query.executeQuery();
+            ) {
 
             while (rs.next()) {
                 Long s3_id = rs.getLong("id");
@@ -1991,9 +1936,10 @@ public class Upgrade410to420 implements DbUpgrade {
                 storeInsert.executeUpdate();
 
                 storeQuery.setString(1, s3_uuid);
-                storeInfo = storeQuery.executeQuery();
-                if (storeInfo.next()) {
-                    storeId = storeInfo.getLong("id");
+                try (ResultSet storeInfo = storeQuery.executeQuery();) {
+                    if (storeInfo.next()) {
+                        storeId = storeInfo.getLong("id");
+                    }
                 }
 
                 Map<String, String> detailMap = new HashMap<String, String>();
@@ -2027,29 +1973,6 @@ public class Upgrade410to420 implements DbUpgrade {
             String msg = "Unable to migrate S3 secondary storages." + e.getMessage();
             s_logger.error(msg);
             throw new CloudRuntimeException(msg, e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (storeInfo != null) {
-                    storeInfo.close();
-                }
-
-                if (storeInsert != null) {
-                    storeInsert.close();
-                }
-                if (storeDetailInsert != null) {
-                    storeDetailInsert.close();
-                }
-                if (storeQuery != null) {
-                    storeQuery.close();
-                }
-                if (s3Query != null) {
-                    s3Query.close();
-                }
-            } catch (SQLException e) {
-            }
         }
 
         s_logger.debug("Migrating template_s3_ref to template_store_ref");
@@ -2162,26 +2085,20 @@ public class Upgrade410to420 implements DbUpgrade {
 
     // migrate secondary storages Swift from swift tables to image_store table
     private void migrateSwiftToImageStore(Connection conn) {
-        PreparedStatement storeInsert = null;
-        PreparedStatement storeDetailInsert = null;
-        PreparedStatement storeQuery = null;
-        PreparedStatement swiftQuery = null;
-        ResultSet rs = null;
-        ResultSet storeInfo = null;
         Long storeId = null;
         Map<Long, Long> swift_store_id_map = new HashMap<Long, Long>();
 
         s_logger.debug("Migrating Swift to image store");
-        try {
-            storeQuery = conn.prepareStatement("select id from `cloud`.`image_store` where uuid = ?");
-            storeDetailInsert = conn.prepareStatement("INSERT INTO `cloud`.`image_store_details` (store_id, name, value) values(?, ?, ?)");
+        try (
+                PreparedStatement storeQuery = conn.prepareStatement("select id from `cloud`.`image_store` where uuid = ?");
+                PreparedStatement storeDetailInsert = conn.prepareStatement("INSERT INTO `cloud`.`image_store_details` (store_id, name, value) values(?, ?, ?)");
 
-            // migrate SWIFT secondary storage
-            storeInsert =
+                // migrate SWIFT secondary storage
+                PreparedStatement storeInsert =
                     conn.prepareStatement("INSERT INTO `cloud`.`image_store` (uuid, name, image_provider_name, protocol, url, scope, role, created) values(?, ?, 'Swift', 'http', ?, 'REGION', 'Image', ?)");
-            swiftQuery = conn.prepareStatement("select id, uuid, url, account, username, swift.key, created from `cloud`.`swift`");
-            rs = swiftQuery.executeQuery();
-
+                PreparedStatement swiftQuery = conn.prepareStatement("select id, uuid, url, account, username, swift.key, created from `cloud`.`swift`");
+                ResultSet rs = swiftQuery.executeQuery();
+            ) {
             while (rs.next()) {
                 Long swift_id = rs.getLong("id");
                 String swift_uuid = rs.getString("uuid");
@@ -2200,9 +2117,10 @@ public class Upgrade410to420 implements DbUpgrade {
                 storeInsert.executeUpdate();
 
                 storeQuery.setString(1, swift_uuid);
-                storeInfo = storeQuery.executeQuery();
-                if (storeInfo.next()) {
-                    storeId = storeInfo.getLong("id");
+                try (ResultSet storeInfo = storeQuery.executeQuery();) {
+                    if (storeInfo.next()) {
+                        storeId = storeInfo.getLong("id");
+                    }
                 }
 
                 Map<String, String> detailMap = new HashMap<String, String>();
@@ -2225,29 +2143,6 @@ public class Upgrade410to420 implements DbUpgrade {
             String msg = "Unable to migrate swift secondary storages." + e.getMessage();
             s_logger.error(msg);
             throw new CloudRuntimeException(msg, e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (storeInfo != null) {
-                    storeInfo.close();
-                }
-
-                if (storeInsert != null) {
-                    storeInsert.close();
-                }
-                if (storeDetailInsert != null) {
-                    storeDetailInsert.close();
-                }
-                if (storeQuery != null) {
-                    storeQuery.close();
-                }
-                if (swiftQuery != null) {
-                    swiftQuery.close();
-                }
-            } catch (SQLException e) {
-            }
         }
 
         s_logger.debug("Migrating template_swift_ref to template_store_ref");
@@ -2261,16 +2156,13 @@ public class Upgrade410to420 implements DbUpgrade {
 
     // migrate template_s3_ref to template_store_ref
     private void migrateTemplateSwiftRef(Connection conn, Map<Long, Long> swiftStoreMap) {
-        PreparedStatement tmplStoreInsert = null;
-        PreparedStatement s3Query = null;
-        ResultSet rs = null;
         s_logger.debug("Updating template_store_ref table from template_swift_ref table");
-        try {
-            tmplStoreInsert =
+        try (
+                PreparedStatement tmplStoreInsert =
                     conn.prepareStatement("INSERT INTO `cloud`.`template_store_ref` (store_id,  template_id, created, download_pct, size, physical_size, download_state, local_path, install_path, update_count, ref_cnt, store_role, state) values(?, ?, ?, 100, ?, ?, 'DOWNLOADED', '?', '?', 0, 0, 'Image', 'Ready')");
-            s3Query = conn.prepareStatement("select swift_id, template_id, created, path, size, physical_size from `cloud`.`template_swift_ref`");
-            rs = s3Query.executeQuery();
-
+                PreparedStatement s3Query = conn.prepareStatement("select swift_id, template_id, created, path, size, physical_size from `cloud`.`template_swift_ref`");
+                ResultSet rs = s3Query.executeQuery();
+            ) {
             while (rs.next()) {
                 Long swift_id = rs.getLong("swift_id");
                 Long tmpl_id = rs.getLong("template_id");
@@ -2300,19 +2192,6 @@ public class Upgrade410to420 implements DbUpgrade {
             String msg = "Unable to migrate template_swift_ref." + e.getMessage();
             s_logger.error(msg);
             throw new CloudRuntimeException(msg, e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (tmplStoreInsert != null) {
-                    tmplStoreInsert.close();
-                }
-                if (s3Query != null) {
-                    s3Query.close();
-                }
-            } catch (SQLException e) {
-            }
         }
         s_logger.debug("Completed migrating template_swift_ref table.");
     }
@@ -2575,10 +2454,10 @@ public class Upgrade410to420 implements DbUpgrade {
 
     private void upgradeResourceCount(Connection conn) {
         s_logger.debug("upgradeResourceCount start");
-        ResultSet rsAccount = null;
-        try( PreparedStatement sel_dom_pstmt = conn.prepareStatement("select id, domain_id FROM `cloud`.`account` where removed is NULL ");)
-        {
-            rsAccount = sel_dom_pstmt.executeQuery();
+        try(
+                PreparedStatement sel_dom_pstmt = conn.prepareStatement("select id, domain_id FROM `cloud`.`account` where removed is NULL ");
+                ResultSet rsAccount = sel_dom_pstmt.executeQuery();
+           ) {
             while (rsAccount.next()) {
                 long account_id = rsAccount.getLong(1);
                 long domain_id = rsAccount.getLong(2);
@@ -2706,13 +2585,6 @@ public class Upgrade410to420 implements DbUpgrade {
             s_logger.debug("upgradeResourceCount finish");
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to upgrade resource count (cpu,memory,primary_storage,secondary_storage) ", e);
-        } finally {
-            try {
-                if (rsAccount != null) {
-                    rsAccount.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 

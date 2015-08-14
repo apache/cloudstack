@@ -142,26 +142,17 @@ public class ConnectionConcierge {
         }
 
         protected String testValidity(String name, Connection conn) {
-            PreparedStatement pstmt = null;
-            try {
-                if (conn != null) {
-                    synchronized (conn) {
-                        pstmt = conn.prepareStatement("SELECT 1");
+            if (conn != null) {
+                synchronized (conn) {
+                    try (PreparedStatement pstmt = conn.prepareStatement("SELECT 1");) {
                         pstmt.executeQuery();
-                    }
-                }
-                return null;
-            } catch (Throwable th) {
-                s_logger.error("Unable to keep the db connection for " + name, th);
-                return th.toString();
-            } finally {
-                if (pstmt != null) {
-                    try {
-                        pstmt.close();
-                    } catch (SQLException e) {
+                    } catch (Throwable th) {
+                        s_logger.error("Unable to keep the db connection for " + name, th);
+                        return th.toString();
                     }
                 }
             }
+            return null;
         }
 
         @Override

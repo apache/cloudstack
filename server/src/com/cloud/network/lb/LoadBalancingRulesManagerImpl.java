@@ -693,6 +693,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                         if (backupState.equals(FirewallRule.State.Active))
                             applyLoadBalancerConfig(cmd.getLbRuleId());
                     } catch (ResourceUnavailableException e1) {
+                        s_logger.info("[ignored] applying load balancer config.", e1);
                     } finally {
                         loadBalancer.setState(backupState);
                         _lbDao.persist(loadBalancer);

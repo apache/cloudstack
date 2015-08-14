@@ -271,30 +271,4 @@ public class DateUtil {
         return (dateCalendar1.getTimeInMillis() - dateCalendar2.getTimeInMillis() )/1000;
 
     }
-
-    // test only
-    public static void main(String[] args) {
-        TimeZone localTimezone = Calendar.getInstance().getTimeZone();
-        TimeZone gmtTimezone = TimeZone.getTimeZone("GMT");
-        TimeZone estTimezone = TimeZone.getTimeZone("EST");
-
-        Date time = new Date();
-        System.out.println("local time :" + getDateDisplayString(localTimezone, time));
-        System.out.println("GMT time   :" + getDateDisplayString(gmtTimezone, time));
-        System.out.println("EST time   :" + getDateDisplayString(estTimezone, time));
-        //Test next run time. Expects interval and schedule as arguments
-        if (args.length == 2) {
-            System.out.println("Next run time: " + getNextRunTime(IntervalType.getIntervalType(args[0]), args[1], "GMT", time).toString());
-        }
-
-        time = new Date();
-        DateFormat dfDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'Z");
-        String str = dfDate.format(time);
-        System.out.println("Formated TZ time string : " + str);
-        try {
-            Date dtParsed = DateUtil.parseTZDateString(str);
-            System.out.println("Parsed TZ time string : " + dtParsed.toString());
-        } catch (ParseException e) {
-        }
-    }
 }

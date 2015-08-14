@@ -32,6 +32,7 @@ import java.util.Set;
 
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.crypt.DBEncryptionUtil;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -76,31 +77,20 @@ public class Upgrade442to450 implements DbUpgrade {
     }
 
     private void updateMaxRouterSizeConfig(Connection conn) {
-        PreparedStatement updatePstmt = null;
-        try {
+        String sqlUpdateConfig = "UPDATE `cloud`.`configuration` SET value=? WHERE name='router.ram.size' AND category='Hidden'";
+        try (PreparedStatement updatePstmt = conn.prepareStatement(sqlUpdateConfig);){
             String encryptedValue = DBEncryptionUtil.encrypt("256");
-            updatePstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value=? WHERE name='router.ram.size' AND category='Hidden'");
             updatePstmt.setBytes(1, encryptedValue.getBytes("UTF-8"));
             updatePstmt.executeUpdate();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to upgrade max ram size of router in config.", e);
         } catch (UnsupportedEncodingException e) {
             throw new CloudRuntimeException("Unable encrypt configuration values ", e);
-        } finally {
-            try {
-                if (updatePstmt != null) {
-                    updatePstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
         s_logger.debug("Done updating router.ram.size config to 256");
     }
 
     private void upgradeMemoryOfVirtualRoutervmOffering(Connection conn) {
-        PreparedStatement updatePstmt = null;
-        PreparedStatement selectPstmt = null;
-        ResultSet selectResultSet = null;
         int newRamSize = 256; //256MB
         long serviceOfferingId = 0;
 
@@ -109,10 +99,11 @@ public class Upgrade442to450 implements DbUpgrade {
          * We should not update/modify any user-defined offering.
          */
 
-        try {
-            selectPstmt = conn.prepareStatement("SELECT id FROM `cloud`.`service_offering` WHERE vm_type='domainrouter'");
-            updatePstmt = conn.prepareStatement("UPDATE `cloud`.`service_offering` SET ram_size=? WHERE id=?");
-            selectResultSet = selectPstmt.executeQuery();
+        try (
+                PreparedStatement selectPstmt = conn.prepareStatement("SELECT id FROM `cloud`.`service_offering` WHERE vm_type='domainrouter'");
+                PreparedStatement updatePstmt = conn.prepareStatement("UPDATE `cloud`.`service_offering` SET ram_size=? WHERE id=?");
+                ResultSet selectResultSet = selectPstmt.executeQuery();
+            ) {
             if(selectResultSet.next()) {
                 serviceOfferingId = selectResultSet.getLong("id");
             }
@@ -122,19 +113,6 @@ public class Upgrade442to450 implements DbUpgrade {
             updatePstmt.executeUpdate();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to upgrade ram_size of service offering for domain router. ", e);
-        } finally {
-            try {
-                if (selectPstmt != null) {
-                    selectPstmt.close();
-                }
-                if (selectResultSet != null) {
-                    selectResultSet.close();
-                }
-                if (updatePstmt != null) {
-                    updatePstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
         s_logger.debug("Done upgrading RAM for service offering of domain router to " + newRamSize);
     }
