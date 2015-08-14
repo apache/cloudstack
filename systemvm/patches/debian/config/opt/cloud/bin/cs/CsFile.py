@@ -114,7 +114,10 @@ class CsFile:
 
     def search(self, search, replace):
         found = False
-        logging.debug("Searching for %s and replacing with %s" % (search, replace))
+        replace_filtered = replace
+        if re.search("PSK \"", replace):
+            replace_filtered = re.sub(r'".*"', '"****"', replace)
+        logging.debug("Searching for %s and replacing with %s" % (search, replace_filtered))
         for index, line in enumerate(self.new_config):
             if line.lstrip().startswith("#"):
                 continue
