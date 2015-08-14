@@ -194,6 +194,12 @@ public class TemplateManagerImplTest {
         templateManager.prepareTemplateForCreate(mockTemplate, (StoragePool) mockPrimaryDataStore);
     }
 
+    @Test(expected = InvalidParameterValueException.class)
+    public void testPrepareTemplateInvalidTemplate() {
+        when(vmTemplateDao.findById(anyLong())).thenReturn(null);
+        templateManager.prepareTemplate(202, 1, null);
+    }
+
     @Configuration
     @ComponentScan(basePackageClasses = {TemplateManagerImpl.class},
             includeFilters = {@ComponentScan.Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)},
