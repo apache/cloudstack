@@ -96,6 +96,11 @@ perl -pi -e "s/<cs.xapi.version>6.2.0-1-SNAPSHOT<\/cs.xapi.version>/<cs.xapi.ver
 perl -pi -e "s/-SNAPSHOT//" tools/checkstyle/pom.xml
 perl -pi -e "s/-SNAPSHOT//" deps/XenServerJava/pom.xml
 perl -pi -e "s/-SNAPSHOT//" tools/apidoc/pom.xml
+perl -pi -e "s/-SNAPSHOT//" Dockerfile
+perl -pi -e "s/-SNAPSHOT//" build/replace.properties
+perl -pi -e "s/-SNAPSHOT//" services/console-proxy/plugin/pom.xml
+perl -pi -e "s/-SNAPSHOT//" tools/marvin/setup.py
+perl -pi -e "s/-SNAPSHOT//" tools/marvin/marvin/deployAndRun.py
 case "$currentversion" in 
   *-SNAPSHOT*)
     perl -pi -e 's/-SNAPSHOT//' debian/rules
