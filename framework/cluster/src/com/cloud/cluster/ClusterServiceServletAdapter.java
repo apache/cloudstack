@@ -24,12 +24,12 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.framework.config.ConfigDepot;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.db.DbProperties;
 
 public class ClusterServiceServletAdapter extends AdapterBase implements ClusterServiceAdapter {
@@ -49,6 +49,10 @@ public class ClusterServiceServletAdapter extends AdapterBase implements Cluster
     private ClusterServiceServletContainer _servletContainer;
 
     private int _clusterServicePort = DEFAULT_SERVICE_PORT;
+
+    public ClusterServiceServletAdapter() {
+        setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK);
+    }
 
     @Override
     public ClusterService getPeerService(String strPeer) throws RemoteException {
