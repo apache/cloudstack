@@ -33,3 +33,7 @@ CREATE TABLE `cloud`.`saml_token` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_saml_token__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+SET foreign_key_checks = 0;
+ALTER TABLE `cloud`.`region` MODIFY `id` int unsigned UNIQUE NOT NULL;
+SET foreign_key_checks = 1;
