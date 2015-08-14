@@ -44,7 +44,7 @@
                             label: 'ui.listView.filters.mine'
                         },
                         shared: {
-                            label: 'Shared'
+                            label: 'label.shared'
                         },
                         featured: {
                             label: 'label.featured'
@@ -100,10 +100,10 @@
                     reorder: cloudStack.api.actions.sort('updateTemplate', 'templates'),
                     actions: {
                         add: {
-                            label: 'Add',
+                            label: 'label.add',
                             messages: {
                                 notification: function(args) {
-                                    return 'Register Template from URL';
+                                    return 'label.action.register.template';
                                 }
                             },
                             createForm: {
@@ -570,14 +570,14 @@
 
                         uploadTemplateFromLocal: {
                             isHeader: true,
-                            label: 'Upload from Local',
+                            label: 'label.upload.from.local',
                             messages: {
                                 notification: function(args) {
-                                    return 'Upload Template from Local';
+                                    return 'label.upload.template.from.local';
                                 }
                             },
                             createForm: {
-                                title: 'Upload Template from Local',
+                                title: 'label.upload.template.from.local',
                                 preFilter: cloudStack.preFilter.createTemplate,
                                 fileUpload: {
                                     getURL: function(args) {
@@ -652,7 +652,7 @@
                                 },
                                 fields: {
                                     templateFileUpload: {
-                                        label: 'local file',
+                                        label: 'label.local.file',
                                         isFileUpload: true,
                                         validation: {
                                             required: true
@@ -1766,7 +1766,7 @@
                             label: 'ui.listView.filters.mine'
                         },
                         shared: {
-                            label: 'Shared'
+                            label: 'label.shared'
                         },
                         featured: {
                             label: 'label.featured'

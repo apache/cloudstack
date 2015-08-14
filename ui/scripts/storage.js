@@ -247,17 +247,17 @@
 
                         uploadVolume: {
                             isHeader: true,
-                            label: 'Upload',
+                            label: 'label.upload',
                             preFilter: function(args) {
                                 return !args.context.instances;
                             },
                             messages: {
                                 notification: function() {
-                                    return 'Upload Volume from URL';
+                                    return 'label.upload.volume.from.url';
                                 }
                             },
                             createForm: {
-                                title: 'Upload Volume from URL',
+                                title: 'label.upload.volume.from.url',
                                 fields: {
                                     url: {
                                         label: 'label.url',
@@ -323,7 +323,7 @@
 
                                     },
                                     diskOffering: {
-                                        label: 'Custom Disk Offering',
+                                        label: 'label.custom.disk.offering',
                                         docID: 'helpVolumeDiskOffering',
                                         select: function(args) {
                                             var diskofferingObjs;
@@ -353,7 +353,7 @@
                                         }
                                     },
                                     diskOffering: {
-                                        label: 'Custom Disk Offering',
+                                        label: 'label.custom.disk.offering',
                                         docID: 'helpVolumeDiskOffering',
                                         select: function(args) {
                                             var diskofferingObjs;
@@ -439,17 +439,17 @@
 
                         uploadVolumefromLocal: {
                             isHeader: true,
-                            label: 'Upload from Local',
+                            label: 'label.upload.from.local',
                             preFilter: function(args) {
                                 return !args.context.instances;
                             },
                             messages: {
                                 notification: function() {
-                                    return 'Upload Volume from Local';
+                                    return 'label.upload.volume.from.local';
                                 }
                             },
                             createForm: {
-                                title: 'Upload Volume from Local',
+                                title: 'label.upload.volume.from.local',
                                 fileUpload: {
                                     getURL: function(args) {
                                         args.data = args.formData;
@@ -500,7 +500,7 @@
                                 },
                                 fields: {
                                     volumeFileUpload: {
-                                        label: 'local file',
+                                        label: 'label.local.file',
                                         isFileUpload: true,
                                         validation: {
                                             required: true
