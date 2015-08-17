@@ -1376,28 +1376,28 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         for (final NicProfile nic : profile.getNics()) {
             final int deviceId = nic.getDeviceId();
             boolean ipv4 = false, ipv6 = false;
-            if (nic.getIp4Address() != null) {
+            if (nic.getIPv4Address() != null) {
                 ipv4 = true;
-                buf.append(" eth").append(deviceId).append("ip=").append(nic.getIp4Address());
-                buf.append(" eth").append(deviceId).append("mask=").append(nic.getNetmask());
+                buf.append(" eth").append(deviceId).append("ip=").append(nic.getIPv4Address());
+                buf.append(" eth").append(deviceId).append("mask=").append(nic.getIPv4Netmask());
             }
-            if (nic.getIp6Address() != null) {
+            if (nic.getIPv6Address() != null) {
                 ipv6 = true;
-                buf.append(" eth").append(deviceId).append("ip6=").append(nic.getIp6Address());
-                buf.append(" eth").append(deviceId).append("ip6prelen=").append(NetUtils.getIp6CidrSize(nic.getIp6Cidr()));
+                buf.append(" eth").append(deviceId).append("ip6=").append(nic.getIPv6Address());
+                buf.append(" eth").append(deviceId).append("ip6prelen=").append(NetUtils.getIp6CidrSize(nic.getIPv6Cidr()));
             }
 
             if (nic.isDefaultNic()) {
                 if (ipv4) {
-                    buf.append(" gateway=").append(nic.getGateway());
+                    buf.append(" gateway=").append(nic.getIPv4Gateway());
                 }
                 if (ipv6) {
-                    buf.append(" ip6gateway=").append(nic.getIp6Gateway());
+                    buf.append(" ip6gateway=").append(nic.getIPv6Gateway());
                 }
-                defaultDns1 = nic.getDns1();
-                defaultDns2 = nic.getDns2();
-                defaultIp6Dns1 = nic.getIp6Dns1();
-                defaultIp6Dns2 = nic.getIp6Dns2();
+                defaultDns1 = nic.getIPv4Dns1();
+                defaultDns2 = nic.getIPv4Dns2();
+                defaultIp6Dns1 = nic.getIPv6Dns1();
+                defaultIp6Dns2 = nic.getIPv6Dns2();
             }
 
             if (nic.getTrafficType() == TrafficType.Management) {
@@ -1546,9 +1546,9 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
             buf.append(createRedundantRouterArgs(guestNic, router));
             final Network net = _networkModel.getNetwork(guestNic.getNetworkId());
             buf.append(" guestgw=").append(net.getGateway());
-            final String brd = NetUtils.long2Ip(NetUtils.ip2Long(guestNic.getIp4Address()) | ~NetUtils.ip2Long(guestNic.getNetmask()));
+            final String brd = NetUtils.long2Ip(NetUtils.ip2Long(guestNic.getIPv4Address()) | ~NetUtils.ip2Long(guestNic.getIPv4Netmask()));
             buf.append(" guestbrd=").append(brd);
-            buf.append(" guestcidrsize=").append(NetUtils.getCidrSize(guestNic.getNetmask()));
+            buf.append(" guestcidrsize=").append(NetUtils.getCidrSize(guestNic.getIPv4Netmask()));
 
             final int advertInt = NumbersUtil.parseInt(_configDao.getValue(Config.RedundantRouterVrrpInterval.key()), 1);
             buf.append(" advert_int=").append(advertInt);
@@ -1565,8 +1565,8 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         // setup dhcp range
         if (dc.getNetworkType() == NetworkType.Basic) {
             if (guestNic.isDefaultNic()) {
-                cidrSize = NetUtils.getCidrSize(guestNic.getNetmask());
-                final String cidr = NetUtils.getCidrSubNet(guestNic.getGateway(), cidrSize);
+                cidrSize = NetUtils.getCidrSize(guestNic.getIPv4Netmask());
+                final String cidr = NetUtils.getCidrSubNet(guestNic.getIPv4Gateway(), cidrSize);
                 if (cidr != null) {
                     dhcpRange = NetUtils.getIpRangeStartIpFromCidr(cidr, cidrSize);
                 }
@@ -1653,11 +1653,11 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         final List<NicProfile> nics = profile.getNics();
         for (final NicProfile nic : nics) {
             if (nic.getTrafficType() == TrafficType.Public) {
-                router.setPublicIpAddress(nic.getIp4Address());
-                router.setPublicNetmask(nic.getNetmask());
+                router.setPublicIpAddress(nic.getIPv4Address());
+                router.setPublicNetmask(nic.getIPv4Netmask());
                 router.setPublicMacAddress(nic.getMacAddress());
             } else if (nic.getTrafficType() == TrafficType.Control) {
-                router.setPrivateIpAddress(nic.getIp4Address());
+                router.setPrivateIpAddress(nic.getIPv4Address());
                 router.setPrivateMacAddress(nic.getMacAddress());
             }
         }
@@ -1697,7 +1697,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
         final List<Long> routerGuestNtwkIds = _routerDao.getRouterNetworks(router.getId());
         for (final Long guestNetworkId : routerGuestNtwkIds) {
-            final AggregationControlCommand startCmd = new AggregationControlCommand(Action.Start, router.getInstanceName(), controlNic.getIp4Address(), _routerControlHelper.getRouterIpInNetwork(
+            final AggregationControlCommand startCmd = new AggregationControlCommand(Action.Start, router.getInstanceName(), controlNic.getIPv4Address(), _routerControlHelper.getRouterIpInNetwork(
                     guestNetworkId, router.getId()));
             cmds.addCommand(startCmd);
 
@@ -1721,7 +1721,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
             finalizeUserDataAndDhcpOnStart(cmds, router, provider, guestNetworkId);
 
-            final AggregationControlCommand finishCmd = new AggregationControlCommand(Action.Finish, router.getInstanceName(), controlNic.getIp4Address(), _routerControlHelper.getRouterIpInNetwork(
+            final AggregationControlCommand finishCmd = new AggregationControlCommand(Action.Finish, router.getInstanceName(), controlNic.getIPv4Address(), _routerControlHelper.getRouterIpInNetwork(
                     guestNetworkId, router.getId()));
             cmds.addCommand(finishCmd);
         }
@@ -1772,7 +1772,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
             throw new CloudRuntimeException("VirtualMachine " + profile.getInstanceName() + " doesn't have a control interface");
         }
         final SetMonitorServiceCommand command = new SetMonitorServiceCommand(servicesTO);
-        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, controlNic.getIp4Address());
+        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, controlNic.getIPv4Address());
         command.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(networkId, router.getId()));
         command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
 
@@ -1790,13 +1790,13 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
             // TODO this is a ugly to test hypervisor type here
             // for basic network mode, we will use the guest NIC for control NIC
             for (final NicProfile nic : profile.getNics()) {
-                if (nic.getTrafficType() == TrafficType.Guest && nic.getIp4Address() != null) {
+                if (nic.getTrafficType() == TrafficType.Guest && nic.getIPv4Address() != null) {
                     controlNic = nic;
                 }
             }
         } else {
             for (final NicProfile nic : profile.getNics()) {
-                if (nic.getTrafficType() == TrafficType.Control && nic.getIp4Address() != null) {
+                if (nic.getTrafficType() == TrafficType.Control && nic.getIPv4Address() != null) {
                     controlNic = nic;
                 }
             }
@@ -1806,18 +1806,18 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
     protected void finalizeSshAndVersionAndNetworkUsageOnStart(final Commands cmds, final VirtualMachineProfile profile, final DomainRouterVO router, final NicProfile controlNic) {
         final DomainRouterVO vr = _routerDao.findById(profile.getId());
-        cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922));
+        cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIPv4Address(), 3922));
 
         // Update router template/scripts version
         final GetDomRVersionCmd command = new GetDomRVersionCmd();
-        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, controlNic.getIp4Address());
+        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, controlNic.getIPv4Address());
         command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         cmds.addCommand("getDomRVersion", command);
 
         // Network usage command to create iptables rules
         final boolean forVpc = vr.getVpcId() != null;
         if (!forVpc) {
-            cmds.addCommand("networkUsage", new NetworkUsageCommand(controlNic.getIp4Address(), router.getHostName(), "create", forVpc));
+            cmds.addCommand("networkUsage", new NetworkUsageCommand(controlNic.getIPv4Address(), router.getHostName(), "create", forVpc));
         }
     }
 

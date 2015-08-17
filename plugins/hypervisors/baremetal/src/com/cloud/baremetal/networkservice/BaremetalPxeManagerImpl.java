@@ -30,14 +30,12 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.network.Network;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.AddBaremetalKickStartPxeCmd;
 import org.apache.cloudstack.api.AddBaremetalPxeCmd;
 import org.apache.cloudstack.api.AddBaremetalPxePingServerCmd;
 import org.apache.cloudstack.api.ListBaremetalPxeServersCmd;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -50,6 +48,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
@@ -199,9 +198,9 @@ public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxe
         cmd.addVmData("userdata", "user-data", vm.getUserData());
         cmd.addVmData("metadata", "service-offering", StringUtils.unicodeEscape(serviceOffering));
         cmd.addVmData("metadata", "availability-zone", StringUtils.unicodeEscape(zoneName));
-        cmd.addVmData("metadata", "local-ipv4", nic.getIp4Address());
+        cmd.addVmData("metadata", "local-ipv4", nic.getIPv4Address());
         cmd.addVmData("metadata", "local-hostname", StringUtils.unicodeEscape(vm.getInstanceName()));
-        cmd.addVmData("metadata", "public-ipv4", nic.getIp4Address());
+        cmd.addVmData("metadata", "public-ipv4", nic.getIPv4Address());
         cmd.addVmData("metadata", "public-hostname", StringUtils.unicodeEscape(vm.getInstanceName()));
         cmd.addVmData("metadata", "instance-id", String.valueOf(vm.getId()));
         cmd.addVmData("metadata", "vm-id", String.valueOf(vm.getInstanceName()));

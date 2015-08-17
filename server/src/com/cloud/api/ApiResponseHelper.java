@@ -30,8 +30,6 @@ import java.util.TimeZone;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -158,6 +156,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.api.query.ViewResponseHelper;
@@ -1257,18 +1256,18 @@ public class ApiResponseHelper implements ResponseGenerator {
                 Network network = ApiDBUtils.findNetworkById(singleNicProfile.getNetworkId());
                 if (network != null) {
                     if (network.getTrafficType() == TrafficType.Management) {
-                        vmResponse.setPrivateIp(singleNicProfile.getIp4Address());
+                        vmResponse.setPrivateIp(singleNicProfile.getIPv4Address());
                         vmResponse.setPrivateMacAddress(singleNicProfile.getMacAddress());
-                        vmResponse.setPrivateNetmask(singleNicProfile.getNetmask());
+                        vmResponse.setPrivateNetmask(singleNicProfile.getIPv4Netmask());
                     } else if (network.getTrafficType() == TrafficType.Control) {
-                        vmResponse.setLinkLocalIp(singleNicProfile.getIp4Address());
+                        vmResponse.setLinkLocalIp(singleNicProfile.getIPv4Address());
                         vmResponse.setLinkLocalMacAddress(singleNicProfile.getMacAddress());
-                        vmResponse.setLinkLocalNetmask(singleNicProfile.getNetmask());
+                        vmResponse.setLinkLocalNetmask(singleNicProfile.getIPv4Netmask());
                     } else if (network.getTrafficType() == TrafficType.Public) {
-                        vmResponse.setPublicIp(singleNicProfile.getIp4Address());
+                        vmResponse.setPublicIp(singleNicProfile.getIPv4Address());
                         vmResponse.setPublicMacAddress(singleNicProfile.getMacAddress());
-                        vmResponse.setPublicNetmask(singleNicProfile.getNetmask());
-                        vmResponse.setGateway(singleNicProfile.getGateway());
+                        vmResponse.setPublicNetmask(singleNicProfile.getIPv4Netmask());
+                        vmResponse.setGateway(singleNicProfile.getIPv4Gateway());
                     } else if (network.getTrafficType() == TrafficType.Guest) {
                         /*
                           * In basic zone, public ip has TrafficType.Guest in case EIP service is not enabled.
@@ -1285,10 +1284,10 @@ public class ApiResponseHelper implements ResponseGenerator {
                                 vmResponse.setGateway(vlan.getVlanGateway());
                             }
                         } else {
-                            vmResponse.setPublicIp(singleNicProfile.getIp4Address());
+                            vmResponse.setPublicIp(singleNicProfile.getIPv4Address());
                             vmResponse.setPublicMacAddress(singleNicProfile.getMacAddress());
-                            vmResponse.setPublicNetmask(singleNicProfile.getNetmask());
-                            vmResponse.setGateway(singleNicProfile.getGateway());
+                            vmResponse.setPublicNetmask(singleNicProfile.getIPv4Netmask());
+                            vmResponse.setGateway(singleNicProfile.getIPv4Gateway());
                         }
                     }
                 }

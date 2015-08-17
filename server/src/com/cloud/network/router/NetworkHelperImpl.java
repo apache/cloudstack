@@ -629,9 +629,9 @@ public class NetworkHelperImpl implements NetworkHelper {
             final NicProfile defaultNic = new NicProfile();
             defaultNic.setDefaultNic(true);
             final PublicIp sourceNatIp = routerDeploymentDefinition.getSourceNatIP();
-            defaultNic.setIp4Address(sourceNatIp.getAddress().addr());
-            defaultNic.setGateway(sourceNatIp.getGateway());
-            defaultNic.setNetmask(sourceNatIp.getNetmask());
+            defaultNic.setIPv4Address(sourceNatIp.getAddress().addr());
+            defaultNic.setIPv4Gateway(sourceNatIp.getGateway());
+            defaultNic.setIPv4Netmask(sourceNatIp.getNetmask());
             defaultNic.setMacAddress(sourceNatIp.getMacAddress());
             // get broadcast from public network
             final Network pubNet = _networkDao.findById(sourceNatIp.getNetworkId());
@@ -650,7 +650,7 @@ public class NetworkHelperImpl implements NetworkHelper {
             }
             final NetworkOffering publicOffering = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemPublicNetwork).get(0);
             final List<? extends Network> publicNetworks = _networkMgr.setupNetwork(s_systemAccount, publicOffering, routerDeploymentDefinition.getPlan(), null, null, false);
-            final String publicIp = defaultNic.getIp4Address();
+            final String publicIp = defaultNic.getIPv4Address();
             // We want to use the identical MAC address for RvR on public
             // interface if possible
             final NicVO peerNic = _nicDao.findByIp4AddressAndNetworkId(publicIp, publicNetworks.get(0).getId());
@@ -715,16 +715,16 @@ public class NetworkHelperImpl implements NetworkHelper {
             final NicProfile gatewayNic = new NicProfile(defaultNetworkStartIp, defaultNetworkStartIpv6);
             if (routerDeploymentDefinition.isPublicNetwork()) {
                 if (routerDeploymentDefinition.isRedundant()) {
-                    gatewayNic.setIp4Address(_ipAddrMgr.acquireGuestIpAddress(guestNetwork, null));
+                    gatewayNic.setIPv4Address(_ipAddrMgr.acquireGuestIpAddress(guestNetwork, null));
                 } else {
-                    gatewayNic.setIp4Address(guestNetwork.getGateway());
+                    gatewayNic.setIPv4Address(guestNetwork.getGateway());
                 }
                 gatewayNic.setBroadcastUri(guestNetwork.getBroadcastUri());
                 gatewayNic.setBroadcastType(guestNetwork.getBroadcastDomainType());
                 gatewayNic.setIsolationUri(guestNetwork.getBroadcastUri());
                 gatewayNic.setMode(guestNetwork.getMode());
                 final String gatewayCidr = guestNetwork.getCidr();
-                gatewayNic.setNetmask(NetUtils.getCidrNetmask(gatewayCidr));
+                gatewayNic.setIPv4Netmask(NetUtils.getCidrNetmask(gatewayCidr));
             } else {
                 gatewayNic.setDefaultNic(true);
             }

@@ -121,9 +121,9 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
                 s_logger.debug("Allocating nic for router in vlan " + publicIp.getVlanTag());
                 final NicProfile publicNic = new NicProfile();
                 publicNic.setDefaultNic(false);
-                publicNic.setIp4Address(publicIp.getAddress().addr());
-                publicNic.setGateway(publicIp.getGateway());
-                publicNic.setNetmask(publicIp.getNetmask());
+                publicNic.setIPv4Address(publicIp.getAddress().addr());
+                publicNic.setIPv4Gateway(publicIp.getGateway());
+                publicNic.setIPv4Netmask(publicIp.getNetmask());
                 publicNic.setMacAddress(publicIp.getMacAddress());
                 publicNic.setBroadcastType(BroadcastDomainType.Vlan);
                 publicNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(publicIp.getVlanTag()));
