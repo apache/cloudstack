@@ -46,7 +46,7 @@ public interface QuotaResponseBuilder {
 
     QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy, Date despositedOn);
 
-    public List<QuotaUsageVO> getQuotaUsage(QuotaStatementCmd cmd);
+    List<QuotaUsageVO> getQuotaUsage(QuotaStatementCmd cmd);
 
     List<QuotaBalanceVO> getQuotaBalance(QuotaBalanceCmd cmd);
 

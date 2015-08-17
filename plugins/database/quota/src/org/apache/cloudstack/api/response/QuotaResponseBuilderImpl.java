@@ -99,7 +99,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Override
     public QuotaBalanceResponse createQuotaBalanceResponse(List<QuotaBalanceVO> quotaBalance, Date startDate, Date endDate) {
-        if (quotaBalance.size() == 0) {
+        if (quotaBalance == null || quotaBalance.size() == 0) {
             new InvalidParameterValueException("The request period does not contain balance entries.");
         }
         Collections.sort(quotaBalance, new Comparator<QuotaBalanceVO>() {
@@ -108,12 +108,15 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             }
         });
 
+        int quota_activity = quotaBalance.size();
         QuotaBalanceResponse resp = new QuotaBalanceResponse();
         BigDecimal lastCredits = new BigDecimal(0);
         boolean consecutive = true;
         for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
             QuotaBalanceVO entry = it.next();
-            s_logger.info("createQuotaBalanceResponse: Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
+            if (s_logger.isDebugEnabled()){
+                s_logger.debug("createQuotaBalanceResponse: Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
+            }
             if (entry.getCreditsId() > 0) {
                 if (consecutive) {
                     lastCredits = lastCredits.add(entry.getCreditBalance());
@@ -125,7 +128,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             }
         }
 
-        if (quotaBalance.size() > 0) {
+        if (quota_activity > 0 && quotaBalance.size() > 0) {
             // order is desc last item is the start item
             QuotaBalanceVO startItem = quotaBalance.get(quotaBalance.size() - 1);
             QuotaBalanceVO endItem = quotaBalance.get(0);
@@ -133,6 +136,12 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             resp.setStartQuota(startItem.getCreditBalance());
             resp.setEndDate(endDate);
             resp.setEndQuota(endItem.getCreditBalance().add(lastCredits));
+        } else if (quota_activity > 0) {
+            // order is desc last item is the start item
+            resp.setStartDate(startDate);
+            resp.setStartQuota(new BigDecimal(0));
+            resp.setEndDate(endDate);
+            resp.setEndQuota(new BigDecimal(0).add(lastCredits));
         } else {
             resp.setStartQuota(new BigDecimal(0));
             resp.setEndQuota(new BigDecimal(0));
@@ -178,9 +187,13 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         BigDecimal totalUsage = new BigDecimal(0);
         quotaUsage.add(new QuotaUsageVO());// boundary
         QuotaUsageVO prev = quotaUsage.get(0);
-        //s_logger.info("createQuotaStatementResponse record count=" + quotaUsage.size());
+        if (s_logger.isDebugEnabled()){
+            s_logger.debug("createQuotaStatementResponse record count=" + quotaUsage.size());
+        }
         for (final QuotaUsageVO quotaRecord : quotaUsage) {
-            //s_logger.info("createQuotaStatementResponse Type=" + quotaRecord.getUsageType() + " usage=" + usage + " name" + quotaRecord.getUsageItemId());
+            if (s_logger.isDebugEnabled()){
+                s_logger.debug("createQuotaStatementResponse Type=" + quotaRecord.getUsageType() + " usage=" + usage + " name" + quotaRecord.getUsageItemId());
+            }
             if (type != quotaRecord.getUsageType()) {
                 if (type != -1) {
                     lineitem = new QuotaStatementItemResponse();
@@ -216,7 +229,9 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         List<QuotaTariffVO> result = new ArrayList<QuotaTariffVO>();
         Date effectiveDate = cmd.getEffectiveDate() == null ? new Date() : cmd.getEffectiveDate();
         Date adjustedEffectiveDate = _quotaService.computeAdjustedTime(effectiveDate);
-        s_logger.info("Effective datec=" + effectiveDate + " quotatype=" + cmd.getUsageType() + " Adjusted date=" + adjustedEffectiveDate);
+        if (s_logger.isDebugEnabled()){
+            s_logger.debug("Effective datec=" + effectiveDate + " quotatype=" + cmd.getUsageType() + " Adjusted date=" + adjustedEffectiveDate);
+        }
         if (cmd.getUsageType() != null) {
             QuotaTariffVO tariffPlan = _quotaTariffDao.findTariffPlanByUsageType(cmd.getUsageType(), adjustedEffectiveDate);
             if (tariffPlan != null) {
@@ -294,16 +309,11 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         }
         TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
         final AccountVO account = _accountDao.findById(accountId);
-        final boolean lockAccountEnforcement = QuotaConfig.QuotaEnableEnforcement.value().equalsIgnoreCase("true");
+        final boolean lockAccountEnforcement = "true".equalsIgnoreCase(QuotaConfig.QuotaEnableEnforcement.value());
         final BigDecimal currentAccountBalance = _quotaBalanceDao.lastQuotaBalance(accountId, domainId, startOfNextDay(despositedOn));
         if (lockAccountEnforcement && (currentAccountBalance.compareTo(new BigDecimal(0)) >= 0)) {
             if (account.getState() == Account.State.locked) {
-                try {
-                    _regionMgr.enableAccount(account.getAccountName(), domainId, accountId);
-                    //_quotaMgr.sendQuotaAlert(account, currentAccountBalance, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_UNLOCK_ACCOUNT);
-                } catch (Exception e) {
-                    s_logger.error(String.format("Unable to unlock account %s after getting enough quota credits", account.getAccountName()));
-                }
+                _regionMgr.enableAccount(account.getAccountName(), domainId, accountId);
             }
         }
 
@@ -361,7 +371,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Override
     public QuotaBalanceResponse createQuotaLastBalanceResponse(List<QuotaBalanceVO> quotaBalance, Date startDate) {
-        if (quotaBalance.size() == 0) {
+        if (quotaBalance == null || quotaBalance.size() == 0) {
             new InvalidParameterValueException("There are no balance entries on or before the requested date.");
         }
         if (startDate == null) {
@@ -371,7 +381,9 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         BigDecimal lastCredits = new BigDecimal(0);
         for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
             QuotaBalanceVO entry = it.next();
-            s_logger.info("createQuotaLastBalanceResponse Date=" + entry.getUpdatedOn() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
+            if (s_logger.isDebugEnabled()){
+                s_logger.info("createQuotaLastBalanceResponse Date=" + entry.getUpdatedOn() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
+            }
             lastCredits = lastCredits.add(entry.getCreditBalance());
         }
         resp.setStartQuota(lastCredits);

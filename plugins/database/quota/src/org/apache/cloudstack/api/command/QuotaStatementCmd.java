@@ -36,7 +36,7 @@ import org.apache.cloudstack.api.response.QuotaStatementItemResponse;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "quotaStatement", responseObject = QuotaStatementItemResponse.class, description = "Create a quota statement", since = "4.2.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "quotaStatement", responseObject = QuotaStatementItemResponse.class, description = "Create a quota statement", since = "4.6.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaStatementCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(QuotaStatementCmd.class.getName());

@@ -36,7 +36,7 @@ import org.apache.cloudstack.api.response.QuotaStatementItemResponse;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "quotaBalance", responseObject = QuotaStatementItemResponse.class, description = "Create a quota balance statement", since = "4.2.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "quotaBalance", responseObject = QuotaStatementItemResponse.class, description = "Create a quota balance statement", since = "4.6.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaBalanceCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(QuotaBalanceCmd.class.getName());
@@ -125,9 +125,9 @@ public class QuotaBalanceCmd extends BaseCmd {
 
         QuotaBalanceResponse response;
         if (getEndDate() == null) {
-            response = _responseBuilder.createQuotaLastBalanceResponse(quotaUsage, startDate);
+            response = _responseBuilder.createQuotaLastBalanceResponse(quotaUsage, getStartDate());
         } else {
-            response = _responseBuilder.createQuotaBalanceResponse(quotaUsage, startDate, endDate);
+            response = _responseBuilder.createQuotaBalanceResponse(quotaUsage, getStartDate(), getEndDate());
         }
         response.setResponseName(getCommandName());
         setResponseObject(response);

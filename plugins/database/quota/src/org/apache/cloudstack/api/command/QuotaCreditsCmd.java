@@ -33,7 +33,7 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = "quotaCredits", responseObject = QuotaCreditsResponse.class, description = "Add +-credits to an account", since = "4.2.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "quotaCredits", responseObject = QuotaCreditsResponse.class, description = "Add +-credits to an account", since = "4.6.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaCreditsCmd extends BaseCmd {
 
     @Inject

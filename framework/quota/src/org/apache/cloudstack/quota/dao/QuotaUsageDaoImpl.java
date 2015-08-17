@@ -71,17 +71,6 @@ public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implem
             if (accountId != null) {
                 sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
             }
-            /*
-             * if (isDomainAdmin) { SearchCriteria<DomainVO> sdc =
-             * _domainDao.createSearchCriteria(); sdc.addOr("path",
-             * SearchCriteria.Op.LIKE,
-             * _domainDao.findById(caller.getDomainId()).getPath() + "%");
-             * List<DomainVO> domains = _domainDao.search(sdc, null); List<Long>
-             * domainIds = new ArrayList<Long>(); for (DomainVO domain :
-             * domains) domainIds.add(domain.getId()); sc.addAnd("domainId",
-             * SearchCriteria.Op.IN, domainIds.toArray());
-             * s_logger.debug("Account ID=" + accountId); }
-             */
             if (domainId != null) {
                 sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
             }

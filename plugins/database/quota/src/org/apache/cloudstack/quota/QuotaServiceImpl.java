@@ -108,7 +108,9 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
             s_logger.warn("Usage stats job aggregation range is to small, using the minimum value of " + UsageUtils.USAGE_AGGREGATION_RANGE_MIN);
             _aggregationDuration = UsageUtils.USAGE_AGGREGATION_RANGE_MIN;
         }
-        s_logger.info("Usage timezone = " + _usageTimezone + " AggregationDuration=" + _aggregationDuration);
+        if (s_logger.isDebugEnabled()){
+            s_logger.debug("Usage timezone = " + _usageTimezone + " AggregationDuration=" + _aggregationDuration);
+        }
         return true;
     }
 
@@ -175,9 +177,13 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         if (endDate == null) {
             // adjust start date to end of day as there is no end date
             Date adjustedStartDate = computeAdjustedTime(_respBldr.startOfNextDay(startDate));
-            s_logger.debug("getQuotaBalance1: Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", on or before " + adjustedStartDate);
+            if (s_logger.isDebugEnabled()){
+                s_logger.debug("getQuotaBalance1: Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", on or before " + adjustedStartDate);
+            }
             List<QuotaBalanceVO> qbrecords = _quotaBalanceDao.lastQuotaBalanceVO(accountId, domainId, adjustedStartDate);
-            s_logger.info("Found records size=" + qbrecords.size());
+            if (s_logger.isDebugEnabled()){
+                s_logger.debug("Found records size=" + qbrecords.size());
+            }
             if (qbrecords.size() == 0) {
                 throw new InvalidParameterValueException("Incorrect Date there are no quota records before this date " + adjustedStartDate);
             } else {
@@ -189,9 +195,13 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
                 throw new InvalidParameterValueException("Incorrect Date Range. End date:" + endDate + " should not be in future. ");
             } else if (startDate.before(endDate)) {
                 Date adjustedEndDate = computeAdjustedTime(endDate);
-                s_logger.debug("getQuotaBalance2: Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
+                if (s_logger.isDebugEnabled()){
+                    s_logger.debug("getQuotaBalance2: Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
+                }
                 List<QuotaBalanceVO> qbrecords = _quotaBalanceDao.findQuotaBalance(accountId, domainId, adjustedStartDate, adjustedEndDate);
-                s_logger.info("getQuotaBalance3: Found records size=" + qbrecords.size());
+                if (s_logger.isDebugEnabled()){
+                    s_logger.debug("getQuotaBalance3: Found records size=" + qbrecords.size());
+                }
                 if (qbrecords.size() == 0) {
                     throw new InvalidParameterValueException("Incorrect Date range there are no quota records between these dates start date " + adjustedStartDate + " and end date:" + endDate);
                 } else {
