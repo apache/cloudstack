@@ -1813,7 +1813,7 @@
 
                                 if (args.data.publickey != null && args.data.publickey.length > 0) {
                                     $.extend(data, {
-                                        publickey: encodeURIComponent(args.data.publickey)
+                                        publickey: args.data.publickey
                                     });
                                     $.ajax({
                                         url: createURL('registerSSHKeyPair'),
