@@ -19,9 +19,8 @@ package com.cloud.network.guru;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan.VlanType;
@@ -117,11 +116,11 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
 
     protected void getIp(NicProfile nic, DataCenter dc, VirtualMachineProfile vm, Network network) throws InsufficientVirtualNetworkCapacityException,
         InsufficientAddressCapacityException, ConcurrentOperationException {
-        if (nic.getIp4Address() == null) {
+        if (nic.getIPv4Address() == null) {
             PublicIp ip = _ipAddrMgr.assignPublicIpAddress(dc.getId(), null, vm.getOwner(), VlanType.VirtualNetwork, null, null, false);
-            nic.setIp4Address(ip.getAddress().toString());
-            nic.setGateway(ip.getGateway());
-            nic.setNetmask(ip.getNetmask());
+            nic.setIPv4Address(ip.getAddress().toString());
+            nic.setIPv4Gateway(ip.getGateway());
+            nic.setIPv4Netmask(ip.getNetmask());
             if (network.getBroadcastDomainType() == BroadcastDomainType.Vxlan) {
                 nic.setIsolationUri(BroadcastDomainType.Vxlan.toUri(ip.getVlanTag()));
                 nic.setBroadcastUri(BroadcastDomainType.Vxlan.toUri(ip.getVlanTag()));
@@ -136,16 +135,16 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
             nic.setMacAddress(ip.getMacAddress());
         }
 
-        nic.setDns1(dc.getDns1());
-        nic.setDns2(dc.getDns2());
+        nic.setIPv4Dns1(dc.getDns1());
+        nic.setIPv4Dns2(dc.getDns2());
     }
 
     @Override
     public void updateNicProfile(NicProfile profile, Network network) {
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
         if (profile != null) {
-            profile.setDns1(dc.getDns1());
-            profile.setDns2(dc.getDns2());
+            profile.setIPv4Dns1(dc.getDns1());
+            profile.setIPv4Dns2(dc.getDns2());
         }
     }
 
@@ -155,7 +154,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
 
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
 
-        if (nic != null && nic.getRequestedIpv4() != null) {
+        if (nic != null && nic.getRequestedIPv4() != null) {
             throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
         }
 
@@ -165,12 +164,12 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
 
         getIp(nic, dc, vm, network);
 
-        if (nic.getIp4Address() == null) {
-            nic.setStrategy(ReservationStrategy.Start);
+        if (nic.getIPv4Address() == null) {
+            nic.setReservationStrategy(ReservationStrategy.Start);
         } else if (vm.getVirtualMachine().getType() == VirtualMachine.Type.DomainRouter) {
-            nic.setStrategy(ReservationStrategy.Managed);
+            nic.setReservationStrategy(ReservationStrategy.Managed);
         } else {
-            nic.setStrategy(ReservationStrategy.Create);
+            nic.setReservationStrategy(ReservationStrategy.Create);
         }
 
         return nic;
@@ -179,7 +178,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
         throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException {
-        if (nic.getIp4Address() == null) {
+        if (nic.getIPv4Address() == null) {
             getIp(nic, dest.getDataCenter(), vm, network);
         }
     }
@@ -199,10 +198,10 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     @DB
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile vm) {
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("public network deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIp4Address());
+            s_logger.debug("public network deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIPv4Address());
         }
 
-        final IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIp4Address());
+        final IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIPv4Address());
         if (ip != null && nic.getReservationStrategy() != ReservationStrategy.Managed) {
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override

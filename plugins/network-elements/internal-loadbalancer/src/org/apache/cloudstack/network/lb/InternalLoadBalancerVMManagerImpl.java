@@ -190,12 +190,12 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
 
         for (final NicProfile nic : profile.getNics()) {
             final int deviceId = nic.getDeviceId();
-            buf.append(" eth").append(deviceId).append("ip=").append(nic.getIp4Address());
-            buf.append(" eth").append(deviceId).append("mask=").append(nic.getNetmask());
+            buf.append(" eth").append(deviceId).append("ip=").append(nic.getIPv4Address());
+            buf.append(" eth").append(deviceId).append("mask=").append(nic.getIPv4Netmask());
 
             if (nic.isDefaultNic()) {
-                buf.append(" gateway=").append(nic.getGateway());
-                buf.append(" dns1=").append(nic.getGateway());
+                buf.append(" gateway=").append(nic.getIPv4Gateway());
+                buf.append(" dns1=").append(nic.getIPv4Gateway());
             }
 
             if (nic.getTrafficType() == TrafficType.Guest) {
@@ -251,7 +251,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         final List<NicProfile> nics = profile.getNics();
         for (final NicProfile nic : nics) {
             if (nic.getTrafficType() == TrafficType.Control) {
-                internalLbVm.setPrivateIpAddress(nic.getIp4Address());
+                internalLbVm.setPrivateIpAddress(nic.getIPv4Address());
                 internalLbVm.setPrivateMacAddress(nic.getMacAddress());
             }
         }
@@ -339,7 +339,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
 
         if (reprogramGuestNtwk) {
             final NicProfile guestNic = getNicProfileByTrafficType(profile, TrafficType.Guest);
-            finalizeLbRulesForIp(cmds, internalLbVm, provider, new Ip(guestNic.getIp4Address()), guestNic.getNetworkId());
+            finalizeLbRulesForIp(cmds, internalLbVm, provider, new Ip(guestNic.getIPv4Address()), guestNic.getNetworkId());
         }
 
         return true;
@@ -408,7 +408,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
 
     protected NicProfile getNicProfileByTrafficType(final VirtualMachineProfile profile, final TrafficType trafficType) {
         for (final NicProfile nic : profile.getNics()) {
-            if (nic.getTrafficType() == trafficType && nic.getIp4Address() != null) {
+            if (nic.getTrafficType() == trafficType && nic.getIPv4Address() != null) {
                 return nic;
             }
         }
@@ -416,11 +416,11 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
     }
 
     protected void finalizeSshAndVersionOnStart(final Commands cmds, final VirtualMachineProfile profile, final DomainRouterVO router, final NicProfile controlNic) {
-        cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922));
+        cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIPv4Address(), 3922));
 
         // Update internal lb vm template/scripts version
         final GetDomRVersionCmd command = new GetDomRVersionCmd();
-        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, controlNic.getIp4Address());
+        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, controlNic.getIPv4Address());
         command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         cmds.addCommand("getDomRVersion", command);
     }
@@ -672,17 +672,17 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
             s_logger.debug("Adding nic for Internal LB in Guest network " + guestNetwork);
             final NicProfile guestNic = new NicProfile();
             if (guestIp != null) {
-                guestNic.setIp4Address(guestIp.addr());
+                guestNic.setIPv4Address(guestIp.addr());
             } else {
-                guestNic.setIp4Address(_ipAddrMgr.acquireGuestIpAddress(guestNetwork, null));
+                guestNic.setIPv4Address(_ipAddrMgr.acquireGuestIpAddress(guestNetwork, null));
             }
-            guestNic.setGateway(guestNetwork.getGateway());
+            guestNic.setIPv4Gateway(guestNetwork.getGateway());
             guestNic.setBroadcastUri(guestNetwork.getBroadcastUri());
             guestNic.setBroadcastType(guestNetwork.getBroadcastDomainType());
             guestNic.setIsolationUri(guestNetwork.getBroadcastUri());
             guestNic.setMode(guestNetwork.getMode());
             final String gatewayCidr = guestNetwork.getCidr();
-            guestNic.setNetmask(NetUtils.getCidrNetmask(gatewayCidr));
+            guestNic.setIPv4Netmask(NetUtils.getCidrNetmask(gatewayCidr));
             guestNic.setDefaultNic(true);
             networks.put(guestNetwork, new ArrayList<NicProfile>(Arrays.asList(guestNic)));
         }

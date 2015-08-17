@@ -152,7 +152,7 @@ public class GloboDnsElement extends AdapterBase implements ResourceStateAdapter
             throw new InvalidParameterValueException("VM name should contain only lower case letters and digits: " + vmName + " - " + vm);
         }
 
-        CreateOrUpdateRecordAndReverseCommand cmd = new CreateOrUpdateRecordAndReverseCommand(vmHostname, nic.getIp4Address(), network.getNetworkDomain(),
+        CreateOrUpdateRecordAndReverseCommand cmd = new CreateOrUpdateRecordAndReverseCommand(vmHostname, nic.getIPv4Address(), network.getNetworkDomain(),
                 GloboDNSTemplateId.value(), GloboDNSOverride.value());
         callCommand(cmd, zoneId);
         return true;
@@ -174,7 +174,7 @@ public class GloboDnsElement extends AdapterBase implements ResourceStateAdapter
             throw new CloudRuntimeException("Could not find zone associated to this network");
         }
 
-        RemoveRecordCommand cmd = new RemoveRecordCommand(hostNameOfVirtualMachine(vm), nic.getIp4Address(), network.getNetworkDomain(), GloboDNSOverride.value());
+        RemoveRecordCommand cmd = new RemoveRecordCommand(hostNameOfVirtualMachine(vm), nic.getIPv4Address(), network.getNetworkDomain(), GloboDNSOverride.value());
         callCommand(cmd, zoneId);
         return true;
     }

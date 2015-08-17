@@ -246,8 +246,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     if (nic.getTrafficType() == TrafficType.Public || nic.getTrafficType() == TrafficType.Guest) {
                         // save dns information
                         if (nic.getTrafficType() == TrafficType.Public) {
-                            defaultDns1 = nic.getDns1();
-                            defaultDns2 = nic.getDns2();
+                            defaultDns1 = nic.getIPv4Dns1();
+                            defaultDns2 = nic.getIPv4Dns2();
                         }
                         s_logger.debug("Removing nic " + nic + " of type " + nic.getTrafficType() + " from the nics passed on vm start. " + "The nic will be plugged later");
                         it.remove();
@@ -433,7 +433,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
             for (final Pair<Nic, Network> nicNtwk : guestNics) {
                 final Nic guestNic = nicNtwk.first();
-                final AggregationControlCommand startCmd = new AggregationControlCommand(Action.Start, domainRouterVO.getInstanceName(), controlNic.getIp4Address(), _routerControlHelper.getRouterIpInNetwork(
+                final AggregationControlCommand startCmd = new AggregationControlCommand(Action.Start, domainRouterVO.getInstanceName(), controlNic.getIPv4Address(), _routerControlHelper.getRouterIpInNetwork(
                         guestNic.getNetworkId(), domainRouterVO.getId()));
                 cmds.addCommand(startCmd);
                 if (reprogramGuestNtwks) {
@@ -442,7 +442,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 }
 
                 finalizeUserDataAndDhcpOnStart(cmds, domainRouterVO, provider, guestNic.getNetworkId());
-                final AggregationControlCommand finishCmd = new AggregationControlCommand(Action.Finish, domainRouterVO.getInstanceName(), controlNic.getIp4Address(), _routerControlHelper.getRouterIpInNetwork(
+                final AggregationControlCommand finishCmd = new AggregationControlCommand(Action.Finish, domainRouterVO.getInstanceName(), controlNic.getIPv4Address(), _routerControlHelper.getRouterIpInNetwork(
                         guestNic.getNetworkId(), domainRouterVO.getId()));
                 cmds.addCommand(finishCmd);
             }
@@ -499,7 +499,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     protected boolean setupVpcPrivateNetwork(final VirtualRouter router, final boolean add, final NicProfile privateNic) throws ResourceUnavailableException {
 
         if (router.getState() == State.Running) {
-            final PrivateIpVO ipVO = _privateIpDao.findByIpAndSourceNetworkId(privateNic.getNetworkId(), privateNic.getIp4Address());
+            final PrivateIpVO ipVO = _privateIpDao.findByIpAndSourceNetworkId(privateNic.getNetworkId(), privateNic.getIPv4Address());
             final Network network = _networkDao.findById(privateNic.getNetworkId());
             final String netmask = NetUtils.getCidrNetmask(network.getCidr());
             final PrivateIpAddress ip = new PrivateIpAddress(ipVO, network.getBroadcastUri().toString(), network.getGateway(), netmask, privateNic.getMacAddress());

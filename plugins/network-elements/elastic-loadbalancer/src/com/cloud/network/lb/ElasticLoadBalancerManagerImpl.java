@@ -434,12 +434,12 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
 
         for (NicProfile nic : profile.getNics()) {
             int deviceId = nic.getDeviceId();
-            buf.append(" eth").append(deviceId).append("ip=").append(nic.getIp4Address());
-            buf.append(" eth").append(deviceId).append("mask=").append(nic.getNetmask());
+            buf.append(" eth").append(deviceId).append("ip=").append(nic.getIPv4Address());
+            buf.append(" eth").append(deviceId).append("mask=").append(nic.getIPv4Netmask());
             if (nic.isDefaultNic()) {
-                buf.append(" gateway=").append(nic.getGateway());
-                defaultDns1 = nic.getDns1();
-                defaultDns2 = nic.getDns2();
+                buf.append(" gateway=").append(nic.getIPv4Gateway());
+                defaultDns1 = nic.getIPv4Dns1();
+                defaultDns2 = nic.getIPv4Dns2();
             }
             if (nic.getTrafficType() == TrafficType.Management) {
                 buf.append(" localgw=").append(dest.getPod().getGateway());
@@ -497,11 +497,11 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         List<NicProfile> nics = profile.getNics();
         for (NicProfile nic : nics) {
             if (nic.getTrafficType() == TrafficType.Public) {
-                elbVm.setPublicIpAddress(nic.getIp4Address());
-                elbVm.setPublicNetmask(nic.getNetmask());
+                elbVm.setPublicIpAddress(nic.getIPv4Address());
+                elbVm.setPublicNetmask(nic.getIPv4Netmask());
                 elbVm.setPublicMacAddress(nic.getMacAddress());
             } else if (nic.getTrafficType() == TrafficType.Control) {
-                elbVm.setPrivateIpAddress(nic.getIp4Address());
+                elbVm.setPrivateIpAddress(nic.getIPv4Address());
                 elbVm.setPrivateMacAddress(nic.getMacAddress());
             }
         }
@@ -534,14 +534,14 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
             // TODO this is a ugly to test hypervisor type here
             // for basic network mode, we will use the guest NIC for control NIC
             for (NicProfile nic : profile.getNics()) {
-                if (nic.getTrafficType() == TrafficType.Guest && nic.getIp4Address() != null) {
+                if (nic.getTrafficType() == TrafficType.Guest && nic.getIPv4Address() != null) {
                     controlNic = nic;
                     guestNetworkId = nic.getNetworkId();
                 }
             }
         } else {
             for (NicProfile nic : profile.getNics()) {
-                if (nic.getTrafficType() == TrafficType.Control && nic.getIp4Address() != null) {
+                if (nic.getTrafficType() == TrafficType.Control && nic.getIPv4Address() != null) {
                     controlNic = nic;
                 } else if (nic.getTrafficType() == TrafficType.Guest) {
                     guestNetworkId = nic.getNetworkId();
@@ -554,7 +554,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
             return false;
         }
 
-        cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922));
+        cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIPv4Address(), 3922));
 
         // Re-apply load balancing rules
         List<LoadBalancerVO> lbs = _elbVmMapDao.listLbsForElbVm(elbVm.getId());

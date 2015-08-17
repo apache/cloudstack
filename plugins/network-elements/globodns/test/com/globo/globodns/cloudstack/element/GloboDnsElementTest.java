@@ -19,9 +19,9 @@ package com.globo.globodns.cloudstack.element;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 
@@ -151,7 +151,7 @@ public class GloboDnsElementTest {
         when(network.getDataCenterId()).thenReturn(zoneId);
         when(network.getId()).thenReturn(1l);
         NicProfile nic = new NicProfile();
-        nic.setIp4Address("10.11.12.13");
+        nic.setIPv4Address("10.11.12.13");
         VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
         when(vm.getHostName()).thenReturn("vm-name");
         when(vm.getType()).thenReturn(VirtualMachine.Type.User);
@@ -184,7 +184,7 @@ public class GloboDnsElementTest {
         when(network.getDataCenterId()).thenReturn(zoneId);
         when(network.getId()).thenReturn(1l);
         NicProfile nic = new NicProfile();
-        nic.setIp4Address("10.11.12.13");
+        nic.setIPv4Address("10.11.12.13");
         VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
         when(vm.getHostName()).thenReturn("vm-name");
         when(vm.getType()).thenReturn(VirtualMachine.Type.User);
