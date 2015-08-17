@@ -2638,6 +2638,22 @@ class StoragePool:
         return apiclient.enableStorageMaintenance(cmd)
 
     @classmethod
+    def enableMaintenance(cls, apiclient, id):
+        """enables maintenance mode Storage pool"""
+
+        cmd = enableStorageMaintenance.enableStorageMaintenanceCmd()
+        cmd.id = id
+        return apiclient.enableStorageMaintenance(cmd)
+
+    @classmethod
+    def cancelMaintenance(cls, apiclient, id):
+        """Cancels maintenance mode Storage pool"""
+
+        cmd = cancelStorageMaintenance.cancelStorageMaintenanceCmd()
+        cmd.id = id
+        return apiclient.cancelStorageMaintenance(cmd)
+
+    @classmethod
     def list(cls, apiclient, **kwargs):
         """List all storage pools matching criteria"""
 
