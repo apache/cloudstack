@@ -405,7 +405,6 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     ScheduledExecutorService _checkExecutor;
     ScheduledExecutorService _networkStatsUpdateExecutor;
     ExecutorService _rvrStatusUpdateExecutor;
-    ExecutorService _rebootRouterExecutor;
 
     BlockingQueue<Long> _vrUpdateQueue = null;
 
@@ -572,7 +571,6 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RouterMonitor"));
         _checkExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RouterStatusMonitor"));
         _networkStatsUpdateExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("NetworkStatsUpdater"));
-        _rebootRouterExecutor = Executors.newCachedThreadPool(new NamedThreadFactory("RebootRouterTask"));
 
         VirtualMachine.State.getStateMachine().registerListener(this);
 
@@ -2604,7 +2602,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { UseExternalDnsServers, routerVersionCheckEnabled, SetServiceMonitor, RouterAlertsCheckInterval, RouterReprovisionOnOutOfBandMigration };
+        return new ConfigKey<?>[] { UseExternalDnsServers, routerVersionCheckEnabled, SetServiceMonitor, RouterAlertsCheckInterval };
     }
 
     @Override
@@ -2615,30 +2613,20 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
     @Override
     public boolean postStateTransitionEvent(final StateMachine2.Transition<State, VirtualMachine.Event> transition, final VirtualMachine vo, final boolean status, final Object opaque) {
-        final State oldState = transition.getCurrentState();
         final State newState = transition.getToState();
         final VirtualMachine.Event event = transition.getEvent();
-        boolean reprovision_out_of_band = RouterReprovisionOnOutOfBandMigration.value();
-        if (
-            (vo.getType() == VirtualMachine.Type.DomainRouter) &&
-            ((oldState == State.Stopped) || (reprovision_out_of_band && isOutOfBandMigrated(opaque))) &&
-            (event == VirtualMachine.Event.FollowAgentPowerOnReport) &&
-            (newState == State.Running)) {
-                s_logger.info("Schedule a router reboot task as router " + vo.getId() + " is powered-on out-of-band. we need to reboot to refresh network rules");
-                _rebootRouterExecutor.execute(new RebootTask(vo.getId()));
-        } else {
-            if (isOutOfBandMigrated(opaque) && (vo.getType() == VirtualMachine.Type.DomainRouter)) {
-                final String title = "Router has been migrated out of band: " + vo.getInstanceName();
-                final String context =
-                        "An out of band migration of router " + vo.getInstanceName() + "(" + vo.getUuid() + ") was detected. No automated action was performed.";
-                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, vo.getDataCenterId(), vo.getPodIdToDeployIn(), title, context);
-            }
+        if (vo.getType() == VirtualMachine.Type.DomainRouter &&
+            event == VirtualMachine.Event.FollowAgentPowerOnReport &&
+            newState == State.Running &&
+            isOutOfBandMigrated(opaque)) {
+                s_logger.debug("Virtual router " + vo.getInstanceName() + " is powered-on out-of-band");
         }
 
         return true;
     }
 
     private boolean isOutOfBandMigrated(final Object opaque) {
+        // opaque -> <hostId, powerHostId>
         if (opaque != null && opaque instanceof Pair<?, ?>) {
             final Pair<?, ?> pair = (Pair<?, ?>)opaque;
             final Object first = pair.first();
