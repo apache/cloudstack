@@ -466,7 +466,9 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
     public Pair<List<? extends UsageVO>, Integer> getUsageRecordsPendingQuotaAggregation(final long accountId, final long domainId) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
-        s_logger.debug("getting usage records for account: " + accountId + ", domainId: " + domainId);
+        if (s_logger.isDebugEnabled()){
+            s_logger.debug("getting usage records for account: " + accountId + ", domainId: " + domainId);
+        }
         Filter usageFilter = new Filter(UsageVO.class, "startDate", true, 0L, 10000L);
         SearchCriteria<UsageVO> sc = createSearchCriteria();
         if (accountId != -1) {
@@ -477,7 +479,9 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
         }
         sc.addAnd("quotaCalculated", SearchCriteria.Op.NULL);
         sc.addOr("quotaCalculated", SearchCriteria.Op.EQ, 0);
-        s_logger.debug("Getting usage records" + usageFilter.getOrderBy());
+        if (s_logger.isDebugEnabled()){
+            s_logger.debug("Getting usage records" + usageFilter.getOrderBy());
+        }
         Pair<List<UsageVO>, Integer> usageRecords = searchAndCountAllRecords(sc, usageFilter);
         TransactionLegacy.open(opendb).close();
         return new Pair<List<? extends UsageVO>, Integer>(usageRecords.first(), usageRecords.second());

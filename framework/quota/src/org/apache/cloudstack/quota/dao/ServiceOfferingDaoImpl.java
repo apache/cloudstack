@@ -57,10 +57,10 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     public ServiceOfferingVO findById(Long vmId, long serviceOfferingId) {
         ServiceOfferingVO offering = super.findById(serviceOfferingId);
         if (offering.isDynamic()) {
-            offering.setDynamicFlag(true);
             if (vmId == null) {
                 throw new CloudRuntimeException("missing argument vmId");
             }
+            offering.setDynamicFlag(true);
             Map<String, String> dynamicOffering = userVmDetailsDao.listDetailsKeyPairs(vmId);
             return getcomputeOffering(offering, dynamicOffering);
         }

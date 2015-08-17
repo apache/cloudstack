@@ -70,10 +70,14 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         // Switch back
         TransactionLegacy.open(opendb).close();
         if (result.size() > 0) {
-            //s_logger.info("findTariffPlanByUsageType: " + effectiveDate + "quota type " + quotaType  + " val=" + result.get(0).getCurrencyValue());
+            if (s_logger.isDebugEnabled()){
+                s_logger.debug("findTariffPlanByUsageType: " + effectiveDate + "quota type " + quotaType  + " val=" + result.get(0).getCurrencyValue());
+            }
             return result.get(0);
         } else {
-            //s_logger.info("Missing quota type " + quotaType);
+            if (s_logger.isDebugEnabled()){
+                s_logger.info("Missing quota type " + quotaType);
+            }
             return null;
         }
     }
