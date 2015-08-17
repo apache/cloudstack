@@ -16,30 +16,15 @@
 // under the License.
 package com.cloud.hypervisor.xenserver.resource;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.ejb.Local;
 
 import com.cloud.resource.ServerResource;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 
 @Local(value = ServerResource.class)
 public class XenServer600Resource extends XenServer56SP2Resource {
 
     @Override
-    protected List<File> getPatchFiles() {
-        final List<File> files = new ArrayList<File>();
-        final String patch = "scripts/vm/hypervisor/xenserver/xenserver60/patch";
-        final String patchfilePath = Script.findScript("", patch);
-        if (patchfilePath == null) {
-            throw new CloudRuntimeException("Unable to find patch file " + patch);
-        }
-        final File file = new File(patchfilePath);
-        files.add(file);
-        return files;
+    protected String getPatchFilePath() {
+        return "scripts/vm/hypervisor/xenserver/xenserver60/patch";
     }
-
 }

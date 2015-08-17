@@ -124,6 +124,7 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VirtualMachine.PowerState;
@@ -2867,9 +2868,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected List<File> getPatchFiles() {
-        return null;
+    private List<File> getPatchFiles() {
+        String patch = getPatchFilePath();
+        String patchfilePath = Script.findScript("", patch);
+        if (patchfilePath == null) {
+            throw new CloudRuntimeException("Unable to find patch file "+patch);
+        }
+        List<File> files = new ArrayList<File>();
+        files.add(new File(patchfilePath));
+        return files;
     }
+
+    protected abstract String getPatchFilePath();
 
     public String getPerfMon(final Connection conn, final Map<String, String> params, final int wait) {
         String result = null;
