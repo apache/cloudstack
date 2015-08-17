@@ -190,8 +190,8 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         // Mask the Ipv4 address of all nics that use this network with the new guest VLAN offset
         List<NicVO> nicsInNetwork = _nicDao.listByNetworkId(config.getId());
         for (NicVO nic : nicsInNetwork) {
-            if (nic.getIp4Address() != null) {
-                long ipMask = getIpMask(nic.getIp4Address(), cidrSize);
+            if (nic.getIPv4Address() != null) {
+                long ipMask = getIpMask(nic.getIPv4Address(), cidrSize);
                 nic.setIp4Address(NetUtils.long2Ip(newCidrAddress | ipMask));
                 _nicDao.persist(nic);
             }

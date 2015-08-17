@@ -679,10 +679,10 @@ public class NetworkHelperImpl implements NetworkHelper {
             if (!routerDeploymentDefinition.isPublicNetwork()) {
                 final Nic placeholder = _networkModel.getPlaceholderNicForRouter(guestNetwork, routerDeploymentDefinition.getPodId());
                 if (guestNetwork.getCidr() != null) {
-                    if (placeholder != null && placeholder.getIp4Address() != null) {
-                        s_logger.debug("Requesting ipv4 address " + placeholder.getIp4Address() + " stored in placeholder nic for the network "
+                    if (placeholder != null && placeholder.getIPv4Address() != null) {
+                        s_logger.debug("Requesting ipv4 address " + placeholder.getIPv4Address() + " stored in placeholder nic for the network "
                                 + guestNetwork);
-                        defaultNetworkStartIp = placeholder.getIp4Address();
+                        defaultNetworkStartIp = placeholder.getIPv4Address();
                     } else {
                         final String startIp = _networkModel.getStartIpAddress(guestNetwork.getId());
                         if (startIp != null
@@ -696,10 +696,10 @@ public class NetworkHelperImpl implements NetworkHelper {
                 }
 
                 if (guestNetwork.getIp6Cidr() != null) {
-                    if (placeholder != null && placeholder.getIp6Address() != null) {
-                        s_logger.debug("Requesting ipv6 address " + placeholder.getIp6Address() + " stored in placeholder nic for the network "
+                    if (placeholder != null && placeholder.getIPv6Address() != null) {
+                        s_logger.debug("Requesting ipv6 address " + placeholder.getIPv6Address() + " stored in placeholder nic for the network "
                                 + guestNetwork);
-                        defaultNetworkStartIpv6 = placeholder.getIp6Address();
+                        defaultNetworkStartIpv6 = placeholder.getIPv6Address();
                     } else {
                         final String startIpv6 = _networkModel.getStartIpv6Address(guestNetwork.getId());
                         if (startIpv6 != null && _ipv6Dao.findByNetworkIdAndIp(guestNetwork.getId(), startIpv6) == null) {

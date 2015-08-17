@@ -294,7 +294,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
                     public void doInTransactionWithoutResult(TransactionStatus status) {
                         // if the ip address a part of placeholder, don't release it
                         Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, null);
-                        if (placeholderNic != null && placeholderNic.getIp4Address().equalsIgnoreCase(ip.getAddress().addr())) {
+                        if (placeholderNic != null && placeholderNic.getIPv4Address().equalsIgnoreCase(ip.getAddress().addr())) {
                             s_logger.debug("Not releasing direct ip " + ip.getId() + " yet as its ip is saved in the placeholder");
                         } else {
                             _ipAddrMgr.markIpAsUnavailable(ip.getId());
@@ -337,9 +337,9 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
                     @Override
                     public void doInTransactionWithoutResult(TransactionStatus status) {
                         for (Nic nic : nics) {
-                            if (nic.getIp4Address() != null) {
-                                s_logger.debug("Releasing ip " + nic.getIp4Address() + " of placeholder nic " + nic);
-                                IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIp4Address());
+                            if (nic.getIPv4Address() != null) {
+                                s_logger.debug("Releasing ip " + nic.getIPv4Address() + " of placeholder nic " + nic);
+                                IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIPv4Address());
                                 if (ip != null) {
                                     _ipAddrMgr.markIpAsUnavailable(ip.getId());
                                     _ipAddressDao.unassignIpAddress(ip.getId());

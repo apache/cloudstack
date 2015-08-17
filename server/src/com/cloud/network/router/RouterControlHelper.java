@@ -49,7 +49,7 @@ public class RouterControlHelper {
         for (final NicVO n : nics) {
             final NetworkVO nc = networkDao.findById(n.getNetworkId());
             if (nc != null && nc.getTrafficType() == TrafficType.Control) {
-                routerControlIpAddress = n.getIp4Address();
+                routerControlIpAddress = n.getIPv4Address();
                 // router will have only one control ip
                 break;
             }

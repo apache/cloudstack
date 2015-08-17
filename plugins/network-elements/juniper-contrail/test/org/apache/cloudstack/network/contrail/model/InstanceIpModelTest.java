@@ -16,33 +16,31 @@
 // under the License.
 
 package org.apache.cloudstack.network.contrail.model;
-import java.util.UUID;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import org.apache.cloudstack.network.contrail.management.ContrailManagerImpl;
 import org.apache.log4j.Logger;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.anyString;
+import org.junit.Test;
 
 import com.cloud.network.Network;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDao;
 
-import net.juniper.contrail.api.ApiConnectorMock;
-import net.juniper.contrail.api.ApiConnector;
-
-import org.junit.Test;
 import junit.framework.TestCase;
+import net.juniper.contrail.api.ApiConnector;
+import net.juniper.contrail.api.ApiConnectorMock;
 
 public class InstanceIpModelTest extends TestCase {
     private static final Logger s_logger =
@@ -102,7 +100,7 @@ public class InstanceIpModelTest extends TestCase {
 
         // Create Virtual=Machine-Interface (VMInterface)
         NicVO nic = mock(NicVO.class);
-        when(nic.getIp4Address()).thenReturn("10.1.1.2");
+        when(nic.getIPv4Address()).thenReturn("10.1.1.2");
         when(nic.getMacAddress()).thenReturn("00:01:02:03:04:05");
         when(nic.getDeviceId()).thenReturn(100);
         when(nic.getState()).thenReturn(NicVO.State.Allocated);
@@ -128,7 +126,7 @@ public class InstanceIpModelTest extends TestCase {
         }
         InstanceIpModel ipModel = new InstanceIpModel(vm.getInstanceName(), nic.getDeviceId());
         ipModel.addToVMInterface(vmiModel);
-        ipModel.setAddress(nic.getIp4Address());
+        ipModel.setAddress(nic.getIPv4Address());
 
         try {
             ipModel.update(controller);

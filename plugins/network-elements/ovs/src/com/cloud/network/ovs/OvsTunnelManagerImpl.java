@@ -27,12 +27,11 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -805,7 +804,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                 Network network = _networkDao.findById(vmNic.getNetworkId());
                 if (network.getTrafficType() == TrafficType.Guest) {
                     OvsVpcPhysicalTopologyConfigCommand.Nic nic =  new OvsVpcPhysicalTopologyConfigCommand.Nic(
-                            vmNic.getIp4Address(), vmNic.getMacAddress(), network.getUuid());
+                            vmNic.getIPv4Address(), vmNic.getMacAddress(), network.getUuid());
                     vmNics.add(nic);
                 }
             }

@@ -71,13 +71,13 @@ public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
         }
 
         for (Nic nic : nics) {
-            if (nic.getIp4Address() == null) {
+            if (nic.getIPv4Address() == null) {
                 continue;
             }
             // get the data center IP address, find a host on the pod, use that host to ping the data center IP address
             List<Long> otherHosts = findHostByPod(vmHost.getPodId(), vm.getHostId());
             for (Long otherHost : otherHosts) {
-                Status vmState = testIpAddress(otherHost, nic.getIp4Address());
+                Status vmState = testIpAddress(otherHost, nic.getIPv4Address());
                 assert vmState != null;
                 // In case of Status.Unknown, next host will be tried
                 if (vmState == Status.Up) {

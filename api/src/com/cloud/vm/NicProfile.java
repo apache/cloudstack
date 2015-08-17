@@ -83,13 +83,13 @@ public class NicProfile implements InternalIdentity, Serializable {
         trafficType = network.getTrafficType();
         format = nic.getAddressFormat();
 
-        ipv4Address = nic.getIp4Address();
-        ipv4Netmask = nic.getNetmask();
-        ipv4Gateway = nic.getGateway();
+        ipv4Address = nic.getIPv4Address();
+        ipv4Netmask = nic.getIPv4Netmask();
+        ipv4Gateway = nic.getIPv4Gateway();
 
-        ipv6Address = nic.getIp6Address();
-        ipv6Gateway = nic.getIp6Gateway();
-        ipv6Cidr = nic.getIp6Cidr();
+        ipv6Address = nic.getIPv6Address();
+        ipv6Gateway = nic.getIPv6Gateway();
+        ipv6Cidr = nic.getIPv6Cidr();
 
         macAddress = nic.getMacAddress();
         reservationId = nic.getReservationId();
@@ -114,11 +114,11 @@ public class NicProfile implements InternalIdentity, Serializable {
         this.requestedIPv6 = requestedIPv6;
     }
 
-    public NicProfile(ReservationStrategy strategy, String ipv4Address, String macAddress, String gateway, String netmask) {
+    public NicProfile(ReservationStrategy strategy, String ipv4Address, String macAddress, String ipv4gateway, String ipv4netmask) {
         format = AddressFormat.Ip4;
         this.ipv4Address = ipv4Address;
-        this.ipv4Gateway = gateway;
-        this.ipv4Netmask = netmask;
+        this.ipv4Gateway = ipv4gateway;
+        this.ipv4Netmask = ipv4netmask;
         this.macAddress = macAddress;
         this.strategy = strategy;
     }

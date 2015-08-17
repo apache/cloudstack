@@ -1853,9 +1853,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 if (requestedIpv4 != null && vm.getType() == VirtualMachine.Type.DomainRouter) {
                     Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, null);
                     if (placeholderNic != null) {
-                        IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), placeholderNic.getIp4Address());
+                        IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), placeholderNic.getIPv4Address());
                         ip = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
-                        s_logger.debug("Nic got an ip address " + placeholderNic.getIp4Address() + " stored in placeholder nic for the network " + network);
+                        s_logger.debug("Nic got an ip address " + placeholderNic.getIPv4Address() + " stored in placeholder nic for the network " + network);
                     }
                 }
 

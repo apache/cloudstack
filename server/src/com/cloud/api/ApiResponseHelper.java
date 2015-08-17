@@ -3421,7 +3421,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setVmId(vm.getUuid());
         }
 
-        response.setIpaddress(result.getIp4Address());
+        response.setIpaddress(result.getIPv4Address());
 
         if (result.getSecondaryIp()) {
             List<NicSecondaryIpVO> secondaryIps = ApiDBUtils.findNicSecondaryIps(result.getId());
@@ -3437,12 +3437,12 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
-        response.setGateway(result.getGateway());
-        response.setNetmask(result.getNetmask());
+        response.setGateway(result.getIPv4Gateway());
+        response.setNetmask(result.getIPv4Netmask());
         response.setMacAddress(result.getMacAddress());
 
-        if (result.getIp6Address() != null) {
-            response.setIp6Address(result.getIp6Address());
+        if (result.getIPv6Address() != null) {
+            response.setIp6Address(result.getIPv6Address());
         }
 
         response.setDeviceId(String.valueOf(result.getDeviceId()));
