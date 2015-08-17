@@ -89,7 +89,7 @@ public class NicProfileHelperImpl implements NicProfileHelper {
             // can we solve this in setBroadcastUri()???
             // or more plugable construct is desirable
             privateNicProfile.setBroadcastType(BroadcastDomainType.getSchemeValue(netUri));
-            privateNicProfile.setFormat(AddressFormat.Ip4);
+            privateNicProfile.setFormat(AddressFormat.IPv4);
             privateNicProfile.setReservationId(String.valueOf(ip.getBroadcastUri()));
             privateNicProfile.setMacAddress(ip.getMacAddress());
         }

@@ -42,7 +42,7 @@ public class Networks {
     };
 
     public enum AddressFormat {
-        Ip4, Ip6, DualStack
+        IPv4, IPv6, DualStack
     }
 
     /**
