@@ -573,7 +573,7 @@
                                     <!-- SSH Key Pairs -->
                                     <div class="select">
                                         <div class="name">
-                                            <span>SSH Key Pairs</span>
+                                            <span><fmt:message key="label.ssh.key.pairs"/></span>
                                         </div>
                                         <div class="value">
                                             <span wizard-field="sshkey-pairs"></span>

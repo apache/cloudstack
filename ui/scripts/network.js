@@ -437,7 +437,7 @@
                             },
 
                             createForm: {
-                                title: 'Add Isolated Guest Network with SourceNat',
+                                title: 'label.add.isolated.guest.network.with.sourcenat',
                                 fields: {
                                     name: {
                                         label: 'label.name',
@@ -2414,7 +2414,7 @@
                                         if (args.remoteaccessvpn.state == "Running") {
                                             msg = _l('message.enabled.vpn') + ' ' + args.remoteaccessvpn.publicip + '.' + '<br/>' + _l('message.enabled.vpn.ip.sec') + '<br/>' + args.remoteaccessvpn.presharedkey;
                                         } else {
-                                            msg = "Remote Access VPN configuration has been generated, but it failed to apply. Please check connectivity of the network element, then re-try.";
+                                            msg = _l('message.network.remote.access.vpn.configuration');
                                         }
                                         return msg;
                                     }
@@ -4446,7 +4446,7 @@
                                 })
                             },
                             vpn: {
-                                title: 'VPN',
+                                title: 'label.vpn',
                                 custom: function(args) {
                                     var ipAddress = args.context.ipAddresses[0].ipaddress;
                                     var psk = "";
@@ -4620,7 +4620,7 @@
 
                             messages: {
                                 confirm: function(args) {
-                                    return 'Are you sure you want to add ' + args.name + '?';
+                                    return _l('message.question.are.you.sure.you.want.to.add') + ' ' + args.name + '?';
                                 },
                                 notification: function(args) {
                                     return 'label.add.security.group';
@@ -5763,7 +5763,7 @@
                                 }
                             },
                             router: {
-                                title: 'VPC Router Details',
+                                title: 'label.vpc.router.details',
                                 fields: [{
                                     name: {
                                         label: 'label.name'

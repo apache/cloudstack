@@ -35,9 +35,9 @@
             var topFieldForm, bottomFieldForm, $topFieldForm, $bottomFieldForm;
             var topfields = forms.topFields;
 
-            var $healthCheckDesc = $('<div>Your load balancer will automatically perform health checks on your cloudstack instances and only route traffic to instances that pass the health check </div>').addClass('health-check-description');
-            var $healthCheckConfigTitle = $('<div><br><br>Configuration Options :</div>').addClass('health-check-config-title');
-            var $healthCheckAdvancedTitle = $('<div><br><br> Advanced Options : </div>').addClass('health-check-advanced-title');
+            var $healthCheckDesc = $('<div>' + 'label.health.check.message.desc' + '</div>').addClass('health-check-description');
+            var $healthCheckConfigTitle = $('<div><br><br>' + 'label.health.check.configurations.options' + '</div>').addClass('health-check-config-title');
+            var $healthCheckAdvancedTitle = $('<div><br><br>' + 'label.health.check.advanced.options' + '</div>').addClass('health-check-advanced-title');
 
             var $healthCheckDialog = $('<div>').addClass('health-check');
             $healthCheckDialog.append($healthCheckDesc);
@@ -361,7 +361,7 @@
             }
 
             $healthCheckDialog.dialog({
-                title: 'Health Check Wizard',
+                title: 'label.health.check.wizard',
                 width: 600,
                 height: 600,
                 draggable: true,

@@ -738,7 +738,7 @@
                                     if (args.data.sshkeyPairs && args.data.sshkeyPairs.length) {
                                         $step.prepend(
                                             $('<div>').addClass('main-desc').append(
-                                                $('<p>').html(_l('Please select a ssh key pair you want this VM to use:'))
+                                                $('<p>').html(_l('message.please.select.ssh.key.pair.use.with.this.vm'))
                                             )
                                         );
                                         $step.find('.section.no-thanks').show();

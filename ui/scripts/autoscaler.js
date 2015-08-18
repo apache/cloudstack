@@ -531,7 +531,7 @@
                 }
             },
             scaleUpPolicy: {
-                title: 'ScaleUp Policy',
+                title: 'label.scaleup.policy',
                 label: 'label.scale.up.policy',
                 noSelect: true,
                 noHeaderActionsColumn: true,
@@ -636,7 +636,7 @@
             },
 
             scaleDownPolicy: {
-                title: 'ScaleDown Policy',
+                title: 'label.scaledown.policy',
                 noSelect: true,
                 noHeaderActionsColumn: true,
                 ignoreEmptyFields: true,
@@ -1459,7 +1459,7 @@
 
                 var $dialog = $('<div>');
                 $dialog.dialog({
-                    title: 'AutoScale Configuration Wizard',
+                    title: 'label.autoscale.configuration.wizard',
                     closeonEscape: false,
 
                     draggable: true,

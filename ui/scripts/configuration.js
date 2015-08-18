@@ -359,7 +359,7 @@
                                         }
                                     },
                                     hostTags: { //Only one single host tag is supported at server-side. Multiple host tags are NOT supported at server-side.
-                                        label: 'Host Tag',
+                                        label: 'label.host.tag',
                                         docID: 'helpComputeOfferingHostTags'
                                     },
                                     cpuCap: {
@@ -769,7 +769,7 @@
                     },
 
                     detailView: {
-                        name: 'Service offering details',
+                        name: 'label.service.offering.details',
                         actions: {
                             edit: {
                                 label: 'label.edit',
@@ -950,7 +950,7 @@
                                         label: 'label.storage.tags'
                                     },
                                     hosttags: {
-                                        label: 'Host Tag'
+                                        label: 'label.host.tag'
                                     },
                                     domain: {
                                         label: 'label.domain'
@@ -1349,7 +1349,7 @@
                     },
 
                     detailView: {
-                        name: 'System service offering details',
+                        name: 'label.system.service.offering.details',
                         actions: {
                             edit: {
                                 label: 'label.edit',
@@ -2018,7 +2018,7 @@
                     },
 
                     detailView: {
-                        name: 'Disk offering details',
+                        name: 'label.disk.offering.details',
                         actions: {
                             edit: {
                                 label: 'label.edit',
@@ -3186,7 +3186,7 @@
                     reorder: cloudStack.api.actions.sort('updateNetworkOffering', 'networkOfferings'),
 
                     detailView: {
-                        name: 'Network offering details',
+                        name: 'label.network.offering.details',
                         actions: {
                             edit: {
                                 label: 'label.edit',

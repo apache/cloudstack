@@ -724,7 +724,7 @@
 
             // Internal load balancers
             internalLoadBalancers: {
-                title: 'Internal LB',
+                title: 'label.internal.lb',
                 listView: {
                     id: 'internalLoadBalancers',
                     fields: {
@@ -1002,7 +1002,7 @@
               */
 
                             assignedVms: {
-                                title: 'Assigned VMs',
+                                title: 'label.assigned.vms',
                                 listView: {
                                     id: 'assignedVms',
                                     fields: {
@@ -1094,7 +1094,7 @@
                 }
             },
             publicLbIps: {
-                title: 'Public LB',
+                title: 'label.public.ip',
                 listView: {
                     id: 'publicLbIps',
                     fields: {
@@ -1304,7 +1304,7 @@
                             },
 
                             aclRules: {
-                                title: 'ACL List Rules',
+                                title: 'label.acl.list.rules',
                                 custom: function(args) {
                                     return $('<div>').multiEdit($.extend(true, {}, aclMultiEdit, {
                                         context: args.context,
@@ -1410,7 +1410,7 @@
 
         routerDetailView: function() {
             return {
-                title: 'VPC router details',
+                title: 'label.VPC.router.details',
                 updateContext: function(args) {
                     var router;
 
@@ -2414,7 +2414,7 @@
                                     }
                                 },
                                 staticRoutes: {
-                                    title: 'Static Routes',
+                                    title: 'label.static.routes',
                                     custom: function(args) {
                                         return $('<div>').multiEdit({
                                             noSelect: true,
@@ -3360,7 +3360,7 @@
                 isMaximized: true,
                 tabs: {
                     details: {
-                        title: 'Network Details',
+                        title: 'label.network.details',
                         preFilter: function(args) {
                             var hiddenFields = [];
                             var zone;
