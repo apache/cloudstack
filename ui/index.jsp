@@ -40,6 +40,7 @@
         <!--[if IE 7]>
             <link type="text/css" rel="stylesheet" href="css/cloudstack3-ie7.css" />
             <![endif]-->
+	<link type="text/css" rel="stylesheet" href="css/custom.css" />
     </head>
     <body>
         <!-- CloudStack widget content -->
