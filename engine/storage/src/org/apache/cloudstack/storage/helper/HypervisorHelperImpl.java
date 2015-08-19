@@ -124,7 +124,7 @@ public class HypervisorHelperImpl implements HypervisorHelper {
         GuestOSVO guestOS = guestOSDao.findById(virtualMachine.getGuestOSId());
         List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(virtualMachine.getId());
         CreateVMSnapshotCommand ccmd =
-            new CreateVMSnapshotCommand(virtualMachine.getInstanceName(), vmSnapshotTO, volumeTOs, guestOS.getDisplayName());
+            new CreateVMSnapshotCommand(virtualMachine.getInstanceName(), virtualMachine.getUuid(), vmSnapshotTO, volumeTOs, guestOS.getDisplayName());
         HostVO host = hostDao.findById(hostId);
         GuestOSHypervisorVO guestOsMapping = guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), host.getHypervisorType().toString(), host.getHypervisorVersion());
         ccmd.setPlatformEmulator(guestOsMapping.getGuestOsName());
