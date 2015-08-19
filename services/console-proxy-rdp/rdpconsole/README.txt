@@ -22,7 +22,7 @@ Usage:
 Common options:
   --help|-h	Show this help text.
   --debug-link|-DL	Print debugging messages when packets are trasnferred via links.
-  --debug-element|-DE	Print debugging messages when packets are received or sended by elements.
+  --debug-element|-DE	Print debugging messages when packets are received or sent by elements.
   --debug-pipeline|-DP	Print debugging messages in pipelines.
   --host|-n|--host-name VALUE	Name or IP address of host to connect to. Required.
   --width|-W VALUE	Width of canvas. Default value is "1024".

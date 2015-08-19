@@ -66,7 +66,7 @@ public class Client {
         {
             name = "--debug-element";
             alias = "-DE";
-            description = "Print debugging messages when packets are received or sended by elements.";
+            description = "Print debugging messages when packets are received or sent by elements.";
         }
     };
     private final Option debugPipeline = new Option() {

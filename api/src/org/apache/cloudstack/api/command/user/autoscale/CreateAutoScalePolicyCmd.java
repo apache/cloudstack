@@ -134,7 +134,7 @@ public class CreateAutoScalePolicyCmd extends BaseAsyncCreateCmd {
         long conditionId = getConditionIds().get(0);
         Condition condition = _entityMgr.findById(Condition.class, conditionId);
         if (condition == null) {
-            // it is an invalid condition, return system acccount, error will be thrown later.
+            // it is an invalid condition, return system account, error will be thrown later.
             conditionDomainId = Domain.ROOT_DOMAIN;
             conditionAccountId = Account.ACCOUNT_ID_SYSTEM;
         } else {

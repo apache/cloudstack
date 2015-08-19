@@ -20,7 +20,7 @@ import org.apache.cloudstack.api.response.LdapUserResponse
 
 
 class LdapUserResponseSpec extends spock.lang.Specification {
-    def "Testing succcessful setting of LdapUserResponse email"() {
+    def "Testing successful setting of LdapUserResponse email"() {
 		given: "We have an LdapResponse"
         LdapUserResponse response = new LdapUserResponse();
 		when: "An email address is set"

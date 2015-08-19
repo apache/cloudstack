@@ -128,7 +128,7 @@ class TestLdap(cloudstackTestCase):
 
         if self.ldapconfRes == 1:
 
-            self.debug("Ldap Configuration was succcessful")
+            self.debug("Ldap Configuration was successful")
 
             loginRes = self._checklogin(
                 self.services["configurableData"]["ldap_configuration"]["ldapUsername"],
