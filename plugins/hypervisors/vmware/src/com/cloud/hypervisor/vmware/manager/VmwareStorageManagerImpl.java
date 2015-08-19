@@ -1164,19 +1164,10 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         try {
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
 
-            // wait if there are already VM snapshot task running
-            ManagedObjectReference taskmgr = context.getServiceContent().getTaskManager();
-            List<ManagedObjectReference> tasks = context.getVimClient().getDynamicProperty(taskmgr, "recentTask");
-
-            for (ManagedObjectReference taskMor : tasks) {
-                TaskInfo info = (TaskInfo)(context.getVimClient().getDynamicProperty(taskMor, "info"));
-
-                if (info.getEntityName().equals(cmd.getVmName()) && info.getName().equalsIgnoreCase("CreateSnapshot_Task")) {
-                    if (!(info.getState().equals(TaskInfoState.SUCCESS) || info.getState().equals(TaskInfoState.ERROR))) {
-                        s_logger.debug("There is already a VM snapshot task running, wait for it");
-                        context.getVimClient().waitForTask(taskMor);
-                    }
-                }
+            if(waitForRunningTaskOnVM(cmd.getVmName(), "CreateSnapshot_Task", context)== false){
+                String msg = "vCenter task failed";
+                s_logger.info(msg);
+                return new CreateVMSnapshotAnswer(cmd, false, msg);
             }
 
             vmMo = hyperHost.findVmOnHyperHost(vmName);
@@ -1205,7 +1196,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
         } catch (Exception e) {
             String msg = e.getMessage();
-            s_logger.error("failed to create snapshot for vm:" + vmName + " due to " + msg);
+            s_logger.error("failed to create snapshot for vm:" + vmName + " due to " + msg, e);
 
             try {
                 if (vmMo.getSnapshotMor(vmSnapshotName) != null) {
@@ -1383,17 +1374,10 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         try {
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
 
-            // wait if there are already VM revert task running
-            ManagedObjectReference taskmgr = context.getServiceContent().getTaskManager();
-            List<ManagedObjectReference> tasks = context.getVimClient().getDynamicProperty(taskmgr, "recentTask");
-
-            for (ManagedObjectReference taskMor : tasks) {
-                TaskInfo info = (TaskInfo)(context.getVimClient().getDynamicProperty(taskMor, "info"));
-
-                if (info.getEntityName().equals(cmd.getVmName()) && info.getName().equalsIgnoreCase("RevertToSnapshot_Task")) {
-                    s_logger.debug("There is already a VM snapshot task running, wait for it");
-                    context.getVimClient().waitForTask(taskMor);
-                }
+            if(waitForRunningTaskOnVM(cmd.getVmName(), "RevertToSnapshot_Task", context)==false){
+                String msg = "vCenter task failed";
+                s_logger.info(msg);
+                return new RevertToVMSnapshotAnswer(cmd, false, msg);
             }
 
             HostMO hostMo = (HostMO)hyperHost;
@@ -1439,7 +1423,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
         } catch (Exception e) {
             String msg = "revert vm " + vmName + " to snapshot " + snapshotName + " failed due to " + e.getMessage();
-            s_logger.error(msg);
+            s_logger.error(msg, e);
 
             return new RevertToVMSnapshotAnswer(cmd, false, msg);
         }
@@ -1463,5 +1447,46 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
     private static String getVolumeRelativeDirInSecStroage(long volumeId) {
         return "volumes/" + volumeId;
+    }
+
+    /**
+     * This method is to check if a given TaskInfo Object is valid( and has name and entity name assigned).It return true if TaskInfo Object is valid and false otherwise.
+     *
+     * @param TaskInfo
+     *        info
+     * @return boolean(true or false)
+     **/
+    private boolean isvalidTaskInfoObj(TaskInfo info){
+        return !(info == null || info.getEntityName() == null || info.getName() == null);
+    }
+
+    private boolean waitForRunningTaskOnVM(String vmName, String taskName, VmwareContext context) throws Exception {
+        try {
+            ManagedObjectReference taskmgr = context.getServiceContent().getTaskManager();
+            List<ManagedObjectReference> tasks = context.getVimClient().getDynamicProperty(taskmgr, "recentTask");
+
+            for (ManagedObjectReference taskMor : tasks) {
+                TaskInfo info = (TaskInfo)(context.getVimClient().getDynamicProperty(taskMor, "info"));
+
+                if (!isvalidTaskInfoObj(info)) {
+                    continue;
+                }
+
+                if (info.getEntityName().equals(vmName) && info.getName().equalsIgnoreCase(taskName)) {
+                    if (!(info.getState().equals(TaskInfoState.SUCCESS) || info.getState().equals(TaskInfoState.ERROR))) {
+                        s_logger.debug("There is already a task: " + taskName + " running for VM: " + vmName + ", wait for it");
+                        // wait if there is already similar VM task running
+                        context.getVimClient().waitForTask(taskMor);
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        } catch (Exception e) {
+            String msg = "Failed to check running task: " + taskName + " for vm: " + vmName + " due to " + e.getMessage();
+            s_logger.error(msg, e);
+            throw new Exception(msg);
+        }
     }
 }
