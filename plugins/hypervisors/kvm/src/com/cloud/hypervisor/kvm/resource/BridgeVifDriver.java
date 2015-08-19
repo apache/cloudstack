@@ -287,7 +287,7 @@ public class BridgeVifDriver extends VifDriverBase {
             for (String line : lines) {
                 String[] tokens = line.split(" ");
                 if (!tokens[2].equalsIgnoreCase(linkLocalBr)) {
-                    Script.runSimpleBashScript("ip route del " + NetUtils.getLinkLocalCIDR());
+                    Script.runSimpleBashScript("ip route del " + NetUtils.getLinkLocalCIDR() + " dev " + tokens[2]);
                 } else {
                     foundLinkLocalBr = true;
                 }
