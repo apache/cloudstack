@@ -146,6 +146,14 @@ public class SshHelper {
             }
             sess = conn.openSession();
 
+            Thread.sleep(1000);
+
+            if (sess == null) {
+                String msg = "Cannot open SSH session";
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+
             sess.execCommand(command);
 
             InputStream stdout = sess.getStdout();
@@ -156,6 +164,12 @@ public class SshHelper {
 
             int currentReadBytes = 0;
             while (true) {
+                if (stdout == null || stderr == null) {
+                    String msg = "Stdout or Stderr of SSH session is null";
+                    s_logger.error(msg);
+                    throw new Exception(msg);
+                }
+
                 if ((stdout.available() == 0) && (stderr.available() == 0)) {
                     int conditions =
                         sess.waitForCondition(ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA | ChannelCondition.EOF | ChannelCondition.EXIT_STATUS,
@@ -170,6 +184,22 @@ public class SshHelper {
                     if ((conditions & ChannelCondition.EXIT_STATUS) != 0) {
                         if ((conditions & (ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA)) == 0) {
                             break;
+                        }
+                    }
+
+                    if ((conditions & ChannelCondition.EOF) != 0) {
+                        if ((conditions & (ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA)) == 0) {
+                            int newConditions = sess.waitForCondition(ChannelCondition.EXIT_STATUS, waitResultTimeoutInMs);
+                            if ((newConditions & ChannelCondition.TIMEOUT) != 0) {
+                                String msg = "Timed out in waiting for SSH execution exit status";
+                                s_logger.error(msg);
+                                throw new Exception(msg);
+                            }
+                            if ((newConditions & ChannelCondition.EXIT_STATUS) != 0) {
+                                if ((newConditions & (ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA)) == 0) {
+                                    break;
+                                }
+                            }
                         }
                     }
                 }
@@ -189,6 +219,7 @@ public class SshHelper {
 
             if (sess.getExitStatus() == null) {
                 //Exit status is NOT available. Returning failure result.
+                s_logger.error("SSH execution of command " + command + " has no exit status set. result output: " + result);
                 return new Pair<Boolean, String>(false, result);
             }
 
