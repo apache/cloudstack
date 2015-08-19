@@ -168,7 +168,7 @@
                     },
 
                     detailView: {
-                        name: 'Account details',
+                        name: 'label.account.details',
                         isMaximized: true,
                         viewAll: {
                             path: 'accounts.users',
@@ -896,7 +896,7 @@
 
                             // Granular settings for account
                             settings: {
-                                title: 'Settings',
+                                title: 'label.settings',
                                 custom: cloudStack.uiCustom.granularSettings({
                                     dataProvider: function(args) {
                                         $.ajax({
@@ -1221,7 +1221,7 @@
                     },
 
                     detailView: {
-                        name: 'User details',
+                        name: 'label.user.details',
                         isMaximized: true,
                         actions: {
                             edit: {
@@ -1665,7 +1665,7 @@
             sshkeypairs: {
                 type: 'select',
                 id: 'sshkeypairs',
-                title: 'SSH Key Pairs',
+                title: 'label.ssh.key.pairs',
                 listView: {
                     name: 'sshkeypairs',
                     fields: {
@@ -1679,7 +1679,7 @@
                            label: 'label.account'
                         },
                         privatekey: {
-                            label: 'Private Key',
+                            label: 'label.private.key',
                             span: false
                         }
                     },
@@ -1704,7 +1704,7 @@
                     },
                     actions: {
                         add: {
-                            label: 'Create a SSH Key Pair',
+                            label: 'label.create.ssh.key.pair',
 
                             preFilter: function(args) {
                                 return true;
@@ -1712,13 +1712,13 @@
 
                             messages: {
                                 notification: function(args) {
-                                    return 'Created a SSH Key Pair.';
+                                    return _l('message.desc.created.ssh.key.pair');
                                 }
                             },
 
                             createForm: {
-                                title: 'Create a SSH Key Pair',
-                                desc: 'Please fill in the following data to create or register a ssh key pair.<br><br>(1) If public key is set, CloudStack will register the public key. You can use it through your private key.<br><br>(2) If public key is not set, CloudStack will create a new SSH Key pair. In this case, please copy and save the private key. CloudStack will not keep it.<br>',
+                                title: 'label.create.ssh.key.pair',
+                                desc: 'message.desc.create.ssh.key.pair',
                                 fields: {
                                     name: {
                                         label: 'label.name',
@@ -1727,7 +1727,7 @@
                                         }
                                     },
                                     publickey: {
-                                        label: 'Public Key'
+                                        label: 'label.public.key'
                                     },
                                     domain: {
                                         label: 'label.domain',
@@ -1857,7 +1857,7 @@
                     },
 
                     detailView: {
-                        name: 'SSH Key Pair Details',
+                        name: 'label.ssh.key.pair.details',
                         isMaximized: true,
                         viewAll: {
                             label: 'label.instances',
@@ -1865,13 +1865,13 @@
                         },
                         actions: {
                             remove: {
-                                label: 'Remove SSH Key Pair',
+                                label: 'label.remove.ssh.key.pair',
                                 messages: {
                                     confirm: function(args) {
-                                        return 'Please confirm that you want to remove this SSH Key Pair';
+                                        return _l('message.please.confirm.remove.ssh.key.pair');
                                     },
                                     notification: function(args) {
-                                        return 'Removed a SSH Key Pair';
+                                        return _l('message.removed.ssh.key.pair');
                                     }
                                 },
                                 action: function(args) {
@@ -1911,11 +1911,11 @@
                                         label: 'label.account'
                                     },
                                     privatekey: {
-                                        label: 'Private Key',
+                                        label: 'label.private.key',
                                         span: false
                                     },
                                     fingerprint: {
-                                        label: 'FingerPrint'
+                                        label: 'label.fingerprint'
                                     }
                                 }],
 

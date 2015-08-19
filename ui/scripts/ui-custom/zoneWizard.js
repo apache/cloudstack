@@ -658,14 +658,14 @@
             var $physicalNetworkItem = $('<div>').addClass('select-container multi');
             var $deleteButton = $('<div>').addClass('button remove physical-network')
                 .attr({
-                    title: 'Remove this physical network'
+                    title: 'label.remove.this.physical.network'
                 })
                 .append('<span>').addClass('icon').html('&nbsp;');
             var $icon = $('<div>').addClass('physical-network-icon');
 
             var $nameField = $('<div>').addClass('field name').append(
                 $('<div>').addClass('name').append(
-                    $('<label>').html('Physical network name')
+                    $('<label>').html(_l('label.physical.network.name'))
                 ),
                 $('<div>').addClass('value').append(
                     $('<input>').attr({
@@ -701,7 +701,7 @@
             if ($wizard.find('.select-network-model input:radio[name=network-model]:checked').val() == 'Advanced') {
                 $nameField.append(
                     $('<div>').append(
-                        $('<span style=\"font-size:11px;padding-right:5px;padding-left:40px\">').html('Isolation method'),
+                        $('<span style=\"font-size:11px;padding-right:5px;padding-left:40px\">').html(_l('label.isolation.method')),
                         $('<select>').append(
                             $('<option>').attr({
                                 value: 'VLAN'
@@ -1211,7 +1211,7 @@
 
                 // Show launch button if last step
                 if ($targetStep.index() == $steps.size() - 1 || options.nextStep) {
-                    $nextButton.find('span').html(options.nextStep ? 'Save changes' : 'Launch zone');
+                    $nextButton.find('span').html(options.nextStep ? _('label.save.changes') : _('label.launch.zone'));
                     $nextButton.addClass('final');
 
                     if (options.nextStep) {
@@ -1424,7 +1424,7 @@
             showStep(1);
 
             return $wizard.dialog({
-                title: 'Add zone',
+                title: _l('label.installWizard.addZone.title'),
                 closeOnEscape: false,
                 width: 750,
                 height: 665,

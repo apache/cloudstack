@@ -180,8 +180,8 @@
 
                 cloudStack.dialog.createForm({
                     form: {
-                        title: 'Configure Sticky Policy',
-                        desc: 'Please complete the following fields',
+                        title: 'label.configure.sticky.policy',
+                        desc: 'label.please.complete.the.following.fields',
                         fields: fields
                     },
                     after: function(args) {
@@ -251,7 +251,7 @@
                     },
                     success: function(json) {
                         cloudStack.ui.notifications.add({
-                                desc: 'Add new LB sticky rule',
+                                desc: 'message.desc.add.new.lb.sticky.rule',
                                 section: 'Network',
                                 poll: pollAsyncJobResult,
                                 _custom: {

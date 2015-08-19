@@ -320,7 +320,7 @@
                                         noCompact: true,
                                         tabs: {
                                             network: {
-                                                title: 'Network',
+                                                title: 'label.network',
                                                 custom: function(args) {
                                                     var $chart = $('<div>').addClass('system-chart network');
 

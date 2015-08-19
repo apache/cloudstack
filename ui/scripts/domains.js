@@ -24,7 +24,7 @@
         overflowScroll: true,
             // Details
             detailView: {
-                name: 'Domain details',
+                name: 'label.domain.details',
                 viewAll: {
                     label: 'label.accounts',
                     path: 'accounts'

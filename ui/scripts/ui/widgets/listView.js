@@ -1956,7 +1956,7 @@
             var form = cloudStack.dialog.createForm({
                 noDialog: true,
                 form: {
-                    title: 'Advanced Search',
+                    title: 'label.advanced.search',
                     fields: listViewData.advSearchFields
                 },
                 after: function(args) {
@@ -1974,7 +1974,7 @@
             $form.find('input[type=submit]')
                 .show()
                 .appendTo($form)
-                .val('Search');
+                .val(_('label.search'));
 
             // Cancel button
             $form.append(

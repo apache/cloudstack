@@ -437,7 +437,7 @@
 
                             cloudStack.dialog.createForm({
                                 form: {
-                                    title: 'Edit rule',
+                                    title: 'label.edit.rule',
                                     desc: '',
                                     fields: editableFields
                                 },

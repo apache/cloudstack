@@ -261,7 +261,7 @@
             GSLB: {
                 id: 'GSLB',
                 type: 'select',
-                title: 'GSLB',
+                title: 'label.gslb',
                 listView: {
                     id: 'GSLB',
                     label: 'label.gslb',
