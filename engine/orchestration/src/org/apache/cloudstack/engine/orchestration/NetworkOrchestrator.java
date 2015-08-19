@@ -892,13 +892,13 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         to.setDeviceId(nic.getDeviceId());
         to.setBroadcastType(config.getBroadcastDomainType());
         to.setType(config.getTrafficType());
-        to.setIp(nic.getIp4Address());
-        to.setNetmask(nic.getNetmask());
+        to.setIp(nic.getIPv4Address());
+        to.setNetmask(nic.getIPv4Netmask());
         to.setMac(nic.getMacAddress());
         to.setDns1(profile.getIPv4Dns1());
         to.setDns2(profile.getIPv4Dns2());
-        if (nic.getGateway() != null) {
-            to.setGateway(nic.getGateway());
+        if (nic.getIPv4Gateway() != null) {
+            to.setGateway(nic.getIPv4Gateway());
         } else {
             to.setGateway(config.getGateway());
         }
@@ -1741,7 +1741,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     private boolean isLastNicInSubnet(NicVO nic) {
-        if (_nicDao.listByNetworkIdTypeAndGatewayAndBroadcastUri(nic.getNetworkId(), VirtualMachine.Type.User, nic.getGateway(), nic.getBroadcastUri()).size() > 1) {
+        if (_nicDao.listByNetworkIdTypeAndGatewayAndBroadcastUri(nic.getNetworkId(), VirtualMachine.Type.User, nic.getIPv4Gateway(), nic.getBroadcastUri()).size() > 1) {
             return false;
         }
         return true;
@@ -1753,7 +1753,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         Network network = _networksDao.findById(nic.getNetworkId());
         DhcpServiceProvider dhcpServiceProvider = getDhcpServiceProvider(network);
         try {
-            final NicIpAliasVO ipAlias = _nicIpAliasDao.findByGatewayAndNetworkIdAndState(nic.getGateway(), network.getId(), NicIpAlias.state.active);
+            final NicIpAliasVO ipAlias = _nicIpAliasDao.findByGatewayAndNetworkIdAndState(nic.getIPv4Gateway(), network.getId(), NicIpAlias.state.active);
             if (ipAlias != null) {
                 ipAlias.setState(NicIpAlias.state.revoked);
                 Transaction.execute(new TransactionCallbackNoReturn() {
@@ -3118,7 +3118,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             String ipAddress = requested.getIPv4Address();
             NicVO nicVO = _nicDao.findByNetworkIdInstanceIdAndBroadcastUri(network.getId(), vm.getId(), broadcastUri);
             if (nicVO != null) {
-                if (ipAddress == null || nicVO.getIp4Address().equals(ipAddress)) {
+                if (ipAddress == null || nicVO.getIPv4Address().equals(ipAddress)) {
                     nic = _networkModel.getNicProfile(vm, network.getId(), broadcastUri);
                 }
             }

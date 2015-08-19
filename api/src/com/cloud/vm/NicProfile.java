@@ -53,19 +53,19 @@ public class NicProfile implements InternalIdentity, Serializable {
     boolean isSecurityGroupEnabled;
 
     // IPv4
-    String ipv4Address;
-    String ipv4Netmask;
-    String ipv4Gateway;
-    String ipv4Dns1;
-    String ipv4Dns2;
+    String iPv4Address;
+    String iPv4Netmask;
+    String iPv4Gateway;
+    String iPv4Dns1;
+    String iPv4Dns2;
     String requestedIPv4;
 
     // IPv6
-    String ipv6Address;
-    String ipv6Gateway;
-    String ipv6Cidr;
-    String ipv6Dns1;
-    String ipv6Dns2;
+    String iPv6Address;
+    String iPv6Gateway;
+    String iPv6Cidr;
+    String iPv6Dns1;
+    String iPv6Dns2;
     String requestedIPv6;
 
     //
@@ -83,13 +83,13 @@ public class NicProfile implements InternalIdentity, Serializable {
         trafficType = network.getTrafficType();
         format = nic.getAddressFormat();
 
-        ipv4Address = nic.getIp4Address();
-        ipv4Netmask = nic.getNetmask();
-        ipv4Gateway = nic.getGateway();
+        iPv4Address = nic.getIPv4Address();
+        iPv4Netmask = nic.getIPv4Netmask();
+        iPv4Gateway = nic.getIPv4Gateway();
 
-        ipv6Address = nic.getIp6Address();
-        ipv6Gateway = nic.getIp6Gateway();
-        ipv6Cidr = nic.getIp6Cidr();
+        iPv6Address = nic.getIPv6Address();
+        iPv6Gateway = nic.getIPv6Gateway();
+        iPv6Cidr = nic.getIPv6Cidr();
 
         macAddress = nic.getMacAddress();
         reservationId = nic.getReservationId();
@@ -114,11 +114,11 @@ public class NicProfile implements InternalIdentity, Serializable {
         this.requestedIPv6 = requestedIPv6;
     }
 
-    public NicProfile(ReservationStrategy strategy, String ipv4Address, String macAddress, String gateway, String netmask) {
+    public NicProfile(ReservationStrategy strategy, String iPv4Address, String macAddress, String iPv4gateway, String iPv4netmask) {
         format = AddressFormat.Ip4;
-        this.ipv4Address = ipv4Address;
-        this.ipv4Gateway = gateway;
-        this.ipv4Netmask = netmask;
+        this.iPv4Address = iPv4Address;
+        this.iPv4Gateway = iPv4gateway;
+        this.iPv4Netmask = iPv4netmask;
         this.macAddress = macAddress;
         this.strategy = strategy;
     }
@@ -277,43 +277,43 @@ public class NicProfile implements InternalIdentity, Serializable {
     //
 
     public String getIPv4Address() {
-        return ipv4Address;
+        return iPv4Address;
     }
 
     public void setIPv4Address(String ipv4Address) {
-        this.ipv4Address = ipv4Address;
+        this.iPv4Address = ipv4Address;
     }
 
     public String getIPv4Netmask() {
-        return ipv4Netmask;
+        return iPv4Netmask;
     }
 
     public void setIPv4Netmask(String ipv4Netmask) {
-        this.ipv4Netmask = ipv4Netmask;
+        this.iPv4Netmask = ipv4Netmask;
     }
 
     public String getIPv4Gateway() {
-        return ipv4Gateway;
+        return iPv4Gateway;
     }
 
     public void setIPv4Gateway(String ipv4Gateway) {
-        this.ipv4Gateway = ipv4Gateway;
+        this.iPv4Gateway = ipv4Gateway;
     }
 
     public String getIPv4Dns1() {
-        return ipv4Dns1;
+        return iPv4Dns1;
     }
 
     public void setIPv4Dns1(String ipv4Dns1) {
-        this.ipv4Dns1 = ipv4Dns1;
+        this.iPv4Dns1 = ipv4Dns1;
     }
 
     public String getIPv4Dns2() {
-        return ipv4Dns2;
+        return iPv4Dns2;
     }
 
     public void setIPv4Dns2(String ipv4Dns2) {
-        this.ipv4Dns2 = ipv4Dns2;
+        this.iPv4Dns2 = ipv4Dns2;
     }
 
     public String getRequestedIPv4() {
@@ -329,43 +329,43 @@ public class NicProfile implements InternalIdentity, Serializable {
     //
 
     public String getIPv6Address() {
-        return ipv6Address;
+        return iPv6Address;
     }
 
     public void setIPv6Address(String ipv6Address) {
-        this.ipv6Address = ipv6Address;
+        this.iPv6Address = ipv6Address;
     }
 
     public String getIPv6Gateway() {
-        return ipv6Gateway;
+        return iPv6Gateway;
     }
 
     public void setIPv6Gateway(String ipv6Gateway) {
-        this.ipv6Gateway = ipv6Gateway;
+        this.iPv6Gateway = ipv6Gateway;
     }
 
     public String getIPv6Cidr() {
-        return ipv6Cidr;
+        return iPv6Cidr;
     }
 
     public void setIPv6Cidr(String ipv6Cidr) {
-        this.ipv6Cidr = ipv6Cidr;
+        this.iPv6Cidr = ipv6Cidr;
     }
 
     public String getIPv6Dns1() {
-        return ipv6Dns1;
+        return iPv6Dns1;
     }
 
     public void setIPv6Dns1(String ipv6Dns1) {
-        this.ipv6Dns1 = ipv6Dns1;
+        this.iPv6Dns1 = ipv6Dns1;
     }
 
     public String getIPv6Dns2() {
-        return ipv6Dns2;
+        return iPv6Dns2;
     }
 
     public void setIPv6Dns2(String ipv6Dns2) {
-        this.ipv6Dns2 = ipv6Dns2;
+        this.iPv6Dns2 = ipv6Dns2;
     }
 
     public String getRequestedIPv6() {
@@ -386,17 +386,17 @@ public class NicProfile implements InternalIdentity, Serializable {
         broadcastType = null;
         trafficType = null;
 
-        ipv4Address = null;
-        ipv4Netmask = null;
-        ipv4Gateway = null;
-        ipv4Dns1 = null;
-        ipv4Dns2 = null;
+        iPv4Address = null;
+        iPv4Netmask = null;
+        iPv4Gateway = null;
+        iPv4Dns1 = null;
+        iPv4Dns2 = null;
 
-        ipv6Address = null;
-        ipv6Gateway = null;
-        ipv6Cidr = null;
-        ipv6Dns1 = null;
-        ipv6Dns2 = null;
+        iPv6Address = null;
+        iPv6Gateway = null;
+        iPv6Cidr = null;
+        iPv6Dns1 = null;
+        iPv6Dns2 = null;
 
         macAddress = null;
         reservationId = null;
@@ -415,7 +415,7 @@ public class NicProfile implements InternalIdentity, Serializable {
                 .append("-")
                 .append(reservationId)
                 .append("-")
-                .append(ipv4Address)
+                .append(iPv4Address)
                 .append("-")
                 .append(broadcastUri)
                 .toString();

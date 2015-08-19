@@ -480,7 +480,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
             maxconn = offering.getConcurrentConnections().toString();
         }
         final LoadBalancerConfigCommand cmd =
-                new LoadBalancerConfigCommand(lbs, guestNic.getIp4Address(), guestNic.getIp4Address(), internalLbVm.getPrivateIpAddress(), _itMgr.toNicTO(guestNicProfile,
+                new LoadBalancerConfigCommand(lbs, guestNic.getIPv4Address(), guestNic.getIPv4Address(), internalLbVm.getPrivateIpAddress(), _itMgr.toNicTO(guestNicProfile,
                         internalLbVm.getHypervisorType()), internalLbVm.getVpcId(), maxconn, offering.isKeepAliveEnabled());
 
         cmd.lbStatsVisibility = _configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
@@ -489,7 +489,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         cmd.lbStatsPort = _configDao.getValue(Config.NetworkLBHaproxyStatsPort.key());
 
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getInternalLbControlIp(internalLbVm.getId()));
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, guestNic.getIp4Address());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, guestNic.getIPv4Address());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, internalLbVm.getInstanceName());
         final DataCenterVO dcVo = _dcDao.findById(internalLbVm.getDataCenterId());
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
@@ -502,7 +502,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         for (final NicVO nic : nics) {
             final Network ntwk = _ntwkModel.getNetwork(nic.getNetworkId());
             if (ntwk.getTrafficType() == TrafficType.Control) {
-                controlIpAddress = nic.getIp4Address();
+                controlIpAddress = nic.getIPv4Address();
             }
         }
 
@@ -714,7 +714,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
             while (it.hasNext()) {
                 final DomainRouterVO vm = it.next();
                 final Nic nic = _nicDao.findByNtwkIdAndInstanceId(guestNetworkId, vm.getId());
-                if (!nic.getIp4Address().equalsIgnoreCase(requestedGuestIp.addr())) {
+                if (!nic.getIPv4Address().equalsIgnoreCase(requestedGuestIp.addr())) {
                     it.remove();
                 }
             }

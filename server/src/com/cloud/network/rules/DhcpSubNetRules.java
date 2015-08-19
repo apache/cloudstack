@@ -92,7 +92,7 @@ public class DhcpSubNetRules extends RuleApplier {
         // create one.
         // This should happen only in case of Basic and Advanced SG enabled
         // networks.
-        if (!NetUtils.sameSubnet(domrGuestNic.getIp4Address(), _nic.getIPv4Address(), _nic.getIPv4Netmask())) {
+        if (!NetUtils.sameSubnet(domrGuestNic.getIPv4Address(), _nic.getIPv4Address(), _nic.getIPv4Netmask())) {
             final NicIpAliasDao nicIpAliasDao = visitor.getVirtualNetworkApplianceFactory().getNicIpAliasDao();
             final List<NicIpAliasVO> aliasIps = nicIpAliasDao.listByNetworkIdAndState(domrGuestNic.getNetworkId(), NicIpAlias.state.active);
             boolean ipInVmsubnet = false;

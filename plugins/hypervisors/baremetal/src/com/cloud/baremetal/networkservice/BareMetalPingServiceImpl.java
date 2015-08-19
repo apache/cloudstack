@@ -138,10 +138,10 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
         HostVO host = _hostDao.findById(hostId);
         DataCenterVO dc = _dcDao.findById(host.getDataCenterId());
         NicVO nic = nics.get(0);
-        String mask = nic.getNetmask();
+        String mask = nic.getIPv4Netmask();
         String mac = nic.getMacAddress();
-        String ip = nic.getIp4Address();
-        String gateway = nic.getGateway();
+        String ip = nic.getIPv4Address();
+        String gateway = nic.getIPv4Gateway();
         String dns = dc.getDns1();
         if (dns == null) {
             dns = dc.getDns2();

@@ -767,10 +767,10 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                             }
                             if (forVpc && network.getTrafficType() == TrafficType.Public || !forVpc && network.getTrafficType() == TrafficType.Guest
                                     && network.getGuestType() == Network.GuestType.Isolated) {
-                                final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName(), forVpc, routerNic.getIp4Address());
+                                final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName(), forVpc, routerNic.getIPv4Address());
                                 final String routerType = router.getType().toString();
                                 final UserStatisticsVO previousStats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterId(), network.getId(),
-                                        forVpc ? routerNic.getIp4Address() : null, router.getId(), routerType);
+                                        forVpc ? routerNic.getIPv4Address() : null, router.getId(), routerType);
                                 NetworkUsageAnswer answer = null;
                                 try {
                                     answer = (NetworkUsageAnswer) _agentMgr.easySend(router.getHostId(), usageCmd);
@@ -795,7 +795,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                                             @Override
                                             public void doInTransactionWithoutResult(final TransactionStatus status) {
                                                 final UserStatisticsVO stats = _userStatsDao.lock(router.getAccountId(), router.getDataCenterId(), network.getId(),
-                                                        forVpc ? routerNic.getIp4Address() : null, router.getId(), routerType);
+                                                        forVpc ? routerNic.getIPv4Address() : null, router.getId(), routerType);
                                                 if (stats == null) {
                                                     s_logger.warn("unable to find stats for account: " + router.getAccountId());
                                                     return;
@@ -2427,10 +2427,10 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 // VR
                 if (forVpc && network.getTrafficType() == TrafficType.Public || !forVpc && network.getTrafficType() == TrafficType.Guest
                         && network.getGuestType() == Network.GuestType.Isolated) {
-                    final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName(), forVpc, routerNic.getIp4Address());
+                    final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName(), forVpc, routerNic.getIPv4Address());
                     final String routerType = router.getType().toString();
                     final UserStatisticsVO previousStats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterId(), network.getId(),
-                            forVpc ? routerNic.getIp4Address() : null, router.getId(), routerType);
+                            forVpc ? routerNic.getIPv4Address() : null, router.getId(), routerType);
                     NetworkUsageAnswer answer = null;
                     try {
                         answer = (NetworkUsageAnswer) _agentMgr.easySend(router.getHostId(), usageCmd);
@@ -2456,7 +2456,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                                 @Override
                                 public void doInTransactionWithoutResult(final TransactionStatus status) {
                                     final UserStatisticsVO stats = _userStatsDao.lock(router.getAccountId(), router.getDataCenterId(), network.getId(),
-                                            forVpc ? routerNic.getIp4Address() : null, router.getId(), routerType);
+                                            forVpc ? routerNic.getIPv4Address() : null, router.getId(), routerType);
                                     if (stats == null) {
                                         s_logger.warn("unable to find stats for account: " + router.getAccountId());
                                         return;

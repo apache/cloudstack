@@ -19,19 +19,18 @@ package org.apache.cloudstack.network.contrail.model;
 
 import java.io.IOException;
 
-import net.juniper.contrail.api.ApiConnector;
-import net.juniper.contrail.api.types.MacAddressesType;
-import net.juniper.contrail.api.types.VirtualMachineInterface;
-import net.juniper.contrail.api.types.VirtualMachineInterfacePropertiesType;
-
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.network.contrail.management.ContrailManager;
+import org.apache.log4j.Logger;
 
 import com.cloud.exception.InternalErrorException;
 import com.cloud.network.Network;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
+
+import net.juniper.contrail.api.ApiConnector;
+import net.juniper.contrail.api.types.MacAddressesType;
+import net.juniper.contrail.api.types.VirtualMachineInterface;
+import net.juniper.contrail.api.types.VirtualMachineInterfacePropertiesType;
 
 public class VMInterfaceModel extends ModelObjectBase {
     private static final Logger s_logger = Logger.getLogger(VMInterfaceModel.class);
@@ -78,7 +77,7 @@ public class VMInterfaceModel extends ModelObjectBase {
         setProperties(controller, instance, nic);
 
         InstanceIpModel ipModel = getInstanceIp();
-        String ipAddress = nic.getIp4Address();
+        String ipAddress = nic.getIPv4Address();
         if (ipAddress != null) {
             if (ipModel == null) {
                 ipModel = new InstanceIpModel(_vmName, _deviceId);

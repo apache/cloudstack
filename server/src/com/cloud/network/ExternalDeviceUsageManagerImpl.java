@@ -29,11 +29,10 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.ExternalNetworkResourceUsageAnswer;
@@ -272,7 +271,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
 
                 if (mapping != null) {
                     NicVO nic = _nicDao.findById(mapping.getNicId());
-                    String loadBalancingIpAddress = nic.getIp4Address();
+                    String loadBalancingIpAddress = nic.getIPv4Address();
                     bytesSentAndReceived = lbAnswer.ipBytes.get(loadBalancingIpAddress);
 
                     if (bytesSentAndReceived != null) {
@@ -542,7 +541,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
 
                     if (mapping != null) {
                         NicVO nic = _nicDao.findById(mapping.getNicId());
-                        String loadBalancingIpAddress = nic.getIp4Address();
+                        String loadBalancingIpAddress = nic.getIPv4Address();
                         bytesSentAndReceived = answer.ipBytes.get(loadBalancingIpAddress);
 
                         if (bytesSentAndReceived != null) {

@@ -316,7 +316,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 for (final Pair<Nic, Network> nicNtwk : publicNics) {
                     final Nic publicNic = nicNtwk.first();
                     final Network publicNtwk = nicNtwk.second();
-                    final IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(publicNtwk.getId(), publicNic.getIp4Address());
+                    final IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(publicNtwk.getId(), publicNic.getIPv4Address());
 
                     if (userIp.isSourceNat()) {
                         final PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
@@ -324,8 +324,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
                         if (domainRouterVO.getPublicIpAddress() == null) {
                             final DomainRouterVO routerVO = _routerDao.findById(domainRouterVO.getId());
-                            routerVO.setPublicIpAddress(publicNic.getIp4Address());
-                            routerVO.setPublicNetmask(publicNic.getNetmask());
+                            routerVO.setPublicIpAddress(publicNic.getIPv4Address());
+                            routerVO.setPublicNetmask(publicNic.getIPv4Netmask());
                             routerVO.setPublicMacAddress(publicNic.getMacAddress());
                             _routerDao.update(routerVO.getId(), routerVO);
                         }
@@ -334,12 +334,12 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                             domainRouterVO.getInstanceName(), domainRouterVO.getType());
                     cmds.addCommand(plugNicCmd);
                     final VpcVO vpc = _vpcDao.findById(domainRouterVO.getVpcId());
-                    final NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(domainRouterVO.getPrivateIpAddress(), domainRouterVO.getInstanceName(), true, publicNic.getIp4Address(), vpc.getCidr());
+                    final NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(domainRouterVO.getPrivateIpAddress(), domainRouterVO.getInstanceName(), true, publicNic.getIPv4Address(), vpc.getCidr());
                     usageCmds.add(netUsageCmd);
-                    UserStatisticsVO stats = _userStatsDao.findBy(domainRouterVO.getAccountId(), domainRouterVO.getDataCenterId(), publicNtwk.getId(), publicNic.getIp4Address(), domainRouterVO.getId(),
+                    UserStatisticsVO stats = _userStatsDao.findBy(domainRouterVO.getAccountId(), domainRouterVO.getDataCenterId(), publicNtwk.getId(), publicNic.getIPv4Address(), domainRouterVO.getId(),
                             domainRouterVO.getType().toString());
                     if (stats == null) {
-                        stats = new UserStatisticsVO(domainRouterVO.getAccountId(), domainRouterVO.getDataCenterId(), publicNic.getIp4Address(), domainRouterVO.getId(), domainRouterVO.getType().toString(),
+                        stats = new UserStatisticsVO(domainRouterVO.getAccountId(), domainRouterVO.getDataCenterId(), publicNic.getIPv4Address(), domainRouterVO.getId(), domainRouterVO.getType().toString(),
                                 publicNtwk.getId());
                         _userStatsDao.persist(stats);
                     }
@@ -365,7 +365,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     } else {
 
                         // set private network
-                        final PrivateIpVO ipVO = _privateIpDao.findByIpAndSourceNetworkId(guestNic.getNetworkId(), guestNic.getIp4Address());
+                        final PrivateIpVO ipVO = _privateIpDao.findByIpAndSourceNetworkId(guestNic.getNetworkId(), guestNic.getIPv4Address());
                         final Network network = _networkDao.findById(guestNic.getNetworkId());
                         BroadcastDomainType.getValue(network.getBroadcastUri());
                         final String netmask = NetUtils.getCidrNetmask(network.getCidr());
