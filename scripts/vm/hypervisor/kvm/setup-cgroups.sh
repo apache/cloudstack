@@ -19,7 +19,7 @@
 
 
 # Script to fix cgroups co-mounted issue
-# Applies to RHEL7 versions only
+# Applies to RHEL 7 versions (and family member CentOS 7) only
 # Detect if cpu,cpuacct cgroups are co-mounted
 # If co-mounted, unmount and mount them seperately
 
@@ -28,7 +28,7 @@
 # Check distribution version for RHEL
 if [ -f '/etc/redhat-release' ]; then
     # Check RHEL version for 7
-    if grep 'Red Hat Enterprise Linux Server release 7' /etc/redhat-release > /dev/null; then
+    if grep -E 'Red Hat Enterprise Linux Server release 7|CentOS Linux release 7' /etc/redhat-release > /dev/null; then
         # Check if cgroups if co-mounted
         if [ -d '/sys/fs/cgroup/cpu,cpuacct' ]; then
             # cgroups co-mounted. Requires remount
