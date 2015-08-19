@@ -51,7 +51,7 @@ public interface TemplateApiService {
 
     VirtualMachineTemplate copyTemplate(CopyTemplateCmd cmd) throws StorageUnavailableException, ResourceAllocationException;
 
-    VirtualMachineTemplate prepareTemplate(long templateId, long zoneId);
+    VirtualMachineTemplate prepareTemplate(long templateId, long zoneId, Long storageId);
 
     boolean detachIso(long vmId);
 
