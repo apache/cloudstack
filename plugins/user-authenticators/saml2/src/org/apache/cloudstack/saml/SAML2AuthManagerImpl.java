@@ -26,6 +26,7 @@ import com.cloud.utils.component.AdapterBase;
 import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import org.apache.cloudstack.api.command.AuthorizeSAMLSSOCmd;
 import org.apache.cloudstack.api.command.GetServiceProviderMetaDataCmd;
+import org.apache.cloudstack.api.command.ListAndSwitchSAMLAccountCmd;
 import org.apache.cloudstack.api.command.ListIdpsCmd;
 import org.apache.cloudstack.api.command.ListSamlAuthorizationCmd;
 import org.apache.cloudstack.api.command.SAML2LoginAPIAuthenticatorCmd;
@@ -287,18 +288,21 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
                         try {
                             idpMetadata.setSigningCertificate(KeyInfoHelper.getCertificates(kd.getKeyInfo()).get(0));
                         } catch (CertificateException ignored) {
+                            s_logger.info("[ignored] encountered invalid certificate signing.", ignored);
                         }
                     }
                     if (kd.getUse() == UsageType.ENCRYPTION) {
                         try {
                             idpMetadata.setEncryptionCertificate(KeyInfoHelper.getCertificates(kd.getKeyInfo()).get(0));
                         } catch (CertificateException ignored) {
+                            s_logger.info("[ignored] encountered invalid certificate encryption.", ignored);
                         }
                     }
                     if (kd.getUse() == UsageType.UNSPECIFIED) {
                         try {
                             unspecifiedKey = KeyInfoHelper.getCertificates(kd.getKeyInfo()).get(0);
                         } catch (CertificateException ignored) {
+                            s_logger.info("[ignored] encountered invalid certificate.", ignored);
                         }
                     }
                 }
@@ -506,6 +510,7 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
         cmdList.add(SAML2LogoutAPIAuthenticatorCmd.class);
         cmdList.add(GetServiceProviderMetaDataCmd.class);
         cmdList.add(ListIdpsCmd.class);
+        cmdList.add(ListAndSwitchSAMLAccountCmd.class);
         return cmdList;
     }
 

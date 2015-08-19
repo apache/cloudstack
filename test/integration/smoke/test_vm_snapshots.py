@@ -60,7 +60,7 @@ class TestVmSnapshot(cloudstackTestCase):
                     with description %s" % cls.services["ostype"]
 
         cls.services["domainid"] = cls.domain.id
-        cls.services["server"]["zoneid"] = cls.zone.id
+        cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["templates"]["ostypeid"] = template.ostypeid
         cls.services["zoneid"] = cls.zone.id
 
@@ -74,12 +74,12 @@ class TestVmSnapshot(cloudstackTestCase):
 
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offerings"]
+            cls.services["service_offerings"]["tiny"]
         )
         cls._cleanup.append(cls.service_offering)
         cls.virtual_machine = VirtualMachine.create(
             cls.apiclient,
-            cls.services["server"],
+            cls.services["small"],
             templateid=template.id,
             accountid=cls.account.name,
             domainid=cls.account.domainid,

@@ -92,13 +92,13 @@ public class DhcpSubNetRules extends RuleApplier {
         // create one.
         // This should happen only in case of Basic and Advanced SG enabled
         // networks.
-        if (!NetUtils.sameSubnet(domrGuestNic.getIp4Address(), _nic.getIp4Address(), _nic.getNetmask())) {
+        if (!NetUtils.sameSubnet(domrGuestNic.getIPv4Address(), _nic.getIPv4Address(), _nic.getIPv4Netmask())) {
             final NicIpAliasDao nicIpAliasDao = visitor.getVirtualNetworkApplianceFactory().getNicIpAliasDao();
             final List<NicIpAliasVO> aliasIps = nicIpAliasDao.listByNetworkIdAndState(domrGuestNic.getNetworkId(), NicIpAlias.state.active);
             boolean ipInVmsubnet = false;
             for (final NicIpAliasVO alias : aliasIps) {
                 // check if any of the alias ips belongs to the Vm's subnet.
-                if (NetUtils.sameSubnet(alias.getIp4Address(), _nic.getIp4Address(), _nic.getNetmask())) {
+                if (NetUtils.sameSubnet(alias.getIp4Address(), _nic.getIPv4Address(), _nic.getIPv4Netmask())) {
                     ipInVmsubnet = true;
                     break;
                 }
@@ -115,7 +115,7 @@ public class DhcpSubNetRules extends RuleApplier {
                         final Account caller = CallContext.current().getCallingAccount();
 
                         VlanDao vlanDao = visitor.getVirtualNetworkApplianceFactory().getVlanDao();
-                        final List<VlanVO> vlanList = vlanDao.listVlansByNetworkIdAndGateway(_network.getId(), _nic.getGateway());
+                        final List<VlanVO> vlanList = vlanDao.listVlansByNetworkIdAndGateway(_network.getId(), _nic.getIPv4Gateway());
                         final List<Long> vlanDbIdList = new ArrayList<Long>();
                         for (final VlanVO vlan : vlanList) {
                             vlanDbIdList.add(vlan.getId());
@@ -138,7 +138,7 @@ public class DhcpSubNetRules extends RuleApplier {
                 }
                 // this means we did not create an IP alias on the router.
                 _nicAlias = new NicIpAliasVO(domrGuestNic.getId(), _routerAliasIp, _router.getId(), CallContext.current().getCallingAccountId(), _network.getDomainId(),
-                        _nic.getNetworkId(), _nic.getGateway(), _nic.getNetmask());
+                        _nic.getNetworkId(), _nic.getIPv4Gateway(), _nic.getIPv4Netmask());
                 _nicAlias.setAliasCount(routerPublicIP.getIpMacAddress());
                 nicIpAliasDao.persist(_nicAlias);
 

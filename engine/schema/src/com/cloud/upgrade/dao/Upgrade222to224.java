@@ -207,18 +207,21 @@ public class Upgrade222to224 implements DbUpgrade {
                 try {
                     pstmtUpdate.close();
                 } catch (SQLException e) {
+                    s_logger.info("[ignored]",e);
                 }
             }
             if (rs != null) {
                 try {
                     rs.close();
                 } catch (SQLException e) {
+                    s_logger.info("[ignored]",e);
                 }
             }
             if (pstmt != null) {
                 try {
                     pstmt.close();
                 } catch (SQLException e) {
+                    s_logger.info("[ignored]",e);
                 }
             }
 
@@ -406,18 +409,21 @@ public class Upgrade222to224 implements DbUpgrade {
                 try {
                     pstmtUpdate.close();
                 } catch (SQLException e) {
+                    s_logger.info("[ignored]",e);
                 }
             }
             if (rs != null) {
                 try {
                     rs.close();
                 } catch (SQLException e) {
+                    s_logger.info("[ignored]",e);
                 }
             }
             if (pstmt != null) {
                 try {
                     pstmt.close();
                 } catch (SQLException e) {
+                    s_logger.info("[ignored]",e);
                 }
             }
 

@@ -331,9 +331,9 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
             SolidFireUtil.SolidFireAccount sfAccount = SolidFireUtil.getSolidFireAccount(sfConnection, sfAccountName);
 
             if (sfAccount == null) {
-                long accountNumber = SolidFireUtil.createSolidFireAccount(sfConnection, sfAccountName);
+                long sfAccountNumber = SolidFireUtil.createSolidFireAccount(sfConnection, sfAccountName);
 
-                sfAccount = SolidFireUtil.getSolidFireAccountById(sfConnection, accountNumber);
+                sfAccount = SolidFireUtil.getSolidFireAccountById(sfConnection, sfAccountNumber);
             }
 
             long sfVolumeId = SolidFireUtil.createSolidFireVolume(sfConnection, SolidFireUtil.getSolidFireVolumeName(volumeName), sfAccount.getId(), volumeSize,

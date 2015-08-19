@@ -101,7 +101,7 @@ public class PrivateGatewayRules extends RuleApplier {
     }
 
     public PrivateIpVO retrivePrivateIP(final NetworkTopologyVisitor visitor) {
-        PrivateIpVO ipVO = visitor.getVirtualNetworkApplianceFactory().getPrivateIpDao().findByIpAndSourceNetworkId(_nicProfile.getNetworkId(), _nicProfile.getIp4Address());
+        PrivateIpVO ipVO = visitor.getVirtualNetworkApplianceFactory().getPrivateIpDao().findByIpAndSourceNetworkId(_nicProfile.getNetworkId(), _nicProfile.getIPv4Address());
         return ipVO;
     }
 

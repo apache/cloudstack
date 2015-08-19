@@ -75,7 +75,7 @@
                             },
                             action: function(args) {
                                 var events = args.context.events;
-                                
+
                                 $.ajax({
                                     url: createURL("deleteEvents"),
                                     data: {
@@ -90,7 +90,7 @@
                                     error:function(data) {
                                         args.response.error(parseXMLHttpResponse(data));
                                     }
-                                }); 
+                                });
                             }
                         },
 
@@ -154,7 +154,7 @@
                                 });
                             }
                         },
-                        
+
                         archive: {
                             label: 'label.archive.events',
                             isHeader: true,
@@ -215,7 +215,7 @@
 
                             }
                         },
-                        
+
                         // Archive multiple events
                         archiveMulti: {
                             label: 'label.archive.events',
@@ -232,7 +232,7 @@
                             },
                             action: function(args) {
                                 var events = args.context.events;
-                                
+
                                 $.ajax({
                                     url: createURL("archiveEvents"),
                                     data: {
@@ -247,7 +247,7 @@
                                     error:function(data) {
                                         args.response.error(parseXMLHttpResponse(data));
                                     }
-                                }); 
+                                });
                             }
                         }
 
@@ -494,7 +494,7 @@
                             },
                             action: function(args) {
                                 var events = args.context.alerts;
-                                
+
                                 $.ajax({
                                     url: createURL("deleteAlerts"),
                                     data: {
@@ -509,10 +509,10 @@
                                     error:function(data) {
                                         args.response.error(parseXMLHttpResponse(data));
                                     }
-                                }); 
+                                });
                             }
                         },
-                        
+
                         remove: {
                             label: 'label.delete.alerts',
                             isHeader: true,
@@ -593,7 +593,7 @@
                             },
                             action: function(args) {
                                 var events = args.context.alerts;
-                                
+
                                 $.ajax({
                                     url: createURL("archiveAlerts"),
                                     data: {
@@ -608,10 +608,10 @@
                                     error:function(data) {
                                         args.response.error(parseXMLHttpResponse(data));
                                     }
-                                }); 
+                                });
                             }
                         },
-                        
+
                         archive: {
                             label: 'label.archive.alerts',
                             isHeader: true,

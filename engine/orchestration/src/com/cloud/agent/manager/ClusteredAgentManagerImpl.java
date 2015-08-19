@@ -585,6 +585,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     s_logger.info("Closing: " + ch.toString());
                     ch.close();
                 } catch (IOException e) {
+                    s_logger.info("[ignored] error on closing channel: " +ch.toString(), e);
                 }
             }
         }

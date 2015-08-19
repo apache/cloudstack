@@ -28,7 +28,7 @@ import org.apache.log4j.Logger;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
-public class Upgrade306to307 extends Upgrade30xBase implements DbUpgrade {
+public class Upgrade306to307 extends Upgrade30xBase {
     final static Logger s_logger = Logger.getLogger(Upgrade306to307.class);
 
     @Override
@@ -97,20 +97,11 @@ public class Upgrade306to307 extends Upgrade30xBase implements DbUpgrade {
             pstmt = conn.prepareStatement("drop table `cloud`.`network_details`");
             pstmt.executeUpdate();
         } catch (SQLException e) {
+            s_logger.info("[ignored] error during network offering update:" + e.getLocalizedMessage(), e);
         } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (rs1 != null) {
-                    rs1.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
+            closeAutoCloseable(rs);
+            closeAutoCloseable(rs1);
+            closeAutoCloseable(pstmt);
         }
     }
 

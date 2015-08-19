@@ -191,7 +191,7 @@ public class CommandSetupHelper {
         final String zoneName = _dcDao.findById(router.getDataCenterId()).getName();
         cmds.addCommand(
                 "vmdata",
-                generateVmDataCommand(router, nic.getIp4Address(), vm.getUserData(), serviceOffering, zoneName, nic.getIp4Address(), vm.getHostName(), vm.getInstanceName(),
+                generateVmDataCommand(router, nic.getIPv4Address(), vm.getUserData(), serviceOffering, zoneName, nic.getIPv4Address(), vm.getHostName(), vm.getInstanceName(),
                         vm.getId(), vm.getUuid(), publicKey, nic.getNetworkId()));
     }
 
@@ -217,10 +217,10 @@ public class CommandSetupHelper {
     }
 
     public void createDhcpEntryCommand(final VirtualRouter router, final UserVm vm, final NicVO nic, final Commands cmds) {
-        final DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), vm.getHostName(), nic.getIp6Address(),
+        final DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIPv4Address(), vm.getHostName(), nic.getIPv6Address(),
                 _networkModel.getExecuteInSeqNtwkElmtCmd());
 
-        String gatewayIp = nic.getGateway();
+        String gatewayIp = nic.getIPv4Gateway();
         if (!nic.isDefaultNic()) {
             final GuestOSVO guestOS = _guestOSDao.findById(vm.getGuestOSId());
             if (guestOS == null || !guestOS.getDisplayName().toLowerCase().contains("windows")) {
@@ -231,11 +231,11 @@ public class CommandSetupHelper {
         final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
 
         dhcpCommand.setDefaultRouter(gatewayIp);
-        dhcpCommand.setIp6Gateway(nic.getIp6Gateway());
+        dhcpCommand.setIp6Gateway(nic.getIPv6Gateway());
         String ipaddress = null;
         final NicVO domrDefaultNic = findDefaultDnsIp(vm.getId());
         if (domrDefaultNic != null) {
-            ipaddress = domrDefaultNic.getIp4Address();
+            ipaddress = domrDefaultNic.getIPv4Address();
         }
         dhcpCommand.setDefaultDns(ipaddress);
         dhcpCommand.setDuid(NetUtils.getDuidLL(nic.getMacAddress()));
@@ -268,13 +268,13 @@ public class CommandSetupHelper {
         final List<DhcpTO> ipList = new ArrayList<DhcpTO>();
 
         final NicVO router_guest_nic = _nicDao.findByNtwkIdAndInstanceId(network.getId(), router.getId());
-        final String cidr = NetUtils.getCidrFromGatewayAndNetmask(router_guest_nic.getGateway(), router_guest_nic.getNetmask());
+        final String cidr = NetUtils.getCidrFromGatewayAndNetmask(router_guest_nic.getIPv4Gateway(), router_guest_nic.getIPv4Netmask());
         final String[] cidrPair = cidr.split("\\/");
         final String cidrAddress = cidrPair[0];
         final long cidrSize = Long.parseLong(cidrPair[1]);
         final String startIpOfSubnet = NetUtils.getIpRangeStartIpFromCidr(cidrAddress, cidrSize);
 
-        ipList.add(new DhcpTO(router_guest_nic.getIp4Address(), router_guest_nic.getGateway(), router_guest_nic.getNetmask(), startIpOfSubnet));
+        ipList.add(new DhcpTO(router_guest_nic.getIPv4Address(), router_guest_nic.getIPv4Gateway(), router_guest_nic.getIPv4Netmask(), startIpOfSubnet));
         for (final NicIpAliasVO ipAliasVO : ipAliasVOList) {
             final DhcpTO DhcpTO = new DhcpTO(ipAliasVO.getIp4Address(), ipAliasVO.getGateway(), ipAliasVO.getNetmask(), ipAliasVO.getStartIpOfSubnet());
             if (s_logger.isTraceEnabled()) {
@@ -523,7 +523,7 @@ public class CommandSetupHelper {
 
         // password should be set only on default network element
         if (password != null && nic.isDefaultNic()) {
-            final SavePasswordCommand cmd = new SavePasswordCommand(password, nic.getIp4Address(), profile.getVirtualMachine().getHostName(),
+            final SavePasswordCommand cmd = new SavePasswordCommand(password, nic.getIPv4Address(), profile.getVirtualMachine().getHostName(),
                     _networkModel.getExecuteInSeqNtwkElmtCmd());
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(nic.getNetworkId(), router.getId()));
@@ -921,8 +921,8 @@ public class CommandSetupHelper {
         final boolean setupDns = dnsProvided || dhcpProvided;
 
         if (setupDns) {
-            defaultDns1 = guestNic.getDns1();
-            defaultDns2 = guestNic.getDns2();
+            defaultDns1 = guestNic.getIPv4Dns1();
+            defaultDns2 = guestNic.getIPv4Dns2();
         }
 
         final Nic nic = _nicDao.findByNtwkIdAndInstanceId(network.getId(), router.getId());
@@ -934,7 +934,7 @@ public class CommandSetupHelper {
         final SetupGuestNetworkCommand setupCmd = new SetupGuestNetworkCommand(dhcpRange, networkDomain, router.getIsRedundantRouter(), defaultDns1, defaultDns2, add, _itMgr.toNicTO(nicProfile,
                 router.getHypervisorType()));
 
-        final String brd = NetUtils.long2Ip(NetUtils.ip2Long(guestNic.getIp4Address()) | ~NetUtils.ip2Long(guestNic.getNetmask()));
+        final String brd = NetUtils.long2Ip(NetUtils.ip2Long(guestNic.getIPv4Address()) | ~NetUtils.ip2Long(guestNic.getIPv4Netmask()));
         setupCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         setupCmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(network.getId(), router.getId()));
 
@@ -1022,7 +1022,7 @@ public class CommandSetupHelper {
         // find domR's nic in the network
         NicVO domrDefaultNic;
         if (isZoneBasic) {
-            domrDefaultNic = _nicDao.findByNetworkIdTypeAndGateway(defaultNic.getNetworkId(), VirtualMachine.Type.DomainRouter, defaultNic.getGateway());
+            domrDefaultNic = _nicDao.findByNetworkIdTypeAndGateway(defaultNic.getNetworkId(), VirtualMachine.Type.DomainRouter, defaultNic.getIPv4Gateway());
         } else {
             domrDefaultNic = _nicDao.findByNetworkIdAndType(defaultNic.getNetworkId(), VirtualMachine.Type.DomainRouter);
         }
@@ -1033,8 +1033,8 @@ public class CommandSetupHelper {
         String dhcpRange = null;
         // setup dhcp range
         if (dc.getNetworkType() == NetworkType.Basic) {
-            final long cidrSize = NetUtils.getCidrSize(guestNic.getNetmask());
-            final String cidr = NetUtils.getCidrSubNet(guestNic.getGateway(), cidrSize);
+            final long cidrSize = NetUtils.getCidrSize(guestNic.getIPv4Netmask());
+            final String cidr = NetUtils.getCidrSubNet(guestNic.getIPv4Gateway(), cidrSize);
             if (cidr != null) {
                 dhcpRange = NetUtils.getIpRangeStartIpFromCidr(cidr, cidrSize);
             }

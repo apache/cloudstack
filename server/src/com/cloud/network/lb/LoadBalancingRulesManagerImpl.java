@@ -30,11 +30,6 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBHealthCheckPolicyCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBStickinessPolicyCmd;
@@ -50,6 +45,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.configuration.ConfigurationManager;
@@ -169,6 +165,8 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 @Local(value = {LoadBalancingRulesManager.class, LoadBalancingRulesService.class})
 public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements LoadBalancingRulesManager, LoadBalancingRulesService {
@@ -693,6 +691,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                         if (backupState.equals(FirewallRule.State.Active))
                             applyLoadBalancerConfig(cmd.getLbRuleId());
                     } catch (ResourceUnavailableException e1) {
+                        s_logger.info("[ignored] applying load balancer config.", e1);
                     } finally {
                         loadBalancer.setState(backupState);
                         _lbDao.persist(loadBalancer);
@@ -897,7 +896,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                                     for (LoadBalancerVMMapVO lbVmMap : lbVmMaps) {
                                         UserVm vm = _vmDao.findById(lbVmMap.getInstanceId());
                                         Nic nic = _nicDao.findByInstanceIdAndNetworkIdIncludingRemoved(ulb.getNetworkId(), vm.getId());
-                                        String dstIp = lbVmMap.getInstanceIp() == null ? nic.getIp4Address(): lbVmMap.getInstanceIp();
+                                        String dstIp = lbVmMap.getInstanceIp() == null ? nic.getIPv4Address(): lbVmMap.getInstanceIp();
 
                                         for (int i = 0; i < lbto.getDestinations().length; i++) {
                                             LoadBalancerTO.DestinationTO des = lbto.getDestinations()[i];
@@ -1030,7 +1029,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 throw ex;
             }
 
-            String priIp = nicInSameNetwork.getIp4Address();
+            String priIp = nicInSameNetwork.getIPv4Address();
 
             if (existingVmIdIps.containsKey(instanceId)) {
                 // now check for ip address
@@ -2055,7 +2054,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         for (LoadBalancerVMMapVO lbVmMap : lbVmMaps) {
             UserVm vm = _vmDao.findById(lbVmMap.getInstanceId());
             Nic nic = _nicDao.findByInstanceIdAndNetworkIdIncludingRemoved(lb.getNetworkId(), vm.getId());
-            dstIp = lbVmMap.getInstanceIp() == null ? nic.getIp4Address(): lbVmMap.getInstanceIp();
+            dstIp = lbVmMap.getInstanceIp() == null ? nic.getIPv4Address(): lbVmMap.getInstanceIp();
             LbDestination lbDst = new LbDestination(lb.getDefaultPortStart(), lb.getDefaultPortEnd(), dstIp, lbVmMap.isRevoke());
             dstList.add(lbDst);
         }
@@ -2464,7 +2463,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         for (LoadBalancerVMMapVO lbVmMap : lbVmMaps) {
             UserVm vm = _vmDao.findById(lbVmMap.getInstanceId());
             Nic nic = _nicDao.findByInstanceIdAndNetworkIdIncludingRemoved(lb.getNetworkId(), vm.getId());
-            Ip ip = new Ip(nic.getIp4Address());
+            Ip ip = new Ip(nic.getIPv4Address());
             dstList.put(ip, vm);
         }
         return dstList;

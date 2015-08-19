@@ -85,12 +85,12 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setDeviceId(profile.getDeviceId());
         to.setBroadcastType(profile.getBroadcastType());
         to.setType(profile.getTrafficType());
-        to.setIp(profile.getIp4Address());
-        to.setNetmask(profile.getNetmask());
+        to.setIp(profile.getIPv4Address());
+        to.setNetmask(profile.getIPv4Netmask());
         to.setMac(profile.getMacAddress());
-        to.setDns1(profile.getDns1());
-        to.setDns2(profile.getDns2());
-        to.setGateway(profile.getGateway());
+        to.setDns1(profile.getIPv4Dns1());
+        to.setDns2(profile.getIPv4Dns2());
+        to.setGateway(profile.getIPv4Gateway());
         to.setDefaultNic(profile.isDefaultNic());
         to.setBroadcastUri(profile.getBroadCastUri());
         to.setIsolationuri(profile.getIsolationUri());

@@ -19,7 +19,7 @@
 
 package com.cloud.utils.net;
 
-import com.cloud.utils.NumbersUtil;
+import static com.cloud.utils.AutoCloseableUtil.closeAutoCloseable;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -29,12 +29,17 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Formatter;
 
+import org.apache.log4j.Logger;
+
+import com.cloud.utils.NumbersUtil;
+
 /**
  * copied from the public domain utility from John Burkard.
  * @author <a href="mailto:jb@eaio.com">Johann Burkard</a>
  * @version 2.1.3
  **/
 public class MacAddress {
+    private static final Logger s_logger = Logger.getLogger(MacAddress.class);
     private long _addr = 0;
 
     protected MacAddress() {
@@ -124,23 +129,14 @@ public class MacAddress {
             }
 
         } catch (SecurityException ex) {
+            s_logger.info("[ignored] security exception in static initializer of MacAddress", ex);
         } catch (IOException ex) {
+            s_logger.info("[ignored] io exception in static initializer of MacAddress");
         } finally {
             if (p != null) {
-                if (in != null) {
-                    try {
-                        in.close();
-                    } catch (IOException ex) {
-                    }
-                }
-                try {
-                    p.getErrorStream().close();
-                } catch (IOException ex) {
-                }
-                try {
-                    p.getOutputStream().close();
-                } catch (IOException ex) {
-                }
+                closeAutoCloseable(in, "closing init process input stream");
+                closeAutoCloseable(p.getErrorStream(), "closing init process error output stream");
+                closeAutoCloseable(p.getOutputStream(), "closing init process std output stream");
                 p.destroy();
             }
         }
@@ -184,20 +180,9 @@ public class MacAddress {
             return reader.readLine();
         } finally {
             if (p != null) {
-                if (reader != null) {
-                    try {
-                        reader.close();
-                    } catch (IOException ex) {
-                    }
-                }
-                try {
-                    p.getErrorStream().close();
-                } catch (IOException ex) {
-                }
-                try {
-                    p.getOutputStream().close();
-                } catch (IOException ex) {
-                }
+                closeAutoCloseable(reader, "closing process input stream");
+                closeAutoCloseable(p.getErrorStream(), "closing process error output stream");
+                closeAutoCloseable(p.getOutputStream(), "closing process std output stream");
                 p.destroy();
             }
         }

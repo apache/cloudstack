@@ -81,9 +81,9 @@ public class NicProfileHelperImpl implements NicProfileHelper {
                             NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress())));
 
             final URI netUri = BroadcastDomainType.fromString(ip.getBroadcastUri());
-            privateNicProfile.setIp4Address(ip.getIpAddress());
-            privateNicProfile.setGateway(ip.getGateway());
-            privateNicProfile.setNetmask(ip.getNetmask());
+            privateNicProfile.setIPv4Address(ip.getIpAddress());
+            privateNicProfile.setIPv4Gateway(ip.getGateway());
+            privateNicProfile.setIPv4Netmask(ip.getNetmask());
             privateNicProfile.setIsolationUri(netUri);
             privateNicProfile.setBroadcastUri(netUri);
             // can we solve this in setBroadcastUri()???
@@ -102,9 +102,9 @@ public class NicProfileHelperImpl implements NicProfileHelper {
         final NicProfile guestNic = new NicProfile();
 
         if (vpcRouterDeploymentDefinition.isRedundant()) {
-            guestNic.setIp4Address(_ipAddrMgr.acquireGuestIpAddress(guestNetwork, null));
+            guestNic.setIPv4Address(_ipAddrMgr.acquireGuestIpAddress(guestNetwork, null));
         } else {
-            guestNic.setIp4Address(guestNetwork.getGateway());
+            guestNic.setIPv4Address(guestNetwork.getGateway());
         }
 
         guestNic.setBroadcastUri(guestNetwork.getBroadcastUri());
@@ -112,7 +112,7 @@ public class NicProfileHelperImpl implements NicProfileHelper {
         guestNic.setIsolationUri(guestNetwork.getBroadcastUri());
         guestNic.setMode(guestNetwork.getMode());
         final String gatewayCidr = guestNetwork.getCidr();
-        guestNic.setNetmask(NetUtils.getCidrNetmask(gatewayCidr));
+        guestNic.setIPv4Netmask(NetUtils.getCidrNetmask(gatewayCidr));
 
         return guestNic;
     }

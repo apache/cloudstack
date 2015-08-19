@@ -114,6 +114,7 @@ public class ClusterServiceServletContainer {
                 try {
                     _serverSocket.close();
                 } catch (IOException e) {
+                    s_logger.info("[ignored] error on closing server socket", e);
                 }
                 _serverSocket = null;
             }

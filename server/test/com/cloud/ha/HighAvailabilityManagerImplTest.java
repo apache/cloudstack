@@ -19,6 +19,7 @@ package com.cloud.ha;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,6 +58,7 @@ import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.user.AccountManager;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -74,13 +76,10 @@ public class HighAvailabilityManagerImplTest {
     HostPodDao _podDao;
     @Mock
     ClusterDetailsDao _clusterDetailsDao;
-
     @Mock
     ServiceOfferingDao _serviceOfferingDao;
-
     @Mock
     ManagedContext _managedContext;
-
     @Mock
     AgentManager _agentMgr;
     @Mock
@@ -103,7 +102,6 @@ public class HighAvailabilityManagerImplTest {
     ConfigurationDao _configDao;
     @Mock
     VolumeOrchestrationService volumeMgr;
-
     @Mock
     HostVO hostVO;
 
@@ -113,12 +111,18 @@ public class HighAvailabilityManagerImplTest {
     public void setup() throws IllegalArgumentException,
             IllegalAccessException, NoSuchFieldException, SecurityException {
         highAvailabilityManager = new HighAvailabilityManagerImpl();
-        for (Field injectField : HighAvailabilityManagerImpl.class
-                .getDeclaredFields()) {
+        for (Field injectField : HighAvailabilityManagerImpl.class.getDeclaredFields()) {
             if (injectField.isAnnotationPresent(Inject.class)) {
                 injectField.setAccessible(true);
-                injectField.set(highAvailabilityManager, this.getClass()
-                        .getDeclaredField(injectField.getName()).get(this));
+                injectField.set(highAvailabilityManager, this.getClass().getDeclaredField(injectField.getName()).get(this));
+            } else if (injectField.getName().equals("_workers")) {
+                injectField.setAccessible(true);
+                for (Class<?> clz : HighAvailabilityManagerImpl.class.getDeclaredClasses()) {
+                    if (clz.getName().equals("com.cloud.ha.HighAvailabilityManagerImpl$WorkerThread")) {
+                        Object obj = Array.newInstance(clz, 0);
+                        injectField.set(highAvailabilityManager, obj);
+                    }
+                }
             }
         }
     }
@@ -127,10 +131,47 @@ public class HighAvailabilityManagerImplTest {
     public void scheduleRestartForVmsOnHost() {
         Mockito.when(hostVO.getType()).thenReturn(Host.Type.Routing);
         Mockito.when(hostVO.getHypervisorType()).thenReturn(HypervisorType.KVM);
-        Mockito.when(_instanceDao.listByHostId(42l)).thenReturn(
-                Arrays.asList(Mockito.mock(VMInstanceVO.class)));
+        Mockito.when(_instanceDao.listByHostId(42l)).thenReturn(Arrays.asList(Mockito.mock(VMInstanceVO.class)));
         Mockito.when(_podDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(HostPodVO.class));
         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(DataCenterVO.class));
+
+        highAvailabilityManager.scheduleRestartForVmsOnHost(hostVO, true);
+    }
+
+    @Test
+    public void scheduleRestartForVmsOnHostNotSupported() {
+        Mockito.when(hostVO.getType()).thenReturn(Host.Type.Routing);
+        Mockito.when(hostVO.getHypervisorType()).thenReturn(HypervisorType.VMware);
+
+        highAvailabilityManager.scheduleRestartForVmsOnHost(hostVO, true);
+    }
+
+    @Test
+    public void scheduleRestartForVmsOnHostNonEmptyVMList() {
+        Mockito.when(hostVO.getId()).thenReturn(1l);
+        Mockito.when(hostVO.getType()).thenReturn(Host.Type.Routing);
+        Mockito.when(hostVO.getHypervisorType()).thenReturn(HypervisorType.XenServer);
+        List<VMInstanceVO> vms = new ArrayList<VMInstanceVO>();
+        VMInstanceVO vm1 = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm1.getHostId()).thenReturn(1l);
+        Mockito.when(vm1.getInstanceName()).thenReturn("i-2-3-VM");
+        Mockito.when(vm1.getType()).thenReturn(VirtualMachine.Type.User);
+        Mockito.when(vm1.isHaEnabled()).thenReturn(true);
+        vms.add(vm1);
+        VMInstanceVO vm2 = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm2.getHostId()).thenReturn(1l);
+        Mockito.when(vm2.getInstanceName()).thenReturn("r-2-VM");
+        Mockito.when(vm2.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
+        Mockito.when(vm2.isHaEnabled()).thenReturn(true);
+        vms.add(vm2);
+        Mockito.when(_instanceDao.listByHostId(Mockito.anyLong())).thenReturn(vms);
+        Mockito.when(_instanceDao.findByUuid(vm1.getUuid())).thenReturn(vm1);
+        Mockito.when(_instanceDao.findByUuid(vm2.getUuid())).thenReturn(vm2);
+        Mockito.when(_podDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(HostPodVO.class));
+        Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(DataCenterVO.class));
+        Mockito.when(_haDao.findPreviousHA(Mockito.anyLong())).thenReturn(Arrays.asList(Mockito.mock(HaWorkVO.class)));
+        Mockito.when(_haDao.persist((HaWorkVO)Mockito.anyObject())).thenReturn(Mockito.mock(HaWorkVO.class));
+
         highAvailabilityManager.scheduleRestartForVmsOnHost(hostVO, true);
     }
 

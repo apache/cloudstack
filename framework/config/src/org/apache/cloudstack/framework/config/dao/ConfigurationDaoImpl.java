@@ -17,7 +17,6 @@
 package org.apache.cloudstack.framework.config.dao;
 
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,10 +25,9 @@ import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 
 import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.crypt.DBEncryptionUtil;
@@ -144,21 +142,13 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
     @Deprecated
     public boolean update(String name, String value) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement stmt = null;
-        try {
-            stmt = txn.prepareStatement(UPDATE_CONFIGURATION_SQL);
+        try (PreparedStatement stmt = txn.prepareStatement(UPDATE_CONFIGURATION_SQL);){
             stmt.setString(1, value);
             stmt.setString(2, name);
             stmt.executeUpdate();
             return true;
         } catch (Exception e) {
             s_logger.warn("Unable to update Configuration Value", e);
-        } finally {
-            try {
-                if (stmt != null)
-                    stmt.close();
-            } catch (SQLException e) {
-            }
         }
         return false;
     }
@@ -166,22 +156,16 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
     @Override
     public boolean update(String name, String category, String value) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement stmt = null;
         try {
             value = ("Hidden".equals(category) || "Secure".equals(category)) ? DBEncryptionUtil.encrypt(value) : value;
-            stmt = txn.prepareStatement(UPDATE_CONFIGURATION_SQL);
-            stmt.setString(1, value);
-            stmt.setString(2, name);
-            stmt.executeUpdate();
-            return true;
+            try (PreparedStatement stmt = txn.prepareStatement(UPDATE_CONFIGURATION_SQL);) {
+                stmt.setString(1, value);
+                stmt.setString(2, name);
+                stmt.executeUpdate();
+                return true;
+            }
         } catch (Exception e) {
             s_logger.warn("Unable to update Configuration Value", e);
-        } finally {
-            try {
-                if (stmt != null)
-                    stmt.close();
-            } catch (SQLException e) {
-            }
         }
         return false;
     }

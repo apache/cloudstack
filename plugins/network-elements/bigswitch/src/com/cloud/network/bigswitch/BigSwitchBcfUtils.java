@@ -292,7 +292,7 @@ public class BigSwitchBcfUtils {
                 p.setOwner(BigSwitchBcfApi.getCloudstackInstanceId());
 
                 List<AttachmentData.Attachment.IpAddress> ipList = new ArrayList<AttachmentData.Attachment.IpAddress>();
-                ipList.add(new AttachmentData().getAttachment().new IpAddress(nic.getIp4Address()));
+                ipList.add(new AttachmentData().getAttachment().new IpAddress(nic.getIPv4Address()));
                 p.setIpAddresses(ipList);
 
                 p.setId(nic.getUuid());

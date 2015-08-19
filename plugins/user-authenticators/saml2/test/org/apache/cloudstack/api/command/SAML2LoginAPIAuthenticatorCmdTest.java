@@ -19,12 +19,15 @@
 
 package org.apache.cloudstack.api.command;
 
+import static org.junit.Assert.assertFalse;
+
 import com.cloud.domain.Domain;
 import com.cloud.user.AccountService;
 import com.cloud.user.DomainManager;
 import com.cloud.user.UserAccountVO;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.HttpUtils;
+
 import org.apache.cloudstack.api.ApiServerService;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
@@ -64,6 +67,7 @@ import org.opensaml.saml2.core.impl.SubjectBuilder;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+
 import java.lang.reflect.Field;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
@@ -154,8 +158,6 @@ public class SAML2LoginAPIAuthenticatorCmdTest {
         userAccountDaoField.setAccessible(true);
         userAccountDaoField.set(cmd, userAccountDao);
 
-        String spId = "someSPID";
-        String url = "someUrl";
         KeyPair kp = SAMLUtils.generateRandomKeyPair();
         X509Certificate cert = SAMLUtils.generateRandomX509Certificate(kp);
 
@@ -187,10 +189,13 @@ public class SAML2LoginAPIAuthenticatorCmdTest {
         // SSO SAMLResponse verification test, this should throw ServerApiException for auth failure
         params.put(SAMLPluginConstants.SAML_RESPONSE, new String[]{"Some String"});
         Mockito.stub(cmd.processSAMLResponse(Mockito.anyString())).toReturn(buildMockResponse());
+        boolean failing = true;
         try {
             cmd.authenticate("command", params, session, InetAddress.getByName("127.0.0.1"), HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), req, resp);
         } catch (ServerApiException ignored) {
+            failing = false;
         }
+        assertFalse("authentication should not have succeeded", failing);
         Mockito.verify(userAccountDao, Mockito.times(0)).getUserAccount(Mockito.anyString(), Mockito.anyLong());
         Mockito.verify(apiServer, Mockito.times(0)).verifyUser(Mockito.anyLong());
     }

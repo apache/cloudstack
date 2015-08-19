@@ -1,0 +1,50 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+FROM centos:6
+
+MAINTAINER "Apache CloudStack" <dev@cloudstack.apache.org>
+LABEL Vendor="Apache.org" License="ApacheV2" Version="4.6.0"
+
+ENV PKG_URL=http://jenkins.buildacloud.org/job/package-rhel63-master/lastSuccessfulBuild/artifact/dist/rpmbuild/RPMS/x86_64
+
+# install CloudStack
+RUN yum install -y \
+    ${PKG_URL}/cloudstack-common-4.6.0-SNAPSHOT.el6.x86_64.rpm \
+    ${PKG_URL}/cloudstack-management-4.6.0-SNAPSHOT.el6.x86_64.rpm
+
+RUN cd /etc/cloudstack/management; \
+    ln -s tomcat6-nonssl.conf tomcat6.conf; \
+    ln -s server-nonssl.xml server.xml; \
+    ln -s log4j-cloud.xml log4j.xml
+COPY init.sh_centos6 /root/init.sh
+
+RUN yum clean all
+
+RUN sed -i "s/cluster.node.IP=.*/cluster.node.IP=localhost/" /etc/cloudstack/management/db.properties
+
+EXPOSE 8080 8250 8096 45219 9090 8787
+# Ports:
+#   8080: webui, api
+#   8250: systemvm communication
+#   8096: api port without authentication(default=off)
+# Troubleshooting ports: 
+#   8787: CloudStack (Tomcat) debug socket
+#   9090: Cloudstack Management Cluster Interface
+#   45219: JMX console
+
+CMD ["/root/init.sh"]

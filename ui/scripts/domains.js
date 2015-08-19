@@ -21,7 +21,7 @@
 
         // Domain tree
         treeView: {
-		overflowScroll: true,
+        overflowScroll: true,
             // Details
             detailView: {
                 name: 'Domain details',
@@ -100,7 +100,7 @@
                             var domainObj;
 
                             var data = {
-                                id: args.context.domains[0].id                                
+                                id: args.context.domains[0].id
                             };
 
                             if (args.data.name != null) { //args.data.name == undefined means name field is not editable (when log in as normal user or domain admin)
@@ -108,22 +108,22 @@
                                     name: args.data.name
                                 });
                             }
-                            
+
                             if (args.data.networkdomain != null) { //args.data.networkdomain == undefined means networkdomain field is not editable (when log in as normal user or domain admin)
                                 $.extend(data, {
-                                	networkdomain: args.data.networkdomain
+                                    networkdomain: args.data.networkdomain
                                 });
                             }
-                           
-                            if('name' in data || 'networkdomain' in data)  {                            
-	                            $.ajax({
-	                                url: createURL("updateDomain"),
-	                                async: false,
-	                                data: data,
-	                                success: function(json) {
-	                                    domainObj = json.updatedomainresponse.domain;
-	                                }
-	                            });
+
+                            if('name' in data || 'networkdomain' in data)  {
+                                $.ajax({
+                                    url: createURL("updateDomain"),
+                                    async: false,
+                                    data: data,
+                                    success: function(json) {
+                                        domainObj = json.updatedomainresponse.domain;
+                                    }
+                                });
                             }
 
                             if (args.data.vmLimit != null) {
@@ -366,7 +366,7 @@
                             networkdomain: {
                                 label: 'label.network.domain',
                                 isEditable: function(args) {
-                                    if (isAdmin()) 
+                                    if (isAdmin())
                                         return true;
                                     else
                                         return false;
@@ -652,10 +652,10 @@
             if (jsonObj.level != 0) { //ROOT domain (whose level is 0) is not allowed to delete
                 allowedActions.push("delete");
             }
-        } else if (isDomainAdmin()) { 
-        	if (args.context.domains[0].id != g_domainid) { 
-        		allowedActions.push("edit"); //merge updateResourceLimit into edit
-        	}
+        } else if (isDomainAdmin()) {
+            if (args.context.domains[0].id != g_domainid) {
+                allowedActions.push("edit"); //merge updateResourceLimit into edit
+            }
         }
         allowedActions.push("updateResourceCount");
         return allowedActions;

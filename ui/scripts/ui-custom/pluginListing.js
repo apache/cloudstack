@@ -53,13 +53,13 @@
 
                 $plugin.click(function() {
                     var $mainSection = $('#navigation ul li').filter('.' + plugin.id);
-                    
+
                     if ($mainSection.size()) {
                         $mainSection.click();
 
                         return;
                     }
-                    
+
                     $browser.cloudBrowser('addPanel', {
                         title: plugin.title,
                         $parent: $('.panel:first'),

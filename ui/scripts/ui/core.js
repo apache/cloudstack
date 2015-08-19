@@ -98,7 +98,7 @@
             $navItem.addClass('active');
             $browser.cloudBrowser('removeAllPanels');
         }
-        
+
         $browser.cloudBrowser('addPanel', {
             title: '<span class="section">' + _l(data.title) + '</span>' + '<span class="subsection"></span>',
             data: '',
@@ -106,7 +106,7 @@
                 if(!isPlugin) {
                     $breadcrumb.attr('title', _l(data.title));
                 }
-                
+
                 data.$breadcrumb = $breadcrumb;
 
                 // Hide breadcrumb if this is the home section

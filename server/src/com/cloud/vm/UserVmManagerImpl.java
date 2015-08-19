@@ -28,20 +28,15 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.event.ActionEvent;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -91,16 +86,20 @@ import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetVmDiskStatsAnswer;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
+import com.cloud.agent.api.GetVmIpAddressCommand;
 import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
-import com.cloud.agent.api.GetVmIpAddressCommand;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
@@ -132,11 +131,12 @@ import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.deploy.DeploymentPlanningManager;
 import com.cloud.deploy.PlannerHostReservationVO;
 import com.cloud.deploy.dao.PlannerHostReservationDao;
-import com.cloud.domain.DomainVO;
 import com.cloud.domain.Domain;
+import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.event.EventTypes;
+import com.cloud.event.ActionEvent;
 import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
@@ -631,7 +631,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 } else {
                     //previously vm has ip and nic table has ip address. After vm restart or stop/start
                     //if vm doesnot get the ip then set the ip in nic table to null
-                    if (nic.getIp4Address() != null) {
+                    if (nic.getIPv4Address() != null) {
                         nic.setIp4Address(null);
                         _nicDao.update(nicId, nic);
                     }
@@ -1868,7 +1868,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 for (NicVO nic : nics) {
 
-                    if (nic.getIp4Address() == null) {
+                    if (nic.getIPv4Address() == null) {
                         long nicId = nic.getId();
                         long vmId = nic.getInstanceId();
                         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
@@ -3572,7 +3572,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         for (NicVO nic : nics) {
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
             if (network.getTrafficType() == TrafficType.Guest || network.getTrafficType() == TrafficType.Public) {
-                userVm.setPrivateIpAddress(nic.getIp4Address());
+                userVm.setPrivateIpAddress(nic.getIPv4Address());
                 userVm.setPrivateMacAddress(nic.getMacAddress());
                 _vmDao.update(userVm.getId(), userVm);
             }
@@ -3629,7 +3629,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), Long.toString(nic.getId()),
                     network.getNetworkOfferingId(), null, isDefault, VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplay());
             if (network.getTrafficType() == TrafficType.Guest) {
-                originalIp = nic.getIp4Address();
+                originalIp = nic.getIPv4Address();
                 guestNic = nic;
                 guestNetwork = network;
                 // In vmware, we will be effecting pvlan settings in portgroups in StartCommand.
@@ -3662,7 +3662,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // dc.getDhcpProvider().equalsIgnoreCase(Provider.ExternalDhcpServer.getName())
             if (_ntwkSrvcDao.canProviderSupportServiceInNetwork(guestNetwork.getId(), Service.Dhcp, Provider.ExternalDhcpServer)) {
                 _nicDao.update(guestNic.getId(), guestNic);
-                userVm.setPrivateIpAddress(guestNic.getIp4Address());
+                userVm.setPrivateIpAddress(guestNic.getIPv4Address());
                 _vmDao.update(userVm.getId(), userVm);
 
                 s_logger.info("Detected that ip changed in the answer, updated nic in the db with new ip " + returnedIp);

@@ -182,7 +182,11 @@ under the License.
 'label.update.ssl': '<fmt:message key="label.update.ssl" />',
 'label.updating': '<fmt:message key="label.updating" />',
 'label.upload': '<fmt:message key="label.upload" />',
+'label.upload.from.local': '<fmt:message key="label.upload.from.local" />',
+'label.upload.template.from.local': '<fmt:message key="label.upload.template.from.local" />',
 'label.upload.volume': '<fmt:message key="label.upload.volume" />',
+'label.upload.volume.from.local': '<fmt:message key="label.upload.volume.from.local" />',
+'label.upload.volume.from.url': '<fmt:message key="label.upload.volume.from.url" />',
 'label.url': '<fmt:message key="label.url" />',
 'label.usage.interface': '<fmt:message key="label.usage.interface" />',
 'label.used': '<fmt:message key="label.used" />',
@@ -279,6 +283,7 @@ under the License.
 'label.password.reset.confirm': '<fmt:message key="label.password.reset.confirm" />',
 'label.openDaylight': '<fmt:message key="label.openDaylight" />',
 'label.change.affinity': '<fmt:message key="label.change.affinity" />',
+'label.custom.disk.offering': '<fmt:message key="label.custom.disk.offering" />',
 'label.assign.instance.another': '<fmt:message key="label.assign.instance.another" />',
 'label.network.addVM': '<fmt:message key="label.network.addVM" />',
 'label.set.default.NIC': '<fmt:message key="label.set.default.NIC" />',
@@ -817,6 +822,7 @@ under the License.
 'label.type.lower': '<fmt:message key="label.type.lower" />',
 'label.rule.number': '<fmt:message key="label.rule.number" />',
 'label.action': '<fmt:message key="label.action" />',
+'label.action.register.template': '<fmt:message key="label.action.register.template" />',
 'label.name.lower': '<fmt:message key="label.name.lower" />',
 'label.ucs': '<fmt:message key="label.ucs" />',
 'label.persistent': '<fmt:message key="label.persistent" />',
@@ -1058,6 +1064,7 @@ under the License.
 'label.ovm3.pool': '<fmt:message key="label.ovm3.pool" />',
 'label.ovm3.cluster': '<fmt:message key="label.ovm3.cluster" />',
 'label.ovm3.vip': '<fmt:message key="label.ovm3.vip" />',
+'label.local.file': '<fmt:message key="label.local.file" />',
 'label.local.storage.enabled.system.vms': '<fmt:message key="label.local.storage.enabled.system.vms" />'
 });
 </script>

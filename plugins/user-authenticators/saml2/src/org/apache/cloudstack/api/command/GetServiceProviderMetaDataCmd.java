@@ -206,15 +206,27 @@ public class GetServiceProviderMetaDataCmd extends BaseCmd implements APIAuthent
         spSSODescriptor.addSupportedProtocol(SAMLConstants.SAML20P_NS);
         spEntityDescriptor.getRoleDescriptors().add(spSSODescriptor);
 
-        ContactPerson contactPerson = new ContactPersonBuilder().buildObject();
+        // Add technical contact
         GivenName givenName = new GivenNameBuilder().buildObject();
         givenName.setName(spMetadata.getContactPersonName());
         EmailAddress emailAddress = new EmailAddressBuilder().buildObject();
         emailAddress.setAddress(spMetadata.getContactPersonEmail());
+        ContactPerson contactPerson = new ContactPersonBuilder().buildObject();
         contactPerson.setType(ContactPersonTypeEnumeration.TECHNICAL);
         contactPerson.setGivenName(givenName);
         contactPerson.getEmailAddresses().add(emailAddress);
         spEntityDescriptor.getContactPersons().add(contactPerson);
+
+        // Add administrative/support contact
+        GivenName givenNameAdmin = new GivenNameBuilder().buildObject();
+        givenNameAdmin.setName(spMetadata.getContactPersonName());
+        EmailAddress emailAddressAdmin = new EmailAddressBuilder().buildObject();
+        emailAddressAdmin.setAddress(spMetadata.getContactPersonEmail());
+        ContactPerson contactPersonAdmin = new ContactPersonBuilder().buildObject();
+        contactPersonAdmin.setType(ContactPersonTypeEnumeration.ADMINISTRATIVE);
+        contactPersonAdmin.setGivenName(givenNameAdmin);
+        contactPersonAdmin.getEmailAddresses().add(emailAddressAdmin);
+        spEntityDescriptor.getContactPersons().add(contactPersonAdmin);
 
         Organization organization = new OrganizationBuilder().buildObject();
         OrganizationName organizationName = new OrganizationNameBuilder().buildObject();
@@ -267,7 +279,7 @@ public class GetServiceProviderMetaDataCmd extends BaseCmd implements APIAuthent
             }
         }
         if (_samlAuthManager == null) {
-            s_logger.error("No suitable Pluggable Authentication Manager found for SAML2 Login Cmd");
+            s_logger.error("No suitable Pluggable Authentication Manager found for SAML2 getSPMetadata Cmd");
         }
     }
 }

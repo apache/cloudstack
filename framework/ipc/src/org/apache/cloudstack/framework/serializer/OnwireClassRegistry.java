@@ -125,6 +125,7 @@ public class OnwireClassRegistry {
         } catch (IOException e) {
             s_logger.debug("Encountered IOException", e);
         } catch (ClassNotFoundException e) {
+            s_logger.info("[ignored] class not found", e);
         }
         return classes;
     }
@@ -139,6 +140,7 @@ public class OnwireClassRegistry {
                         Class<?> clazz = Class.forName(name);
                         classes.add(clazz);
                     } catch (ClassNotFoundException e) {
+                        s_logger.info("[ignored] class not found in directory " + directory, e);
                     } catch (Exception e) {
                         s_logger.debug("Encountered unexpect exception! ", e);
                     }

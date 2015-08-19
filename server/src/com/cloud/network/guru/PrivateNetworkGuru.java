@@ -141,12 +141,12 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile vm) {
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIp4Address());
+            s_logger.debug("Deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIPv4Address());
         }
 
-        PrivateIpVO ip = _privateIpDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIp4Address());
+        PrivateIpVO ip = _privateIpDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIPv4Address());
         if (ip != null) {
-            _privateIpDao.releaseIpAddress(nic.getIp4Address(), nic.getNetworkId());
+            _privateIpDao.releaseIpAddress(nic.getIPv4Address(), nic.getNetworkId());
         }
         nic.deallocate();
     }
@@ -173,26 +173,26 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
 
         getIp(nic, dc, network);
 
-        if (nic.getIp4Address() == null) {
-            nic.setStrategy(ReservationStrategy.Start);
+        if (nic.getIPv4Address() == null) {
+            nic.setReservationStrategy(ReservationStrategy.Start);
         } else {
-            nic.setStrategy(ReservationStrategy.Create);
+            nic.setReservationStrategy(ReservationStrategy.Create);
         }
 
         return nic;
     }
 
     protected void getIp(NicProfile nic, DataCenter dc, Network network) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
-        if (nic.getIp4Address() == null) {
+        if (nic.getIPv4Address() == null) {
             PrivateIpVO ipVO = _privateIpDao.allocateIpAddress(network.getDataCenterId(), network.getId(), null);
             String vlanTag = BroadcastDomainType.getValue(network.getBroadcastUri());
             String netmask = NetUtils.getCidrNetmask(network.getCidr());
             PrivateIpAddress ip =
                 new PrivateIpAddress(ipVO, vlanTag, network.getGateway(), netmask, NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress())));
 
-            nic.setIp4Address(ip.getIpAddress());
-            nic.setGateway(ip.getGateway());
-            nic.setNetmask(ip.getNetmask());
+            nic.setIPv4Address(ip.getIpAddress());
+            nic.setIPv4Gateway(ip.getGateway());
+            nic.setIPv4Netmask(ip.getNetmask());
             nic.setIsolationUri(IsolationType.Vlan.toUri(ip.getBroadcastUri()));
             nic.setBroadcastUri(IsolationType.Vlan.toUri(ip.getBroadcastUri()));
             nic.setBroadcastType(BroadcastDomainType.Vlan);
@@ -201,25 +201,25 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
             nic.setMacAddress(ip.getMacAddress());
         }
 
-        nic.setDns1(dc.getDns1());
-        nic.setDns2(dc.getDns2());
+        nic.setIPv4Dns1(dc.getDns1());
+        nic.setIPv4Dns2(dc.getDns2());
     }
 
     @Override
     public void updateNicProfile(NicProfile profile, Network network) {
         DataCenter dc = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
         if (profile != null) {
-            profile.setDns1(dc.getDns1());
-            profile.setDns2(dc.getDns2());
+            profile.setIPv4Dns1(dc.getDns1());
+            profile.setIPv4Dns2(dc.getDns2());
         }
     }
 
     @Override
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
         throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
-        if (nic.getIp4Address() == null) {
+        if (nic.getIPv4Address() == null) {
             getIp(nic, _entityMgr.findById(DataCenter.class, network.getDataCenterId()), network);
-            nic.setStrategy(ReservationStrategy.Create);
+            nic.setReservationStrategy(ReservationStrategy.Create);
         }
     }
 

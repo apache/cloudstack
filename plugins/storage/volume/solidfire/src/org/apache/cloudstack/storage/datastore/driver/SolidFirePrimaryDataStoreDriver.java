@@ -77,6 +77,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private static final Logger s_logger = Logger.getLogger(SolidFirePrimaryDataStoreDriver.class);
     private static final int s_lockTimeInSeconds = 300;
+    private static final int s_lowestHypervisorSnapshotReserve = 10;
 
     @Inject private AccountDao _accountDao;
     @Inject private AccountDetailsDao _accountDetailsDao;
@@ -306,6 +307,18 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
                     usedSpace += volumeSize;
                 }
+                else {
+                    SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePool.getId(), _storagePoolDetailsDao);
+                    long lVolumeId = Long.parseLong(volume.getFolder());
+
+                    SolidFireUtil.SolidFireVolume sfVolume = SolidFireUtil.getSolidFireVolume(sfConnection, lVolumeId);
+
+                    // SolidFireUtil.VOLUME_SIZE was introduced in 4.5.
+                    // To be backward compatible with releases prior to 4.5, call updateVolumeDetails here.
+                    // That way if SolidFireUtil.VOLUME_SIZE wasn't put in the volume_details table when the
+                    // volume was initially created, it can be placed in volume_details here.
+                    updateVolumeDetails(volume.getId(), sfVolume.getTotalSize());
+                }
             }
         }
 
@@ -352,9 +365,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         Integer hypervisorSnapshotReserve = volume.getHypervisorSnapshotReserve();
 
         if (hypervisorSnapshotReserve != null) {
-            if (hypervisorSnapshotReserve < 50) {
-                hypervisorSnapshotReserve = 50;
-            }
+            hypervisorSnapshotReserve = Math.max(hypervisorSnapshotReserve, s_lowestHypervisorSnapshotReserve);
 
             volumeSize += volumeSize * (hypervisorSnapshotReserve / 100f);
         }
@@ -418,8 +429,6 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         if (dataObject.getType() == DataObjectType.VOLUME) {
             VolumeInfo volumeInfo = (VolumeInfo)dataObject;
-            AccountVO account = _accountDao.findById(volumeInfo.getAccountId());
-            String sfAccountName = SolidFireUtil.getSolidFireAccountName(account.getUuid(), account.getAccountId());
 
             long storagePoolId = dataStore.getId();
 
@@ -428,6 +437,8 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             AccountDetailVO accountDetail = SolidFireUtil.getAccountDetail(volumeInfo.getAccountId(), storagePoolId, _accountDetailsDao);
 
             if (accountDetail == null || accountDetail.getValue() == null) {
+                AccountVO account = _accountDao.findById(volumeInfo.getAccountId());
+                String sfAccountName = SolidFireUtil.getSolidFireAccountName(account.getUuid(), account.getAccountId());
                 SolidFireUtil.SolidFireAccount sfAccount = SolidFireUtil.getSolidFireAccount(sfConnection, sfAccountName);
 
                 if (sfAccount == null) {

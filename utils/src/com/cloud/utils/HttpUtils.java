@@ -23,7 +23,9 @@ import org.apache.log4j.Logger;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.util.Map;
 
 public class HttpUtils {
 
@@ -48,18 +50,6 @@ public class HttpUtils {
         else {
             resp.addHeader("X-XSS-Protection", "1;mode=block");
         }
-    }
-
-    public static String findCookie(final Cookie[] cookies, final String key) {
-        if (cookies == null || key == null || key.isEmpty()) {
-            return null;
-        }
-        for (Cookie cookie: cookies) {
-            if (cookie != null && cookie.getName().equals(key)) {
-                return cookie.getValue();
-            }
-        }
-        return null;
     }
 
     public static void writeHttpResponse(final HttpServletResponse resp, final String response,
@@ -89,4 +79,36 @@ public class HttpUtils {
             }
         }
     }
+
+    public static String findCookie(final Cookie[] cookies, final String key) {
+        if (cookies == null || key == null || key.isEmpty()) {
+            return null;
+        }
+        for (Cookie cookie: cookies) {
+            if (cookie != null && cookie.getName().equals(key)) {
+                return cookie.getValue();
+            }
+        }
+        return null;
+    }
+
+    public static boolean validateSessionKey(final HttpSession session, final Map<String, Object[]> params, final Cookie[] cookies, final String sessionKeyString) {
+        if (session == null || sessionKeyString == null) {
+            return false;
+        }
+        final String sessionKey = (String) session.getAttribute(sessionKeyString);
+        final String sessionKeyFromCookie = HttpUtils.findCookie(cookies, sessionKeyString);
+        String[] sessionKeyFromParams = null;
+        if (params != null) {
+            sessionKeyFromParams = (String[]) params.get(sessionKeyString);
+        }
+        if ((sessionKey == null)
+                || (sessionKeyFromParams == null && sessionKeyFromCookie == null)
+                || (sessionKeyFromParams != null && !sessionKey.equals(sessionKeyFromParams[0]))
+                || (sessionKeyFromCookie != null && !sessionKey.equals(sessionKeyFromCookie))) {
+            return false;
+        }
+        return true;
+    }
+
 }

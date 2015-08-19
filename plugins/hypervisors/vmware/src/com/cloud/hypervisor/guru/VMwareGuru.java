@@ -27,8 +27,6 @@ import java.util.UUID;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -41,6 +39,7 @@ import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.Command;
@@ -267,10 +266,10 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                     } catch (InsufficientAddressCapacityException e) {
                         throw new CloudRuntimeException("unable to allocate mac address on network: " + networkId);
                     }
-                    nicTo.setDns1(publicNicProfile.getDns1());
-                    nicTo.setDns2(publicNicProfile.getDns2());
-                    if (publicNicProfile.getGateway() != null) {
-                        nicTo.setGateway(publicNicProfile.getGateway());
+                    nicTo.setDns1(publicNicProfile.getIPv4Dns1());
+                    nicTo.setDns2(publicNicProfile.getIPv4Dns2());
+                    if (publicNicProfile.getIPv4Gateway() != null) {
+                        nicTo.setGateway(publicNicProfile.getIPv4Gateway());
                     } else {
                         nicTo.setGateway(network.getGateway());
                     }

@@ -425,10 +425,10 @@ class CsSite2SiteVpn(CsDataBag):
         CsHelper.execute("ipsec auto --rereadall")
 
     def configure_iptables(self, dev, obj):
-        self.fw.append(["", "front", "-A INPUT -i %s -p udp -m udp --dport 500 -j ACCEPT" % dev])
-        self.fw.append(["", "front", "-A INPUT -i %s -p udp -m udp --dport 4500 -j ACCEPT" % dev])
-        self.fw.append(["", "front", "-A INPUT -i %s -p esp -j ACCEPT" % dev])
-        self.fw.append(["nat", "front", "-A POSTROUTING -t nat -o %s-m mark --set-xmark 0x525/0xffffffff -j ACCEPT" % dev])
+        self.fw.append(["", "front", "-A INPUT -i %s -p udp -m udp --dport 500 -s %s -d %s -j ACCEPT" % (dev, obj['peer_gateway_ip'], obj['local_public_ip'])])
+        self.fw.append(["", "front", "-A INPUT -i %s -p udp -m udp --dport 4500 -s %s -d %s -j ACCEPT" % (dev, obj['peer_gateway_ip'], obj['local_public_ip'])])
+        self.fw.append(["", "front", "-A INPUT -i %s -p esp -s %s -d %s -j ACCEPT" % (dev, obj['peer_gateway_ip'], obj['local_public_ip'])])
+        self.fw.append(["nat", "front", "-A POSTROUTING -t nat -o %s -m mark --mark 0x525 -j ACCEPT" % dev])
         for net in obj['peer_guest_cidr_list'].lstrip().rstrip().split(','):
             self.fw.append(["mangle", "front",
                             "-A FORWARD -s %s -d %s -j MARK --set-xmark 0x525/0xffffffff" % (obj['local_guest_cidr'], net)])
@@ -453,17 +453,17 @@ class CsSite2SiteVpn(CsDataBag):
         file.addeq(" leftsubnet=%s" % obj['local_guest_cidr'])
         file.addeq(" leftnexthop=%s" % obj['local_public_gateway'])
         file.addeq(" right=%s" % rightpeer)
-        file.addeq(" rightsubnets=%s" % peerlist)
+        file.addeq(" rightsubnets={%s}" % peerlist)
         file.addeq(" type=tunnel")
         file.addeq(" authby=secret")
         file.addeq(" keyexchange=ike")
         file.addeq(" ike=%s" % obj['ike_policy'])
         file.addeq(" ikelifetime=%s" % self.convert_sec_to_h(obj['ike_lifetime']))
-        file.addeq(" esp=%s" % self.convert_sec_to_h(obj['esp_lifetime']))
+        file.addeq(" esp=%s" % obj['esp_policy'])
         file.addeq(" salifetime=%s" % self.convert_sec_to_h(obj['esp_lifetime']))
         file.addeq(" pfs=%s" % CsHelper.bool_to_yn(obj['dpd']))
         file.addeq(" keyingtries=2")
-        file.addeq(" auto=add")
+        file.addeq(" auto=start")
         if obj['dpd']:
             file.addeq("  dpddelay=30")
             file.addeq("  dpdtimeout=120")
@@ -678,9 +678,6 @@ def main(argv):
     red = CsRedundant(config)
     red.set()
 
-    nf = CsNetfilters()
-    nf.compare(config.get_fw())
-
     vpns = CsSite2SiteVpn("site2sitevpn", config)
     vpns.process()
 
@@ -692,6 +689,9 @@ def main(argv):
 
     mon = CsMonitor("monitorservice", config)
     mon.process()
+
+    nf = CsNetfilters()
+    nf.compare(config.get_fw())
 
     # Save iptables configuration - will be loaded on reboot by the iptables-restore that is configured on /etc/rc.local
     CsHelper.save_iptables("iptables-save", "/etc/iptables/router_rules.v4")
