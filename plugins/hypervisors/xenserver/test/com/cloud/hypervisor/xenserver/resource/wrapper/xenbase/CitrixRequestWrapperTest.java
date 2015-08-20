@@ -1582,7 +1582,7 @@ public class CitrixRequestWrapperTest {
         final VMSnapshotTO snapshotTO = Mockito.mock(VMSnapshotTO.class);
         final List<VolumeObjectTO> volumeTOs = new ArrayList<VolumeObjectTO>();
 
-        final CreateVMSnapshotCommand vmSnapshot = new CreateVMSnapshotCommand("Test", snapshotTO, volumeTOs, "Debian");
+        final CreateVMSnapshotCommand vmSnapshot = new CreateVMSnapshotCommand("Test", "uuid", snapshotTO, volumeTOs, "Debian");
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -1624,7 +1624,7 @@ public class CitrixRequestWrapperTest {
         final VMSnapshotTO snapshotTO = Mockito.mock(VMSnapshotTO.class);
         final List<VolumeObjectTO> volumeTOs = new ArrayList<VolumeObjectTO>();
 
-        final RevertToVMSnapshotCommand vmSnapshot = new RevertToVMSnapshotCommand("Test", snapshotTO, volumeTOs, "Debian");
+        final RevertToVMSnapshotCommand vmSnapshot = new RevertToVMSnapshotCommand("Test", "uuid", snapshotTO, volumeTOs, "Debian");
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);
