@@ -685,24 +685,6 @@ class SetupCgRules(ConfigTask):
 		enable_service("cgred")
 
 
-class SetupCgroupControllers(ConfigTask):
-	name = "qemu cgroup controllers setup"
-	cfgline = "cgroup_controllers = [ \"cpu\" ]"
-	filename = "/etc/libvirt/qemu.conf"
-	
-	def done(self):
-		try:
-			return self.cfgline in file(self.filename,"r").read(-1)
-		except IOError,e:
-			if e.errno is 2: raise TaskFailed("qemu has not been properly installed on this system")
-			raise
-	
-	def execute(self):
-		libvirtqemu = file(self.filename,"r").read(-1)
-		libvirtqemu = libvirtqemu + "\n" + self.cfgline + "\n"
-		file("/etc/libvirt/qemu.conf","w").write(libvirtqemu)
-
-
 class SetupSecurityDriver(ConfigTask):
 	name = "security driver setup"
 	cfgline = "security_driver = \"none\""
@@ -887,7 +869,6 @@ def config_tasks(brname, pubNic, prvNic):
 			SetupNetworking(brname, pubNic, prvNic),
 			SetupCgConfig(),
 			SetupCgRules(),
-			SetupCgroupControllers(),
 			SetupSecurityDriver(),
 			SetupLibvirt(),
 			SetupLiveMigration(),

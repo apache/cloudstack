@@ -180,7 +180,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String _ovsPvlanVmPath;
     private String _routerProxyPath;
     private String _ovsTunnelPath;
-    private String _setupCgroupPath;
     private String _host;
     private String _dcId;
     private String _pod;
@@ -697,17 +696,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         _hypervisorType = HypervisorType.getType((String)params.get("hypervisor.type"));
         if (_hypervisorType == HypervisorType.None) {
             _hypervisorType = HypervisorType.KVM;
-        }
-
-        //Verify that cpu,cpuacct cgroups are not co-mounted
-        if(HypervisorType.LXC.equals(getHypervisorType())){
-            _setupCgroupPath = Script.findScript(kvmScriptsDir, "setup-cgroups.sh");
-            if (_setupCgroupPath == null) {
-                throw new ConfigurationException("Unable to find the setup-cgroups.sh");
-            }
-            if(!checkCgroups()){
-                throw new ConfigurationException("cpu,cpuacct cgroups are co-mounted");
-            }
         }
 
         _hypervisorURI = (String)params.get("hypervisor.uri");
@@ -3330,17 +3318,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public HypervisorType getHypervisorType(){
         return _hypervisorType;
-    }
-
-    private boolean checkCgroups(){
-        final Script command = new Script(_setupCgroupPath, 5 * 1000, s_logger);
-        String result;
-        result = command.execute();
-        if (result != null) {
-            s_logger.debug("cgroup check failed:" + result);
-            return false;
-        }
-        return true;
     }
 
     public String mapRbdDevice(final KVMPhysicalDisk disk){

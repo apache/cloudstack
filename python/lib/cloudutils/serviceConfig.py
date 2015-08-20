@@ -493,7 +493,6 @@ class libvirtConfigRedhat(serviceCfgBase):
             filename = "/etc/libvirt/qemu.conf"
 
             cfo = configFileOps(filename, self)
-            cfo.addEntry("cgroup_controllers", "[\"cpu\"]")
             cfo.addEntry("security_driver", "\"none\"")
             cfo.addEntry("user", "\"root\"")
             cfo.addEntry("group", "\"root\"")
