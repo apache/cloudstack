@@ -17,17 +17,11 @@
 
 package com.cloud.hypervisor.xenserver.resource;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.ejb.Local;
 
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.resource.ServerResource;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VM;
@@ -38,17 +32,8 @@ public class XcpOssResource extends CitrixResourceBase {
     private static final long mem_32m = 33554432L;
 
     @Override
-    protected List<File> getPatchFiles() {
-        final List<File> files = new ArrayList<File>();
-        final String patch = "scripts/vm/hypervisor/xenserver/xcposs/patch";
-        final String patchfilePath = Script.findScript("", patch);
-        if (patchfilePath == null) {
-            throw new CloudRuntimeException("Unable to find patch file "
-                    + patch);
-        }
-        final File file = new File(patchfilePath);
-        files.add(file);
-        return files;
+    protected String getPatchFilePath() {
+        return "scripts/vm/hypervisor/xenserver/xcposs/patch";
     }
 
     @Override

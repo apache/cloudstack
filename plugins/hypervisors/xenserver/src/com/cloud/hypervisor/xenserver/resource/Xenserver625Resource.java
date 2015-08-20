@@ -18,10 +18,6 @@
  */
 package com.cloud.hypervisor.xenserver.resource;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.ejb.Local;
 
 import org.apache.cloudstack.hypervisor.xenserver.XenServerResourceNewBase;
@@ -32,7 +28,6 @@ import com.cloud.resource.ServerResource;
 import com.cloud.storage.resource.StorageSubsystemCommandHandler;
 import com.cloud.storage.resource.StorageSubsystemCommandHandlerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
@@ -45,27 +40,18 @@ public class Xenserver625Resource extends XenServerResourceNewBase {
     private static final Logger s_logger = Logger.getLogger(Xenserver625Resource.class);
 
     @Override
-    protected List<File> getPatchFiles() {
-        final List<File> files = new ArrayList<File>();
-        final String patch = "scripts/vm/hypervisor/xenserver/xenserver62/patch";
-        final String patchfilePath = Script.findScript("", patch);
-        if (patchfilePath == null) {
-            throw new CloudRuntimeException("Unable to find patch file " + patch);
-        }
-        final File file = new File(patchfilePath);
-        files.add(file);
-        return files;
+    protected String getPatchFilePath() {
+        return "scripts/vm/hypervisor/xenserver/xenserver62/patch";
     }
 
     @Override
     protected StorageSubsystemCommandHandler buildStorageHandler() {
-        final XenServerStorageProcessor processor = new Xenserver625StorageProcessor(this);
+        XenServerStorageProcessor processor = new Xenserver625StorageProcessor(this);
         return new StorageSubsystemCommandHandlerBase(processor);
     }
 
     @Override
-    public void umountSnapshotDir(final Connection conn, final Long dcId) {
-    }
+    public void umountSnapshotDir(final Connection conn, final Long dcId) {}
 
     @Override
     public boolean setupServer(final Connection conn,final Host host) {
