@@ -27,12 +27,13 @@ from marvin.lib.base import (Account,
                              DiskOffering,
                              Template,
                              listConfigurations)
-from marvin.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,list_isos,
                                get_zone,
                                get_template)
 from nose.plugins.attrib import attr
 from ast import literal_eval
 from marvin.codes import PASS
+from marvin.cloudstackException import CloudstackAPIException
 
 class TestVMware(cloudstackTestCase):
 
@@ -202,4 +203,68 @@ class TestVMware(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to attach data disk to RHEL vm whose root disk type is IDE")
         return
+
+    @attr(tags=["advanced", "basic"], required_hardware="true")
+    def test2_attach_ISO_in_CentOSVM(self):
+        """
+        @desc:Incorrect guest os mapping in vmware for CentOS 5.9 and above
+        Step1 :Register an CentOS 6.3 template
+        Step2 :Launch a VM
+        Step3: Try to attach VMware Tools ISO
+        Step4: Verify VMware tools ISO attached correctly
+        """
+        self.hypervisor = str(get_hypervisor_type(self.api_client)).lower()
+        if self.hypervisor != "vmware":
+            self.skipTest("This test can be run only on vmware")
+        template = Template.register(
+            self.userapiclient,
+            self.services["CentOS6.3template"],
+            zoneid=self.zone.id,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            hypervisor=self.hypervisor
+        )
+        self.debug(
+            "Registered a template with format {} and id {}".format(
+                self.services["CentOS6.3template"]["format"],template.id)
+        )
+        template.download(self.userapiclient)
+        self.cleanup.append(template)
+        vm = VirtualMachine.create(
+            self.userapiclient,
+            self.services["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            templateid=template.id,
+            zoneid=self.zone.id
+        )
+        self.cleanup.append(vm)
+        response = VirtualMachine.list(self.userapiclient,id=vm.id)
+        status = validateList(response)
+        self.assertEqual(status[0],PASS,"list vm response returned invalid list")
+        list_default_iso_response = list_isos(
+            self.api_client,
+            name="vmware-tools.iso",
+            account="system",
+            isready="true"
+        )
+        status = validateList(list_default_iso_response)
+        self.assertEquals(
+                PASS,
+                status[0],
+                "ISO list is empty")
+        self.debug(
+            "Registered a ISO with name {}".format(list_default_iso_response[0].name))
+        try:
+            vm.attach_iso(self.userapiclient,list_default_iso_response[0])
+        except CloudstackAPIException  as e:
+            self.fail("Attached ISO failed : %s" % e)
+        response = VirtualMachine.list(self.userapiclient, id=vm.id)
+        status = validateList(response)
+        self.assertEqual(status[0], PASS,"list vm response returned invalid list")
+        attachedIsoName=response[0].isoname;
+        self.assertEqual(attachedIsoName, "vmware-tools.iso", "vmware-tools.iso not attached")
+        return
+
 
