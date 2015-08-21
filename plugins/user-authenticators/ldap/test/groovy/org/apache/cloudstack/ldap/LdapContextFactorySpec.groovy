@@ -61,7 +61,7 @@ class LdapContextFactorySpec extends spock.lang.Specification {
 		password = "password"
     }
 
-    def "Test succcessfully creating a initial context"() {
+    def "Test successfully creating a initial context"() {
 		given: "We have a LdapContextFactory"
 		def ldapContextFactory = new LdapContextFactory(ldapConfiguration)
 		when: "A context attempts to bind and no Ldap server is avaiable"

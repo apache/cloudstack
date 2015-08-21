@@ -1947,12 +1947,12 @@ class TestIpAddresses(cloudstackTestCase):
         self.assertEqual(
             1,
             len(list_ipaddresses_after),
-            "VM Created is not in Runnning state"
+            "VM Created is not in Running state"
         )
         self.assertEquals(
             vm_created.id,
             list_vms_running[0].id,
-            "VM Created is not in Runnning state"
+            "VM Created is not in Running state"
         )
         # Listing Virtual Machines in stopped state in above created network
         list_vms_stopped = VirtualMachine.list(
