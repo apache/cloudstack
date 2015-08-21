@@ -775,6 +775,15 @@ test_data = {
         "ostype": "CentOS 5.6 (64-bit)"
 
     },
+    "CentOS6.3template": {
+        "displaytext": "Centos",
+        "name": "Centos",
+        "passwordenabled": False,
+        "ostype": "CentOS 6.3 (64-bit)",
+        "url": "http://10.147.28.7/templates/centos63.ova",
+        "format": "OVA",
+        "ispublic": "true"
+    },
     "template_2": {
         "displaytext": "Public Template",
         "name": "Public template",
