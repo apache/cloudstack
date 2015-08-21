@@ -838,7 +838,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         vo.setDefaultNic(profile.isDefaultNic());
 
-        vo.setIp4Address(profile.getIPv4Address());
+        vo.setIPv4Address(profile.getIPv4Address());
         vo.setAddressFormat(profile.getFormat());
 
         if (profile.getMacAddress() != null) {
@@ -846,8 +846,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         vo.setMode(profile.getMode());
-        vo.setNetmask(profile.getIPv4Netmask());
-        vo.setGateway(profile.getIPv4Gateway());
+        vo.setIPv4Netmask(profile.getIPv4Netmask());
+        vo.setIPv4Gateway(profile.getIPv4Gateway());
 
         if (profile.getBroadCastUri() != null) {
             vo.setBroadcastUri(profile.getBroadCastUri());
@@ -859,25 +859,25 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         vo.setState(Nic.State.Allocated);
 
-        vo.setIp6Address(profile.getIPv6Address());
-        vo.setIp6Gateway(profile.getIPv6Gateway());
-        vo.setIp6Cidr(profile.getIPv6Cidr());
+        vo.setIPv6Address(profile.getIPv6Address());
+        vo.setIPv6Gateway(profile.getIPv6Gateway());
+        vo.setIPv6Cidr(profile.getIPv6Cidr());
 
         return deviceId;
     }
 
     protected void applyProfileToNicForRelease(NicVO vo, NicProfile profile) {
-        vo.setGateway(profile.getIPv4Gateway());
+        vo.setIPv4Gateway(profile.getIPv4Gateway());
         vo.setAddressFormat(profile.getFormat());
-        vo.setIp4Address(profile.getIPv4Address());
-        vo.setIp6Address(profile.getIPv6Address());
+        vo.setIPv4Address(profile.getIPv4Address());
+        vo.setIPv6Address(profile.getIPv6Address());
         vo.setMacAddress(profile.getMacAddress());
         if (profile.getReservationStrategy() != null) {
             vo.setReservationStrategy(profile.getReservationStrategy());
         }
         vo.setBroadcastUri(profile.getBroadCastUri());
         vo.setIsolationUri(profile.getIsolationUri());
-        vo.setNetmask(profile.getIPv4Netmask());
+        vo.setIPv4Netmask(profile.getIPv4Netmask());
     }
 
     protected void applyProfileToNetwork(NetworkVO network, NetworkProfile profile) {
@@ -1332,16 +1332,16 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
                     networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vmProfile.getHypervisorType(), network));
             guru.reserve(profile, network, vmProfile, dest, context);
-            nic.setIp4Address(profile.getIPv4Address());
+            nic.setIPv4Address(profile.getIPv4Address());
             nic.setAddressFormat(profile.getFormat());
-            nic.setIp6Address(profile.getIPv6Address());
+            nic.setIPv6Address(profile.getIPv6Address());
             nic.setMacAddress(profile.getMacAddress());
             nic.setIsolationUri(profile.getIsolationUri());
             nic.setBroadcastUri(profile.getBroadCastUri());
             nic.setReserver(guru.getName());
             nic.setState(Nic.State.Reserved);
-            nic.setNetmask(profile.getIPv4Netmask());
-            nic.setGateway(profile.getIPv4Gateway());
+            nic.setIPv4Netmask(profile.getIPv4Netmask());
+            nic.setIPv4Gateway(profile.getIPv4Gateway());
 
             if (profile.getReservationStrategy() != null) {
                 nic.setReservationStrategy(profile.getReservationStrategy());
@@ -3315,8 +3315,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Override
     public NicVO savePlaceholderNic(Network network, String ip4Address, String ip6Address, Type vmType) {
         NicVO nic = new NicVO(null, null, network.getId(), null);
-        nic.setIp4Address(ip4Address);
-        nic.setIp6Address(ip6Address);
+        nic.setIPv4Address(ip4Address);
+        nic.setIPv6Address(ip6Address);
         nic.setReservationStrategy(ReservationStrategy.PlaceHolder);
         nic.setState(Nic.State.Reserved);
         nic.setVmType(vmType);

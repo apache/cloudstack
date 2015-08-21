@@ -136,7 +136,7 @@ public class NicVO implements Nic {
         return iPv4Address;
     }
 
-    public void setIp4Address(String address) {
+    public void setIPv4Address(String address) {
         iPv4Address = address;
     }
 
@@ -168,7 +168,7 @@ public class NicVO implements Nic {
         return iPv6Address;
     }
 
-    public void setIp6Address(String ip6Address) {
+    public void setIPv6Address(String ip6Address) {
         this.iPv6Address = ip6Address;
     }
 
@@ -182,7 +182,7 @@ public class NicVO implements Nic {
         return iPv4Gateway;
     }
 
-    public void setGateway(String gateway) {
+    public void setIPv4Gateway(String gateway) {
         this.iPv4Gateway = gateway;
     }
 
@@ -195,7 +195,7 @@ public class NicVO implements Nic {
         this.addressFormat = format;
     }
 
-    public void setNetmask(String netmask) {
+    public void setIPv4Netmask(String netmask) {
         this.iPv4Netmask = netmask;
     }
 
@@ -346,7 +346,7 @@ public class NicVO implements Nic {
         return iPv6Gateway;
     }
 
-    public void setIp6Gateway(String ip6Gateway) {
+    public void setIPv6Gateway(String ip6Gateway) {
         this.iPv6Gateway = ip6Gateway;
     }
 
@@ -355,7 +355,7 @@ public class NicVO implements Nic {
         return iPv6Cidr;
     }
 
-    public void setIp6Cidr(String ip6Cidr) {
+    public void setIPv6Cidr(String ip6Cidr) {
         this.iPv6Cidr = ip6Cidr;
     }
 
