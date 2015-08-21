@@ -19,13 +19,14 @@
 # Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.cloudstackAPI import listZones, updateIso, extractIso, updateIsoPermissions, copyIso, deleteIso
-from marvin.lib.utils import cleanup_resources, random_gen, get_hypervisor_type
+from marvin.lib.utils import cleanup_resources, random_gen, get_hypervisor_type,validateList
 from marvin.lib.base import Account, Iso
 from marvin.lib.common import (get_domain,
                                get_zone,
                                list_isos,
                                list_os_types)
 from nose.plugins.attrib import attr
+from marvin.codes import PASS
 import urllib
 # Import System modules
 import time
@@ -253,13 +254,15 @@ class TestISO(cloudstackTestCase):
         list_default_iso_response = list_isos(
             self.apiclient,
             name=isoname,
+            account="system",
             isready="true"
         )
-        self.assertEqual(
-            list_default_iso_response,
-            None,
-            "Check if ISO exists in ListIsos"
-        )
+        status = validateList(list_default_iso_response)
+        self.assertEquals(
+                PASS,
+                status[0],
+                "Check if ISO exists in ListIsos")
+
 
     @attr(
         tags=[
@@ -600,6 +603,6 @@ class TestISO(cloudstackTestCase):
         # list ISO should list default ISOS (VM and xen tools)
 
         # ListIsos to list default ISOS (VM and xen tools)
-        self.get_iso_details("xs-tools.iso")
         self.get_iso_details("vmware-tools.iso")
+        self.get_iso_details("xs-tools.iso")
         return

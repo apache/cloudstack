@@ -277,6 +277,16 @@ class VirtualMachine:
         cmd.id = volume.id
         return apiclient.detachVolume(cmd)
 
+    def attach_iso(self,apiclient,iso):
+        cmd=attachIso.attachIsoCmd()
+        cmd.id=iso.id
+        return apiclient.attachIso(cmd)
+
+    def detach_iso(self,apiclient,iso):
+        cmd=detachIso.detachIsoCmd()
+        cmd.id=iso.id
+        return apiclient.detachIso(cmd)
+
     @classmethod
     def list(cls, apiclient, **kwargs):
         """List all VMs matching criteria"""
