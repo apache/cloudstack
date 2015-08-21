@@ -201,7 +201,7 @@ public class NicPlugInOutRules extends RuleApplier {
                     final PublicIpAddress nicToUnplug = nicsToUnplug.get(ip.getVlanTag());
                     if (nicToUnplug != null) {
                         NicVO nicVO = nicDao.findByIp4AddressAndNetworkIdAndInstanceId(publicNtwkId, _router.getId(), nicToUnplug.getAddress().addr());
-                        nicVO.setIp4Address(ip.getAddress().addr());
+                        nicVO.setIPv4Address(ip.getAddress().addr());
                         nicDao.update(nicVO.getId(), nicVO);
                         s_logger.debug("Updated the nic " + nicVO + " with the new ip address " + ip.getAddress().addr());
                         nicsToUnplug.remove(ip.getVlanTag());

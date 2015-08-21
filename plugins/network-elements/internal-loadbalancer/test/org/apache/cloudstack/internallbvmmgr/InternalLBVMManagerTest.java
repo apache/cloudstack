@@ -24,8 +24,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import junit.framework.TestCase;
-
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMManager;
 import org.junit.Before;
@@ -73,6 +71,8 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+
+import junit.framework.TestCase;
 
 /**
  * Set of unittests for InternalLoadBalancerVMManager
@@ -137,7 +137,7 @@ public class InternalLBVMManagerTest extends TestCase {
         vm = setId(vm, 1);
         vm.setPrivateIpAddress("10.2.2.2");
         final NicVO nic = new NicVO("somereserver", 1L, 1L, VirtualMachine.Type.InternalLoadBalancerVm);
-        nic.setIp4Address(requestedIp);
+        nic.setIPv4Address(requestedIp);
 
         final List<DomainRouterVO> emptyList = new ArrayList<DomainRouterVO>();
         final List<DomainRouterVO> nonEmptyList = new ArrayList<DomainRouterVO>();

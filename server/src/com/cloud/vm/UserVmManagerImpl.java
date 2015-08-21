@@ -618,7 +618,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     if (NetUtils.isValidIp(vmIp)) {
                         // set this vm ip addr in vm nic.
                         if (nic != null) {
-                            nic.setIp4Address(vmIp);
+                            nic.setIPv4Address(vmIp);
                             _nicDao.update(nicId, nic);
                             s_logger.debug("Vm "+ vmId +" IP "+vmIp +" got retrieved successfully");
                             vmIdCountMap.remove(nicId);
@@ -632,7 +632,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     //previously vm has ip and nic table has ip address. After vm restart or stop/start
                     //if vm doesnot get the ip then set the ip in nic table to null
                     if (nic.getIPv4Address() != null) {
-                        nic.setIp4Address(null);
+                        nic.setIPv4Address(null);
                         _nicDao.update(nicId, nic);
                     }
                     if (answer.getDetails() != null) {
@@ -3646,13 +3646,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean ipChanged = false;
         if (originalIp != null && !originalIp.equalsIgnoreCase(returnedIp)) {
             if (returnedIp != null && guestNic != null) {
-                guestNic.setIp4Address(returnedIp);
+                guestNic.setIPv4Address(returnedIp);
                 ipChanged = true;
             }
         }
         if (returnedIp != null && !returnedIp.equalsIgnoreCase(originalIp)) {
             if (guestNic != null) {
-                guestNic.setIp4Address(returnedIp);
+                guestNic.setIPv4Address(returnedIp);
                 ipChanged = true;
             }
         }
