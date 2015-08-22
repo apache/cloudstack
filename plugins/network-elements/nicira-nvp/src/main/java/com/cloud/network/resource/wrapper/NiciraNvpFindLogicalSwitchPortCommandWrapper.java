@@ -33,7 +33,7 @@ import com.cloud.network.utils.CommandRetryUtility;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 
-@ResourceWrapper(handles =  FindLogicalSwitchPortCommand.class)
+@ResourceWrapper(handles = FindLogicalSwitchPortCommand.class)
 public final class NiciraNvpFindLogicalSwitchPortCommandWrapper extends CommandWrapper<FindLogicalSwitchPortCommand, Answer, NiciraNvpResource> {
 
     @Override

@@ -33,7 +33,7 @@ import com.cloud.network.utils.CommandRetryUtility;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 
-@ResourceWrapper(handles =  ConfigurePublicIpsOnLogicalRouterCommand.class)
+@ResourceWrapper(handles = ConfigurePublicIpsOnLogicalRouterCommand.class)
 public final class NiciraNvpConfigurePublicIpsCommandWrapper extends CommandWrapper<ConfigurePublicIpsOnLogicalRouterCommand, Answer, NiciraNvpResource> {
 
     @Override
@@ -50,7 +50,7 @@ public final class NiciraNvpConfigurePublicIpsCommandWrapper extends CommandWrap
             niciraNvpApi.updateLogicalRouterPort(command.getLogicalRouterUuid(), lrp);
 
             return new ConfigurePublicIpsOnLogicalRouterAnswer(command, true, "Configured " + command.getPublicCidrs().size() + " ip addresses on logical router uuid " +
-                    command.getLogicalRouterUuid());
+                            command.getLogicalRouterUuid());
         } catch (final NiciraNvpApiException e) {
             final CommandRetryUtility retryUtility = niciraNvpResource.getRetryUtility();
             retryUtility.addRetry(command, NUM_RETRIES);

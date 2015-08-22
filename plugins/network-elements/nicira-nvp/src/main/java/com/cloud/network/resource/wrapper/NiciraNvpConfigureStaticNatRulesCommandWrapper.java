@@ -36,7 +36,7 @@ import com.cloud.network.utils.CommandRetryUtility;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 
-@ResourceWrapper(handles =  ConfigureStaticNatRulesOnLogicalRouterCommand.class)
+@ResourceWrapper(handles = ConfigureStaticNatRulesOnLogicalRouterCommand.class)
 public final class NiciraNvpConfigureStaticNatRulesCommandWrapper extends CommandWrapper<ConfigureStaticNatRulesOnLogicalRouterCommand, Answer, NiciraNvpResource> {
 
     private static final Logger s_logger = Logger.getLogger(NiciraNvpConfigureStaticNatRulesCommandWrapper.class);

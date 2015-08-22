@@ -36,7 +36,7 @@ import com.cloud.network.utils.CommandRetryUtility;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 
-@ResourceWrapper(handles =  ConfigurePortForwardingRulesOnLogicalRouterCommand.class)
+@ResourceWrapper(handles = ConfigurePortForwardingRulesOnLogicalRouterCommand.class)
 public final class NiciraNvpConfigurePortForwardingRulesCommandWrapper extends CommandWrapper<ConfigurePortForwardingRulesOnLogicalRouterCommand, Answer, NiciraNvpResource> {
 
     private static final Logger s_logger = Logger.getLogger(NiciraNvpConfigurePortForwardingRulesCommandWrapper.class);
@@ -60,7 +60,8 @@ public final class NiciraNvpConfigurePortForwardingRulesCommandWrapper extends C
                     return new ConfigurePortForwardingRulesOnLogicalRouterAnswer(command, false, "Nicira NVP doesn't support port ranges for port forwarding");
                 }
 
-                final NatRule[] rulepair = niciraNvpResource.generatePortForwardingRulePair(rule.getDstIp(), rule.getDstPortRange(), rule.getSrcIp(), rule.getSrcPortRange(), rule.getProtocol());
+                final NatRule[] rulepair = niciraNvpResource.generatePortForwardingRulePair(rule.getDstIp(), rule.getDstPortRange(), rule.getSrcIp(), rule.getSrcPortRange(),
+                                rule.getProtocol());
 
                 NatRule incoming = null;
                 NatRule outgoing = null;
