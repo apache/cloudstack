@@ -21,6 +21,8 @@ package com.cloud.network.resource.wrapper;
 
 import static com.cloud.network.resource.NiciraNvpResource.NUM_RETRIES;
 
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -30,7 +32,6 @@ import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.network.nicira.NatRule;
 import com.cloud.network.nicira.NiciraNvpApi;
 import com.cloud.network.nicira.NiciraNvpApiException;
-import com.cloud.network.nicira.NiciraNvpList;
 import com.cloud.network.resource.NiciraNvpResource;
 import com.cloud.network.utils.CommandRetryUtility;
 import com.cloud.resource.CommandWrapper;
@@ -45,7 +46,7 @@ public final class NiciraNvpConfigurePortForwardingRulesCommandWrapper extends C
     public Answer execute(final ConfigurePortForwardingRulesOnLogicalRouterCommand command, final NiciraNvpResource niciraNvpResource) {
         final NiciraNvpApi niciraNvpApi = niciraNvpResource.getNiciraNvpApi();
         try {
-            final NiciraNvpList<NatRule> existingRules = niciraNvpApi.findNatRulesByLogicalRouterUuid(command.getLogicalRouterUuid());
+            final List<NatRule> existingRules = niciraNvpApi.findNatRulesByLogicalRouterUuid(command.getLogicalRouterUuid());
             // Rules of the game (also known as assumptions-that-will-make-stuff-break-later-on)
             // A SourceNat rule with a match other than a /32 cidr is assumed to be the "main" SourceNat rule
             // Any other SourceNat rule should have a corresponding DestinationNat rule
@@ -66,7 +67,7 @@ public final class NiciraNvpConfigurePortForwardingRulesCommandWrapper extends C
                 NatRule incoming = null;
                 NatRule outgoing = null;
 
-                for (final NatRule storedRule : existingRules.getResults()) {
+                for (final NatRule storedRule : existingRules) {
                     if (storedRule.equalsIgnoreUuid(rulepair[1])) {
                         // The outgoing rule exists
                         outgoing = storedRule;

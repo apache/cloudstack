@@ -19,6 +19,9 @@
 
 package com.cloud.network.resource;
 
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
@@ -42,6 +45,8 @@ import com.cloud.network.nicira.NiciraNvpApiException;
 import com.cloud.network.nicira.SourceNatRule;
 import com.cloud.network.utils.CommandRetryUtility;
 import com.cloud.resource.ServerResource;
+import com.cloud.utils.rest.CloudstackRESTException;
+import com.cloud.utils.rest.HttpClientHelper;
 
 public class NiciraNvpResource implements ServerResource {
 
@@ -49,6 +54,7 @@ public class NiciraNvpResource implements ServerResource {
 
     public static final int NAME_MAX_LEN = 40;
     public static final int NUM_RETRIES = 2;
+    private static final int MAX_REDIRECTS = 5;
 
     private String name;
     private String guid;
@@ -58,8 +64,16 @@ public class NiciraNvpResource implements ServerResource {
     private NiciraNvpUtilities niciraNvpUtilities;
     private CommandRetryUtility retryUtility;
 
-    protected NiciraNvpApi createNiciraNvpApi() {
-        return new NiciraNvpApi();
+    protected NiciraNvpApi createNiciraNvpApi(final String host, final String username, final String password) throws CloudstackRESTException {
+        try {
+            return NiciraNvpApi.create().host(host).username(username).password(password).httpClient(HttpClientHelper.createHttpClient(MAX_REDIRECTS)).build();
+        } catch (final KeyManagementException e) {
+            throw new CloudstackRESTException("Could not create HTTP client", e);
+        } catch (final NoSuchAlgorithmException e) {
+            throw new CloudstackRESTException("Could not create HTTP client", e);
+        } catch (final KeyStoreException e) {
+            throw new CloudstackRESTException("Could not create HTTP client", e);
+        }
     }
 
     @Override
@@ -99,9 +113,11 @@ public class NiciraNvpResource implements ServerResource {
         retryUtility = CommandRetryUtility.getInstance();
         retryUtility.setServerResource(this);
 
-        niciraNvpApi = createNiciraNvpApi();
-        niciraNvpApi.setControllerAddress(ip);
-        niciraNvpApi.setAdminCredentials(adminuser, adminpass);
+        try {
+            niciraNvpApi = createNiciraNvpApi(ip, adminuser, adminpass);
+        } catch (final CloudstackRESTException e) {
+            throw new ConfigurationException("Could not create a Nicira Nvp API client: " + e.getMessage());
+        }
 
         return true;
     }

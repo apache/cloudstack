@@ -21,13 +21,14 @@ package com.cloud.network.resource.wrapper;
 
 import static com.cloud.network.resource.NiciraNvpResource.NUM_RETRIES;
 
+import java.util.List;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.FindLogicalSwitchPortAnswer;
 import com.cloud.agent.api.FindLogicalSwitchPortCommand;
 import com.cloud.network.nicira.LogicalSwitchPort;
 import com.cloud.network.nicira.NiciraNvpApi;
 import com.cloud.network.nicira.NiciraNvpApiException;
-import com.cloud.network.nicira.NiciraNvpList;
 import com.cloud.network.resource.NiciraNvpResource;
 import com.cloud.network.utils.CommandRetryUtility;
 import com.cloud.resource.CommandWrapper;
@@ -44,8 +45,8 @@ public final class NiciraNvpFindLogicalSwitchPortCommandWrapper extends CommandW
         final NiciraNvpApi niciraNvpApi = niciraNvpResource.getNiciraNvpApi();
 
         try {
-            final NiciraNvpList<LogicalSwitchPort> ports = niciraNvpApi.findLogicalSwitchPortsByUuid(logicalSwitchUuid, logicalSwitchPortUuid);
-            if (ports.getResultCount() == 0) {
+            final List<LogicalSwitchPort> ports = niciraNvpApi.findLogicalSwitchPortsByUuid(logicalSwitchUuid, logicalSwitchPortUuid);
+            if (ports.size() == 0) {
                 return new FindLogicalSwitchPortAnswer(command, false, "Logical switchport " + logicalSwitchPortUuid + " not found", null);
             } else {
                 return new FindLogicalSwitchPortAnswer(command, true, "Logical switchport " + logicalSwitchPortUuid + " found", logicalSwitchPortUuid);

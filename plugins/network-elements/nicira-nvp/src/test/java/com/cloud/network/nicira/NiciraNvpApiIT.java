@@ -22,16 +22,15 @@ package com.cloud.network.nicira;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 import java.util.UUID;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.rest.HttpClientHelper;
 
 public class NiciraNvpApiIT {
 
@@ -40,18 +39,23 @@ public class NiciraNvpApiIT {
     protected long timestamp = System.currentTimeMillis();
 
     @Before
-    public void setup() throws IOException {
-        final Properties properties = PropertiesUtil.loadFromFile(PropertiesUtil.findConfigFile("config.properties"));
-        api = new NiciraNvpApi();
-        api.setControllerAddress(properties.getProperty("nvp.host"));
-        api.setAdminCredentials(properties.getProperty("nvp.admin.user"),
-                properties.getProperty("nvp.admin.pwd"));
+    public void setup() throws Exception {
+        PropertiesUtil.loadFromFile(PropertiesUtil.findConfigFile("config.properties"));
+        final String host = System.getProperty("nvp.host");
+        final String user = System.getProperty("nvp.admin.user");
+        final String pass = System.getProperty("nvp.admin.pwd");
+        api = NiciraNvpApi.create()
+            .host(host)
+            .username(user)
+            .password(pass)
+            .httpClient(HttpClientHelper.createHttpClient(5))
+            .build();
     }
 
     @Test
-    public void testCRUDSecurityProfile() throws NiciraNvpApiException {
+    public void testCRUDSecurityProfile() {
         SecurityProfile sProfile = new SecurityProfile();
-        sProfile.setDisplayName("SecProfile"+timestamp);
+        sProfile.setDisplayName("SecProfile" + timestamp);
 
         final List<SecurityRule> egressRules = new ArrayList<SecurityRule>();
         sProfile.setLogicalPortEgressRules(egressRules);
@@ -73,27 +77,23 @@ public class NiciraNvpApiIT {
             sProfile = api.createSecurityProfile(sProfile);
 
             // We can now update the new entity
-            sProfile.setDisplayName("UpdatedSecProfile"+timestamp);
+            sProfile.setDisplayName("UpdatedSecProfile" + timestamp);
             api.updateSecurityProfile(sProfile, sProfile.getUuid());
 
             // Read them all
-            NiciraNvpList<SecurityProfile> profiles = api.findSecurityProfile();
+            List<SecurityProfile> profiles = api.findSecurityProfile();
             SecurityProfile scInList = null;
-            for(final SecurityProfile iProfile : profiles.getResults()) {
+            for (final SecurityProfile iProfile : profiles) {
                 if (iProfile.getUuid().equalsIgnoreCase(sProfile.getUuid())) {
                     scInList = iProfile;
                 }
             }
-            assertEquals("Read a Security Profile different from the one just created and updated",
-                    sProfile, scInList);
+            assertEquals("Read a Security Profile different from the one just created and updated", sProfile, scInList);
 
             // Read them filtered by uuid (get one)
             profiles = api.findSecurityProfile(sProfile.getUuid());
-            assertEquals("Read a Security Profile different from the one just created and updated",
-                    sProfile,
-                    profiles.getResults().get(0));
-            assertEquals("Read a Security Profile filtered by unique id (UUID) with more than one item",
-                    1, profiles.getResults().size());
+            assertEquals("Read a Security Profile different from the one just created and updated", sProfile, profiles.get(0));
+            assertEquals("Read a Security Profile filtered by unique id (UUID) with more than one item", 1, profiles.size());
 
             // We can now delete the new entity
             api.deleteSecurityProfile(sProfile.getUuid());
@@ -104,25 +104,21 @@ public class NiciraNvpApiIT {
     }
 
     @Test
-    public void testCRUDAcl() throws NiciraNvpApiException {
+    public void testCRUDAcl() {
         Acl acl = new Acl();
-        acl.setDisplayName("Acl"+timestamp);
+        acl.setDisplayName("Acl" + timestamp);
 
         // Note that if the protocol is 6 (TCP) then you cannot put ICMP code and type
         // Note that if the protocol is 1 (ICMP) then you cannot put ports
         final List<AclRule> egressRules = new ArrayList<AclRule>();
         acl.setLogicalPortEgressRules(egressRules);
-        egressRules.add(new AclRule(AclRule.ETHERTYPE_IPV4, 1, "allow", null, null,
-                "1.10.10.0", "1.10.10.1", null, null, null, null, 0, 0, 5));
-        egressRules.add(new AclRule(AclRule.ETHERTYPE_IPV4, 6, "allow", null, null,
-                "1.10.10.6", "1.10.10.7", 80, 80, 80, 80, 1, null, null));
+        egressRules.add(new AclRule(AclRule.ETHERTYPE_IPV4, 1, "allow", null, null, "1.10.10.0", "1.10.10.1", null, null, null, null, 0, 0, 5));
+        egressRules.add(new AclRule(AclRule.ETHERTYPE_IPV4, 6, "allow", null, null, "1.10.10.6", "1.10.10.7", 80, 80, 80, 80, 1, null, null));
 
         final List<AclRule> ingressRules = new ArrayList<AclRule>();
         acl.setLogicalPortIngressRules(ingressRules);
-        ingressRules.add(new AclRule(AclRule.ETHERTYPE_IPV4, 1, "allow", null, null,
-                "1.10.10.0", "1.10.10.1", null, null, null, null, 0, 0, 5));
-        ingressRules.add(new AclRule(AclRule.ETHERTYPE_IPV4, 6, "allow", null, null,
-                "1.10.10.6", "1.10.10.7", 80, 80, 80, 80, 1, null, null));
+        ingressRules.add(new AclRule(AclRule.ETHERTYPE_IPV4, 1, "allow", null, null, "1.10.10.0", "1.10.10.1", null, null, null, null, 0, 0, 5));
+        ingressRules.add(new AclRule(AclRule.ETHERTYPE_IPV4, 6, "allow", null, null, "1.10.10.6", "1.10.10.7", 80, 80, 80, 80, 1, null, null));
 
         final List<NiciraNvpTag> tags = new ArrayList<NiciraNvpTag>();
         acl.setTags(tags);
@@ -134,27 +130,23 @@ public class NiciraNvpApiIT {
             acl = api.createAcl(acl);
 
             // We can now update the new entity
-            acl.setDisplayName("UpdatedAcl"+timestamp);
+            acl.setDisplayName("UpdatedAcl" + timestamp);
             api.updateAcl(acl, acl.getUuid());
 
             // Read them all
-            NiciraNvpList<Acl> acls = api.findAcl();
+            List<Acl> acls = api.findAcl();
             Acl scInList = null;
-            for(final Acl iAcl : acls.getResults()) {
+            for (final Acl iAcl : acls) {
                 if (iAcl.getUuid().equalsIgnoreCase(acl.getUuid())) {
                     scInList = iAcl;
                 }
             }
-            assertEquals("Read a ACL different from the one just created and updated",
-                    acl, scInList);
+            assertEquals("Read a ACL different from the one just created and updated", acl, scInList);
 
             // Read them filtered by uuid (get one)
             acls = api.findAcl(acl.getUuid());
-            assertEquals("Read a ACL different from the one just created and updated",
-                    acl,
-                    acls.getResults().get(0));
-            assertEquals("Read a ACL filtered by unique id (UUID) with more than one item",
-                    1, acls.getResults().size());
+            assertEquals("Read a ACL different from the one just created and updated", acl, acls.get(0));
+            assertEquals("Read a ACL filtered by unique id (UUID) with more than one item", 1, acls.size());
 
             // We can now delete the new entity
             api.deleteAcl(acl.getUuid());
@@ -165,9 +157,9 @@ public class NiciraNvpApiIT {
     }
 
     @Test
-    public void testCRUDLogicalSwitch() throws NiciraNvpApiException {
+    public void testCRUDLogicalSwitch() throws Exception {
         LogicalSwitch logicalSwitch = new LogicalSwitch();
-        logicalSwitch.setDisplayName("LogicalSwitch"+timestamp);
+        logicalSwitch.setDisplayName("LogicalSwitch" + timestamp);
         logicalSwitch.setPortIsolationEnabled(true);
         logicalSwitch.setReplicationMode("service");
         logicalSwitch.setTags(new ArrayList<NiciraNvpTag>());
@@ -175,78 +167,65 @@ public class NiciraNvpApiIT {
 
         // In the creation we don't get to specify UUID, href or schema: they don't exist yet
 
-        try {
-            logicalSwitch = api.createLogicalSwitch(logicalSwitch);
+        logicalSwitch = api.createLogicalSwitch(logicalSwitch);
 
-            // We can now update the new entity
-            logicalSwitch.setDisplayName("UpdatedLogicalSwitch"+timestamp);
-            api.updateLogicalSwitch(logicalSwitch, logicalSwitch.getUuid());
+        // We can now update the new entity
+        logicalSwitch.setDisplayName("UpdatedLogicalSwitch" + timestamp);
+        api.updateLogicalSwitch(logicalSwitch, logicalSwitch.getUuid());
 
-            // Read them all
-            NiciraNvpList<LogicalSwitch> logicalSwitches = api.findLogicalSwitch();
-            for(final LogicalSwitch iLogicalSwitch : logicalSwitches.getResults()) {
-                if (iLogicalSwitch.getUuid().equalsIgnoreCase(logicalSwitch.getUuid())) {
-                    assertEquals("Read a LogicalSwitch different from the one just created and updated",
-                            logicalSwitch, iLogicalSwitch);
-                }
+        // Read them all
+        List<LogicalSwitch> logicalSwitches = api.findLogicalSwitch();
+        for (final LogicalSwitch iLogicalSwitch : logicalSwitches) {
+            if (iLogicalSwitch.getUuid().equalsIgnoreCase(logicalSwitch.getUuid())) {
+                assertEquals("Read a LogicalSwitch different from the one just created and updated", logicalSwitch, iLogicalSwitch);
             }
-
-            // Read them filtered by uuid (get one)
-            logicalSwitches = api.findLogicalSwitch(logicalSwitch.getUuid());
-            assertEquals("Read a LogicalSwitch different from the one just created and updated",
-                    logicalSwitch,
-                    logicalSwitches.getResults().get(0));
-            assertEquals("Read a LogicalSwitch filtered by unique id (UUID) with more than one item",
-                    1, logicalSwitches.getResults().size());
-
-            // Before deleting the test LogicalSwitch, test its ports
-            final List<NiciraNvpTag> tags = new ArrayList<NiciraNvpTag>();
-            tags.add(new NiciraNvpTag("cs_account", "OwnerName"));
-
-            LogicalSwitchPort logicalSwitchPort = new LogicalSwitchPort("LSwitchPort"+timestamp, tags, true);
-            logicalSwitchPort = api.createLogicalSwitchPort(logicalSwitch.getUuid(), logicalSwitchPort);
-
-            logicalSwitchPort.setDisplayName("UpdatedLSwitchPort"+timestamp);
-            api.updateLogicalSwitchPort(logicalSwitch.getUuid(), logicalSwitchPort);
-
-            final NiciraNvpList<LogicalSwitchPort> logicalSwitchePorts =
-                    api.findLogicalSwitchPortsByUuid(logicalSwitch.getUuid(), logicalSwitchPort.getUuid());
-            for(final LogicalSwitchPort iLSwitchPort : logicalSwitchePorts.getResults()) {
-                if (iLSwitchPort.getUuid().equalsIgnoreCase(logicalSwitchPort.getUuid())) {
-                    assertEquals("Read a LogicalSwitchPort different from the one just created and updated",
-                            logicalSwitchPort, iLSwitchPort);
-                }
-            }
-
-            // And finally test attachments
-            final String attachmentUuid = UUID.randomUUID().toString();
-            final VifAttachment vifAttachment = new VifAttachment(attachmentUuid);
-            api.updateLogicalSwitchPortAttachment(logicalSwitch.getUuid(), logicalSwitchPort.getUuid(),
-                    vifAttachment);
-
-            assertEquals("Read a LogicalSwitchPort by vifAttachment different than expected",
-                    api.findLogicalSwitchPortUuidByVifAttachmentUuid(logicalSwitch.getUuid(), vifAttachment.getVifUuid()),
-                            logicalSwitchPort.getUuid());
-
-            api.deleteLogicalSwitchPort(logicalSwitch.getUuid(), logicalSwitchPort.getUuid());
-
-            // We can now delete the new entity
-            api.deleteLogicalSwitch(logicalSwitch.getUuid());
-        } catch (final NiciraNvpApiException e) {
-            e.printStackTrace();
-            assertTrue("Errors in LogicalSwitch CRUD", false);
         }
+
+        // Read them filtered by uuid (get one)
+        logicalSwitches = api.findLogicalSwitch(logicalSwitch.getUuid());
+        assertEquals("Read a LogicalSwitch different from the one just created and updated", logicalSwitch, logicalSwitches.get(0));
+        assertEquals("Read a LogicalSwitch filtered by unique id (UUID) with more than one item", 1, logicalSwitches.size());
+
+        // Before deleting the test LogicalSwitch, test its ports
+        final List<NiciraNvpTag> tags = new ArrayList<NiciraNvpTag>();
+        tags.add(new NiciraNvpTag("cs_account", "OwnerName"));
+
+        LogicalSwitchPort logicalSwitchPort = new LogicalSwitchPort("LSwitchPort" + timestamp, tags, true);
+        logicalSwitchPort = api.createLogicalSwitchPort(logicalSwitch.getUuid(), logicalSwitchPort);
+
+        logicalSwitchPort.setDisplayName("UpdatedLSwitchPort" + timestamp);
+        api.updateLogicalSwitchPort(logicalSwitch.getUuid(), logicalSwitchPort);
+
+        final List<LogicalSwitchPort> logicalSwitchePorts = api.findLogicalSwitchPortsByUuid(logicalSwitch.getUuid(), logicalSwitchPort.getUuid());
+        for (final LogicalSwitchPort iLSwitchPort : logicalSwitchePorts) {
+            if (iLSwitchPort.getUuid().equalsIgnoreCase(logicalSwitchPort.getUuid())) {
+                assertEquals("Read a LogicalSwitchPort different from the one just created and updated", logicalSwitchPort, iLSwitchPort);
+            }
+        }
+
+        // And finally test attachments
+        final String attachmentUuid = UUID.randomUUID().toString();
+        final VifAttachment vifAttachment = new VifAttachment(attachmentUuid);
+        api.updateLogicalSwitchPortAttachment(logicalSwitch.getUuid(), logicalSwitchPort.getUuid(), vifAttachment);
+
+        assertEquals("Read a LogicalSwitchPort by vifAttachment different than expected",
+                        api.findLogicalSwitchPortUuidByVifAttachmentUuid(logicalSwitch.getUuid(), vifAttachment.getVifUuid()), logicalSwitchPort.getUuid());
+
+        api.deleteLogicalSwitchPort(logicalSwitch.getUuid(), logicalSwitchPort.getUuid());
+
+        // We can now delete the new entity
+        api.deleteLogicalSwitch(logicalSwitch.getUuid());
     }
 
     @Test
-    public void testCRUDLogicalRouter() throws NiciraNvpApiException {
+    public void testCRUDLogicalRouter() {
         LogicalRouter logicalRouter = new LogicalRouter();
-        logicalRouter.setDisplayName("LogicalRouter"+timestamp);
+        logicalRouter.setDisplayName("LogicalRouter" + timestamp);
         logicalRouter.setDistributed(true);
         logicalRouter.setNatSynchronizationEnabled(true);
         logicalRouter.setReplicationMode(LogicalRouter.REPLICATION_MODE_SERVICE);
         final RoutingConfig routingConfig = new SingleDefaultRouteImplicitRoutingConfig(
-                new RouterNextHop("192.168.10.20"));
+                        new RouterNextHop("192.168.10.20"));
         logicalRouter.setRoutingConfig(routingConfig);
 
         // In the creation we don't get to specify UUID, href or schema: they don't exist yet
@@ -255,37 +234,32 @@ public class NiciraNvpApiIT {
             logicalRouter = api.createLogicalRouter(logicalRouter);
 
             // We can now update the new entity
-            logicalRouter.setDisplayName("UpdatedLogicalSwitch"+timestamp);
+            logicalRouter.setDisplayName("UpdatedLogicalSwitch" + timestamp);
             api.updateLogicalRouter(logicalRouter, logicalRouter.getUuid());
 
             // Read them all
-            NiciraNvpList<LogicalRouter> logicalRouters = api.findLogicalRouter();
+            List<LogicalRouter> logicalRouters = api.findLogicalRouter();
             LogicalRouter lsInList = null;
-            for(final LogicalRouter iLogicalRouter : logicalRouters.getResults()) {
+            for (final LogicalRouter iLogicalRouter : logicalRouters) {
                 if (iLogicalRouter.getUuid().equalsIgnoreCase(logicalRouter.getUuid())) {
                     lsInList = iLogicalRouter;
                 }
             }
-            assertEquals("Read a LogicalRouter different from the one just created and updated",
-                    logicalRouter, lsInList);
+            assertEquals("Read a LogicalRouter different from the one just created and updated", logicalRouter, lsInList);
 
             // Read them filtered by uuid (get one)
             logicalRouters = api.findLogicalRouter(logicalRouter.getUuid());
-            assertEquals("Read a LogicalRouter different from the one just created and updated",
-                    logicalRouter,
-                    logicalRouters.getResults().get(0));
-            assertEquals("Read a LogicalRouter filtered by unique id (UUID) with more than one item",
-                    1, logicalRouters.getResults().size());
+            assertEquals("Read a LogicalRouter different from the one just created and updated", logicalRouter, logicalRouters.get(0));
+            assertEquals("Read a LogicalRouter filtered by unique id (UUID) with more than one item", 1, logicalRouters.size());
 
-            assertEquals("", logicalRouters.getResults().get(0),
-                    api.findOneLogicalRouterByUuid(logicalRouter.getUuid()));
+            assertEquals(logicalRouters.get(0), api.findOneLogicalRouterByUuid(logicalRouter.getUuid()));
 
             // Before deleting the test LogicalRouter, test its ports
             final List<NiciraNvpTag> tags = new ArrayList<NiciraNvpTag>();
             tags.add(new NiciraNvpTag("cs_account", "OwnerName"));
 
             LogicalRouterPort logicalRouterPort = new LogicalRouterPort();
-            logicalRouterPort.setDisplayName("LRouterPort"+timestamp);
+            logicalRouterPort.setDisplayName("LRouterPort" + timestamp);
             logicalRouterPort.setTags(tags);
             logicalRouterPort.setAdminStatusEnabled(true);
             logicalRouterPort.setPortno(1024);
@@ -296,15 +270,13 @@ public class NiciraNvpApiIT {
             logicalRouterPort.setIpAddresses(ipAddresses);
             logicalRouterPort = api.createLogicalRouterPort(logicalRouter.getUuid(), logicalRouterPort);
 
-            logicalRouterPort.setDisplayName("UpdatedLRouterPort"+timestamp);
+            logicalRouterPort.setDisplayName("UpdatedLRouterPort" + timestamp);
             api.updateLogicalRouterPort(logicalRouter.getUuid(), logicalRouterPort);
 
-            final NiciraNvpList<LogicalRouterPort> logicalRouterePorts =
-                    api.findLogicalRouterPortsByUuid(logicalRouter.getUuid(), logicalRouterPort.getUuid());
-            for(final LogicalRouterPort iLRouterPort : logicalRouterePorts.getResults()) {
+            final List<LogicalRouterPort> logicalRouterePorts = api.findLogicalRouterPortsByUuid(logicalRouter.getUuid(), logicalRouterPort.getUuid());
+            for (final LogicalRouterPort iLRouterPort : logicalRouterePorts) {
                 if (iLRouterPort.getUuid().equalsIgnoreCase(logicalRouterPort.getUuid())) {
-                    assertEquals("Read a LogicalRouterPort different from the one just created and updated",
-                            logicalRouterPort, iLRouterPort);
+                    assertEquals("Read a LogicalRouterPort different from the one just created and updated", logicalRouterPort, iLRouterPort);
                 }
             }
 
@@ -339,8 +311,8 @@ public class NiciraNvpApiIT {
     public void testGetControlClusterStatus() throws NiciraNvpApiException {
         final ControlClusterStatus controlClusterStatus = api.getControlClusterStatus();
         final String clusterStatus = controlClusterStatus.getClusterStatus();
-        final boolean correctStatus = (clusterStatus.equalsIgnoreCase("stable") ||
-                clusterStatus.equalsIgnoreCase("joining") || clusterStatus.equalsIgnoreCase("unstable"));
+        final boolean correctStatus = clusterStatus.equalsIgnoreCase("stable") ||
+                        clusterStatus.equalsIgnoreCase("joining") || clusterStatus.equalsIgnoreCase("unstable");
         assertTrue("Not recognizable cluster status", correctStatus);
     }
 

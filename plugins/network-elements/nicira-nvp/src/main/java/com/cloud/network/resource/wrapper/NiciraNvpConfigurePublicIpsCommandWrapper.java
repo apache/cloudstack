@@ -21,13 +21,14 @@ package com.cloud.network.resource.wrapper;
 
 import static com.cloud.network.resource.NiciraNvpResource.NUM_RETRIES;
 
+import java.util.List;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ConfigurePublicIpsOnLogicalRouterAnswer;
 import com.cloud.agent.api.ConfigurePublicIpsOnLogicalRouterCommand;
 import com.cloud.network.nicira.LogicalRouterPort;
 import com.cloud.network.nicira.NiciraNvpApi;
 import com.cloud.network.nicira.NiciraNvpApiException;
-import com.cloud.network.nicira.NiciraNvpList;
 import com.cloud.network.resource.NiciraNvpResource;
 import com.cloud.network.utils.CommandRetryUtility;
 import com.cloud.resource.CommandWrapper;
@@ -41,11 +42,11 @@ public final class NiciraNvpConfigurePublicIpsCommandWrapper extends CommandWrap
         final NiciraNvpApi niciraNvpApi = niciraNvpResource.getNiciraNvpApi();
 
         try {
-            final NiciraNvpList<LogicalRouterPort> ports = niciraNvpApi.findLogicalRouterPortByGatewayServiceUuid(command.getLogicalRouterUuid(), command.getL3GatewayServiceUuid());
-            if (ports.getResultCount() != 1) {
+            final List<LogicalRouterPort> ports = niciraNvpApi.findLogicalRouterPortByGatewayServiceUuid(command.getLogicalRouterUuid(), command.getL3GatewayServiceUuid());
+            if (ports.size() != 1) {
                 return new ConfigurePublicIpsOnLogicalRouterAnswer(command, false, "No logical router ports found, unable to set ip addresses");
             }
-            final LogicalRouterPort lrp = ports.getResults().get(0);
+            final LogicalRouterPort lrp = ports.get(0);
             lrp.setIpAddresses(command.getPublicCidrs());
             niciraNvpApi.updateLogicalRouterPort(command.getLogicalRouterUuid(), lrp);
 
