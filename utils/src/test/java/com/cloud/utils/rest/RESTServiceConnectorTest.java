@@ -156,25 +156,24 @@ public class RESTServiceConnectorTest {
     @Test(expected = CloudstackRESTException.class)
     public void testExecuteMethodWithLogin() throws CloudstackRESTException, HttpException, IOException {
         final GetMethod gm = mock(GetMethod.class);
-        when(client.executeMethod((HttpMethod)any())).thenThrow(new HttpException());
+        when(client.executeMethod((HttpMethod) any())).thenThrow(new HttpException());
         when(gm.getStatusCode()).thenReturn(HttpStatus.SC_UNAUTHORIZED).thenReturn(HttpStatus.SC_UNAUTHORIZED);
         connector.executeMethod(gm);
         verify(gm, times(1)).getStatusCode();
     }
 
-    /* Bit of a roundabout way to ensure that login is called after an un authorized result
-     * It not possible to properly mock login()
+    /*
+     * Bit of a roundabout way to ensure that login is called after an un authorized result It not possible to properly mock login()
      */
-    public void testExecuteMethodWithLoginSucced2ndAttempt() throws CloudstackRESTException, HttpException, IOException {
+    public void testExecuteMethodWithLoginSucced2ndAttempt() throws CloudstackRESTException {
         // Prepare
         final GetMethod gm = mock(GetMethod.class);
         when(gm.getStatusCode()).thenReturn(HttpStatus.SC_UNAUTHORIZED).thenReturn(HttpStatus.SC_UNAUTHORIZED);
 
         final RESTValidationStrategy previousValidationStrategy = connector.validation;
-        connector.validation = new RESTValidationStrategy(){
+        connector.validation = new RESTValidationStrategy() {
             @Override
-            protected void login(final String protocol, final HttpClient client)
-                    throws CloudstackRESTException {
+            protected void login(final String protocol, final HttpClient client) throws CloudstackRESTException {
                 // Do nothing
             }
         };
@@ -222,7 +221,7 @@ public class RESTServiceConnectorTest {
     @Test(expected = CloudstackRESTException.class)
     public void testExecuteCreateObjectException() throws CloudstackRESTException, IOException {
         JsonEntity ls = new JsonEntity();
-        when(client.executeMethod((HttpMethod)any())).thenThrow(new HttpException());
+        when(client.executeMethod((HttpMethod) any())).thenThrow(new HttpException());
         method = mock(PostMethod.class);
         when(method.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
         final Header header = mock(Header.class);
@@ -268,7 +267,7 @@ public class RESTServiceConnectorTest {
         final JsonEntity ls = new JsonEntity();
         method = mock(PutMethod.class);
         when(method.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        when(client.executeMethod((HttpMethod)any())).thenThrow(new IOException());
+        when(client.executeMethod((HttpMethod) any())).thenThrow(new IOException());
         try {
             connector.executeUpdateObject(ls, "/", Collections.<String, String> emptyMap());
         } finally {
@@ -305,7 +304,7 @@ public class RESTServiceConnectorTest {
     public void testExecuteDeleteObjectException() throws CloudstackRESTException, IOException {
         method = mock(DeleteMethod.class);
         when(method.getStatusCode()).thenReturn(HttpStatus.SC_NO_CONTENT);
-        when(client.executeMethod((HttpMethod)any())).thenThrow(new HttpException());
+        when(client.executeMethod((HttpMethod) any())).thenThrow(new HttpException());
         try {
             connector.executeDeleteObject("/");
         } finally {
@@ -345,7 +344,7 @@ public class RESTServiceConnectorTest {
         method = mock(GetMethod.class);
         when(method.getStatusCode()).thenReturn(HttpStatus.SC_OK);
         when(method.getResponseBodyAsString()).thenReturn(UUID_JSON_RESPONSE);
-        when(client.executeMethod((HttpMethod)any())).thenThrow(new HttpException());
+        when(client.executeMethod((HttpMethod) any())).thenThrow(new HttpException());
         try {
             connector.executeRetrieveObject(JsonEntity.class, "/", Collections.<String, String> emptyMap());
         } finally {

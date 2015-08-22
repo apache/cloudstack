@@ -19,17 +19,11 @@
 
 package com.cloud.utils.rest;
 
+@SuppressWarnings("serial")
 public class CloudstackRESTException extends Exception {
-
-    public CloudstackRESTException() {
-    }
 
     public CloudstackRESTException(final String message) {
         super(message);
-    }
-
-    public CloudstackRESTException(final Throwable cause) {
-        super(cause);
     }
 
     public CloudstackRESTException(final String message, final Throwable cause) {

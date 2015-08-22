@@ -19,11 +19,29 @@
 
 package com.cloud.utils.rest;
 
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.reflect.TypeToken;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Type;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.Socket;
+import java.net.URL;
+import java.net.UnknownHostException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
 import org.apache.commons.httpclient.ConnectTimeoutException;
@@ -46,36 +64,18 @@ import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.apache.log4j.Logger;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Type;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
-import java.net.Socket;
-import java.net.URL;
-import java.net.UnknownHostException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.reflect.TypeToken;
 
 /**
- * This abstraction encapsulates client side code for REST service communication. It encapsulates
- * access in a delegate validation strategy. There may different implementations extending
- * {@link RESTValidationStrategy}, and any of them should mention the needed data to work.
+ * This abstraction encapsulates client side code for REST service communication. It encapsulates access in a delegate validation strategy. There may different implementations
+ * extending {@link RESTValidationStrategy}, and any of them should mention the needed data to work.
  *
- * This connector allows the use of {@link JsonDeserializer} for specific classes. You can provide
- * in the constructor a list of classes and a list of deserializers for these classes. These should
- * be a correlated so that Nth deserializer is correctly mapped to Nth class.
+ * This connector allows the use of {@link JsonDeserializer} for specific classes. You can provide in the constructor a list of classes and a list of deserializers for these
+ * classes. These should be a correlated so that Nth deserializer is correctly mapped to Nth class.
  */
 public class RESTServiceConnector {
     private static final String HTTPS = "https";
@@ -101,7 +101,6 @@ public class RESTServiceConnector {
 
     private final Gson gson;
 
-
     /**
      * Getter that may be needed only for test purpose
      *
@@ -122,14 +121,14 @@ public class RESTServiceConnector {
 
         try {
             // Cast to ProtocolSocketFactory to avoid the deprecated constructor with the SecureProtocolSocketFactory parameter
-            Protocol.registerProtocol(HTTPS, new Protocol(HTTPS, (ProtocolSocketFactory)new TrustingProtocolSocketFactory(), HTTPS_PORT));
+            Protocol.registerProtocol(HTTPS, new Protocol(HTTPS, (ProtocolSocketFactory) new TrustingProtocolSocketFactory(), HTTPS_PORT));
         } catch (final IOException e) {
             s_logger.warn("Failed to register the TrustingProtocolSocketFactory, falling back to default SSLSocketFactory", e);
         }
 
         final GsonBuilder gsonBuilder = new GsonBuilder();
-        if(classList != null && deserializerList != null) {
-            for(int i = 0; i < classList.size() && i < deserializerList.size(); i++) {
+        if (classList != null && deserializerList != null) {
+            for (int i = 0; i < classList.size() && i < deserializerList.size(); i++) {
                 gsonBuilder.registerTypeAdapter(classList.get(i), deserializerList.get(i));
             }
         }
@@ -173,7 +172,7 @@ public class RESTServiceConnector {
 
     public <T> void executeUpdateObject(final T newObject, final String uri, final Map<String, String> parameters) throws CloudstackRESTException {
 
-        final PutMethod pm = (PutMethod)createMethod(PUT_METHOD_TYPE, uri);
+        final PutMethod pm = (PutMethod) createMethod(PUT_METHOD_TYPE, uri);
         pm.setRequestHeader(CONTENT_TYPE, JSON_CONTENT_TYPE);
         try {
             pm.setRequestEntity(new StringRequestEntity(gson.toJson(newObject), JSON_CONTENT_TYPE, null));
@@ -193,10 +192,9 @@ public class RESTServiceConnector {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T executeCreateObject(final T newObject, final Type returnObjectType, final String uri, final Map<String, String> parameters)
-            throws CloudstackRESTException {
+    public <T> T executeCreateObject(final T newObject, final Type returnObjectType, final String uri, final Map<String, String> parameters) throws CloudstackRESTException {
 
-        final PostMethod pm = (PostMethod)createMethod(POST_METHOD_TYPE, uri);
+        final PostMethod pm = (PostMethod) createMethod(POST_METHOD_TYPE, uri);
         pm.setRequestHeader(CONTENT_TYPE, JSON_CONTENT_TYPE);
         try {
             pm.setRequestEntity(new StringRequestEntity(gson.toJson(newObject), JSON_CONTENT_TYPE, null));
@@ -215,7 +213,7 @@ public class RESTServiceConnector {
 
         T result;
         try {
-            result = (T)gson.fromJson(pm.getResponseBodyAsString(), TypeToken.get(newObject.getClass()).getType());
+            result = (T) gson.fromJson(pm.getResponseBodyAsString(), TypeToken.get(newObject.getClass()).getType());
         } catch (final IOException e) {
             throw new CloudstackRESTException("Failed to decode json response body", e);
         } finally {
@@ -226,7 +224,7 @@ public class RESTServiceConnector {
     }
 
     public void executeDeleteObject(final String uri) throws CloudstackRESTException {
-        final DeleteMethod dm = (DeleteMethod)createMethod(DELETE_METHOD_TYPE, uri);
+        final DeleteMethod dm = (DeleteMethod) createMethod(DELETE_METHOD_TYPE, uri);
         dm.setRequestHeader(CONTENT_TYPE, JSON_CONTENT_TYPE);
 
         executeMethod(dm);
@@ -242,7 +240,7 @@ public class RESTServiceConnector {
 
     @SuppressWarnings("unchecked")
     public <T> T executeRetrieveObject(final Type returnObjectType, final String uri, final Map<String, String> parameters) throws CloudstackRESTException {
-        final GetMethod gm = (GetMethod)createMethod(GET_METHOD_TYPE, uri);
+        final GetMethod gm = (GetMethod) createMethod(GET_METHOD_TYPE, uri);
         gm.setRequestHeader(CONTENT_TYPE, JSON_CONTENT_TYPE);
         if (parameters != null && !parameters.isEmpty()) {
             final List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(parameters.size());
@@ -263,7 +261,7 @@ public class RESTServiceConnector {
 
         T returnValue;
         try {
-            returnValue = (T)gson.fromJson(gm.getResponseBodyAsString(), returnObjectType);
+            returnValue = (T) gson.fromJson(gm.getResponseBodyAsString(), returnObjectType);
         } catch (final IOException e) {
             s_logger.error("IOException while retrieving response body", e);
             throw new CloudstackRESTException(e);
@@ -287,7 +285,7 @@ public class RESTServiceConnector {
         }
     }
 
-    private String responseToErrorMessage(final HttpMethodBase method) {
+    private static String responseToErrorMessage(final HttpMethodBase method) {
         assert method.isRequestSent() : "no use getting an error message unless the request is sent";
 
         if (TEXT_HTML_CONTENT_TYPE.equals(method.getResponseHeader(CONTENT_TYPE).getValue())) {
@@ -305,10 +303,8 @@ public class RESTServiceConnector {
         return method.getStatusText();
     }
 
-    /* Some controllers use a self-signed certificate. The
-     * TrustingProtocolSocketFactory will accept any provided
-     * certificate when making an SSL connection to the SDN
-     * Manager
+    /*
+     * Some controllers use a self-signed certificate. The TrustingProtocolSocketFactory will accept any provided certificate when making an SSL connection to the SDN Manager
      */
     private class TrustingProtocolSocketFactory implements SecureProtocolSocketFactory {
 
@@ -316,7 +312,7 @@ public class RESTServiceConnector {
 
         public TrustingProtocolSocketFactory() throws IOException {
             // Create a trust manager that does not validate certificate chains
-            final TrustManager[] trustAllCerts = new TrustManager[] {new X509TrustManager() {
+            final TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
                 @Override
                 public X509Certificate[] getAcceptedIssuers() {
                     return null;
@@ -331,7 +327,7 @@ public class RESTServiceConnector {
                 public void checkServerTrusted(final X509Certificate[] certs, final String authType) {
                     // Trust always
                 }
-            }};
+            } };
 
             try {
                 // Install the all-trusting trust manager
@@ -347,43 +343,43 @@ public class RESTServiceConnector {
 
         @Override
         public Socket createSocket(final String host, final int port) throws IOException {
-            SSLSocket socket = (SSLSocket) ssf.createSocket(host, port);
+            final SSLSocket socket = (SSLSocket) ssf.createSocket(host, port);
             socket.setEnabledProtocols(SSLUtils.getSupportedProtocols(socket.getEnabledProtocols()));
             return socket;
         }
 
         @Override
         public Socket createSocket(final String address, final int port, final InetAddress localAddress, final int localPort) throws IOException, UnknownHostException {
-            Socket socket = ssf.createSocket(address, port, localAddress, localPort);
+            final Socket socket = ssf.createSocket(address, port, localAddress, localPort);
             if (socket instanceof SSLSocket) {
-                ((SSLSocket)socket).setEnabledProtocols(SSLUtils.getSupportedProtocols(((SSLSocket)socket).getEnabledProtocols()));
+                ((SSLSocket) socket).setEnabledProtocols(SSLUtils.getSupportedProtocols(((SSLSocket) socket).getEnabledProtocols()));
             }
             return socket;
         }
 
         @Override
         public Socket createSocket(final Socket socket, final String host, final int port, final boolean autoClose) throws IOException, UnknownHostException {
-            Socket s = ssf.createSocket(socket, host, port, autoClose);
+            final Socket s = ssf.createSocket(socket, host, port, autoClose);
             if (s instanceof SSLSocket) {
-                ((SSLSocket)s).setEnabledProtocols(SSLUtils.getSupportedProtocols(((SSLSocket)s).getEnabledProtocols()));
+                ((SSLSocket) s).setEnabledProtocols(SSLUtils.getSupportedProtocols(((SSLSocket) s).getEnabledProtocols()));
             }
             return s;
         }
 
         @Override
-        public Socket createSocket(final String host, final int port, final InetAddress localAddress, final int localPort, final HttpConnectionParams params)
-                throws IOException, UnknownHostException, ConnectTimeoutException {
+        public Socket createSocket(final String host, final int port, final InetAddress localAddress, final int localPort, final HttpConnectionParams params) throws IOException,
+                UnknownHostException, ConnectTimeoutException {
             final int timeout = params.getConnectionTimeout();
             if (timeout == 0) {
-                Socket socket = createSocket(host, port, localAddress, localPort);
+                final Socket socket = createSocket(host, port, localAddress, localPort);
                 if (socket instanceof SSLSocket) {
-                    ((SSLSocket)socket).setEnabledProtocols(SSLUtils.getSupportedProtocols(((SSLSocket)socket).getEnabledProtocols()));
+                    ((SSLSocket) socket).setEnabledProtocols(SSLUtils.getSupportedProtocols(((SSLSocket) socket).getEnabledProtocols()));
                 }
                 return socket;
             } else {
                 final Socket s = ssf.createSocket();
                 if (s instanceof SSLSocket) {
-                    ((SSLSocket)s).setEnabledProtocols(SSLUtils.getSupportedProtocols(((SSLSocket)s).getEnabledProtocols()));
+                    ((SSLSocket) s).setEnabledProtocols(SSLUtils.getSupportedProtocols(((SSLSocket) s).getEnabledProtocols()));
                 }
                 s.bind(new InetSocketAddress(localAddress, localPort));
                 s.connect(new InetSocketAddress(host, port), timeout);
