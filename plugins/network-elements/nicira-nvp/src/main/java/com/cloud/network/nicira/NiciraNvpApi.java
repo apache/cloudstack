@@ -32,9 +32,6 @@ import com.cloud.utils.rest.RESTServiceConnector;
 import com.cloud.utils.rest.RESTValidationStrategy;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
 
 @SuppressWarnings("rawtypes")
@@ -50,7 +47,7 @@ public class NiciraNvpApi {
     private static final String ROUTER_URI_PREFIX = "/ws.v1/lrouter";
     private static final String LOGIN_URL = "/ws.v1/login";
 
-    protected RESTServiceConnector restConnector;
+    private final RESTServiceConnector restConnector;
 
     protected final static Map<Class, String> prefixMap;
 
@@ -111,7 +108,7 @@ public class NiciraNvpApi {
      * @return
      * @throws NiciraNvpApiException
      */
-    protected <T> T create(final T entity) throws NiciraNvpApiException {
+    private <T> T create(final T entity) throws NiciraNvpApiException {
         final String uri = prefixMap.get(entity.getClass());
         return createWithUri(entity, uri);
     }
@@ -123,7 +120,7 @@ public class NiciraNvpApi {
      * @return
      * @throws NiciraNvpApiException
      */
-    protected <T> T createWithUri(final T entity, final String uri) throws NiciraNvpApiException {
+    private <T> T createWithUri(final T entity, final String uri) throws NiciraNvpApiException {
         T createdEntity;
         try {
             createdEntity = restConnector.executeCreateObject(entity, new TypeToken<T>() {
@@ -138,24 +135,15 @@ public class NiciraNvpApi {
     /**
      * GET list of items
      *
-     * @return
-     * @throws NiciraNvpApiException
-     */
-    protected <T> NiciraNvpList<T> find(final Class<T> clazz) throws NiciraNvpApiException {
-        return find(null, clazz);
-    }
-
-    /**
-     * GET list of items
-     *
      * @param uuid
+     *
      * @return
      * @throws NiciraNvpApiException
      */
-    public <T> NiciraNvpList<T> find(final String uuid, final Class<T> clazz) throws NiciraNvpApiException {
+    private <T> List<T> find(final Optional<String> uuid, final Class<T> clazz) throws NiciraNvpApiException {
         final String uri = prefixMap.get(clazz);
         Map<String, String> params = defaultListParams;
-        if (uuid != null) {
+        if (uuid.isPresent()) {
             params = new HashMap<String, String>(defaultListParams);
             params.put("uuid", uuid);
         }
@@ -181,7 +169,7 @@ public class NiciraNvpApi {
      * @param uuid
      * @throws NiciraNvpApiException
      */
-    public <T> void update(final T item, final String uuid) throws NiciraNvpApiException {
+    private <T> void update(final T item, final String uuid) throws NiciraNvpApiException {
         final String uri = prefixMap.get(item.getClass()) + "/" + uuid;
         updateWithUri(item, uri);
     }
@@ -193,7 +181,7 @@ public class NiciraNvpApi {
      * @param uuid
      * @throws NiciraNvpApiException
      */
-    public <T> void updateWithUri(final T item, final String uri) throws NiciraNvpApiException {
+    private <T> void updateWithUri(final T item, final String uri) throws NiciraNvpApiException {
         try {
             restConnector.executeUpdateObject(item, uri, Collections.<String, String> emptyMap());
         } catch (final CloudstackRESTException e) {
@@ -207,7 +195,7 @@ public class NiciraNvpApi {
      * @param securityProfileUuid
      * @throws NiciraNvpApiException
      */
-    public <T> void delete(final String uuid, final Class<T> clazz) throws NiciraNvpApiException {
+    private <T> void delete(final String uuid, final Class<T> clazz) throws NiciraNvpApiException {
         final String uri = prefixMap.get(clazz) + "/" + uuid;
         deleteWithUri(uri);
     }
@@ -218,7 +206,7 @@ public class NiciraNvpApi {
      * @param securityProfileUuid
      * @throws NiciraNvpApiException
      */
-    public void deleteWithUri(final String uri) throws NiciraNvpApiException {
+    private void deleteWithUri(final String uri) throws NiciraNvpApiException {
         try {
             restConnector.executeDeleteObject(uri);
         } catch (final CloudstackRESTException e) {
@@ -588,48 +576,17 @@ public class NiciraNvpApi {
         }
     }
 
-    public static class NatRuleAdapter implements JsonDeserializer<NatRule> {
 
-        @Override
-        public NatRule deserialize(final JsonElement jsonElement, final Type type, final JsonDeserializationContext context) throws JsonParseException {
-            final JsonObject jsonObject = jsonElement.getAsJsonObject();
 
-            if (!jsonObject.has("type")) {
-                throw new JsonParseException("Deserializing as a NatRule, but no type present in the json object");
-            }
 
-            final String natRuleType = jsonObject.get("type").getAsString();
-            if ("SourceNatRule".equals(natRuleType)) {
-                return context.deserialize(jsonElement, SourceNatRule.class);
-            } else if ("DestinationNatRule".equals(natRuleType)) {
-                return context.deserialize(jsonElement, DestinationNatRule.class);
-            }
 
-            throw new JsonParseException("Failed to deserialize type \"" + natRuleType + "\"");
-        }
     }
 
-    public static class RoutingConfigAdapter implements JsonDeserializer<RoutingConfig> {
 
-        private static final String ROUTING_TABLE_ROUTING_CONFIG = "RoutingTableRoutingConfig";
-        private static final String SINGLE_DEFAULT_ROUTE_IMPLICIT_ROUTING_CONFIG = "SingleDefaultRouteImplicitRoutingConfig";
 
-        @Override
-        public RoutingConfig deserialize(final JsonElement jsonElement, final Type type, final JsonDeserializationContext context) throws JsonParseException {
-            final JsonObject jsonObject = jsonElement.getAsJsonObject();
 
-            if (!jsonObject.has("type")) {
-                throw new JsonParseException("Deserializing as a RoutingConfig, but no type present in the json object");
-            }
 
-            final String routingConfigType = jsonObject.get("type").getAsString();
-            if (SINGLE_DEFAULT_ROUTE_IMPLICIT_ROUTING_CONFIG.equals(routingConfigType)) {
-                return context.deserialize(jsonElement, SingleDefaultRouteImplicitRoutingConfig.class);
-            } else if (ROUTING_TABLE_ROUTING_CONFIG.equals(routingConfigType)) {
-                return context.deserialize(jsonElement, RoutingTableRoutingConfig.class);
-            }
 
-            throw new JsonParseException("Failed to deserialize type \"" + routingConfigType + "\"");
         }
     }
 }

@@ -32,7 +32,7 @@ public class NatRuleTest {
     @Test
     public void testNatRuleEncoding() {
         final Gson gson =
-            new GsonBuilder().registerTypeAdapter(NatRule.class, new NiciraNvpApi.NatRuleAdapter())
+            new GsonBuilder().registerTypeAdapter(NatRule.class, new NatRuleAdapter())
                 .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
                 .create();
 
