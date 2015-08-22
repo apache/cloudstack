@@ -65,7 +65,7 @@ def getUserInputs():
     if oldHypervisor == "":
         oldHypervisor = "kvm"
 
-    hypervisor = raw_input("Please input the Hypervisor type kvm/lxc:[%s]"%oldCluster)
+    hypervisor = raw_input("Please input the Hypervisor type kvm/lxc:[%s]"%oldHypervisor)
     if hypervisor == "":
         hypervisor = oldHypervisor
 
