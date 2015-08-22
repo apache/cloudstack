@@ -985,7 +985,7 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <version>2.18.1</version>
           <configuration>
-              <argLine>-Djava.security.egd=file:/dev/./urandom</argLine>
+            <argLine>-Djava.security.egd=file:/dev/./urandom -noverify</argLine>
           </configuration>
         </plugin>
         <plugin>
