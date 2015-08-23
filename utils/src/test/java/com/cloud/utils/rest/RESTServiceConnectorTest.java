@@ -19,376 +19,305 @@
 
 package com.cloud.utils.rest;
 
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
-import java.util.Collections;
+import java.lang.reflect.Type;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.methods.DeleteMethod;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.httpclient.methods.PutMethod;
-import org.apache.commons.httpclient.params.HttpClientParams;
-import org.apache.http.HttpStatus;
-import org.junit.Before;
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
+import org.apache.http.ProtocolVersion;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.message.BasicStatusLine;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.type.CollectionType;
 import org.junit.Test;
 
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+
 public class RESTServiceConnectorTest {
-    protected static final String UUID = "aaaa";
-    protected static final String UUID_JSON_RESPONSE = "{\"uuid\" : \"aaaa\"}";
+    private static final BasicStatusLine HTTP_200_STATUS_LINE = new BasicStatusLine(new ProtocolVersion("HTTP", 1, 1), 200, "OK");
+    private static final Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
+    private static final Map<String, String> DEFAULT_TEST_PARAMETERS = new HashMap<String, String>();
+    static {
+        DEFAULT_TEST_PARAMETERS.put("arg1", "val1");
+        DEFAULT_TEST_PARAMETERS.put("arg2", "val2");
+    }
 
-    RESTServiceConnector connector;
-    HttpClient client = mock(HttpClient.class);
-    HttpMethod method;
-    String type;
-    String uri;
+    @Test
+    public void testExecuteUpdateObject() throws Exception {
+        final TestPojo newObject = new TestPojo();
+        newObject.setField("newValue");
+        final String newObjectJson = gson.toJson(newObject);
+        final CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+        when(response.getStatusLine()).thenReturn(HTTP_200_STATUS_LINE);
+        final CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
+        when(httpClient.execute(any(HttpHost.class), any(HttpRequest.class), any(HttpClientContext.class))).thenReturn(response);
+        final RestClient restClient = new BasicRestClient(httpClient, HttpClientContext.create(), "localhost");
+        final RESTServiceConnector connector = new RESTServiceConnector.Builder().client(restClient).build();
 
-    @Before
-    public void setUp() {
-        final HttpClientParams hmp = mock(HttpClientParams.class);
-        when(client.getParams()).thenReturn(hmp);
-        connector = new RESTServiceConnector(null) {
-            @Override
-            public HttpClient createHttpClient() {
-                return client;
+        connector.executeUpdateObject(newObject, "/somepath");
+
+        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestMethodMatcher.aMethod("PUT"), any(HttpClientContext.class));
+        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestPayloadMatcher.aPayload(newObjectJson), any(HttpClientContext.class));
+    }
+
+    @Test
+    public void testExecuteUpdateObjectWithParameters() throws Exception {
+        final TestPojo newObject = new TestPojo();
+        newObject.setField("newValue");
+        final String newObjectJson = gson.toJson(newObject);
+        final CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+        when(response.getStatusLine()).thenReturn(HTTP_200_STATUS_LINE);
+        final CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
+        when(httpClient.execute(any(HttpHost.class), any(HttpRequest.class), any(HttpClientContext.class))).thenReturn(response);
+        final RestClient restClient = new BasicRestClient(httpClient, HttpClientContext.create(), "localhost");
+
+        final RESTServiceConnector connector = new RESTServiceConnector.Builder().client(restClient).build();
+
+        connector.executeUpdateObject(newObject, "/somepath", DEFAULT_TEST_PARAMETERS);
+
+        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestMethodMatcher.aMethod("PUT"), any(HttpClientContext.class));
+        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestPayloadMatcher.aPayload(newObjectJson), any(HttpClientContext.class));
+        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestQueryMatcher.aQueryThatContains("arg2=val2"), any(HttpClientContext.class));
+        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestQueryMatcher.aQueryThatContains("arg1=val1"), any(HttpClientContext.class));
+    }
+
+    @Test
+    public void testExecuteCreateObject() throws Exception {
+        final TestPojo newObject = new TestPojo();
+        newObject.setField("newValue");
+        final String newObjectJson = gson.toJson(newObject);
+        final CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+        when(response.getEntity()).thenReturn(new StringEntity(newObjectJson));
+        when(response.getStatusLine()).thenReturn(HTTP_200_STATUS_LINE);
+        final CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
+        when(httpClient.execute(any(HttpHost.class), any(HttpRequest.class), any(HttpClientContext.class))).thenReturn(response);
+        final RestClient restClient = new BasicRestClient(httpClient, HttpClientContext.create(), "localhost");
+        final RESTServiceConnector connector = new RESTServiceConnector.Builder().client(restClient).build();
+
+        final TestPojo object = connector.executeCreateObject(newObject, "/somepath");
+
+        assertThat(object, notNullValue());
+        assertThat(object, equalTo(newObject));
+        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestMethodMatcher.aMethod("POST"), any(HttpClientContext.class));
+        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestPayloadMatcher.aPayload(newObjectJson), any(HttpClientContext.class));
+        verify(response).close();
+    }
+
+    @Test
+    public void testExecuteCreateObjectWithParameters() throws Exception {
+        final TestPojo newObject = new TestPojo();
+        newObject.setField("newValue");
+        final String newObjectJson = gson.toJson(newObject);
+        final CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+        when(response.getEntity()).thenReturn(new StringEntity(newObjectJson));
+        when(response.getStatusLine()).thenReturn(HTTP_200_STATUS_LINE);
+        final CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
+        when(httpClient.execute(any(HttpHost.class), any(HttpRequest.class), any(HttpClientContext.class))).thenReturn(response);
+        final RestClient restClient = new BasicRestClient(httpClient, HttpClientContext.create(), "localhost");
+        final RESTServiceConnector connector = new RESTServiceConnector.Builder().client(restClient).build();
+
+        final TestPojo object = connector.executeCreateObject(newObject, "/somepath", DEFAULT_TEST_PARAMETERS);
+
+        assertThat(object, notNullValue());
+        assertThat(object, equalTo(newObject));
+        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestMethodMatcher.aMethod("POST"), any(HttpClientContext.class));
+        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestPayloadMatcher.aPayload(newObjectJson), any(HttpClientContext.class));
+        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestQueryMatcher.aQueryThatContains("arg2=val2"), any(HttpClientContext.class));
+        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestQueryMatcher.aQueryThatContains("arg1=val1"), any(HttpClientContext.class));
+        verify(response).close();
+    }
+
+    @Test
+    public void testExecuteDeleteObject() throws Exception {
+        final HttpEntity entity = mock(HttpEntity.class);
+        final CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+        when(response.getEntity()).thenReturn(entity);
+        when(response.getStatusLine()).thenReturn(HTTP_200_STATUS_LINE);
+        final CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
+        when(httpClient.execute(any(HttpHost.class), any(HttpRequest.class), any(HttpClientContext.class))).thenReturn(response);
+        final RestClient restClient = new BasicRestClient(httpClient, HttpClientContext.create(), "localhost");
+        final RESTServiceConnector connector = new RESTServiceConnector.Builder().client(restClient).build();
+
+        connector.executeDeleteObject("/somepath");
+
+        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestMethodMatcher.aMethod("DELETE"), any(HttpClientContext.class));
+        verify(response).close();
+    }
+
+    @Test
+    public void testExecuteRetrieveObject() throws Exception {
+        final TestPojo existingObject = new TestPojo();
+        existingObject.setField("existingValue");
+        final String newObjectJson = gson.toJson(existingObject);
+        final CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+        when(response.getEntity()).thenReturn(new StringEntity(newObjectJson));
+        when(response.getStatusLine()).thenReturn(HTTP_200_STATUS_LINE);
+        final CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
+        when(httpClient.execute(any(HttpHost.class), any(HttpRequest.class), any(HttpClientContext.class))).thenReturn(response);
+        final RestClient restClient = new BasicRestClient(httpClient, HttpClientContext.create(), "localhost");
+        final RESTServiceConnector connector = new RESTServiceConnector.Builder().client(restClient).build();
+
+        final TestPojo object = connector.executeRetrieveObject(TestPojo.class, "/somepath");
+
+        assertThat(object, notNullValue());
+        assertThat(object, equalTo(existingObject));
+        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestMethodMatcher.aMethod("GET"), any(HttpClientContext.class));
+        verify(response).close();
+    }
+
+    @Test
+    public void testExecuteRetrieveObjectWithParameters() throws Exception {
+        final TestPojo existingObject = new TestPojo();
+        existingObject.setField("existingValue");
+        final String newObjectJson = gson.toJson(existingObject);
+        final CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+        when(response.getEntity()).thenReturn(new StringEntity(newObjectJson));
+        when(response.getStatusLine()).thenReturn(HTTP_200_STATUS_LINE);
+        final CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
+        when(httpClient.execute(any(HttpHost.class), any(HttpRequest.class), any(HttpClientContext.class))).thenReturn(response);
+        final RestClient restClient = new BasicRestClient(httpClient, HttpClientContext.create(), "localhost");
+        final RESTServiceConnector connector = new RESTServiceConnector.Builder().client(restClient).build();
+
+        final TestPojo object = connector.executeRetrieveObject(TestPojo.class, "/somepath", DEFAULT_TEST_PARAMETERS);
+
+        assertThat(object, notNullValue());
+        assertThat(object, equalTo(existingObject));
+        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestMethodMatcher.aMethod("GET"), any(HttpClientContext.class));
+        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestQueryMatcher.aQueryThatContains("arg2=val2"), any(HttpClientContext.class));
+        verify(httpClient).execute(any(HttpHost.class), HttpUriRequestQueryMatcher.aQueryThatContains("arg1=val1"), any(HttpClientContext.class));
+        verify(response).close();
+    }
+
+    @Test(expected = JsonParseException.class)
+    public void testCustomDeserializerTypeMismatch() throws Exception {
+        final CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+        when(response.getStatusLine()).thenReturn(HTTP_200_STATUS_LINE);
+        when(response.getEntity()).thenReturn(new StringEntity("[{somethig_not_type : \"WrongType\"}]"));
+        final CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
+        when(httpClient.execute(any(HttpHost.class), any(HttpRequest.class), any(HttpClientContext.class))).thenReturn(response);
+        final RestClient restClient = new BasicRestClient(httpClient, HttpClientContext.create(), "localhost");
+        final RESTServiceConnector connector = new RESTServiceConnector.Builder()
+            .client(restClient)
+            .classToDeserializerEntry(TestPojo.class, new TestPojoDeserializer())
+            .build();
+
+        connector.executeRetrieveObject(TestPojo.class, "/somepath");
+    }
+
+    @Test
+    public void testCustomDeserializerForCustomLists() throws Exception {
+        final CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+        when(response.getStatusLine()).thenReturn(HTTP_200_STATUS_LINE);
+        when(response.getEntity()).thenReturn(new StringEntity("{results: [{field : \"SomeValue\"}], results_count: 1}"));
+        final CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
+        when(httpClient.execute(any(HttpHost.class), any(HttpRequest.class), any(HttpClientContext.class))).thenReturn(response);
+        final RestClient restClient = new BasicRestClient(httpClient, HttpClientContext.create(), "localhost");
+        final Class<? extends CollectionType> clazzListOfTestPojo = new ObjectMapper().getTypeFactory().constructCollectionType(List.class, TestPojo.class).getClass();
+        final RESTServiceConnector connector = new RESTServiceConnector.Builder()
+            .client(restClient)
+            .classToDeserializerEntry(clazzListOfTestPojo, new CustomListDeserializer<TestPojoDeserializer>())
+            .build();
+
+        connector.executeRetrieveObject(TestPojo.class, "/somepath");
+    }
+
+    class NiciraList<T> {
+        private List<T> results;
+        private int resultCount;
+
+        public List<T> getResults() {
+            return results;
+        }
+
+        public void setResults(final List<T> results) {
+            this.results = results;
+        }
+
+        public int getResultCount() {
+            return resultCount;
+        }
+
+        public void setResultCount(final int resultCount) {
+            this.resultCount = resultCount;
+        }
+
+    }
+
+    class TestPojo {
+        private String field;
+
+        public String getField() {
+            return field;
+        }
+
+        public void setField(final String field) {
+            this.field = field;
+        }
+
+        @Override
+        public int hashCode() {
+            return HashCodeBuilder.reflectionHashCode(this);
+        }
+
+        @Override
+        public boolean equals(final Object obj) {
+            return EqualsBuilder.reflectionEquals(this, obj);
+        }
+
+    }
+
+    private final class TestPojoDeserializer implements JsonDeserializer<TestPojo> {
+        @Override
+        public TestPojo deserialize(final JsonElement json, final Type typeOfT, final JsonDeserializationContext context) throws JsonParseException {
+            final JsonObject jsonObject = json.getAsJsonObject();
+
+            if (!jsonObject.has("type")) {
+                throw new JsonParseException("Deserializing as a TestPojo, but no type present in the json object");
             }
 
-            @Override
-            public HttpMethod createMethod(final String newType, final String newUri) {
-                type = newType;
-                uri = newUri;
-                return method;
+            return context.deserialize(jsonObject, TestPojo.class);
+        }
+    }
+
+    private final class CustomListDeserializer<T> implements JsonDeserializer<T> {
+        private final Gson standardGson = new GsonBuilder().create();
+
+        @Override
+        public T deserialize(final JsonElement json, final Type typeOfT, final JsonDeserializationContext context) throws JsonParseException {
+            final JsonObject jsonObject = json.getAsJsonObject();
+
+            System.err.println(json.toString());
+
+            if (jsonObject.has("results")) {
+                final JsonArray results = jsonObject.getAsJsonArray("results");
+                return context.deserialize(results, typeOfT);
+            } else {
+                return standardGson.fromJson(jsonObject, typeOfT);
             }
-        };
-
-        connector.validation = new RESTValidationStrategy();
-        connector.setAdminCredentials("admin", "adminpass");
-        connector.setControllerAddress("localhost");
-    }
-
-    @Test(expected = CloudstackRESTException.class)
-    public void testExecuteLoginWithoutHostname() throws CloudstackRESTException {
-        connector.setControllerAddress(null);
-        connector.validation.login(RESTServiceConnector.protocol, client);
-    }
-
-    @Test(expected = CloudstackRESTException.class)
-    public void testExecuteLoginWithoutCredentials() throws CloudstackRESTException {
-        method = mock(PutMethod.class);
-        connector.setAdminCredentials(null, null);
-        connector.validation.login(RESTServiceConnector.protocol, client);
-    }
-
-    @Test(expected = CloudstackRESTException.class)
-    public void testExecuteUpdateObjectWithoutHostname() throws CloudstackRESTException {
-        method = mock(PutMethod.class);
-        connector.setControllerAddress(null);
-        connector.executeUpdateObject(new String(), "/", Collections.<String, String> emptyMap());
-    }
-
-    @Test(expected = CloudstackRESTException.class)
-    public void testExecuteUpdateObjectWithoutCredentials() throws CloudstackRESTException {
-        method = mock(PutMethod.class);
-        connector.setAdminCredentials(null, null);
-        connector.executeUpdateObject(new String(), "/", Collections.<String, String> emptyMap());
-    }
-
-    @Test(expected = CloudstackRESTException.class)
-    public void testExecuteCreateObjectWithoutHostname() throws CloudstackRESTException {
-        method = mock(PostMethod.class);
-        connector.setControllerAddress(null);
-        connector.executeCreateObject(new String(), String.class, "/", Collections.<String, String> emptyMap());
-    }
-
-    @Test(expected = CloudstackRESTException.class)
-    public void testExecuteCreateObjectWithoutCredentials() throws CloudstackRESTException {
-        method = mock(PostMethod.class);
-        connector.setAdminCredentials(null, null);
-        connector.executeCreateObject(new String(), String.class, "/", Collections.<String, String> emptyMap());
-    }
-
-    @Test(expected = CloudstackRESTException.class)
-    public void testExecuteDeleteObjectWithoutHostname() throws CloudstackRESTException {
-        method = mock(DeleteMethod.class);
-        connector.setControllerAddress(null);
-        connector.executeDeleteObject("/");
-    }
-
-    @Test(expected = CloudstackRESTException.class)
-    public void testExecuteDeleteObjectWithoutCredentials() throws CloudstackRESTException {
-        method = mock(DeleteMethod.class);
-        connector.setAdminCredentials(null, null);
-        connector.executeDeleteObject("/");
-    }
-
-    @Test(expected = CloudstackRESTException.class)
-    public void testExecuteRetrieveObjectWithoutHostname() throws CloudstackRESTException {
-        method = mock(GetMethod.class);
-        connector.setControllerAddress(null);
-        connector.executeRetrieveObject(String.class, "/", Collections.<String, String> emptyMap());
-    }
-
-    @Test(expected = CloudstackRESTException.class)
-    public void testExecuteRetrieveObjectWithoutCredentials() throws CloudstackRESTException {
-        method = mock(GetMethod.class);
-        connector.setAdminCredentials(null, null);
-        connector.executeRetrieveObject(String.class, "/", Collections.<String, String> emptyMap());
-    }
-
-    @Test
-    public void testExecuteMethod() throws CloudstackRESTException {
-        final GetMethod gm = mock(GetMethod.class);
-
-        when(gm.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        connector.executeMethod(gm);
-        verify(gm, times(1)).getStatusCode();
-    }
-
-    @Test(expected = CloudstackRESTException.class)
-    public void testExecuteMethodWithLogin() throws CloudstackRESTException, HttpException, IOException {
-        final GetMethod gm = mock(GetMethod.class);
-        when(client.executeMethod((HttpMethod) any())).thenThrow(new HttpException());
-        when(gm.getStatusCode()).thenReturn(HttpStatus.SC_UNAUTHORIZED).thenReturn(HttpStatus.SC_UNAUTHORIZED);
-        connector.executeMethod(gm);
-        verify(gm, times(1)).getStatusCode();
-    }
-
-    /*
-     * Bit of a roundabout way to ensure that login is called after an un authorized result It not possible to properly mock login()
-     */
-    public void testExecuteMethodWithLoginSucced2ndAttempt() throws CloudstackRESTException {
-        // Prepare
-        final GetMethod gm = mock(GetMethod.class);
-        when(gm.getStatusCode()).thenReturn(HttpStatus.SC_UNAUTHORIZED).thenReturn(HttpStatus.SC_UNAUTHORIZED);
-
-        final RESTValidationStrategy previousValidationStrategy = connector.validation;
-        connector.validation = new RESTValidationStrategy() {
-            @Override
-            protected void login(final String protocol, final HttpClient client) throws CloudstackRESTException {
-                // Do nothing
-            }
-        };
-        connector.setAdminCredentials("admin", "adminpass");
-        connector.setControllerAddress("localhost");
-
-        // Execute
-        connector.executeMethod(gm);
-        // Leave mock object as is was
-        connector.validation = previousValidationStrategy;
-
-        // Assert/verify
-        verify(gm, times(2)).getStatusCode();
-    }
-
-    @Test
-    public void testExecuteCreateObject() throws CloudstackRESTException, IOException {
-        JsonEntity ls = new JsonEntity();
-        method = mock(PostMethod.class);
-        when(method.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
-        when(method.getResponseBodyAsString()).thenReturn(UUID_JSON_RESPONSE);
-        ls = connector.executeCreateObject(ls, JsonEntity.class, "/", Collections.<String, String> emptyMap());
-        assertTrue(UUID.equals(ls.getUuid()));
-        verify(method, times(1)).releaseConnection();
-
-    }
-
-    @Test(expected = CloudstackRESTException.class)
-    public void testExecuteCreateObjectFailure() throws CloudstackRESTException, IOException {
-        JsonEntity ls = new JsonEntity();
-        method = mock(PostMethod.class);
-        when(method.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        final Header header = mock(Header.class);
-        when(header.getValue()).thenReturn("text/html");
-        when(method.getResponseHeader("Content-Type")).thenReturn(header);
-        when(method.getResponseBodyAsString()).thenReturn("Off to timbuktu, won't be back later.");
-        when(method.isRequestSent()).thenReturn(true);
-        try {
-            ls = connector.executeCreateObject(ls, JsonEntity.class, "/", Collections.<String, String> emptyMap());
-        } finally {
-            verify(method, times(1)).releaseConnection();
         }
-    }
-
-    @Test(expected = CloudstackRESTException.class)
-    public void testExecuteCreateObjectException() throws CloudstackRESTException, IOException {
-        JsonEntity ls = new JsonEntity();
-        when(client.executeMethod((HttpMethod) any())).thenThrow(new HttpException());
-        method = mock(PostMethod.class);
-        when(method.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        final Header header = mock(Header.class);
-        when(header.getValue()).thenReturn("text/html");
-        when(method.getResponseHeader("Content-Type")).thenReturn(header);
-        when(method.getResponseBodyAsString()).thenReturn("Off to timbuktu, won't be back later.");
-        try {
-            ls = connector.executeCreateObject(ls, JsonEntity.class, "/", Collections.<String, String> emptyMap());
-        } finally {
-            verify(method, times(1)).releaseConnection();
-        }
-    }
-
-    @Test
-    public void testExecuteUpdateObject() throws CloudstackRESTException, IOException {
-        final JsonEntity ls = new JsonEntity();
-        method = mock(PutMethod.class);
-        when(method.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        connector.executeUpdateObject(ls, "/", Collections.<String, String> emptyMap());
-        verify(method, times(1)).releaseConnection();
-        verify(client, times(1)).executeMethod(method);
-    }
-
-    @Test(expected = CloudstackRESTException.class)
-    public void testExecuteUpdateObjectFailure() throws CloudstackRESTException, IOException {
-        final JsonEntity ls = new JsonEntity();
-        method = mock(PutMethod.class);
-        when(method.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        final Header header = mock(Header.class);
-        when(header.getValue()).thenReturn("text/html");
-        when(method.getResponseHeader("Content-Type")).thenReturn(header);
-        when(method.getResponseBodyAsString()).thenReturn("Off to timbuktu, won't be back later.");
-        when(method.isRequestSent()).thenReturn(true);
-        try {
-            connector.executeUpdateObject(ls, "/", Collections.<String, String> emptyMap());
-        } finally {
-            verify(method, times(1)).releaseConnection();
-        }
-    }
-
-    @Test(expected = CloudstackRESTException.class)
-    public void testExecuteUpdateObjectException() throws CloudstackRESTException, IOException {
-        final JsonEntity ls = new JsonEntity();
-        method = mock(PutMethod.class);
-        when(method.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        when(client.executeMethod((HttpMethod) any())).thenThrow(new IOException());
-        try {
-            connector.executeUpdateObject(ls, "/", Collections.<String, String> emptyMap());
-        } finally {
-            verify(method, times(1)).releaseConnection();
-        }
-    }
-
-    @Test
-    public void testExecuteDeleteObject() throws CloudstackRESTException, IOException {
-        method = mock(DeleteMethod.class);
-        when(method.getStatusCode()).thenReturn(HttpStatus.SC_NO_CONTENT);
-        connector.executeDeleteObject("/");
-        verify(method, times(1)).releaseConnection();
-        verify(client, times(1)).executeMethod(method);
-    }
-
-    @Test(expected = CloudstackRESTException.class)
-    public void testExecuteDeleteObjectFailure() throws CloudstackRESTException, IOException {
-        method = mock(DeleteMethod.class);
-        when(method.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        final Header header = mock(Header.class);
-        when(header.getValue()).thenReturn("text/html");
-        when(method.getResponseHeader("Content-Type")).thenReturn(header);
-        when(method.getResponseBodyAsString()).thenReturn("Off to timbuktu, won't be back later.");
-        when(method.isRequestSent()).thenReturn(true);
-        try {
-            connector.executeDeleteObject("/");
-        } finally {
-            verify(method, times(1)).releaseConnection();
-        }
-    }
-
-    @Test(expected = CloudstackRESTException.class)
-    public void testExecuteDeleteObjectException() throws CloudstackRESTException, IOException {
-        method = mock(DeleteMethod.class);
-        when(method.getStatusCode()).thenReturn(HttpStatus.SC_NO_CONTENT);
-        when(client.executeMethod((HttpMethod) any())).thenThrow(new HttpException());
-        try {
-            connector.executeDeleteObject("/");
-        } finally {
-            verify(method, times(1)).releaseConnection();
-        }
-    }
-
-    @Test
-    public void testExecuteRetrieveObject() throws CloudstackRESTException, IOException {
-        method = mock(GetMethod.class);
-        when(method.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        when(method.getResponseBodyAsString()).thenReturn(UUID_JSON_RESPONSE);
-        connector.executeRetrieveObject(JsonEntity.class, "/", Collections.<String, String> emptyMap());
-        verify(method, times(1)).releaseConnection();
-        verify(client, times(1)).executeMethod(method);
-    }
-
-    @Test(expected = CloudstackRESTException.class)
-    public void testExecuteRetrieveObjectFailure() throws CloudstackRESTException, IOException {
-        method = mock(GetMethod.class);
-        when(method.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        when(method.getResponseBodyAsString()).thenReturn(UUID_JSON_RESPONSE);
-        final Header header = mock(Header.class);
-        when(header.getValue()).thenReturn("text/html");
-        when(method.getResponseHeader("Content-Type")).thenReturn(header);
-        when(method.getResponseBodyAsString()).thenReturn("Off to timbuktu, won't be back later.");
-        when(method.isRequestSent()).thenReturn(true);
-        try {
-            connector.executeRetrieveObject(JsonEntity.class, "/", Collections.<String, String> emptyMap());
-        } finally {
-            verify(method, times(1)).releaseConnection();
-        }
-    }
-
-    @Test(expected = CloudstackRESTException.class)
-    public void testExecuteRetrieveObjectException() throws CloudstackRESTException, IOException {
-        method = mock(GetMethod.class);
-        when(method.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        when(method.getResponseBodyAsString()).thenReturn(UUID_JSON_RESPONSE);
-        when(client.executeMethod((HttpMethod) any())).thenThrow(new HttpException());
-        try {
-            connector.executeRetrieveObject(JsonEntity.class, "/", Collections.<String, String> emptyMap());
-        } finally {
-            verify(method, times(1)).releaseConnection();
-        }
-    }
-
-}
-
-class JsonEntity {
-    private String displayName;
-    private String uuid;
-    private String href;
-    private String schema;
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public void setDisplayName(final String displayName) {
-        this.displayName = displayName;
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(final String uuid) {
-        this.uuid = uuid;
-    }
-
-    public String getHref() {
-        return href;
-    }
-
-    public void setHref(final String href) {
-        this.href = href;
-    }
-
-    public String getSchema() {
-        return schema;
-    }
-
-    public void setSchema(final String schema) {
-        this.schema = schema;
     }
 }
