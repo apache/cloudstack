@@ -163,7 +163,7 @@ class ShellColor(object):
     END = '\033[0m'
     ITALICS = '\x1B[3m'
 
-#VERSION = "4.5.2-SNAPSHOT"
+#VERSION = "4.5.2"
 
 
 class MarvinCli(cmd.Cmd, object):
