@@ -1,12 +1,23 @@
-<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor 
-  license agreements. See the NOTICE file distributed with this work for additional 
-  information regarding copyright ownership. The ASF licenses this file to you under 
-  the Apache License, Version 2.0 (the "License"); you may not use this file except 
-  in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
-  Unless required by applicable law or agreed to in writing, software distributed under 
-  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS 
-  OF ANY KIND, either express or implied. See the License for the specific language 
-  governing permissions and limitations under the License. -->
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
@@ -32,7 +43,7 @@
     <system>jira</system>
     <url>https://issues.apache.org/jira/browse/CLOUDSTACK</url>
   </issueManagement>
-  
+
   <prerequisites>
     <maven>3.0.4</maven>
   </prerequisites>
@@ -424,14 +435,8 @@
 
   <dependencies>
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>${cs.junit.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.hamcrest</groupId>
-      <artifactId>hamcrest-library</artifactId>
+      <artifactId>hamcrest-all</artifactId>
       <version>${cs.hamcrest.version}</version>
       <scope>test</scope>
     </dependency>
@@ -440,17 +445,35 @@
       <artifactId>mockito-all</artifactId>
       <version>${cs.mockito.version}</version>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>hamcrest-core</artifactId>
+          <groupId>org.hamcrest</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
-	  <groupId>org.powermock</groupId>
-	  <artifactId>powermock-module-junit4</artifactId>
-	  <version>${cs.powermock.version}</version>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>${cs.junit.version}</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>hamcrest-core</artifactId>
+          <groupId>org.hamcrest</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
-	  <groupId>org.powermock</groupId>
-	  <artifactId>powermock-api-mockito</artifactId>
-	  <version>${cs.powermock.version}</version>
-	  <scope>test</scope>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-module-junit4</artifactId>
+      <version>${cs.powermock.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-api-mockito</artifactId>
+      <version>${cs.powermock.version}</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
@@ -485,13 +508,13 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
-          <executions>
-            <execution>
-              <id>cloudstack-checkstyle</id>
-              <phase>none</phase>
-              <inherited>false</inherited>
-            </execution>
-          </executions>
+        <executions>
+          <execution>
+            <id>cloudstack-checkstyle</id>
+            <phase>none</phase>
+            <inherited>false</inherited>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>com.mycila</groupId>
@@ -570,9 +593,9 @@
             <aggregate>true</aggregate>
             <header>LICENSE.header</header>
             <mapping>
-                  <xml>XML_STYLE</xml>
-                  <java>DOUBLESLASH_STYLE</java>
-                  <clj>SEMICOLON_STYLE</clj>
+              <xml>XML_STYLE</xml>
+              <java>DOUBLESLASH_STYLE</java>
+              <clj>SEMICOLON_STYLE</clj>
             </mapping>
             <useDefaultExcludes>false</useDefaultExcludes>
             <excludes>
@@ -627,8 +650,8 @@
             </execution>
           </executions>
         </plugin>
-        <!--This plugin's configuration is used to store Eclipse m2e settings only. 
-          It has no influence on the Maven build itself. -->
+        <!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build
+          itself. -->
         <plugin>
           <groupId>org.eclipse.m2e</groupId>
           <artifactId>lifecycle-mapping</artifactId>
@@ -646,7 +669,7 @@
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                    <ignore />
+                    <ignore/>
                   </action>
                 </pluginExecution>
                 <pluginExecution>
@@ -659,7 +682,7 @@
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                    <ignore />
+                    <ignore/>
                   </action>
                 </pluginExecution>
                 <pluginExecution>
@@ -682,12 +705,12 @@
                     <artifactId>gmaven-plugin</artifactId>
                     <versionRange>[1.3,)</versionRange>
                     <goals>
-                        <goal>compile</goal>
-                        <goal>testCompile</goal>
+                      <goal>compile</goal>
+                      <goal>testCompile</goal>
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                      <ignore></ignore>
+                    <ignore></ignore>
                   </action>
                 </pluginExecution>
               </pluginExecutions>
@@ -841,7 +864,7 @@
               <exclude>tools/ngui/static/js/lib/*</exclude>
               <exclude>**/.checkstyle</exclude>
               <exclude>scripts/installer/windows/acs_license.rtf</exclude>
-	            <exclude>**/*.md</exclude>
+              <exclude>**/*.md</exclude>
             </excludes>
           </configuration>
         </plugin>
@@ -943,9 +966,9 @@
           </dependencies>
           <configuration>
             <failOnViolation>false</failOnViolation>
-           <rulesets>
-             <ruleset>cloud-pmd.xml</ruleset>
-           </rulesets>
+            <rulesets>
+              <ruleset>cloud-pmd.xml</ruleset>
+            </rulesets>
           </configuration>
           <executions>
             <execution>
@@ -986,18 +1009,18 @@
         </configuration>
       </plugin>
       <plugin>
-         <groupId>org.apache.maven.plugins</groupId>
-         <artifactId>maven-javadoc-plugin</artifactId>
-         <version>${cs.javadoc.version}</version>
-         <configuration>
-           <minmemory>128m</minmemory>
-           <maxmemory>1g</maxmemory>
-         </configuration>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>${cs.javadoc.version}</version>
+        <configuration>
+          <minmemory>128m</minmemory>
+          <maxmemory>1g</maxmemory>
+        </configuration>
       </plugin>
       <plugin>
-         <groupId>org.apache.maven.plugins</groupId>
-         <artifactId>maven-project-info-reports-plugin</artifactId>
-         <version>2.7</version>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-project-info-reports-plugin</artifactId>
+        <version>2.7</version>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -1072,17 +1095,17 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-checkstyle-plugin</artifactId>
-              <executions>
-                <execution>
-                  <id>cloudstack-checkstyle</id>
-                  <phase>none</phase>
-                  <inherited>true</inherited>
-                </execution>
-              </executions>
+            <executions>
+              <execution>
+                <id>cloudstack-checkstyle</id>
+                <phase>none</phase>
+                <inherited>true</inherited>
+              </execution>
+            </executions>
           </plugin>
         </plugins>
       </build>
-    </profile>  
+    </profile>
     <profile>
       <id>enablefindbugs</id>
       <build>
@@ -1090,17 +1113,17 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>findbugs-maven-plugin</artifactId>
-              <executions>
-                <execution>
-                  <id>cloudstack-findbugs</id>
-                  <phase>process-classes</phase>
-                  <inherited>true</inherited>
-                </execution>
-              </executions>
+            <executions>
+              <execution>
+                <id>cloudstack-findbugs</id>
+                <phase>process-classes</phase>
+                <inherited>true</inherited>
+              </execution>
+            </executions>
           </plugin>
         </plugins>
       </build>
-    </profile>  
+    </profile>
     <profile>
       <id>buildw</id>
       <activation>
