@@ -207,10 +207,11 @@ echo "${prTitle}${prBody}" >> ${tmpMessageFile}
 echo "ATTENTION: Merging pull request #${prId} from ${prOriginBranch} into '${currentBranch}' branch in 5 seconds. CTRL+c to abort.."
 sec=5
 while [ $sec -ge 0 ]; do
-  echo -n "${sec} "
+  printf "${sec} "
   sec=$((sec-1))
   sleep 1
 done
+echo
 echo "INFO: Executing the merge now.. Git output below:"
 echo "INFO: ***********************************************************************************"
 
