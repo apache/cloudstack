@@ -31,25 +31,36 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.storage.Snapshot;
 import com.cloud.user.Account;
 
-@APICommand(name = "revertSnapshot", description = "revert a volume snapshot.", responseObject = SnapshotResponse.class, entityType = {Snapshot.class},
+@APICommand(name = "revertSnapshot", description = "revert a volume snapshot.", responseObject = SuccessResponse.class, entityType = {Snapshot.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RevertSnapshotCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(RevertSnapshotCmd.class.getName());
     private static final String s_name = "revertsnapshotresponse";
 
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name= ApiConstants.ID, type= BaseCmd.CommandType.UUID, entityType = SnapshotResponse.class,
             required=true, description="The ID of the snapshot")
     private Long id;
 
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
     public Long getId() {
         return id;
     }
 
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
     @Override
     public String getCommandName() {
         return s_name;
@@ -91,7 +102,6 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
         boolean result = _snapshotService.revertSnapshot(getId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to revert snapshot");
