@@ -217,7 +217,7 @@ echo "INFO: ********************************************************************
 
 # Do the actual merge
 git fetch ${github_remote} pull/${prId}/head:pr/${prId}
-git merge --no-ff --log -m "$(cat .git-tmp-message.txt)" pr/${prId}
+git merge --no-ff --log -m "$(cat ${tmpMessageFile})" pr/${prId}
 if [ $? -eq 0 ]; then
   git commit --amend -s --allow-empty-message -m ''
 else
