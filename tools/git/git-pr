@@ -47,6 +47,7 @@ fi
 # Check the arguments
 if [ -z ${prId} ]; then
   echo "Usage: git pr pool-request-number [ --force ]"
+  echo "For instructions, see: https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=61311655"
   clean_up_and_exit 1
 fi
 
@@ -178,8 +179,16 @@ fi
 github_remote=$(git remote -v | grep "apache/cloudstack.git" | head -n 1 | cut -f1)
 if [ ${#github_remote} -eq 0 ]; then
   echo "ERROR: We couldn't find a git remote pointing to 'apache/cloudstack.git' to merge the PR from."
-  echo "INFO: Current remotes:"
+  echo "INFO: Currently, your configured remotes are:"
+  echo "INFO: ***********************************************************************************"
   git remote -v
+  echo "INFO: ***********************************************************************************"
+  echo "INFO: To merge a PR, we need access to two remotes: "
+  echo "INFO: 1. Read-only access to GitHub mirror"
+  echo "INFO: 2. Read/write access to Apache git"
+  echo "INFO: Please add a remote like this: 'git remote add github https://github.com/apache/cloudstack.git'"
+  echo "INFO: For more help, visit: https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=61311655"
+  echo "INFO: Once done, run this script again."
   clean_up_and_exit 1
 fi
 
