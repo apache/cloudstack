@@ -96,14 +96,19 @@ class CsAddress(CsDataBag):
         return None
 
     def process(self):
+        route = CsRoute()
+        found_defaultroute = False
+
         for dev in self.dbag:
             if dev == "id":
                 continue
             ip = CsIP(dev, self.config)
 
             for address in self.dbag[dev]:
-                if not address["nw_type"] == "control":
-                    CsRoute(dev).add(address)
+
+                gateway = str(address["gateway"])
+                network = str(address["network"])
+
                 ip.setAddress(address)
 
                 if ip.configured():
@@ -117,6 +122,16 @@ class CsAddress(CsDataBag):
                         "Address %s on device %s not configured", ip.ip(), dev)
                     if CsDevice(dev, self.config).waitfordevice():
                         ip.configure()
+
+                if address["nw_type"] != "control":
+                    route.add_route(dev, network)
+
+                # once we start processing public ip's we need to verify there
+                # is a default route and add if needed
+                if address["nw_type"] == "public" and not found_defaultroute:
+                    if not route.defaultroute_exists():
+                        if route.add_defaultroute(gateway):
+                            found_defaultroute = True
 
 
 class CsInterface:
@@ -275,8 +290,8 @@ class CsIP:
     def post_configure(self):
         """ The steps that must be done after a device is configured """
         if not self.get_type() in ["control"]:
-            route = CsRoute(self.dev)
-            route.routeTable()
+            route = CsRoute()
+            route.add_table(self.dev)
             CsRule(self.dev).addMark()
             self.check_is_up()
             self.set_mark()
@@ -467,9 +482,13 @@ class CsIP:
         self.fw.append(["", "", "-A NETWORK_STATS -i eth2 ! -o eth0 -p tcp"])
 
     def post_config_change(self, method):
-        route = CsRoute(self.dev)
-        route.routeTable()
-        route.add(self.address, method)
+        route = CsRoute()
+        if method == "add":
+            route.add_table(self.dev)
+            route.add_route(self.dev, str(self.address["network"]))
+        elif method == "delete":
+            logging.warn("delete route not implemented")
+
         self.fw_router()
         self.fw_vpcrouter()
         # On deletion nw_type will no longer be known
