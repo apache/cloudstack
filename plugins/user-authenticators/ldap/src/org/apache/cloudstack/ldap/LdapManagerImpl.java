@@ -28,6 +28,7 @@ import javax.naming.ldap.LdapContext;
 import org.apache.cloudstack.api.command.LinkDomainToLdapCmd;
 import org.apache.cloudstack.api.response.LinkDomainToLdapResponse;
 import org.apache.cloudstack.ldap.dao.LdapTrustMapDao;
+import org.apache.commons.lang.Validate;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -265,8 +266,14 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
 
     @Override
     public LinkDomainToLdapResponse linkDomainToLdap(Long domainId, String type, String name, short accountType) {
-        LdapTrustMapVO vo = _ldapTrustMapDao.persist(new LdapTrustMapVO(domainId, type, name, accountType));
-        LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(vo.getDomainId(), vo.getType(), vo.getName(), vo.getAccountType());
+        Validate.notNull(type, "type cannot be null. It should either be GROUP or OU");
+        Validate.notNull(domainId, "domainId cannot be null.");
+        Validate.notEmpty(name, "GROUP or OU name cannot be empty");
+        //Account type constants in com.cloud.user.Account
+        Validate.isTrue(accountType>=0 && accountType<=5, "accountype should be a number from 0-5");
+        LinkType linkType = LdapManager.LinkType.valueOf(type.toUpperCase());
+        LdapTrustMapVO vo = _ldapTrustMapDao.persist(new LdapTrustMapVO(domainId, linkType, name, accountType));
+        LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(vo.getDomainId(), vo.getType().toString(), vo.getName(), vo.getAccountType());
         return response;
     }
 

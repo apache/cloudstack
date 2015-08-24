@@ -29,6 +29,8 @@ import org.apache.cloudstack.api.response.LinkDomainToLdapResponse;
 
 public interface LdapManager extends PluggableService {
 
+    enum LinkType { GROUP, OU;}
+
     LdapConfigurationResponse addConfiguration(String hostname, int port) throws InvalidParameterValueException;
 
     boolean canAuthenticate(String principal, String password);

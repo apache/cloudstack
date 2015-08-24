@@ -66,7 +66,7 @@ public class LdapAuthenticator extends DefaultUserAuthenticator {
             LdapTrustMapVO ldapTrustMapVO = _ldapManager.getDomainLinkedToLdap(domainId);
             if(ldapTrustMapVO != null) {
                 try {
-                    LdapUser ldapUser = _ldapManager.getUser(username, ldapTrustMapVO.getType(), ldapTrustMapVO.getName());
+                    LdapUser ldapUser = _ldapManager.getUser(username, ldapTrustMapVO.getType().toString(), ldapTrustMapVO.getName());
                     if(!ldapUser.isDisabled()) {
                         result = _ldapManager.canAuthenticate(ldapUser.getPrincipal(), password);
                         if(result) {
