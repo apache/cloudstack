@@ -47,19 +47,22 @@ fi
 # Check the arguments
 if [ -z ${prId} ]; then
   echo "Usage: git pr pool-request-number [ --force ]"
+  echo "Works for any Apache repository mirrored on GitHub'"
+  echo "For instructions, see: https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=61311655"
   clean_up_and_exit 1
 fi
 
 # Vars we need
 jsonTmp="${PWD}/${prId}.json"
 tmpMessageFile="${PWD}/.git-tmp-message.txt"
+repoName=$(basename `git rev-parse --show-toplevel`)
 
 # We need UTF-8 to support the GitHub '...' 3-dots-in-1-char, for example.
 export LANG="en_EN.UTF-8"
 
 if [ "${prId}" -eq "${prId}" 2>/dev/null ]; then
   # Get json data from Github API
-  curl -s https://api.github.com/repos/apache/cloudstack/pulls/${prId} > ${jsonTmp}
+  curl -s https://api.github.com/repos/apache/${repoName}/pulls/${prId} > ${jsonTmp}
 else
   echo "ERROR: Pull-request id must be an integer, not '${prId}'"
   clean_up_and_exit 1
@@ -175,15 +178,23 @@ elif [ "${prMergeableState}" != "clean" ] && [ ${force} -eq 1 ]; then
   echo "WARNING: You used --force to merge a PR with non-clean merge state '${prMergeableState}'."
 fi
 
-github_remote=$(git remote -v | grep "apache/cloudstack.git" | head -n 1 | cut -f1)
+github_remote=$(git remote -v | grep -E "apache/${repoName}(.git)?" | head -n 1 | cut -f1)
 if [ ${#github_remote} -eq 0 ]; then
-  echo "ERROR: We couldn't find a git remote pointing to 'apache/cloudstack.git' to merge the PR from."
-  echo "INFO: Current remotes:"
+  echo "ERROR: We couldn't find a git remote pointing to 'apache/${repoName}.git' to merge the PR from."
+  echo "INFO: Currently, your configured remotes are:"
+  echo "INFO: ***********************************************************************************"
   git remote -v
+  echo "INFO: ***********************************************************************************"
+  echo "INFO: To merge a PR, we need access to two remotes: "
+  echo "INFO: 1. Read-only access to GitHub mirror"
+  echo "INFO: 2. Read/write access to Apache git"
+  echo "INFO: Please add a remote like this: 'git remote add github https://github.com/apache/${repoName}.git'"
+  echo "INFO: For more help, visit: https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=61311655"
+  echo "INFO: Once done, run this script again."
   clean_up_and_exit 1
 fi
 
-echo "INFO: Using remote repository '${github_remote}' to fetch PR (should point to github.com/apache/cloudstack.git)"
+echo "INFO: Using remote repository '${github_remote}' to fetch PR (should point to github.com/apache/${repoName}.git)"
 echo "INFO: PR #${prId} against branch '${prDestinationBranch}' from '${prAuthor}': '${prTitle}'"
 echo "INFO: has state '${prState}' and mergable state '${prMergeableState}', about to be merged in branch '${currentBranch}'."
 
@@ -196,21 +207,23 @@ echo "${prTitle}${prBody}" >> ${tmpMessageFile}
 echo "ATTENTION: Merging pull request #${prId} from ${prOriginBranch} into '${currentBranch}' branch in 5 seconds. CTRL+c to abort.."
 sec=5
 while [ $sec -ge 0 ]; do
-  echo -n "${sec} "
+  printf "${sec} "
   sec=$((sec-1))
   sleep 1
 done
+echo
 echo "INFO: Executing the merge now.. Git output below:"
 echo "INFO: ***********************************************************************************"
 
 # Do the actual merge
 git fetch ${github_remote} pull/${prId}/head:pr/${prId}
-git merge --no-ff --log -m "$(cat .git-tmp-message.txt)" pr/${prId}
+git merge --no-ff --log -m "$(cat ${tmpMessageFile})" pr/${prId}
 if [ $? -eq 0 ]; then
   git commit --amend -s --allow-empty-message -m ''
 else
   echo "ERROR: Merge failed, aborting."
   git merge --abort
+  clean_up_and_exit 1
 fi
 
 # What's next
