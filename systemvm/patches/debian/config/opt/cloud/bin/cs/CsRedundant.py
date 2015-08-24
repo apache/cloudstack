@@ -94,12 +94,17 @@ class CsRedundant(object):
             d = s
             if s.endswith(".templ"):
                 d = s.replace(".templ", "")
-            CsHelper.copy_if_needed("%s/%s" % (self.CS_TEMPLATES_DIR, s), "%s/%s" % (self.CS_ROUTER_DIR, d))
-        CsHelper.copy_if_needed("%s/%s" % (self.CS_TEMPLATES_DIR, "keepalived.conf.templ"), self.KEEPALIVED_CONF)
-        CsHelper.copy_if_needed("%s/%s" % (self.CS_TEMPLATES_DIR, "conntrackd.conf.templ"), self.CONNTRACKD_CONF)
-        CsHelper.copy_if_needed("%s/%s" % (self.CS_TEMPLATES_DIR, "checkrouter.sh.templ"), "/opt/cloud/bin/checkrouter.sh")
+            CsHelper.copy_if_needed(
+                "%s/%s" % (self.CS_TEMPLATES_DIR, s), "%s/%s" % (self.CS_ROUTER_DIR, d))
+        CsHelper.copy_if_needed(
+            "%s/%s" % (self.CS_TEMPLATES_DIR, "keepalived.conf.templ"), self.KEEPALIVED_CONF)
+        CsHelper.copy_if_needed(
+            "%s/%s" % (self.CS_TEMPLATES_DIR, "conntrackd.conf.templ"), self.CONNTRACKD_CONF)
+        CsHelper.copy_if_needed(
+            "%s/%s" % (self.CS_TEMPLATES_DIR, "checkrouter.sh.templ"), "/opt/cloud/bin/checkrouter.sh")
 
-        CsHelper.execute('sed -i "s/--exec\ \$DAEMON;/--exec\ \$DAEMON\ --\ --vrrp;/g" /etc/init.d/keepalived')
+        CsHelper.execute(
+            'sed -i "s/--exec\ \$DAEMON;/--exec\ \$DAEMON\ --\ --vrrp;/g" /etc/init.d/keepalived')
         # checkrouter.sh configuration
         check_router = CsFile("/opt/cloud/bin/checkrouter.sh")
         check_router.greplace("[RROUTER_LOG]", self.RROUTER_LOG)
@@ -107,12 +112,17 @@ class CsRedundant(object):
 
         # keepalived configuration
         keepalived_conf = CsFile(self.KEEPALIVED_CONF)
-        keepalived_conf.search(" router_id ", "    router_id %s" % self.cl.get_name())
-        keepalived_conf.search(" interface ", "    interface %s" % guest.get_device())
-        keepalived_conf.search(" virtual_router_id ", "    virtual_router_id %s" % self.cl.get_router_id())
+        keepalived_conf.search(
+            " router_id ", "    router_id %s" % self.cl.get_name())
+        keepalived_conf.search(
+            " interface ", "    interface %s" % guest.get_device())
+        keepalived_conf.search(
+            " virtual_router_id ", "    virtual_router_id %s" % self.cl.get_router_id())
         keepalived_conf.greplace("[RROUTER_BIN_PATH]", self.CS_ROUTER_DIR)
-        keepalived_conf.section("authentication {", "}", ["        auth_type AH \n", "        auth_pass %s\n" % self.cl.get_router_password()])
-        keepalived_conf.section("virtual_ipaddress {", "}", self._collect_ips())
+        keepalived_conf.section("authentication {", "}", [
+                                "        auth_type AH \n", "        auth_pass %s\n" % self.cl.get_router_password()])
+        keepalived_conf.section(
+            "virtual_ipaddress {", "}", self._collect_ips())
         keepalived_conf.commit()
 
         # conntrackd configuration
@@ -135,22 +145,27 @@ class CsRedundant(object):
         # Configure heartbeat cron job - runs every 30 seconds
         heartbeat_cron = CsFile("/etc/cron.d/heartbeat")
         heartbeat_cron.add("SHELL=/bin/bash", 0)
-        heartbeat_cron.add("PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin", 1)
-        heartbeat_cron.add("* * * * * root $SHELL %s/check_heartbeat.sh 2>&1 > /dev/null" % self.CS_ROUTER_DIR, -1)
-        heartbeat_cron.add("* * * * * root sleep 30; $SHELL %s/check_heartbeat.sh 2>&1 > /dev/null" % self.CS_ROUTER_DIR, -1)
+        heartbeat_cron.add(
+            "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin", 1)
+        heartbeat_cron.add(
+            "* * * * * root $SHELL %s/check_heartbeat.sh 2>&1 > /dev/null" % self.CS_ROUTER_DIR, -1)
+        heartbeat_cron.add(
+            "* * * * * root sleep 30; $SHELL %s/check_heartbeat.sh 2>&1 > /dev/null" % self.CS_ROUTER_DIR, -1)
         heartbeat_cron.commit()
 
         # Configure KeepaliveD cron job - runs at every reboot
         keepalived_cron = CsFile("/etc/cron.d/keepalived")
         keepalived_cron.add("SHELL=/bin/bash", 0)
-        keepalived_cron.add("PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin", 1)
+        keepalived_cron.add(
+            "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin", 1)
         keepalived_cron.add("@reboot root service keepalived start", -1)
         keepalived_cron.commit()
 
         # Configure ConntrackD cron job - runs at every reboot
         conntrackd_cron = CsFile("/etc/cron.d/conntrackd")
         conntrackd_cron.add("SHELL=/bin/bash", 0)
-        conntrackd_cron.add("PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin", 1)
+        conntrackd_cron.add(
+            "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin", 1)
         conntrackd_cron.add("@reboot root service conntrackd start", -1)
         conntrackd_cron.commit()
 
@@ -188,7 +203,7 @@ class CsRedundant(object):
         if not self.cl.is_redundant():
             logging.error("Set fault called on non-redundant router")
             return
-        
+
         self.set_lock()
         logging.info("Router switched to fault mode")
         ads = [o for o in self.address.get_ips() if o.is_public()]
@@ -255,9 +270,11 @@ class CsRedundant(object):
             if CsDevice(o.get_device(), self.config).waitfordevice():
                 CsHelper.execute(cmd2)
                 dev = o.get_device()
-                logging.info("Bringing public interface %s up" % o.get_device())
+                logging.info("Bringing public interface %s up" %
+                             o.get_device())
             else:
-                logging.error("Device %s was not ready could not bring it up" % o.get_device())
+                logging.error(
+                    "Device %s was not ready could not bring it up" % o.get_device())
         # ip route add default via $gw table Table_$dev proto static
         cmd = "%s -C %s" % (self.CONNTRACKD_BIN, self.CONNTRACKD_CONF)
         CsHelper.execute("%s -c" % cmd)
@@ -282,7 +299,8 @@ class CsRedundant(object):
         """
         lines = []
         lines.append("\t\t\tIPv4_address %s\n" % "127.0.0.1")
-        lines.append("\t\t\tIPv4_address %s\n" % self.address.get_control_if().get_ip())
+        lines.append("\t\t\tIPv4_address %s\n" %
+                     self.address.get_control_if().get_ip())
         # FIXME - Do we need to also add any internal network gateways?
         return lines
 
@@ -299,7 +317,8 @@ class CsRedundant(object):
         lines = []
         for o in self.address.get_ips():
             if o.needs_vrrp():
-                str = "        %s brd %s dev %s\n" % (o.get_gateway_cidr(), o.get_broadcast(), o.get_device())
+                str = "        %s brd %s dev %s\n" % (
+                    o.get_gateway_cidr(), o.get_broadcast(), o.get_device())
                 lines.append(str)
                 self.check_is_up(o.get_device())
         return lines
