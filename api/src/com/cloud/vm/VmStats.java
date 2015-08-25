@@ -32,4 +32,10 @@ public interface VmStats {
 
     public double getDiskWriteKBs();
 
+    public double getMemoryKBs();
+
+    public double getIntFreeMemoryKBs();
+
+    public double getTargetMemoryKBs();
+
 }
