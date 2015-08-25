@@ -57,6 +57,7 @@ import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RevertToVMSnapshotAnswer;
 import com.cloud.agent.api.RevertToVMSnapshotCommand;
+import com.cloud.agent.api.ScaleVmAnswer;
 import com.cloud.agent.api.ScaleVmCommand;
 import com.cloud.agent.api.SecurityGroupRuleAnswer;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
@@ -248,7 +249,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             return vmMap;
         } catch (final Exception ex) {
             txn.rollback();
-            throw new CloudRuntimeException("unable to fetch vms  from host " + hostGuid, ex);
+            throw new CloudRuntimeException("unable to fetch vms from host " + hostGuid, ex);
         } finally {
             txn.close();
             txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -292,7 +293,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             return states;
         } catch (final Exception ex) {
             txn.rollback();
-            throw new CloudRuntimeException("unable to fetch vms  from host " + hostGuid, ex);
+            throw new CloudRuntimeException("unable to fetch vms from host " + hostGuid, ex);
         } finally {
             txn.close();
             txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -369,7 +370,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public MigrateAnswer Migrate(final MigrateCommand cmd, final SimulatorInfo info) {
+    public MigrateAnswer migrate(final MigrateCommand cmd, final SimulatorInfo info) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
             txn.start();
@@ -382,7 +383,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
 
             final MockHost destHost = _mockHostDao.findByGuid(destGuid);
             if (destHost == null) {
-                return new MigrateAnswer(cmd, false, "can;t find host:" + info.getHostUuid(), null);
+                return new MigrateAnswer(cmd, false, "can't find destination host:" + destGuid, null);
             }
             vm.setHostId(destHost.getId());
             _mockVmDao.update(vm.getId(), vm);
@@ -424,7 +425,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public Answer CleanupNetworkRules(final CleanupNetworkRulesCmd cmd, final SimulatorInfo info) {
+    public Answer cleanupNetworkRules(final CleanupNetworkRulesCmd cmd, final SimulatorInfo info) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
             txn.start();
@@ -449,12 +450,34 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
 
     @Override
     public Answer scaleVm(final ScaleVmCommand cmd) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
+        try {
+            txn.start();
+            final String vmName = cmd.getVmName();
+            final MockVMVO vm = _mockVmDao.findByVmName(vmName);
+            if (vm == null) {
+                return new ScaleVmAnswer(cmd, false, "Can't find VM " + vmName);
+            }
+            vm.setCpu(cmd.getCpus() * cmd.getMaxSpeed());
+            vm.setMemory(cmd.getMaxRam());
+            _mockVmDao.update(vm.getId(), vm);
+            s_logger.debug("Scaled up VM " + vmName);
+            txn.commit();
+            return new ScaleVmAnswer(cmd, true, null);
+        } catch (final Exception ex) {
+            txn.rollback();
+            throw new CloudRuntimeException("Unable to scale up VM", ex);
+        } finally {
+            txn.close();
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+            txn.close();
+        }
     }
 
     @Override
     public Answer plugSecondaryIp(final NetworkRulesVmSecondaryIpCommand cmd) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        s_logger.debug("Plugged secondary IP to VM " + cmd.getVmName());
+        return new Answer(cmd, true, null);
     }
 
     @Override
@@ -527,12 +550,12 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public Answer CheckConsoleProxyLoad(final CheckConsoleProxyLoadCommand cmd) {
+    public Answer checkConsoleProxyLoad(final CheckConsoleProxyLoadCommand cmd) {
         return Answer.createUnsupportedCommandAnswer(cmd);
     }
 
     @Override
-    public Answer WatchConsoleProxyLoad(final WatchConsoleProxyLoadCommand cmd) {
+    public Answer watchConsoleProxyLoad(final WatchConsoleProxyLoadCommand cmd) {
         return Answer.createUnsupportedCommandAnswer(cmd);
     }
 
@@ -543,7 +566,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public SecurityGroupRuleAnswer AddSecurityGroupRules(final SecurityGroupRulesCmd cmd, final SimulatorInfo info) {
+    public SecurityGroupRuleAnswer addSecurityGroupRules(final SecurityGroupRulesCmd cmd, final SimulatorInfo info) {
         if (!info.isEnabled()) {
             return new SecurityGroupRuleAnswer(cmd, false, "Disabled", SecurityGroupRuleAnswer.FailureReason.CANNOT_BRIDGE_FIREWALL);
         }
@@ -611,7 +634,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public Answer SavePassword(final SavePasswordCommand cmd) {
+    public Answer savePassword(final SavePasswordCommand cmd) {
         return new Answer(cmd);
     }
 
