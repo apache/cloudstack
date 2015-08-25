@@ -138,7 +138,10 @@ import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
+<<<<<<< HEAD
 import com.cloud.utils.db.SearchCriteria;
+=======
+>>>>>>> CLOUDSTACK-8672: Removal of servicePackageUUID from Create Network Offering Command,
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
@@ -1016,25 +1019,23 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         _netscalerControlCenterDao.remove(result.getId());
 
         //Removal of  NCC from Host Table
-        SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
-        sc.addAnd("type", SearchCriteria.Op.EQ, Host.Type.NetScalerControlCenter);
-        List<HostVO> ncc_list = _hostDao.search(sc, null);
-
+        List<HostVO> ncc_list = _hostDao.listAll();
         if (ncc_list == null) {
             throw new CloudRuntimeException("Could not find Netscaler Control Center in Database");
         }
         for (HostVO ncc : ncc_list) {
-            try {
-                // put the host in maintenance state in order for it to be deleted
-                ncc.setResourceState(ResourceState.Maintenance);
-                _hostDao.update(ncc.getId(), ncc);
-                _resourceMgr.deleteHost(ncc.getId(), false, false);
-            } catch (Exception e) {
-                s_logger.debug(e);
-                return false;
+            if (ncc.getType().equals(Host.Type.NetScalerControlCenter)) {
+                try {
+                    // put the host in maintenance state in order for it to be deleted
+                    ncc.setResourceState(ResourceState.Maintenance);
+                    _hostDao.update(ncc.getId(), ncc);
+                    _resourceMgr.deleteHost(ncc.getId(), false, false);
+                } catch (Exception e) {
+                    s_logger.debug(e);
+                    return false;
+                }
             }
         }
-
         return true;
     }
 
