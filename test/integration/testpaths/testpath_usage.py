@@ -17,7 +17,7 @@
 """ Test cases for Usage Test Path
 """
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import (cleanup_resources,
                               validateList,
                               verifyRouterState,
@@ -53,6 +53,7 @@ from marvin.lib.common import (get_domain,
                                get_builtin_template_info,
                                findSuitableHostForMigration,
                                list_hosts,
+                               list_volumes,
                                list_routers)
 from marvin.codes import (PASS, FAIL, ERROR_NO_HOST_FOR_MIGRATION)
 from marvin.sshClient import SshClient
@@ -104,7 +105,6 @@ class TestUsage(cloudstackTestCase):
             cls.apiclient,
             cls.zone.id,
             cls.testdata["ostype"])
-
 
         try:
             # If local storage is enabled, alter the offerings to use
@@ -1120,7 +1120,6 @@ class TestUsage(cloudstackTestCase):
             self.userapiclient,
             rootVolume.id)
 
-
         # Verifying usage for Snapshot - START
         response = self.listUsageRecords(usagetype=9)
         self.assertEqual(response[0], PASS, response[1])
@@ -1231,7 +1230,6 @@ class TestUsage(cloudstackTestCase):
         # Step 7
         templateFromVolume.delete(self.userapiclient)
 
-
         # Verifying usage for Template is stoppd after deleting it - START
         response = self.listUsageRecords(usagetype=7)
         self.assertEqual(response[0], PASS, response[1])
@@ -1316,8 +1314,8 @@ class TestUsage(cloudstackTestCase):
         # Step 9
         volumeFromSnapshot.delete(self.userapiclient)
 
-
-        # Verifying usage for Volume from Snapshot is stopped after delete - START
+        # Verifying usage for Volume from Snapshot is stopped after delete -
+        # START
         response = self.listUsageRecords(usagetype=6)
         self.assertEqual(response[0], PASS, response[1])
         volumeUsageRecords = response[1]
@@ -1346,7 +1344,8 @@ class TestUsage(cloudstackTestCase):
                         "usage for volume after deletion should remain the same\
                         after specific intervals of time")
 
-        # Verifying usage for Volume from Snapshot is stopped after delete - END
+        # Verifying usage for Volume from Snapshot is stopped after delete -
+        # END
 
         # Step 10
         templateFromSnapshot = Template.create_from_snapshot(
@@ -1418,7 +1417,8 @@ class TestUsage(cloudstackTestCase):
 
         templateFromSnapshot.delete(self.userapiclient)
 
-        # Verifying usage for Template from Snapshot is stopped after delete - START
+        # Verifying usage for Template from Snapshot is stopped after delete -
+        # START
         response = self.listUsageRecords(usagetype=7)
         self.assertEqual(response[0], PASS, response[1])
         templateUsageRecords = response[1]
@@ -1444,11 +1444,13 @@ class TestUsage(cloudstackTestCase):
                         "usage for volume after deletion should remain the same\
                         after specific intervals of time")
 
-        # Verifying usage for Template from Snapshot is stopped after delete - END
+        # Verifying usage for Template from Snapshot is stopped after delete -
+        # END
 
         snapshotFromRootVolume.delete(self.userapiclient)
 
-        # Verifying usage for Snapshot from volume is stopped after delete - START
+        # Verifying usage for Snapshot from volume is stopped after delete -
+        # START
         response = self.listUsageRecords(usagetype=9)
         self.assertEqual(response[0], PASS, response[1])
         templateUsageRecords = response[1]
@@ -1474,7 +1476,8 @@ class TestUsage(cloudstackTestCase):
                         "usage for volume after deletion should remain the same\
                         after specific intervals of time")
 
-        # Verifying usage for Snapshot from volume is stopped after delete - END
+        # Verifying usage for Snapshot from volume is stopped after delete -
+        # END
         return
 
     @attr(tags=["advanced"], required_hardware="true")
@@ -2879,6 +2882,74 @@ class TestUsage(cloudstackTestCase):
         # aggregation period and current period will give the network usage
         return
 
+    @attr(tags=["advanced", "basic"], required_hardware="false")
+    def test_08_checkNewVolumein_listUsageRecords(self):
+        """ Test case to check if new volume crated after
+        restore VM is listed in listUsageRecords
+        # 1. Launch a VM
+        # 2. Restore the VM
+        # 3. Check if the new volume created is listed in listUsageRecords API
+        """
+
+        # Step 1
+        vm = VirtualMachine.create(
+            self.userapiclient,
+            self.testdata["small"],
+            templateid=self.template.id,
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            zoneid=self.zone.id,
+        )
+
+        volumes_root_list = list_volumes(
+            self.apiclient,
+            virtualmachineid=vm.id,
+            type='ROOT',
+            listall=True
+        )
+        list_validation = validateList(volumes_root_list)
+
+        self.assertEqual(
+            list_validation[0],
+            PASS,
+            "Volume list validation failed due to %s" %
+            list_validation[2])
+
+        root_volume = volumes_root_list[0]
+
+        # Step 2
+        vm.restore(self.apiclient)
+
+        qresultset = self.dbclient.execute(
+            "select id from volumes where name='%s' and state='Ready';" %
+            root_volume.name)
+
+        db_list_validation = validateList(qresultset)
+
+        self.assertEqual(
+            db_list_validation[0],
+            PASS,
+            "Database list validation failed due to %s" %
+            db_list_validation[2])
+
+        self.assertNotEqual(
+            len(qresultset),
+            0,
+            "Check DB Query result set"
+        )
+
+        volumeCheck = "Volume Id: " + str(qresultset[0][0]) + " usage time"
+
+        response = self.listUsageRecords(usagetype=6)
+        self.assertEqual(response[0], PASS, response[1])
+        UsageRecords = [record for record in response[1]
+                        if volumeCheck in record.description]
+        # Step 3
+        if not UsageRecords:
+            self.fail(
+                "listUsageRecords not returning usage for newly created volume")
+
 
 class TestUsageDataAggregatior(cloudstackTestCase):
 
@@ -2985,7 +3056,6 @@ class TestUsageDirectMeteringBasicZone(cloudstackTestCase):
             cls.apiclient,
             cls.zone.id,
             cls.testdata["ostype"])
-
 
         try:
             # If local storage is enabled, alter the offerings to use
