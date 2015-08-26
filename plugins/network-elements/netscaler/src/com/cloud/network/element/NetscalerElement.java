@@ -37,6 +37,8 @@ import com.google.gson.Gson;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.address.AcquirePodIpCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
@@ -65,7 +67,6 @@ import com.cloud.api.commands.ListNetscalerLoadBalancersCmd;
 import com.cloud.api.commands.ListRegisteredServicePackageCmd;
 import com.cloud.api.commands.RegisterNetscalerControlCenterCmd;
 import com.cloud.api.commands.RegisterServicePackageCmd;
-
 import com.cloud.api.response.NetScalerServicePackageResponse;
 import com.cloud.api.response.NetscalerControlCenterResponse;
 import com.cloud.api.response.NetscalerLoadBalancerResponse;
@@ -131,13 +132,12 @@ import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.network.rules.LoadBalancerContainer;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
@@ -271,6 +271,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         }
     }
 
+    @Override
     public HostVO getNetScalerControlCenterForNetwork(Network guestConfig) {
         long zoneId = guestConfig.getDataCenterId();
         return _hostDao.findByTypeNameAndZoneId(zoneId, "NetscalerControlCenter", Type.NetScalerControlCenter);
@@ -895,6 +896,8 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         cmdList.add(ListNetscalerControlCenterCmd.class);
         cmdList.add(DeleteServicePackageOfferingCmd.class);
         cmdList.add(DeleteNetscalerControlCenterCmd.class);
+        cmdList.add(ReleasePodIpCmdByAdmin.class);
+        cmdList.add(AcquirePodIpCmdByAdmin.class);
         return cmdList;
     }
 
@@ -987,6 +990,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
 
     }
 
+    @DB
     @Override
     public boolean deleteNetscalerControlCenter(DeleteNetscalerControlCenterCmd cmd) throws CloudRuntimeException {
 
@@ -994,35 +998,44 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         if (result == null)
             throw new CloudRuntimeException("External Netscaler Control Center Table does not contain record with this ID");
         else {
-            final SearchCriteria<NetworkOfferingVO> sc_1 = _networkOfferingDao.createSearchCriteria();
-            final Filter searchFilter_1 = new Filter(NetworkOfferingVO.class, "created", false, null, null);
-            sc_1.addAnd("servicePackageUuid", SearchCriteria.Op.NEQ, null);
-            List<NetworkOfferingVO> set_of_servicePackageUuid = _networkOfferingDao.search(sc_1, searchFilter_1);
-            List<Long> id_set = new ArrayList<Long>();
-            for (NetworkOfferingVO node : set_of_servicePackageUuid) {
-                if (node.getServicePackage() != null && !node.getServicePackage().isEmpty()) {
-                    id_set.add(node.getId());
-                }
-            }
-            if (id_set.size() != 0) {
-                final SearchCriteria<NetworkVO> sc_2 = _networkDao.createSearchCriteria();
-                final Filter searchFilter_2 = new Filter(NetworkVO.class, "id", false, null, null);
-                sc_2.addAnd("networkOfferingId", SearchCriteria.Op.IN, id_set);
-                if (_networkDao.search(sc_2, searchFilter_2) != null && _networkDao.search(sc_2, searchFilter_2).size() != 0)
-                    throw new CloudRuntimeException("Can Not Delete Netscaler Control Center Because it is in use");
+            List<Long> id_set_1 = _networkOfferingDao.listServicePackageUuid();
+            if (id_set_1.size() != 0) {
+                List<NetworkVO> id_set_2 = _networkDao.listNetworkOfferingId(id_set_1);
+                if (id_set_2 != null && id_set_2.size() != 0)
+                    throw new CloudRuntimeException(
+                            "ServicePackages published by NetScalerControlCenter are being used by NetworkOfferings. Try deleting NetworkOffering with ServicePackages and then delete NetScalerControlCenter.");
             }
         }
         try {
-            List<NetScalerServicePackageVO> list_NetScalerServicePackageVO = _netscalerServicePackageDao.listAll();
-            for (NetScalerServicePackageVO row : list_NetScalerServicePackageVO) {
-                _netscalerServicePackageDao.remove(row.getId());
-            }
+            _netscalerServicePackageDao.removeAll();
         } catch (CloudRuntimeException ce) {
-            throw new CloudRuntimeException("Network offering is using the service package. First delete the nework offering.");
+            throw new CloudRuntimeException("Service Package is being used by Network Offering, Try deleting Network Offering and then delete Service Package.");
         }
 
-        return _netscalerControlCenterDao.remove(result.getId());
+        // delete Netscaler Control Center
+        _netscalerControlCenterDao.remove(result.getId());
 
+        //Removal of  NCC from Host Table
+        SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
+        sc.addAnd("type", SearchCriteria.Op.EQ, Host.Type.NetScalerControlCenter);
+        List<HostVO> ncc_list = _hostDao.search(sc, null);
+
+        if (ncc_list == null) {
+            throw new CloudRuntimeException("Could not find Netscaler Control Center in Database");
+        }
+        for (HostVO ncc : ncc_list) {
+            try {
+                // put the host in maintenance state in order for it to be deleted
+                ncc.setResourceState(ResourceState.Maintenance);
+                _hostDao.update(ncc.getId(), ncc);
+                _resourceMgr.deleteHost(ncc.getId(), false, false);
+            } catch (Exception e) {
+                s_logger.debug(e);
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override
@@ -1536,14 +1549,14 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     }
 
     private boolean canHandleLbRules(List<LoadBalancingRule> rules) {
-        Map<Capability, String> lbCaps = this.getCapabilities().get(Service.Lb);
+        Map<Capability, String> lbCaps = getCapabilities().get(Service.Lb);
         if (!lbCaps.isEmpty()) {
             String schemeCaps = lbCaps.get(Capability.LbSchemes);
             if (schemeCaps != null) {
                 for (LoadBalancingRule rule : rules) {
                     if (!schemeCaps.contains(rule.getScheme().toString())) {
                         s_logger.debug("Scheme " + rules.get(0).getScheme() + " is not supported by the provider "
-                                + this.getName());
+                                + getName());
                         return false;
                     }
                 }

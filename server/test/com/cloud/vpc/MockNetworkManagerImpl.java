@@ -901,4 +901,26 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
         return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    @Override
+    public AcquirePodIpCmdResponse allocatePodIp(Account ipOwner, long zoneId, String cidr) throws ResourceAllocationException, ConcurrentOperationException {
+
+        Account caller = CallContext.current().getCallingAccount();
+        long callerUserId = CallContext.current().getCallingUserId();
+        DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
+
+        if (zone == null)
+            throw new InvalidParameterValueException("Invalid zone Id is Null");
+        if (_accountMgr.checkAccessAndSpecifyAuthority(caller, zoneId) != zoneId)
+            throw new InvalidParameterValueException("Caller does not have permission for this Zone" + "(" + zoneId + ")");
+        if (s_logger.isDebugEnabled())
+            s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
+        return _ipAddrMgr.allocatePodIp(zoneId, cidr);
+    }
+
+    @Override
+    public boolean releasePodIp(ReleasePodIpCmdByAdmin ip) throws CloudRuntimeException {
+        _ipAddrMgr.releasePodIp(ip.getId());
+        return true;
+    }
+
 }
