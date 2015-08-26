@@ -182,6 +182,7 @@ class testMigrateVolumeTimeout(cloudstackTestCase):
         Configurations.update(self.api_client,
                               name="migratewait",
                               value="3600")
+        restart_ms(self)
         cleanup_resources(self.apiClient, self.cleanup)
         return
 
