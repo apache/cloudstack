@@ -572,7 +572,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                     } finally {
                         profiler.stop();
 
-                        if (profiler.getDuration() >= HeartbeatInterval.value()) {
+                        if (profiler.getDurationInMillis() >= HeartbeatInterval.value()) {
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Management server heartbeat takes too long to finish. profiler: " + profiler.toString() + ", profilerHeartbeatUpdate: " +
                                         profilerHeartbeatUpdate.toString() + ", profilerPeerScan: " + profilerPeerScan.toString());
@@ -665,12 +665,12 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                                     notifyNodeJoined(msg.getNodes());
 
                                     profiler.stop();
-                                    if (profiler.getDuration() > 1000) {
+                                    if (profiler.getDurationInMillis() > 1000) {
                                         if (s_logger.isDebugEnabled()) {
-                                            s_logger.debug("Notifying management server join event took " + profiler.getDuration() + " ms");
+                                            s_logger.debug("Notifying management server join event took " + profiler.getDurationInMillis() + " ms");
                                         }
                                     } else {
-                                        s_logger.warn("Notifying management server join event took " + profiler.getDuration() + " ms");
+                                        s_logger.warn("Notifying management server join event took " + profiler.getDurationInMillis() + " ms");
                                     }
                                 }
                                 break;
@@ -683,12 +683,12 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                                     notifyNodeLeft(msg.getNodes());
 
                                     profiler.stop();
-                                    if (profiler.getDuration() > 1000) {
+                                    if (profiler.getDurationInMillis() > 1000) {
                                         if (s_logger.isDebugEnabled()) {
-                                            s_logger.debug("Notifying management server leave event took " + profiler.getDuration() + " ms");
+                                            s_logger.debug("Notifying management server leave event took " + profiler.getDurationInMillis() + " ms");
                                         }
                                     } else {
-                                        s_logger.warn("Notifying management server leave event took " + profiler.getDuration() + " ms");
+                                        s_logger.warn("Notifying management server leave event took " + profiler.getDurationInMillis() + " ms");
                                     }
                                 }
                                 break;
@@ -927,7 +927,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
         profiler.stop();
 
-        if (profiler.getDuration() >= HeartbeatInterval.value()) {
+        if (profiler.getDurationInMillis() >= HeartbeatInterval.value()) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Peer scan takes too long to finish. profiler: " + profiler.toString() + ", profilerQueryActiveList: " +
                         profilerQueryActiveList.toString() + ", profilerSyncClusterInfo: " + profilerSyncClusterInfo.toString() + ", profilerInvalidatedNodeList: " +
