@@ -62,4 +62,11 @@ public class NetScalerServicePackageDaoImpl extends GenericDaoBase<NetScalerServ
         return search(sc, null);
     }
 
+    @Override
+    public void removeAll() {
+        List<NetScalerServicePackageVO> list_NetScalerServicePackageVO = this.listAll();
+        for (NetScalerServicePackageVO row : list_NetScalerServicePackageVO) {
+            this.remove(row.getId());
+        }
+    }
 }

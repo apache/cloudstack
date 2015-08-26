@@ -381,4 +381,10 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
     public int getNonSystemNetworkCountByVpcId(final long vpcId) {
         return 0;
     }
+
+    @Override
+    public List<NetworkVO> listNetworkOfferingId(List<Long> idset) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

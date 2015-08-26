@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
@@ -58,23 +57,26 @@ public class DeleteNetscalerControlCenterCmd extends BaseCmd {
         SuccessResponse response = new SuccessResponse();
         try {
             boolean result = _netsclarLbService.deleteNetscalerControlCenter(this);
-
             if (response != null && result) {
                 response.setDisplayText("Netscaler Control Center Deleted Successfully");
                 response.setSuccess(result);
                 response.setResponseName(getCommandName());
-                this.setResponseObject(response);
+                setResponseObject(response);
             }
         } catch (CloudRuntimeException runtimeExcp) {
             response.setDisplayText(runtimeExcp.getMessage());
             response.setSuccess(false);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
             return;
         } catch (Exception e) {
             e.printStackTrace();
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage() + "My Error");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
+    }
+
+    public String setId(String iD) {
+        return ID = iD;
     }
 
     public String getId() {
