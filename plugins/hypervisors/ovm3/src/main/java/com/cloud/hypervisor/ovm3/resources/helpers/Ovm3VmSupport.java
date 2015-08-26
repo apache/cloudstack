@@ -28,8 +28,6 @@ import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
-// import com.cloud.agent.api.AttachVolumeAnswer;
-// import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
@@ -152,12 +150,7 @@ public class Ovm3VmSupport {
         }
         return true;
     }
-/*
-    public AttachVolumeAnswer execute(AttachVolumeCommand cmd) {
-        return new AttachVolumeAnswer(cmd, "You must stop " + cmd.getVmName()
-                + " first, Ovm3 doesn't support hotplug datadisk");
-    }
-*/
+
     /* Migration should make sure both HVs are the same ? */
     public PrepareForMigrationAnswer execute(PrepareForMigrationCommand cmd) {
         VirtualMachineTO vm = cmd.getVirtualMachine();
