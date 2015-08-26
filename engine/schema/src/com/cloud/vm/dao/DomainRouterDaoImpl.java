@@ -251,8 +251,11 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         sc.setJoinParameters("networkRouter", "type", Network.GuestType.Isolated);
         final List<DomainRouterVO> routerIds = listBy(sc);
         final List<DomainRouterVO> routers = new ArrayList<DomainRouterVO>();
-        for (final DomainRouterVO router : routerIds) {
-            routers.add(findById(router.getId()));
+        for (DomainRouterVO router : routerIds) {
+            router = findById(router.getId());
+            if (router != null) {
+                routers.add(router);
+            }
         }
         return routers;
     }
