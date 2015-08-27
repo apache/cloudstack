@@ -37,7 +37,6 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
-import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkCommand;
@@ -331,8 +330,6 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                     answer = _mockStorageMgr.primaryStorageDownload((PrimaryStorageDownloadCommand)cmd);
                 } else if (cmd instanceof CreateCommand) {
                     answer = _mockStorageMgr.createVolume((CreateCommand)cmd);
-                } else if (cmd instanceof AttachVolumeCommand) {
-                    answer = _mockStorageMgr.AttachVolume((AttachVolumeCommand)cmd);
                 } else if (cmd instanceof AttachIsoCommand) {
                     answer = _mockStorageMgr.AttachIso((AttachIsoCommand)cmd);
                 } else if (cmd instanceof DeleteStoragePoolCommand) {

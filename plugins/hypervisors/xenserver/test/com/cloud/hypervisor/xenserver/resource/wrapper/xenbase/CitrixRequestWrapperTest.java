@@ -49,7 +49,6 @@ import org.powermock.api.mockito.PowerMockito;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
-import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckOnHostCommand;
@@ -127,7 +126,6 @@ import com.cloud.hypervisor.xenserver.resource.XsLocalNetwork;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkSetupInfo;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.resource.StorageSubsystemCommandHandler;
 import com.cloud.utils.Pair;
@@ -434,19 +432,6 @@ public class CitrixRequestWrapperTest {
         assertNotNull(wrapper);
 
         final Answer answer = wrapper.execute(resizeCommand, citrixResourceBase);
-        verify(citrixResourceBase, times(1)).getConnection();
-
-        assertFalse(answer.getResult());
-    }
-
-    @Test
-    public void testAttachVolumeCommand() {
-        final AttachVolumeCommand attachCommand = new AttachVolumeCommand(false, true, "Test", StoragePoolType.LVM, "/", "DATA", 100l, 1l, "123");
-
-        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
-        assertNotNull(wrapper);
-
-        final Answer answer = wrapper.execute(attachCommand, citrixResourceBase);
         verify(citrixResourceBase, times(1)).getConnection();
 
         assertFalse(answer.getResult());

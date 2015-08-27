@@ -125,16 +125,4 @@ public class Ovm3VmSupportTest {
         Answer ra = hypervisor.executeRequest(cmd);
         results.basicBooleanTest(ra.getResult());
     }
-/*
-    @Test
-    public void AttachVolumeCommandTest() throws ConfigurationException {
-        hypervisor = support.prepare(configTest.getParams());
-        // boolean attach, boolean managed, String vmName, StoragePoolType pooltype,
-        // String volumePath, String volumeName, Long volumeSize, Long deviceId, String chainInfo
-        AttachVolumeCommand cmd = new AttachVolumeCommand(true, false, xen.getVmName(), StoragePoolType.NetworkFilesystem,
-                "x", "x", 0L, 0L, "x");
-        Answer ra = hypervisor.executeRequest(cmd);
-        results.basicBooleanTest(ra.getResult());
-    }
-*/
 }

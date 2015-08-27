@@ -1303,7 +1303,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, null);
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
             if (vmMo == null) {
-                String msg = "Unable to find the VM to execute AttachVolumeCommand, vmName: " + vmName;
+                String msg = "Unable to find the VM to execute AttachCommand, vmName: " + vmName;
                 s_logger.error(msg);
                 throw new Exception(msg);
             }
@@ -1329,7 +1329,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
 
             if (morDs == null) {
-                String msg = "Unable to find the mounted datastore to execute AttachVolumeCommand, vmName: " + vmName;
+                String msg = "Unable to find the mounted datastore to execute AttachCommand, vmName: " + vmName;
                 s_logger.error(msg);
                 throw new Exception(msg);
             }
