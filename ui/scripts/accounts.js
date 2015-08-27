@@ -901,9 +901,12 @@
                                     id: 'sslCertificates',
                                     
                                     fields: {
+                                        name: {
+                                            label: 'label.name'
+                                        },
                                         id: {
                                             label: 'label.certificateid'
-                                        },
+                                        }
                                     },
                                     
                                     dataProvider: function(args) {
@@ -941,6 +944,12 @@
                                             createForm: {
                                                 title: 'label.add.certificate',
                                                 fields: {
+                                                    name: {
+                                                        label: 'label.name',
+                                                        validation: {
+                                                            required: true
+                                                        }
+                                                    },
                                                     certificate: {
                                                         label: 'label.certificate.name',
                                                         isTextarea: true,
@@ -974,6 +983,7 @@
 
                                             action: function(args) {
                                                 var data = {
+                                                    name: args.data.name,
                                                     certificate: args.data.certificate,
                                                     privatekey: args.data.privatekey
                                                 };
@@ -1013,7 +1023,7 @@
                                                 label: 'label.delete.sslcertificate',
                                                 messages: {
                                                     confirm: function(args) {
-                                                        return 'label.delete.sslcertificate';
+                                                        return 'message.delete.sslcertificate';
                                                     },
                                                     notification: function(args) {
                                                         return 'label.delete.sslcertificate';
@@ -1023,7 +1033,7 @@
                                                     $.ajax({
                                                         url: createURL('deleteSslCert'),
                                                         data: {
-                                                            id: args.context.sslCerts[0].id
+                                                            id: args.context.sslCertificates[0].id
                                                         },
                                                         success: function(json) {
                                                             var items = json.deletesslcertresponse.sslcert;
@@ -1034,50 +1044,44 @@
                                                     });
                                                 }
                                             }
-                                        }
-                                    },
+                                        },
 
-                                    viewAll: {
-                                        path: 'instances',
-                                        label: 'label.instances'
-                                    },
-
-                                    tabs: {
-                                        details: {
-                                            title: 'label.certificate.details',
-                                            fields: {
-                                                certificate: {
-                                                    label: 'label.certificate.name'
+                                        tabs: {
+                                            details: {
+                                                title: 'label.certificate.details',
+                                                fields: {
+                                                    name: {
+                                                        label: 'label.name'
+                                                    },
+                                                    certificate: {
+                                                        label: 'label.certificate.name'
+                                                    },
+                                                    certchain: {
+                                                        label: 'label.chain'
+                                                    }
                                                 },
-                                                fingerprint: {
-                                                    label: 'label.privatekey.name'
-                                                },
-                                                certchain: {
-                                                    label: 'label.chain'
-                                                }
-                                            },
 
-                                            dataProvider: function(args) {
-                                                var data = {};
+                                                dataProvider: function(args) {
+                                                    var data = {};
                                                 
-                                                if (args.context != null) {
-                                                    if ("accounts" in args.context) {
-                                                        $.extend(data, {
-                                                            accountid: args.context.accounts[0].id
-                                                        });
+                                                    if (args.context != null) {
+                                                        if ("sslCertificates" in args.context) {
+                                                            $.extend(data, {
+                                                                certid: args.context.sslCertificates[0].id
+                                                            });
+                                                        }
                                                     }
+                                                    $.ajax({
+                                                        url: createURL('listSslCerts'),
+                                                        data: data,
+                                                        success: function(json) {
+                                                            var items = json.listsslcertsresponse.sslcert[0];
+                                                            args.response.success({
+                                                                data: items
+                                                            });
+                                                        }
+                                                    });
                                                 }
-                                                $.ajax({
-                                                    url: createURL('listSslCerts'),
-                                                    data: data,
-                                                    success: function(json) {
-                                                        var items = json.listsslcertsresponse.sslcert;
-                                                        args.response.success({
-                                                            //actionFilter: sslcertActionfilter,
-                                                            data: items
-                                                        });
-                                                    }
-                                                });
                                             }
                                         }
                                     }
