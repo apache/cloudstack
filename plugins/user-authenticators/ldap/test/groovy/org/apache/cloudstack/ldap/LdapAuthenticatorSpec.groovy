@@ -16,12 +16,17 @@
 // under the License.
 package groovy.org.apache.cloudstack.ldap
 
+import com.cloud.server.auth.UserAuthenticator
+import com.cloud.user.Account
+import com.cloud.user.AccountManager
+import com.cloud.user.User
+import com.cloud.user.UserAccount
 import com.cloud.user.UserAccountVO
 import com.cloud.user.dao.UserAccountDao
 import com.cloud.utils.Pair
 import org.apache.cloudstack.ldap.LdapAuthenticator
-import org.apache.cloudstack.ldap.LdapConfigurationVO
 import org.apache.cloudstack.ldap.LdapManager
+import org.apache.cloudstack.ldap.LdapTrustMapVO
 import org.apache.cloudstack.ldap.LdapUser
 
 class LdapAuthenticatorSpec extends spock.lang.Specification {
@@ -102,5 +107,143 @@ class LdapAuthenticatorSpec extends spock.lang.Specification {
         def result = ldapAuthenticator.encode("password")
         then: "it doesn't change"
         result == "password"
+    }
+
+    def "test authentication when ldap is disabled"(){
+        LdapManager ldapManager = Mock(LdapManager)
+        UserAccountDao userAccountDao = Mock(UserAccountDao)
+        def ldapAuthenticator = new LdapAuthenticator(ldapManager, userAccountDao)
+        ldapManager.isLdapEnabled() >> false
+
+        when:
+            Pair<Boolean, UserAuthenticator.ActionOnFailedAuthentication> result = ldapAuthenticator.authenticate("rajanik", "password", 1, null)
+        then:
+            result.first() == false
+            result.second() == null
+
+    }
+
+    // tests when domain is linked to LDAP
+    def "test authentication when domain is linked and user disabled in ldap"(){
+        LdapManager ldapManager = Mock(LdapManager)
+        UserAccountDao userAccountDao = Mock(UserAccountDao)
+        AccountManager accountManager = Mock(AccountManager)
+
+        def ldapAuthenticator = new LdapAuthenticator()
+        ldapAuthenticator._ldapManager = ldapManager
+        ldapAuthenticator._userAccountDao = userAccountDao
+        ldapAuthenticator._accountManager = accountManager
+
+        long domainId = 1;
+        String username = "rajanik"
+        LdapManager.LinkType type = LdapManager.LinkType.GROUP
+        String name = "CN=test,DC=ccp,DC=citrix,DC=com"
+
+        ldapManager.isLdapEnabled() >> true
+        UserAccount userAccount = Mock(UserAccount)
+        userAccountDao.getUserAccount(username, domainId) >> userAccount
+        userAccount.getId() >> 1
+        ldapManager.getDomainLinkedToLdap(domainId) >> new LdapTrustMapVO(domainId, type, name, (short)2)
+        ldapManager.getUser(username, type.toString(), name) >> new LdapUser(username, "email", "firstname", "lastname", "principal", "domain", true)
+        //user should be disabled in cloudstack
+        accountManager.disableUser(1) >> userAccount
+
+        when:
+            Pair<Boolean, UserAuthenticator.ActionOnFailedAuthentication> result = ldapAuthenticator.authenticate(username, "password", domainId, null)
+        then:
+            result.first() == false
+            result.second() == UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT
+    }
+
+    def "test authentication when domain is linked and first time user can authenticate in ldap"(){
+        LdapManager ldapManager = Mock(LdapManager)
+        UserAccountDao userAccountDao = Mock(UserAccountDao)
+        AccountManager accountManager = Mock(AccountManager)
+
+        def ldapAuthenticator = new LdapAuthenticator()
+        ldapAuthenticator._ldapManager = ldapManager
+        ldapAuthenticator._userAccountDao = userAccountDao
+        ldapAuthenticator._accountManager = accountManager
+
+        long domainId = 1;
+        String username = "rajanik"
+        LdapManager.LinkType type = LdapManager.LinkType.GROUP
+        String name = "CN=test,DC=ccp,DC=citrix,DC=com"
+
+        ldapManager.isLdapEnabled() >> true
+        userAccountDao.getUserAccount(username, domainId) >> null
+        ldapManager.getDomainLinkedToLdap(domainId) >> new LdapTrustMapVO(domainId, type, name, (short)0)
+        ldapManager.getUser(username, type.toString(), name) >> new LdapUser(username, "email", "firstname", "lastname", "principal", "domain", false)
+        ldapManager.canAuthenticate(_,_) >> true
+        //user should be created in cloudstack
+        accountManager.createUserAccount(username, "", "firstname", "lastname", "email", null, username, (short) 2, domainId, username, null, _, _, User.Source.LDAP) >> Mock(UserAccount)
+
+        when:
+            Pair<Boolean, UserAuthenticator.ActionOnFailedAuthentication> result = ldapAuthenticator.authenticate(username, "password", domainId, null)
+        then:
+            result.first() == true
+            result.second() == null
+    }
+
+    def "test authentication when domain is linked and existing user can authenticate in ldap"(){
+        LdapManager ldapManager = Mock(LdapManager)
+        UserAccountDao userAccountDao = Mock(UserAccountDao)
+        AccountManager accountManager = Mock(AccountManager)
+
+        def ldapAuthenticator = new LdapAuthenticator()
+        ldapAuthenticator._ldapManager = ldapManager
+        ldapAuthenticator._userAccountDao = userAccountDao
+        ldapAuthenticator._accountManager = accountManager
+
+        long domainId = 1;
+        String username = "rajanik"
+        LdapManager.LinkType type = LdapManager.LinkType.GROUP
+        String name = "CN=test,DC=ccp,DC=citrix,DC=com"
+
+        ldapManager.isLdapEnabled() >> true
+        UserAccount userAccount = Mock(UserAccount)
+        userAccountDao.getUserAccount(username, domainId) >> userAccount
+        userAccount.getId() >> 1
+        userAccount.getState() >> Account.State.disabled.toString()
+        ldapManager.getDomainLinkedToLdap(domainId) >> new LdapTrustMapVO(domainId, type, name, (short)2)
+        ldapManager.getUser(username, type.toString(), name) >> new LdapUser(username, "email", "firstname", "lastname", "principal", "domain", false)
+        ldapManager.canAuthenticate(_,_) >> true
+        //user should be enabled in cloudstack if disabled
+        accountManager.enableUser(1) >> userAccount
+
+        when:
+        Pair<Boolean, UserAuthenticator.ActionOnFailedAuthentication> result = ldapAuthenticator.authenticate(username, "password", domainId, null)
+        then:
+        result.first() == true
+        result.second() == null
+    }
+
+    def "test authentication when domain is linked and user cannot authenticate in ldap"(){
+        LdapManager ldapManager = Mock(LdapManager)
+        UserAccountDao userAccountDao = Mock(UserAccountDao)
+        AccountManager accountManager = Mock(AccountManager)
+
+        def ldapAuthenticator = new LdapAuthenticator()
+        ldapAuthenticator._ldapManager = ldapManager
+        ldapAuthenticator._userAccountDao = userAccountDao
+        ldapAuthenticator._accountManager = accountManager
+
+        long domainId = 1;
+        String username = "rajanik"
+        LdapManager.LinkType type = LdapManager.LinkType.GROUP
+        String name = "CN=test,DC=ccp,DC=citrix,DC=com"
+
+        ldapManager.isLdapEnabled() >> true
+        UserAccount userAccount = Mock(UserAccount)
+        userAccountDao.getUserAccount(username, domainId) >> userAccount
+        ldapManager.getDomainLinkedToLdap(domainId) >> new LdapTrustMapVO(domainId, type, name, (short)2)
+        ldapManager.getUser(username, type.toString(), name) >> new LdapUser(username, "email", "firstname", "lastname", "principal", "domain", false)
+        ldapManager.canAuthenticate(_,_) >> false
+
+        when:
+        Pair<Boolean, UserAuthenticator.ActionOnFailedAuthentication> result = ldapAuthenticator.authenticate(username, "password", domainId, null)
+        then:
+            result.first() == false
+            result.second() == UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT
     }
 }
