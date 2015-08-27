@@ -3347,12 +3347,10 @@
                                                     }
                                                 }
                                             },
-
                                             'add-vm': {
                                                 label: 'label.add.vms',
                                                 addButton: true
                                             },
-
                                             'state' : {
                                                 edit: 'ignore',
                                                 label: 'label.state'
@@ -3761,6 +3759,21 @@
                                                                 cloudStack.dialog.notice({
                                                                     message: parseXMLHttpResponse(json)
                                                                 });
+                                                            }
+                                                        });
+
+                                                        // Get SSL Certificate data
+                                                        $.ajax({
+                                                            url: createURL('listSslCerts'),
+                                                            data: {
+                                                                listAll: true,
+                                                                lbruleid: lbRule.id
+                                                            },
+                                                            async: false,
+                                                            success: function(json) {
+                                                                if (json.listsslcertsresponse != null) {
+                                                                    lbRule._hideFields.push('sslcertificate');
+                                                                }
                                                             }
                                                         });
 
