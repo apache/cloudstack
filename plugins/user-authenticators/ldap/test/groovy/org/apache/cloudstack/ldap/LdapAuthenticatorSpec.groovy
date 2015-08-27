@@ -27,80 +27,80 @@ import org.apache.cloudstack.ldap.LdapUser
 class LdapAuthenticatorSpec extends spock.lang.Specification {
 
     def "Test a failed authentication due to user not being found within cloudstack"() {
-		given: "We have an LdapManager, userAccountDao and ldapAuthenticator and the user doesn't exist within cloudstack."
+        given: "We have an LdapManager, userAccountDao and ldapAuthenticator and the user doesn't exist within cloudstack."
         LdapManager ldapManager = Mock(LdapManager)
         UserAccountDao userAccountDao = Mock(UserAccountDao)
         userAccountDao.getUserAccount(_, _) >> null
         def ldapAuthenticator = new LdapAuthenticator(ldapManager, userAccountDao)
-		when: "A user authentications"
+        when: "A user authentications"
         def result = ldapAuthenticator.authenticate("rmurphy", "password", 0, null)
-		then: "their authentication fails"
-		result.first() == false
+        then: "their authentication fails"
+        result.first() == false
     }
 
     def "Test failed authentication due to ldap bind being unsuccessful"() {
-		given: "We have an LdapManager, LdapConfiguration, userAccountDao and LdapAuthenticator"
-		def ldapManager = Mock(LdapManager)
-		def ldapUser = Mock(LdapUser)
-		ldapUser.isDisabled() >> false
-		ldapManager.isLdapEnabled() >> true
-		ldapManager.getUser("rmurphy") >> ldapUser
-		ldapManager.canAuthenticate(_, _) >> false
+        given: "We have an LdapManager, LdapConfiguration, userAccountDao and LdapAuthenticator"
+        def ldapManager = Mock(LdapManager)
+        def ldapUser = Mock(LdapUser)
+        ldapUser.isDisabled() >> false
+        ldapManager.isLdapEnabled() >> true
+        ldapManager.getUser("rmurphy") >> ldapUser
+        ldapManager.canAuthenticate(_, _) >> false
 
-		UserAccountDao userAccountDao = Mock(UserAccountDao)
-		userAccountDao.getUserAccount(_, _) >> new UserAccountVO()
-		def ldapAuthenticator = new LdapAuthenticator(ldapManager, userAccountDao)
+        UserAccountDao userAccountDao = Mock(UserAccountDao)
+        userAccountDao.getUserAccount(_, _) >> new UserAccountVO()
+        def ldapAuthenticator = new LdapAuthenticator(ldapManager, userAccountDao)
 
-		when: "The user authenticates with an incorrect password"
-		def result = ldapAuthenticator.authenticate("rmurphy", "password", 0, null)
+        when: "The user authenticates with an incorrect password"
+        def result = ldapAuthenticator.authenticate("rmurphy", "password", 0, null)
 
-		then: "their authentication fails"
-		result.first() == false
+        then: "their authentication fails"
+        result.first() == false
     }
 
     def "Test failed authentication due to ldap not being configured"() {
-		given: "We have an LdapManager, A configured LDAP server, a userAccountDao and LdapAuthenticator"
-		def ldapManager = Mock(LdapManager)
-		ldapManager.isLdapEnabled() >> false
+        given: "We have an LdapManager, A configured LDAP server, a userAccountDao and LdapAuthenticator"
+        def ldapManager = Mock(LdapManager)
+        ldapManager.isLdapEnabled() >> false
 
-		UserAccountDao userAccountDao = Mock(UserAccountDao)
-		userAccountDao.getUserAccount(_, _) >> new UserAccountVO()
+        UserAccountDao userAccountDao = Mock(UserAccountDao)
+        userAccountDao.getUserAccount(_, _) >> new UserAccountVO()
 
-		def ldapAuthenticator = new LdapAuthenticator(ldapManager, userAccountDao)
-		when: "The user authenticates"
-		def result = ldapAuthenticator.authenticate("rmurphy", "password", 0, null)
-		then: "their authentication fails"
-		result.first() == false
+        def ldapAuthenticator = new LdapAuthenticator(ldapManager, userAccountDao)
+        when: "The user authenticates"
+        def result = ldapAuthenticator.authenticate("rmurphy", "password", 0, null)
+        then: "their authentication fails"
+        result.first() == false
     }
 
-	def "Test successful authentication"() {
-		given: "We have an LdapManager, LdapConfiguration, userAccountDao and LdapAuthenticator"
-		def ldapManager = Mock(LdapManager)
-		def ldapUser = Mock(LdapUser)
-		ldapUser.isDisabled() >> false
-		ldapManager.isLdapEnabled() >> true
-		ldapManager.canAuthenticate(_, _) >> true
-		ldapManager.getUser("rmurphy") >> ldapUser
+    def "Test successful authentication"() {
+        given: "We have an LdapManager, LdapConfiguration, userAccountDao and LdapAuthenticator"
+        def ldapManager = Mock(LdapManager)
+        def ldapUser = Mock(LdapUser)
+        ldapUser.isDisabled() >> false
+        ldapManager.isLdapEnabled() >> true
+        ldapManager.canAuthenticate(_, _) >> true
+        ldapManager.getUser("rmurphy") >> ldapUser
 
-		UserAccountDao userAccountDao = Mock(UserAccountDao)
-		userAccountDao.getUserAccount(_, _) >> new UserAccountVO()
-		def ldapAuthenticator = new LdapAuthenticator(ldapManager, userAccountDao)
+        UserAccountDao userAccountDao = Mock(UserAccountDao)
+        userAccountDao.getUserAccount(_, _) >> new UserAccountVO()
+        def ldapAuthenticator = new LdapAuthenticator(ldapManager, userAccountDao)
 
-		when: "The user authenticates with an incorrect password"
-		def result = ldapAuthenticator.authenticate("rmurphy", "password", 0, null)
+        when: "The user authenticates with an incorrect password"
+        def result = ldapAuthenticator.authenticate("rmurphy", "password", 0, null)
 
-		then: "their authentication passes"
-		result.first() == true
-	}
+        then: "their authentication passes"
+        result.first() == true
+    }
 
     def "Test that encode doesn't change the input"() {
-		given: "We have an LdapManager, userAccountDao and LdapAuthenticator"
-		LdapManager ldapManager = Mock(LdapManager)
-	    UserAccountDao userAccountDao = Mock(UserAccountDao)
-	    def ldapAuthenticator = new LdapAuthenticator(ldapManager, userAccountDao)
-		when: "a users password is encoded"
-	    def result = ldapAuthenticator.encode("password")
-		then: "it doesn't change"
-	    result == "password"
+        given: "We have an LdapManager, userAccountDao and LdapAuthenticator"
+        LdapManager ldapManager = Mock(LdapManager)
+        UserAccountDao userAccountDao = Mock(UserAccountDao)
+        def ldapAuthenticator = new LdapAuthenticator(ldapManager, userAccountDao)
+        when: "a users password is encoded"
+        def result = ldapAuthenticator.encode("password")
+        then: "it doesn't change"
+        result == "password"
     }
 }
