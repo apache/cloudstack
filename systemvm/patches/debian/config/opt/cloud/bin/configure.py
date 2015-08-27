@@ -585,7 +585,7 @@ class CsForwardingRules(CsDataBag):
                 rule['protocol'],
                 self.portsToString(rule['public_ports'], ':'),
               )
-        fw7 = "-A FORWARD -i %s -o %s -p %s -m %s --dport %s -m state --state NEW -j ACCEPT" % \
+        fw7 = "-A FORWARD -i %s -o %s -p %s -m %s --dport %s -m state --state NEW,ESTABLISHED -j ACCEPT" % \
               (
                 self.getDeviceByIp(rule['public_ip']),
                 self.getDeviceByIp(rule['internal_ip']),
@@ -599,7 +599,7 @@ class CsForwardingRules(CsDataBag):
         self.fw.append(["nat", "", fw4])
         self.fw.append(["nat", "", fw5])
         self.fw.append(["nat", "", fw6])
-        self.fw.append(["", "", fw7])
+        self.fw.append(["filter", "", fw7])
 
     def forward_vpc(self, rule):
         fw_prerout_rule = "-A PREROUTING -d %s/32 -i %s" % (rule["public_ip"], self.getDeviceByIp(rule['public_ip']))
