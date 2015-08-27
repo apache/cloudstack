@@ -123,6 +123,7 @@ public class CertServiceImpl implements CertService {
         final String key = certCmd.getKey();
         final String password = certCmd.getPassword();
         final String chain = certCmd.getChain();
+        final String name = certCmd.getName();
 
         validate(cert, key, password, chain);
         s_logger.debug("Certificate Validation succeeded");
@@ -142,7 +143,7 @@ public class CertServiceImpl implements CertService {
         final Long accountId = owner.getId();
         final Long domainId = owner.getDomainId();
 
-        final SslCertVO certVO = new SslCertVO(cert, key, password, chain, accountId, domainId, fingerPrint);
+        final SslCertVO certVO = new SslCertVO(cert, key, password, chain, accountId, domainId, fingerPrint, name);
         _sslCertDao.persist(certVO);
 
         return createCertResponse(certVO, null);
