@@ -12851,6 +12851,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -230px -677px;
 }
 
+.linktoldap .icon {
+  background-position: -197px -65px;
+}
+
+.linktoldap:hover .icon {
+  background-position: -197px -647px;
+}
+
 .label-hovered {
   cursor: pointer;
   color: #0000FF !important;

@@ -313,6 +313,109 @@
                         }
                     },
 
+                    linktoldap: {
+                            label: 'label.link.domain.to.ldap',
+
+                            action: function(args) {
+                                var data = {
+                                    domainid: args.context.domains[0].id,
+                                    type: args.data.type,
+                                    name: args.data.name,
+                                    accounttype: args.data.accounttype
+                                };
+
+                                if (args.data.admin != null && args.data.admin.length > 0) {
+                                    $.extend(data, {
+                                        admin: args.data.admin
+                                    });
+                                }
+
+                                $.ajax({
+                                    url: createURL('linkDomainToLdap'),
+                                    data: data,
+                                    success: function(json) {
+                                        var item = json.linkdomaintoldapresponse.LinkDomainToLdap.domainid;
+                                        args.response.success({
+                                            data: item
+                                        });
+                                    },
+                                    error: function(XMLHttpResponse) {
+                                        var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                        args.response.error(errorMsg);
+                                    }
+                                });
+                            },
+
+                            messages: {
+                                notification: function(args) {
+                                    return 'label.link.domain.to.ldap';
+                                }
+                            },
+
+                            createForm: {
+                                title: 'label.link.domain.to.ldap',
+                                desc: 'message.link.domain.to.ldap',
+                                fields: {
+                                    type: {
+                                        label: 'label.ldap.link.type',
+                                        docID: 'helpLdapGroupType',
+                                        validation: {
+                                            required: true
+                                        },
+                                        select: function(args) {
+                                             var items = [];
+                                             items.push({
+                                                 id: "GROUP",
+                                                 description: "GROUP"
+                                             }); //regular-user
+                                             items.push({
+                                                 id: "OU",
+                                                 description: "OU"
+                                             }); //root-admin
+                                             args.response.success({
+                                                 data: items
+                                             });
+                                        }
+                                    },
+                                    name: {
+                                        label: 'label.name',
+                                        docID: 'helpLdapGroupName',
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
+                                    accounttype: {
+                                        label: 'label.account.type',
+                                        docID: 'helpAccountType',
+                                        validation: {
+                                            required: true
+                                        },
+                                        select: function(args) {
+                                             var items = [];
+                                             items.push({
+                                                 id: 0,
+                                                 description: "Normal User"
+                                             }); //regular-user
+                                             items.push({
+                                                 id: 2,
+                                                 description: "Domain Admin"
+                                             }); //root-admin
+                                             args.response.success({
+                                                 data: items
+                                             });
+                                        }
+                                    },
+                                    admin: {
+                                        label: 'label.domain.admin',
+                                        docID: 'helpLdapLinkDomainAdmin',
+                                        validation: {
+                                            required: false
+                                        }
+                                    }
+                                }
+                            }
+                    },
+
                     updateResourceCount: {
                         label: 'label.action.update.resource.count',
                         messages: {
@@ -651,6 +754,9 @@
             allowedActions.push("edit"); //merge updateResourceLimit into edit
             if (jsonObj.level != 0) { //ROOT domain (whose level is 0) is not allowed to delete
                 allowedActions.push("delete");
+            }
+            if(isLdapEnabled()) {
+                allowedActions.push("linktoldap")
             }
         } else if (isDomainAdmin()) {
             if (args.context.domains[0].id != g_domainid) {
