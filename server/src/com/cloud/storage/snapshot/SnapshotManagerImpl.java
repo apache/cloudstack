@@ -246,7 +246,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     }
 
     @Override
-    public boolean revertSnapshot(Long snapshotId) {
+    public Snapshot revertSnapshot(Long snapshotId) {
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
         if (snapshot == null) {
             throw new InvalidParameterValueException("No such snapshot");
@@ -277,7 +277,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
         if (snapshotStrategy == null) {
             s_logger.error("Unable to find snaphot strategy to handle snapshot with id '" + snapshotId + "'");
-            return false;
+            return null;
         }
 
         boolean result = snapshotStrategy.revertSnapshot(snapshotInfo);
@@ -287,8 +287,9 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                     new Long(volume.getSize() - snapshot.getSize()));
             volume.setSize(snapshot.getSize());
             _volsDao.update(volume.getId(), volume);
+            return snapshotInfo;
         }
-        return result;
+        return null;
     }
 
     @Override
