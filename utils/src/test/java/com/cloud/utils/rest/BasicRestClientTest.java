@@ -41,7 +41,7 @@ import org.junit.Test;
 
 public class BasicRestClientTest {
 
-    private static final String LOCALHOST = "localhost";
+    private static final String LOCALHOST = "fakelocalhost";
     private static final String HTTPS = HttpConstants.HTTPS;
 
     private static final StatusLine HTTP_200_REPSONSE = new BasicStatusLine(new ProtocolVersion(HTTPS, 1, 1), 200, "OK");
