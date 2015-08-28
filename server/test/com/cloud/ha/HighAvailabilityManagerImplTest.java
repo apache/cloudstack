@@ -16,11 +16,14 @@
 // under the License.
 package com.cloud.ha;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -31,6 +34,7 @@ import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationSer
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContext;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -44,6 +48,8 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.ha.HighAvailabilityManager.Step;
+import com.cloud.ha.HighAvailabilityManager.WorkType;
 import com.cloud.ha.dao.HighAvailabilityDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -106,6 +112,17 @@ public class HighAvailabilityManagerImplTest {
     HostVO hostVO;
 
     HighAvailabilityManagerImpl highAvailabilityManager;
+    HighAvailabilityManagerImpl highAvailabilityManagerSpy;
+    static Method processWorkMethod = null;
+
+    @BeforeClass
+    public static void initOnce() {
+        try {
+            processWorkMethod = HighAvailabilityManagerImpl.class.getDeclaredMethod("processWork", HaWorkVO.class);
+            processWorkMethod.setAccessible(true);
+        } catch (NoSuchMethodException e) {
+        }
+    }
 
     @Before
     public void setup() throws IllegalArgumentException,
@@ -123,8 +140,12 @@ public class HighAvailabilityManagerImplTest {
                         injectField.set(highAvailabilityManager, obj);
                     }
                 }
+            } else if (injectField.getName().equals("_maxRetries")) {
+                injectField.setAccessible(true);
+                injectField.set(highAvailabilityManager, 5);
             }
         }
+        highAvailabilityManagerSpy = Mockito.spy(highAvailabilityManager);
     }
 
     @Test
@@ -200,5 +221,28 @@ public class HighAvailabilityManagerImplTest {
         highAvailabilityManager.setInvestigators(investigators);
 
         assertNull(highAvailabilityManager.investigate(1l));
+    }
+
+    private void processWorkWithRetryCount(int count, Step expectedStep) {
+        assertNotNull(processWorkMethod);
+        HaWorkVO work = new HaWorkVO(1l, VirtualMachine.Type.User, WorkType.Migration, Step.Scheduled, 1l, VirtualMachine.State.Running, count, 12345678l);
+        Mockito.doReturn(12345678l).when(highAvailabilityManagerSpy).migrate(work);
+        try {
+            processWorkMethod.invoke(highAvailabilityManagerSpy, work);
+        } catch (IllegalAccessException e) {
+        } catch (IllegalArgumentException e) {
+        } catch (InvocationTargetException e) {
+        }
+        assertTrue(work.getStep() == expectedStep);
+    }
+
+    @Test
+    public void processWorkWithRetryCountExceeded() {
+        processWorkWithRetryCount(5, Step.Done); // max retry count is 5
+    }
+
+    @Test
+    public void processWorkWithRetryCountNotExceeded() {
+        processWorkWithRetryCount(3, Step.Scheduled);
     }
 }
