@@ -140,36 +140,48 @@
                             dataType: 'json',
                             type: "POST",
                             success: function(json) {
-                                var jid = json.registernetscalercontrolcenterresponse.jobid;
-                                $.ajax({
-                                    url: createURL("queryAsyncJobResult&jobId=" + jid),
-                                    dataType: "json",
-                                    success: function(json) {
-                                        var result = json.queryasyncjobresultresponse;
-
-                                        if (result.jobstatus == 0) {
-                                            return; //Job has not completed
-                                        } else {
-                                            if (result.jobstatus == 1) {
-                                                cloudStack.dialog.notice({
-                                                    message: 'message.register.succeeded'
-                                                });
-                                                $loading.remove();
-                                            } else if (result.jobstatus == 2) {
-                                                cloudStack.dialog.notice({
-                                                    message: _l('message.register.failed') + ' ' + _s(result.jobresult.errortext)
-                                                });
-                                                $loading.remove();
+                                var jid = json.registernetscalercontrolcenterrresponse.jobid;
+                                var count = 0;
+                                var registerNetscalerControlCenterIntervalID = setInterval(function() {
+                                    $.ajax({
+                                        url: createURL("queryAsyncJobResult&jobId=" + jid),
+                                        dataType: "json",
+                                        success: function(json) {
+                                            var result = json.queryasyncjobresultresponse;
+                                            if (result.jobstatus == 0) {
+                                                if (count > 5) {
+                                                    cloudStack.dialog.notice({
+                                                        message: _l('message.register.failed') + ' ' + 'Check your Data.'
+                                                    });
+                                                    $loading.remove();
+                                                    clearInterval(registerNetscalerControlCenterIntervalID);
+                                                } else {
+                                                    count++;
+                                                    return; //Job has not completed
+                                                }
+                                            } else {
+                                                clearInterval(registerNetscalerControlCenterIntervalID);
+                                                if (result.jobstatus == 1) {
+                                                    cloudStack.dialog.notice({
+                                                        message: 'message.register.succeeded'
+                                                    });
+                                                    $loading.remove();
+                                                } else if (result.jobstatus == 2) {
+                                                    cloudStack.dialog.notice({
+                                                        message: _l('message.register.failed') + ' ' + _s(result.jobresult.errortext)
+                                                    });
+                                                    $loading.remove();
+                                                }
                                             }
+                                        },
+                                        error: function(XMLHttpResponse) {
+                                            cloudStack.dialog.notice({
+                                                message: _l('message.register.failed') + ' ' + parseXMLHttpResponse(XMLHttpResponse)
+                                            });
+                                            $loading.remove();
                                         }
-                                    },
-                                    error: function(XMLHttpResponse) {
-                                        cloudStack.dialog.notice({
-                                            message: _l('message.register.failed') + ' ' + parseXMLHttpResponse(XMLHttpResponse)
-                                        });
-                                        $loading.remove();
-                                    }
-                                });
+                                    });
+                                }, g_queryAsyncJobResultInterval);
                             },
                             error: function(XMLHttpResponse) {
                                 cloudStack.dialog.notice({
