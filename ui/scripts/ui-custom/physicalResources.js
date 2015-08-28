@@ -91,6 +91,97 @@
             }
         });
         return function(args) {
+            $dashboard.find('#register_ncc').click(function() {
+                cloudStack.dialog.createForm({
+                    form: {
+                        title: 'label.action.register.ncc',
+                        fields: {
+                            ipaddress: {
+                                label: 'label.ip.address',
+                                validation: {
+                                    required: true
+                                }
+                            },
+                            username: {
+                                label: 'label.username',
+                                validation: {
+                                    required: true
+                                }
+                            },
+                            password: {
+                                label: 'label.password',
+                                isPassword: true,
+                                validation: {
+                                    required: true
+                                }
+                            },
+                            numretries: {
+                                label: 'label.numretries',
+                                defaultValue: '2',
+                                validation: {
+                                    required: true
+                                }
+                            }
+                        }
+                    },
+                    after: function (args) {
+                        var $loading = $('<div>').addClass('loading-overlay');
+                        $('.system-dashboard-view:visible').prepend($loading);
+
+                        var data = {
+                            ipaddress: args.data.ipaddress,
+                            username: args.data.username,
+                            password: args.data.password,
+                            numretries: args.data.numretries
+                        };
+                        $.ajax({
+                            url: createURL('registerNetscalerControlCenter'),
+                            data: data,
+                            dataType: 'json',
+                            type: "POST",
+                            success: function(json) {
+                                var jid = json.registernetscalercontrolcenterresponse.jobid;
+                                $.ajax({
+                                    url: createURL("queryAsyncJobResult&jobId=" + jid),
+                                    dataType: "json",
+                                    success: function(json) {
+                                        var result = json.queryasyncjobresultresponse;
+
+                                        if (result.jobstatus == 0) {
+                                            return; //Job has not completed
+                                        } else {
+                                            if (result.jobstatus == 1) {
+                                                cloudStack.dialog.notice({
+                                                    message: 'message.register.succeeded'
+                                                });
+                                                $loading.remove();
+                                            } else if (result.jobstatus == 2) {
+                                                cloudStack.dialog.notice({
+                                                    message: _l('message.register.failed') + ' ' + _s(result.jobresult.errortext)
+                                                });
+                                                $loading.remove();
+                                            }
+                                        }
+                                    },
+                                    error: function(XMLHttpResponse) {
+                                        cloudStack.dialog.notice({
+                                            message: _l('message.register.failed') + ' ' + parseXMLHttpResponse(XMLHttpResponse)
+                                        });
+                                        $loading.remove();
+                                    }
+                                });
+                            },
+                            error: function(XMLHttpResponse) {
+                                cloudStack.dialog.notice({
+                                    message: _l('message.register.failed') + ' ' + parseXMLHttpResponse(XMLHttpResponse)
+                                });
+                                $loading.remove();
+                            }
+                        });
+                    },
+                });
+                return false;
+            });
             $dashboard.find('#update_ssl_button').click(function() {
                 cloudStack.dialog.createForm({
                     form: {
