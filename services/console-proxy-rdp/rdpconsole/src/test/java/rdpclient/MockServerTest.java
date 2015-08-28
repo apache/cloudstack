@@ -161,7 +161,8 @@ public class MockServerTest extends TestCase {
 
                 final SSLSocketFactory sslSocketFactory = (SSLSocketFactory)SSLSocketFactory.getDefault();
                 SSLSocket sslSocket = (SSLSocket)sslSocketFactory.createSocket(socket, address.getHostName(), address.getPort(), true);
-                sslSocket.setEnabledCipherSuites(sslSocket.getSupportedCipherSuites());
+                //sslSocket.setEnabledCipherSuites(sslSocket.getSupportedCipherSuites());
+                sslSocket.setEnabledCipherSuites(new String[] { "SSL_DH_anon_WITH_3DES_EDE_CBC_SHA" });
                 sslSocket.startHandshake();
 
                 InputStream is = sslSocket.getInputStream();
