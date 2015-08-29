@@ -22,7 +22,6 @@ import java.util.Map;
 
 import javax.ejb.Local;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.Vpc.State;
@@ -34,7 +33,6 @@ import com.cloud.utils.db.GenericDaoBase;
 @Local(value = VpcDao.class)
 @DB()
 public class MockVpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao {
-    private static final Logger s_logger = Logger.getLogger(MockNetworkOfferingDaoImpl.class);
 
     /* (non-Javadoc)
      * @see com.cloud.network.vpc.Dao.VpcDao#getVpcCountByOfferingId(long)
@@ -117,10 +115,10 @@ public class MockVpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDa
             f.setAccessible(true);
             f.setLong(voToReturn, id);
         } catch (NoSuchFieldException ex) {
-            s_logger.warn(ex);
+            logger.warn(ex);
             return null;
         } catch (IllegalAccessException ex) {
-            s_logger.warn(ex);
+            logger.warn(ex);
             return null;
         }
 

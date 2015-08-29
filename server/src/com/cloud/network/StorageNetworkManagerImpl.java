@@ -24,7 +24,6 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.command.admin.network.CreateStorageNetworkIpRangeCmd;
@@ -61,7 +60,6 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 @Component
 @Local(value = {StorageNetworkManager.class, StorageNetworkService.class})
 public class StorageNetworkManagerImpl extends ManagerBase implements StorageNetworkManager, StorageNetworkService {
-    private static final Logger s_logger = Logger.getLogger(StorageNetworkManagerImpl.class);
 
     @Inject
     StorageNetworkIpAddressDao _sNwIpDao;
@@ -240,7 +238,7 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
                     err.append("endIp=" + endIpFinal);
                     err.append("netmask=" + netmask);
                     err.append("zoneId=" + zoneId);
-                    s_logger.debug(err.toString(), e);
+                    logger.debug(err.toString(), e);
                     throw e;
                 }
 
@@ -280,7 +278,7 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
                     range = _sNwIpRangeDao.acquireInLockTable(rangeId);
                     if (range == null) {
                         String msg = "Unable to acquire lock on storage network ip range id=" + rangeId + ", delete failed";
-                        s_logger.warn(msg);
+                        logger.warn(msg);
                         throw new CloudRuntimeException(msg);
                     }
                     /*
@@ -332,7 +330,7 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
                 r = _sNwIpRangeDao.acquireInLockTable(rangeId);
                 if (r == null) {
                     String msg = "Unable to acquire lock on storage network ip range id=" + rangeId + ", delete failed";
-                    s_logger.warn(msg);
+                    logger.warn(msg);
                     throw new CloudRuntimeException(msg);
                 }
 

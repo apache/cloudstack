@@ -27,7 +27,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
@@ -69,7 +68,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 @Component
 @Local(value = {HostAllocator.class})
 public class FirstFitAllocator extends AdapterBase implements HostAllocator {
-    private static final Logger s_logger = Logger.getLogger(FirstFitAllocator.class);
     @Inject
     protected HostDao _hostDao = null;
     @Inject
@@ -119,8 +117,8 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             return new ArrayList<Host>();
         }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Looking for hosts in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Looking for hosts in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
         }
 
         String hostTagOnOffering = offering.getHostTag();
@@ -141,29 +139,29 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
                 List<HostVO> hostsMatchingOfferingTag = new ArrayList<HostVO>();
                 List<HostVO> hostsMatchingTemplateTag = new ArrayList<HostVO>();
                 if (hasSvcOfferingTag) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Looking for hosts having tag specified on SvcOffering:" + hostTagOnOffering);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Looking for hosts having tag specified on SvcOffering:" + hostTagOnOffering);
                     }
                     hostsMatchingOfferingTag = _hostDao.listByHostTag(type, clusterId, podId, dcId, hostTagOnOffering);
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Hosts with tag '" + hostTagOnOffering + "' are:" + hostsMatchingOfferingTag);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Hosts with tag '" + hostTagOnOffering + "' are:" + hostsMatchingOfferingTag);
                     }
                 }
                 if (hasTemplateTag) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Looking for hosts having tag specified on Template:" + hostTagOnTemplate);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Looking for hosts having tag specified on Template:" + hostTagOnTemplate);
                     }
                     hostsMatchingTemplateTag = _hostDao.listByHostTag(type, clusterId, podId, dcId, hostTagOnTemplate);
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Hosts with tag '" + hostTagOnTemplate + "' are:" + hostsMatchingTemplateTag);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Hosts with tag '" + hostTagOnTemplate + "' are:" + hostsMatchingTemplateTag);
                     }
                 }
 
                 if (hasSvcOfferingTag && hasTemplateTag) {
                     hostsMatchingOfferingTag.retainAll(hostsMatchingTemplateTag);
                     clusterHosts = _hostDao.listByHostTag(type, clusterId, podId, dcId, hostTagOnTemplate);
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Found " + hostsMatchingOfferingTag.size() + " Hosts satisfying both tags, host ids are:" + hostsMatchingOfferingTag);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Found " + hostsMatchingOfferingTag.size() + " Hosts satisfying both tags, host ids are:" + hostsMatchingOfferingTag);
                     }
 
                     clusterHosts = hostsMatchingOfferingTag;
@@ -218,25 +216,25 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
                 hostsCopy.retainAll(_resourceMgr.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId));
             } else {
                 if (hasSvcOfferingTag) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Looking for hosts having tag specified on SvcOffering:" + hostTagOnOffering);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Looking for hosts having tag specified on SvcOffering:" + hostTagOnOffering);
                     }
                     hostsCopy.retainAll(_hostDao.listByHostTag(type, clusterId, podId, dcId, hostTagOnOffering));
 
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Hosts with tag '" + hostTagOnOffering + "' are:" + hostsCopy);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Hosts with tag '" + hostTagOnOffering + "' are:" + hostsCopy);
                     }
                 }
 
                 if (hasTemplateTag) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Looking for hosts having tag specified on Template:" + hostTagOnTemplate);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Looking for hosts having tag specified on Template:" + hostTagOnTemplate);
                     }
 
                     hostsCopy.retainAll(_hostDao.listByHostTag(type, clusterId, podId, dcId, hostTagOnTemplate));
 
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Hosts with tag '" + hostTagOnTemplate + "' are:" + hostsCopy);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Hosts with tag '" + hostTagOnTemplate + "' are:" + hostsCopy);
                     }
                 }
             }
@@ -260,20 +258,20 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             hosts = reorderHostsByCapacity(plan, hosts);
         }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("FirstFitAllocator has " + hosts.size() + " hosts to check for allocation: " + hosts);
+        if (logger.isDebugEnabled()) {
+            logger.debug("FirstFitAllocator has " + hosts.size() + " hosts to check for allocation: " + hosts);
         }
 
         // We will try to reorder the host lists such that we give priority to hosts that have
         // the minimums to support a VM's requirements
         hosts = prioritizeHosts(template, offering, hosts);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Found " + hosts.size() + " hosts for allocation after prioritization: " + hosts);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Found " + hosts.size() + " hosts for allocation after prioritization: " + hosts);
         }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Looking for speed=" + (offering.getCpu() * offering.getSpeed()) + "Mhz, Ram=" + offering.getRamSize());
+        if (logger.isDebugEnabled()) {
+            logger.debug("Looking for speed=" + (offering.getCpu() * offering.getSpeed()) + "Mhz, Ram=" + offering.getRamSize());
         }
 
         long serviceOfferingId = offering.getId();
@@ -285,16 +283,16 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
                 break;
             }
             if (avoid.shouldAvoid(host)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Host name: " + host.getName() + ", hostId: " + host.getId() + " is in avoid set, skipping this and trying other available hosts");
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Host name: " + host.getName() + ", hostId: " + host.getId() + " is in avoid set, skipping this and trying other available hosts");
                 }
                 continue;
             }
 
             //find number of guest VMs occupying capacity on this host.
             if (_capacityMgr.checkIfHostReachMaxGuestLimit(host)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Host name: " + host.getName() + ", hostId: " + host.getId() +
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Host name: " + host.getName() + ", hostId: " + host.getId() +
                         " already has max Running VMs(count includes system VMs), skipping this and trying other available hosts");
                 }
                 continue;
@@ -304,7 +302,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             if ((offeringDetails   = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.vgpuType.toString())) != null) {
                 ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.pciDevice.toString());
                 if(!_resourceMgr.isGPUDeviceAvailable(host.getId(), groupName.getValue(), offeringDetails.getValue())){
-                    s_logger.info("Host name: " + host.getName() + ", hostId: "+ host.getId() +" does not have required GPU devices available");
+                    logger.info("Host name: " + host.getName() + ", hostId: "+ host.getId() +" does not have required GPU devices available");
                     continue;
                 }
             }
@@ -322,20 +320,20 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
                 considerReservedCapacity);
 
             if (hostHasCpuCapability && hostHasCapacity) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Found a suitable host, adding to list: " + host.getId());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Found a suitable host, adding to list: " + host.getId());
                 }
                 suitableHosts.add(host);
             } else {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Not using host " + host.getId() + "; host has cpu capability? " + hostHasCpuCapability + ", host has capacity?" + hostHasCapacity);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Not using host " + host.getId() + "; host has cpu capability? " + hostHasCpuCapability + ", host has capacity?" + hostHasCapacity);
                 }
                 avoid.addHost(host.getId());
             }
         }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Host Allocator returning " + suitableHosts.size() + " suitable hosts");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Host Allocator returning " + suitableHosts.size() + " suitable hosts");
         }
 
         return suitableHosts;
@@ -351,8 +349,8 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             capacityType = CapacityVO.CAPACITY_TYPE_MEMORY;
         }
         List<Long> hostIdsByFreeCapacity = _capacityDao.orderHostsByFreeCapacity(clusterId, capacityType);
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("List of hosts in descending order of free capacity in the cluster: "+ hostIdsByFreeCapacity);
+        if (logger.isDebugEnabled()) {
+            logger.debug("List of hosts in descending order of free capacity in the cluster: "+ hostIdsByFreeCapacity);
         }
 
         //now filter the given list of Hosts by this ordered list
@@ -381,8 +379,8 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         Long clusterId = plan.getClusterId();
 
         List<Long> hostIdsByVmCount = _vmInstanceDao.listHostIdsByVmCount(dcId, podId, clusterId, account.getAccountId());
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("List of hosts in ascending order of number of VMs: " + hostIdsByVmCount);
+        if (logger.isDebugEnabled()) {
+            logger.debug("List of hosts in ascending order of number of VMs: " + hostIdsByVmCount);
         }
 
         //now filter the given list of Hosts by this ordered list
@@ -434,9 +432,9 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             hostsToCheck.addAll(hosts);
         }
 
-        if (s_logger.isDebugEnabled()) {
+        if (logger.isDebugEnabled()) {
             if (noHvmHosts.size() > 0) {
-                s_logger.debug("Not considering hosts: " + noHvmHosts + "  to deploy template: " + template + " as they are not HVM enabled");
+                logger.debug("Not considering hosts: " + noHvmHosts + "  to deploy template: " + template + " as they are not HVM enabled");
             }
         }
         // If a host is tagged with the same guest OS category as the template, move it to a high priority list

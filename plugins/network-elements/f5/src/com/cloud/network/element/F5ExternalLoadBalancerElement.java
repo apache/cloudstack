@@ -26,7 +26,6 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
 
@@ -97,7 +96,6 @@ import com.cloud.vm.VirtualMachineProfile;
 public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider, IpDeployer,
         F5ExternalLoadBalancerElementService, ExternalLoadBalancerDeviceManager {
 
-    private static final Logger s_logger = Logger.getLogger(F5ExternalLoadBalancerElement.class);
 
     @Inject
     NetworkModel _networkManager;
@@ -125,7 +123,7 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
     private boolean canHandle(Network config, List<LoadBalancingRule> rules) {
         if ((config.getGuestType() != Network.GuestType.Isolated && config.getGuestType() != Network.GuestType.Shared) || config.getTrafficType() != TrafficType.Guest) {
 
-            s_logger.trace("Not handling network with Type  " + config.getGuestType() + " and traffic type " + config.getTrafficType());
+            logger.trace("Not handling network with Type  " + config.getGuestType() + " and traffic type " + config.getTrafficType());
             return false;
         }
 
@@ -135,7 +133,7 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
             if (schemeCaps != null && rules != null && !rules.isEmpty()) {
                 for (LoadBalancingRule rule : rules) {
                     if (!schemeCaps.contains(rule.getScheme().toString())) {
-                        s_logger.debug("Scheme " + rules.get(0).getScheme() + " is not supported by the provider " + this.getName());
+                        logger.debug("Scheme " + rules.get(0).getScheme() + " is not supported by the provider " + this.getName());
                         return false;
                     }
                 }
@@ -517,8 +515,8 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
     public IpDeployer getIpDeployer(Network network) {
         ExternalLoadBalancerDeviceVO lbDevice = getExternalLoadBalancerForNetwork(network);
         if (lbDevice == null) {
-            s_logger.error("Cannot find external load balanacer for network " + network.getName());
-            s_logger.error("Make F5 as dummy ip deployer, since we likely met this when clean up resource after shutdown network");
+            logger.error("Cannot find external load balanacer for network " + network.getName());
+            logger.error("Make F5 as dummy ip deployer, since we likely met this when clean up resource after shutdown network");
             return this;
         }
         if (_networkManager.isNetworkInlineMode(network)) {

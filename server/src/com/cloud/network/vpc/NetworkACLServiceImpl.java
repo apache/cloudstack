@@ -24,7 +24,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -67,7 +66,6 @@ import com.cloud.utils.net.NetUtils;
 @Component
 @Local(value = {NetworkACLService.class})
 public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLService {
-    private static final Logger s_logger = Logger.getLogger(NetworkACLServiceImpl.class);
 
     @Inject
     AccountManager _accountMgr;
@@ -324,7 +322,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
             if (aclId == null) {
                 //Network is not associated with any ACL. Create a new ACL and add aclItem in it for backward compatibility
-                s_logger.debug("Network " + network.getId() + " is not associated with any ACL. Creating an ACL before adding acl item");
+                logger.debug("Network " + network.getId() + " is not associated with any ACL. Creating an ACL before adding acl item");
 
                 //verify that ACLProvider is supported by network offering
                 if (!_networkModel.areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Network.Service.NetworkACL)) {
@@ -343,14 +341,14 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
                 if (acl == null) {
                     throw new CloudRuntimeException("Error while create ACL before adding ACL Item for network " + network.getId());
                 }
-                s_logger.debug("Created ACL: " + aclName + " for network " + network.getId());
+                logger.debug("Created ACL: " + aclName + " for network " + network.getId());
                 aclId = acl.getId();
                 //Apply acl to network
                 try {
                     if (!_networkAclMgr.replaceNetworkACL(acl, (NetworkVO)network)) {
                         throw new CloudRuntimeException("Unable to apply auto created ACL to network " + network.getId());
                     }
-                    s_logger.debug("Created ACL is applied to network " + network.getId());
+                    logger.debug("Created ACL is applied to network " + network.getId());
                 } catch (ResourceUnavailableException e) {
                     throw new CloudRuntimeException("Unable to apply auto created ACL to network " + network.getId(), e);
                 }

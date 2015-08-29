@@ -32,7 +32,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.Ternary;
@@ -43,7 +42,6 @@ import com.cloud.utils.security.CertificateHelper;
 @Component
 @Local(value = KeystoreManager.class)
 public class KeystoreManagerImpl extends ManagerBase implements KeystoreManager {
-    private static final Logger s_logger = Logger.getLogger(KeystoreManagerImpl.class);
 
     @Inject
     private KeystoreDao _ksDao;
@@ -51,7 +49,7 @@ public class KeystoreManagerImpl extends ManagerBase implements KeystoreManager 
     @Override
     public boolean validateCertificate(String certificate, String key, String domainSuffix) {
         if (certificate == null || certificate.isEmpty() || key == null || key.isEmpty() || domainSuffix == null || domainSuffix.isEmpty()) {
-            s_logger.error("Invalid parameter found in (certificate, key, domainSuffix) tuple for domain: " + domainSuffix);
+            logger.error("Invalid parameter found in (certificate, key, domainSuffix) tuple for domain: " + domainSuffix);
             return false;
         }
 
@@ -62,9 +60,9 @@ public class KeystoreManagerImpl extends ManagerBase implements KeystoreManager 
             if (ks != null)
                 return true;
 
-            s_logger.error("Unabled to construct keystore for domain: " + domainSuffix);
+            logger.error("Unabled to construct keystore for domain: " + domainSuffix);
         } catch (Exception e) {
-            s_logger.error("Certificate validation failed due to exception for domain: " + domainSuffix, e);
+            logger.error("Certificate validation failed due to exception for domain: " + domainSuffix, e);
         }
         return false;
     }
@@ -110,15 +108,15 @@ public class KeystoreManagerImpl extends ManagerBase implements KeystoreManager 
         try {
             return CertificateHelper.buildAndSaveKeystore(certs, storePassword);
         } catch (KeyStoreException e) {
-            s_logger.warn("Unable to build keystore for " + name + " due to KeyStoreException");
+            logger.warn("Unable to build keystore for " + name + " due to KeyStoreException");
         } catch (CertificateException e) {
-            s_logger.warn("Unable to build keystore for " + name + " due to CertificateException");
+            logger.warn("Unable to build keystore for " + name + " due to CertificateException");
         } catch (NoSuchAlgorithmException e) {
-            s_logger.warn("Unable to build keystore for " + name + " due to NoSuchAlgorithmException");
+            logger.warn("Unable to build keystore for " + name + " due to NoSuchAlgorithmException");
         } catch (InvalidKeySpecException e) {
-            s_logger.warn("Unable to build keystore for " + name + " due to InvalidKeySpecException");
+            logger.warn("Unable to build keystore for " + name + " due to InvalidKeySpecException");
         } catch (IOException e) {
-            s_logger.warn("Unable to build keystore for " + name + " due to IOException");
+            logger.warn("Unable to build keystore for " + name + " due to IOException");
         }
         return null;
     }

@@ -22,7 +22,6 @@ package com.cloud.network.guru;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter.NetworkType;
@@ -47,7 +46,6 @@ import com.cloud.vm.VirtualMachineProfile;
 @Component
 @Local(value = NetworkGuru.class)
 public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
-    private static final Logger s_logger = Logger.getLogger(MidoNetGuestNetworkGuru.class);
 
     @Inject
     AccountDao _accountDao;
@@ -64,7 +62,7 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
             isMyIsolationMethod(physicalNetwork)) {
             return true;
         } else {
-            s_logger.trace("We only take care of Guest networks of type   " + Network.GuestType.Isolated + " in zone of type " + NetworkType.Advanced +
+            logger.trace("We only take care of Guest networks of type   " + Network.GuestType.Isolated + " in zone of type " + NetworkType.Advanced +
                 " using isolation method MIDO.");
             return false;
         }
@@ -72,15 +70,15 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
-        s_logger.debug("design called");
+        logger.debug("design called");
         // Check if the isolation type of the related physical network is MIDO
         PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan.getPhysicalNetworkId());
         if (physnet == null || physnet.getIsolationMethods() == null || !physnet.getIsolationMethods().contains("MIDO")) {
-            s_logger.debug("Refusing to design this network, the physical isolation type is not MIDO");
+            logger.debug("Refusing to design this network, the physical isolation type is not MIDO");
             return null;
         }
 
-        s_logger.debug("Physical isolation type is MIDO, asking GuestNetworkGuru to design this network");
+        logger.debug("Physical isolation type is MIDO, asking GuestNetworkGuru to design this network");
         NetworkVO networkObject = (NetworkVO)super.design(offering, plan, userSpecified, owner);
         if (networkObject == null) {
             return null;
@@ -95,7 +93,7 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
     public Network implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
         throws InsufficientVirtualNetworkCapacityException {
         assert (network.getState() == Network.State.Implementing) : "Why are we implementing " + network;
-        s_logger.debug("implement called network: " + network.toString());
+        logger.debug("implement called network: " + network.toString());
 
         long dcId = dest.getDataCenter().getId();
 
@@ -126,7 +124,7 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
         String broadcastUriStr = accountUUIDStr + "." + String.valueOf(network.getId()) + ":" + routerName;
 
         implemented.setBroadcastUri(Networks.BroadcastDomainType.Mido.toUri(broadcastUriStr));
-        s_logger.debug("Broadcast URI set to " + broadcastUriStr);
+        logger.debug("Broadcast URI set to " + broadcastUriStr);
 
         return implemented;
     }
@@ -134,27 +132,27 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
     @Override
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
         throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
-        s_logger.debug("reserve called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());
+        logger.debug("reserve called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());
 
         super.reserve(nic, network, vm, dest, context);
     }
 
     @Override
     public boolean release(NicProfile nic, VirtualMachineProfile vm, String reservationId) {
-        s_logger.debug("release called with nic: " + nic.toString() + " vm: " + vm.toString());
+        logger.debug("release called with nic: " + nic.toString() + " vm: " + vm.toString());
         return super.release(nic, vm, reservationId);
     }
 
     @Override
     public void shutdown(NetworkProfile profile, NetworkOffering offering) {
-        s_logger.debug("shutdown called");
+        logger.debug("shutdown called");
 
         super.shutdown(profile, offering);
     }
 
     @Override
     public boolean trash(Network network, NetworkOffering offering) {
-        s_logger.debug("trash called with network: " + network.toString());
+        logger.debug("trash called with network: " + network.toString());
 
         return super.trash(network, offering);
     }

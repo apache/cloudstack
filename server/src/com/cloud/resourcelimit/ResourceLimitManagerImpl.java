@@ -30,7 +30,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -110,7 +109,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 @Component
 @Local(value = {ResourceLimitService.class})
 public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLimitService {
-    public static final Logger s_logger = Logger.getLogger(ResourceLimitManagerImpl.class);
 
     @Inject
     private DomainDao _domainDao;
@@ -249,7 +247,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             domainResourceLimitMap.put(Resource.ResourceType.primary_storage, Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainPrimaryStorage.key())));
             domainResourceLimitMap.put(Resource.ResourceType.secondary_storage, Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainSecondaryStorage.key())));
         } catch (NumberFormatException e) {
-            s_logger.error("NumberFormatException during configuration", e);
+            logger.error("NumberFormatException during configuration", e);
             throw new ConfigurationException("Configuration failed due to NumberFormatException, see log for the stacktrace");
         }
 
@@ -260,7 +258,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     public void incrementResourceCount(long accountId, ResourceType type, Long... delta) {
         // don't upgrade resource count for system account
         if (accountId == Account.ACCOUNT_ID_SYSTEM) {
-            s_logger.trace("Not incrementing resource count for system accounts, returning");
+            logger.trace("Not incrementing resource count for system accounts, returning");
             return;
         }
 
@@ -276,7 +274,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     public void decrementResourceCount(long accountId, ResourceType type, Long... delta) {
         // don't upgrade resource count for system account
         if (accountId == Account.ACCOUNT_ID_SYSTEM) {
-            s_logger.trace("Not decrementing resource count for system accounts, returning");
+            logger.trace("Not decrementing resource count for system accounts, returning");
             return;
         }
         long numToDecrement = (delta.length == 0) ? 1 : delta[0].longValue();
@@ -450,7 +448,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                                 " has been exceeded.";
                 }
                 ResourceAllocationException e=  new ResourceAllocationException(message, type);;
-                s_logger.error(message, e);
+                logger.error(message, e);
                 throw e;
             }
 
@@ -795,7 +793,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
             for (ResourceCountVO rowToUpdate : rowsToUpdate) {
                 if (!_resourceCountDao.updateById(rowToUpdate.getId(), increment, delta)) {
-                    s_logger.trace("Unable to update resource count for the row " + rowToUpdate);
+                    logger.trace("Unable to update resource count for the row " + rowToUpdate);
                     result = false;
                 }
             }
@@ -804,7 +802,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 }
             });
         } catch (Exception ex) {
-            s_logger.error("Failed to update resource count for account id=" + accountId);
+            logger.error("Failed to update resource count for account id=" + accountId);
             return false;
         }
     }
@@ -850,7 +848,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             _resourceCountDao.setResourceCount(domainId, ResourceOwnerType.Domain, type, newCount);
 
             if (oldCount != newCount) {
-                    s_logger.info("Discrepency in the resource count " + "(original count=" + oldCount + " correct count = " + newCount + ") for type " + type +
+                    logger.info("Discrepency in the resource count " + "(original count=" + oldCount + " correct count = " + newCount + ") for type " + type +
                         " for domain ID " + domainId + " is fixed during resource count recalculation.");
             }
 
@@ -912,7 +910,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
                 // No need to log message for primary and secondary storage because both are recalculating the resource count which will not lead to any discrepancy.
                 if (!Long.valueOf(oldCount).equals(newCount) && (type != Resource.ResourceType.primary_storage && type != Resource.ResourceType.secondary_storage)) {
-                    s_logger.info("Discrepency in the resource count " + "(original count=" + oldCount + " correct count = " + newCount + ") for type " + type +
+                    logger.info("Discrepency in the resource count " + "(original count=" + oldCount + " correct count = " + newCount + ") for type " + type +
                         " for account ID " + accountId + " is fixed during resource count recalculation.");
         }
 
@@ -1070,7 +1068,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         @Override
         protected void runInContext() {
-            s_logger.info("Running resource count check periodic task");
+            logger.info("Running resource count check periodic task");
             List<DomainVO> domains = _domainDao.findImmediateChildrenForParent(Domain.ROOT_DOMAIN);
 
             // recalculateDomainResourceCount will take care of re-calculation of resource counts for sub-domains

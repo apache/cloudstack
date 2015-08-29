@@ -48,7 +48,6 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -145,7 +144,6 @@ import com.cloud.vm.dao.DomainRouterDao;
 
 @Local(value = {VpcManager.class, VpcService.class, VpcProvisioningService.class})
 public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvisioningService, VpcService {
-    private static final Logger s_logger = Logger.getLogger(VpcManagerImpl.class);
 
     public static final String SERVICE = "service";
     public static final String CAPABILITYTYPE = "capabilitytype";
@@ -252,7 +250,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             public void doInTransactionWithoutResult(final TransactionStatus status) {
 
                 if (_vpcOffDao.findByUniqueName(VpcOffering.defaultVPCOfferingName) == null) {
-                    s_logger.debug("Creating default VPC offering " + VpcOffering.defaultVPCOfferingName);
+                    logger.debug("Creating default VPC offering " + VpcOffering.defaultVPCOfferingName);
 
                     final Map<Service, Set<Provider>> svcProviderMap = new HashMap<Service, Set<Provider>>();
                     final Set<Provider> defaultProviders = new HashSet<Provider>();
@@ -273,7 +271,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
                 //configure default vpc offering with Netscaler as LB Provider
                 if (_vpcOffDao.findByUniqueName(VpcOffering.defaultVPCNSOfferingName) == null) {
-                    s_logger.debug("Creating default VPC offering with Netscaler as LB Provider" + VpcOffering.defaultVPCNSOfferingName);
+                    logger.debug("Creating default VPC offering with Netscaler as LB Provider" + VpcOffering.defaultVPCNSOfferingName);
                     final Map<Service, Set<Provider>> svcProviderMap = new HashMap<Service, Set<Provider>>();
                     final Set<Provider> defaultProviders = new HashSet<Provider>();
                     defaultProviders.add(Provider.VPCVirtualRouter);
@@ -293,7 +291,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
 
                 if (_vpcOffDao.findByUniqueName(VpcOffering.redundantVPCOfferingName) == null) {
-                    s_logger.debug("Creating Redundant VPC offering " + VpcOffering.redundantVPCOfferingName);
+                    logger.debug("Creating Redundant VPC offering " + VpcOffering.redundantVPCOfferingName);
 
                     final Map<Service, Set<Provider>> svcProviderMap = new HashMap<Service, Set<Provider>>();
                     final Set<Provider> defaultProviders = new HashSet<Provider>();
@@ -383,7 +381,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
 
             if (service == Service.Connectivity) {
-                s_logger.debug("Applying Connectivity workaround, setting provider to NiciraNvp");
+                logger.debug("Applying Connectivity workaround, setting provider to NiciraNvp");
                 svcProviderMap.put(service, sdnProviders);
             } else {
                 svcProviderMap.put(service, defaultProviders);
@@ -398,12 +396,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         if (!sourceNatSvc) {
-            s_logger.debug("Automatically adding source nat service to the list of VPC services");
+            logger.debug("Automatically adding source nat service to the list of VPC services");
             svcProviderMap.put(Service.SourceNat, defaultProviders);
         }
 
         if (!firewallSvs) {
-            s_logger.debug("Automatically adding network ACL service to the list of VPC services");
+            logger.debug("Automatically adding network ACL service to the list of VPC services");
             svcProviderMap.put(Service.NetworkACL, defaultProviders);
         }
 
@@ -464,7 +462,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 if (state != null) {
                     offering.setState(state);
                 }
-                s_logger.debug("Adding vpc offering " + offering);
+                logger.debug("Adding vpc offering " + offering);
                 offering = _vpcOffDao.persist(offering);
                 // populate services and providers
                 if (svcProviderMap != null) {
@@ -474,7 +472,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                             for (final Network.Provider provider : providers) {
                                 final VpcOfferingServiceMapVO offService = new VpcOfferingServiceMapVO(offering.getId(), service, provider);
                                 _vpcOffSvcMapDao.persist(offService);
-                                s_logger.trace("Added service for the vpc offering: " + offService + " with provider " + provider.getName());
+                                logger.trace("Added service for the vpc offering: " + offService + " with provider " + provider.getName());
                             }
                         } else {
                             throw new InvalidParameterValueException("Provider is missing for the VPC offering service " + service.getName());
@@ -754,7 +752,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         if (_vpcOffDao.update(vpcOffId, offering)) {
-            s_logger.debug("Updated VPC offeirng id=" + vpcOffId);
+            logger.debug("Updated VPC offeirng id=" + vpcOffId);
             return _vpcOffDao.findById(vpcOffId);
         } else {
             return null;
@@ -850,7 +848,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
                 final VpcVO persistedVpc = _vpcDao.persist(vpc, finalizeServicesAndProvidersForVpc(vpc.getZoneId(), vpc.getVpcOfferingId()));
                 _resourceLimitMgr.incrementResourceCount(vpc.getAccountId(), ResourceType.vpc);
-                s_logger.debug("Created VPC " + persistedVpc);
+                logger.debug("Created VPC " + persistedVpc);
 
                 return persistedVpc;
             }
@@ -908,7 +906,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     @DB
     public boolean destroyVpc(final Vpc vpc, final Account caller, final Long callerUserId) throws ConcurrentOperationException, ResourceUnavailableException {
-        s_logger.debug("Destroying vpc " + vpc);
+        logger.debug("Destroying vpc " + vpc);
 
         //don't allow to delete vpc if it's in use by existing non system networks (system networks are networks of a private gateway of the VPC,
         //and they will get removed as a part of VPC cleanup
@@ -919,7 +917,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         //mark VPC as inactive
         if (vpc.getState() != Vpc.State.Inactive) {
-            s_logger.debug("Updating VPC " + vpc + " with state " + Vpc.State.Inactive + " as a part of vpc delete");
+            logger.debug("Updating VPC " + vpc + " with state " + Vpc.State.Inactive + " as a part of vpc delete");
             final VpcVO vpcVO = _vpcDao.findById(vpc.getId());
             vpcVO.setState(Vpc.State.Inactive);
 
@@ -936,22 +934,22 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         //shutdown VPC
         if (!shutdownVpc(vpc.getId())) {
-            s_logger.warn("Failed to shutdown vpc " + vpc + " as a part of vpc destroy process");
+            logger.warn("Failed to shutdown vpc " + vpc + " as a part of vpc destroy process");
             return false;
         }
 
         //cleanup vpc resources
         if (!cleanupVpcResources(vpc.getId(), caller, callerUserId)) {
-            s_logger.warn("Failed to cleanup resources for vpc " + vpc);
+            logger.warn("Failed to cleanup resources for vpc " + vpc);
             return false;
         }
 
         //update the instance with removed flag only when the cleanup is executed successfully
         if (_vpcDao.remove(vpc.getId())) {
-            s_logger.debug("Vpc " + vpc + " is destroyed succesfully");
+            logger.debug("Vpc " + vpc + " is destroyed succesfully");
             return true;
         } else {
-            s_logger.warn("Vpc " + vpc + " failed to destroy");
+            logger.warn("Vpc " + vpc + " failed to destroy");
             return false;
         }
     }
@@ -989,7 +987,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         if (_vpcDao.update(vpcId, vpc)) {
-            s_logger.debug("Updated VPC id=" + vpcId);
+            logger.debug("Updated VPC id=" + vpcId);
             return _vpcDao.findById(vpcId);
         } else {
             return null;
@@ -1178,20 +1176,20 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         boolean result = true;
         try {
             if (!startVpc(vpc, dest, context)) {
-                s_logger.warn("Failed to start vpc " + vpc);
+                logger.warn("Failed to start vpc " + vpc);
                 result = false;
             }
         } catch (final Exception ex) {
-            s_logger.warn("Failed to start vpc " + vpc + " due to ", ex);
+            logger.warn("Failed to start vpc " + vpc + " due to ", ex);
             result = false;
         } finally {
             //do cleanup
             if (!result && destroyOnFailure) {
-                s_logger.debug("Destroying vpc " + vpc + " that failed to start");
+                logger.debug("Destroying vpc " + vpc + " that failed to start");
                 if (destroyVpc(vpc, caller, callerUser.getId())) {
-                    s_logger.warn("Successfully destroyed vpc " + vpc + " that failed to start");
+                    logger.warn("Successfully destroyed vpc " + vpc + " that failed to start");
                 } else {
-                    s_logger.warn("Failed to destroy vpc " + vpc + " that failed to start");
+                    logger.warn("Failed to destroy vpc " + vpc + " that failed to start");
                 }
             }
         }
@@ -1206,9 +1204,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         for (final VpcProvider element : getVpcElements()) {
             if (providersToImplement.contains(element.getProvider())) {
                 if (element.implementVpc(vpc, dest, context)) {
-                    s_logger.debug("Vpc " + vpc + " has started succesfully");
+                    logger.debug("Vpc " + vpc + " has started succesfully");
                 } else {
-                    s_logger.warn("Vpc " + vpc + " failed to start");
+                    logger.warn("Vpc " + vpc + " failed to start");
                     success = false;
                 }
             }
@@ -1231,7 +1229,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         _accountMgr.checkAccess(caller, null, false, vpc);
 
         //shutdown provider
-        s_logger.debug("Shutting down vpc " + vpc);
+        logger.debug("Shutting down vpc " + vpc);
         //TODO - shutdown all vpc resources here (ACLs, gateways, etc)
 
         boolean success = true;
@@ -1240,9 +1238,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         for (final VpcProvider element : getVpcElements()) {
             if (providersToImplement.contains(element.getProvider())) {
                 if (element.shutdownVpc(vpc, context)) {
-                    s_logger.debug("Vpc " + vpc + " has been shutdown succesfully");
+                    logger.debug("Vpc " + vpc + " has been shutdown succesfully");
                 } else {
-                    s_logger.warn("Vpc " + vpc + " failed to shutdown");
+                    logger.warn("Vpc " + vpc + " failed to shutdown");
                     success = false;
                 }
             }
@@ -1396,7 +1394,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         throw new InvalidParameterValueException("Invalid gateway specified. It should never be equal to the cidr subnet value");
                     }
                 } finally {
-                    s_logger.debug("Releasing lock for " + locked);
+                    logger.debug("Releasing lock for " + locked);
                     _vpcDao.releaseFromLockTable(locked.getId());
                 }
             }
@@ -1425,18 +1423,18 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     public boolean cleanupVpcResources(final long vpcId, final Account caller, final long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException {
-        s_logger.debug("Cleaning up resources for vpc id=" + vpcId);
+        logger.debug("Cleaning up resources for vpc id=" + vpcId);
         boolean success = true;
 
         //1) Remove VPN connections and VPN gateway
-        s_logger.debug("Cleaning up existed site to site VPN connections");
+        logger.debug("Cleaning up existed site to site VPN connections");
         _s2sVpnMgr.cleanupVpnConnectionByVpc(vpcId);
-        s_logger.debug("Cleaning up existed site to site VPN gateways");
+        logger.debug("Cleaning up existed site to site VPN gateways");
         _s2sVpnMgr.cleanupVpnGatewayByVpc(vpcId);
 
         //2) release all ip addresses
         final List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedVpc(vpcId, null);
-        s_logger.debug("Releasing ips for vpc id=" + vpcId + " as a part of vpc cleanup");
+        logger.debug("Releasing ips for vpc id=" + vpcId + " as a part of vpc cleanup");
         for (final IPAddressVO ipToRelease : ipsToRelease) {
             if (ipToRelease.isPortable()) {
                 // portable IP address are associated with owner, until explicitly requested to be disassociated.
@@ -1444,25 +1442,25 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 ipToRelease.setVpcId(null);
                 ipToRelease.setAssociatedWithNetworkId(null);
                 _ipAddressDao.update(ipToRelease.getId(), ipToRelease);
-                s_logger.debug("Portable IP address " + ipToRelease + " is no longer associated with any VPC");
+                logger.debug("Portable IP address " + ipToRelease + " is no longer associated with any VPC");
             } else {
                 success = success && _ipAddrMgr.disassociatePublicIpAddress(ipToRelease.getId(), callerUserId, caller);
                 if (!success) {
-                    s_logger.warn("Failed to cleanup ip " + ipToRelease + " as a part of vpc id=" + vpcId + " cleanup");
+                    logger.warn("Failed to cleanup ip " + ipToRelease + " as a part of vpc id=" + vpcId + " cleanup");
                 }
             }
         }
 
         if (success) {
-            s_logger.debug("Released ip addresses for vpc id=" + vpcId + " as a part of cleanup vpc process");
+            logger.debug("Released ip addresses for vpc id=" + vpcId + " as a part of cleanup vpc process");
         } else {
-            s_logger.warn("Failed to release ip addresses for vpc id=" + vpcId + " as a part of cleanup vpc process");
+            logger.warn("Failed to release ip addresses for vpc id=" + vpcId + " as a part of cleanup vpc process");
             //although it failed, proceed to the next cleanup step as it doesn't depend on the public ip release
         }
 
         //3) Delete all static route rules
         if (!revokeStaticRoutesForVpc(vpcId, caller)) {
-            s_logger.warn("Failed to revoke static routes for vpc " + vpcId + " as a part of cleanup vpc process");
+            logger.warn("Failed to revoke static routes for vpc " + vpcId + " as a part of cleanup vpc process");
             return false;
         }
 
@@ -1471,12 +1469,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (gateways != null) {
             for (final PrivateGateway gateway : gateways) {
                 if (gateway != null) {
-                    s_logger.debug("Deleting private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
+                    logger.debug("Deleting private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
                     if (!deleteVpcPrivateGateway(gateway.getId())) {
                         success = false;
-                        s_logger.debug("Failed to delete private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
+                        logger.debug("Failed to delete private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
                     } else {
-                        s_logger.debug("Deleted private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
+                        logger.debug("Deleted private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
                     }
                 }
             }
@@ -1502,7 +1500,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         _accountMgr.checkAccess(caller, null, false, vpc);
 
-        s_logger.debug("Restarting VPC " + vpc);
+        logger.debug("Restarting VPC " + vpc);
         boolean restartRequired = false;
         try {
 
@@ -1522,26 +1520,26 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
 
             if (forceCleanup) {
-                s_logger.debug("Shutting down VPC " + vpc + " as a part of VPC restart process");
+                logger.debug("Shutting down VPC " + vpc + " as a part of VPC restart process");
                 if (!shutdownVpc(vpcId)) {
-                    s_logger.warn("Failed to shutdown vpc as a part of VPC " + vpc + " restart process");
+                    logger.warn("Failed to shutdown vpc as a part of VPC " + vpc + " restart process");
                     restartRequired = true;
                     return false;
                 }
             } else {
-                s_logger.info("Will not shutdown vpc as a part of VPC " + vpc + " restart process.");
+                logger.info("Will not shutdown vpc as a part of VPC " + vpc + " restart process.");
             }
 
-            s_logger.debug("Starting VPC " + vpc + " as a part of VPC restart process");
+            logger.debug("Starting VPC " + vpc + " as a part of VPC restart process");
             if (!startVpc(vpcId, false)) {
-                s_logger.warn("Failed to start vpc as a part of VPC " + vpc + " restart process");
+                logger.warn("Failed to start vpc as a part of VPC " + vpc + " restart process");
                 restartRequired = true;
                 return false;
             }
-            s_logger.debug("VPC " + vpc + " was restarted successfully");
+            logger.debug("VPC " + vpc + " was restarted successfully");
             return true;
         } finally {
-            s_logger.debug("Updating VPC " + vpc + " with restartRequired=" + restartRequired);
+            logger.debug("Updating VPC " + vpc + " with restartRequired=" + restartRequired);
             final VpcVO vo = _vpcDao.findById(vpcId);
             vo.setRestartRequired(restartRequired);
             _vpcDao.update(vpc.getId(), vo);
@@ -1617,7 +1615,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 @Override
                 public VpcGatewayVO doInTransaction(final TransactionStatus status) throws ResourceAllocationException, ConcurrentOperationException,
                 InsufficientCapacityException {
-                    s_logger.debug("Creating Private gateway for VPC " + vpc);
+                    logger.debug("Creating Private gateway for VPC " + vpc);
                     //1) create private network unless it is existing and lswitch'd
                     Network privateNtwk = null;
                     if (BroadcastDomainType.getSchemeValue(BroadcastDomainType.fromString(broadcastUri)) == BroadcastDomainType.Lswitch) {
@@ -1626,13 +1624,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         // if the dcid is different we get no network so next we try to create it
                     }
                     if (privateNtwk == null) {
-                        s_logger.info("creating new network for vpc " + vpc + " using broadcast uri: " + broadcastUri);
+                        logger.info("creating new network for vpc " + vpc + " using broadcast uri: " + broadcastUri);
                         final String networkName = "vpc-" + vpc.getName() + "-privateNetwork";
                         privateNtwk =
                                 _ntwkSvc.createPrivateNetwork(networkName, networkName, physicalNetworkIdFinal, broadcastUri, ipAddress, null, gateway, netmask,
                                         gatewayOwnerId, vpcId, isSourceNat, networkOfferingId);
                     } else { // create the nic/ip as createPrivateNetwork doesn''t do that work for us now
-                        s_logger.info("found and using existing network for vpc " + vpc + ": " + broadcastUri);
+                        logger.info("found and using existing network for vpc " + vpc + ": " + broadcastUri);
                         final DataCenterVO dc = _dcDao.lockRow(physNetFinal.getDataCenterId(), true);
 
                         //add entry to private_ip_address table
@@ -1646,7 +1644,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         final Long nextMac = mac + 1;
                         dc.setMacAddress(nextMac);
 
-                        s_logger.info("creating private ip adress for vpc (" + ipAddress + ", " + privateNtwk.getId() + ", " + nextMac + ", " + vpcId + ", " + isSourceNat + ")");
+                        logger.info("creating private ip adress for vpc (" + ipAddress + ", " + privateNtwk.getId() + ", " + nextMac + ", " + vpcId + ", " + isSourceNat + ")");
                         privateIp = new PrivateIpVO(ipAddress, privateNtwk.getId(), nextMac, vpcId, isSourceNat);
                         _privateIpDao.persist(privateIp);
 
@@ -1684,7 +1682,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                                     vpc.getAccountId(), vpc.getDomainId(), isSourceNat, networkAclId);
                     _vpcGatewayDao.persist(gatewayVO);
 
-                    s_logger.debug("Created vpc gateway entry " + gatewayVO);
+                    logger.debug("Created vpc gateway entry " + gatewayVO);
 
                     return gatewayVO;
                 }
@@ -1718,28 +1716,28 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             }
             if (success) {
-                s_logger.debug("Private gateway " + gateway + " was applied succesfully on the backend");
+                logger.debug("Private gateway " + gateway + " was applied succesfully on the backend");
                 if (vo.getState() != VpcGateway.State.Ready) {
                     vo.setState(VpcGateway.State.Ready);
                     _vpcGatewayDao.update(vo.getId(), vo);
-                    s_logger.debug("Marke gateway " + gateway + " with state " + VpcGateway.State.Ready);
+                    logger.debug("Marke gateway " + gateway + " with state " + VpcGateway.State.Ready);
                 }
                 CallContext.current().setEventDetails("Private Gateway Id: " + gatewayId);
                 return getVpcPrivateGateway(gatewayId);
             } else {
-                s_logger.warn("Private gateway " + gateway + " failed to apply on the backend");
+                logger.warn("Private gateway " + gateway + " failed to apply on the backend");
                 return null;
             }
         } finally {
             //do cleanup
             if (!success) {
                 if (destroyOnFailure) {
-                    s_logger.debug("Destroying private gateway " + vo + " that failed to start");
+                    logger.debug("Destroying private gateway " + vo + " that failed to start");
                     // calling deleting from db because on createprivategateway fail, destroyPrivateGateway is already called
                     if (deletePrivateGatewayFromTheDB(getVpcPrivateGateway(gatewayId))) {
-                        s_logger.warn("Successfully destroyed vpc " + vo + " that failed to start");
+                        logger.warn("Successfully destroyed vpc " + vo + " that failed to start");
                     } else {
-                        s_logger.warn("Failed to destroy vpc " + vo + " that failed to start");
+                        logger.warn("Failed to destroy vpc " + vo + " that failed to start");
                     }
                 }
             }
@@ -1769,7 +1767,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
                     gatewayVO.setState(VpcGateway.State.Deleting);
                     _vpcGatewayDao.update(gatewayVO.getId(), gatewayVO);
-                    s_logger.debug("Marked gateway " + gatewayVO + " with state " + VpcGateway.State.Deleting);
+                    logger.debug("Marked gateway " + gatewayVO + " with state " + VpcGateway.State.Deleting);
                 }
             });
 
@@ -1779,12 +1777,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             for (final VpcProvider provider : getVpcElements()) {
                 if (providersToImplement.contains(provider.getProvider())) {
                     if (provider.deletePrivateGateway(gateway)) {
-                        s_logger.debug("Private gateway " + gateway + " was applied succesfully on the backend");
+                        logger.debug("Private gateway " + gateway + " was applied succesfully on the backend");
                     } else {
-                        s_logger.warn("Private gateway " + gateway + " failed to apply on the backend");
+                        logger.warn("Private gateway " + gateway + " failed to apply on the backend");
                         gatewayVO.setState(VpcGateway.State.Ready);
                         _vpcGatewayDao.update(gatewayVO.getId(), gatewayVO);
-                        s_logger.debug("Marked gateway " + gatewayVO + " with state " + VpcGateway.State.Ready);
+                        logger.debug("Marked gateway " + gatewayVO + " with state " + VpcGateway.State.Ready);
 
                         return false;
                     }
@@ -1819,12 +1817,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 final Account owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
                 final ReservationContext context = new ReservationContextImpl(null, null, callerUser, owner);
                 _ntwkMgr.destroyNetwork(networkId, context, false);
-                s_logger.debug("Deleted private network id=" + networkId);
+                logger.debug("Deleted private network id=" + networkId);
             }
         } catch (final InterruptedException e) {
-            s_logger.error("deletePrivateGatewayFromTheDB failed to delete network id " + networkId + "due to => ", e);
+            logger.error("deletePrivateGatewayFromTheDB failed to delete network id " + networkId + "due to => ", e);
         } catch (final ExecutionException e) {
-            s_logger.error("deletePrivateGatewayFromTheDB failed to delete network id " + networkId + "due to => ", e);
+            logger.error("deletePrivateGatewayFromTheDB failed to delete network id " + networkId + "due to => ", e);
         }
 
         return true;
@@ -1918,19 +1916,19 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             staticRouteProfiles.add(new StaticRouteProfile(route, gateway));
         }
         if (!applyStaticRoutes(staticRouteProfiles)) {
-            s_logger.warn("Routes are not completely applied");
+            logger.warn("Routes are not completely applied");
             return false;
         } else {
             if (updateRoutesInDB) {
                 for (final StaticRoute route : routes) {
                     if (route.getState() == StaticRoute.State.Revoke) {
                         _staticRouteDao.remove(route.getId());
-                        s_logger.debug("Removed route " + route + " from the DB");
+                        logger.debug("Removed route " + route + " from the DB");
                     } else if (route.getState() == StaticRoute.State.Add) {
                         final StaticRouteVO ruleVO = _staticRouteDao.findById(route.getId());
                         ruleVO.setState(StaticRoute.State.Active);
                         _staticRouteDao.update(ruleVO.getId(), ruleVO);
-                        s_logger.debug("Marked route " + route + " with state " + StaticRoute.State.Active);
+                        logger.debug("Marked route " + route + " with state " + StaticRoute.State.Active);
                     }
                 }
             }
@@ -1941,12 +1939,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     protected boolean applyStaticRoutes(final List<StaticRouteProfile> routes) throws ResourceUnavailableException {
         if (routes.isEmpty()) {
-            s_logger.debug("No static routes to apply");
+            logger.debug("No static routes to apply");
             return true;
         }
         final Vpc vpc = _vpcDao.findById(routes.get(0).getVpcId());
 
-        s_logger.debug("Applying static routes for vpc " + vpc);
+        logger.debug("Applying static routes for vpc " + vpc);
         final String staticNatProvider = _vpcSrvcDao.getProviderForServiceInVpc(vpc.getId(), Service.StaticNat);
 
         for (final VpcProvider provider : getVpcElements()) {
@@ -1955,9 +1953,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
 
             if (provider.applyStaticRoutes(vpc, routes)) {
-                s_logger.debug("Applied static routes for vpc " + vpc);
+                logger.debug("Applied static routes for vpc " + vpc);
             } else {
-                s_logger.warn("Failed to apply static routes for vpc " + vpc);
+                logger.warn("Failed to apply static routes for vpc " + vpc);
                 return false;
             }
         }
@@ -1986,7 +1984,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     protected boolean revokeStaticRoutesForVpc(final long vpcId, final Account caller) throws ResourceUnavailableException {
         //get all static routes for the vpc
         final List<StaticRouteVO> routes = _staticRouteDao.listByVpcId(vpcId);
-        s_logger.debug("Found " + routes.size() + " to revoke for the vpc " + vpcId);
+        logger.debug("Found " + routes.size() + " to revoke for the vpc " + vpcId);
         if (!routes.isEmpty()) {
             //mark all of them as revoke
             Transaction.execute(new TransactionCallbackNoReturn() {
@@ -2049,7 +2047,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             @Override
             public StaticRouteVO doInTransaction(final TransactionStatus status) throws NetworkRuleConflictException {
                 StaticRouteVO newRoute = new StaticRouteVO(gateway.getId(), cidr, vpc.getId(), vpc.getAccountId(), vpc.getDomainId());
-                s_logger.debug("Adding static route " + newRoute);
+                logger.debug("Adding static route " + newRoute);
                 newRoute = _staticRouteDao.persist(newRoute);
 
                 detectRoutesConflict(newRoute);
@@ -2170,20 +2168,20 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     protected void markStaticRouteForRevoke(final StaticRouteVO route, final Account caller) {
-        s_logger.debug("Revoking static route " + route);
+        logger.debug("Revoking static route " + route);
         if (caller != null) {
             _accountMgr.checkAccess(caller, null, false, route);
         }
 
         if (route.getState() == StaticRoute.State.Staged) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Found a static route that is still in stage state so just removing it: " + route);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Found a static route that is still in stage state so just removing it: " + route);
             }
             _staticRouteDao.remove(route.getId());
         } else if (route.getState() == StaticRoute.State.Add || route.getState() == StaticRoute.State.Active) {
             route.setState(StaticRoute.State.Revoke);
             _staticRouteDao.update(route.getId(), route);
-            s_logger.debug("Marked static route " + route + " with state " + StaticRoute.State.Revoke);
+            logger.debug("Marked static route " + route + " with state " + StaticRoute.State.Revoke);
         }
     }
 
@@ -2193,12 +2191,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             try {
                 final GlobalLock lock = GlobalLock.getInternLock("VpcCleanup");
                 if (lock == null) {
-                    s_logger.debug("Couldn't get the global lock");
+                    logger.debug("Couldn't get the global lock");
                     return;
                 }
 
                 if (!lock.lock(30)) {
-                    s_logger.debug("Couldn't lock the db");
+                    logger.debug("Couldn't lock the db");
                     return;
                 }
 
@@ -2206,19 +2204,19 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     // Cleanup inactive VPCs
                     final List<VpcVO> inactiveVpcs = _vpcDao.listInactiveVpcs();
                     if (inactiveVpcs != null) {
-                        s_logger.info("Found " + inactiveVpcs.size() + " removed VPCs to cleanup");
+                        logger.info("Found " + inactiveVpcs.size() + " removed VPCs to cleanup");
                         for (final VpcVO vpc : inactiveVpcs) {
-                            s_logger.debug("Cleaning up " + vpc);
+                            logger.debug("Cleaning up " + vpc);
                             destroyVpc(vpc, _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM), User.UID_SYSTEM);
                         }
                     }
                 } catch (final Exception e) {
-                    s_logger.error("Exception ", e);
+                    logger.error("Exception ", e);
                 } finally {
                     lock.unlock();
                 }
             } catch (final Exception e) {
-                s_logger.error("Exception ", e);
+                logger.error("Exception ", e);
             }
         }
     }
@@ -2236,7 +2234,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             _accountMgr.checkAccess(caller, null, true, ipToAssoc);
             owner = _accountMgr.getAccount(ipToAssoc.getAllocatedToAccountId());
         } else {
-            s_logger.debug("Unable to find ip address by id: " + ipId);
+            logger.debug("Unable to find ip address by id: " + ipId);
             return null;
         }
 
@@ -2253,7 +2251,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             isSourceNat = true;
         }
 
-        s_logger.debug("Associating ip " + ipToAssoc + " to vpc " + vpc);
+        logger.debug("Associating ip " + ipToAssoc + " to vpc " + vpc);
 
         final boolean isSourceNatFinal = isSourceNat;
         Transaction.execute(new TransactionCallbackNoReturn() {
@@ -2271,7 +2269,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         });
 
-        s_logger.debug("Successfully assigned ip " + ipToAssoc + " to vpc " + vpc);
+        logger.debug("Successfully assigned ip " + ipToAssoc + " to vpc " + vpc);
 
         return _ipAddressDao.findById(ipId);
     }
@@ -2287,7 +2285,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             return;
         }
 
-        s_logger.debug("Releasing VPC ip address " + ip + " from vpc network id=" + networkId);
+        logger.debug("Releasing VPC ip address " + ip + " from vpc network id=" + networkId);
 
         final long  vpcId = ip.getVpcId();
         boolean success = false;
@@ -2301,11 +2299,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (success) {
             ip.setAssociatedWithNetworkId(null);
             _ipAddressDao.update(ipId, ip);
-            s_logger.debug("IP address " + ip + " is no longer associated with the network inside vpc id=" + vpcId);
+            logger.debug("IP address " + ip + " is no longer associated with the network inside vpc id=" + vpcId);
         } else {
             throw new CloudRuntimeException("Failed to apply ip associations for network id=" + networkId + " as a part of unassigning ip " + ipId + " from vpc");
         }
-        s_logger.debug("Successfully released VPC ip address " + ip + " back to VPC pool ");
+        logger.debug("Successfully released VPC ip address " + ip + " back to VPC pool ");
     }
 
     @Override

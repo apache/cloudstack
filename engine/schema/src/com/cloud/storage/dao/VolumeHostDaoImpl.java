@@ -21,7 +21,6 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
@@ -38,7 +37,6 @@ import com.cloud.utils.db.UpdateBuilder;
 @Component
 @Local(value = {VolumeHostDao.class})
 public class VolumeHostDaoImpl extends GenericDaoBase<VolumeHostVO, Long> implements VolumeHostDao {
-    private static final Logger s_logger = Logger.getLogger(VolumeHostDaoImpl.class);
     protected final SearchBuilder<VolumeHostVO> HostVolumeSearch;
     protected final SearchBuilder<VolumeHostVO> ZoneVolumeSearch;
     protected final SearchBuilder<VolumeHostVO> VolumeSearch;
@@ -141,7 +139,7 @@ public class VolumeHostDaoImpl extends GenericDaoBase<VolumeHostVO, Long> implem
         builder.set(vo, "updated", new Date());
 
         int rows = update((VolumeHostVO)vo, sc);
-        if (rows == 0 && s_logger.isDebugEnabled()) {
+        if (rows == 0 && logger.isDebugEnabled()) {
             VolumeHostVO dbVol = findByIdIncludingRemoved(volHost.getId());
             if (dbVol != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
@@ -174,7 +172,7 @@ public class VolumeHostDaoImpl extends GenericDaoBase<VolumeHostVO, Long> implem
                     .append("; updatedTime=")
                     .append(oldUpdatedTime);
             } else {
-                s_logger.debug("Unable to update objectIndatastore: id=" + volHost.getId() + ", as there is no such object exists in the database anymore");
+                logger.debug("Unable to update objectIndatastore: id=" + volHost.getId() + ", as there is no such object exists in the database anymore");
             }
         }
         return rows > 0;

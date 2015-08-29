@@ -23,7 +23,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.component.ManagerBase;
@@ -31,7 +30,6 @@ import com.cloud.utils.component.ManagerBase;
 @Component
 @Local(value = {ClusterFenceManager.class})
 public class ClusterFenceManagerImpl extends ManagerBase implements ClusterFenceManager, ClusterManagerListener {
-    private static final Logger s_logger = Logger.getLogger(ClusterFenceManagerImpl.class);
 
     @Inject
     ClusterManager _clusterMgr;
@@ -52,7 +50,7 @@ public class ClusterFenceManagerImpl extends ManagerBase implements ClusterFence
 
     @Override
     public void onManagementNodeIsolated() {
-        s_logger.error("Received node isolation notification, will perform self-fencing and shut myself down");
+        logger.error("Received node isolation notification, will perform self-fencing and shut myself down");
         System.exit(SELF_FENCING_EXIT_CODE);
     }
 }

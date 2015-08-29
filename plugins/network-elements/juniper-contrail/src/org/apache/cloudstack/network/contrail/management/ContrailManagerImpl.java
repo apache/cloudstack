@@ -50,7 +50,6 @@ import org.apache.cloudstack.network.contrail.model.ModelController;
 import org.apache.cloudstack.network.contrail.model.VirtualNetworkModel;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationService;
@@ -145,7 +144,6 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
     @Inject
     NetworkACLDao _networkAclDao;
 
-    private static final Logger s_logger = Logger.getLogger(ContrailManager.class);
 
     private ApiConnector _api;
 
@@ -175,8 +173,8 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
         try {
             _dbSyncTimer.schedule(new DBSyncTask(), 0, _dbSyncInterval);
         } catch (Exception ex) {
-            s_logger.debug("Unable to start DB Sync timer " + ex.getMessage());
-            s_logger.debug("timer start", ex);
+            logger.debug("Unable to start DB Sync timer " + ex.getMessage());
+            logger.debug("timer start", ex);
         }
         return true;
     }
@@ -340,10 +338,10 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
             }
             _api = ApiConnectorFactory.build(hostname, port);
         } catch (IOException ex) {
-            s_logger.warn("Unable to read " + configuration, ex);
+            logger.warn("Unable to read " + configuration, ex);
             throw new ConfigurationException();
         } catch (Exception ex) {
-            s_logger.debug("Exception in configure: " + ex);
+            logger.debug("Exception in configure: " + ex);
             ex.printStackTrace();
             throw new ConfigurationException();
         } finally {
@@ -360,7 +358,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
                     Provider.JuniperContrailVpcRouter);
             _vpcOffering = locateVpcOffering();
         }catch (Exception ex) {
-            s_logger.debug("Exception in locating network offerings: " + ex);
+            logger.debug("Exception in locating network offerings: " + ex);
             ex.printStackTrace();
             throw new ConfigurationException();
         }
@@ -524,12 +522,12 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
     public void syncNetworkDB(short syncMode) throws IOException {
         if (_dbSync.syncAll(syncMode) == ServerDBSync.SYNC_STATE_OUT_OF_SYNC) {
             if (syncMode == DBSyncGeneric.SYNC_MODE_CHECK) {
-                s_logger.info("# Cloudstack DB & VNC are out of sync #");
+                logger.info("# Cloudstack DB & VNC are out of sync #");
             } else {
-                s_logger.info("# Cloudstack DB & VNC were out of sync, performed re-sync operation #");
+                logger.info("# Cloudstack DB & VNC were out of sync, performed re-sync operation #");
             }
         } else {
-            s_logger.info("# Cloudstack DB & VNC are in sync #");
+            logger.info("# Cloudstack DB & VNC are in sync #");
         }
     }
 
@@ -539,13 +537,13 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
         @Override
         public void run() {
             try {
-                s_logger.debug("DB Sync task is running");
+                logger.debug("DB Sync task is running");
                 syncNetworkDB(_syncMode);
                 // Change to check mode
                 _syncMode = DBSyncGeneric.SYNC_MODE_CHECK;
             } catch (Exception ex) {
-                s_logger.debug(ex);
-                s_logger.info("Unable to sync network db");
+                logger.debug(ex);
+                logger.info("Unable to sync network db");
             }
         }
     }
@@ -596,7 +594,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
         sc.setParameters("trafficType", types.toArray());
         List<NetworkVO> dbNets = _networksDao.search(sc, null);
         if (dbNets == null) {
-            s_logger.debug("no system networks for the given traffic types: " + types.toString());
+            logger.debug("no system networks for the given traffic types: " + types.toString());
             dbNets = new ArrayList<NetworkVO>();
         }
 
@@ -671,7 +669,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
 
         List<NetworkVO> dbNets = _networksDao.search(sc, null);
         if (dbNets == null) {
-            s_logger.debug("no juniper managed networks for the given traffic types: " + types.toString());
+            logger.debug("no juniper managed networks for the given traffic types: " + types.toString());
             dbNets = new ArrayList<NetworkVO>();
         }
 
@@ -713,7 +711,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
         sc.setParameters("vpcOffering", getVpcOffering().getId());
         List<VpcVO> vpcs = _vpcDao.search(sc, null);
         if (vpcs == null || vpcs.size() == 0) {
-            s_logger.debug("no vpcs found");
+            logger.debug("no vpcs found");
             return null;
         }
         return vpcs;
@@ -737,7 +735,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
         sc.setParameters("vpcId", vpcIds.toArray());
         List<NetworkACLVO> acls = _networkAclDao.search(sc, null);
         if (acls == null || acls.size() == 0) {
-            s_logger.debug("no acls found");
+            logger.debug("no acls found");
             return null;
         }
         /* only return if acl is associated to any network */
@@ -761,7 +759,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
         List<NetworkVO> dbNets = findManagedNetworks(null);
 
         if (dbNets == null || dbNets.isEmpty()) {
-            s_logger.debug("Juniper managed networks is empty");
+            logger.debug("Juniper managed networks is empty");
             return null;
         }
 
@@ -783,7 +781,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
 
         List<IPAddressVO> publicIps = _ipAddressDao.search(sc, null);
         if (publicIps == null) {
-            s_logger.debug("no public ips");
+            logger.debug("no public ips");
             return null;
         }
 
@@ -808,7 +806,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
                         vnModel.update(getModelController());
                     }
                 } catch (Exception ex) {
-                    s_logger.warn("virtual-network update: ", ex);
+                    logger.warn("virtual-network update: ", ex);
                 }
                 getDatabase().getVirtualNetworks().add(vnModel);
             }
@@ -923,7 +921,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
             }
             getDatabase().getVirtualNetworks().add(vnModel);
         } catch (Exception ex) {
-            s_logger.warn("virtual-network update: ", ex);
+            logger.warn("virtual-network update: ", ex);
         }
         return vnModel;
     }
@@ -943,7 +941,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
                 fipPoolModel.update(getModelController());
                 vnModel.setFipPoolModel(fipPoolModel);
             } catch (Exception ex) {
-                s_logger.warn("floating-ip-pool create: ", ex);
+                logger.warn("floating-ip-pool create: ", ex);
                 return false;
             }
         }
@@ -957,7 +955,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
             try {
                 fipModel.update(getModelController());
             } catch (Exception ex) {
-                s_logger.warn("floating-ip create: ", ex);
+                logger.warn("floating-ip create: ", ex);
                 return false;
             }
         }
@@ -974,7 +972,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
             try {
                 fipModel.destroy(getModelController());
             } catch (IOException ex) {
-                s_logger.warn("floating ip delete", ex);
+                logger.warn("floating ip delete", ex);
                 return false;
             }
             fipPoolModel.removeSuccessor(fipModel);
@@ -998,7 +996,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
         try {
             fipPool = (FloatingIpPool)_api.findByFQN(FloatingIpPool.class, fipPoolName);
         } catch (Exception ex) {
-            s_logger.debug(ex);
+            logger.debug(ex);
         }
         if (fipPool == null) {
             return null;
@@ -1008,7 +1006,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
             try {
                 return (List<FloatingIp>)_api.getObjects(FloatingIp.class, ips);
             } catch (IOException ex) {
-                s_logger.debug(ex);
+                logger.debug(ex);
                 return null;
             }
         }

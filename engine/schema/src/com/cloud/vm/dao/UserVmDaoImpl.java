@@ -30,7 +30,6 @@ import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -55,7 +54,6 @@ import com.cloud.vm.dao.UserVmData.SecurityGroupData;
 
 @Local(value = {UserVmDao.class})
 public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements UserVmDao {
-    public static final Logger s_logger = Logger.getLogger(UserVmDaoImpl.class);
 
     protected SearchBuilder<UserVmVO> AccountPodSearch;
     protected SearchBuilder<UserVmVO> AccountDataCenterSearch;
@@ -378,13 +376,13 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
                 }
             }
             catch (Exception e) {
-                s_logger.error("listPodIdsHavingVmsforAccount:Exception: " +  e.getMessage());
+                logger.error("listPodIdsHavingVmsforAccount:Exception: " +  e.getMessage());
                 throw new CloudRuntimeException("listPodIdsHavingVmsforAccount:Exception: " + e.getMessage(), e);
             }
             txn.commit();
             return result;
         } catch (Exception e) {
-            s_logger.error("listPodIdsHavingVmsforAccount:Exception : " +  e.getMessage());
+            logger.error("listPodIdsHavingVmsforAccount:Exception : " +  e.getMessage());
             throw new CloudRuntimeException("listPodIdsHavingVmsforAccount:Exception: " + e.getMessage(), e);
         }
         finally {
@@ -396,7 +394,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             }
             catch (Exception e)
             {
-                s_logger.error("listVmDetails:Exception:" + e.getMessage());
+                logger.error("listVmDetails:Exception:" + e.getMessage());
             }
         }
 
@@ -433,7 +431,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
                         }
                         catch (Exception e)
                         {
-                            s_logger.error("listVmDetails:Exception:" + e.getMessage());
+                            logger.error("listVmDetails:Exception:" + e.getMessage());
                             throw new CloudRuntimeException("listVmDetails: Exception:" + e.getMessage(),e);
                         }
                         curr_index += VM_DETAILS_BATCH_SIZE;
@@ -441,7 +439,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
                 }
                 catch (Exception e)
                 {
-                    s_logger.error("listVmDetails:Exception:" + e.getMessage());
+                    logger.error("listVmDetails:Exception:" + e.getMessage());
                     throw new CloudRuntimeException("listVmDetails: Exception:" + e.getMessage(),e);
                 }
             }
@@ -469,20 +467,20 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
                     }
                     catch (Exception e)
                     {
-                        s_logger.error("listVmDetails: Exception:" + e.getMessage());
+                        logger.error("listVmDetails: Exception:" + e.getMessage());
                         throw new CloudRuntimeException("listVmDetails: Exception:" + e.getMessage(),e);
                     }
                 }
                 catch (Exception e)
                 {
-                    s_logger.error("listVmDetails:Exception:" + e.getMessage());
+                    logger.error("listVmDetails:Exception:" + e.getMessage());
                     throw new CloudRuntimeException("listVmDetails: Exception:" + e.getMessage(),e);
                 }
             }
             txn.commit();
             return userVmDataHash;
         } catch (Exception e) {
-            s_logger.error("listVmDetails:Exception:" + e.getMessage());
+            logger.error("listVmDetails:Exception:" + e.getMessage());
             throw new CloudRuntimeException("listVmDetails:Exception : ", e);
         }
         finally {
@@ -494,7 +492,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             }
             catch (Exception e)
             {
-                s_logger.error("listVmDetails:Exception:" + e.getMessage());
+                logger.error("listVmDetails:Exception:" + e.getMessage());
             }
         }
 
@@ -656,7 +654,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
                 }
             }
         } catch (SQLException e) {
-            s_logger.error("GetVmsDetailsByNames: Exception in sql: " + e.getMessage());
+            logger.error("GetVmsDetailsByNames: Exception in sql: " + e.getMessage());
             throw new CloudRuntimeException("GetVmsDetailsByNames: Exception: " + e.getMessage());
         }
 

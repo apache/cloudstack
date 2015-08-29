@@ -25,7 +25,6 @@ import java.util.TimeZone;
 
 import javax.ejb.Local;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageVMInstanceVO;
@@ -36,7 +35,6 @@ import com.cloud.utils.db.TransactionLegacy;
 @Component
 @Local(value = {UsageVMInstanceDao.class})
 public class UsageVMInstanceDaoImpl extends GenericDaoBase<UsageVMInstanceVO, Long> implements UsageVMInstanceDao {
-    public static final Logger s_logger = Logger.getLogger(UsageVMInstanceDaoImpl.class.getName());
 
     protected static final String UPDATE_USAGE_INSTANCE_SQL = "UPDATE usage_vm_instance SET end_date = ? "
         + "WHERE account_id = ? and vm_instance_id = ? and usage_type = ? and end_date IS NULL";
@@ -64,7 +62,7 @@ public class UsageVMInstanceDaoImpl extends GenericDaoBase<UsageVMInstanceVO, Lo
             pstmt.executeUpdate();
             txn.commit();
         } catch (Exception e) {
-            s_logger.warn(e);
+            logger.warn(e);
         } finally {
             txn.close();
         }
@@ -85,7 +83,7 @@ public class UsageVMInstanceDaoImpl extends GenericDaoBase<UsageVMInstanceVO, Lo
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            s_logger.error("error deleting usage vm instance with vmId: " + instance.getVmInstanceId() + ", for account with id: " + instance.getAccountId());
+            logger.error("error deleting usage vm instance with vmId: " + instance.getVmInstanceId() + ", for account with id: " + instance.getAccountId());
         } finally {
             txn.close();
         }
@@ -143,7 +141,7 @@ public class UsageVMInstanceDaoImpl extends GenericDaoBase<UsageVMInstanceVO, Lo
                 usageInstances.add(usageInstance);
             }
         } catch (Exception ex) {
-            s_logger.error("error retrieving usage vm instances for account id: " + accountId, ex);
+            logger.error("error retrieving usage vm instances for account id: " + accountId, ex);
         } finally {
             txn.close();
         }

@@ -31,7 +31,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.guru.DeallocateVmVspAnswer;
@@ -85,7 +84,6 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = NetworkGuru.class)
 public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
-    public static final Logger s_logger = Logger.getLogger(NuageVspGuestNetworkGuru.class);
 
     @Inject
     NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
@@ -114,7 +112,7 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
         PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan.getPhysicalNetworkId());
         DataCenter dc = _dcDao.findById(plan.getDataCenterId());
         if (!canHandle(offering, dc.getNetworkType(), physnet)) {
-            s_logger.debug("Refusing to design this network");
+            logger.debug("Refusing to design this network");
             return null;
         }
 
@@ -163,7 +161,7 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
         AccountVO networksAccount = _accountDao.findById(network.getAccountId());
         if (networksAccount.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             String errorMessage = "CS project support is not yet implemented in NuageVsp";
-            s_logger.debug(errorMessage);
+            logger.debug(errorMessage);
             throw new InsufficientVirtualNetworkCapacityException(errorMessage, Account.class, network.getAccountId());
         }
         boolean isL3Network = isL3Network(offering.getId());
@@ -182,13 +180,13 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
         ImplementNetworkVspAnswer answer = (ImplementNetworkVspAnswer)_agentMgr.easySend(nuageVspHost.getId(), cmd);
 
         if (answer == null || !answer.getResult()) {
-            s_logger.error("ImplementNetworkNuageVspCommand failed");
+            logger.error("ImplementNetworkNuageVspCommand failed");
             if ((null != answer) && (null != answer.getDetails())) {
-                s_logger.error(answer.getDetails());
+                logger.error(answer.getDetails());
             }
             return null;
         }
-        s_logger.info("Implemented OK, network " + networkUuid + " in tenant " + tenantId + " linked to " + implemented.getBroadcastUri().toString());
+        logger.info("Implemented OK, network " + networkUuid + " in tenant " + tenantId + " linked to " + implemented.getBroadcastUri().toString());
         return implemented;
     }
 
@@ -204,7 +202,7 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
         nic.setBroadcastUri(network.getBroadcastUri());
         nic.setIsolationUri(network.getBroadcastUri());
 
-        s_logger.debug("Handling reserve() call back to with Create a new VM or add an interface to existing VM in network " + network.getName());
+        logger.debug("Handling reserve() call back to with Create a new VM or add an interface to existing VM in network " + network.getName());
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
         Account networksAccount = _accountDao.findById(network.getAccountId());
         DomainVO networksDomain = _domainDao.findById(network.getDomainId());
@@ -233,9 +231,9 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
         ReserveVmInterfaceVspAnswer answer = (ReserveVmInterfaceVspAnswer)_agentMgr.easySend(nuageVspHost.getId(), cmd);
 
         if (answer == null || !answer.getResult()) {
-            s_logger.error("ReserveVmInterfaceNuageVspCommand failed");
+            logger.error("ReserveVmInterfaceNuageVspCommand failed");
             if ((null != answer) && (null != answer.getDetails())) {
-                s_logger.error(answer.getDetails());
+                logger.error(answer.getDetails());
             }
             throw new InsufficientVirtualNetworkCapacityException("Failed to reserve VM in Nuage VSP.", Network.class, network.getId());
         }
@@ -249,7 +247,7 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
                 && isMyIsolationMethod(physicalNetwork)) {
             return true;
         } else {
-            s_logger.trace("We only take care of Guest networks of type   " + GuestType.Isolated + " in zone of type " + NetworkType.Advanced);
+            logger.trace("We only take care of Guest networks of type   " + GuestType.Isolated + " in zone of type " + NetworkType.Advanced);
             return false;
         }
     }
@@ -258,7 +256,7 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
     public boolean release(NicProfile nic, VirtualMachineProfile vm, String reservationId) {
         long networkId = nic.getNetworkId();
         Network network = _networkDao.findById(networkId);
-        s_logger.debug("Handling release() call back, which is called when a VM is stopped or destroyed, to delete the VM with state " + vm.getVirtualMachine().getState()
+        logger.debug("Handling release() call back, which is called when a VM is stopped or destroyed, to delete the VM with state " + vm.getVirtualMachine().getState()
                 + " from netork " + network.getName());
         if (vm.getVirtualMachine().getState().equals(VirtualMachine.State.Stopping)) {
             try {
@@ -266,16 +264,16 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
                 ReleaseVmVspCommand cmd = new ReleaseVmVspCommand(network.getUuid(), vm.getUuid(), vm.getInstanceName());
                 ReleaseVmVspAnswer answer = (ReleaseVmVspAnswer)_agentMgr.easySend(nuageVspHost.getId(), cmd);
                 if (answer == null || !answer.getResult()) {
-                    s_logger.error("ReleaseVmNuageVspCommand for VM " + vm.getUuid() + " failed");
+                    logger.error("ReleaseVmNuageVspCommand for VM " + vm.getUuid() + " failed");
                     if ((null != answer) && (null != answer.getDetails())) {
-                        s_logger.error(answer.getDetails());
+                        logger.error(answer.getDetails());
                     }
                 }
             } catch (InsufficientVirtualNetworkCapacityException e) {
-                s_logger.debug("Handling release() call back. Failed to delete CS VM " + vm.getInstanceName() + " in VSP. " + e.getMessage());
+                logger.debug("Handling release() call back. Failed to delete CS VM " + vm.getInstanceName() + " in VSP. " + e.getMessage());
             }
         } else {
-            s_logger.debug("Handling release() call back. VM " + vm.getInstanceName() + " is in " + vm.getVirtualMachine().getState() + " state. So, the CS VM is not deleted."
+            logger.debug("Handling release() call back. VM " + vm.getInstanceName() + " is in " + vm.getVirtualMachine().getState() + " state. So, the CS VM is not deleted."
                     + " This could be a case where VM interface is deleted. deallocate() call back should be called later");
         }
 
@@ -287,7 +285,7 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile vm) {
 
         try {
-            s_logger.debug("Handling deallocate() call back, which is called when a VM is destroyed or interface is removed, " + "to delete VM Interface with IP "
+            logger.debug("Handling deallocate() call back, which is called when a VM is destroyed or interface is removed, " + "to delete VM Interface with IP "
                     + nic.getIPv4Address() + " from a VM " + vm.getInstanceName() + " with state " + vm.getVirtualMachine().getState());
             DomainVO networksDomain = _domainDao.findById(network.getDomainId());
             NicVO nicFrmDd = _nicDao.findById(nic.getId());
@@ -303,13 +301,13 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
                     isL3Network(networkOfferingId), vpcUuid, networksDomain.getUuid(), vm.getInstanceName(), vm.getUuid());
             DeallocateVmVspAnswer answer = (DeallocateVmVspAnswer)_agentMgr.easySend(nuageVspHost.getId(), cmd);
             if (answer == null || !answer.getResult()) {
-                s_logger.error("DeallocateVmNuageVspCommand for VM " + vm.getUuid() + " failed");
+                logger.error("DeallocateVmNuageVspCommand for VM " + vm.getUuid() + " failed");
                 if ((null != answer) && (null != answer.getDetails())) {
-                    s_logger.error(answer.getDetails());
+                    logger.error(answer.getDetails());
                 }
             }
         } catch (InsufficientVirtualNetworkCapacityException e) {
-            s_logger.error("Handling deallocate(). VM " + vm.getInstanceName() + " with NIC IP " + nic.getIPv4Address()
+            logger.error("Handling deallocate(). VM " + vm.getInstanceName() + " with NIC IP " + nic.getIPv4Address()
                     + " is getting destroyed. REST API failed to update the VM state in NuageVsp", e);
         }
         super.deallocate(network, nic, vm);
@@ -323,7 +321,7 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
     @Override
     public boolean trash(Network network, NetworkOffering offering) {
 
-        s_logger.debug("Handling trash() call back to delete the network " + network.getName() + " with uuid " + network.getUuid() + " from VSP");
+        logger.debug("Handling trash() call back to delete the network " + network.getName() + " with uuid " + network.getUuid() + " from VSP");
         long domainId = network.getDomainId();
         Domain domain = _domainDao.findById(domainId);
         Long vpcId = network.getVpcId();
@@ -337,13 +335,13 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
             TrashNetworkVspCommand cmd = new TrashNetworkVspCommand(domain.getUuid(), network.getUuid(), isL3Network(offering.getId()), vpcUuid);
             TrashNetworkVspAnswer answer = (TrashNetworkVspAnswer)_agentMgr.easySend(nuageVspHost.getId(), cmd);
             if (answer == null || !answer.getResult()) {
-                s_logger.error("TrashNetworkNuageVspCommand for network " + network.getUuid() + " failed");
+                logger.error("TrashNetworkNuageVspCommand for network " + network.getUuid() + " failed");
                 if ((null != answer) && (null != answer.getDetails())) {
-                    s_logger.error(answer.getDetails());
+                    logger.error(answer.getDetails());
                 }
             }
         } catch (Exception e) {
-            s_logger.warn("Failed to clean up network information in Vsp " + e.getMessage());
+            logger.warn("Failed to clean up network information in Vsp " + e.getMessage());
         }
 
         return super.trash(network, offering);
@@ -361,13 +359,13 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
             Iterator<Long> ipIterator = allIPsInCidr.iterator();
             long vip = ipIterator.next();
             if (NetUtils.ip2Long(network.getGateway()) == vip) {
-                s_logger.debug("Gateway of the Network(" + network.getUuid() + ") has the first IP " + NetUtils.long2Ip(vip));
+                logger.debug("Gateway of the Network(" + network.getUuid() + ") has the first IP " + NetUtils.long2Ip(vip));
                 vip = ipIterator.next();
                 virtualRouterIp = NetUtils.long2Ip(vip);
-                s_logger.debug("So, reserving the 2nd IP " + virtualRouterIp + " for the Virtual Router IP in Network(" + network.getUuid() + ")");
+                logger.debug("So, reserving the 2nd IP " + virtualRouterIp + " for the Virtual Router IP in Network(" + network.getUuid() + ")");
             } else {
                 virtualRouterIp = NetUtils.long2Ip(vip);
-                s_logger.debug("1nd IP is not used as the gateway IP. So, reserving" + virtualRouterIp + " for the Virtual Router IP for " + "Network(" + network.getUuid() + ")");
+                logger.debug("1nd IP is not used as the gateway IP. So, reserving" + virtualRouterIp + " for the Virtual Router IP for " + "Network(" + network.getUuid() + ")");
             }
             addressRange.add(NetUtils.long2Ip(ipIterator.next()));
             addressRange.add(NetUtils.long2Ip((Long)allIPsInCidr.toArray()[allIPsInCidr.size() - 1]));
@@ -390,7 +388,7 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
                 }
             }
         } catch (Exception e) {
-            s_logger.error("Failed to parse the VM interface Json response from VSP REST API. VM interface json string is  " + vmInterfacesDetails, e);
+            logger.error("Failed to parse the VM interface Json response from VSP REST API. VM interface json string is  " + vmInterfacesDetails, e);
             throw new InsufficientVirtualNetworkCapacityException("Failed to parse the VM interface Json response from VSP REST API. VM interface Json " + "string is  "
                     + vmInterfacesDetails + ". So. failed to get IP for the VM from VSP address for network " + network, Network.class, network.getId());
         }

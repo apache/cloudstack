@@ -24,7 +24,6 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.host.Status;
@@ -38,7 +37,6 @@ import com.cloud.utils.db.TransactionLegacy;
 @Component
 @Local(value = {StoragePoolHostDao.class})
 public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Long> implements StoragePoolHostDao {
-    public static final Logger s_logger = Logger.getLogger(StoragePoolHostDaoImpl.class.getName());
 
     protected final SearchBuilder<StoragePoolHostVO> PoolSearch;
     protected final SearchBuilder<StoragePoolHostVO> HostSearch;
@@ -115,10 +113,10 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
                     result.add(findById(id));
                 }
             }catch (SQLException e) {
-                s_logger.warn("listByHostStatus:Exception: ", e);
+                logger.warn("listByHostStatus:Exception: ", e);
             }
         } catch (Exception e) {
-            s_logger.warn("listByHostStatus:Exception: ", e);
+            logger.warn("listByHostStatus:Exception: ", e);
         }
         return result;
     }
@@ -138,7 +136,7 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
                 l.add(new Pair<Long, Integer>(rs.getLong(1), rs.getInt(2)));
             }
         } catch (SQLException e) {
-            s_logger.debug("SQLException: ", e);
+            logger.debug("SQLException: ", e);
         }
         return l;
     }
