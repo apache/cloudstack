@@ -21,13 +21,11 @@ import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.Pair;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.Map;
 
 public class LdapAuthenticator extends DefaultUserAuthenticator {
-    private static final Logger s_logger = Logger.getLogger(LdapAuthenticator.class.getName());
 
     @Inject
     private LdapManager _ldapManager;
@@ -48,14 +46,14 @@ public class LdapAuthenticator extends DefaultUserAuthenticator {
     public Pair<Boolean, ActionOnFailedAuthentication> authenticate(final String username, final String password, final Long domainId, final Map<String, Object[]> requestParameters) {
 
         if (StringUtils.isEmpty(username) || StringUtils.isEmpty(password)) {
-            s_logger.debug("Username or Password cannot be empty");
+            logger.debug("Username or Password cannot be empty");
             return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
         }
 
         final UserAccount user = _userAccountDao.getUserAccount(username, domainId);
 
         if (user == null) {
-            s_logger.debug("Unable to find user with " + username + " in domain " + domainId);
+            logger.debug("Unable to find user with " + username + " in domain " + domainId);
             return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
         } else if (_ldapManager.isLdapEnabled()) {
             boolean result = _ldapManager.canAuthenticate(username, password);

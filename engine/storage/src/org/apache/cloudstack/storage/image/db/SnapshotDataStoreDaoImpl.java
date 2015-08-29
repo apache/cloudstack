@@ -25,7 +25,6 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
@@ -46,7 +45,6 @@ import com.cloud.utils.db.UpdateBuilder;
 
 @Component
 public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO, Long> implements SnapshotDataStoreDao {
-    private static final Logger s_logger = Logger.getLogger(SnapshotDataStoreDaoImpl.class);
     private SearchBuilder<SnapshotDataStoreVO> updateStateSearch;
     private SearchBuilder<SnapshotDataStoreVO> storeSearch;
     private SearchBuilder<SnapshotDataStoreVO> destroyedSearch;
@@ -140,7 +138,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         builder.set(dataObj, "updated", new Date());
 
         int rows = update(dataObj, sc);
-        if (rows == 0 && s_logger.isDebugEnabled()) {
+        if (rows == 0 && logger.isDebugEnabled()) {
             SnapshotDataStoreVO dbVol = findByIdIncludingRemoved(dataObj.getId());
             if (dbVol != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(dataObj.toString());
@@ -173,7 +171,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
                     .append("; updatedTime=")
                     .append(oldUpdatedTime);
             } else {
-                s_logger.debug("Unable to update objectIndatastore: id=" + dataObj.getId() + ", as there is no such object exists in the database anymore");
+                logger.debug("Unable to update objectIndatastore: id=" + dataObj.getId() + ", as there is no such object exists in the database anymore");
             }
         }
         return rows > 0;
@@ -234,7 +232,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
                 }
             }
         } catch (SQLException e) {
-            s_logger.debug("Failed to find latest snapshot for volume: " + volumeId + " due to: "  + e.toString());
+            logger.debug("Failed to find latest snapshot for volume: " + volumeId + " due to: "  + e.toString());
         }
         return null;
     }
@@ -255,7 +253,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
                 }
             }
         } catch (SQLException e) {
-            s_logger.debug("Failed to find oldest snapshot for volume: " + volumeId + " due to: "  + e.toString());
+            logger.debug("Failed to find oldest snapshot for volume: " + volumeId + " due to: "  + e.toString());
         }
         return null;
     }
@@ -278,7 +276,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
                 }
             }
         } catch (SQLException e) {
-            s_logger.debug("Failed to find parent snapshot: " + e.toString());
+            logger.debug("Failed to find parent snapshot: " + e.toString());
         }
         return null;
     }
@@ -326,14 +324,14 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         List<SnapshotDataStoreVO> snapshots = listBy(sc);
         // create an entry for each record, but with empty install path since the content is not yet on region-wide store yet
         if (snapshots != null) {
-            s_logger.info("Duplicate " + snapshots.size() + " snapshot cache store records to region store");
+            logger.info("Duplicate " + snapshots.size() + " snapshot cache store records to region store");
             for (SnapshotDataStoreVO snap : snapshots) {
                 SnapshotDataStoreVO snapStore = findByStoreSnapshot(DataStoreRole.Image, storeId, snap.getSnapshotId());
                 if (snapStore != null) {
-                    s_logger.info("There is already entry for snapshot " + snap.getSnapshotId() + " on region store " + storeId);
+                    logger.info("There is already entry for snapshot " + snap.getSnapshotId() + " on region store " + storeId);
                     continue;
                 }
-                s_logger.info("Persisting an entry for snapshot " + snap.getSnapshotId() + " on region store " + storeId);
+                logger.info("Persisting an entry for snapshot " + snap.getSnapshotId() + " on region store " + storeId);
                 SnapshotDataStoreVO ss = new SnapshotDataStoreVO();
                 ss.setSnapshotId(snap.getSnapshotId());
                 ss.setDataStoreId(storeId);
@@ -377,7 +375,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         sc.setParameters("destroyed", false);
         List<SnapshotDataStoreVO> snaps = listBy(sc);
         if (snaps != null) {
-            s_logger.info("Update to cache store role for " + snaps.size() + " entries in snapshot_store_ref");
+            logger.info("Update to cache store role for " + snaps.size() + " entries in snapshot_store_ref");
             for (SnapshotDataStoreVO snap : snaps) {
                 snap.setRole(DataStoreRole.ImageCache);
                 update(snap.getId(), snap);

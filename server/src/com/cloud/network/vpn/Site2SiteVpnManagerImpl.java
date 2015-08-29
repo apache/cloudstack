@@ -24,7 +24,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.command.user.vpn.CreateVpnConnectionCmd;
@@ -83,7 +82,6 @@ import com.cloud.vm.DomainRouterVO;
 @Component
 @Local(value = {Site2SiteVpnManager.class, Site2SiteVpnService.class})
 public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpnManager {
-    private static final Logger s_logger = Logger.getLogger(Site2SiteVpnManagerImpl.class);
 
     List<Site2SiteVpnServiceProvider> _s2sProviders;
     @Inject
@@ -786,7 +784,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
                     startVpnConnection(conn.getId());
                 } catch (ResourceUnavailableException e) {
                     Site2SiteCustomerGatewayVO gw = _customerGatewayDao.findById(conn.getCustomerGatewayId());
-                    s_logger.warn("Site2SiteVpnManager: Fail to re-initiate VPN connection " + conn.getId() + " which connect to " + gw.getName());
+                    logger.warn("Site2SiteVpnManager: Fail to re-initiate VPN connection " + conn.getId() + " which connect to " + gw.getName());
                 }
             }
         }

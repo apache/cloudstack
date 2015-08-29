@@ -27,7 +27,6 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.host.Host;
@@ -41,7 +40,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 @Component
 @Local(value = AgentLoadBalancerPlanner.class)
 public class ClusterBasedAgentLoadBalancerPlanner extends AdapterBase implements AgentLoadBalancerPlanner {
-    private static final Logger s_logger = Logger.getLogger(AgentLoadBalancerPlanner.class);
 
     @Inject
     HostDao _hostDao = null;
@@ -54,7 +52,7 @@ public class ClusterBasedAgentLoadBalancerPlanner extends AdapterBase implements
         List<HostVO> allHosts = sc.list();
 
         if (allHosts.size() <= avLoad) {
-            s_logger.debug("Agent load = " + allHosts.size() + " for management server " + msId + " doesn't exceed average system agent load = " + avLoad +
+            logger.debug("Agent load = " + allHosts.size() + " for management server " + msId + " doesn't exceed average system agent load = " + avLoad +
                 "; so it doesn't participate in agent rebalancing process");
             return null;
         }
@@ -66,7 +64,7 @@ public class ClusterBasedAgentLoadBalancerPlanner extends AdapterBase implements
         List<HostVO> directHosts = sc.list();
 
         if (directHosts.isEmpty()) {
-            s_logger.debug("No direct agents in status " + Status.Up + " exist for the management server " + msId +
+            logger.debug("No direct agents in status " + Status.Up + " exist for the management server " + msId +
                 "; so it doesn't participate in agent rebalancing process");
             return null;
         }
@@ -92,23 +90,23 @@ public class ClusterBasedAgentLoadBalancerPlanner extends AdapterBase implements
         int hostsLeft = directHosts.size();
         List<HostVO> hostsToReturn = new ArrayList<HostVO>();
 
-        s_logger.debug("Management server " + msId + " can give away " + hostsToGive + " as it currently owns " + allHosts.size() +
+        logger.debug("Management server " + msId + " can give away " + hostsToGive + " as it currently owns " + allHosts.size() +
             " and the average agent load in the system is " + avLoad + "; finalyzing list of hosts to give away...");
         for (Long cluster : hostToClusterMap.keySet()) {
             List<HostVO> hostsInCluster = hostToClusterMap.get(cluster);
             hostsLeft = hostsLeft - hostsInCluster.size();
             if (hostsToReturn.size() < hostsToGive) {
-                s_logger.debug("Trying cluster id=" + cluster);
+                logger.debug("Trying cluster id=" + cluster);
 
                 if (hostsInCluster.size() > hostsLeftToGive) {
-                    s_logger.debug("Skipping cluster id=" + cluster + " as it has more hosts than we need: " + hostsInCluster.size() + " vs " + hostsLeftToGive);
+                    logger.debug("Skipping cluster id=" + cluster + " as it has more hosts than we need: " + hostsInCluster.size() + " vs " + hostsLeftToGive);
                     if (hostsLeft >= hostsLeftToGive) {
                         continue;
                     } else {
                         break;
                     }
                 } else {
-                    s_logger.debug("Taking all " + hostsInCluster.size() + " hosts: " + hostsInCluster + " from cluster id=" + cluster);
+                    logger.debug("Taking all " + hostsInCluster.size() + " hosts: " + hostsInCluster + " from cluster id=" + cluster);
                     hostsToReturn.addAll(hostsInCluster);
                     hostsLeftToGive = hostsLeftToGive - hostsInCluster.size();
                 }
@@ -117,7 +115,7 @@ public class ClusterBasedAgentLoadBalancerPlanner extends AdapterBase implements
             }
         }
 
-        s_logger.debug("Management server " + msId + " is ready to give away " + hostsToReturn.size() + " hosts");
+        logger.debug("Management server " + msId + " is ready to give away " + hostsToReturn.size() + " hosts");
         return hostsToReturn;
     }
 

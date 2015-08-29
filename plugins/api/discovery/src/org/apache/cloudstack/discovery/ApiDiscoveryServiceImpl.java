@@ -27,7 +27,6 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.google.gson.annotations.SerializedName;
@@ -55,7 +54,6 @@ import com.cloud.utils.component.PluggableService;
 @Component
 @Local(value = ApiDiscoveryService.class)
 public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements ApiDiscoveryService {
-    private static final Logger s_logger = Logger.getLogger(ApiDiscoveryServiceImpl.class);
 
     List<APIChecker> _apiAccessCheckers = null;
     List<PluggableService> _services = null;
@@ -72,13 +70,13 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
             s_apiNameDiscoveryResponseMap = new HashMap<String, ApiDiscoveryResponse>();
             Set<Class<?>> cmdClasses = new HashSet<Class<?>>();
             for (PluggableService service : _services) {
-                s_logger.debug(String.format("getting api commands of service: %s", service.getClass().getName()));
+                logger.debug(String.format("getting api commands of service: %s", service.getClass().getName()));
                 cmdClasses.addAll(service.getCommands());
             }
             cmdClasses.addAll(this.getCommands());
             cacheResponseMap(cmdClasses);
             long endTime = System.nanoTime();
-            s_logger.info("Api Discovery Service: Annotation, docstrings, api relation graph processed in " + (endTime - startTime) / 1000000.0 + " ms");
+            logger.info("Api Discovery Service: Annotation, docstrings, api relation graph processed in " + (endTime - startTime) / 1000000.0 + " ms");
         }
 
         return true;
@@ -97,8 +95,8 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
             }
 
             String apiName = apiCmdAnnotation.name();
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Found api: " + apiName);
+            if (logger.isTraceEnabled()) {
+                logger.trace("Found api: " + apiName);
             }
             ApiDiscoveryResponse response = getCmdRequestMap(cmdClass, apiCmdAnnotation);
 
@@ -227,7 +225,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
                 try {
                     apiChecker.checkAccess(user, name);
                 } catch (Exception ex) {
-                    s_logger.debug("API discovery access check failed for " + name + " with " + ex.getMessage());
+                    logger.debug("API discovery access check failed for " + name + " with " + ex.getMessage());
                     return null;
                 }
             }

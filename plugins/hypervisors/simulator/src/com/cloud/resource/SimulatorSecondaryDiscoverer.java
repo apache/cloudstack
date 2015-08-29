@@ -29,7 +29,6 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.resource.SecondaryStorageDiscoverer;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -47,7 +46,6 @@ import com.cloud.storage.dao.SnapshotDao;
 
 @Local(value = Discoverer.class)
 public class SimulatorSecondaryDiscoverer extends SecondaryStorageDiscoverer implements ResourceStateAdapter, Listener {
-    private static final Logger s_logger = Logger.getLogger(SimulatorSecondaryDiscoverer.class);
     @Inject
     MockStorageManager _mockStorageMgr = null;
     @Inject
@@ -71,7 +69,7 @@ public class SimulatorSecondaryDiscoverer extends SecondaryStorageDiscoverer imp
     public Map<? extends ServerResource, Map<String, String>>
         find(long dcId, Long podId, Long clusterId, URI uri, String username, String password, List<String> hostTags) {
         if (!uri.getScheme().equalsIgnoreCase("sim")) {
-            s_logger.debug("It's not NFS or file or ISO, so not a secondary storage server: " + uri.toString());
+            logger.debug("It's not NFS or file or ISO, so not a secondary storage server: " + uri.toString());
             return null;
         }
         List<ImageStoreVO> stores = imageStoreDao.listImageStores();

@@ -33,7 +33,6 @@ import javax.mail.internet.InternetAddress;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.alert.AlertManager;
@@ -48,8 +47,6 @@ import com.sun.mail.smtp.SMTPTransport;
 @Component
 @Local(value = {AlertManager.class})
 public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
-    private static final Logger s_logger = Logger.getLogger(UsageAlertManagerImpl.class.getName());
-    private static final Logger s_alertsLogger = Logger.getLogger("org.apache.cloudstack.alerts");
 
     private EmailAlert _emailAlert;
     @Inject
@@ -92,7 +89,7 @@ public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
                 _emailAlert.clearAlert(alertType.getType(), dataCenterId, podId);
             }
         } catch (Exception ex) {
-            s_logger.error("Problem clearing email alert", ex);
+            logger.error("Problem clearing email alert", ex);
         }
     }
 
@@ -104,11 +101,11 @@ public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
             if (_emailAlert != null) {
                 _emailAlert.sendAlert(alertType, dataCenterId, podId, subject, body);
             } else {
-                s_alertsLogger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: " + podId + " // clusterId:: " + null +
+                logger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: " + podId + " // clusterId:: " + null +
                     " // message:: " + subject + " // body:: " + body);
             }
         } catch (Exception ex) {
-            s_logger.error("Problem sending email alert", ex);
+            logger.error("Problem sending email alert", ex);
         }
     }
 
@@ -130,7 +127,7 @@ public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
                     try {
                         _recipientList[i] = new InternetAddress(recipientList[i], recipientList[i]);
                     } catch (Exception ex) {
-                        s_logger.error("Exception creating address for: " + recipientList[i], ex);
+                        logger.error("Exception creating address for: " + recipientList[i], ex);
                     }
                 }
             }
@@ -177,7 +174,7 @@ public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
         // TODO:  make sure this handles SSL transport (useAuth is true) and regular
         protected void sendAlert(AlertType alertType, long dataCenterId, Long podId, String subject, String content) throws MessagingException,
             UnsupportedEncodingException {
-            s_alertsLogger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: " +
+            logger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: " +
                 podId + " // clusterId:: " + null + " // message:: " + subject);
             AlertVO alert = null;
             if ((alertType != AlertManager.AlertType.ALERT_TYPE_HOST) &&
@@ -202,8 +199,8 @@ public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
                 newAlert.setName(alertType.getName());
                 _alertDao.persist(newAlert);
             } else {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Have already sent: " + alert.getSentCount() + " emails for alert type '" + alertType + "' -- skipping send email");
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Have already sent: " + alert.getSentCount() + " emails for alert type '" + alertType + "' -- skipping send email");
                 }
                 return;
             }
@@ -256,7 +253,7 @@ public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
             sendAlert(alertType, dataCenterId, podId, msg, msg);
             return true;
         } catch (Exception ex) {
-            s_logger.warn("Failed to generate an alert of type=" + alertType + "; msg=" + msg);
+            logger.warn("Failed to generate an alert of type=" + alertType + "; msg=" + msg);
             return false;
         }
     }

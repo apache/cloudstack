@@ -21,7 +21,6 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
@@ -35,7 +34,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 
 public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements AsyncJobDao {
-    private static final Logger s_logger = Logger.getLogger(AsyncJobDaoImpl.class.getName());
 
     private final SearchBuilder<AsyncJobVO> pendingAsyncJobSearch;
     private final SearchBuilder<AsyncJobVO> pendingAsyncJobsSearch;
@@ -105,7 +103,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         List<AsyncJobVO> l = listIncludingRemovedBy(sc);
         if (l != null && l.size() > 0) {
             if (l.size() > 1) {
-                s_logger.warn("Instance " + instanceType + "-" + instanceId + " has multiple pending async-job");
+                logger.warn("Instance " + instanceType + "-" + instanceId + " has multiple pending async-job");
             }
 
             return l.get(0);
@@ -192,9 +190,9 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
             pstmt.setLong(6, msid);
             pstmt.execute();
         } catch (SQLException e) {
-            s_logger.warn("Unable to reset job status for management server " + msid, e);
+            logger.warn("Unable to reset job status for management server " + msid, e);
         } catch (Throwable e) {
-            s_logger.warn("Unable to reset job status for management server " + msid, e);
+            logger.warn("Unable to reset job status for management server " + msid, e);
         }
     }
 

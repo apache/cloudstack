@@ -64,7 +64,6 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
@@ -80,7 +79,6 @@ import java.util.TimeZone;
 @Component
 @Local(value = {UsageService.class})
 public class UsageServiceImpl extends ManagerBase implements UsageService, Manager {
-    public static final Logger s_logger = Logger.getLogger(UsageServiceImpl.class);
 
     //ToDo: Move implementation to ManagaerImpl
 
@@ -213,7 +211,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             } else if (_accountService.isDomainAdmin(caller.getId())) {
                 isDomainAdmin = true;
             }
-            s_logger.debug("Account details not available. Using userContext accountId: " + accountId);
+            logger.debug("Account details not available. Using userContext accountId: " + accountId);
         }
 
         Date startDate = cmd.getStartDate();
@@ -225,8 +223,8 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         Date adjustedStartDate = computeAdjustedTime(startDate, usageTZ);
         Date adjustedEndDate = computeAdjustedTime(endDate, usageTZ);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("getting usage records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate +
+        if (logger.isDebugEnabled()) {
+            logger.debug("getting usage records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate +
                 ", using pageSize: " + cmd.getPageSizeVal() + " and startIndex: " + cmd.getStartIndex());
         }
 
@@ -394,7 +392,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
                     cal.set(Calendar.SECOND, 0);
                     cal.set(Calendar.MILLISECOND, 0);
                     long execTS = cal.getTimeInMillis();
-                    s_logger.debug("Trying to remove old raw cloud_usage records older than " + interval + " day(s), current time=" + curTS + " next job execution time=" + execTS);
+                    logger.debug("Trying to remove old raw cloud_usage records older than " + interval + " day(s), current time=" + curTS + " next job execution time=" + execTS);
                     // Let's avoid cleanup when job runs and around a 15 min interval
                     if (Math.abs(curTS - execTS) < 15 * 60 * 1000) {
                         return false;

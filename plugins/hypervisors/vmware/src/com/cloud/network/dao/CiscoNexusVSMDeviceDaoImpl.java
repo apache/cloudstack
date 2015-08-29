@@ -20,7 +20,6 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.CiscoNexusVSMDeviceVO;
@@ -34,7 +33,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 @Local(value = CiscoNexusVSMDeviceDao.class)
 @DB
 public class CiscoNexusVSMDeviceDaoImpl extends GenericDaoBase<CiscoNexusVSMDeviceVO, Long> implements CiscoNexusVSMDeviceDao {
-    protected static final Logger s_logger = Logger.getLogger(CiscoNexusVSMDeviceDaoImpl.class);
     final SearchBuilder<CiscoNexusVSMDeviceVO> mgmtVlanIdSearch;
     final SearchBuilder<CiscoNexusVSMDeviceVO> domainIdSearch;
     final SearchBuilder<CiscoNexusVSMDeviceVO> nameSearch;

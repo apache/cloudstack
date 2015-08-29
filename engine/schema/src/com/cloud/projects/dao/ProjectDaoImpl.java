@@ -21,7 +21,6 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.projects.Project;
@@ -39,7 +38,6 @@ import com.cloud.utils.db.TransactionLegacy;
 @Component
 @Local(value = {ProjectDao.class})
 public class ProjectDaoImpl extends GenericDaoBase<ProjectVO, Long> implements ProjectDao {
-    private static final Logger s_logger = Logger.getLogger(ProjectDaoImpl.class);
     protected final SearchBuilder<ProjectVO> AllFieldsSearch;
     protected GenericSearchBuilder<ProjectVO, Long> CountByDomain;
     protected GenericSearchBuilder<ProjectVO, Long> ProjectAccountSearch;
@@ -79,7 +77,7 @@ public class ProjectDaoImpl extends GenericDaoBase<ProjectVO, Long> implements P
         ProjectVO projectToRemove = findById(projectId);
         projectToRemove.setName(null);
         if (!update(projectId, projectToRemove)) {
-            s_logger.warn("Failed to reset name for the project id=" + projectId + " as a part of project remove");
+            logger.warn("Failed to reset name for the project id=" + projectId + " as a part of project remove");
             return false;
         }
 

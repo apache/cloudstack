@@ -25,7 +25,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataObjectType;
@@ -45,7 +44,6 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = HypervisorGuru.class)
 public class Ovm3HypervisorGuru extends HypervisorGuruBase implements HypervisorGuru {
-    private final Logger LOGGER = Logger.getLogger(Ovm3HypervisorGuru.class);
     @Inject
     GuestOSDao guestOsDao;
     @Inject
@@ -86,7 +84,7 @@ public class Ovm3HypervisorGuru extends HypervisorGuruBase implements Hypervisor
      * @see com.cloud.hypervisor.HypervisorGuruBase#getCommandHostDelegation(long, com.cloud.agent.api.Command)
      */
     public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
-        LOGGER.debug("getCommandHostDelegation: " + cmd.getClass());
+        logger.debug("getCommandHostDelegation: " + cmd.getClass());
         if (cmd instanceof StorageSubSystemCommand) {
             StorageSubSystemCommand c = (StorageSubSystemCommand)cmd;
             c.setExecuteInSequence(true);
@@ -97,7 +95,7 @@ public class Ovm3HypervisorGuru extends HypervisorGuruBase implements Hypervisor
             DataTO destData = cpyCommand.getDestTO();
 
             if (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.TEMPLATE) {
-                LOGGER.debug("Snapshot to Template: " + cmd);
+                logger.debug("Snapshot to Template: " + cmd);
                 DataStoreTO srcStore = srcData.getDataStore();
                 DataStoreTO destStore = destData.getDataStore();
                 if (srcStore instanceof NfsTO && destStore instanceof NfsTO) {

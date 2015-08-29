@@ -23,7 +23,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.FenceAnswer;
@@ -41,7 +40,6 @@ import com.cloud.vm.VirtualMachine;
 
 @Local(value = FenceBuilder.class)
 public class OvmFencer extends AdapterBase implements FenceBuilder {
-    private static final Logger s_logger = Logger.getLogger(OvmFencer.class);
     @Inject
     AgentManager _agentMgr;
     @Inject
@@ -71,7 +69,7 @@ public class OvmFencer extends AdapterBase implements FenceBuilder {
     @Override
     public Boolean fenceOff(VirtualMachine vm, Host host) {
         if (host.getHypervisorType() != HypervisorType.Ovm) {
-            s_logger.debug("Don't know how to fence non Ovm hosts " + host.getHypervisorType());
+            logger.debug("Don't know how to fence non Ovm hosts " + host.getHypervisorType());
             return null;
         }
 
@@ -95,13 +93,13 @@ public class OvmFencer extends AdapterBase implements FenceBuilder {
             try {
                 answer = (FenceAnswer)_agentMgr.send(h.getId(), fence);
             } catch (AgentUnavailableException e) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Moving on to the next host because " + h.toString() + " is unavailable");
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Moving on to the next host because " + h.toString() + " is unavailable");
                 }
                 continue;
             } catch (OperationTimedoutException e) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Moving on to the next host because " + h.toString() + " is unavailable");
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Moving on to the next host because " + h.toString() + " is unavailable");
                 }
                 continue;
             }
@@ -111,8 +109,8 @@ public class OvmFencer extends AdapterBase implements FenceBuilder {
             }
         }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Unable to fence off " + vm.toString() + " on " + host.toString());
+        if (logger.isDebugEnabled()) {
+            logger.debug("Unable to fence off " + vm.toString() + " on " + host.toString());
         }
 
         return false;

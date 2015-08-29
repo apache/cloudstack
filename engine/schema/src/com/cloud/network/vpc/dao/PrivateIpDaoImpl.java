@@ -21,7 +21,6 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.vpc.PrivateIpVO;
@@ -38,7 +37,6 @@ import com.cloud.utils.db.TransactionLegacy;
 @Local(value = PrivateIpDao.class)
 @DB()
 public class PrivateIpDaoImpl extends GenericDaoBase<PrivateIpVO, Long> implements PrivateIpDao {
-    private static final Logger s_logger = Logger.getLogger(PrivateIpDaoImpl.class);
 
     private final SearchBuilder<PrivateIpVO> AllFieldsSearch;
     private final GenericSearchBuilder<PrivateIpVO, Integer> CountAllocatedByNetworkId;
@@ -92,8 +90,8 @@ public class PrivateIpDaoImpl extends GenericDaoBase<PrivateIpVO, Long> implemen
 
     @Override
     public void releaseIpAddress(String ipAddress, long networkId) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Releasing private ip address: " + ipAddress + " network id " + networkId);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Releasing private ip address: " + ipAddress + " network id " + networkId);
         }
         SearchCriteria<PrivateIpVO> sc = AllFieldsSearch.create();
         sc.setParameters("ip", ipAddress);

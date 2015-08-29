@@ -23,7 +23,6 @@ import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 import org.bouncycastle.crypto.PBEParametersGenerator;
 import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -41,7 +40,6 @@ import static java.lang.String.format;
 
 @Local({UserAuthenticator.class})
 public class PBKDF2UserAuthenticator extends DefaultUserAuthenticator {
-    public static final Logger s_logger = Logger.getLogger(PBKDF2UserAuthenticator.class);
     private static final int s_saltlen = 64;
     private static final int s_rounds = 100000;
     private static final int s_keylen = 512;
@@ -50,12 +48,12 @@ public class PBKDF2UserAuthenticator extends DefaultUserAuthenticator {
     private UserAccountDao _userAccountDao;
 
     public Pair<Boolean, UserAuthenticator.ActionOnFailedAuthentication> authenticate(String username, String password, Long domainId, Map<String, Object[]> requestParameters) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Retrieving user: " + username);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Retrieving user: " + username);
         }
 
         if (StringUtils.isEmpty(username) || StringUtils.isEmpty(password)) {
-            s_logger.debug("Username or Password cannot be empty");
+            logger.debug("Username or Password cannot be empty");
             return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
         }
 
@@ -64,7 +62,7 @@ public class PBKDF2UserAuthenticator extends DefaultUserAuthenticator {
         if (user != null) {
             isValidUser = true;
         } else {
-            s_logger.debug("Unable to find user with " + username + " in domain " + domainId);
+            logger.debug("Unable to find user with " + username + " in domain " + domainId);
         }
 
         byte[] salt = new byte[0];
@@ -73,7 +71,7 @@ public class PBKDF2UserAuthenticator extends DefaultUserAuthenticator {
             if (isValidUser) {
                 String[] storedPassword = user.getPassword().split(":");
                 if ((storedPassword.length != 3) || (!StringUtils.isNumeric(storedPassword[2]))) {
-                    s_logger.warn("The stored password for " + username + " isn't in the right format for this authenticator");
+                    logger.warn("The stored password for " + username + " isn't in the right format for this authenticator");
                     isValidUser = false;
                 } else {
                     // Encoding format = <salt>:<password hash>:<rounds>
@@ -112,7 +110,7 @@ public class PBKDF2UserAuthenticator extends DefaultUserAuthenticator {
         } catch (UnsupportedEncodingException e) {
             throw new CloudRuntimeException("Unable to hash password", e);
         } catch (InvalidKeySpecException e) {
-            s_logger.error("Exception in EncryptUtil.createKey ", e);
+            logger.error("Exception in EncryptUtil.createKey ", e);
             throw new CloudRuntimeException("Unable to hash password", e);
         }
     }

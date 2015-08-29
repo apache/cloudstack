@@ -29,7 +29,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.command.admin.usage.AddTrafficMonitorCmd;
@@ -99,7 +98,6 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
         TrafficSentinel;
     }
 
-    private static final org.apache.log4j.Logger s_logger = Logger.getLogger(NetworkUsageManagerImpl.class);
     @Inject
     HostDao _hostDao;
     @Inject
@@ -152,7 +150,7 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
         try {
             uri = new URI(cmd.getUrl());
         } catch (Exception e) {
-            s_logger.debug(e);
+            logger.debug(e);
             throw new InvalidParameterValueException(e.getMessage());
         }
 
@@ -278,11 +276,11 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
             HostVO host = _hostDao.findById(agentId);
             if (host != null) {
                 if ((host.getManagementServerId() == null) || (mgmtSrvrId != host.getManagementServerId())) {
-                    s_logger.warn("Not the owner. Not collecting Direct Network usage from  TrafficMonitor : " + agentId);
+                    logger.warn("Not the owner. Not collecting Direct Network usage from  TrafficMonitor : " + agentId);
                     return false;
                 }
             } else {
-                s_logger.warn("Agent not found. Not collecting Direct Network usage from  TrafficMonitor : " + agentId);
+                logger.warn("Agent not found. Not collecting Direct Network usage from  TrafficMonitor : " + agentId);
                 return false;
             }
 
@@ -302,12 +300,12 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
         }
 
         private boolean collectDirectNetworkUsage(final HostVO host) {
-            s_logger.debug("Direct Network Usage stats collector is running...");
+            logger.debug("Direct Network Usage stats collector is running...");
 
             final long zoneId = host.getDataCenterId();
             final DetailVO lastCollectDetail = _detailsDao.findDetail(host.getId(), "last_collection");
             if (lastCollectDetail == null) {
-                s_logger.warn("Last collection time not available. Skipping direct usage collection for Traffic Monitor: " + host.getId());
+                logger.warn("Last collection time not available. Skipping direct usage collection for Traffic Monitor: " + host.getId());
                 return false;
             }
             Date lastCollection = new Date(Long.parseLong(lastCollectDetail.getValue()));
@@ -323,7 +321,7 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
             final Date now = rightNow.getTime();
 
             if (lastCollection.after(now)) {
-                s_logger.debug("Current time is less than 2 hours after last collection time : " + lastCollection.toString() +
+                logger.debug("Current time is less than 2 hours after last collection time : " + lastCollection.toString() +
                     ". Skipping direct network usage collection");
                 return false;
             }
@@ -382,7 +380,7 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
                 if (answer == null || !answer.getResult()) {
                     String details = (answer != null) ? answer.getDetails() : "details unavailable";
                     String msg = "Unable to get network usage stats from " + host.getId() + " due to: " + details + ".";
-                    s_logger.error(msg);
+                    logger.error(msg);
                     return false;
                 } else {
                     for (UsageIPAddressVO usageIp : fullDurationIpUsage) {
@@ -391,11 +389,11 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
                         Long bytesSent = bytesSentRcvd[0];
                         Long bytesRcvd = bytesSentRcvd[1];
                         if (bytesSent == null || bytesRcvd == null) {
-                            s_logger.debug("Incorrect bytes for IP: " + publicIp);
+                            logger.debug("Incorrect bytes for IP: " + publicIp);
                             continue;
                         }
                         if (bytesSent == 0L && bytesRcvd == 0L) {
-                            s_logger.trace("Ignore zero bytes for IP: " + publicIp);
+                            logger.trace("Ignore zero bytes for IP: " + publicIp);
                             continue;
                         }
                         UserStatisticsVO stats = new UserStatisticsVO(usageIp.getAccountId(), zoneId, null, null, null, null);
@@ -415,7 +413,7 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
                 if (answer == null || !answer.getResult()) {
                     String details = (answer != null) ? answer.getDetails() : "details unavailable";
                     String msg = "Unable to get network usage stats from " + host.getId() + " due to: " + details + ".";
-                    s_logger.error(msg);
+                    logger.error(msg);
                     return false;
                 } else {
                     String publicIp = usageIp.getAddress();
@@ -423,11 +421,11 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
                     Long bytesSent = bytesSentRcvd[0];
                     Long bytesRcvd = bytesSentRcvd[1];
                     if (bytesSent == null || bytesRcvd == null) {
-                        s_logger.debug("Incorrect bytes for IP: " + publicIp);
+                        logger.debug("Incorrect bytes for IP: " + publicIp);
                         continue;
                     }
                     if (bytesSent == 0L && bytesRcvd == 0L) {
-                        s_logger.trace("Ignore zero bytes for IP: " + publicIp);
+                        logger.trace("Ignore zero bytes for IP: " + publicIp);
                         continue;
                     }
                     UserStatisticsVO stats = new UserStatisticsVO(usageIp.getAccountId(), zoneId, null, null, null, null);
@@ -439,7 +437,7 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
             }
 
             if (collectedStats.size() == 0) {
-                s_logger.debug("No new direct network stats. No need to persist");
+                logger.debug("No new direct network stats. No need to persist");
                 return false;
             }
             //Persist all the stats and last_collection time in a single transaction
@@ -479,8 +477,8 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
 
         @Override
         public boolean processDisconnect(long agentId, Status state) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Disconnected called on " + agentId + " with status " + state.toString());
+            if (logger.isDebugEnabled()) {
+                logger.debug("Disconnected called on " + agentId + " with status " + state.toString());
             }
             return true;
         }
@@ -489,12 +487,12 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
         public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) {
             if (cmd instanceof StartupTrafficMonitorCommand) {
                 long agentId = agent.getId();
-                s_logger.debug("Sending RecurringNetworkUsageCommand to " + agentId);
+                logger.debug("Sending RecurringNetworkUsageCommand to " + agentId);
                 RecurringNetworkUsageCommand watch = new RecurringNetworkUsageCommand(_interval);
                 try {
                     _agentMgr.send(agentId, new Commands(watch), this);
                 } catch (AgentUnavailableException e) {
-                    s_logger.debug("Can not process connect for host " + agentId, e);
+                    logger.debug("Can not process connect for host " + agentId, e);
                 }
             }
             return;

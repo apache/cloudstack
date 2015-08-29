@@ -27,7 +27,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.utils.fsm.StateMachine2;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -73,7 +72,6 @@ import com.cloud.vm.dao.UserVmDao;
 @Local(value = {AffinityGroupService.class})
 public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGroupService, Manager, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
-    public static final Logger s_logger = Logger.getLogger(AffinityGroupServiceImpl.class);
     private String _name;
 
     @Inject
@@ -230,8 +228,8 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
             }
         });
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Created affinity group =" + affinityGroupName);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Created affinity group =" + affinityGroupName);
         }
 
         return group;
@@ -307,8 +305,8 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
         Pair<Class<?>, Long> params = new Pair<Class<?>, Long>(AffinityGroup.class, affinityGroupIdFinal);
         _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, params);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Deleted affinity group id=" + affinityGroupId);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Deleted affinity group id=" + affinityGroupId);
         }
         return true;
     }
@@ -465,7 +463,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
 
         // Check that the VM is stopped
         if (!vmInstance.getState().equals(State.Stopped)) {
-            s_logger.warn("Unable to update affinity groups of the virtual machine " + vmInstance.toString() + " in state " + vmInstance.getState());
+            logger.warn("Unable to update affinity groups of the virtual machine " + vmInstance.toString() + " in state " + vmInstance.getState());
             throw new InvalidParameterValueException("Unable update affinity groups of the virtual machine " + vmInstance.toString() + " " + "in state " +
                 vmInstance.getState() + "; make sure the virtual machine is stopped and not in an error state before updating.");
         }
@@ -491,8 +489,8 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
             }
         }
         _affinityGroupVMMapDao.updateMap(vmId, affinityGroupIds);
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Updated VM :" + vmId + " affinity groups to =" + affinityGroupIds);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Updated VM :" + vmId + " affinity groups to =" + affinityGroupIds);
         }
         // APIResponseHelper will pull out the updated affinitygroups.
         return vmInstance;

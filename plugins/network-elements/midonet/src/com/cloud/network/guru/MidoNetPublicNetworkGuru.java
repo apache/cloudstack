@@ -23,7 +23,6 @@ import java.net.URI;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan;
@@ -57,7 +56,6 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = NetworkGuru.class)
 public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
-    private static final Logger s_logger = Logger.getLogger(MidoNetPublicNetworkGuru.class);
 
     // Inject any stuff we need to use (DAOs etc)
     @Inject
@@ -72,7 +70,7 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
     // Only change is to make broadcast domain type Mido
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network network, Account owner) {
-        s_logger.debug("design called with network: " + network);
+        logger.debug("design called with network: " + network);
         if (!canHandle(offering)) {
             return null;
         }
@@ -121,7 +119,7 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
 
     @Override
     public void updateNicProfile(NicProfile profile, Network network) {
-        s_logger.debug("updateNicProfile called with network: " + network + " profile: " + profile);
+        logger.debug("updateNicProfile called with network: " + network + " profile: " + profile);
 
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
         if (profile != null) {
@@ -137,7 +135,7 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
         if (nic == null) {
             nic = new NicProfile(Nic.ReservationStrategy.Create, null, null, null, null);
         }
-        s_logger.debug("allocate called with network: " + network + " nic: " + nic + " vm: " + vm);
+        logger.debug("allocate called with network: " + network + " nic: " + nic + " vm: " + vm);
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
 
         if (nic.getRequestedIPv4() != null) {
@@ -162,7 +160,7 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
     @Override
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
         throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException {
-        s_logger.debug("reserve called with network: " + network + " nic: " + nic + " vm: " + vm);
+        logger.debug("reserve called with network: " + network + " nic: " + nic + " vm: " + vm);
         if (nic.getIPv4Address() == null) {
             getIp(nic, dest.getDataCenter(), vm, network);
         }
@@ -170,14 +168,14 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
 
     @Override
     public boolean release(NicProfile nic, VirtualMachineProfile vm, String reservationId) {
-        s_logger.debug("release called with nic: " + nic + " vm: " + vm);
+        logger.debug("release called with nic: " + nic + " vm: " + vm);
         return true;
     }
 
     @Override
     public Network implement(Network network, NetworkOffering offering, DeployDestination destination, ReservationContext context)
         throws InsufficientVirtualNetworkCapacityException {
-        s_logger.debug("implement called with network: " + network);
+        logger.debug("implement called with network: " + network);
         long dcId = destination.getDataCenter().getId();
 
         //get physical network id
@@ -204,9 +202,9 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
     @Override
     @DB
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile vm) {
-        s_logger.debug("deallocate called with network: " + network + " nic: " + nic + " vm: " + vm);
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("public network deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIPv4Address());
+        logger.debug("deallocate called with network: " + network + " nic: " + nic + " vm: " + vm);
+        if (logger.isDebugEnabled()) {
+            logger.debug("public network deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIPv4Address());
         }
 
         final IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIPv4Address());
@@ -221,19 +219,19 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
         }
         nic.deallocate();
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Deallocated nic: " + nic);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Deallocated nic: " + nic);
         }
     }
 
     @Override
     public void shutdown(NetworkProfile network, NetworkOffering offering) {
-        s_logger.debug("shutdown called with network: " + network);
+        logger.debug("shutdown called with network: " + network);
     }
 
     @Override
     public boolean trash(Network network, NetworkOffering offering) {
-        s_logger.debug("trash called with network: " + network);
+        logger.debug("trash called with network: " + network);
         return true;
     }
 

@@ -23,7 +23,6 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenterIpAddressVO;
@@ -41,7 +40,6 @@ import com.cloud.utils.net.NetUtils;
 @Local(value = {DataCenterIpAddressDao.class})
 @DB
 public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddressVO, Long> implements DataCenterIpAddressDao {
-    private static final Logger s_logger = Logger.getLogger(DataCenterIpAddressDaoImpl.class);
 
     private final SearchBuilder<DataCenterIpAddressVO> AllFieldsSearch;
     private final GenericSearchBuilder<DataCenterIpAddressVO, Integer> AllIpCount;
@@ -144,8 +142,8 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
 
     @Override
     public void releaseIpAddress(String ipAddress, long dcId, Long instanceId) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Releasing ip address: " + ipAddress + " data center " + dcId);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Releasing ip address: " + ipAddress + " data center " + dcId);
         }
         SearchCriteria<DataCenterIpAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("ip", ipAddress);
@@ -162,8 +160,8 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
 
     @Override
     public void releaseIpAddress(long nicId, String reservationId) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Releasing ip address for reservationId=" + reservationId + ", instance=" + nicId);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Releasing ip address for reservationId=" + reservationId + ", instance=" + nicId);
         }
         SearchCriteria<DataCenterIpAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("instance", nicId);
@@ -178,8 +176,8 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
 
     @Override
     public void releaseIpAddress(long nicId) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Releasing ip address for instance=" + nicId);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Releasing ip address for instance=" + nicId);
         }
         SearchCriteria<DataCenterIpAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("instance", nicId);

@@ -24,7 +24,6 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -56,7 +55,6 @@ import com.cloud.utils.db.SearchCriteria;
 @Local(value = {TemplateJoinDao.class})
 public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> implements TemplateJoinDao {
 
-    public static final Logger s_logger = Logger.getLogger(TemplateJoinDaoImpl.class);
 
     @Inject
     private ConfigurationDao  _configDao;

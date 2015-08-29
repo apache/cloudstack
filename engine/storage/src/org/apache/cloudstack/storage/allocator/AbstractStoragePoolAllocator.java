@@ -28,7 +28,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.storage.Storage;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
@@ -54,7 +53,6 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachineProfile;
 
 public abstract class AbstractStoragePoolAllocator extends AdapterBase implements StoragePoolAllocator {
-    private static final Logger s_logger = Logger.getLogger(AbstractStoragePoolAllocator.class);
     @Inject
     StorageManager storageMgr;
     protected @Inject
@@ -116,8 +114,8 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         }
 
         List<Long> poolIdsByCapacity = _capacityDao.orderHostsByFreeCapacity(clusterId, capacityType);
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("List of pools in descending order of free capacity: "+ poolIdsByCapacity);
+        if (logger.isDebugEnabled()) {
+            logger.debug("List of pools in descending order of free capacity: "+ poolIdsByCapacity);
         }
 
       //now filter the given list of Pools by this ordered list
@@ -146,8 +144,8 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         Long clusterId = plan.getClusterId();
 
         List<Long> poolIdsByVolCount = _volumeDao.listPoolIdsByVolumeCount(dcId, podId, clusterId, account.getAccountId());
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("List of pools in ascending order of number of volumes for account id: " + account.getAccountId() + " is: " + poolIdsByVolCount);
+        if (logger.isDebugEnabled()) {
+            logger.debug("List of pools in ascending order of number of volumes for account id: " + account.getAccountId() + " is: " + poolIdsByVolCount);
         }
 
         // now filter the given list of Pools by this ordered list
@@ -189,12 +187,12 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 
     protected boolean filter(ExcludeList avoid, StoragePool pool, DiskProfile dskCh, DeploymentPlan plan) {
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Checking if storage pool is suitable, name: " + pool.getName() + " ,poolId: " + pool.getId());
+        if (logger.isDebugEnabled()) {
+            logger.debug("Checking if storage pool is suitable, name: " + pool.getName() + " ,poolId: " + pool.getId());
         }
         if (avoid.shouldAvoid(pool)) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("StoragePool is in avoid set, skipping this pool");
+            if (logger.isDebugEnabled()) {
+                logger.debug("StoragePool is in avoid set, skipping this pool");
             }
             return false;
         }
@@ -203,14 +201,14 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         if (clusterId != null) {
             ClusterVO cluster = _clusterDao.findById(clusterId);
             if (!(cluster.getHypervisorType() == dskCh.getHypervisorType())) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("StoragePool's Cluster does not have required hypervisorType, skipping this pool");
+                if (logger.isDebugEnabled()) {
+                    logger.debug("StoragePool's Cluster does not have required hypervisorType, skipping this pool");
                 }
                 return false;
             }
         } else if (pool.getHypervisor() != null && !pool.getHypervisor().equals(HypervisorType.Any) && !(pool.getHypervisor() == dskCh.getHypervisorType())) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("StoragePool does not have required hypervisorType, skipping this pool");
+            if (logger.isDebugEnabled()) {
+                logger.debug("StoragePool does not have required hypervisorType, skipping this pool");
             }
             return false;
         }
@@ -235,13 +233,13 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
                 //LXC ROOT disks supports NFS and local storage pools only
                 if(!(Storage.StoragePoolType.NetworkFilesystem.equals(poolType) ||
                         Storage.StoragePoolType.Filesystem.equals(poolType)) ){
-                    s_logger.debug("StoragePool does not support LXC ROOT disk, skipping this pool");
+                    logger.debug("StoragePool does not support LXC ROOT disk, skipping this pool");
                     return false;
                 }
             } else if (Volume.Type.DATADISK.equals(volType)){
                 //LXC DATA disks supports RBD storage pool only
                 if(!Storage.StoragePoolType.RBD.equals(poolType)){
-                    s_logger.debug("StoragePool does not support LXC DATA disk, skipping this pool");
+                    logger.debug("StoragePool does not support LXC DATA disk, skipping this pool");
                     return false;
                 }
             }

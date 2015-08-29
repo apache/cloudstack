@@ -20,7 +20,6 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
@@ -36,7 +35,6 @@ import com.cloud.utils.db.SearchCriteria;
 @Component
 @Local(value = {DiskOfferingJoinDao.class})
 public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, Long> implements DiskOfferingJoinDao {
-    public static final Logger s_logger = Logger.getLogger(DiskOfferingJoinDaoImpl.class);
 
     private final SearchBuilder<DiskOfferingJoinVO> dofIdSearch;
     private final Attribute _typeAttr;

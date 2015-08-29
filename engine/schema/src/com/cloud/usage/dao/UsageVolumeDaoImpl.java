@@ -27,7 +27,6 @@ import java.util.TimeZone;
 import javax.ejb.Local;
 
 import com.cloud.exception.CloudException;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageVolumeVO;
@@ -38,7 +37,6 @@ import com.cloud.utils.db.TransactionLegacy;
 @Component
 @Local(value = {UsageVolumeDao.class})
 public class UsageVolumeDaoImpl extends GenericDaoBase<UsageVolumeVO, Long> implements UsageVolumeDao {
-    public static final Logger s_logger = Logger.getLogger(UsageVolumeDaoImpl.class.getName());
 
     protected static final String REMOVE_BY_USERID_VOLID = "DELETE FROM usage_volume WHERE account_id = ? AND id = ?";
     protected static final String UPDATE_DELETED = "UPDATE usage_volume SET deleted = ? WHERE account_id = ? AND id = ? and deleted IS NULL";
@@ -71,7 +69,7 @@ public class UsageVolumeDaoImpl extends GenericDaoBase<UsageVolumeVO, Long> impl
             txn.commit();
         } catch (Exception e) {
             txn.rollback();
-            s_logger.warn("Error removing usageVolumeVO:"+e.getMessage(), e);
+            logger.warn("Error removing usageVolumeVO:"+e.getMessage(), e);
         } finally {
             txn.close();
         }
@@ -93,7 +91,7 @@ public class UsageVolumeDaoImpl extends GenericDaoBase<UsageVolumeVO, Long> impl
             txn.commit();
         } catch (Exception e) {
             txn.rollback();
-            s_logger.warn("Error updating UsageVolumeVO", e);
+            logger.warn("Error updating UsageVolumeVO", e);
         } finally {
             txn.close();
         }
@@ -171,7 +169,7 @@ public class UsageVolumeDaoImpl extends GenericDaoBase<UsageVolumeVO, Long> impl
             }
         } catch (Exception e) {
             txn.rollback();
-            s_logger.warn("Error getting usage records", e);
+            logger.warn("Error getting usage records", e);
         } finally {
             txn.close();
         }

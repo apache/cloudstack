@@ -24,7 +24,6 @@ import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Command;
@@ -36,7 +35,6 @@ import com.cloud.utils.component.ManagerBase;
 @Component
 @Local(value = {HypervisorGuruManager.class})
 public class HypervisorGuruManagerImpl extends ManagerBase implements HypervisorGuruManager {
-    public static final Logger s_logger = Logger.getLogger(HypervisorGuruManagerImpl.class.getName());
 
     @Inject
     HostDao _hostDao;

@@ -20,7 +20,6 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.cluster.ManagementServerHost;
 import com.cloud.cluster.ManagementServerHostPeerVO;
@@ -32,7 +31,6 @@ import com.cloud.utils.db.TransactionLegacy;
 
 @Local(value = {ManagementServerHostPeerDao.class})
 public class ManagementServerHostPeerDaoImpl extends GenericDaoBase<ManagementServerHostPeerVO, Long> implements ManagementServerHostPeerDao {
-    private static final Logger s_logger = Logger.getLogger(ManagementServerHostPeerDaoImpl.class);
 
     private final SearchBuilder<ManagementServerHostPeerVO> ClearPeerSearch;
     private final SearchBuilder<ManagementServerHostPeerVO> FindForUpdateSearch;
@@ -87,7 +85,7 @@ public class ManagementServerHostPeerDaoImpl extends GenericDaoBase<ManagementSe
             }
             txn.commit();
         } catch (Exception e) {
-            s_logger.warn("Unexpected exception, ", e);
+            logger.warn("Unexpected exception, ", e);
             txn.rollback();
         }
     }

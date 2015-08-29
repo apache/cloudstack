@@ -23,7 +23,6 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -62,7 +61,6 @@ import com.cloud.vm.dao.UserVmDao;
 
 @Local(value = NetworkElement.class)
 public class CloudZonesNetworkElement extends AdapterBase implements NetworkElement, UserDataServiceProvider {
-    private static final Logger s_logger = Logger.getLogger(CloudZonesNetworkElement.class);
 
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
@@ -227,15 +225,15 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
             try {
                 _agentManager.send(dest.getHost().getId(), cmds);
             } catch (OperationTimedoutException e) {
-                s_logger.debug("Unable to send vm data command to host " + dest.getHost());
+                logger.debug("Unable to send vm data command to host " + dest.getHost());
                 return false;
             }
             Answer dataAnswer = cmds.getAnswer("vmdata");
             if (dataAnswer != null && dataAnswer.getResult()) {
-                s_logger.info("Sent vm data successfully to vm " + uservm.getInstanceName());
+                logger.info("Sent vm data successfully to vm " + uservm.getInstanceName());
                 return true;
             }
-            s_logger.info("Failed to send vm data to vm " + uservm.getInstanceName());
+            logger.info("Failed to send vm data to vm " + uservm.getInstanceName());
             return false;
         }
         return false;
