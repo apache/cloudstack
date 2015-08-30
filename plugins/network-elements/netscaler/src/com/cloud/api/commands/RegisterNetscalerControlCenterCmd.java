@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.context.CallContext;
 
+import com.cloud.api.response.NetscalerControlCenterResponse;
 import com.cloud.api.response.NetscalerLoadBalancerResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -43,7 +44,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class RegisterNetscalerControlCenterCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(RegisterNetscalerControlCenterCmd.class.getName());
-    private static final String s_name = "registernetscalercontrolcenterrresponse";
+    private static final String s_name = "registernetscalercontrolcenterresponse";
     @Inject
     NetscalerLoadBalancerElementService _netsclarLbService;
 
@@ -108,10 +109,10 @@ public class RegisterNetscalerControlCenterCmd extends BaseAsyncCmd {
         try {
             NetScalerControlCenterVO nccVO = _netsclarLbService.registerNetscalerControlCenter(this);
             if (nccVO != null) {
-                /*NetscalerLoadBalancerResponse response = _netsclarLbService.createNetscalerLoadBalancerResponse(lbDeviceVO);
+                NetscalerControlCenterResponse  response = _netsclarLbService.createNetscalerControlCenterResponse(nccVO);
                 response.setObjectName("netscalerloadbalancer");
                 response.setResponseName(getCommandName());
-                this.setResponseObject(response);*/
+                this.setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add netscaler load balancer due to internal error.");
             }
@@ -124,12 +125,12 @@ public class RegisterNetscalerControlCenterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Adding a netscaler load balancer device";
+        return "Adding a Netscaler Control Center Device";
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_EXTERNAL_LB_DEVICE_ADD;
+        return EventTypes.EVENT_EXTERNAL_NCC_DEVICE_ADD;
     }
 
     @Override
