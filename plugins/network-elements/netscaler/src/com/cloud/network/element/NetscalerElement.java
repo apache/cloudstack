@@ -37,8 +37,6 @@ import com.google.gson.Gson;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.admin.address.AcquirePodIpCmdByAdmin;
-import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
@@ -61,7 +59,6 @@ import com.cloud.api.commands.ConfigureNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.DeleteNetscalerControlCenterCmd;
 import com.cloud.api.commands.DeleteNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.DeleteServicePackageOfferingCmd;
-import com.cloud.api.commands.DeployNetscalerVpxCmd;
 import com.cloud.api.commands.ListNetscalerControlCenterCmd;
 import com.cloud.api.commands.ListNetscalerLoadBalancerNetworksCmd;
 import com.cloud.api.commands.ListNetscalerLoadBalancersCmd;
@@ -148,7 +145,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.UrlUtil;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineProfile;
 //import com.cloud.network.dao.RegisteredServicePackageVO;
 
@@ -899,8 +895,8 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         cmdList.add(ListNetscalerControlCenterCmd.class);
         cmdList.add(DeleteServicePackageOfferingCmd.class);
         cmdList.add(DeleteNetscalerControlCenterCmd.class);
-        cmdList.add(ReleasePodIpCmdByAdmin.class);
-        cmdList.add(AcquirePodIpCmdByAdmin.class);
+        /*cmdList.add(ReleasePodIpCmdByAdmin.class);
+        cmdList.add(AcquirePodIpCmdByAdmin.class);*/
         return cmdList;
     }
 
@@ -1621,19 +1617,19 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         return null;
     }*/
 
-    @Override
+/*    @Override
     public VMInstanceVO deployNetscalerServiceVm(DeployNetscalerVpxCmd cmd) {
         DataCenter zone = _dcDao.findById(cmd.getZoneId());
         DeployDestination dest = new DeployDestination(zone, null, null, null);//DeployDestination dest = new DeployDestination(zone, null, null, null);
         //USERVO CALLERUSER = _USERDAO.FINDBYID(CALLCONTEXT.CURRENT().GETCALLINGUSERID());
         //JOURNAL JOURNAL = NEW JOURNAL.LOGJOURNAL("IMPLEMENTING "  NETWORK, S_LOGGER);
         VMInstanceVO vmvo = null;
-        /*try {
+        try {
             //vmvo = (VMInstanceVO)implementNsVpxDeployment(null, null, dest, null);
         } catch (ConcurrentOperationException | ResourceUnavailableException | InsufficientCapacityException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        }*/
+        }
         return vmvo;
-    }
+    }*/
 }
