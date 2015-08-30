@@ -927,11 +927,15 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             String uuid = rule.getUuid();
             String srcIp = rule.getSourceIp().addr();
             String srcIpVlan = null;
+            String srcIpGateway = null;
+            String srcIpNetmask = null;
             //IpAddress ipAddress =  _networkModel.getPublicIpAddress(rule.getSourceIp().addr(), network.getDataCenterId()).getVlanId();
             Long vlanid =  _networkModel.getPublicIpAddress(rule.getSourceIp().addr(), network.getDataCenterId()).getVlanId();
             if(vlanid != null ) {
               VlanVO publicVlan =   _vlanDao.findById(vlanid);
               srcIpVlan =  publicVlan.getVlanTag();
+              srcIpGateway = publicVlan.getVlanGateway();
+              srcIpNetmask = publicVlan.getVlanNetmask();
             }
             int srcPort = rule.getSourcePortStart();
             List<LbDestination> destinations = rule.getDestinations();
@@ -956,6 +960,8 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                         rule.getHealthCheckPolicies(), rule.getLbSslCert(), rule.getLbProtocol());
                 loadBalancer.setNetworkId(network.getId());
                 loadBalancer.setSrcIpVlan(srcIpVlan);
+                loadBalancer.setSrcIpNetmask(srcIpNetmask);
+                loadBalancer.setSrcIpGateway(srcIpGateway);
                 if (rule.isAutoScaleConfig()) {
                     loadBalancer.setAutoScaleVmGroup(rule.getAutoScaleVmGroup());
                 }
@@ -1253,7 +1259,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 LoadBalancerTO[] loadBalancersForCommand = loadBalancersToApply.toArray(new LoadBalancerTO[numLoadBalancersForCommand]);
                 // LoadBalancerConfigCommand cmd = new
                 // LoadBalancerConfigCommand(loadBalancersForCommand, null);
-                HealthCheckLBConfigCommand cmd = new HealthCheckLBConfigCommand(loadBalancersForCommand);
+                HealthCheckLBConfigCommand cmd = new HealthCheckLBConfigCommand(loadBalancersForCommand, network.getId());
                 long guestVlanTag = Integer.parseInt(BroadcastDomainType.getValue(network.getBroadcastUri()));
                 cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, String.valueOf(guestVlanTag));
 

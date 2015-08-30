@@ -391,6 +391,10 @@ public class EventTypes {
     public static final String EVENT_EXTERNAL_LB_DEVICE_DELETE = "PHYSICAL.LOADBALANCER.DELETE";
     public static final String EVENT_EXTERNAL_LB_DEVICE_CONFIGURE = "PHYSICAL.LOADBALANCER.CONFIGURE";
 
+    // external NCC device events
+    public static final String EVENT_EXTERNAL_NCC_DEVICE_ADD = "PHYSICAL.NCC.ADD";
+    public static final String EVENT_EXTERNAL_NCC_DEVICE_DELETE = "PHYSICAL.NCC.DELETE";
+
     // external switch management device events (E.g.: Cisco Nexus 1000v Virtual Supervisor Module.
     public static final String EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_ADD = "SWITCH.MGMT.ADD";
     public static final String EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_DELETE = "SWITCH.MGMT.DELETE";

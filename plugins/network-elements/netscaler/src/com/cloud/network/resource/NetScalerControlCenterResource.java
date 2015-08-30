@@ -95,7 +95,6 @@ import com.citrix.netscaler.nitro.resource.stat.lb.lbvserver_stats;
 import com.citrix.netscaler.nitro.service.nitro_service;
 import com.citrix.netscaler.nitro.util.filtervalue;
 import com.citrix.sdx.nitro.resource.config.ns.ns;
-import com.citrix.sdx.nitro.resource.config.xen.xen_nsvpx_image;
 import com.google.gson.Gson;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -114,7 +113,6 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupExternalLoadBalancerCommand;
 import com.cloud.agent.api.UnsupportedAnswer;
-import com.cloud.agent.api.routing.CreateLoadBalancerApplianceCommand;
 import com.cloud.agent.api.routing.DestroyLoadBalancerApplianceCommand;
 import com.cloud.agent.api.routing.GlobalLoadBalancerConfigAnswer;
 import com.cloud.agent.api.routing.GlobalLoadBalancerConfigCommand;
@@ -149,14 +147,12 @@ import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SshHelper;
 
-/*class NitroError {
-    static final int NS_RESOURCE_EXISTS = 273;
-    static final int NS_RESOURCE_NOT_EXISTS = 258;
-    static final int NS_NO_SERIVCE = 344;
-    static final int NS_OPERATION_NOT_PERMITTED = 257;
-    static final int NS_INTERFACE_ALREADY_BOUND_TO_VLAN = 2080;
-    static final int NS_GSLB_DOMAIN_ALREADY_BOUND = 1842;
-}*/
+class NccHttpCode {
+    static final String INTERNAL_ERROR  = "INTERNAL ERROR";
+    static final String NOT_FOUND = "NOT FOUND";
+    static final String JOB_ID = "Job_id";
+    static final String UNAUTHORIZED  = "UNAUTHORIZED";
+}
 
 public class NetScalerControlCenterResource implements ServerResource {
 
@@ -189,6 +185,7 @@ public class NetScalerControlCenterResource implements ServerResource {
     private final String _objectNamePathSep = "-";
     final String protocol="https";
     private static String nccsession;
+    private int pingCount = 0;
     // interface to interact with VPX and MPX devices
     com.citrix.netscaler.nitro.service.nitro_service _netscalerService;
 
@@ -397,8 +394,6 @@ public class NetScalerControlCenterResource implements ServerResource {
             return execute((LoadBalancerConfigCommand)cmd, numRetries);
         } else if (cmd instanceof ExternalNetworkResourceUsageCommand) {
             return execute((ExternalNetworkResourceUsageCommand)cmd, numRetries);
-        } else if (cmd instanceof CreateLoadBalancerApplianceCommand) {
-            return execute((CreateLoadBalancerApplianceCommand)cmd, numRetries);
         } else if (cmd instanceof DestroyLoadBalancerApplianceCommand) {
             return execute((DestroyLoadBalancerApplianceCommand)cmd, numRetries);
         } else if (cmd instanceof SetStaticNatRulesCommand) {
@@ -423,7 +418,28 @@ public class NetScalerControlCenterResource implements ServerResource {
         return new MaintainAnswer(cmd);
     }
 
-    private String queryAsyncJob(String jobId) {
+    private void keepSessionAlive() throws ExecutionException {
+        URI agentUri = null;
+        try {
+            agentUri =
+                    new URI("https", null, _ip, DEFAULT_PORT,
+                            "/cs/cca/v1/cloudstacks", null, null);
+            org.json.JSONObject jsonBody = new JSONObject();
+            getHttpRequest(jsonBody.toString(), agentUri, _sessionid);
+            s_logger.debug("Keeping Session Alive");
+        } catch (URISyntaxException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        /*} catch (ExecutionException e) {
+            // TODO Auto-generated catch block
+            s_logger.debug("Seesion Alive" + e.getMessage());
+            e.printStackTrace();*/
+        }
+
+
+    }
+
+    private String queryAsyncJob(String jobId) throws ExecutionException {
         String result = null;
         try {
             // If a previous session was open, log it out.
@@ -448,7 +464,6 @@ public class NetScalerControlCenterResource implements ServerResource {
 */
 
             URI agentUri = null;
-            //String url = protocol + "://" + _ip +"/nitro/v2/config/login";
             agentUri =
                     new URI("https", null, _ip, DEFAULT_PORT,
                             "/admin/v1/journalcontexts/" + jobId, null, null);
@@ -461,49 +476,43 @@ public class NetScalerControlCenterResource implements ServerResource {
                 JSONObject response = new JSONObject(result);
                 if(response != null ) {
                     s_logger.debug("Job Status result for ["+jobId + "]:: " + result + " Tick and currentTime :" +  System.currentTimeMillis() +" -" + startTick + "job cmd timeout :" +_nccCmdTimeout);
-                    String status = response.getJSONObject("journalcontext").getString("status");
+                    String status = response.getJSONObject("journalcontext").getString("status").toUpperCase();
+                    String message = response.getJSONObject("journalcontext").getString("message");
                     s_logger.debug("Job Status Progress Status ["+ jobId + "]:: " + status);
                     switch(status) {
-                    case "Finished":
+                    case "FINISHED":
                             return status;
-                    case "In Progress":
+                    case "IN PROGRESS":
                         break;
-                    case "ERROR, ROLLBACK_IN_PROGRESS":
+                    case "ERROR, ROLLBACK IN PROGRESS":
                         break;
-                        //return status;
-                    case "ERROR, ROLLBACK_COMPLETED":
-                        break;
-                        //return status;
-                    case "ERROR, ROLLBACK_FAILED":
-                        break;
-                        //return status;
+                    case "ERROR, ROLLBACK COMPLETED":
+                        throw new ExecutionException("ERROR, ROLLBACK COMPLETED " + message);
+                    case "ERROR, ROLLBACK FAILED":
+                        throw new ExecutionException("ERROR, ROLLBACK FAILED " + message);
                     }
                 }
             }
 
-            //s_logger.debug("List of Service Packages in NCC:: " + result);
-            //return result;
         } catch (URISyntaxException e) {
             String errMsg = "Could not generate URI for NetScaler ControlCenter";
             s_logger.error(errMsg, e);
 
-        } catch (Exception e) {
+        /*} catch (Exception e) {
             //throw new ExecutionException("Failed to log in to NCC device at " + _ip + " due to " + e.getMessage());
+*/        } catch (JSONException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
         return result;
     }
     private synchronized Answer execute(NetScalerImplementNetworkCommand cmd, int numRetries) {
         String result = null;
         try {
-            // If a previous session was open, log it out.
-            //logout();
-            //http://10.102.31.78/nitro/v2/config/login
             URI agentUri = null;
-            //String url = protocol + "://" + _ip +"/nitro/v2/config/login";
-            //url: <ip>/cs/cca/networks
             agentUri =
                     new URI("https", null, _ip, DEFAULT_PORT,
-                            "/cs/cca/v1/networks", null, null);
+                            "/cs/adcaas/v1/networks", null, null);
             org.json.JSONObject jsonBody = new JSONObject(cmd.getDetails());
             s_logger.debug("Sending Network Implement to NCC:: " + jsonBody);
             result = postHttpRequest(jsonBody.toString(), agentUri, _sessionid);
@@ -515,9 +524,12 @@ public class NetScalerControlCenterResource implements ServerResource {
                 String errMsg = "Could not generate URI for NetScaler ControlCenter ";
                 s_logger.error(errMsg, e);
             } catch (ExecutionException e) {
-                if(e.getMessage().equalsIgnoreCase("NOTFOUND")) {
+                if(e.getMessage().equalsIgnoreCase(NccHttpCode.NOT_FOUND)) {
                     return new Answer(cmd, true, "Successfully unallocated the device");
-                } else {
+                }else if(e.getMessage().startsWith("ERROR, ROLLBACK") ) {
+                    return new Answer(cmd, false, e.getMessage());
+                }
+                else {
                     if (shouldRetry(numRetries)) {
                         s_logger.debug("Retrying the command NetScalerImplementNetworkCommand retry count: " + numRetries );
                         return retry(cmd, numRetries);
@@ -538,41 +550,16 @@ public class NetScalerControlCenterResource implements ServerResource {
     }
 
     private synchronized Answer execute(IpAssocCommand cmd,  int numRetries) {
+
         if (_isSdx) {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
 
         String[] results = new String[cmd.getIpAddresses().length];
         int i = 0;
-        try {
-            IpAddressTO[] ips = cmd.getIpAddresses();
-            for (IpAddressTO ip : ips) {
-                long guestVlanTag = Long.parseLong(ip.getBroadcastUri());
-                String vlanSelfIp = ip.getVlanGateway();
-                String vlanNetmask = ip.getVlanNetmask();
-
-                if (ip.isAdd()) {
-                    // Add a new guest VLAN and its subnet and bind it to private interface
-                    addGuestVlanAndSubnet(guestVlanTag, vlanSelfIp, vlanNetmask, true);
-                } else {
-                    // Check and delete guest VLAN with this tag, self IP, and netmask
-                    deleteGuestVlan(guestVlanTag, vlanSelfIp, vlanNetmask);
-                }
-
-                saveConfiguration();
-                results[i++] = ip.getPublicIp() + " - success";
-                String action = ip.isAdd() ? "associate" : "remove";
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Netscaler load balancer " + _ip + " successfully executed IPAssocCommand to " + action + " IP " + ip);
-                }
-            }
-        } catch (ExecutionException e) {
-            s_logger.error("Netscaler loadbalancer " + _ip + " failed to execute IPAssocCommand due to " + e.getMessage());
-            if (shouldRetry(numRetries)) {
-                return retry(cmd, numRetries);
-            } else {
-                results[i++] = IpAssocAnswer.errorResult;
-            }
+        IpAddressTO[] ips = cmd.getIpAddresses();
+        for (IpAddressTO ip : ips) {
+            results[i++] = ip.getPublicIp() + " - success";
         }
 
         return new IpAssocAnswer(cmd, results);
@@ -583,16 +570,12 @@ public class NetScalerControlCenterResource implements ServerResource {
         List<LoadBalancerTO> hcLB = new ArrayList<LoadBalancerTO>();
         try {
 
-            if (_isSdx) {
-                return Answer.createUnsupportedCommandAnswer(cmd);
-            }
-
             LoadBalancerTO[] loadBalancers = cmd.getLoadBalancers();
 
             if (loadBalancers == null) {
                 return new HealthCheckLBConfigAnswer(hcLB);
             }
-
+            String result = getLBHealthChecks(cmd.getNetworkId());
             for (LoadBalancerTO loadBalancer : loadBalancers) {
                 HealthCheckPolicyTO[] healthCheckPolicies = loadBalancer.getHealthCheckPolicies();
                 if ((healthCheckPolicies != null) && (healthCheckPolicies.length > 0) && (healthCheckPolicies[0] != null)) {
@@ -634,215 +617,67 @@ public class NetScalerControlCenterResource implements ServerResource {
         return new HealthCheckLBConfigAnswer(hcLB);
     }
 
+    private String getLBHealthChecks(long networkid) throws ExecutionException  {
+        URI agentUri = null;
+        String response = null;
+        try {
+            agentUri =
+                    new URI("https", null, _ip, DEFAULT_PORT,
+                            "/cs/adcaas/v1/networks/"+ networkid +"/lbhealthstatus", null, null);
+            org.json.JSONObject jsonBody = new JSONObject();
+            response = getHttpRequest(jsonBody.toString(), agentUri, _sessionid);
+            s_logger.debug("LBHealthcheck Response :" + response);
+        } catch (URISyntaxException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        /*} catch (ExecutionException e) {
+            // TODO Auto-generated catch block
+            s_logger.debug("Seesion Alive" + e.getMessage());
+            e.printStackTrace();*/
+        }
+        return response;
+    }
     private synchronized Answer execute(LoadBalancerConfigCommand cmd, int numRetries) {
         try {
-            if (_isSdx) {
-                return Answer.createUnsupportedCommandAnswer(cmd);
-            }
-
             LoadBalancerTO[] loadBalancers = cmd.getLoadBalancers();
             if (loadBalancers == null) {
                 return new Answer(cmd);
             }
-            JSONObject jsonCmd = new JSONObject(cmd);
+            JSONObject lbConfigPaylod = new JSONObject(cmd);
             URI agentUri = null;
-            //String url = protocol + "://" + _ip +"/nitro/v2/config/login";
             agentUri =
                     new URI("https", null, _ip, DEFAULT_PORT,
-                            "/nitro/v2/config/" + "login", null, null);
-
-            s_logger.debug("LB config cmd: " + jsonCmd.toString());
-            String result = postHttpRequest(jsonCmd.toString(), agentUri, _sessionid);
-            /*for (LoadBalancerTO loadBalancer : loadBalancers) {
-                String srcIp = loadBalancer.getSrcIp();
-                int srcPort = loadBalancer.getSrcPort();
-                String lbProtocol = getNetScalerProtocol(loadBalancer);
-                String lbAlgorithm = loadBalancer.getAlgorithm();
-                String nsVirtualServerName = generateNSVirtualServerName(srcIp, srcPort);
-                String nsMonitorName = generateNSMonitorName(srcIp, srcPort);
-                LbSslCert sslCert = loadBalancer.getSslCert();
-
-                if (loadBalancer.isAutoScaleVmGroupTO()) {
-                    applyAutoScaleConfig(loadBalancer);
-                    // Continue to process all the rules.
-                    continue;
-                }
-                boolean hasMonitor = false;
-                boolean deleteMonitor = false;
-                boolean destinationsToAdd = false;
-                boolean deleteCert = false;
-                for (DestinationTO destination : loadBalancer.getDestinations()) {
-                    if (!destination.isRevoked()) {
-                        destinationsToAdd = true;
-                        break;
-                    }
-                }
-
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Successfully executed resource LoadBalancerConfigCommand: " + _gson.toJson(cmd));
-            }*/
-
-            //saveConfiguration();
+                            "/cs/adcaas/v1/loadbalancerCmds", null, null);
+            JSONObject lbConfigCmd = new JSONObject();
+            lbConfigCmd.put("LoadBalancerConfigCommand", lbConfigPaylod.getJSONArray("loadBalancers"));
+            s_logger.debug("LB config paylod : " + lbConfigCmd.toString());
+            String result = postHttpRequest(lbConfigCmd.toString(), agentUri, _sessionid);
+            s_logger.debug("Result of lbconfigcmg is "+ result);
+            result = queryAsyncJob(result);
+            s_logger.debug("Done query async of LB ConfigCmd implement request and result:: " + result);
             return new Answer(cmd);
         } catch (ExecutionException e) {
             s_logger.error("Failed to execute LoadBalancerConfigCommand due to ", e);
+            if(e.getMessage().equalsIgnoreCase(NccHttpCode.NOT_FOUND)) {
+                return new Answer(cmd, true, "LB Rule is not present in NS device. So returning as removed the LB Rule");
+            } else  if(e.getMessage().startsWith("ERROR, ROLLBACK COMPLETED") || e.getMessage().startsWith("ERROR, ROLLBACK FAILED")) {
+                return new Answer(cmd, false, e.getMessage());
+            } else if (e.getMessage().startsWith(NccHttpCode.INTERNAL_ERROR)) {
+                s_logger.error("Failed to execute LoadBalancerConfigCommand as Internal Error returning Internal error ::" + e.getMessage() );
+                return new Answer(cmd, false, e.getMessage());
+            }
             if (shouldRetry(numRetries)) {
                 return retry(cmd, numRetries);
             } else {
-                return new Answer(cmd, e);
+                return new Answer(cmd, false, e.getMessage());
             }
         } catch (Exception e) {
             s_logger.error("Failed to execute LoadBalancerConfigCommand due to ", e);
             if (shouldRetry(numRetries)) {
                 return retry(cmd, numRetries);
             } else {
-                return new Answer(cmd, e);
+                return new Answer(cmd, false, e.getMessage());
             }
-        }
-    }
-
-    private synchronized Answer execute(CreateLoadBalancerApplianceCommand cmd, int numRetries) {
-
-        if (!_isSdx) {
-            return Answer.createUnsupportedCommandAnswer(cmd);
-        }
-
-        try {
-            String vpxName = "Cloud-VPX-" + cmd.getLoadBalancerIP();
-            String username = "admin";
-            String password = "admin";
-
-            ns ns_obj = new ns();
-            ns_obj.set_name(vpxName);
-            ns_obj.set_ip_address(cmd.getLoadBalancerIP());
-            ns_obj.set_netmask(cmd.getNetmask());
-            ns_obj.set_gateway(cmd.getGateway());
-            ns_obj.set_username(username);
-            ns_obj.set_password(password);
-
-            // configure VPX instances with defaults
-            ns_obj.set_license("Standard");
-            ns_obj.set_vm_memory_total(new Double(2048));
-            ns_obj.set_throughput(new Double(1000));
-            ns_obj.set_pps(new Double(1000000));
-            ns_obj.set_number_of_ssl_cores(0);
-            ns_obj.set_profile_name("ns_nsroot_profile");
-
-            // use the first VPX image of the available VPX images on the SDX to create an instance of VPX
-            // TODO: should enable the option to choose the template while adding the SDX device in to CloudStack
-            xen_nsvpx_image[] vpxImages = xen_nsvpx_image.get(_netscalerSdxService);
-            if (!(vpxImages != null && vpxImages.length >= 1)) {
-                new Answer(cmd, new ExecutionException("Failed to create VPX instance on the netscaler SDX device " + _ip +
-                        " as there are no VPX images on SDX to use for creating VPX."));
-            }
-            String imageName = vpxImages[0].get_file_name();
-            ns_obj.set_image_name(imageName);
-
-            String publicIf = _publicInterface;
-            String privateIf = _privateInterface;
-
-            // enable only the interfaces that will be used by VPX
-            enableVPXInterfaces(_publicInterface, _privateInterface, ns_obj);
-
-            // create new VPX instance
-            ns newVpx = ns.add(_netscalerSdxService, ns_obj);
-
-            if (newVpx == null) {
-                return new Answer(cmd, new ExecutionException("Failed to create VPX instance on the netscaler SDX device " + _ip));
-            }
-
-            // wait for VPX instance to start-up
-            long startTick = System.currentTimeMillis();
-            long startWaitMilliSeconds = 600000;
-            while (!newVpx.get_instance_state().equalsIgnoreCase("up") && System.currentTimeMillis() - startTick < startWaitMilliSeconds) {
-                try {
-                    Thread.sleep(10000);
-                } catch (InterruptedException e) {
-                }
-                ns refreshNsObj = new ns();
-                refreshNsObj.set_id(newVpx.get_id());
-                newVpx = ns.get(_netscalerSdxService, refreshNsObj);
-            }
-
-            // if vpx instance never came up then error out
-            if (!newVpx.get_instance_state().equalsIgnoreCase("up")) {
-                return new Answer(cmd, new ExecutionException("Failed to start VPX instance " + vpxName + " created on the netscaler SDX device " + _ip));
-            }
-
-            // wait till NS service in side VPX is actually ready
-            startTick = System.currentTimeMillis();
-            boolean nsServiceUp = false;
-            long nsServiceWaitMilliSeconds = 60000;
-            while (System.currentTimeMillis() - startTick < nsServiceWaitMilliSeconds) {
-                try {
-                    nitro_service _netscalerService = new nitro_service(cmd.getLoadBalancerIP(), "https");
-                    _netscalerService.set_certvalidation(false);
-                    _netscalerService.set_hostnameverification(false);
-                    _netscalerService.set_credential(username, password);
-                    apiCallResult = _netscalerService.login();
-                    if (apiCallResult.errorcode == 0) {
-                        nsServiceUp = true;
-                        break;
-                    }
-                } catch (Exception e) {
-                    Thread.sleep(10000);
-                    continue;
-                }
-            }
-
-            if (!nsServiceUp) {
-                return new Answer(cmd, new ExecutionException("Failed to create VPX instance " + vpxName + " on the netscaler SDX device " + _ip));
-            }
-
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Successfully provisioned VPX instance " + vpxName + " on the Netscaler SDX device " + _ip);
-            }
-
-            // physical interfaces on the SDX range from 10/1 to 10/8 & 1/1 to 1/8 of which two different port or same port can be used for public and private interfaces
-            // However the VPX instances created will have interface range start from 10/1 but will only have as many interfaces enabled while creating the VPX instance
-            // So due to this, we need to map public & private interface on SDX to correct public & private interface of VPX
-
-            int publicIfnum = Integer.parseInt(_publicInterface.substring(_publicInterface.lastIndexOf("/") + 1));
-            int privateIfnum = Integer.parseInt(_privateInterface.substring(_privateInterface.lastIndexOf("/") + 1));
-
-            if (_publicInterface.startsWith("10/") && _privateInterface.startsWith("10/")) {
-                if (publicIfnum == privateIfnum) {
-                    publicIf = "10/1";
-                    privateIf = "10/1";
-                } else if (publicIfnum > privateIfnum) {
-                    privateIf = "10/1";
-                    publicIf = "10/2";
-                } else {
-                    publicIf = "10/1";
-                    privateIf = "10/2";
-                }
-            } else if (_publicInterface.startsWith("1/") && _privateInterface.startsWith("1/")) {
-                if (publicIfnum == privateIfnum) {
-                    publicIf = "1/1";
-                    privateIf = "1/1";
-                } else if (publicIfnum > privateIfnum) {
-                    privateIf = "1/1";
-                    publicIf = "1/2";
-                } else {
-                    publicIf = "1/1";
-                    privateIf = "1/2";
-                }
-            } else if (_publicInterface.startsWith("1/") && _privateInterface.startsWith("10/")) {
-                publicIf = "1/1";
-                privateIf = "10/1";
-            } else if (_publicInterface.startsWith("10/") && _privateInterface.startsWith("1/")) {
-                publicIf = "10/1";
-                privateIf = "1/1";
-            }
-
-            return new CreateLoadBalancerApplianceAnswer(cmd, true, "provisioned VPX instance", "NetscalerVPXLoadBalancer", "Netscaler", new NetScalerControlCenterResource(),
-                    publicIf, privateIf, _username, _password);
-        } catch (Exception e) {
-            if (shouldRetry(numRetries)) {
-                return retry(cmd, numRetries);
-            }
-            return new CreateLoadBalancerApplianceAnswer(cmd, false, "failed to provisioned VPX instance due to " + e.getMessage(), null, null, null, null, null, null,
-                    null);
         }
     }
 
@@ -3598,19 +3433,20 @@ public class NetScalerControlCenterResource implements ServerResource {
     private boolean refreshNCCConnection() {
         boolean ret = false;
         try {
-            login();
+            keepSessionAlive();
             return true;
         } catch (ExecutionException ex) {
-            s_logger.error("Login to NCC failed", ex);
+            s_logger.error("Failed to keep up the session alive ", ex);
         }
         return ret;
     }
 
     @Override
     public PingCommand getCurrentStatus(long id) {
-        /*if (!refreshNCCConnection()) {
-            return null;
-        }*/
+        pingCount++;
+        if (pingCount > 10 && refreshNCCConnection()) {
+            pingCount = 0;
+        }
         return new PingCommand(Host.Type.NetScalerControlCenter, id);
     }
 
@@ -3841,31 +3677,27 @@ public class NetScalerControlCenterResource implements ServerResource {
 
             // Unsupported commands will not route.
             if (response.getStatusLine().getStatusCode() == HttpStatus.SC_NOT_FOUND) {
-                String errMsg = "Failed to send : HTTP error code : " + response.getStatusLine().getStatusCode();
-                throw new ExecutionException("NOT_FOUND");
-                /*s_logger.error(errMsg);
-                String unsupportMsg = "Unsupported command " + agentUri.getPath() + ".  Are you sure you got the right type of" + " server?";
-                Answer ans = new UnsupportedAnswer(null, unsupportMsg);
-                s_logger.error(ans);*/
-                //result = s_gson.toJson(new Answer[] {ans});
+                String errMsg = "Failed : HTTP error code : " + response.getStatusLine().getStatusCode();
+                throw new ExecutionException(NccHttpCode.NOT_FOUND);
             } else if ((response.getStatusLine().getStatusCode() != HttpStatus.SC_OK ) && (response.getStatusLine().getStatusCode() != HttpStatus.SC_CREATED )) {
-                String errMsg = "Failed send to " + agentUri.toString() + " : HTTP error code : " + response.getStatusLine().getStatusCode();
+                String errMsg = "Command Not Success " + agentUri.toString() + " : HTTP error code : " + response.getStatusLine().getStatusCode();
                 s_logger.error(errMsg);
-                throw new ExecutionException("UNAUTHORIZED");
+                throw new ExecutionException(NccHttpCode.INTERNAL_ERROR + " " + errMsg);
                 //return null;
             } else if (response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
                 //Successfully created the resource in the NCC, Now get the Job ID and send to the response
                 // make login request and store new session id
-                throw new ExecutionException("UNAUTHORIZED");
+                throw new ExecutionException(NccHttpCode.UNAUTHORIZED);
             } else if (response.getStatusLine().getStatusCode() == HttpStatus.SC_CREATED) {
                 //Successfully created the resource in the NCC, Now get the Job ID and send to the response
-                result = response.getFirstHeader("Job_id").getValue();
+                result = response.getFirstHeader(NccHttpCode.JOB_ID).getValue();
                 //"jobid : " +
             } else {
                 result = EntityUtils.toString(response.getEntity());
                 String logResult = cleanPassword(StringEscapeUtils.unescapeJava(result));
                 s_logger.debug("POST response is " + logResult);
             }
+
         } catch (ClientProtocolException protocolEx) {
             // Problem with HTTP message exchange
             s_logger.error(protocolEx);

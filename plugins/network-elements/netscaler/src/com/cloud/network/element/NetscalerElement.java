@@ -61,6 +61,7 @@ import com.cloud.api.commands.ConfigureNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.DeleteNetscalerControlCenterCmd;
 import com.cloud.api.commands.DeleteNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.DeleteServicePackageOfferingCmd;
+import com.cloud.api.commands.DeployNetscalerVpxCmd;
 import com.cloud.api.commands.ListNetscalerControlCenterCmd;
 import com.cloud.api.commands.ListNetscalerLoadBalancerNetworksCmd;
 import com.cloud.api.commands.ListNetscalerLoadBalancersCmd;
@@ -80,6 +81,8 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
@@ -121,7 +124,6 @@ import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
-//import com.cloud.network.dao.RegisteredServicePackageVO;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.resource.NetScalerControlCenterResource;
@@ -138,10 +140,6 @@ import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
-<<<<<<< HEAD
-import com.cloud.utils.db.SearchCriteria;
-=======
->>>>>>> CLOUDSTACK-8672: Removal of servicePackageUUID from Create Network Offering Command,
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
@@ -150,7 +148,9 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.UrlUtil;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineProfile;
+//import com.cloud.network.dao.RegisteredServicePackageVO;
 
 public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider, NetscalerLoadBalancerElementService,
         ExternalLoadBalancerDeviceManager, IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
@@ -1416,7 +1416,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             int numLoadBalancersForCommand = loadBalancersToApply.size();
             LoadBalancerTO[] loadBalancersForCommand = loadBalancersToApply
                     .toArray(new LoadBalancerTO[numLoadBalancersForCommand]);
-            HealthCheckLBConfigCommand cmd = new HealthCheckLBConfigCommand(loadBalancersForCommand);
+            HealthCheckLBConfigCommand cmd = new HealthCheckLBConfigCommand(loadBalancersForCommand, network.getId());
             HostVO externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
             answer = (HealthCheckLBConfigAnswer)_agentMgr.easySend(externalLoadBalancer.getId(), cmd);
             return answer.getLoadBalancers();
@@ -1567,6 +1567,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_NETSCALER_SERVICEPACKAGE_ADD, eventDescription = "Registering NetScaler Service Package")
     public NetScalerServicePackageResponse registerNetscalerServicePackage(RegisterServicePackageCmd cmd) {
         NetScalerServicePackageVO servicePackage = new NetScalerServicePackageVO(cmd);
         NetScalerServicePackageResponse response = null;
@@ -1612,5 +1613,27 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             resource = null;
             throw new CloudRuntimeException(e.getMessage());
         }
+    }
+
+   /* @Override
+    public VirtualMachine deployNetscalerServiceVm(DeployNetscalerVpxCmd deployNetscalerVpxCmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }*/
+
+    @Override
+    public VMInstanceVO deployNetscalerServiceVm(DeployNetscalerVpxCmd cmd) {
+        DataCenter zone = _dcDao.findById(cmd.getZoneId());
+        DeployDestination dest = new DeployDestination(zone, null, null, null);//DeployDestination dest = new DeployDestination(zone, null, null, null);
+        //USERVO CALLERUSER = _USERDAO.FINDBYID(CALLCONTEXT.CURRENT().GETCALLINGUSERID());
+        //JOURNAL JOURNAL = NEW JOURNAL.LOGJOURNAL("IMPLEMENTING "  NETWORK, S_LOGGER);
+        VMInstanceVO vmvo = null;
+        /*try {
+            //vmvo = (VMInstanceVO)implementNsVpxDeployment(null, null, dest, null);
+        } catch (ConcurrentOperationException | ResourceUnavailableException | InsufficientCapacityException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }*/
+        return vmvo;
     }
 }

@@ -46,6 +46,8 @@ public class LoadBalancerTO {
     boolean alreadyAdded;
     boolean inline;
     String srcIpVlan;
+    String srcIpGateway;
+    String srcIpNetmask;
     Long networkId;
     DestinationTO[] destinations;
     private StickinessPolicyTO[] stickinessPolicies;
@@ -210,6 +212,22 @@ public class LoadBalancerTO {
 
     public void setNetworkId(long id) {
         this.networkId = id;
+    }
+
+    public String getSrcIpGateway() {
+        return srcIpGateway;
+    }
+
+    public void setSrcIpGateway(String srcIpGateway) {
+        this.srcIpGateway = srcIpGateway;
+    }
+
+    public String getSrcIpNetmask() {
+        return srcIpNetmask;
+    }
+
+    public void setSrcIpNetmask(String srcIpNetmask) {
+        this.srcIpNetmask = srcIpNetmask;
     }
 
     public static class StickinessPolicyTO {
