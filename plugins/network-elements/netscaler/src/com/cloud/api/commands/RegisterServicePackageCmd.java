@@ -52,16 +52,7 @@ public class RegisterServicePackageCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, required = true, description = "Description of Service Package")
     private String description;
 
-    /*    @Override
-    public String getEventType() {
-        return EventTypes.EVENT_NETSCALER_SERVICEPACKAGE_ADD;
-    }
 
-    @Override
-    public String getEventDescription() {
-        return "Adding Netscaler Service Package";
-    }
-     */
     @Override
     public void execute() throws ServerApiException, ConcurrentOperationException, EntityExistsException {
         try {
