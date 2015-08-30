@@ -326,10 +326,10 @@ public class CertServiceImpl implements CertService {
         response.setId(cert.getUuid());
         response.setCertificate(cert.getCertificate());
         response.setFingerprint(cert.getFingerPrint());
+        response.setName(cert.getName());
 
-        if (cert.getChain() != null) {
+        if (cert.getChain() != null)
             response.setCertchain(cert.getChain());
-        }
 
         if (lbCertMap != null && !lbCertMap.isEmpty()) {
             final List<String> lbIds = new ArrayList<String>();

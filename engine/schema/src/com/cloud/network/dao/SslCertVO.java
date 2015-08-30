@@ -126,6 +126,11 @@ public class SslCertVO implements SslCert {
     }
 
     @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
     public Class<?> getEntityType() {
         return SslCert.class;
     }

@@ -250,5 +250,5 @@ CREATE TABLE `cloud`.`external_netscaler_controlcenter` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+ALTER TABLE `cloud`.`sslcerts` ADD COLUMN `name` varchar(255) NULL default NULL COMMENT 'Name of the Certificate';
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `service_package_id` varchar(255) NULL default NULL COMMENT 'Netscaler ControlCenter Service Package';
-ALTER TABLE `network_offerings` ADD CONSTRAINT `fk_netscaler_service_package_id` FOREIGN KEY (`service_package_id`) REFERENCES `netscaler_servicepackages` (`uuid`);
