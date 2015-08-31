@@ -60,8 +60,23 @@ public class Upgrade452to460 implements DbUpgrade {
 
     @Override
     public void performDataMigration(final Connection conn) {
+        alterAddColumnToCloudUsage(conn);
         updateVMInstanceUserId(conn);
         addIndexForVMInstance(conn);
+    }
+
+    public void alterAddColumnToCloudUsage(final Connection conn) {
+        final String alterTableSql = "ALTER TABLE `cloud_usage`.`cloud_usage` ADD COLUMN `quota_calculated` tinyint(1) DEFAULT 0 NOT NULL COMMENT 'quota calculation status'";
+        try (PreparedStatement pstmt = conn.prepareStatement(alterTableSql)) {
+            pstmt.executeUpdate();
+            s_logger.debug("Altered usage table and added column quota_calculated");
+        } catch (SQLException e) {
+            if (e.getMessage().contains("quota_calculated")) {
+                s_logger.debug("Usage table already has a column called quota_calculated");
+            } else {
+                throw new CloudRuntimeException("Unable to create column quota_calculated", e);
+            }
+        }
     }
 
     public void updateVMInstanceUserId(final Connection conn) {

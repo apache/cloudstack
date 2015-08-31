@@ -19,7 +19,9 @@
 -- Schema upgrade from 4.5.1 to 4.5.2;
 --;
 
-DELETE FROM `cloud`.`configuration` WHERE name like 'saml%';
+-- SAML
+
+DELETE FROM `cloud`.`configuration` WHERE name like 'saml%' and component='management-server';
 
 ALTER TABLE `cloud`.`user` ADD COLUMN `external_entity` text DEFAULT NULL COMMENT "reference to external federation entity";
 

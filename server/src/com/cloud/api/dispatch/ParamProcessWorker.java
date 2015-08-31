@@ -294,6 +294,14 @@ public class ParamProcessWorker implements DispatchWorker {
                     field.set(cmdObj, Float.valueOf(paramObj.toString()));
                 }
                 break;
+            case DOUBLE:
+                // Assuming that the parameters have been checked for required before now,
+                // we ignore blank or null values and defer to the command to set a default
+                // value for optional parameters ...
+                if (paramObj != null && isNotBlank(paramObj.toString())) {
+                    field.set(cmdObj, Double.valueOf(paramObj.toString()));
+                }
+                break;
             case INTEGER:
                 // Assuming that the parameters have been checked for required before now,
                 // we ignore blank or null values and defer to the command to set a default
