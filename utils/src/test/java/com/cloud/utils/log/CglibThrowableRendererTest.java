@@ -21,6 +21,7 @@ package com.cloud.utils.log;
 
 import java.lang.reflect.Method;
 
+import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -39,16 +40,18 @@ public class CglibThrowableRendererTest {
             sampleClass.theFirstMethodThatCapturesAnException();
         } catch (Exception e) {
             String[] exceptions = cglibThrowableRenderer.doRender(e);
-            dumpExceptions(exceptions);
-            Assert.assertEquals(40, exceptions.length);
+            assertThatTheTraceListDoesNotContainsCgLibLogs(exceptions);
         }
     }
 
-    private void dumpExceptions(String[] exceptions) {
-        System.out.println("Dumping exception for debugging purposes");
+    private void assertThatTheTraceListDoesNotContainsCgLibLogs(String[] exceptions) {
         for (String s : exceptions) {
-            System.out.println(s);
+            Assert.assertEquals(false, isCgLibLogTrace(s));
         }
+    }
+
+    private boolean isCgLibLogTrace(String s) {
+        return StringUtils.contains(s, "net.sf.cglib.proxy");
     }
 
     static class SampleClass {
