@@ -219,3 +219,14 @@ def copy_if_needed(src, dest):
         logging.Error("Could not copy %s to %s" % (src, dest))
     else:
         logging.info("Copied %s to %s" % (src, dest))
+
+def copy(src, dest):
+    """
+    copy source to destination.
+    """
+    try:
+        shutil.copy2(src, dest)
+    except IOError:
+        logging.Error("Could not copy %s to %s" % (src, dest))
+    else:
+        logging.info("Copied %s to %s" % (src, dest))
