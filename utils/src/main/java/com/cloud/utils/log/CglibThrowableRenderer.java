@@ -19,7 +19,6 @@
 
 package com.cloud.utils.log;
 
-import java.io.PrintWriter;
 import java.util.ArrayList;
 
 import org.apache.log4j.spi.ThrowableRenderer;
@@ -73,10 +72,7 @@ public class CglibThrowableRenderer implements ThrowableRenderer {
             } while (throwable != null);
             return lines.toArray(new String[lines.size()]);
         } catch (Exception ex) {
-            PrintWriter pw = new PrintWriter(System.err);
-            ex.printStackTrace(pw);
-            pw = new PrintWriter(System.out);
-            ex.printStackTrace(pw);
+            ex.printStackTrace(System.out);
             ex.printStackTrace();
             return null;
         }
