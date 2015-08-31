@@ -879,6 +879,10 @@
                     dataProvider: function(args) {
                         var data = {};
                         listViewDataProvider(args, data);
+                        // Due to zonal grouping, low pagesize can result lower
+                        // aggregated items, resulting in no scroll shown
+                        // So, use maximum pagesize
+                        data.pagesize = 200;
 
                         var ignoreProject = false;
                         if (args.filterBy != null) { //filter dropdown
@@ -2024,6 +2028,10 @@
                     dataProvider: function(args) {
                         var data = {};
                         listViewDataProvider(args, data);
+                        // Due to zonal grouping, low pagesize can result lower
+                        // aggregated items, resulting in no scroll shown
+                        // So, use maximum pagesize
+                        data.pagesize = 200;
 
                         var ignoreProject = false;
                         if (args.filterBy != null) { //filter dropdown
