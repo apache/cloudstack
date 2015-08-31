@@ -263,7 +263,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private String _updateHostPasswdPath;
 
-    private int _dom0MinMem;
+    private long _dom0MinMem;
 
     protected boolean _disconnected = true;
     protected int _cmdsTimeout;
@@ -791,7 +791,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         _videoRam = NumbersUtil.parseInt(value, 0);
 
         value = (String)params.get("host.reserved.mem.mb");
-        _dom0MinMem = NumbersUtil.parseInt(value, 0) * 1024 * 1024;
+        // Reserve 1GB unless admin overrides
+        _dom0MinMem = NumbersUtil.parseInt(value, 1024) * 1024 * 1024L;
 
         value = (String) params.get("kvmclock.disable");
         if (Boolean.parseBoolean(value)) {
@@ -2605,16 +2606,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         info.add((int)cpus);
         info.add(speed);
+        // Report system's RAM as actual RAM minus host OS reserved RAM
+        ram = ram - _dom0MinMem;
         info.add(ram);
         info.add(cap);
-        long dom0ram = Math.min(ram / 10, 768 * 1024 * 1024L);// save a maximum
-        // of 10% of
-        // system ram or
-        // 768M
-        dom0ram = Math.max(dom0ram, _dom0MinMem);
-        info.add(dom0ram);
+        info.add(_dom0MinMem);
         info.add(cpuSockets);
-        s_logger.debug("cpus=" + cpus + ", speed=" + speed + ", ram=" + ram + ", dom0ram=" + dom0ram + ", cpu sockets=" + cpuSockets);
+        s_logger.debug("cpus=" + cpus + ", speed=" + speed + ", ram=" + ram + ", _dom0MinMem=" + _dom0MinMem + ", cpu sockets=" + cpuSockets);
 
         return info;
     }
