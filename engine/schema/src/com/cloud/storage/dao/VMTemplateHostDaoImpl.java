@@ -29,6 +29,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
@@ -52,6 +53,7 @@ import com.cloud.utils.db.UpdateBuilder;
 @Component
 @Local(value = {VMTemplateHostDao.class})
 public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long> implements VMTemplateHostDao {
+    public static final Logger s_logger = Logger.getLogger(VMTemplateHostDaoImpl.class.getName());
     @Inject
     HostDao _hostDao;
     protected final SearchBuilder<VMTemplateHostVO> HostSearch;
@@ -170,7 +172,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
             pstmt.setLong(8, instance.getTemplateId());
             pstmt.executeUpdate();
         } catch (Exception e) {
-            logger.warn("Exception: ", e);
+            s_logger.warn("Exception: ", e);
         }
     }
 
@@ -239,7 +241,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
                 result.add(toEntityBean(rs, false));
             }
         } catch (Exception e) {
-            logger.warn("Exception: ", e);
+            s_logger.warn("Exception: ", e);
         }
         return result;
     }
@@ -271,10 +273,10 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
                     result.add(findById(id));
                 }
             }catch (SQLException e) {
-                logger.warn("listByTemplateStatus:Exception: "+e.getMessage(), e);
+                s_logger.warn("listByTemplateStatus:Exception: "+e.getMessage(), e);
             }
         } catch (Exception e) {
-            logger.warn("listByTemplateStatus:Exception: "+e.getMessage(), e);
+            s_logger.warn("listByTemplateStatus:Exception: "+e.getMessage(), e);
         }
         return result;
 
@@ -389,7 +391,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
         builder.set(vo, "updated", new Date());
 
         int rows = update((VMTemplateHostVO)vo, sc);
-        if (rows == 0 && logger.isDebugEnabled()) {
+        if (rows == 0 && s_logger.isDebugEnabled()) {
             VMTemplateHostVO dbVol = findByIdIncludingRemoved(templateHost.getId());
             if (dbVol != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
@@ -422,7 +424,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
                     .append("; updatedTime=")
                     .append(oldUpdatedTime);
             } else {
-                logger.debug("Unable to update objectIndatastore: id=" + templateHost.getId() + ", as there is no such object exists in the database anymore");
+                s_logger.debug("Unable to update objectIndatastore: id=" + templateHost.getId() + ", as there is no such object exists in the database anymore");
             }
         }
         return rows > 0;

@@ -28,6 +28,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ResourceManager;
 import com.cloud.utils.component.AdapterBase;
+import org.apache.log4j.Logger;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -35,6 +36,7 @@ import java.util.List;
 
 @Local(value = Investigator.class)
 public class KVMInvestigator extends AdapterBase implements Investigator {
+    private final static Logger s_logger = Logger.getLogger(KVMInvestigator.class);
     @Inject
     HostDao _hostDao;
     @Inject
@@ -70,7 +72,7 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
                 hostStatus = answer.getResult() ? Status.Down : Status.Up;
             }
         } catch (Exception e) {
-            logger.debug("Failed to send command to host: " + agent.getId());
+            s_logger.debug("Failed to send command to host: " + agent.getId());
         }
         if (hostStatus == null) {
             hostStatus = Status.Disconnected;
@@ -81,18 +83,18 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
             if (neighbor.getId() == agent.getId() || (neighbor.getHypervisorType() != Hypervisor.HypervisorType.KVM && neighbor.getHypervisorType() != Hypervisor.HypervisorType.LXC)) {
                 continue;
             }
-            logger.debug("Investigating host:" + agent.getId() + " via neighbouring host:" + neighbor.getId());
+            s_logger.debug("Investigating host:" + agent.getId() + " via neighbouring host:" + neighbor.getId());
             try {
                 Answer answer = _agentMgr.easySend(neighbor.getId(), cmd);
                 if (answer != null) {
                     neighbourStatus = answer.getResult() ? Status.Down : Status.Up;
-                    logger.debug("Neighbouring host:" + neighbor.getId() + " returned status:" + neighbourStatus + " for the investigated host:" + agent.getId());
+                    s_logger.debug("Neighbouring host:" + neighbor.getId() + " returned status:" + neighbourStatus + " for the investigated host:" + agent.getId());
                     if (neighbourStatus == Status.Up) {
                         break;
                     }
                 }
             } catch (Exception e) {
-                logger.debug("Failed to send command to host: " + neighbor.getId());
+                s_logger.debug("Failed to send command to host: " + neighbor.getId());
             }
         }
         if (neighbourStatus == Status.Up && (hostStatus == Status.Disconnected || hostStatus == Status.Down)) {

@@ -27,6 +27,7 @@ import java.util.TimeZone;
 import javax.ejb.Local;
 
 import com.cloud.exception.CloudException;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsagePortForwardingRuleVO;
@@ -37,6 +38,7 @@ import com.cloud.utils.db.TransactionLegacy;
 @Component
 @Local(value = {UsagePortForwardingRuleDao.class})
 public class UsagePortForwardingRuleDaoImpl extends GenericDaoBase<UsagePortForwardingRuleVO, Long> implements UsagePortForwardingRuleDao {
+    public static final Logger s_logger = Logger.getLogger(UsagePortForwardingRuleDaoImpl.class.getName());
 
     protected static final String REMOVE_BY_USERID_PFID = "DELETE FROM usage_port_forwarding WHERE account_id = ? AND id = ?";
     protected static final String UPDATE_DELETED = "UPDATE usage_port_forwarding SET deleted = ? WHERE account_id = ? AND id = ? and deleted IS NULL";
@@ -64,7 +66,7 @@ public class UsagePortForwardingRuleDaoImpl extends GenericDaoBase<UsagePortForw
             txn.commit();
         } catch (Exception e) {
             txn.rollback();
-            logger.warn("Error removing UsagePortForwardingRuleVO", e);
+            s_logger.warn("Error removing UsagePortForwardingRuleVO", e);
         } finally {
             txn.close();
         }
@@ -90,7 +92,7 @@ public class UsagePortForwardingRuleDaoImpl extends GenericDaoBase<UsagePortForw
             txn.commit();
         } catch (Exception e) {
             txn.rollback();
-            logger.warn("Error updating UsagePortForwardingRuleVO:"+e.getMessage(), e);
+            s_logger.warn("Error updating UsagePortForwardingRuleVO:"+e.getMessage(), e);
         } finally {
             txn.close();
         }
@@ -159,7 +161,7 @@ public class UsagePortForwardingRuleDaoImpl extends GenericDaoBase<UsagePortForw
             }
         } catch (Exception e) {
             txn.rollback();
-            logger.warn("Error getting usage records", e);
+            s_logger.warn("Error getting usage records", e);
         } finally {
             txn.close();
         }

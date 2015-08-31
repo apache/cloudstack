@@ -25,6 +25,7 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.HostPodVO;
@@ -39,6 +40,7 @@ import com.cloud.utils.db.TransactionLegacy;
 @Component
 @Local(value = {HostPodDao.class})
 public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements HostPodDao {
+    private static final Logger s_logger = Logger.getLogger(HostPodDaoImpl.class);
 
     protected SearchBuilder<HostPodVO> DataCenterAndNameSearch;
     protected SearchBuilder<HostPodVO> DataCenterIdSearch;
@@ -100,7 +102,7 @@ public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements H
                 currentPodCidrSubnets.put(podId, cidrPair);
             }
         } catch (SQLException ex) {
-            logger.warn("DB exception " + ex.getMessage(), ex);
+            s_logger.warn("DB exception " + ex.getMessage(), ex);
             return null;
         }
 

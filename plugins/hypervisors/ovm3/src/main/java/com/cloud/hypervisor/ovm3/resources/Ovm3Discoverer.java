@@ -30,6 +30,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -67,6 +68,7 @@ import com.cloud.utils.ssh.SSHCmdHelper;
 @Local(value = Discoverer.class)
 public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
         Listener, ResourceStateAdapter {
+    private static final Logger LOGGER = Logger.getLogger(Ovm3Discoverer.class);
     protected String publicNetworkDevice;
     protected String privateNetworkDevice;
     protected String guestNetworkDevice;
@@ -123,11 +125,11 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
     private boolean CheckUrl(URI url) throws DiscoveryException {
         if ("http".equals(url.getScheme()) || "https".equals(url.getScheme())) {
             String msg = "Discovering " + url + ": " + _params;
-            logger.debug(msg);
+            LOGGER.debug(msg);
         } else {
             String msg = "urlString is not http(s) so we're not taking care of the discovery for this: "
                     + url;
-            logger.info(msg);
+            LOGGER.info(msg);
             throw new DiscoveryException(msg);
         }
         return true;
@@ -142,13 +144,13 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
         CheckUrl(url);
         if (clusterId == null) {
             String msg = "must specify cluster Id when add host";
-            logger.info(msg);
+            LOGGER.info(msg);
             throw new DiscoveryException(msg);
         }
 
         if (podId == null) {
             String msg = "must specify pod Id when add host";
-            logger.info(msg);
+            LOGGER.info(msg);
             throw new DiscoveryException(msg);
         }
 
@@ -156,30 +158,30 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
         if (cluster == null
                 || (cluster.getHypervisorType() != HypervisorType.Ovm3)) {
             String msg = "invalid cluster id or cluster is not for Ovm3 hypervisors";
-            logger.info(msg);
+            LOGGER.info(msg);
             throw new DiscoveryException(msg);
         } else {
-            logger.debug("cluster: " + cluster);
+            LOGGER.debug("cluster: " + cluster);
         }
 
         String agentUsername = _params.get("agentusername");
         if (agentUsername == null) {
             String msg = "Agent user name must be specified";
-            logger.info(msg);
+            LOGGER.info(msg);
             throw new DiscoveryException(msg);
         }
 
         String agentPassword = _params.get("agentpassword");
         if (agentPassword == null) {
             String msg = "Agent password must be specified";
-            logger.info(msg);
+            LOGGER.info(msg);
             throw new DiscoveryException(msg);
         }
 
         String agentPort = _params.get("agentport");
         if (agentPort == null) {
             String msg = "Agent port must be specified";
-            logger.info(msg);
+            LOGGER.info(msg);
             throw new DiscoveryException(msg);
         }
 
@@ -193,11 +195,11 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
 
             if (checkIfExisted(guid)) {
                 String msg = "The host " + hostIp + " has been added before";
-                logger.info(msg);
+                LOGGER.info(msg);
                 throw new DiscoveryException(msg);
             }
 
-            logger.debug("Ovm3 discover is going to disover host having guid "
+            LOGGER.debug("Ovm3 discover is going to disover host having guid "
                     + guid);
 
             ClusterVO clu = clusterDao.findById(clusterId);
@@ -224,7 +226,7 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
                 String msg = "Cannot Ssh to Ovm3 host(IP=" + hostIp
                         + ", username=" + username
                         + ", password=*******), discovery failed";
-                logger.warn(msg);
+                LOGGER.warn(msg);
                 throw new DiscoveryException(msg);
             }
 
@@ -281,17 +283,17 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
             resources.put(ovmResource, details);
             return resources;
         } catch (UnknownHostException e) {
-            logger.error(
+            LOGGER.error(
                     "Host name resolve failed exception, Unable to discover Ovm3 host: "
                             + url.getHost(), e);
             return null;
         } catch (ConfigurationException e) {
-            logger.error(
+            LOGGER.error(
                     "Configure resource failed, Unable to discover Ovm3 host: "
                             + url.getHost(), e);
             return null;
         } catch (IOException | Ovm3ResourceException e) {
-            logger.error("Unable to discover Ovm3 host: " + url.getHost(), e);
+            LOGGER.error("Unable to discover Ovm3 host: " + url.getHost(), e);
             return null;
         }
     }
@@ -299,7 +301,7 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
     @Override
     public void postDiscovery(List<HostVO> hosts, long msId)
             throws CloudRuntimeException {
-        logger.debug("postDiscovery: " + hosts);
+        LOGGER.debug("postDiscovery: " + hosts);
     }
 
     @Override
@@ -315,26 +317,26 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
     @Override
     public HostVO createHostVOForConnectedAgent(HostVO host,
             StartupCommand[] cmd) {
-        logger.debug("createHostVOForConnectedAgent: " + host);
+        LOGGER.debug("createHostVOForConnectedAgent: " + host);
         return null;
     }
 
     @Override
     public boolean processAnswers(long agentId, long seq, Answer[] answers) {
-        logger.debug("processAnswers: " + agentId);
+        LOGGER.debug("processAnswers: " + agentId);
         return false;
     }
 
     @Override
     public boolean processCommands(long agentId, long seq, Command[] commands) {
-        logger.debug("processCommands: " + agentId);
+        LOGGER.debug("processCommands: " + agentId);
         return false;
     }
 
     @Override
     public AgentControlAnswer processControlCommand(long agentId,
             AgentControlCommand cmd) {
-        logger.debug("processControlCommand: " + agentId);
+        LOGGER.debug("processControlCommand: " + agentId);
         return null;
     }
 
@@ -342,12 +344,12 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
     @Override
     public void processConnect(Host host, StartupCommand cmd,
             boolean forRebalance) {
-        logger.debug("processConnect");
+        LOGGER.debug("processConnect");
     }
 
     @Override
     public boolean processDisconnect(long agentId, Status state) {
-        logger.debug("processDisconnect");
+        LOGGER.debug("processDisconnect");
         return false;
     }
 
@@ -358,13 +360,13 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
 
     @Override
     public int getTimeout() {
-        logger.debug("getTimeout");
+        LOGGER.debug("getTimeout");
         return 0;
     }
 
     @Override
     public boolean processTimeout(long agentId, long seq) {
-        logger.debug("processTimeout: " + agentId);
+        LOGGER.debug("processTimeout: " + agentId);
         return false;
     }
 
@@ -372,7 +374,7 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
     public HostVO createHostVOForDirectConnectAgent(HostVO host,
             StartupCommand[] startup, ServerResource resource,
             Map<String, String> details, List<String> hostTags) {
-        logger.debug("createHostVOForDirectConnectAgent: " + host);
+        LOGGER.debug("createHostVOForDirectConnectAgent: " + host);
         StartupCommand firstCmd = startup[0];
         if (!(firstCmd instanceof StartupRoutingCommand)) {
             return null;
@@ -390,7 +392,7 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
     @Override
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced,
             boolean isForceDeleteStorage) throws UnableDeleteHostException {
-        logger.debug("deleteHost: " + host);
+        LOGGER.debug("deleteHost: " + host);
         if (host.getType() != com.cloud.host.Host.Type.Routing
                 || host.getHypervisorType() != HypervisorType.Ovm3) {
             return null;

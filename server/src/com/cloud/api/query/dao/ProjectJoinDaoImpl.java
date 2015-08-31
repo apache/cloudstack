@@ -22,6 +22,7 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.response.ProjectResponse;
@@ -41,6 +42,7 @@ import com.cloud.utils.db.SearchCriteria;
 @Component
 @Local(value = {ProjectJoinDao.class})
 public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> implements ProjectJoinDao {
+    public static final Logger s_logger = Logger.getLogger(ProjectJoinDaoImpl.class);
 
     @Inject
     private ConfigurationDao _configDao;

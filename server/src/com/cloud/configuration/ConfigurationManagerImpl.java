@@ -37,6 +37,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -216,6 +217,7 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 
 @Local(value = {ConfigurationManager.class, ConfigurationService.class})
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
+    public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class);
 
     @Inject
     EntityManager _entityMgr;
@@ -419,13 +421,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (mgtCidr == null || mgtCidr.trim().isEmpty()) {
             final String[] localCidrs = NetUtils.getLocalCidrs();
             if (localCidrs != null && localCidrs.length > 0) {
-                logger.warn("Management network CIDR is not configured originally. Set it default to " + localCidrs[0]);
+                s_logger.warn("Management network CIDR is not configured originally. Set it default to " + localCidrs[0]);
 
                 _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_MANAGMENT_NODE, 0, new Long(0), "Management network CIDR is not configured originally. Set it default to "
                         + localCidrs[0], "");
                 _configDao.update(Config.ManagementNetwork.key(), Config.ManagementNetwork.getCategory(), localCidrs[0]);
             } else {
-                logger.warn("Management network CIDR is not properly configured and we are not able to find a default setting");
+                s_logger.warn("Management network CIDR is not properly configured and we are not able to find a default setting");
                 _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_MANAGMENT_NODE, 0, new Long(0),
                         "Management network CIDR is not properly configured and we are not able to find a default setting", "");
             }
@@ -445,7 +447,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final String validationMsg = validateConfigurationValue(name, value, scope);
 
         if (validationMsg != null) {
-            logger.error("Invalid configuration option, name: " + name + ", value:" + value);
+            s_logger.error("Invalid configuration option, name: " + name + ", value:" + value);
             throw new InvalidParameterValueException(validationMsg);
         }
 
@@ -517,7 +519,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         txn.start();
 
         if (!_configDao.update(name, category, value)) {
-            logger.error("Failed to update configuration option, name: " + name + ", value:" + value);
+            s_logger.error("Failed to update configuration option, name: " + name + ", value:" + value);
             throw new CloudRuntimeException("Failed to update configuration value. Please contact Cloud Support.");
         }
 
@@ -620,7 +622,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // FIX ME - All configuration parameters are not moved from config.java to configKey
         if (config == null) {
             if (_configDepot.get(name) == null) {
-                logger.warn("Probably the component manager where configuration variable " + name + " is defined needs to implement Configurable interface");
+                s_logger.warn("Probably the component manager where configuration variable " + name + " is defined needs to implement Configurable interface");
                 throw new InvalidParameterValueException("Config parameter with name " + name + " doesn't exist");
             }
             catergory = _configDepot.get(name).category();
@@ -679,24 +681,24 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         final ConfigurationVO cfg = _configDao.findByName(name);
         if (cfg == null) {
-            logger.error("Missing configuration variable " + name + " in configuration table");
+            s_logger.error("Missing configuration variable " + name + " in configuration table");
             return "Invalid configuration variable.";
         }
 
         final String configScope = cfg.getScope();
         if (scope != null) {
             if (!configScope.contains(scope)) {
-                logger.error("Invalid scope id provided for the parameter " + name);
+                s_logger.error("Invalid scope id provided for the parameter " + name);
                 return "Invalid scope id provided for the parameter " + name;
             }
         }
         Class<?> type = null;
         final Config c = Config.getConfig(name);
         if (c == null) {
-            logger.warn("Did not find configuration " + name + " in Config.java. Perhaps moved to ConfigDepot");
+            s_logger.warn("Did not find configuration " + name + " in Config.java. Perhaps moved to ConfigDepot");
             final ConfigKey<?> configKey = _configDepot.get(name);
             if(configKey == null) {
-                logger.warn("Did not find configuration " + name + " in ConfigDepot too.");
+                s_logger.warn("Did not find configuration " + name + " in ConfigDepot too.");
                 return null;
             }
             type = configKey.type();
@@ -715,7 +717,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         } catch (final Exception e) {
             // catching generic exception as some throws NullPointerException and some throws NumberFormatExcpeion
-            logger.error(errMsg);
+            s_logger.error(errMsg);
             return errMsg;
         }
 
@@ -725,7 +727,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
             if (overprovisioningFactorsForValidation.contains(name)) {
                 final String msg = "value cannot be null for the parameter " + name;
-                logger.error(msg);
+                s_logger.error(msg);
                 return msg;
             }
             return null;
@@ -735,18 +737,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         try {
             if (overprovisioningFactorsForValidation.contains(name) && Float.parseFloat(value) < 1f) {
                 final String msg = name + " should be greater than or equal to 1";
-                logger.error(msg);
+                s_logger.error(msg);
                 throw new InvalidParameterValueException(msg);
             }
         } catch (final NumberFormatException e) {
             final String msg = "There was an error trying to parse the float value for: " + name;
-            logger.error(msg);
+            s_logger.error(msg);
             throw new InvalidParameterValueException(msg);
         }
 
         if (type.equals(Boolean.class)) {
             if (!(value.equals("true") || value.equals("false"))) {
-                logger.error("Configuration variable " + name + " is expecting true or false instead of " + value);
+                s_logger.error("Configuration variable " + name + " is expecting true or false instead of " + value);
                 return "Please enter either 'true' or 'false'.";
             }
             return null;
@@ -763,7 +765,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     throw new InvalidParameterValueException("Please enter a value greater than 6 for the configuration parameter:" + name);
                 }
             } catch (final NumberFormatException e) {
-                logger.error("There was an error trying to parse the integer value for:" + name);
+                s_logger.error("There was an error trying to parse the integer value for:" + name);
                 throw new InvalidParameterValueException("There was an error trying to parse the integer value for:" + name);
             }
         }
@@ -775,7 +777,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     throw new InvalidParameterValueException("Please enter a value between 0 and 1 for the configuration parameter: " + name);
                 }
             } catch (final NumberFormatException e) {
-                logger.error("There was an error trying to parse the float value for:" + name);
+                s_logger.error("There was an error trying to parse the float value for:" + name);
                 throw new InvalidParameterValueException("There was an error trying to parse the float value for:" + name);
             }
         }
@@ -795,16 +797,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (range.equals("privateip")) {
                 try {
                     if (!NetUtils.isSiteLocalAddress(value)) {
-                        logger.error("privateip range " + value + " is not a site local address for configuration variable " + name);
+                        s_logger.error("privateip range " + value + " is not a site local address for configuration variable " + name);
                         return "Please enter a site local IP address.";
                     }
                 } catch (final NullPointerException e) {
-                    logger.error("Error parsing ip address for " + name);
+                    s_logger.error("Error parsing ip address for " + name);
                     throw new InvalidParameterValueException("Error parsing ip address");
                 }
             } else if (range.equals("netmask")) {
                 if (!NetUtils.isValidNetmask(value)) {
-                    logger.error("netmask " + value + " is not a valid net mask for configuration variable " + name);
+                    s_logger.error("netmask " + value + " is not a valid net mask for configuration variable " + name);
                     return "Please enter a valid netmask.";
                 }
             } else if (range.equals("hypervisorList")) {
@@ -848,7 +850,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         return null;
                     }
                 }
-                logger.error("configuration value for " + name + " is invalid");
+                s_logger.error("configuration value for " + name + " is invalid");
                 return "Please enter : " + range;
 
             }
@@ -856,14 +858,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             final String[] options = range.split("-");
             if (options.length != 2) {
                 final String msg = "configuration range " + range + " for " + name + " is invalid";
-                logger.error(msg);
+                s_logger.error(msg);
                 return msg;
             }
             final int min = Integer.parseInt(options[0]);
             final int max = Integer.parseInt(options[1]);
             final int val = Integer.parseInt(value);
             if (val < min || val > max) {
-                logger.error("configuration value for " + name + " is invalid");
+                s_logger.error("configuration value for " + name + " is invalid");
                 return "Please enter : " + range;
             }
         }
@@ -1233,7 +1235,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
             });
         } catch (final Exception e) {
-            logger.error("Unable to edit pod due to " + e.getMessage(), e);
+            s_logger.error("Unable to edit pod due to " + e.getMessage(), e);
             throw new CloudRuntimeException("Failed to edit pod. Please contact Cloud Support.");
         }
 
@@ -1761,7 +1763,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                 _networkSvc.addTrafficTypeToPhysicalNetwork(mgmtPhyNetwork.getId(), TrafficType.Storage.toString(), "vlan", mgmtTraffic.getXenNetworkLabel(),
                                         mgmtTraffic.getKvmNetworkLabel(), mgmtTraffic.getVmwareNetworkLabel(), mgmtTraffic.getSimulatorNetworkLabel(), mgmtTraffic.getVlan(),
                                         mgmtTraffic.getHypervNetworkLabel(), mgmtTraffic.getOvm3NetworkLabel());
-                                logger.info("No storage traffic type was specified by admin, create default storage traffic on physical network " + mgmtPhyNetwork.getId()
+                                s_logger.info("No storage traffic type was specified by admin, create default storage traffic on physical network " + mgmtPhyNetwork.getId()
                                         + " with same configure of management traffic type");
                             }
                         } catch (final InvalidParameterValueException ex) {
@@ -2893,7 +2895,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     if (supportsMultipleSubnets == null || !Boolean.valueOf(supportsMultipleSubnets)) {
                         throw new  InvalidParameterValueException("The Dhcp serivice provider for this network dose not support the dhcp  across multiple subnets");
                     }
-                    logger.info("adding a new subnet to the network " + network.getId());
+                    s_logger.info("adding a new subnet to the network " + network.getId());
                 } else if (sameSubnet != null)  {
                     // if it is same subnet the user might not send the vlan and the
                     // netmask details. so we are
@@ -3254,7 +3256,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             @Override
             public VlanVO doInTransaction(final TransactionStatus status) {
                 VlanVO vlan = new VlanVO(vlanType, vlanId, vlanGateway, vlanNetmask, zone.getId(), ipRange, networkId, physicalNetworkId, vlanIp6Gateway, vlanIp6Cidr, ipv6Range);
-                logger.debug("Saving vlan range " + vlan);
+                s_logger.debug("Saving vlan range " + vlan);
                 vlan = _vlanDao.persist(vlan);
 
                 // IPv6 use a used ip map, is different from ipv4, no need to save
@@ -3317,8 +3319,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     throw new CloudRuntimeException("Unable to acquire vlan configuration: " + vlanDbId);
                 }
 
-                if (logger.isDebugEnabled()) {
-                    logger.debug("lock vlan " + vlanDbId + " is acquired");
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("lock vlan " + vlanDbId + " is acquired");
                 }
                 for (final IPAddressVO ip : ips) {
                     boolean success = true;
@@ -3342,7 +3344,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         success = _ipAddrMgr.disassociatePublicIpAddress(ip.getId(), userId, caller);
                     }
                     if (!success) {
-                        logger.warn("Some ip addresses failed to be released as a part of vlan " + vlanDbId + " removal");
+                        s_logger.warn("Some ip addresses failed to be released as a part of vlan " + vlanDbId + " removal");
                     } else {
                         resourceCountToBeDecrement++;
                         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE, acctVln.get(0).getAccountId(), ip.getDataCenterId(), ip.getId(),
@@ -3499,14 +3501,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (vlan == null) {
                     throw new CloudRuntimeException("Unable to acquire vlan configuration: " + vlanDbId);
                 }
-                if (logger.isDebugEnabled()) {
-                    logger.debug("lock vlan " + vlanDbId + " is acquired");
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("lock vlan " + vlanDbId + " is acquired");
                 }
                 for (final IPAddressVO ip : ips) {
                     // Disassociate allocated IP's that are not in use
                     if (!ip.isOneToOneNat() && !ip.isSourceNat() && !(_firewallDao.countRulesByIpId(ip.getId()) > 0)) {
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("Releasing Public IP addresses" + ip + " of vlan " + vlanDbId + " as part of Public IP" + " range release to the system pool");
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Releasing Public IP addresses" + ip + " of vlan " + vlanDbId + " as part of Public IP" + " range release to the system pool");
                         }
                         success = success && _ipAddrMgr.disassociatePublicIpAddress(ip.getId(), userId, caller);
                     } else {
@@ -3514,7 +3516,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                 }
                 if (!success) {
-                    logger.warn("Some Public IP addresses that were not in use failed to be released as a part of" + " vlan " + vlanDbId + "release to the system pool");
+                    s_logger.warn("Some Public IP addresses that were not in use failed to be released as a part of" + " vlan " + vlanDbId + "release to the system pool");
                 }
             } finally {
                 _vlanDao.releaseFromLockTable(vlanDbId);
@@ -3797,8 +3799,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public void checkDiskOfferingAccess(final Account caller, final DiskOffering dof) {
         for (final SecurityChecker checker : _secChecker) {
             if (checker.checkAccess(caller, dof)) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Access granted to " + caller + " to disk offering:" + dof.getId() + " by " + checker.getName());
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Access granted to " + caller + " to disk offering:" + dof.getId() + " by " + checker.getName());
                 }
                 return;
             } else {
@@ -3814,8 +3816,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public void checkZoneAccess(final Account caller, final DataCenter zone) {
         for (final SecurityChecker checker : _secChecker) {
             if (checker.checkAccess(caller, zone)) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Access granted to " + caller + " to zone:" + zone.getId() + " by " + checker.getName());
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Access granted to " + caller + " to zone:" + zone.getId() + " by " + checker.getName());
                 }
                 return;
             } else {
@@ -3998,7 +4000,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // dhcp provider and userdata provider should be same because vm will be contacting dhcp server for user data.
         if (dhcpProvider == null && IsVrUserdataProvider) {
-            logger.debug("User data provider VR can't be selected without VR as dhcp provider. In this case VM fails to contact the DHCP server for userdata");
+            s_logger.debug("User data provider VR can't be selected without VR as dhcp provider. In this case VM fails to contact the DHCP server for userdata");
             throw new InvalidParameterValueException("Without VR as dhcp provider, User data can't selected for VR. Please select VR as DHCP provider ");
         }
 
@@ -4058,7 +4060,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // if Firewall service is missing, add Firewall service/provider
         // combination
         if (firewallProvider != null) {
-            logger.debug("Adding Firewall service with provider " + firewallProvider.getName());
+            s_logger.debug("Adding Firewall service with provider " + firewallProvider.getName());
             final Set<Provider> firewallProviderSet = new HashSet<Provider>();
             firewallProviderSet.add(firewallProvider);
             serviceProviderMap.put(Service.Firewall, firewallProviderSet);
@@ -4384,7 +4386,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 NetworkOfferingVO offering = offeringFinal;
 
                 // 1) create network offering object
-                logger.debug("Adding network offering " + offering);
+                s_logger.debug("Adding network offering " + offering);
                 offering.setConcurrentConnections(maxconn);
                 offering.setKeepAliveEnabled(enableKeepAlive);
                 offering = _networkOfferingDao.persist(offering, details);
@@ -4400,7 +4402,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                 }
                                 final NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(offering.getId(), service, provider);
                                 _ntwkOffServiceMapDao.persist(offService);
-                                logger.trace("Added service for the network offering: " + offService + " with provider " + provider.getName());
+                                s_logger.trace("Added service for the network offering: " + offService + " with provider " + provider.getName());
                             }
 
                             if (vpcOff) {
@@ -4411,7 +4413,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         } else {
                             final NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(offering.getId(), service, null);
                             _ntwkOffServiceMapDao.persist(offService);
-                            logger.trace("Added service for the network offering: " + offService + " with null provider");
+                            s_logger.trace("Added service for the network offering: " + offService + " with null provider");
                         }
                     }
                 }
@@ -4833,7 +4835,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // Check if the account exists
         final Account account = _accountDao.findEnabledAccount(accountName, domainId);
         if (account == null) {
-            logger.error("Unable to find account by name: " + accountName + " in domain " + domainId);
+            s_logger.error("Unable to find account by name: " + accountName + " in domain " + domainId);
             throw new InvalidParameterValueException("Account by name: " + accountName + " doesn't exist in domain " + domainId);
         }
 
@@ -4953,11 +4955,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                 });
             } catch (final CloudRuntimeException e) {
-                logger.error(e);
+                s_logger.error(e);
                 return false;
             }
         } else {
-            logger.trace("Account id=" + accountId + " has no account specific virtual ip ranges, nothing to release");
+            s_logger.trace("Account id=" + accountId + " has no account specific virtual ip ranges, nothing to release");
         }
         return true;
     }

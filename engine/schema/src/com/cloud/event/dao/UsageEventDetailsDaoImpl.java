@@ -21,6 +21,7 @@ import java.util.Map;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.event.UsageEventDetailsVO;
@@ -32,6 +33,7 @@ import com.cloud.utils.db.TransactionLegacy;
 @Component
 @Local(value = {UsageEventDetailsDao.class})
 public class UsageEventDetailsDaoImpl extends GenericDaoBase<UsageEventDetailsVO, Long> implements UsageEventDetailsDao {
+    public static final Logger s_logger = Logger.getLogger(UsageEventDetailsDaoImpl.class.getName());
 
     protected final SearchBuilder<UsageEventDetailsVO> EventDetailsSearch;
     protected final SearchBuilder<UsageEventDetailsVO> DetailSearch;

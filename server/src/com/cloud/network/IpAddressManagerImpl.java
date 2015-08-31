@@ -40,6 +40,7 @@ import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpDao;
 import org.apache.cloudstack.region.PortableIpVO;
 import org.apache.cloudstack.region.Region;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
@@ -167,6 +168,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class IpAddressManagerImpl extends ManagerBase implements IpAddressManager, Configurable {
+    private static final Logger s_logger = Logger.getLogger(IpAddressManagerImpl.class);
 
     @Inject
     NetworkOrchestrationService _networkMgr = null;
@@ -397,7 +399,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         Network.State.getStateMachine().registerListener(new NetworkStateListener(_usageEventDao, _networksDao, _configDao));
 
-        logger.info("Network Manager is configured.");
+        s_logger.info("Network Manager is configured.");
 
         return true;
     }
@@ -449,14 +451,14 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 if (postApplyRules) {
 
                     if (revokeCount != null && revokeCount.longValue() == totalCount.longValue()) {
-                        logger.trace("All rules are in Revoke state, have to dis-assiciate IP from the backend");
+                        s_logger.trace("All rules are in Revoke state, have to dis-assiciate IP from the backend");
                         return true;
                     }
                 } else {
                     if (activeCount != null && activeCount > 0) {
                         continue;
                     } else if (addCount != null && addCount.longValue() == totalCount.longValue()) {
-                        logger.trace("All rules are in Add state, have to assiciate IP with the backend");
+                        s_logger.trace("All rules are in Add state, have to assiciate IP with the backend");
                         return true;
                     } else {
                         continue;
@@ -473,7 +475,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     public boolean applyRules(List<? extends FirewallRule> rules, FirewallRule.Purpose purpose, NetworkRuleApplier applier, boolean continueOnError)
         throws ResourceUnavailableException {
         if (rules == null || rules.size() == 0) {
-            logger.debug("There are no rules to forward to the network elements");
+            s_logger.debug("There are no rules to forward to the network elements");
             return true;
         }
 
@@ -504,7 +506,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             if (!continueOnError) {
                 throw e;
             }
-            logger.warn("Problems with applying " + purpose + " rules but pushing on", e);
+            s_logger.warn("Problems with applying " + purpose + " rules but pushing on", e);
             success = false;
         }
 
@@ -522,31 +524,31 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         // Revoke all firewall rules for the ip
         try {
-            logger.debug("Revoking all " + Purpose.Firewall + "rules as a part of public IP id=" + ipId + " release...");
+            s_logger.debug("Revoking all " + Purpose.Firewall + "rules as a part of public IP id=" + ipId + " release...");
             if (!_firewallMgr.revokeFirewallRulesForIp(ipId, userId, caller)) {
-                logger.warn("Unable to revoke all the firewall rules for ip id=" + ipId + " as a part of ip release");
+                s_logger.warn("Unable to revoke all the firewall rules for ip id=" + ipId + " as a part of ip release");
                 success = false;
             }
         } catch (ResourceUnavailableException e) {
-            logger.warn("Unable to revoke all firewall rules for ip id=" + ipId + " as a part of ip release", e);
+            s_logger.warn("Unable to revoke all firewall rules for ip id=" + ipId + " as a part of ip release", e);
             success = false;
         }
 
         // Revoke all PF/Static nat rules for the ip
         try {
-            logger.debug("Revoking all " + Purpose.PortForwarding + "/" + Purpose.StaticNat + " rules as a part of public IP id=" + ipId + " release...");
+            s_logger.debug("Revoking all " + Purpose.PortForwarding + "/" + Purpose.StaticNat + " rules as a part of public IP id=" + ipId + " release...");
             if (!_rulesMgr.revokeAllPFAndStaticNatRulesForIp(ipId, userId, caller)) {
-                logger.warn("Unable to revoke all the port forwarding rules for ip id=" + ipId + " as a part of ip release");
+                s_logger.warn("Unable to revoke all the port forwarding rules for ip id=" + ipId + " as a part of ip release");
                 success = false;
             }
         } catch (ResourceUnavailableException e) {
-            logger.warn("Unable to revoke all the port forwarding rules for ip id=" + ipId + " as a part of ip release", e);
+            s_logger.warn("Unable to revoke all the port forwarding rules for ip id=" + ipId + " as a part of ip release", e);
             success = false;
         }
 
-        logger.debug("Revoking all " + Purpose.LoadBalancing + " rules as a part of public IP id=" + ipId + " release...");
+        s_logger.debug("Revoking all " + Purpose.LoadBalancing + " rules as a part of public IP id=" + ipId + " release...");
         if (!_lbMgr.removeAllLoadBalanacersForIp(ipId, caller, userId)) {
-            logger.warn("Unable to revoke all the load balancer rules for ip id=" + ipId + " as a part of ip release");
+            s_logger.warn("Unable to revoke all the load balancer rules for ip id=" + ipId + " as a part of ip release");
             success = false;
         }
 
@@ -554,11 +556,11 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         // conditions
         // only when ip address failed to be cleaned up as a part of account destroy and was marked as Releasing, this part of
         // the code would be triggered
-        logger.debug("Cleaning up remote access vpns as a part of public IP id=" + ipId + " release...");
+        s_logger.debug("Cleaning up remote access vpns as a part of public IP id=" + ipId + " release...");
         try {
             _vpnMgr.destroyRemoteAccessVpnForIp(ipId, caller);
         } catch (ResourceUnavailableException e) {
-            logger.warn("Unable to destroy remote access vpn for ip id=" + ipId + " as a part of ip release", e);
+            s_logger.warn("Unable to destroy remote access vpn for ip id=" + ipId + " as a part of ip release", e);
             success = false;
         }
 
@@ -573,7 +575,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         // Cleanup all ip address resources - PF/LB/Static nat rules
         if (!cleanupIpResources(addrId, userId, caller)) {
             success = false;
-            logger.warn("Failed to release resources for ip address id=" + addrId);
+            s_logger.warn("Failed to release resources for ip address id=" + addrId);
         }
 
         IPAddressVO ip = markIpAsUnavailable(addrId);
@@ -581,15 +583,15 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             return true;
         }
 
-        if (logger.isDebugEnabled()) {
-            logger.debug("Releasing ip id=" + addrId + "; sourceNat = " + ip.isSourceNat());
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Releasing ip id=" + addrId + "; sourceNat = " + ip.isSourceNat());
         }
 
         if (ip.getAssociatedWithNetworkId() != null) {
             Network network = _networksDao.findById(ip.getAssociatedWithNetworkId());
             try {
                 if (!applyIpAssociations(network, true)) {
-                    logger.warn("Unable to apply ip address associations for " + network);
+                    s_logger.warn("Unable to apply ip address associations for " + network);
                     success = false;
                 }
             } catch (ResourceUnavailableException e) {
@@ -605,7 +607,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             if (ip.isPortable()) {
                 releasePortableIpAddress(addrId);
             }
-            logger.debug("Released a public ip id=" + addrId);
+            s_logger.debug("Released a public ip id=" + addrId);
         }
 
         return success;
@@ -701,7 +703,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 ex.addProxyObject(ApiDBUtils.findPodById(podId).getUuid());
                 throw ex;
             }
-            logger.warn(errorMessage.toString());
+            s_logger.warn(errorMessage.toString());
             InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Insufficient address capacity", DataCenter.class, dcId);
             ex.addProxyObject(ApiDBUtils.findZoneById(dcId).getUuid());
             throw ex;
@@ -746,7 +748,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 ex.addProxyObject(ApiDBUtils.findPodById(podId).getUuid());
                 throw ex;
             }
-            logger.warn(errorMessage.toString());
+            s_logger.warn(errorMessage.toString());
             InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Insufficient address capacity", DataCenter.class, dcId);
             ex.addProxyObject(ApiDBUtils.findZoneById(dcId).getUuid());
             throw ex;
@@ -759,7 +761,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             try {
                 _resourceLimitMgr.checkResourceLimit(owner, ResourceType.public_ip);
             } catch (ResourceAllocationException ex) {
-                logger.warn("Failed to allocate resource of type " + ex.getResourceType() + " for account " + owner);
+                s_logger.warn("Failed to allocate resource of type " + ex.getResourceType() + " for account " + owner);
                 throw new AccountLimitException("Maximum number of public IP addresses for account: " + owner.getAccountName() + " has been exceeded.");
             }
         }
@@ -877,8 +879,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 ConcurrentOperationException ex = new ConcurrentOperationException("Unable to lock account");
                 throw ex;
             }
-            if (logger.isDebugEnabled()) {
-                logger.debug("lock account " + ownerId + " is acquired");
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("lock account " + ownerId + " is acquired");
             }
                     boolean displayIp = true;
                     if (guestNtwkId != null) {
@@ -902,14 +904,14 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             return ip;
         } finally {
             if (owner != null) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Releasing lock account " + ownerId);
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Releasing lock account " + ownerId);
                 }
 
                 _accountDao.releaseFromLockTable(ownerId);
             }
             if (ip == null) {
-                logger.error("Unable to get source nat ip address for account " + ownerId);
+                s_logger.error("Unable to get source nat ip address for account " + ownerId);
             }
         }
     }
@@ -932,7 +934,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     _ipAddressDao.unassignIpAddress(addr.getId());
                 } else {
                     success = false;
-                    logger.warn("Failed to release resources for ip address id=" + addr.getId());
+                    s_logger.warn("Failed to release resources for ip address id=" + addr.getId());
                 }
             }
         }
@@ -979,7 +981,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 if (!continueOnError) {
                     throw e;
                 } else {
-                    logger.debug("Resource is not available: " + provider.getName(), e);
+                    s_logger.debug("Resource is not available: " + provider.getName(), e);
                 }
             }
         }
@@ -1007,17 +1009,17 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         Account accountToLock = null;
         try {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
             }
             accountToLock = _accountDao.acquireInLockTable(ipOwner.getId());
             if (accountToLock == null) {
-                logger.warn("Unable to lock account: " + ipOwner.getId());
+                s_logger.warn("Unable to lock account: " + ipOwner.getId());
                 throw new ConcurrentOperationException("Unable to acquire account lock");
             }
 
-            if (logger.isDebugEnabled()) {
-                logger.debug("Associate IP address lock acquired");
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Associate IP address lock acquired");
             }
 
             ip = Transaction.execute(new TransactionCallbackWithException<PublicIp, InsufficientAddressCapacityException>() {
@@ -1034,7 +1036,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             CallContext.current().setEventDetails("Ip Id: " + ip.getId());
             Ip ipAddress = ip.getAddress();
 
-            logger.debug("Got " + ipAddress + " to assign for account " + ipOwner.getId() + " in zone " + zone.getId());
+            s_logger.debug("Got " + ipAddress + " to assign for account " + ipOwner.getId() + " in zone " + zone.getId());
 
                     return ip;
                 }
@@ -1042,11 +1044,11 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         } finally {
             if (accountToLock != null) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Releasing lock account " + ipOwner);
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Releasing lock account " + ipOwner);
                 }
                 _accountDao.releaseFromLockTable(ipOwner.getId());
-                logger.debug("Associate IP address lock released");
+                s_logger.debug("Associate IP address lock released");
             }
         }
         return ip;
@@ -1175,12 +1177,12 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             }
             owner = _accountMgr.getAccount(ipToAssoc.getAllocatedToAccountId());
         } else {
-            logger.debug("Unable to find ip address by id: " + ipId);
+            s_logger.debug("Unable to find ip address by id: " + ipId);
             return null;
         }
 
         if (ipToAssoc.getAssociatedWithNetworkId() != null) {
-            logger.debug("IP " + ipToAssoc + " is already assocaited with network id" + networkId);
+            s_logger.debug("IP " + ipToAssoc + " is already assocaited with network id" + networkId);
             return ipToAssoc;
         }
 
@@ -1188,7 +1190,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         if (network != null) {
             _accountMgr.checkAccess(owner, AccessType.UseEntry, false, network);
         } else {
-            logger.debug("Unable to find ip address by id: " + ipId);
+            s_logger.debug("Unable to find ip address by id: " + ipId);
             return null;
         }
 
@@ -1235,7 +1237,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             }
         }
 
-        logger.debug("Associating ip " + ipToAssoc + " to network " + network);
+        s_logger.debug("Associating ip " + ipToAssoc + " to network " + network);
 
         IPAddressVO ip = _ipAddressDao.findById(ipId);
         //update ip address with networkId
@@ -1247,16 +1249,16 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         try {
             success = applyIpAssociations(network, false);
             if (success) {
-                logger.debug("Successfully associated ip address " + ip.getAddress().addr() + " to network " + network);
+                s_logger.debug("Successfully associated ip address " + ip.getAddress().addr() + " to network " + network);
             } else {
-                logger.warn("Failed to associate ip address " + ip.getAddress().addr() + " to network " + network);
+                s_logger.warn("Failed to associate ip address " + ip.getAddress().addr() + " to network " + network);
             }
             return ip;
         } finally {
             if (!success && releaseOnFailure) {
                 if (ip != null) {
                     try {
-                        logger.warn("Failed to associate ip address, so releasing ip from the database " + ip);
+                        s_logger.warn("Failed to associate ip address, so releasing ip from the database " + ip);
                         _ipAddressDao.markAsUnavailable(ip.getId());
                         if (!applyIpAssociations(network, true)) {
                             // if fail to apply ip assciations again, unassign ip address without updating resource
@@ -1264,7 +1266,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                             _ipAddressDao.unassignIpAddress(ip.getId());
                         }
                     } catch (Exception e) {
-                        logger.warn("Unable to disassociate ip address for recovery", e);
+                        s_logger.warn("Unable to disassociate ip address for recovery", e);
                     }
                 }
             }
@@ -1326,7 +1328,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             }
             owner = _accountMgr.getAccount(ipToAssoc.getAllocatedToAccountId());
         } else {
-            logger.debug("Unable to find ip address by id: " + ipId);
+            s_logger.debug("Unable to find ip address by id: " + ipId);
             return null;
         }
 
@@ -1361,9 +1363,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         try {
             boolean success = applyIpAssociations(network, false);
             if (success) {
-                logger.debug("Successfully associated ip address " + ip.getAddress().addr() + " to network " + network);
+                s_logger.debug("Successfully associated ip address " + ip.getAddress().addr() + " to network " + network);
             } else {
-                logger.warn("Failed to associate ip address " + ip.getAddress().addr() + " to network " + network);
+                s_logger.warn("Failed to associate ip address " + ip.getAddress().addr() + " to network " + network);
             }
             return ip;
         } finally {
@@ -1524,12 +1526,12 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                                         + requiredOfferings.get(0).getTags());
                             }
 
-                            logger.debug("Creating network for account " + owner + " from the network offering id=" + requiredOfferings.get(0).getId()
+                            s_logger.debug("Creating network for account " + owner + " from the network offering id=" + requiredOfferings.get(0).getId()
                                     + " as a part of createVlanIpRange process");
                             guestNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName()
                                     + "-network", null, null, null, null, owner, null, physicalNetwork, zoneId, ACLType.Account, null, null, null, null, true, null);
                 if (guestNetwork == null) {
-                    logger.warn("Failed to create default Virtual network for the account " + accountId + "in zone " + zoneId);
+                    s_logger.warn("Failed to create default Virtual network for the account " + accountId + "in zone " + zoneId);
                                 throw new CloudRuntimeException("Failed to create a Guest Isolated Networks with SourceNAT "
                                         + "service enabled as a part of createVlanIpRange, for the account " + accountId + "in zone " + zoneId);
                 }
@@ -1586,19 +1588,19 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             DeployDestination dest = new DeployDestination(zone, null, null, null);
             Account callerAccount = CallContext.current().getCallingAccount();
             UserVO callerUser = _userDao.findById(CallContext.current().getCallingUserId());
-            Journal journal = new Journal.LogJournal("Implementing " + guestNetwork, logger);
+            Journal journal = new Journal.LogJournal("Implementing " + guestNetwork, s_logger);
             ReservationContext context = new ReservationContextImpl(UUID.randomUUID().toString(), journal, callerUser, callerAccount);
-            logger.debug("Implementing network " + guestNetwork + " as a part of network provision for persistent network");
+            s_logger.debug("Implementing network " + guestNetwork + " as a part of network provision for persistent network");
             try {
                 Pair<? extends NetworkGuru, ? extends Network> implementedNetwork = _networkMgr.implementNetwork(guestNetwork.getId(), dest, context);
                 if (implementedNetwork == null || implementedNetwork.first() == null) {
-                    logger.warn("Failed to implement the network " + guestNetwork);
+                    s_logger.warn("Failed to implement the network " + guestNetwork);
                 }
                 if (implementedNetwork != null) {
                     guestNetwork = implementedNetwork.second();
                 }
             } catch (Exception ex) {
-                logger.warn("Failed to implement network " + guestNetwork + " elements and resources as a part of" + " network provision due to ", ex);
+                s_logger.warn("Failed to implement network " + guestNetwork + " elements and resources as a part of" + " network provision due to ", ex);
                 CloudRuntimeException e = new CloudRuntimeException("Failed to implement network (with specified id)"
                                                                     + " elements and resources as a part of network provision for persistent network");
                 e.addProxyObject(guestNetwork.getUuid(), "networkId");
@@ -1614,7 +1616,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         final IPAddressVO ip = _ipAddressDao.findById(addrId);
 
         if (ip.getAllocatedToAccountId() == null && ip.getAllocatedTime() == null) {
-            logger.trace("Ip address id=" + addrId + " is already released");
+            s_logger.trace("Ip address id=" + addrId + " is already released");
             return ip;
         }
 
@@ -1655,14 +1657,14 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @DB
     public String acquireGuestIpAddress(Network network, String requestedIp) {
         if (requestedIp != null && requestedIp.equals(network.getGateway())) {
-            logger.warn("Requested ip address " + requestedIp + " is used as a gateway address in network " + network);
+            s_logger.warn("Requested ip address " + requestedIp + " is used as a gateway address in network " + network);
             return null;
         }
 
         Set<Long> availableIps = _networkModel.getAvailableIps(network, requestedIp);
 
         if (availableIps == null || availableIps.isEmpty()) {
-            logger.debug("There are no free ips in the  network " + network);
+            s_logger.debug("There are no free ips in the  network " + network);
             return null;
         }
 
@@ -1673,10 +1675,10 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             String[] cidr = network.getCidr().split("/");
             boolean isSameCidr = NetUtils.sameSubnetCIDR(requestedIp, NetUtils.long2Ip(array[0]), Integer.parseInt(cidr[1]));
             if (!isSameCidr) {
-                logger.warn("Requested ip address " + requestedIp + " doesn't belong to the network " + network + " cidr");
+                s_logger.warn("Requested ip address " + requestedIp + " doesn't belong to the network " + network + " cidr");
                 return null;
             } else if (NetUtils.IsIpEqualToNetworkOrBroadCastIp(requestedIp, cidr[0], Integer.parseInt(cidr[1]))) {
-                logger.warn("Requested ip address " + requestedIp + " is equal to the to the network/broadcast ip of the network" + network);
+                s_logger.warn("Requested ip address " + requestedIp + " is equal to the to the network/broadcast ip of the network" + network);
                 return null;
             }
             return requestedIp;
@@ -1694,7 +1696,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Override
     public boolean applyStaticNats(List<? extends StaticNat> staticNats, boolean continueOnError, boolean forRevoke) throws ResourceUnavailableException {
         if (staticNats == null || staticNats.size() == 0) {
-            logger.debug("There are no static nat rules for the network elements");
+            s_logger.debug("There are no static nat rules for the network elements");
             return true;
         }
 
@@ -1703,7 +1705,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         // Check if the StaticNat service is supported
         if (!_networkModel.areServicesSupportedInNetwork(network.getId(), Service.StaticNat)) {
-            logger.debug("StaticNat service is not supported in specified network id");
+            s_logger.debug("StaticNat service is not supported in specified network id");
             return true;
         }
 
@@ -1731,7 +1733,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             if (!continueOnError) {
                 throw e;
             }
-            logger.warn("Problems with " + element.getName() + " but pushing on", e);
+            s_logger.warn("Problems with " + element.getName() + " but pushing on", e);
             success = false;
         }
 
@@ -1792,7 +1794,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         if ((off.getElasticLb() && forElasticLb) || (off.getElasticIp() && forElasticIp)) {
 
             try {
-                logger.debug("Allocating system IP address for load balancer rule...");
+                s_logger.debug("Allocating system IP address for load balancer rule...");
                 // allocate ip
                 ip = allocateIP(owner, true, guestNetwork.getDataCenterId());
                 // apply ip associations
@@ -1822,10 +1824,10 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             if (ip.getSystem()) {
                 CallContext ctx = CallContext.current();
                 if (!disassociatePublicIpAddress(ip.getId(), ctx.getCallingUserId(), ctx.getCallingAccount())) {
-                    logger.warn("Unable to release system ip address id=" + ip.getId());
+                    s_logger.warn("Unable to release system ip address id=" + ip.getId());
                     success = false;
                 } else {
-                    logger.warn("Successfully released system ip address id=" + ip.getId());
+                    s_logger.warn("Successfully released system ip address id=" + ip.getId());
                 }
             }
         }
@@ -1853,7 +1855,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     if (placeholderNic != null) {
                         IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), placeholderNic.getIPv4Address());
                         ip = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
-                        logger.debug("Nic got an ip address " + placeholderNic.getIPv4Address() + " stored in placeholder nic for the network " + network);
+                        s_logger.debug("Nic got an ip address " + placeholderNic.getIPv4Address() + " stored in placeholder nic for the network " + network);
                     }
                 }
 
@@ -1926,7 +1928,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
                         //Get ip address from the placeholder and don't allocate a new one
                         if (requestedIpv4 != null && vm.getType() == VirtualMachine.Type.DomainRouter) {
-                            logger.debug("There won't be nic assignment for VR id " + vm.getId() +"  in this network " + network);
+                            s_logger.debug("There won't be nic assignment for VR id " + vm.getId() +"  in this network " + network);
 
                         }
 
@@ -1993,7 +1995,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     public String allocatePublicIpForGuestNic(Network network, Long podId, Account owner, String requestedIp) throws InsufficientAddressCapacityException {
         PublicIp ip = assignPublicIpAddress(network.getDataCenterId(), podId, owner, VlanType.DirectAttached, network.getId(), requestedIp, false);
         if (ip == null) {
-            logger.debug("There is no free public ip address");
+            s_logger.debug("There is no free public ip address");
             return null;
         }
         Ip ipAddr = ip.getAddress();

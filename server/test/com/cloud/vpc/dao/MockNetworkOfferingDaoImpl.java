@@ -21,6 +21,7 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
 
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
@@ -36,6 +37,7 @@ import com.cloud.utils.db.DB;
 @Local(value = NetworkOfferingDao.class)
 @DB()
 public class MockNetworkOfferingDaoImpl extends NetworkOfferingDaoImpl implements NetworkOfferingDao {
+    private static final Logger s_logger = Logger.getLogger(MockNetworkOfferingDaoImpl.class);
 
     /* (non-Javadoc)
      * @see com.cloud.offerings.dao.NetworkOfferingDao#findByUniqueName(java.lang.String)
@@ -142,10 +144,10 @@ public class MockNetworkOfferingDaoImpl extends NetworkOfferingDaoImpl implement
             f.setAccessible(true);
             f.setLong(voToReturn, id);
         } catch (NoSuchFieldException ex) {
-            logger.warn(ex);
+            s_logger.warn(ex);
             return null;
         } catch (IllegalAccessException ex) {
-            logger.warn(ex);
+            s_logger.warn(ex);
             return null;
         }
 

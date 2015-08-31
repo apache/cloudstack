@@ -19,6 +19,7 @@ package org.apache.cloudstack.network.guru;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.network.element.SspElement;
 import org.apache.cloudstack.network.element.SspManager;
@@ -47,6 +48,7 @@ import com.cloud.vm.VirtualMachineProfile;
  */
 @Local(value = NetworkGuru.class)
 public class SspGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigrationResponder {
+    private static final Logger s_logger = Logger.getLogger(SspGuestNetworkGuru.class);
 
     @Inject
     SspManager _sspMgr;
@@ -62,7 +64,7 @@ public class SspGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
 
     @Override
     protected boolean canHandle(NetworkOffering offering, NetworkType networkType, PhysicalNetwork physicalNetwork) {
-        logger.trace("canHandle");
+        s_logger.trace("canHandle");
 
         String setting = null;
         if (physicalNetwork != null && physicalNetwork.getIsolationMethods().contains("SSP")) {
@@ -73,18 +75,18 @@ public class SspGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
         }
         if (setting != null) {
             if (networkType != NetworkType.Advanced) {
-                logger.info("SSP enebled by " + setting + " but not active because networkType was " + networkType);
+                s_logger.info("SSP enebled by " + setting + " but not active because networkType was " + networkType);
             } else if (!isMyTrafficType(offering.getTrafficType())) {
-                logger.info("SSP enabled by " + setting + " but not active because traffic type not Guest");
+                s_logger.info("SSP enabled by " + setting + " but not active because traffic type not Guest");
             } else if (offering.getGuestType() != Network.GuestType.Isolated) {
-                logger.info("SSP works for network isolatation.");
+                s_logger.info("SSP works for network isolatation.");
             } else if (!_sspMgr.canHandle(physicalNetwork)) {
-                logger.info("SSP manager not ready");
+                s_logger.info("SSP manager not ready");
             } else {
                 return true;
             }
         } else {
-            logger.debug("SSP not configured to be active");
+            s_logger.debug("SSP not configured to be active");
         }
         return false;
     }
@@ -99,7 +101,7 @@ public class SspGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
     @Override
     public Network implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
         throws InsufficientVirtualNetworkCapacityException {
-        logger.trace("implement " + network.toString());
+        s_logger.trace("implement " + network.toString());
         super.implement(network, offering, dest, context);
         _sspMgr.createNetwork(network, offering, dest, context);
         return network;
@@ -107,7 +109,7 @@ public class SspGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
 
     @Override
     public void shutdown(NetworkProfile profile, NetworkOffering offering) {
-        logger.trace("shutdown " + profile.toString());
+        s_logger.trace("shutdown " + profile.toString());
         _sspMgr.deleteNetwork(profile);
         super.shutdown(profile, offering);
     }
@@ -136,10 +138,10 @@ public class SspGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
         try {
             reserve(nic, network, vm, dest, context);
         } catch (InsufficientVirtualNetworkCapacityException e) {
-            logger.error("prepareForMigration failed", e);
+            s_logger.error("prepareForMigration failed", e);
             return false;
         } catch (InsufficientAddressCapacityException e) {
-            logger.error("prepareForMigration failed", e);
+            s_logger.error("prepareForMigration failed", e);
             return false;
         }
         return true;

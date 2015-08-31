@@ -29,6 +29,7 @@ import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostVO;
@@ -65,6 +66,7 @@ import com.cloud.vm.VirtualMachine.Type;
 @Local(value = {VMInstanceDao.class})
 public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implements VMInstanceDao {
 
+    public static final Logger s_logger = Logger.getLogger(VMInstanceDaoImpl.class);
     private static final int MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT = 3;
 
     protected SearchBuilder<VMInstanceVO> VMClusterSearch;
@@ -437,8 +439,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     @Override
     public boolean updateState(State oldState, Event event, State newState, VirtualMachine vm, Object opaque) {
         if (newState == null) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("There's no way to transition from old state: " + oldState.toString() + " event: " + event.toString());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("There's no way to transition from old state: " + oldState.toString() + " event: " + event.toString());
             }
             return false;
         }
@@ -477,7 +479,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         if (result == 0) {
             VMInstanceVO vo = findByIdIncludingRemoved(vm.getId());
 
-            if (logger.isDebugEnabled()) {
+            if (s_logger.isDebugEnabled()) {
                 if (vo != null) {
                     StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
                     str.append(": DB Data={Host=").append(vo.getHostId()).append("; State=").append(vo.getState().toString()).append("; updated=").append(vo.getUpdated())
@@ -486,16 +488,16 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
                             .append("; time=").append(vo.getUpdateTime());
                     str.append("} Stale Data: {Host=").append(oldHostId).append("; State=").append(oldState).append("; updated=").append(oldUpdated).append("; time=")
                             .append(oldUpdateDate).append("}");
-                    logger.debug(str.toString());
+                    s_logger.debug(str.toString());
 
                 } else {
-                    logger.debug("Unable to update the vm id=" + vm.getId() + "; the vm either doesn't exist or already removed");
+                    s_logger.debug("Unable to update the vm id=" + vm.getId() + "; the vm either doesn't exist or already removed");
                 }
             }
 
             if (vo != null && vo.getState() == newState) {
                 // allow for concurrent update if target state has already been matched
-                logger.debug("VM " + vo.getInstanceName() + " state has been already been updated to " + newState);
+                s_logger.debug("VM " + vo.getInstanceName() + " state has been already been updated to " + newState);
                 return true;
             }
         }

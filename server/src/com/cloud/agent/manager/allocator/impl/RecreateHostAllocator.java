@@ -27,6 +27,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -57,6 +58,7 @@ import com.cloud.vm.VirtualMachineProfile;
 @Component
 @Local(value = HostAllocator.class)
 public class RecreateHostAllocator extends FirstFitRoutingAllocator {
+    private final static Logger s_logger = Logger.getLogger(RecreateHostAllocator.class);
 
     @Inject
     HostPodDao _podDao;
@@ -81,10 +83,10 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
             return hosts;
         }
 
-        logger.debug("First fit was unable to find a host");
+        s_logger.debug("First fit was unable to find a host");
         VirtualMachine.Type vmType = vm.getType();
         if (vmType == VirtualMachine.Type.User) {
-            logger.debug("vm is not a system vm so let's just return empty list");
+            s_logger.debug("vm is not a system vm so let's just return empty list");
             return new ArrayList<Host>();
         }
 
@@ -93,11 +95,11 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
         //getting rid of direct.attached.untagged.vlan.enabled config param: Bug 7204
         //basic network type for zone maps to direct untagged case
         if (dc.getNetworkType().equals(NetworkType.Basic)) {
-            logger.debug("Direct Networking mode so we can only allow the host to be allocated in the same pod due to public ip address cannot change");
+            s_logger.debug("Direct Networking mode so we can only allow the host to be allocated in the same pod due to public ip address cannot change");
             List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
             VolumeVO vol = vols.get(0);
             long podId = vol.getPodId();
-            logger.debug("Pod id determined from volume " + vol.getId() + " is " + podId);
+            s_logger.debug("Pod id determined from volume " + vol.getId() + " is " + podId);
             Iterator<PodCluster> it = pcs.iterator();
             while (it.hasNext()) {
                 PodCluster pc = it.next();
@@ -118,22 +120,22 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
         }
 
         for (Pair<Long, Long> pcId : avoidPcs) {
-            logger.debug("Removing " + pcId + " from the list of available pods");
+            s_logger.debug("Removing " + pcId + " from the list of available pods");
             pcs.remove(new PodCluster(new HostPodVO(pcId.first()), pcId.second() != null ? new ClusterVO(pcId.second()) : null));
         }
 
         for (PodCluster p : pcs) {
             if (p.getPod().getAllocationState() != Grouping.AllocationState.Enabled) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Pod name: " + p.getPod().getName() + ", podId: " + p.getPod().getId() + " is in " + p.getPod().getAllocationState().name() +
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Pod name: " + p.getPod().getName() + ", podId: " + p.getPod().getId() + " is in " + p.getPod().getAllocationState().name() +
                         " state, skipping this and trying other pods");
                 }
                 continue;
             }
             Long clusterId = p.getCluster() == null ? null : p.getCluster().getId();
             if (p.getCluster() != null && p.getCluster().getAllocationState() != Grouping.AllocationState.Enabled) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Cluster name: " + p.getCluster().getName() + ", clusterId: " + clusterId + " is in " + p.getCluster().getAllocationState().name() +
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Cluster name: " + p.getCluster().getName() + ", clusterId: " + clusterId + " is in " + p.getCluster().getAllocationState().name() +
                         " state, skipping this and trying other pod-clusters");
                 }
                 continue;
@@ -146,7 +148,7 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
 
         }
 
-        logger.debug("Unable to find any available pods at all!");
+        s_logger.debug("Unable to find any available pods at all!");
         return new ArrayList<Host>();
     }
 

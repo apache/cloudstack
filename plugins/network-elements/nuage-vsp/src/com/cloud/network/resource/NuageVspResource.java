@@ -32,6 +32,7 @@ import net.nuage.vsp.acs.client.NuageVspGuruClient;
 import net.nuage.vsp.acs.client.NuageVspSyncClient;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -69,6 +70,7 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class NuageVspResource extends ManagerBase implements ServerResource {
+    private static final Logger s_logger = Logger.getLogger(NuageVspResource.class);
 
     private String _name;
     private String _guid;
@@ -182,7 +184,7 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
         try {
             login();
         } catch (Exception e) {
-            logger.error("Failed to login to Nuage VSD on " + name + " as user " + cmsUser + " Exception " + e.getMessage());
+            s_logger.error("Failed to login to Nuage VSD on " + name + " as user " + cmsUser + " Exception " + e.getMessage());
             throw new CloudRuntimeException("Failed to login to Nuage VSD on " + name + " as user " + cmsUser, e);
         }
 
@@ -217,7 +219,7 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
         } catch (Exception e) {
             _isNuageVspClientLoaded = false;
             String errorMessage = "Nuage Vsp Plugin client is not yet installed. Please install NuageVsp plugin client to use NuageVsp plugin in Cloudstack. ";
-            logger.warn(errorMessage + e.getMessage());
+            s_logger.warn(errorMessage + e.getMessage());
             throw new Exception(errorMessage);
         }
 
@@ -259,13 +261,13 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
     @Override
     public PingCommand getCurrentStatus(long id) {
         if ((_relativePath == null) || (_relativePath.isEmpty()) || (_cmsUserInfo == null) || (_cmsUserInfo.length == 0)) {
-            logger.error("Failed to ping to Nuage VSD");
+            s_logger.error("Failed to ping to Nuage VSD");
             return null;
         }
         try {
             login();
         } catch (Exception e) {
-            logger.error("Failed to ping to Nuage VSD on " + _name + " as user " + _cmsUserInfo[1] + " Exception " + e.getMessage());
+            s_logger.error("Failed to ping to Nuage VSD on " + _name + " as user " + _cmsUserInfo[1] + " Exception " + e.getMessage());
             return null;
         }
         return new PingCommand(Host.Type.L2Networking, id);
@@ -304,7 +306,7 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
         else if (cmd instanceof SyncVspCommand) {
             return executeRequest((SyncVspCommand)cmd);
         }
-        logger.debug("Received unsupported command " + cmd.toString());
+        s_logger.debug("Received unsupported command " + cmd.toString());
         return Answer.createUnsupportedCommandAnswer(cmd);
     }
 

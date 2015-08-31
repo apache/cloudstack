@@ -20,6 +20,7 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
@@ -33,6 +34,7 @@ import com.cloud.utils.db.SearchCriteria;
 @Component
 @Local(value = {ProjectInvitationJoinDao.class})
 public class ProjectInvitationJoinDaoImpl extends GenericDaoBase<ProjectInvitationJoinVO, Long> implements ProjectInvitationJoinDao {
+    public static final Logger s_logger = Logger.getLogger(ProjectInvitationJoinDaoImpl.class);
 
     private SearchBuilder<ProjectInvitationJoinVO> piIdSearch;
 

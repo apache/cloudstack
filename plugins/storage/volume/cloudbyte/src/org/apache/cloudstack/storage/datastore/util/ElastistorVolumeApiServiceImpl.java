@@ -26,6 +26,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.response.ListResponse;
@@ -46,6 +47,7 @@ import com.cloud.vm.dao.UserVmDao;
 
 @Component
 public class ElastistorVolumeApiServiceImpl extends ManagerBase implements ElastistorVolumeApiService {
+    private static final Logger s_logger = Logger.getLogger(ElastistorVolumeApiServiceImpl.class);
 
     @Inject
     protected VolumeDao _volsDao;
@@ -72,7 +74,7 @@ public class ElastistorVolumeApiServiceImpl extends ManagerBase implements Elast
         cmdList.add(ListElastistorPoolCmd.class);
         cmdList.add(ListElastistorInterfaceCmd.class);
 
-        logger.info("Commands were registered successfully with elastistor volume api service. [cmdcount:" + cmdList.size() + "]");
+        s_logger.info("Commands were registered successfully with elastistor volume api service. [cmdcount:" + cmdList.size() + "]");
         return cmdList;
 
     }
@@ -123,7 +125,7 @@ public class ElastistorVolumeApiServiceImpl extends ManagerBase implements Elast
 
             return response;
         } catch (Throwable e) {
-            logger.error("Unable to list elastistor volume.", e);
+            s_logger.error("Unable to list elastistor volume.", e);
             throw new CloudRuntimeException("Unable to list elastistor volume. " + e.getMessage());
         }
     }
@@ -163,7 +165,7 @@ public class ElastistorVolumeApiServiceImpl extends ManagerBase implements Elast
             return response;
 
         } catch (Throwable e) {
-            logger.error("Unable to list elastistor pools.", e);
+            s_logger.error("Unable to list elastistor pools.", e);
             throw new CloudRuntimeException("Unable to list elastistor pools. " + e.getMessage());
         }
 
@@ -197,7 +199,7 @@ public class ElastistorVolumeApiServiceImpl extends ManagerBase implements Elast
 
             return response;
         } catch (Throwable e) {
-            logger.error("Unable to list elastistor interfaces.", e);
+            s_logger.error("Unable to list elastistor interfaces.", e);
             throw new CloudRuntimeException("Unable to list elastistor interfaces. " + e.getMessage());
         }
 

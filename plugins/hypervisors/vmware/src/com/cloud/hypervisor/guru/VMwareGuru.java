@@ -39,6 +39,7 @@ import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.Command;
@@ -106,6 +107,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = HypervisorGuru.class)
 public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Configurable {
+    private static final Logger s_logger = Logger.getLogger(VMwareGuru.class);
 
     @Inject
     private NetworkDao _networkDao;
@@ -181,7 +183,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 try {
                     VirtualEthernetCardType.valueOf(nicDeviceType);
                 } catch (Exception e) {
-                    logger.warn("Invalid NIC device type " + nicDeviceType + " is specified in VM details, switch to default E1000");
+                    s_logger.warn("Invalid NIC device type " + nicDeviceType + " is specified in VM details, switch to default E1000");
                     details.put(VmDetailConstants.NIC_ADAPTER, VirtualEthernetCardType.E1000.toString());
                 }
             }
@@ -193,7 +195,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 try {
                     VirtualEthernetCardType.valueOf(nicDeviceType);
                 } catch (Exception e) {
-                    logger.warn("Invalid NIC device type " + nicDeviceType + " is specified in VM details, switch to default E1000");
+                    s_logger.warn("Invalid NIC device type " + nicDeviceType + " is specified in VM details, switch to default E1000");
                     details.put(VmDetailConstants.NIC_ADAPTER, VirtualEthernetCardType.E1000.toString());
                 }
             }
@@ -301,7 +303,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         if (userVm) {
             String nestedVirt = _configDao.getValue(Config.VmwareEnableNestedVirtualization.key());
             if (nestedVirt != null) {
-                logger.debug("Nested virtualization requested, adding flag to vm configuration");
+                s_logger.debug("Nested virtualization requested, adding flag to vm configuration");
                 details.put(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG, nestedVirt);
                 to.setDetails(details);
 
@@ -481,7 +483,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
         String vCenterIp = NetUtils.resolveToIp(tokens[1]);
         if (vCenterIp == null) {
-            logger.error("Fatal : unable to resolve vCenter address " + tokens[1] + ", please check your DNS configuration");
+            s_logger.error("Fatal : unable to resolve vCenter address " + tokens[1] + ", please check your DNS configuration");
             return guid;
         }
 
@@ -498,7 +500,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         for (NicVO nic : nicVOs) {
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
             if (network.getBroadcastDomainType() == BroadcastDomainType.Lswitch) {
-                logger.debug("Nic " + nic.toString() + " is connected to an lswitch, cleanup required");
+                s_logger.debug("Nic " + nic.toString() + " is connected to an lswitch, cleanup required");
                 NetworkVO networkVO = _networkDao.findById(nic.getNetworkId());
                 // We need the traffic label to figure out which vSwitch has the
                 // portgroup

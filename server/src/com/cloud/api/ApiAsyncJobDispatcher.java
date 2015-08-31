@@ -21,6 +21,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -44,6 +45,7 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.EntityManager;
 
 public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispatcher {
+    private static final Logger s_logger = Logger.getLogger(ApiAsyncJobDispatcher.class);
 
     @Inject
     private ApiDispatcher _dispatcher;
@@ -116,7 +118,7 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
             String errorMsg = null;
             int errorCode = ApiErrorCode.INTERNAL_ERROR.getHttpCode();
             if (!(e instanceof ServerApiException)) {
-                logger.error("Unexpected exception while executing " + job.getCmd(), e);
+                s_logger.error("Unexpected exception while executing " + job.getCmd(), e);
                 errorMsg = e.getMessage();
             } else {
                 ServerApiException sApiEx = (ServerApiException)e;

@@ -27,6 +27,7 @@ import javax.naming.ConfigurationException;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.APIChecker;
@@ -46,6 +47,7 @@ import com.cloud.utils.component.AdapterBase;
 @Component
 @Local(value = APIChecker.class)
 public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, ApiRateLimitService {
+    private static final Logger s_logger = Logger.getLogger(ApiRateLimitServiceImpl.class);
 
     /**
      * True if api rate limiting is enabled
@@ -98,7 +100,7 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
             CacheManager cm = CacheManager.create();
             Cache cache = new Cache("api-limit-cache", maxElements, false, false, timeToLive, timeToLive);
             cm.addCache(cache);
-            logger.info("Limit Cache created with timeToLive=" + timeToLive + ", maxAllowed=" + maxAllowed + ", maxElements=" + maxElements);
+            s_logger.info("Limit Cache created with timeToLive=" + timeToLive + ", maxAllowed=" + maxAllowed + ", maxElements=" + maxElements);
             cacheStore.setCache(cache);
             _store = cacheStore;
 
@@ -163,13 +165,13 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
         int current = entry.incrementAndGet();
 
         if (current <= maxAllowed) {
-            logger.trace("account (" + account.getAccountId() + "," + account.getAccountName() + ") has current count = " + current);
+            s_logger.trace("account (" + account.getAccountId() + "," + account.getAccountName() + ") has current count = " + current);
             return true;
         } else {
             long expireAfter = entry.getExpireDuration();
             // for this exception, we can just show the same message to user and admin users.
             String msg = "The given user has reached his/her account api limit, please retry after " + expireAfter + " ms.";
-            logger.warn(msg);
+            s_logger.warn(msg);
             throw new RequestLimitException(msg);
         }
     }

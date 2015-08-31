@@ -19,6 +19,7 @@ package com.cloud.network.guru;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
 
 import com.cloud.dc.Pod;
 import com.cloud.dc.StorageNetworkIpAddressVO;
@@ -45,6 +46,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = NetworkGuru.class)
 public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGuru {
+    private static final Logger s_logger = Logger.getLogger(StorageNetworkGuru.class);
     @Inject
     StorageNetworkManager _sNwMgr;
     @Inject
@@ -75,7 +77,7 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         if (isMyTrafficType(offering.getTrafficType()) && offering.isSystemOnly()) {
             return true;
         } else {
-            logger.trace("It's not storage network offering, skip it.");
+            s_logger.trace("It's not storage network offering, skip it.");
             return false;
         }
     }
@@ -142,7 +144,7 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
             nic.setBroadcastUri(null);
         }
         nic.setIsolationUri(null);
-        logger.debug("Allocated a storage nic " + nic + " for " + vm);
+        s_logger.debug("Allocated a storage nic " + nic + " for " + vm);
     }
 
     @Override
@@ -153,7 +155,7 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         }
 
         _sNwMgr.releaseIpAddress(nic.getIPv4Address());
-        logger.debug("Release an storage ip " + nic.getIPv4Address());
+        s_logger.debug("Release an storage ip " + nic.getIPv4Address());
         nic.deallocate();
         return true;
     }

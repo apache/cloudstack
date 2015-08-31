@@ -22,6 +22,7 @@ import java.util.Map;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
 
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachineProfile;
@@ -29,6 +30,7 @@ import com.cloud.vm.VirtualMachineProfile;
 @Local(value = DeploymentPlanner.class)
 public class UserConcentratedPodPlanner extends FirstFitPlanner implements DeploymentClusterPlanner {
 
+    private static final Logger s_logger = Logger.getLogger(UserConcentratedPodPlanner.class);
 
     /**
      * This method should reorder the given list of Cluster Ids by applying any necessary heuristic
@@ -62,14 +64,14 @@ public class UserConcentratedPodPlanner extends FirstFitPlanner implements Deplo
 
     private List<Long> reorderClustersByPods(List<Long> clusterIds, List<Long> podIds) {
 
-        if (logger.isDebugEnabled()) {
-            logger.debug("Reordering cluster list as per pods ordered by user concentration");
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Reordering cluster list as per pods ordered by user concentration");
         }
 
         Map<Long, List<Long>> podClusterMap = _clusterDao.getPodClusterIdMap(clusterIds);
 
-        if (logger.isTraceEnabled()) {
-            logger.trace("Pod To cluster Map is: " + podClusterMap);
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Pod To cluster Map is: " + podClusterMap);
         }
 
         List<Long> reorderedClusters = new ArrayList<Long>();
@@ -88,22 +90,22 @@ public class UserConcentratedPodPlanner extends FirstFitPlanner implements Deplo
         }
         reorderedClusters.addAll(clusterIds);
 
-        if (logger.isTraceEnabled()) {
-            logger.trace("Reordered cluster list: " + reorderedClusters);
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Reordered cluster list: " + reorderedClusters);
         }
         return reorderedClusters;
     }
 
     protected List<Long> listPodsByUserConcentration(long zoneId, long accountId) {
 
-        if (logger.isDebugEnabled()) {
-            logger.debug("Applying UserConcentratedPod heuristic for account: " + accountId);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Applying UserConcentratedPod heuristic for account: " + accountId);
         }
 
         List<Long> prioritizedPods = _vmDao.listPodIdsHavingVmsforAccount(zoneId, accountId);
 
-        if (logger.isTraceEnabled()) {
-            logger.trace("List of pods to be considered, after applying UserConcentratedPod heuristic: " + prioritizedPods);
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("List of pods to be considered, after applying UserConcentratedPod heuristic: " + prioritizedPods);
         }
 
         return prioritizedPods;

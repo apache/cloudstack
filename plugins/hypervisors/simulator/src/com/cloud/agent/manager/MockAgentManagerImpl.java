@@ -34,6 +34,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.user.AccountManager;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
@@ -73,6 +74,7 @@ import com.cloud.utils.net.NetUtils;
 @Component
 @Local(value = {MockAgentManager.class})
 public class MockAgentManagerImpl extends ManagerBase implements MockAgentManager {
+    private static final Logger s_logger = Logger.getLogger(MockAgentManagerImpl.class);
     @Inject
     HostPodDao _podDao = null;
     @Inject
@@ -108,10 +110,10 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
             Long cidrSize = (Long)cidrPair.get(1);
             return new Pair<String, Long>(cidrAddress, cidrSize);
         } catch (PatternSyntaxException e) {
-            logger.error("Exception while splitting pod cidr");
+            s_logger.error("Exception while splitting pod cidr");
             return null;
         } catch (IndexOutOfBoundsException e) {
-            logger.error("Invalid pod cidr. Please check");
+            s_logger.error("Invalid pod cidr. Please check");
             return null;
         }
     }
@@ -176,7 +178,7 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
                 txn.commit();
             } catch (Exception ex) {
                 txn.rollback();
-                logger.error("Error while configuring mock agent " + ex.getMessage());
+                s_logger.error("Error while configuring mock agent " + ex.getMessage());
                 throw new CloudRuntimeException("Error configuring agent", ex);
             } finally {
                 txn.close();
@@ -195,7 +197,7 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
 
                     newResources.put(agentResource, args);
                 } catch (ConfigurationException e) {
-                    logger.error("error while configuring server resource" + e.getMessage());
+                    s_logger.error("error while configuring server resource" + e.getMessage());
                 }
             }
         }
@@ -208,7 +210,7 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
             random = SecureRandom.getInstance("SHA1PRNG");
             _executor = new ThreadPoolExecutor(1, 5, 1, TimeUnit.DAYS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("Simulator-Agent-Mgr"));
         } catch (NoSuchAlgorithmException e) {
-            logger.debug("Failed to initialize random:" + e.toString());
+            s_logger.debug("Failed to initialize random:" + e.toString());
             return false;
         }
         return true;
@@ -296,7 +298,7 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
                 try {
                     _resourceMgr.deleteHost(host.getId(), true, true);
                 } catch (Exception e) {
-                    logger.debug("Failed to delete host: ", e);
+                    s_logger.debug("Failed to delete host: ", e);
                 }
             }
         }
@@ -361,12 +363,12 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
                     try {
                         _resourceMgr.discoverHosts(cmd);
                     } catch (DiscoveryException e) {
-                        logger.debug("Failed to discover host: " + e.toString());
+                        s_logger.debug("Failed to discover host: " + e.toString());
                         CallContext.unregister();
                         return;
                     }
                 } catch (ConfigurationException e) {
-                    logger.debug("Failed to load secondary storage resource: " + e.toString());
+                    s_logger.debug("Failed to load secondary storage resource: " + e.toString());
                     CallContext.unregister();
                     return;
                 }
@@ -384,7 +386,7 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
             if (_host != null) {
                 return _host;
             } else {
-                logger.error("Host with guid " + guid + " was not found");
+                s_logger.error("Host with guid " + guid + " was not found");
                 return null;
             }
         } catch (Exception ex) {
@@ -492,8 +494,8 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
 
     @Override
     public Answer checkNetworkCommand(CheckNetworkCommand cmd) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("Checking if network name setup is done on the resource");
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Checking if network name setup is done on the resource");
         }
         return new CheckNetworkAnswer(cmd, true, "Network Setup check by names is done");
     }

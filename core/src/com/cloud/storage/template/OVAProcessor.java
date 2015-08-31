@@ -26,6 +26,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -37,38 +38,39 @@ import com.cloud.utils.script.Script;
 
 @Local(value = Processor.class)
 public class OVAProcessor extends AdapterBase implements Processor {
+    private static final Logger s_logger = Logger.getLogger(OVAProcessor.class);
 
     StorageLayer _storage;
 
     @Override
     public FormatInfo process(String templatePath, ImageFormat format, String templateName) throws InternalErrorException {
         if (format != null) {
-            if (logger.isInfoEnabled()) {
-                logger.info("We currently don't handle conversion from " + format + " to OVA.");
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("We currently don't handle conversion from " + format + " to OVA.");
             }
             return null;
         }
 
-        logger.info("Template processing. templatePath: " + templatePath + ", templateName: " + templateName);
+        s_logger.info("Template processing. templatePath: " + templatePath + ", templateName: " + templateName);
         String templateFilePath = templatePath + File.separator + templateName + "." + ImageFormat.OVA.getFileExtension();
         if (!_storage.exists(templateFilePath)) {
-            if (logger.isInfoEnabled()) {
-                logger.info("Unable to find the vmware template file: " + templateFilePath);
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("Unable to find the vmware template file: " + templateFilePath);
             }
             return null;
         }
 
-        logger.info("Template processing - untar OVA package. templatePath: " + templatePath + ", templateName: " + templateName);
+        s_logger.info("Template processing - untar OVA package. templatePath: " + templatePath + ", templateName: " + templateName);
         String templateFileFullPath = templatePath + File.separator + templateName + "." + ImageFormat.OVA.getFileExtension();
         File templateFile = new File(templateFileFullPath);
 
-        Script command = new Script("tar", 0, logger);
+        Script command = new Script("tar", 0, s_logger);
         command.add("--no-same-owner");
         command.add("-xf", templateFileFullPath);
         command.setWorkDir(templateFile.getParent());
         String result = command.execute();
         if (result != null) {
-            logger.info("failed to untar OVA package due to " + result + ". templatePath: " + templatePath + ", templateName: " + templateName);
+            s_logger.info("failed to untar OVA package due to " + result + ". templatePath: " + templatePath + ", templateName: " + templateName);
             return null;
         }
 
@@ -89,7 +91,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
             long size = getTemplateVirtualSize(file.getParent(), file.getName());
             return size;
         } catch (Exception e) {
-            logger.info("[ignored]"
+            s_logger.info("[ignored]"
                     + "failed to get virtual template size for ova: " + e.getLocalizedMessage());
         }
         return file.length();
@@ -103,7 +105,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
         String ovfFileName = getOVFFilePath(templateFileFullPath);
         if (ovfFileName == null) {
             String msg = "Unable to locate OVF file in template package directory: " + templatePath;
-            logger.error(msg);
+            s_logger.error(msg);
             throw new InternalErrorException(msg);
         }
         try {
@@ -128,7 +130,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
             return virtualSize;
         } catch (Exception e) {
             String msg = "Unable to parse OVF XML document to get the virtual disk size due to" + e;
-            logger.error(msg);
+            s_logger.error(msg);
             throw new InternalErrorException(msg);
         }
     }

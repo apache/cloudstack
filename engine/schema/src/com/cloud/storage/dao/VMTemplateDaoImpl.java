@@ -30,6 +30,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.dao.DataCenterDao;
@@ -64,6 +65,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @Component
 @Local(value = {VMTemplateDao.class})
 public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implements VMTemplateDao {
+    private static final Logger s_logger = Logger.getLogger(VMTemplateDaoImpl.class);
 
     @Inject
     VMTemplateZoneDao _templateZoneDao;
@@ -232,7 +234,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
                 l.add(rs.getLong(1));
             }
         } catch (SQLException e) {
-            logger.debug("Exception: ", e);
+            s_logger.debug("Exception: ", e);
         }
         return l;
     }
@@ -286,7 +288,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
         routerTmpltName = (String)params.get("routing.uniquename");
 
-        logger.debug("Found parameter routing unique name " + routerTmpltName);
+        s_logger.debug("Found parameter routing unique name " + routerTmpltName);
         if (routerTmpltName == null) {
             routerTmpltName = "routing";
         }
@@ -295,8 +297,8 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         if (consoleProxyTmpltName == null) {
             consoleProxyTmpltName = "routing";
         }
-        if (logger.isDebugEnabled()) {
-            logger.debug("Use console proxy template : " + consoleProxyTmpltName);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Use console proxy template : " + consoleProxyTmpltName);
         }
 
         UniqueNameSearch = createSearchBuilder();
@@ -510,10 +512,10 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
      * (rs.next()) { Pair<Long, Long> templateZonePair = new Pair<Long,
      * Long>(rs.getLong(1), -1L); templateZonePairList.add(templateZonePair); }
      *
-     * } catch (Exception e) { logger.warn("Error listing templates", e); }
+     * } catch (Exception e) { s_logger.warn("Error listing templates", e); }
      * finally { try { if (rs != null) { rs.close(); } if (pstmt != null) {
      * pstmt.close(); } txn.commit(); } catch (SQLException sqle) {
-     * logger.warn("Error in cleaning up", sqle); } }
+     * s_logger.warn("Error in cleaning up", sqle); } }
      *
      * return templateZonePairList; }
      *
@@ -694,9 +696,9 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
      * null)); continue; } else if (keyword == null && name == null){
      * templateZonePairList.add(new Pair<Long,Long>(publicIsos.get(i).getId(),
      * null)); } } } } } catch (Exception e) {
-     * logger.warn("Error listing templates", e); } finally { try { if (rs !=
+     * s_logger.warn("Error listing templates", e); } finally { try { if (rs !=
      * null) { rs.close(); } if (pstmt != null) { pstmt.close(); } txn.commit();
-     * } catch( SQLException sqle) { logger.warn("Error in cleaning up",
+     * } catch( SQLException sqle) { s_logger.warn("Error in cleaning up",
      * sqle); } }
      *
      * return templateZonePairList; }
@@ -1019,7 +1021,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
      * while (rs.next()) { final Pair<Long, Long> templateZonePair = new
      * Pair<Long, Long>( rs.getLong(1), -1L);
      * templateZonePairList.add(templateZonePair); } txn.commit(); } catch
-     * (Exception e) { logger.warn("Error listing S3 templates", e); if (txn
+     * (Exception e) { s_logger.warn("Error listing S3 templates", e); if (txn
      * != null) { txn.rollback(); } } finally { closeResources(pstmt, rs); if
      * (txn != null) { txn.close(); } }
      *
@@ -1048,7 +1050,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         builder.set(vo, "updated", new Date());
 
         int rows = update((VMTemplateVO)vo, sc);
-        if (rows == 0 && logger.isDebugEnabled()) {
+        if (rows == 0 && s_logger.isDebugEnabled()) {
             VMTemplateVO dbTemplate = findByIdIncludingRemoved(vo.getId());
             if (dbTemplate != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
@@ -1081,7 +1083,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
                     .append("; updatedTime=")
                     .append(oldUpdatedTime);
             } else {
-                logger.debug("Unable to update template: id=" + vo.getId() + ", as no such template exists in the database anymore");
+                s_logger.debug("Unable to update template: id=" + vo.getId() + ", as no such template exists in the database anymore");
             }
         }
         return rows > 0;

@@ -22,6 +22,7 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -39,6 +40,7 @@ import com.cloud.utils.db.SearchCriteria;
 @Component
 @Local(value = {ImageStoreJoinDao.class})
 public class ImageStoreJoinDaoImpl extends GenericDaoBase<ImageStoreJoinVO, Long> implements ImageStoreJoinDao {
+    public static final Logger s_logger = Logger.getLogger(ImageStoreJoinDaoImpl.class);
 
     @Inject
     private ConfigurationDao _configDao;

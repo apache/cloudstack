@@ -27,6 +27,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -43,6 +44,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 @Component
 @Local(value = {LBHealthCheckManager.class})
 public class LBHealthCheckManagerImpl extends ManagerBase implements LBHealthCheckManager, Manager {
+    private static final Logger s_logger = Logger.getLogger(LBHealthCheckManagerImpl.class);
 
     @Inject
     ConfigurationDao _configDao;
@@ -58,8 +60,8 @@ public class LBHealthCheckManagerImpl extends ManagerBase implements LBHealthChe
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _configs = _configDao.getConfiguration("management-server", params);
-        if (logger.isInfoEnabled()) {
-            logger.info(format("Configuring LBHealthCheck Manager %1$s", name));
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info(format("Configuring LBHealthCheck Manager %1$s", name));
         }
         this.name = name;
         _interval = NumbersUtil.parseLong(_configs.get(Config.LBHealthCheck.key()), 600);
@@ -69,14 +71,14 @@ public class LBHealthCheckManagerImpl extends ManagerBase implements LBHealthChe
 
     @Override
     public boolean start() {
-        logger.debug("LB HealthCheckmanager is getting Started");
+        s_logger.debug("LB HealthCheckmanager is getting Started");
         _executor.scheduleAtFixedRate(new UpdateLBHealthCheck(), 10, _interval, TimeUnit.SECONDS);
         return true;
     }
 
     @Override
     public boolean stop() {
-        logger.debug("HealthCheckmanager is getting Stopped");
+        s_logger.debug("HealthCheckmanager is getting Stopped");
         _executor.shutdown();
         return true;
     }
@@ -93,7 +95,7 @@ public class LBHealthCheckManagerImpl extends ManagerBase implements LBHealthChe
                 updateLBHealthCheck(Scheme.Public);
                 updateLBHealthCheck(Scheme.Internal);
             } catch (Exception e) {
-                logger.error("Exception in LB HealthCheck Update Checker", e);
+                s_logger.error("Exception in LB HealthCheck Update Checker", e);
             }
         }
     }
@@ -103,9 +105,9 @@ public class LBHealthCheckManagerImpl extends ManagerBase implements LBHealthChe
         try {
             _lbService.updateLBHealthChecks(scheme);
         } catch (ResourceUnavailableException e) {
-            logger.debug("Error while updating the LB HealtCheck ", e);
+            s_logger.debug("Error while updating the LB HealtCheck ", e);
         }
-        logger.debug("LB HealthCheck Manager is running and getting the updates from LB providers and updating service status");
+        s_logger.debug("LB HealthCheck Manager is running and getting the updates from LB providers and updating service status");
     }
 
 }

@@ -27,6 +27,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -101,6 +102,7 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 @Component
 @Local(value = { VMSnapshotManager.class, VMSnapshotService.class })
 public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotManager, VMSnapshotService, VmWorkJobHandler {
+    private static final Logger s_logger = Logger.getLogger(VMSnapshotManagerImpl.class);
 
     public static final String VM_WORK_JOB_HANDLER = VMSnapshotManagerImpl.class.getSimpleName();
 
@@ -339,7 +341,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             return vmSnapshot;
         } catch (Exception e) {
             String msg = e.getMessage();
-            logger.error("Create vm snapshot record failed for vm: " + vmId + " due to: " + msg);
+            s_logger.error("Create vm snapshot record failed for vm: " + vmId + " due to: " + msg);
         }
         return null;
     }
@@ -435,7 +437,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             VMSnapshot snapshot = strategy.takeVMSnapshot(vmSnapshot);
             return snapshot;
         } catch (Exception e) {
-            logger.debug("Failed to create vm snapshot: " + vmSnapshotId, e);
+            s_logger.debug("Failed to create vm snapshot: " + vmSnapshotId, e);
             return null;
         }
     }
@@ -472,7 +474,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         if (hasActiveVMSnapshotTasks(vmSnapshot.getVmId())) {
             List<VMSnapshotVO> expungingSnapshots = _vmSnapshotDao.listByInstanceId(vmSnapshot.getVmId(), VMSnapshot.State.Expunging);
             if (expungingSnapshots.size() > 0 && expungingSnapshots.get(0).getId() == vmSnapshot.getId())
-                logger.debug("Target VM snapshot already in expunging state, go on deleting it: " + vmSnapshot.getDisplayName());
+                s_logger.debug("Target VM snapshot already in expunging state, go on deleting it: " + vmSnapshot.getDisplayName());
             else
                 throw new InvalidParameterValueException("There is other active vm snapshot tasks on the instance, please try again later");
         }
@@ -534,7 +536,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         if (hasActiveVMSnapshotTasks(vmSnapshot.getVmId())) {
             List<VMSnapshotVO> expungingSnapshots = _vmSnapshotDao.listByInstanceId(vmSnapshot.getVmId(), VMSnapshot.State.Expunging);
             if (expungingSnapshots.size() > 0 && expungingSnapshots.get(0).getId() == vmSnapshot.getId())
-                logger.debug("Target VM snapshot already in expunging state, go on deleting it: " + vmSnapshot.getDisplayName());
+                s_logger.debug("Target VM snapshot already in expunging state, go on deleting it: " + vmSnapshot.getDisplayName());
             else
                 throw new InvalidParameterValueException("There is other active vm snapshot tasks on the instance, please try again later");
         }
@@ -546,7 +548,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                 VMSnapshotStrategy strategy = findVMSnapshotStrategy(vmSnapshot);
                 return strategy.deleteVMSnapshot(vmSnapshot);
             } catch (Exception e) {
-                logger.debug("Failed to delete vm snapshot: " + vmSnapshotId, e);
+                s_logger.debug("Failed to delete vm snapshot: " + vmSnapshotId, e);
                 return false;
             }
         }
@@ -682,7 +684,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                 vm = _userVMDao.findById(userVm.getId());
                 hostId = vm.getHostId();
             } catch (Exception e) {
-                logger.error("Start VM " + userVm.getInstanceName() + " before reverting failed due to " + e.getMessage());
+                s_logger.error("Start VM " + userVm.getInstanceName() + " before reverting failed due to " + e.getMessage());
                 throw new CloudRuntimeException(e.getMessage());
             }
         } else {
@@ -690,7 +692,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                 try {
                     _itMgr.advanceStop(userVm.getUuid(), true);
                 } catch (Exception e) {
-                    logger.error("Stop VM " + userVm.getInstanceName() + " before reverting failed due to " + e.getMessage());
+                    s_logger.error("Stop VM " + userVm.getInstanceName() + " before reverting failed due to " + e.getMessage());
                     throw new CloudRuntimeException(e.getMessage());
                 }
             }
@@ -706,7 +708,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             strategy.revertVMSnapshot(vmSnapshotVo);
             return userVm;
         } catch (Exception e) {
-            logger.debug("Failed to revert vmsnapshot: " + vmSnapshotId, e);
+            s_logger.debug("Failed to revert vmsnapshot: " + vmSnapshotId, e);
             throw new CloudRuntimeException(e.getMessage());
         }
     }
@@ -810,7 +812,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                 }
             }
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
+            s_logger.error(e.getMessage(), e);
             if (_vmSnapshotDao.listByInstanceId(vm.getId(), VMSnapshot.State.Expunging).size() == 0)
                 return true;
             else

@@ -22,6 +22,7 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.TimeZone;
 
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.jobs.impl.SyncQueueVO;
 
@@ -32,6 +33,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 public class SyncQueueDaoImpl extends GenericDaoBase<SyncQueueVO, Long> implements SyncQueueDao {
+    private static final Logger s_logger = Logger.getLogger(SyncQueueDaoImpl.class.getName());
 
     SearchBuilder<SyncQueueVO> TypeIdSearch = createSearchBuilder();
 
@@ -58,9 +60,9 @@ public class SyncQueueDaoImpl extends GenericDaoBase<SyncQueueVO, Long> implemen
             pstmt.setString(4, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), dt));
             pstmt.execute();
         } catch (SQLException e) {
-            logger.warn("Unable to create sync queue " + syncObjType + "-" + syncObjId + ":" + e.getMessage(), e);
+            s_logger.warn("Unable to create sync queue " + syncObjType + "-" + syncObjId + ":" + e.getMessage(), e);
         } catch (Throwable e) {
-            logger.warn("Unable to create sync queue " + syncObjType + "-" + syncObjId + ":" + e.getMessage(), e);
+            s_logger.warn("Unable to create sync queue " + syncObjType + "-" + syncObjId + ":" + e.getMessage(), e);
         }
     }
 

@@ -18,6 +18,7 @@ package com.cloud.certificate.dao;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.certificate.CertificateVO;
@@ -29,6 +30,7 @@ import com.cloud.utils.db.GenericDaoBase;
 @DB
 public class CertificateDaoImpl extends GenericDaoBase<CertificateVO, Long> implements CertificateDao {
 
+    private static final Logger s_logger = Logger.getLogger(CertificateDaoImpl.class);
 
     public CertificateDaoImpl() {
 
@@ -42,7 +44,7 @@ public class CertificateDaoImpl extends GenericDaoBase<CertificateVO, Long> impl
             update(cert.getId(), cert);
             return cert.getId();
         } catch (Exception e) {
-            logger.warn("Unable to read the certificate: " + e);
+            s_logger.warn("Unable to read the certificate: " + e);
             return new Long(0);
         }
     }

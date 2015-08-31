@@ -42,5 +42,5 @@
     </bean>
   
     <bean class="org.apache.cloudstack.internallbelement.ElementChildTestConfiguration" />
-    <bean class="com.cloud.network.element.HAProxyLBRule" />
+    
 </beans>

@@ -30,6 +30,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.host.HostVO;
@@ -54,6 +55,7 @@ import com.cloud.utils.script.Script;
  */
 @Local(value = Discoverer.class)
 public class SecondaryStorageDiscoverer extends DiscovererBase implements Discoverer {
+    private static final Logger s_logger = Logger.getLogger(SecondaryStorageDiscoverer.class);
 
     long _timeout = 2 * 60 * 1000; // 2 minutes
     String _mountParent;
@@ -77,7 +79,7 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
         find(long dcId, Long podId, Long clusterId, URI uri, String username, String password, List<String> hostTags) {
         if (!uri.getScheme().equalsIgnoreCase("nfs") && !uri.getScheme().equalsIgnoreCase("cifs") && !uri.getScheme().equalsIgnoreCase("file") &&
             !uri.getScheme().equalsIgnoreCase("iso") && !uri.getScheme().equalsIgnoreCase("dummy")) {
-            logger.debug("It's not NFS or file or ISO, so not a secondary storage server: " + uri.toString());
+            s_logger.debug("It's not NFS or file or ISO, so not a secondary storage server: " + uri.toString());
             return null;
         }
 
@@ -99,7 +101,7 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
         }
         String mountStr = NfsUtils.uri2Mount(uri);
 
-        Script script = new Script(true, "mount", _timeout, logger);
+        Script script = new Script(true, "mount", _timeout, s_logger);
         String mntPoint = null;
         File file = null;
         do {
@@ -108,19 +110,19 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
         } while (file.exists());
 
         if (!file.mkdirs()) {
-            logger.warn("Unable to make directory: " + mntPoint);
+            s_logger.warn("Unable to make directory: " + mntPoint);
             return null;
         }
 
         script.add(mountStr, mntPoint);
         String result = script.execute();
         if (result != null && !result.contains("already mounted")) {
-            logger.warn("Unable to mount " + uri.toString() + " due to " + result);
+            s_logger.warn("Unable to mount " + uri.toString() + " due to " + result);
             file.delete();
             return null;
         }
 
-        script = new Script(true, "umount", 0, logger);
+        script = new Script(true, "umount", 0, s_logger);
         script.add(mntPoint);
         script.execute();
 
@@ -138,25 +140,25 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
                 constructor.setAccessible(true);
                 storage = (NfsSecondaryStorageResource)constructor.newInstance();
             } catch (final ClassNotFoundException e) {
-                logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to ClassNotFoundException");
+                s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to ClassNotFoundException");
                 return null;
             } catch (final SecurityException e) {
-                logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to SecurityException");
+                s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to SecurityException");
                 return null;
             } catch (final NoSuchMethodException e) {
-                logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to NoSuchMethodException");
+                s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to NoSuchMethodException");
                 return null;
             } catch (final IllegalArgumentException e) {
-                logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to IllegalArgumentException");
+                s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to IllegalArgumentException");
                 return null;
             } catch (final InstantiationException e) {
-                logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to InstantiationException");
+                s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to InstantiationException");
                 return null;
             } catch (final IllegalAccessException e) {
-                logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to IllegalAccessException");
+                s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to IllegalAccessException");
                 return null;
             } catch (final InvocationTargetException e) {
-                logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to InvocationTargetException");
+                s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to InvocationTargetException");
                 return null;
             }
         } else {
@@ -181,7 +183,7 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
         try {
             storage.configure("Storage", params);
         } catch (ConfigurationException e) {
-            logger.warn("Unable to configure the storage ", e);
+            s_logger.warn("Unable to configure the storage ", e);
             return null;
         }
         srs.put(storage, details);
@@ -212,7 +214,7 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
         try {
             storage.configure("Storage", params);
         } catch (ConfigurationException e) {
-            logger.warn("Unable to configure the storage ", e);
+            s_logger.warn("Unable to configure the storage ", e);
             return null;
         }
         srs.put(storage, details);
@@ -242,7 +244,7 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
         try {
             storage.configure("Storage", params);
         } catch (ConfigurationException e) {
-            logger.warn("Unable to configure the storage ", e);
+            s_logger.warn("Unable to configure the storage ", e);
             return null;
         }
         srs.put(storage, details);

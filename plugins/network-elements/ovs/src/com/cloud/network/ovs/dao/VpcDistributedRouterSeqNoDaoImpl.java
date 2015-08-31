@@ -18,6 +18,7 @@ package com.cloud.network.ovs.dao;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
@@ -27,6 +28,7 @@ import com.cloud.utils.db.SearchCriteria;
 @Component
 @Local(value = {VpcDistributedRouterSeqNoDao.class})
 public class VpcDistributedRouterSeqNoDaoImpl extends GenericDaoBase<VpcDistributedRouterSeqNoVO, Long> implements VpcDistributedRouterSeqNoDao {
+    protected static final Logger s_logger = Logger.getLogger(VpcDistributedRouterSeqNoDaoImpl.class);
     private SearchBuilder<VpcDistributedRouterSeqNoVO> VpcIdSearch;
 
     protected VpcDistributedRouterSeqNoDaoImpl() {

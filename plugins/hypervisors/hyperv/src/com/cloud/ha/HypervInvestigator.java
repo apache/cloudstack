@@ -23,6 +23,7 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -37,6 +38,7 @@ import com.cloud.utils.component.AdapterBase;
 
 @Local(value=Investigator.class)
 public class HypervInvestigator extends AdapterBase implements Investigator {
+    private final static Logger s_logger = Logger.getLogger(HypervInvestigator.class);
     @Inject HostDao _hostDao;
     @Inject AgentManager _agentMgr;
     @Inject ResourceManager _resourceMgr;
@@ -68,7 +70,7 @@ public class HypervInvestigator extends AdapterBase implements Investigator {
                     return answer.getResult() ? Status.Down : Status.Up;
                 }
             } catch (Exception e) {
-                logger.debug("Failed to send command to host: " + neighbor.getId());
+                s_logger.debug("Failed to send command to host: " + neighbor.getId());
             }
         }
 

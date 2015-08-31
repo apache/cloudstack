@@ -27,6 +27,7 @@ import java.util.Set;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.security.VmRulesetLogVO;
@@ -38,6 +39,7 @@ import com.cloud.utils.db.TransactionLegacy;
 @Component
 @Local(value = {VmRulesetLogDao.class})
 public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> implements VmRulesetLogDao {
+    protected static final Logger s_logger = Logger.getLogger(VmRulesetLogDaoImpl.class);
     private SearchBuilder<VmRulesetLogVO> VmIdSearch;
     private String InsertOrUpdateSQl = "INSERT INTO op_vm_ruleset_log (instance_id, created, logsequence) "
         + " VALUES(?, now(), 1) ON DUPLICATE KEY UPDATE logsequence=logsequence+1";
@@ -98,19 +100,19 @@ public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> im
             } catch (SQLTransactionRollbackException e1) {
                 if (i < maxTries - 1) {
                     int delayMs = (i + 1) * 1000;
-                    logger.debug("Caught a deadlock exception while inserting security group rule log, retrying in " + delayMs);
+                    s_logger.debug("Caught a deadlock exception while inserting security group rule log, retrying in " + delayMs);
                     try {
                         Thread.sleep(delayMs);
                     } catch (InterruptedException ie) {
-                        logger.debug("[ignored] interupted while inserting security group rule logger.");
+                        s_logger.debug("[ignored] interupted while inserting security group rule log.");
                     }
                 } else
-                    logger.warn("Caught another deadlock exception while retrying inserting security group rule log, giving up");
+                    s_logger.warn("Caught another deadlock exception while retrying inserting security group rule log, giving up");
 
             }
         }
-        if (logger.isTraceEnabled()) {
-            logger.trace("Inserted or updated " + numUpdated + " rows");
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Inserted or updated " + numUpdated + " rows");
         }
         return numUpdated;
     }
@@ -134,8 +136,8 @@ public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> im
                             vmIds.add(vmId);
                         }
                         int numUpdated = executeWithRetryOnDeadlock(txn, pstmt, vmIds);
-                        if (logger.isTraceEnabled()) {
-                            logger.trace("Inserted or updated " + numUpdated + " rows");
+                        if (s_logger.isTraceEnabled()) {
+                            s_logger.trace("Inserted or updated " + numUpdated + " rows");
                         }
                         if (numUpdated > 0)
                             count += stmtSize;
@@ -145,7 +147,7 @@ public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> im
 
             }
         } catch (SQLException sqe) {
-            logger.warn("Failed to execute multi insert ", sqe);
+            s_logger.warn("Failed to execute multi insert ", sqe);
         }
 
         return count;
@@ -173,10 +175,10 @@ public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> im
             queryResult = stmtInsert.executeBatch();
 
             txn.commit();
-            if (logger.isTraceEnabled())
-                logger.trace("Updated or inserted " + workItems.size() + " log items");
+            if (s_logger.isTraceEnabled())
+                s_logger.trace("Updated or inserted " + workItems.size() + " log items");
         } catch (SQLException e) {
-            logger.warn("Failed to execute batch update statement for ruleset log: ", e);
+            s_logger.warn("Failed to execute batch update statement for ruleset log: ", e);
             txn.rollback();
             success = false;
         }
@@ -185,7 +187,7 @@ public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> im
             workItems.toArray(arrayItems);
             for (int i = 0; i < queryResult.length; i++) {
                 if (queryResult[i] < 0) {
-                    logger.debug("Batch query update failed for vm " + arrayItems[i]);
+                    s_logger.debug("Batch query update failed for vm " + arrayItems[i]);
                 }
             }
         }

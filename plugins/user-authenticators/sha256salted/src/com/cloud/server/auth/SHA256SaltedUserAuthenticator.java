@@ -21,6 +21,7 @@ import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.bouncycastle.util.encoders.Base64;
 
 import javax.ejb.Local;
@@ -33,6 +34,7 @@ import java.util.Map;
 
 @Local(value = {UserAuthenticator.class})
 public class SHA256SaltedUserAuthenticator extends DefaultUserAuthenticator {
+    public static final Logger s_logger = Logger.getLogger(SHA256SaltedUserAuthenticator.class);
     private static final String s_defaultPassword = "000000000000000000000000000=";
     private static final String s_defaultSalt = "0000000000000000000000000000000=";
     @Inject
@@ -44,19 +46,19 @@ public class SHA256SaltedUserAuthenticator extends DefaultUserAuthenticator {
      */
     @Override
     public Pair<Boolean, ActionOnFailedAuthentication> authenticate(String username, String password, Long domainId, Map<String, Object[]> requestParameters) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("Retrieving user: " + username);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Retrieving user: " + username);
         }
 
         if (StringUtils.isEmpty(username) || StringUtils.isEmpty(password)) {
-            logger.debug("Username or Password cannot be empty");
+            s_logger.debug("Username or Password cannot be empty");
             return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
         }
 
         boolean realUser = true;
         UserAccount user = _userAccountDao.getUserAccount(username, domainId);
         if (user == null) {
-            logger.debug("Unable to find user with " + username + " in domain " + domainId);
+            s_logger.debug("Unable to find user with " + username + " in domain " + domainId);
             realUser = false;
         }
         /* Fake Data */
@@ -65,7 +67,7 @@ public class SHA256SaltedUserAuthenticator extends DefaultUserAuthenticator {
         if (realUser) {
             String storedPassword[] = user.getPassword().split(":");
             if (storedPassword.length != 2) {
-                logger.warn("The stored password for " + username + " isn't in the right format for this authenticator");
+                s_logger.warn("The stored password for " + username + " isn't in the right format for this authenticator");
                 realUser = false;
             } else {
                 realPassword = storedPassword[1];

@@ -28,6 +28,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.capacity.dao.CapacityDao;
@@ -46,6 +47,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 @Component
 @Local(value = StoragePoolAllocator.class)
 public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
+    private static final Logger s_logger = Logger.getLogger(LocalStoragePoolAllocator.class);
 
     @Inject
     StoragePoolHostDao _poolHostDao;
@@ -62,18 +64,18 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
 
     @Override
     protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
-        logger.debug("LocalStoragePoolAllocator trying to find storage pool to fit the vm");
+        s_logger.debug("LocalStoragePoolAllocator trying to find storage pool to fit the vm");
 
         if (!dskCh.useLocalStorage()) {
             return null;
         }
 
-        if (logger.isTraceEnabled()) {
+        if (s_logger.isTraceEnabled()) {
             // Log the pools details that are ignored because they are in disabled state
             List<StoragePoolVO> disabledPools = _storagePoolDao.findDisabledPoolsByScope(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), ScopeType.HOST);
             if (disabledPools != null && !disabledPools.isEmpty()) {
                 for (StoragePoolVO pool : disabledPools) {
-                    logger.trace("Ignoring pool " + pool + " as it is in disabled state.");
+                    s_logger.trace("Ignoring pool " + pool + " as it is in disabled state.");
                 }
             }
         }
@@ -87,7 +89,7 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
                 if (pool != null && pool.isLocal()) {
                     StoragePool storagePool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(pool.getId());
                     if (filter(avoid, storagePool, dskCh, plan)) {
-                        logger.debug("Found suitable local storage pool " + pool.getId() + ", adding to list");
+                        s_logger.debug("Found suitable local storage pool " + pool.getId() + ", adding to list");
                         suitablePools.add(storagePool);
                     } else {
                         avoid.addPool(pool.getId());
@@ -126,8 +128,8 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
             }
         }
 
-        if (logger.isDebugEnabled()) {
-            logger.debug("LocalStoragePoolAllocator returning " + suitablePools.size() + " suitable storage pools");
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("LocalStoragePoolAllocator returning " + suitablePools.size() + " suitable storage pools");
         }
 
         return suitablePools;

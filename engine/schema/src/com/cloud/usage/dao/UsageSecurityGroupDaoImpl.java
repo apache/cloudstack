@@ -27,6 +27,7 @@ import java.util.TimeZone;
 import javax.ejb.Local;
 
 import com.cloud.exception.CloudException;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageSecurityGroupVO;
@@ -37,6 +38,7 @@ import com.cloud.utils.db.TransactionLegacy;
 @Component
 @Local(value = {UsageSecurityGroupDao.class})
 public class UsageSecurityGroupDaoImpl extends GenericDaoBase<UsageSecurityGroupVO, Long> implements UsageSecurityGroupDao {
+    public static final Logger s_logger = Logger.getLogger(UsageSecurityGroupDaoImpl.class.getName());
 
     protected static final String UPDATE_DELETED =
         "UPDATE usage_security_group SET deleted = ? WHERE account_id = ? AND vm_instance_id = ? AND security_group_id = ? and deleted IS NULL";
@@ -74,7 +76,7 @@ public class UsageSecurityGroupDaoImpl extends GenericDaoBase<UsageSecurityGroup
             txn.commit();
         } catch (Exception e) {
             txn.rollback();
-            logger.warn("Error updating UsageSecurityGroupVO:"+e.getMessage(), e);
+            s_logger.warn("Error updating UsageSecurityGroupVO:"+e.getMessage(), e);
         } finally {
             txn.close();
         }
@@ -142,7 +144,7 @@ public class UsageSecurityGroupDaoImpl extends GenericDaoBase<UsageSecurityGroup
             }
         } catch (Exception e) {
             txn.rollback();
-            logger.warn("Error getting usage records:"+e.getMessage(), e);
+            s_logger.warn("Error getting usage records:"+e.getMessage(), e);
         } finally {
             txn.close();
         }

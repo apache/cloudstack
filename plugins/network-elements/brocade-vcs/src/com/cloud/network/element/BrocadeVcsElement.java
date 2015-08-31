@@ -30,6 +30,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
@@ -93,6 +94,7 @@ import com.cloud.vm.dao.NicDao;
 @Component
 @Local(value = {NetworkElement.class})
 public class BrocadeVcsElement extends AdapterBase implements NetworkElement, ResourceStateAdapter, BrocadeVcsElementService {
+    private static final Logger s_logger = Logger.getLogger(BrocadeVcsElement.class);
 
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
@@ -138,18 +140,18 @@ public class BrocadeVcsElement extends AdapterBase implements NetworkElement, Re
     }
 
     protected boolean canHandle(Network network, Service service) {
-        logger.debug("Checking if BrocadeVcsElement can handle service " + service.getName() + " on network " + network.getDisplayText());
+        s_logger.debug("Checking if BrocadeVcsElement can handle service " + service.getName() + " on network " + network.getDisplayText());
         if (network.getBroadcastDomainType() != BroadcastDomainType.Vcs) {
             return false;
         }
 
         if (!_networkModel.isProviderForNetwork(getProvider(), network.getId())) {
-            logger.debug("BrocadeVcsElement is not a provider for network " + network.getDisplayText());
+            s_logger.debug("BrocadeVcsElement is not a provider for network " + network.getDisplayText());
             return false;
         }
 
         if (!_ntwkSrvcDao.canProviderSupportServiceInNetwork(network.getId(), service, Network.Provider.BrocadeVcs)) {
-            logger.debug("BrocadeVcsElement can't provide the " + service.getName() + " service on network " + network.getDisplayText());
+            s_logger.debug("BrocadeVcsElement can't provide the " + service.getName() + " service on network " + network.getDisplayText());
             return false;
         }
 
@@ -166,7 +168,7 @@ public class BrocadeVcsElement extends AdapterBase implements NetworkElement, Re
     @Override
     public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
             ResourceUnavailableException, InsufficientCapacityException {
-        logger.debug("entering BrocadeVcsElement implement function for network " + network.getDisplayText() + " (state " + network.getState() + ")");
+        s_logger.debug("entering BrocadeVcsElement implement function for network " + network.getDisplayText() + " (state " + network.getState() + ")");
 
         if (!canHandle(network, Service.Connectivity)) {
             return false;
@@ -234,7 +236,7 @@ public class BrocadeVcsElement extends AdapterBase implements NetworkElement, Re
     public boolean verifyServicesCombination(Set<Service> services) {
 
         if (!services.contains(Service.Connectivity)) {
-            logger.warn("Unable to provide services without Connectivity service enabled for this element");
+            s_logger.warn("Unable to provide services without Connectivity service enabled for this element");
             return false;
         }
         return true;

@@ -26,6 +26,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.exception.InsufficientServerCapacityException;
@@ -43,6 +44,7 @@ import com.cloud.vm.VirtualMachineProfile;
 @Local(value = DeploymentPlanner.class)
 public class ImplicitDedicationPlanner extends FirstFitPlanner implements DeploymentClusterPlanner {
 
+    private static final Logger s_logger = Logger.getLogger(ImplicitDedicationPlanner.class);
 
     @Inject
     private ServiceOfferingDao serviceOfferingDao;
@@ -157,12 +159,12 @@ public class ImplicitDedicationPlanner extends FirstFitPlanner implements Deploy
 
         for (VMInstanceVO vm : allVmsOnHost) {
             if (vm.getAccountId() != accountId) {
-                logger.info("Host " + vm.getHostId() + " found to be unsuitable for implicit dedication as it is " + "running instances of another account");
+                s_logger.info("Host " + vm.getHostId() + " found to be unsuitable for implicit dedication as it is " + "running instances of another account");
                 suitable = false;
                 break;
             } else {
                 if (!isImplicitPlannerUsedByOffering(vm.getServiceOfferingId())) {
-                    logger.info("Host " + vm.getHostId() + " found to be unsuitable for implicit dedication as it " +
+                    s_logger.info("Host " + vm.getHostId() + " found to be unsuitable for implicit dedication as it " +
                         "is running instances of this account which haven't been created using implicit dedication.");
                     suitable = false;
                     break;
@@ -178,11 +180,11 @@ public class ImplicitDedicationPlanner extends FirstFitPlanner implements Deploy
             return false;
         for (VMInstanceVO vm : allVmsOnHost) {
             if (!isImplicitPlannerUsedByOffering(vm.getServiceOfferingId())) {
-                logger.info("Host " + vm.getHostId() + " found to be running a vm created by a planner other" + " than implicit.");
+                s_logger.info("Host " + vm.getHostId() + " found to be running a vm created by a planner other" + " than implicit.");
                 createdByImplicitStrict = false;
                 break;
             } else if (isServiceOfferingUsingPlannerInPreferredMode(vm.getServiceOfferingId())) {
-                logger.info("Host " + vm.getHostId() + " found to be running a vm created by an implicit planner" + " in preferred mode.");
+                s_logger.info("Host " + vm.getHostId() + " found to be running a vm created by an implicit planner" + " in preferred mode.");
                 createdByImplicitStrict = false;
                 break;
             }
@@ -194,7 +196,7 @@ public class ImplicitDedicationPlanner extends FirstFitPlanner implements Deploy
         boolean implicitPlannerUsed = false;
         ServiceOfferingVO offering = serviceOfferingDao.findByIdIncludingRemoved(offeringId);
         if (offering == null) {
-            logger.error("Couldn't retrieve the offering by the given id : " + offeringId);
+            s_logger.error("Couldn't retrieve the offering by the given id : " + offeringId);
         } else {
             String plannerName = offering.getDeploymentPlanner();
             if (plannerName == null) {

@@ -27,7 +27,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 public class ComponentLifecycleBase implements ComponentLifecycle {
-    protected Logger logger = Logger.getLogger(getClass());
+    private static final Logger s_logger = Logger.getLogger(ComponentLifecycleBase.class);
 
     protected String _name;
     protected int _runLevel;

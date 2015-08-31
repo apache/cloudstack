@@ -27,6 +27,7 @@ import java.util.TimeZone;
 import javax.ejb.Local;
 
 import com.cloud.exception.CloudException;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageLoadBalancerPolicyVO;
@@ -37,6 +38,7 @@ import com.cloud.utils.db.TransactionLegacy;
 @Component
 @Local(value = {UsageLoadBalancerPolicyDao.class})
 public class UsageLoadBalancerPolicyDaoImpl extends GenericDaoBase<UsageLoadBalancerPolicyVO, Long> implements UsageLoadBalancerPolicyDao {
+    public static final Logger s_logger = Logger.getLogger(UsageLoadBalancerPolicyDaoImpl.class.getName());
 
     protected static final String REMOVE_BY_USERID_LBID = "DELETE FROM usage_load_balancer_policy WHERE account_id = ? AND id = ?";
     protected static final String UPDATE_DELETED = "UPDATE usage_load_balancer_policy SET deleted = ? WHERE account_id = ? AND id = ? and deleted IS NULL";
@@ -64,7 +66,7 @@ public class UsageLoadBalancerPolicyDaoImpl extends GenericDaoBase<UsageLoadBala
             txn.commit();
         } catch (Exception e) {
             txn.rollback();
-            logger.warn("Error removing UsageLoadBalancerPolicyVO", e);
+            s_logger.warn("Error removing UsageLoadBalancerPolicyVO", e);
         } finally {
             txn.close();
         }
@@ -90,7 +92,7 @@ public class UsageLoadBalancerPolicyDaoImpl extends GenericDaoBase<UsageLoadBala
             txn.commit();
         } catch (Exception e) {
             txn.rollback();
-            logger.warn("Error updating UsageLoadBalancerPolicyVO"+e.getMessage(), e);
+            s_logger.warn("Error updating UsageLoadBalancerPolicyVO"+e.getMessage(), e);
         } finally {
             txn.close();
         }
@@ -159,7 +161,7 @@ public class UsageLoadBalancerPolicyDaoImpl extends GenericDaoBase<UsageLoadBala
             }
         } catch (Exception e) {
             txn.rollback();
-            logger.warn("Error getting usage records", e);
+            s_logger.warn("Error getting usage records", e);
         } finally {
             txn.close();
         }

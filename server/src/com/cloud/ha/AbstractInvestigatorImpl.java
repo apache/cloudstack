@@ -23,6 +23,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -39,6 +40,7 @@ import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 public abstract class AbstractInvestigatorImpl extends AdapterBase implements Investigator {
+    private static final Logger s_logger = Logger.getLogger(AbstractInvestigatorImpl.class);
 
     @Inject
     private final HostDao _hostDao = null;
@@ -88,32 +90,32 @@ public abstract class AbstractInvestigatorImpl extends AdapterBase implements In
         try {
             Answer pingTestAnswer = _agentMgr.send(hostId, new PingTestCommand(testHostIp));
             if (pingTestAnswer == null) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("host (" + testHostIp + ") returns Unknown (null) answer");
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("host (" + testHostIp + ") returns Unknown (null) answer");
                 }
                 return Status.Unknown;
             }
 
             if (pingTestAnswer.getResult()) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("host (" + testHostIp + ") has been successfully pinged, returning that host is up");
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("host (" + testHostIp + ") has been successfully pinged, returning that host is up");
                 }
                 // computing host is available, but could not reach agent, return false
                 return Status.Up;
             } else {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("host (" + testHostIp + ") cannot be pinged, returning Unknown (I don't know) state");
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("host (" + testHostIp + ") cannot be pinged, returning Unknown (I don't know) state");
                 }
                 return Status.Unknown;
             }
         } catch (AgentUnavailableException e) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("host (" + testHostIp + "): " + e.getLocalizedMessage() + ", trapped AgentUnavailableException returning Unknown state");
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("host (" + testHostIp + "): " + e.getLocalizedMessage() + ", trapped AgentUnavailableException returning Unknown state");
             }
             return Status.Unknown;
         } catch (OperationTimedoutException e) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("host (" + testHostIp + "): " + e.getLocalizedMessage() + ", trapped OperationTimedoutException returning Unknown state");
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("host (" + testHostIp + "): " + e.getLocalizedMessage() + ", trapped OperationTimedoutException returning Unknown state");
             }
             return Status.Unknown;
         }

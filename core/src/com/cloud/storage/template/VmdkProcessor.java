@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
@@ -39,23 +40,24 @@ import com.cloud.utils.component.AdapterBase;
 
 @Local(value = Processor.class)
 public class VmdkProcessor extends AdapterBase implements Processor {
+    private static final Logger s_logger = Logger.getLogger(VmdkProcessor.class);
 
     StorageLayer _storage;
 
     @Override
     public FormatInfo process(String templatePath, ImageFormat format, String templateName) throws InternalErrorException {
         if (format != null) {
-            if (logger.isInfoEnabled()) {
-                logger.info("We currently don't handle conversion from " + format + " to VMDK.");
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("We currently don't handle conversion from " + format + " to VMDK.");
             }
             return null;
         }
 
-        logger.info("Template processing. templatePath: " + templatePath + ", templateName: " + templateName);
+        s_logger.info("Template processing. templatePath: " + templatePath + ", templateName: " + templateName);
         String templateFilePath = templatePath + File.separator + templateName + "." + ImageFormat.VMDK.getFileExtension();
         if (!_storage.exists(templateFilePath)) {
-            if (logger.isInfoEnabled()) {
-                logger.info("Unable to find the vmware template file: " + templateFilePath);
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("Unable to find the vmware template file: " + templateFilePath);
             }
             return null;
         }
@@ -75,7 +77,7 @@ public class VmdkProcessor extends AdapterBase implements Processor {
             long size = getTemplateVirtualSize(file.getParent(), file.getName());
             return size;
         } catch (Exception e) {
-            logger.info("[ignored]"
+            s_logger.info("[ignored]"
                     + "failed to get template virtual size for vmdk: " + e.getLocalizedMessage());
         }
         return file.length();
@@ -101,15 +103,15 @@ public class VmdkProcessor extends AdapterBase implements Processor {
             }
         } catch(FileNotFoundException ex) {
             String msg = "Unable to open file '" + templateFileFullPath + "' " + ex.toString();
-            logger.error(msg);
+            s_logger.error(msg);
             throw new InternalErrorException(msg);
         } catch(IOException ex) {
             String msg = "Unable read open file '" + templateFileFullPath + "' " + ex.toString();
-            logger.error(msg);
+            s_logger.error(msg);
             throw new InternalErrorException(msg);
         }
 
-        logger.debug("vmdk file had size="+virtualSize);
+        s_logger.debug("vmdk file had size="+virtualSize);
         return virtualSize;
     }
 

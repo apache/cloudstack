@@ -21,6 +21,7 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.hypervisor.vmware.LegacyZoneVO;
@@ -34,6 +35,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 @Local(value = LegacyZoneDao.class)
 @DB
 public class LegacyZoneDaoImpl extends GenericDaoBase<LegacyZoneVO, Long> implements LegacyZoneDao {
+    protected static final Logger s_logger = Logger.getLogger(LegacyZoneDaoImpl.class);
 
     final SearchBuilder<LegacyZoneVO> zoneSearch;
     final SearchBuilder<LegacyZoneVO> fullTableSearch;

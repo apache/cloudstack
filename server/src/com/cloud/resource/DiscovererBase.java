@@ -26,6 +26,7 @@ import com.cloud.network.NetworkModel;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.net.UrlUtil;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -37,6 +38,7 @@ import java.util.Map;
 
 public abstract class DiscovererBase extends AdapterBase implements Discoverer {
     protected Map<String, String> _params;
+    private static final Logger s_logger = Logger.getLogger(DiscovererBase.class);
     @Inject
     protected ClusterDao _clusterDao;
     @Inject
@@ -88,19 +90,19 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
             Constructor constructor = clazz.getConstructor();
             resource = (ServerResource)constructor.newInstance();
         } catch (ClassNotFoundException e) {
-            logger.warn("Unable to find class " + resourceName, e);
+            s_logger.warn("Unable to find class " + resourceName, e);
         } catch (InstantiationException e) {
-            logger.warn("Unablet to instantiate class " + resourceName, e);
+            s_logger.warn("Unablet to instantiate class " + resourceName, e);
         } catch (IllegalAccessException e) {
-            logger.warn("Illegal access " + resourceName, e);
+            s_logger.warn("Illegal access " + resourceName, e);
         } catch (SecurityException e) {
-            logger.warn("Security error on " + resourceName, e);
+            s_logger.warn("Security error on " + resourceName, e);
         } catch (NoSuchMethodException e) {
-            logger.warn("NoSuchMethodException error on " + resourceName, e);
+            s_logger.warn("NoSuchMethodException error on " + resourceName, e);
         } catch (IllegalArgumentException e) {
-            logger.warn("IllegalArgumentException error on " + resourceName, e);
+            s_logger.warn("IllegalArgumentException error on " + resourceName, e);
         } catch (InvocationTargetException e) {
-            logger.warn("InvocationTargetException error on " + resourceName, e);
+            s_logger.warn("InvocationTargetException error on " + resourceName, e);
         }
 
         return resource;
@@ -155,11 +157,11 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
             try {
                 resource.configure(host.getName(), params);
             } catch (ConfigurationException e) {
-                logger.warn("Unable to configure resource due to " + e.getMessage());
+                s_logger.warn("Unable to configure resource due to " + e.getMessage());
                 return null;
             }
             if (!resource.start()) {
-                logger.warn("Unable to start the resource");
+                s_logger.warn("Unable to start the resource");
                 return null;
             }
         }

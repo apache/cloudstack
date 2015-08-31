@@ -22,6 +22,7 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -36,6 +37,7 @@ import com.cloud.utils.component.AdapterBase;
 
 @Local(value = Investigator.class)
 public class Ovm3Investigator extends AdapterBase implements Investigator {
+    private static final Logger LOGGER = Logger.getLogger(Ovm3Investigator.class);
     @Inject
     HostDao hostDao;
     @Inject
@@ -45,7 +47,7 @@ public class Ovm3Investigator extends AdapterBase implements Investigator {
 
     @Override
     public boolean isVmAlive(com.cloud.vm.VirtualMachine vm, Host host) throws UnknownVM {
-        logger.debug("isVmAlive: " + vm.getHostName() + " on " + host.getName());
+        LOGGER.debug("isVmAlive: " + vm.getHostName() + " on " + host.getName());
         if (host.getHypervisorType() != Hypervisor.HypervisorType.Ovm3) {
             throw new UnknownVM();
         }
@@ -58,7 +60,7 @@ public class Ovm3Investigator extends AdapterBase implements Investigator {
 
     @Override
     public Status isAgentAlive(Host agent) {
-        logger.debug("isAgentAlive: " + agent.getName());
+        LOGGER.debug("isAgentAlive: " + agent.getName());
         if (agent.getHypervisorType() != Hypervisor.HypervisorType.Ovm3) {
             return null;
         }
@@ -74,7 +76,7 @@ public class Ovm3Investigator extends AdapterBase implements Investigator {
                     return answer.getResult() ? Status.Down : Status.Up;
                 }
             } catch (Exception e) {
-                logger.error("Failed to send command to host: " + neighbor.getId(), e);
+                LOGGER.error("Failed to send command to host: " + neighbor.getId(), e);
             }
         }
 

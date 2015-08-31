@@ -28,6 +28,7 @@ import java.util.Properties;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.deploy.DeploymentPlan;
@@ -47,6 +48,7 @@ import com.cloud.utils.PropertiesUtil;
  */
 @Component
 public class ManagementNetworkGuru extends ContrailGuru {
+    private static final Logger s_logger = Logger.getLogger(ManagementNetworkGuru.class);
     private static final TrafficType[] TrafficTypes = {TrafficType.Management};
 
     private final String configuration = "contrail.properties";
@@ -69,7 +71,7 @@ public class ManagementNetworkGuru extends ContrailGuru {
             }
             inputFile = new FileInputStream(configFile);
         } catch (FileNotFoundException e) {
-            logger.error(e.getMessage());
+            s_logger.error(e.getMessage());
             throw new ConfigurationException(e.getMessage());
         }
 
@@ -77,14 +79,14 @@ public class ManagementNetworkGuru extends ContrailGuru {
         try {
             configProps.load(inputFile);
         } catch (IOException e) {
-            logger.error(e.getMessage());
+            s_logger.error(e.getMessage());
             throw new ConfigurationException(e.getMessage());
         } finally {
             closeAutoCloseable(inputFile, "error closing config file");
         }
         _mgmtCidr = configProps.getProperty("management.cidr");
         _mgmtGateway = configProps.getProperty("management.gateway");
-        logger.info("Management network " + _mgmtCidr + " gateway: " + _mgmtGateway);
+        s_logger.info("Management network " + _mgmtCidr + " gateway: " + _mgmtGateway);
         return true;
     }
 
@@ -121,7 +123,7 @@ public class ManagementNetworkGuru extends ContrailGuru {
             network.setCidr(_mgmtCidr);
             network.setGateway(_mgmtGateway);
         }
-        logger.debug("Allocated network " + userSpecified.getName() + (network.getCidr() == null ? "" : " subnet: " + network.getCidr()));
+        s_logger.debug("Allocated network " + userSpecified.getName() + (network.getCidr() == null ? "" : " subnet: " + network.getCidr()));
         return network;
     }
 

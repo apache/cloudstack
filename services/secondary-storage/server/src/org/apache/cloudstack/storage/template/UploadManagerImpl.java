@@ -30,6 +30,7 @@ import java.util.concurrent.Executors;
 import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.Answer;
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 
@@ -92,6 +93,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
 
     }
 
+    public static final Logger s_logger = Logger.getLogger(UploadManagerImpl.class);
     private ExecutorService threadPool;
     private final Map<String, UploadJob> jobs = new ConcurrentHashMap<String, UploadJob>();
     private String parentDir;
@@ -107,13 +109,13 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         String jobId = uuid.toString();
 
         String completePath = parentDir + File.separator + installPathPrefix;
-        logger.debug("Starting upload from " + completePath);
+        s_logger.debug("Starting upload from " + completePath);
 
         URI uri;
         try {
             uri = new URI(url);
         } catch (URISyntaxException e) {
-            logger.error("URI is incorrect: " + url);
+            s_logger.error("URI is incorrect: " + url);
             throw new CloudRuntimeException("URI is incorrect: " + url);
         }
         TemplateUploader tu;
@@ -121,11 +123,11 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
             if (uri.getScheme().equalsIgnoreCase("ftp")) {
                 tu = new FtpTemplateUploader(completePath, url, new Completion(jobId), templateSizeInBytes);
             } else {
-                logger.error("Scheme is not supported " + url);
+                s_logger.error("Scheme is not supported " + url);
                 throw new CloudRuntimeException("Scheme is not supported " + url);
             }
         } else {
-            logger.error("Unable to download from URL: " + url);
+            s_logger.error("Unable to download from URL: " + url);
             throw new CloudRuntimeException("Unable to download from URL: " + url);
         }
         UploadJob uj = new UploadJob(tu, jobId, id, name, format, hvm, accountId, descr, cksum, installPathPrefix);
@@ -238,7 +240,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
 
     @Override
     public UploadAnswer handleUploadCommand(SecondaryStorageResource resource, UploadCommand cmd) {
-        logger.warn("Handling the upload " + cmd.getInstallPath() + " " + cmd.getId());
+        s_logger.warn("Handling the upload " + cmd.getInstallPath() + " " + cmd.getId());
         if (cmd instanceof UploadProgressCommand) {
             return handleUploadProgressCmd((UploadProgressCommand)cmd);
         }
@@ -259,40 +261,40 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         boolean isApacheUp = checkAndStartApache();
         if (!isApacheUp) {
             String errorString = "Error in starting Apache server ";
-            logger.error(errorString);
+            s_logger.error(errorString);
             return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
         }
         // Create the directory structure so that its visible under apache server root
         String extractDir = "/var/www/html/userdata/";
-        Script command = new Script("mkdir", logger);
+        Script command = new Script("mkdir", s_logger);
         command.add("-p");
         command.add(extractDir);
         String result = command.execute();
         if (result != null) {
             String errorString = "Error in creating directory =" + result;
-            logger.error(errorString);
+            s_logger.error(errorString);
             return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
         }
 
         // Create a random file under the directory for security reasons.
         String uuid = cmd.getExtractLinkUUID();
-        command = new Script("touch", logger);
+        command = new Script("touch", s_logger);
         command.add(extractDir + uuid);
         result = command.execute();
         if (result != null) {
             String errorString = "Error in creating file " + uuid + " ,error: " + result;
-            logger.warn(errorString);
+            s_logger.warn(errorString);
             return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
         }
 
         // Create a symbolic link from the actual directory to the template location. The entity would be directly visible under /var/www/html/userdata/cmd.getInstallPath();
-        command = new Script("/bin/bash", logger);
+        command = new Script("/bin/bash", s_logger);
         command.add("-c");
         command.add("ln -sf /mnt/SecStorage/" + cmd.getParent() + File.separator + cmd.getInstallPath() + " " + extractDir + uuid);
         result = command.execute();
         if (result != null) {
             String errorString = "Error in linking  err=" + result;
-            logger.error(errorString);
+            s_logger.error(errorString);
             return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
         }
 
@@ -304,9 +306,9 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
     public Answer handleDeleteEntityDownloadURLCommand(DeleteEntityDownloadURLCommand cmd) {
 
         //Delete the soft link. Example path = volumes/8/74eeb2c6-8ab1-4357-841f-2e9d06d1f360.vhd
-        logger.warn("handleDeleteEntityDownloadURLCommand Path:" + cmd.getPath() + " Type:" + cmd.getType().toString());
+        s_logger.warn("handleDeleteEntityDownloadURLCommand Path:" + cmd.getPath() + " Type:" + cmd.getType().toString());
         String path = cmd.getPath();
-        Script command = new Script("/bin/bash", logger);
+        Script command = new Script("/bin/bash", s_logger);
         command.add("-c");
 
         //We just need to remove the UUID.vhd
@@ -316,19 +318,19 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         if (result != null) {
             // FIXME - Ideally should bail out if you cant delete symlink. Not doing it right now.
             // This is because the ssvm might already be destroyed and the symlinks do not exist.
-            logger.warn("Error in deleting symlink :" + result);
+            s_logger.warn("Error in deleting symlink :" + result);
         }
 
         // If its a volume also delete the Hard link since it was created only for the purpose of download.
         if (cmd.getType() == Upload.Type.VOLUME) {
-            command = new Script("/bin/bash", logger);
+            command = new Script("/bin/bash", s_logger);
             command.add("-c");
             command.add("rm -rf /mnt/SecStorage/" + cmd.getParentPath() + File.separator + path);
-            logger.warn(" " + parentDir + File.separator + path);
+            s_logger.warn(" " + parentDir + File.separator + path);
             result = command.execute();
             if (result != null) {
                 String errorString = "Error in deleting volume " + path + " : " + result;
-                logger.warn(errorString);
+                s_logger.warn(errorString);
                 return new Answer(cmd, false, errorString);
             }
         }
@@ -378,7 +380,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
 
         String inSystemVM = (String)params.get("secondary.storage.vm");
         if (inSystemVM != null && "true".equalsIgnoreCase(inSystemVM)) {
-            logger.info("UploadManager: starting additional services since we are inside system vm");
+            s_logger.info("UploadManager: starting additional services since we are inside system vm");
             startAdditionalServices();
             //blockOutgoingOnPrivate();
         }
@@ -399,29 +401,29 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
 
     private void startAdditionalServices() {
 
-        Script command = new Script("rm", logger);
+        Script command = new Script("rm", s_logger);
         command.add("-rf");
         command.add(extractMountPoint);
         String result = command.execute();
         if (result != null) {
-            logger.warn("Error in creating file " + extractMountPoint + " ,error: " + result);
+            s_logger.warn("Error in creating file " + extractMountPoint + " ,error: " + result);
             return;
         }
 
-        command = new Script("touch", logger);
+        command = new Script("touch", s_logger);
         command.add(extractMountPoint);
         result = command.execute();
         if (result != null) {
-            logger.warn("Error in creating file " + extractMountPoint + " ,error: " + result);
+            s_logger.warn("Error in creating file " + extractMountPoint + " ,error: " + result);
             return;
         }
 
-        command = new Script("/bin/bash", logger);
+        command = new Script("/bin/bash", s_logger);
         command.add("-c");
         command.add("ln -sf " + parentDir + " " + extractMountPoint);
         result = command.execute();
         if (result != null) {
-            logger.warn("Error in linking  err=" + result);
+            s_logger.warn("Error in linking  err=" + result);
             return;
         }
 
@@ -438,12 +440,12 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
     public void setUploadStatus(String jobId, Status status) {
         UploadJob uj = jobs.get(jobId);
         if (uj == null) {
-            logger.warn("setUploadStatus for jobId: " + jobId + ", status=" + status + " no job found");
+            s_logger.warn("setUploadStatus for jobId: " + jobId + ", status=" + status + " no job found");
             return;
         }
         TemplateUploader tu = uj.getTemplateUploader();
-        logger.warn("Upload Completion for jobId: " + jobId + ", status=" + status);
-        logger.warn("UploadedBytes=" + tu.getUploadedBytes() + ", error=" + tu.getUploadError() + ", pct=" + tu.getUploadPercent());
+        s_logger.warn("Upload Completion for jobId: " + jobId + ", status=" + status);
+        s_logger.warn("UploadedBytes=" + tu.getUploadedBytes() + ", error=" + tu.getUploadError() + ", pct=" + tu.getUploadPercent());
 
         switch (status) {
         case ABORTED:
@@ -457,7 +459,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         case UNKNOWN:
             return;
         case IN_PROGRESS:
-            logger.info("Resuming jobId: " + jobId + ", status=" + status);
+            s_logger.info("Resuming jobId: " + jobId + ", status=" + status);
             tu.setResume(true);
             threadPool.execute(tu);
             break;
@@ -468,11 +470,11 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
             tu.setUploadError("Upload success, starting install ");
             String result = postUpload(jobId);
             if (result != null) {
-                logger.error("Failed post upload script: " + result);
+                s_logger.error("Failed post upload script: " + result);
                 tu.setStatus(Status.UNRECOVERABLE_ERROR);
                 tu.setUploadError("Failed post upload script: " + result);
             } else {
-                logger.warn("Upload completed successfully at " + new SimpleDateFormat().format(new Date()));
+                s_logger.warn("Upload completed successfully at " + new SimpleDateFormat().format(new Date()));
                 tu.setStatus(Status.POST_UPLOAD_FINISHED);
                 tu.setUploadError("Upload completed successfully at " + new SimpleDateFormat().format(new Date()));
             }
@@ -501,7 +503,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
     private boolean checkAndStartApache() {
 
         //Check whether the Apache server is running
-        Script command = new Script("/bin/bash", logger);
+        Script command = new Script("/bin/bash", s_logger);
         command.add("-c");
         command.add("if [ -d /etc/apache2 ] ; then service apache2 status | grep pid; else service httpd status | grep pid; fi ");
         String result = command.execute();
@@ -509,11 +511,11 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         //Apache Server is not running. Try to start it.
         if (result != null) {
 
-            /*logger.warn("Apache server not running, trying to start it");
+            /*s_logger.warn("Apache server not running, trying to start it");
             String port = Integer.toString(TemplateConstants.DEFAULT_TMPLT_COPY_PORT);
             String intf = TemplateConstants.DEFAULT_TMPLT_COPY_INTF;
 
-            command = new Script("/bin/bash", logger);
+            command = new Script("/bin/bash", s_logger);
             command.add("-c");
             command.add("iptables -D INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j DROP;" +
                         "iptables -D INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j HTTP;" +
@@ -529,16 +531,16 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
 
             result = command.execute();
             if (result != null) {
-                logger.warn("Error in opening up httpd port err=" + result );
+                s_logger.warn("Error in opening up httpd port err=" + result );
                 return false;
             }*/
 
-            command = new Script("/bin/bash", logger);
+            command = new Script("/bin/bash", s_logger);
             command.add("-c");
             command.add("if [ -d /etc/apache2 ] ; then service apache2 start; else service httpd start; fi ");
             result = command.execute();
             if (result != null) {
-                logger.warn("Error in starting httpd service err=" + result);
+                s_logger.warn("Error in starting httpd service err=" + result);
                 return false;
             }
         }

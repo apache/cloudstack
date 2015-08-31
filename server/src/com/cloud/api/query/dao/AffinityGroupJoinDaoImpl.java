@@ -22,6 +22,7 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -35,6 +36,7 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Local(value = {AffinityGroupJoinDao.class})
 public class AffinityGroupJoinDaoImpl extends GenericDaoBase<AffinityGroupJoinVO, Long> implements AffinityGroupJoinDao {
+    public static final Logger s_logger = Logger.getLogger(AffinityGroupJoinDaoImpl.class);
 
     @Inject
     private ConfigurationDao _configDao;

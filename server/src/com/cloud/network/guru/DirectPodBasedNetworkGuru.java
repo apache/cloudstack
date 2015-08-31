@@ -22,6 +22,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ZoneConfig;
 import com.cloud.dc.DataCenter;
@@ -63,6 +64,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = NetworkGuru.class)
 public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
+    private static final Logger s_logger = Logger.getLogger(DirectPodBasedNetworkGuru.class);
 
     @Inject
     DataCenterDao _dcDao;
@@ -85,7 +87,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
         if (dc.getNetworkType() == NetworkType.Basic && isMyTrafficType(offering.getTrafficType())) {
             return true;
         } else {
-            logger.trace("We only take care of Guest Direct Pod based networks");
+            s_logger.trace("We only take care of Guest Direct Pod based networks");
             return false;
         }
     }
@@ -182,7 +184,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
                         if (placeholderNic != null) {
                             IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), placeholderNic.getIPv4Address());
                             ip = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
-                            logger.debug("Nic got an ip address " + placeholderNic.getIPv4Address() + " stored in placeholder nic for the network " + network +
+                            s_logger.debug("Nic got an ip address " + placeholderNic.getIPv4Address() + " stored in placeholder nic for the network " + network +
                                 " and gateway " + podRangeGateway);
                         }
                     }
@@ -207,7 +209,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
                     if (vm.getType() == VirtualMachine.Type.DomainRouter) {
                         Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, pod.getId());
                         if (placeholderNic == null) {
-                            logger.debug("Saving placeholder nic with ip4 address " + nic.getIPv4Address() + " for the network " + network);
+                            s_logger.debug("Saving placeholder nic with ip4 address " + nic.getIPv4Address() + " for the network " + network);
                             _networkMgr.savePlaceholderNic(network, nic.getIPv4Address(), null, VirtualMachine.Type.DomainRouter);
                         }
                     }

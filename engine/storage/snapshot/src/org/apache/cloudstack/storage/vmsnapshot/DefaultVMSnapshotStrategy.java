@@ -24,6 +24,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotOptions;
@@ -70,6 +71,7 @@ import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshotStrategy {
+    private static final Logger s_logger = Logger.getLogger(DefaultVMSnapshotStrategy.class);
     @Inject
     VMSnapshotHelper vmSnapshotHelper;
     @Inject
@@ -146,7 +148,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             answer = (CreateVMSnapshotAnswer)agentMgr.send(hostId, ccmd);
             if (answer != null && answer.getResult()) {
                 processAnswer(vmSnapshotVO, userVm, answer, hostId);
-                logger.debug("Create vm snapshot " + vmSnapshot.getName() + " succeeded for vm: " + userVm.getInstanceName());
+                s_logger.debug("Create vm snapshot " + vmSnapshot.getName() + " succeeded for vm: " + userVm.getInstanceName());
                 result = true;
 
                 for (VolumeObjectTO volumeTo : answer.getVolumeTOs()) {
@@ -157,21 +159,21 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 String errMsg = "Creating VM snapshot: " + vmSnapshot.getName() + " failed";
                 if (answer != null && answer.getDetails() != null)
                     errMsg = errMsg + " due to " + answer.getDetails();
-                logger.error(errMsg);
+                s_logger.error(errMsg);
                 throw new CloudRuntimeException(errMsg);
             }
         } catch (OperationTimedoutException e) {
-            logger.debug("Creating VM snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
+            s_logger.debug("Creating VM snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
             throw new CloudRuntimeException("Creating VM snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
         } catch (AgentUnavailableException e) {
-            logger.debug("Creating VM snapshot: " + vmSnapshot.getName() + " failed", e);
+            s_logger.debug("Creating VM snapshot: " + vmSnapshot.getName() + " failed", e);
             throw new CloudRuntimeException("Creating VM snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
         } finally {
             if (!result) {
                 try {
                     vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
                 } catch (NoTransitionException e1) {
-                    logger.error("Cannot set vm snapshot state due to: " + e1.getMessage());
+                    s_logger.error("Cannot set vm snapshot state due to: " + e1.getMessage());
                 }
             }
         }
@@ -184,7 +186,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         try {
             vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.ExpungeRequested);
         } catch (NoTransitionException e) {
-            logger.debug("Failed to change vm snapshot state with event ExpungeRequested");
+            s_logger.debug("Failed to change vm snapshot state with event ExpungeRequested");
             throw new CloudRuntimeException("Failed to change vm snapshot state with event ExpungeRequested: " + e.getMessage());
         }
 
@@ -212,7 +214,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 return true;
             } else {
                 String errMsg = (answer == null) ? null : answer.getDetails();
-                logger.error("Delete vm snapshot " + vmSnapshot.getName() + " of vm " + userVm.getInstanceName() + " failed due to " + errMsg);
+                s_logger.error("Delete vm snapshot " + vmSnapshot.getName() + " of vm " + userVm.getInstanceName() + " failed due to " + errMsg);
                 throw new CloudRuntimeException("Delete vm snapshot " + vmSnapshot.getName() + " of vm " + userVm.getInstanceName() + " failed due to " + errMsg);
             }
         } catch (OperationTimedoutException e) {
@@ -245,7 +247,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             });
         } catch (Exception e) {
             String errMsg = "Error while process answer: " + as.getClass() + " due to " + e.getMessage();
-            logger.error(errMsg, e);
+            s_logger.error(errMsg, e);
             throw new CloudRuntimeException(errMsg);
         }
     }
@@ -365,21 +367,21 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 String errMsg = "Revert VM: " + userVm.getInstanceName() + " to snapshot: " + vmSnapshotVO.getName() + " failed";
                 if (answer != null && answer.getDetails() != null)
                     errMsg = errMsg + " due to " + answer.getDetails();
-                logger.error(errMsg);
+                s_logger.error(errMsg);
                 throw new CloudRuntimeException(errMsg);
             }
         } catch (OperationTimedoutException e) {
-            logger.debug("Failed to revert vm snapshot", e);
+            s_logger.debug("Failed to revert vm snapshot", e);
             throw new CloudRuntimeException(e.getMessage());
         } catch (AgentUnavailableException e) {
-            logger.debug("Failed to revert vm snapshot", e);
+            s_logger.debug("Failed to revert vm snapshot", e);
             throw new CloudRuntimeException(e.getMessage());
         } finally {
             if (!result) {
                 try {
                     vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
                 } catch (NoTransitionException e1) {
-                    logger.error("Cannot set vm snapshot state due to: " + e1.getMessage());
+                    s_logger.error("Cannot set vm snapshot state due to: " + e1.getMessage());
                 }
             }
         }

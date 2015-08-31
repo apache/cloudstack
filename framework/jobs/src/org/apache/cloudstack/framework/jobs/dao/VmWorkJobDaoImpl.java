@@ -24,6 +24,7 @@ import java.util.List;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO.Step;
@@ -42,6 +43,7 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.vm.VirtualMachine;
 
 public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implements VmWorkJobDao {
+    private static final Logger s_logger = Logger.getLogger(VmWorkJobDaoImpl.class);
 
     protected SearchBuilder<VmWorkJobVO> PendingWorkJobSearch;
     protected SearchBuilder<VmWorkJobVO> PendingWorkJobByCommandSearch;
@@ -143,8 +145,8 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
         sc.setParameters("dispatcher", "VmWorkJobDispatcher");
         List<VmWorkJobVO> expungeList = listBy(sc);
         for (VmWorkJobVO job : expungeList) {
-            if (logger.isDebugEnabled())
-                logger.debug("Expunge completed work job-" + job.getId());
+            if (s_logger.isDebugEnabled())
+                s_logger.debug("Expunge completed work job-" + job.getId());
             expunge(job.getId());
             _baseJobDao.expunge(job.getId());
         }
@@ -174,10 +176,10 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
 
                     pstmt.execute();
                 } catch (SQLException e) {
-                    logger.info("[ignored]"
+                    s_logger.info("[ignored]"
                             + "SQL failed to delete vm work job: " + e.getLocalizedMessage());
                 } catch (Throwable e) {
-                    logger.info("[ignored]"
+                    s_logger.info("[ignored]"
                             + "caught an error during delete vm work job: " + e.getLocalizedMessage());
                 }
 
@@ -189,10 +191,10 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
 
                     pstmt.execute();
                 } catch (SQLException e) {
-                    logger.info("[ignored]"
+                    s_logger.info("[ignored]"
                             + "SQL failed to delete async job: " + e.getLocalizedMessage());
                 } catch (Throwable e) {
-                    logger.info("[ignored]"
+                    s_logger.info("[ignored]"
                             + "caught an error during delete async job: " + e.getLocalizedMessage());
                 }
             }

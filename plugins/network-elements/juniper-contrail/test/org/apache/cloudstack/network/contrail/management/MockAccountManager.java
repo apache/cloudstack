@@ -24,6 +24,7 @@ import java.net.InetAddress;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RoleType;
@@ -62,6 +63,7 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 
 public class MockAccountManager extends ManagerBase implements AccountManager {
+    private static final Logger s_logger = Logger.getLogger(MockAccountManager.class);
 
     @Inject
     AccountDao _accountDao;
@@ -86,7 +88,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
             throw new ConfigurationException("Unable to find the system user using " + User.UID_SYSTEM);
         }
         CallContext.register(_systemUser, _systemAccount);
-        logger.info("MockAccountManager initialization successful");
+        s_logger.info("MockAccountManager initialization successful");
         return true;
     }
 

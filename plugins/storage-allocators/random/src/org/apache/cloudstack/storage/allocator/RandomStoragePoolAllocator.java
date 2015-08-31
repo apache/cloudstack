@@ -21,6 +21,7 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -34,6 +35,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = StoragePoolAllocator.class)
 public class RandomStoragePoolAllocator extends AbstractStoragePoolAllocator {
+    private static final Logger s_logger = Logger.getLogger(RandomStoragePoolAllocator.class);
 
     @Override
     public List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
@@ -48,18 +50,18 @@ public class RandomStoragePoolAllocator extends AbstractStoragePoolAllocator {
             return null;
         }
 
-        logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
+        s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
         List<StoragePoolVO> pools = _storagePoolDao.listBy(dcId, podId, clusterId, ScopeType.CLUSTER);
         if (pools.size() == 0) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("No storage pools available for allocation, returning");
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("No storage pools available for allocation, returning");
             }
             return suitablePools;
         }
 
         Collections.shuffle(pools);
-        if (logger.isDebugEnabled()) {
-            logger.debug("RandomStoragePoolAllocator has " + pools.size() + " pools to check for allocation");
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("RandomStoragePoolAllocator has " + pools.size() + " pools to check for allocation");
         }
         for (StoragePoolVO pool : pools) {
             if (suitablePools.size() == returnUpTo) {
@@ -72,8 +74,8 @@ public class RandomStoragePoolAllocator extends AbstractStoragePoolAllocator {
             }
         }
 
-        if (logger.isDebugEnabled()) {
-            logger.debug("RandomStoragePoolAllocator returning " + suitablePools.size() + " suitable storage pools");
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("RandomStoragePoolAllocator returning " + suitablePools.size() + " suitable storage pools");
         }
 
         return suitablePools;

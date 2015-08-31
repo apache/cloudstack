@@ -27,6 +27,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.command.user.firewall.IListFirewallRulesCmd;
@@ -99,6 +100,7 @@ import com.cloud.vm.dao.UserVmDao;
 @Component
 @Local(value = {FirewallService.class, FirewallManager.class})
 public class FirewallManagerImpl extends ManagerBase implements FirewallService, FirewallManager, NetworkRuleApplier {
+    private static final Logger s_logger = Logger.getLogger(FirewallManagerImpl.class);
 
     @Inject
     FirewallRulesDao _firewallDao;
@@ -154,7 +156,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
     @Override
     public boolean start() {
-        logger.info("Firewall provider list is " + _firewallElements.iterator().next());
+        s_logger.info("Firewall provider list is " + _firewallElements.iterator().next());
         return super.start();
     }
 
@@ -435,8 +437,8 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             }
         }
 
-        if (logger.isDebugEnabled()) {
-            logger.debug("No network rule conflicts detected for " + newRule + " against " + (rules.size() - 1) + " existing rules");
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("No network rule conflicts detected for " + newRule + " against " + (rules.size() - 1) + " existing rules");
         }
     }
 
@@ -523,12 +525,12 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     public boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError, boolean updateRulesInDB) throws ResourceUnavailableException {
         boolean success = true;
         if (rules == null || rules.size() == 0) {
-            logger.debug("There are no rules to forward to the network elements");
+            s_logger.debug("There are no rules to forward to the network elements");
             return true;
         }
         Purpose purpose = rules.get(0).getPurpose();
         if (!_ipAddrMgr.applyRules(rules, purpose, this, continueOnError)) {
-            logger.warn("Rules are not completely applied");
+            s_logger.warn("Rules are not completely applied");
             return false;
         } else {
             if (updateRulesInDB) {
@@ -536,7 +538,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                     if (rule.getState() == FirewallRule.State.Revoke) {
                         FirewallRuleVO relatedRule = _firewallDao.findByRelatedId(rule.getId());
                         if (relatedRule != null) {
-                            logger.warn("Can't remove the firewall rule id=" + rule.getId() + " as it has related firewall rule id=" + relatedRule.getId() +
+                            s_logger.warn("Can't remove the firewall rule id=" + rule.getId() + " as it has related firewall rule id=" + relatedRule.getId() +
                                 "; leaving it in Revoke state");
                             success = false;
                         } else {
@@ -603,7 +605,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             break;*/
         default:
                 assert (false) : "Unexpected fall through in applying rules to the network elements";
-            logger.error("FirewallManager cannot process rules of type " + purpose);
+            s_logger.error("FirewallManager cannot process rules of type " + purpose);
             throw new CloudRuntimeException("FirewallManager cannot process rules of type " + purpose);
         }
         return handled;
@@ -639,7 +641,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     public boolean applyFirewallRules(List<FirewallRuleVO> rules, boolean continueOnError, Account caller) {
 
         if (rules.size() == 0) {
-            logger.debug("There are no firewall rules to apply");
+            s_logger.debug("There are no firewall rules to apply");
             return true;
         }
 
@@ -657,7 +659,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                 return false;
             }
         } catch (ResourceUnavailableException ex) {
-            logger.warn("Failed to apply firewall rules due to : "+ ex.getMessage());
+            s_logger.warn("Failed to apply firewall rules due to : "+ ex.getMessage());
             return false;
         }
 
@@ -667,7 +669,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     @Override
     public boolean applyDefaultEgressFirewallRule(Long networkId, boolean defaultPolicy, boolean add) throws ResourceUnavailableException {
 
-        logger.debug("applying default firewall egress rules ");
+        s_logger.debug("applying default firewall egress rules ");
 
         NetworkVO network = _networkDao.findById(networkId);
         List<String> sourceCidr = new ArrayList<String>();
@@ -686,7 +688,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                 return  false;
             }
         } catch (ResourceUnavailableException ex) {
-            logger.warn("Failed to apply default egress rules for guest network due to ", ex);
+            s_logger.warn("Failed to apply default egress rules for guest network due to ", ex);
             return false;
         }
         return true;
@@ -802,8 +804,8 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         boolean generateUsageEvent = false;
 
         if (rule.getState() == State.Staged) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Found a rule that is still in stage state so just removing it: " + rule);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Found a rule that is still in stage state so just removing it: " + rule);
             }
             removeRule(rule);
             generateUsageEvent = true;
@@ -832,8 +834,8 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         List<FirewallRule> rules = new ArrayList<FirewallRule>();
 
         List<FirewallRuleVO> fwRules = _firewallDao.listByIpAndPurposeAndNotRevoked(ipId, Purpose.Firewall);
-        if (logger.isDebugEnabled()) {
-            logger.debug("Releasing " + fwRules.size() + " firewall rules for ip id=" + ipId);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Releasing " + fwRules.size() + " firewall rules for ip id=" + ipId);
         }
 
         for (FirewallRuleVO rule : fwRules) {
@@ -849,8 +851,8 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         // Now we check again in case more rules have been inserted.
         rules.addAll(_firewallDao.listByIpAndPurposeAndNotRevoked(ipId, Purpose.Firewall));
 
-        if (logger.isDebugEnabled()) {
-            logger.debug("Successfully released firewall rules for ip id=" + ipId + " and # of rules now = " + rules.size());
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Successfully released firewall rules for ip id=" + ipId + " and # of rules now = " + rules.size());
         }
 
         return rules.size() == 0;
@@ -879,8 +881,8 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         List<FirewallRule> rules = new ArrayList<FirewallRule>();
 
         List<FirewallRuleVO> fwRules = _firewallDao.listByNetworkAndPurposeAndNotRevoked(networkId, Purpose.Firewall);
-        if (logger.isDebugEnabled()) {
-            logger.debug("Releasing " + fwRules.size() + " firewall rules for network id=" + networkId);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Releasing " + fwRules.size() + " firewall rules for network id=" + networkId);
         }
 
         for (FirewallRuleVO rule : fwRules) {
@@ -896,8 +898,8 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         // Now we check again in case more rules have been inserted.
         rules.addAll(_firewallDao.listByNetworkAndPurposeAndNotRevoked(networkId, Purpose.Firewall));
 
-        if (logger.isDebugEnabled()) {
-            logger.debug("Successfully released firewall rules for network id=" + networkId + " and # of rules now = " + rules.size());
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Successfully released firewall rules for network id=" + networkId + " and # of rules now = " + rules.size());
         }
 
         return success && rules.size() == 0;
@@ -908,11 +910,11 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         FirewallRule fwRule = _firewallDao.findByRelatedId(ruleId);
 
         if (fwRule == null) {
-            logger.trace("No related firewall rule exists for rule id=" + ruleId + " so returning true here");
+            s_logger.trace("No related firewall rule exists for rule id=" + ruleId + " so returning true here");
             return true;
         }
 
-        logger.debug("Revoking Firewall rule id=" + fwRule.getId() + " as a part of rule delete id=" + ruleId + " with apply=" + apply);
+        s_logger.debug("Revoking Firewall rule id=" + fwRule.getId() + " as a part of rule delete id=" + ruleId + " with apply=" + apply);
         return revokeIngressFirewallRule(fwRule.getId(), apply);
 
     }
@@ -948,10 +950,10 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         Set<Long> ipsToReprogram = new HashSet<Long>();
 
         if (firewallRules.isEmpty()) {
-            logger.debug("No firewall rules are found for vm id=" + vmId);
+            s_logger.debug("No firewall rules are found for vm id=" + vmId);
             return true;
         } else {
-            logger.debug("Found " + firewallRules.size() + " to cleanup for vm id=" + vmId);
+            s_logger.debug("Found " + firewallRules.size() + " to cleanup for vm id=" + vmId);
         }
 
         for (FirewallRuleVO rule : firewallRules) {
@@ -962,11 +964,11 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
         // apply rules for all ip addresses
         for (Long ipId : ipsToReprogram) {
-            logger.debug("Applying firewall rules for ip address id=" + ipId + " as a part of vm expunge");
+            s_logger.debug("Applying firewall rules for ip address id=" + ipId + " as a part of vm expunge");
             try {
                 success = success && applyIngressFirewallRules(ipId, _accountMgr.getSystemAccount());
             } catch (ResourceUnavailableException ex) {
-                logger.warn("Failed to apply port forwarding rules for ip id=" + ipId);
+                s_logger.warn("Failed to apply port forwarding rules for ip id=" + ipId);
                 success = false;
             }
         }
@@ -986,7 +988,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                 createFirewallRule(ip.getId(), acct, rule.getXid(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(), rule.getSourceCidrList(),
                         rule.getIcmpCode(), rule.getIcmpType(), rule.getRelated(), FirewallRuleType.System, rule.getNetworkId(), rule.getTrafficType(), true);
             } catch (Exception e) {
-                logger.debug("Failed to add system wide firewall rule, due to:" + e.toString());
+                s_logger.debug("Failed to add system wide firewall rule, due to:" + e.toString());
             }
         }
         return true;

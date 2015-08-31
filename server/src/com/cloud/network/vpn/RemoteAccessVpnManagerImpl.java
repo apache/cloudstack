@@ -25,6 +25,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.vpn.ListRemoteAccessVpnsCmd;
@@ -93,6 +94,7 @@ import com.cloud.utils.net.NetUtils;
 
 @Local(value = RemoteAccessVpnService.class)
 public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAccessVpnService, Configurable {
+    private final static Logger s_logger = Logger.getLogger(RemoteAccessVpnManagerImpl.class);
 
     static final ConfigKey<String> RemoteAccessVpnClientIpRange = new ConfigKey<String>("Network", String.class, RemoteAccessVpnClientIpRangeCK, "10.1.2.1-10.1.2.8",
         "The range of ips to be allocated to remote access vpn clients. The first ip in the range is used by the VPN server", false, ConfigKey.Scope.Account);
@@ -258,7 +260,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     private void validateRemoteAccessVpnConfiguration() throws ConfigurationException {
         String ipRange = RemoteAccessVpnClientIpRange.value();
         if (ipRange == null) {
-            logger.warn("Remote Access VPN global configuration missing client ip range -- ignoring");
+            s_logger.warn("Remote Access VPN global configuration missing client ip range -- ignoring");
             return;
         }
         Integer pskLength = _pskLength;
@@ -284,7 +286,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     public boolean destroyRemoteAccessVpnForIp(long ipId, Account caller) throws ResourceUnavailableException {
         final RemoteAccessVpnVO vpn = _remoteAccessVpnDao.findByPublicIpAddress(ipId);
         if (vpn == null) {
-            logger.debug("there are no Remote access vpns for public ip address id=" + ipId);
+            s_logger.debug("there are no Remote access vpns for public ip address id=" + ipId);
             return true;
         }
 
@@ -305,7 +307,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         }catch (ResourceUnavailableException ex) {
             vpn.setState(prevState);
             _remoteAccessVpnDao.update(vpn.getId(), vpn);
-            logger.debug("Failed to stop the vpn " + vpn.getId() + " , so reverted state to "+
+            s_logger.debug("Failed to stop the vpn " + vpn.getId() + " , so reverted state to "+
                     RemoteAccessVpn.State.Running);
             success = false;
         } finally {
@@ -330,12 +332,12 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                                 fwRules.add(_rulesDao.findByRelatedId(vpnFwRule.getId()));
                             }
 
-                            logger.debug("Marked " + fwRules.size() + " firewall rules as Revoked as a part of disable remote access vpn");
+                            s_logger.debug("Marked " + fwRules.size() + " firewall rules as Revoked as a part of disable remote access vpn");
                         }
                     });
 
                     //now apply vpn rules on the backend
-                    logger.debug("Reapplying firewall rules for ip id=" + ipId + " as a part of disable remote access vpn");
+                    s_logger.debug("Reapplying firewall rules for ip id=" + ipId + " as a part of disable remote access vpn");
                     success = _firewallMgr.applyIngressFirewallRules(ipId, caller);
                 }
 
@@ -357,14 +359,14 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                                 if (vpnFwRules != null) {
                                     for (FirewallRule vpnFwRule : vpnFwRules) {
                                         _rulesDao.remove(vpnFwRule.getId());
-                                        logger.debug("Successfully removed firewall rule with ip id=" + vpnFwRule.getSourceIpAddressId() + " and port " +
+                                        s_logger.debug("Successfully removed firewall rule with ip id=" + vpnFwRule.getSourceIpAddressId() + " and port " +
                                             vpnFwRule.getSourcePortStart().intValue() + " as a part of vpn cleanup");
                                     }
                                 }
                             }
                         });
                     } catch (Exception ex) {
-                        logger.warn("Unable to release the three vpn ports from the firewall rules", ex);
+                        s_logger.warn("Unable to release the three vpn ports from the firewall rules", ex);
                     }
                 }
             }
@@ -506,7 +508,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         Account owner = _accountDao.findById(vpnOwnerId);
         _accountMgr.checkAccess(caller, null, true, owner);
 
-        logger.debug("Applying vpn users for " + owner);
+        s_logger.debug("Applying vpn users for " + owner);
         List<RemoteAccessVpnVO> vpns = _remoteAccessVpnDao.findByAccount(vpnOwnerId);
 
         List<VpnUserVO> users = _vpnUsersDao.listByAccount(vpnOwnerId);
@@ -523,13 +525,13 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
         boolean[] finals = new boolean[users.size()];
         for (RemoteAccessVPNServiceProvider element : _vpnServiceProviders) {
-            logger.debug("Applying vpn access to " + element.getName());
+            s_logger.debug("Applying vpn access to " + element.getName());
             for (RemoteAccessVpnVO vpn : vpns) {
                 try {
                     String[] results = element.applyVpnUsers(vpn, users);
                     if (results != null) {
                         for (int i = 0; i < results.length; i++) {
-                            logger.debug("VPN User " + users.get(i) + (results[i] == null ? " is set on " : (" couldn't be set due to " + results[i]) + " on ") + vpn);
+                            s_logger.debug("VPN User " + users.get(i) + (results[i] == null ? " is set on " : (" couldn't be set due to " + results[i]) + " on ") + vpn);
                             if (results[i] == null) {
                                 if (!finals[i]) {
                                     finals[i] = true;
@@ -541,7 +543,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                         }
                     }
                 } catch (Exception e) {
-                    logger.warn("Unable to apply vpn users ", e);
+                    s_logger.warn("Unable to apply vpn users ", e);
                     success = false;
 
                     for (int i = 0; i < finals.length; i++) {
@@ -571,7 +573,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                         }
                     });
                 }
-                logger.warn("Failed to apply vpn for user " + user.getUsername() + ", accountId=" + user.getAccountId());
+                s_logger.warn("Failed to apply vpn for user " + user.getUsername() + ", accountId=" + user.getAccountId());
             }
         }
 

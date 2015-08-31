@@ -22,6 +22,7 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
@@ -37,6 +38,7 @@ import com.cloud.vm.snapshot.VMSnapshotVO;
 @Component
 @Local(value = {VMSnapshotDao.class})
 public class VMSnapshotDaoImpl extends GenericDaoBase<VMSnapshotVO, Long> implements VMSnapshotDao {
+    private static final Logger s_logger = Logger.getLogger(VMSnapshotDaoImpl.class);
     private final SearchBuilder<VMSnapshotVO> SnapshotSearch;
     private final SearchBuilder<VMSnapshotVO> ExpungingSnapshotSearch;
     private final SearchBuilder<VMSnapshotVO> SnapshotStatusSearch;
@@ -143,7 +145,7 @@ public class VMSnapshotDaoImpl extends GenericDaoBase<VMSnapshotVO, Long> implem
         builder.set(vo, "updated", new Date());
 
         int rows = update((VMSnapshotVO)vo, sc);
-        if (rows == 0 && logger.isDebugEnabled()) {
+        if (rows == 0 && s_logger.isDebugEnabled()) {
             VMSnapshotVO dbVol = findByIdIncludingRemoved(vo.getId());
             if (dbVol != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
@@ -176,7 +178,7 @@ public class VMSnapshotDaoImpl extends GenericDaoBase<VMSnapshotVO, Long> implem
                     .append("; updatedTime=")
                     .append(oldUpdatedTime);
             } else {
-                logger.debug("Unable to update VM snapshot: id=" + vo.getId() + ", as there is no such snapshot exists in the database anymore");
+                s_logger.debug("Unable to update VM snapshot: id=" + vo.getId() + ", as there is no such snapshot exists in the database anymore");
             }
         }
         return rows > 0;

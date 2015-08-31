@@ -25,6 +25,7 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
@@ -33,6 +34,7 @@ import com.cloud.utils.component.AdapterBase;
 
 @Local(value = Processor.class)
 public class RawImageProcessor extends AdapterBase implements Processor {
+    private static final Logger s_logger = Logger.getLogger(RawImageProcessor.class);
     StorageLayer _storage;
 
     @Override
@@ -48,13 +50,13 @@ public class RawImageProcessor extends AdapterBase implements Processor {
     @Override
     public FormatInfo process(String templatePath, ImageFormat format, String templateName) throws InternalErrorException {
         if (format != null) {
-            logger.debug("We currently don't handle conversion from " + format + " to raw image.");
+            s_logger.debug("We currently don't handle conversion from " + format + " to raw image.");
             return null;
         }
 
         String imgPath = templatePath + File.separator + templateName + "." + ImageFormat.RAW.getFileExtension();
         if (!_storage.exists(imgPath)) {
-            logger.debug("Unable to find raw image:" + imgPath);
+            s_logger.debug("Unable to find raw image:" + imgPath);
             return null;
         }
         FormatInfo info = new FormatInfo();
@@ -62,7 +64,7 @@ public class RawImageProcessor extends AdapterBase implements Processor {
         info.filename = templateName + "." + ImageFormat.RAW.getFileExtension();
         info.size = _storage.getSize(imgPath);
         info.virtualSize = info.size;
-        logger.debug("Process raw image " + info.filename + " successfully");
+        s_logger.debug("Process raw image " + info.filename + " successfully");
         return info;
     }
 

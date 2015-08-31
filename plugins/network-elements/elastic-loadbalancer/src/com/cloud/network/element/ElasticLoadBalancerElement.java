@@ -25,6 +25,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -57,6 +58,7 @@ import com.cloud.vm.VirtualMachineProfile;
 @Component
 @Local(value = NetworkElement.class)
 public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalancingServiceProvider, IpDeployer {
+    private static final Logger s_logger = Logger.getLogger(ElasticLoadBalancerElement.class);
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
     @Inject
     NetworkModel _networkManager;
@@ -74,7 +76,7 @@ public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalan
 
     private boolean canHandle(Network network, List<LoadBalancingRule> rules) {
         if (network.getGuestType() != Network.GuestType.Shared || network.getTrafficType() != TrafficType.Guest) {
-            logger.debug("Not handling network with type  " + network.getGuestType() + " and traffic type " + network.getTrafficType());
+            s_logger.debug("Not handling network with type  " + network.getGuestType() + " and traffic type " + network.getTrafficType());
             return false;
         }
 
@@ -84,7 +86,7 @@ public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalan
             if (schemeCaps != null) {
                 for (LoadBalancingRule rule : rules) {
                     if (!schemeCaps.contains(rule.getScheme().toString())) {
-                        logger.debug("Scheme " + rules.get(0).getScheme() + " is not supported by the provider " + this.getName());
+                        s_logger.debug("Scheme " + rules.get(0).getScheme() + " is not supported by the provider " + this.getName());
                         return false;
                     }
                 }

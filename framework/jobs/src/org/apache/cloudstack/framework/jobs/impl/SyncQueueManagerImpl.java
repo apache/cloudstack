@@ -22,6 +22,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.jobs.dao.SyncQueueDao;
 import org.apache.cloudstack.framework.jobs.dao.SyncQueueItemDao;
@@ -35,6 +36,7 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManager {
+    public static final Logger s_logger = Logger.getLogger(SyncQueueManagerImpl.class.getName());
 
     @Inject
     private SyncQueueDao _syncQueueDao;
@@ -68,7 +70,7 @@ public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManage
                 }
             });
         } catch (Exception e) {
-            logger.error("Unexpected exception: ", e);
+            s_logger.error("Unexpected exception: ", e);
         }
         return null;
     }
@@ -82,7 +84,7 @@ public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManage
                 public SyncQueueItemVO doInTransaction(TransactionStatus status) {
                     SyncQueueVO queueVO = _syncQueueDao.findById(queueId);
                     if(queueVO == null) {
-                        logger.error("Sync queue(id: " + queueId + ") does not exist");
+                        s_logger.error("Sync queue(id: " + queueId + ") does not exist");
                         return null;
                     }
 
@@ -107,19 +109,19 @@ public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManage
 
                             return itemVO;
                         } else {
-                            if (logger.isDebugEnabled())
-                                logger.debug("Sync queue (" + queueId + ") is currently empty");
+                            if (s_logger.isDebugEnabled())
+                                s_logger.debug("Sync queue (" + queueId + ") is currently empty");
                         }
                     } else {
-                        if (logger.isDebugEnabled())
-                            logger.debug("There is a pending process in sync queue(id: " + queueId + ")");
+                        if (s_logger.isDebugEnabled())
+                            s_logger.debug("There is a pending process in sync queue(id: " + queueId + ")");
                     }
 
                     return null;
                 }
             });
         } catch (Exception e) {
-            logger.error("Unexpected exception: ", e);
+            s_logger.error("Unexpected exception: ", e);
         }
 
         return null;
@@ -167,7 +169,7 @@ public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManage
 
             return resultList;
         } catch (Exception e) {
-            logger.error("Unexpected exception: ", e);
+            s_logger.error("Unexpected exception: ", e);
         }
 
         return null;
@@ -198,14 +200,14 @@ public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManage
                 }
             });
         } catch (Exception e) {
-            logger.error("Unexpected exception: ", e);
+            s_logger.error("Unexpected exception: ", e);
         }
     }
 
     @Override
     @DB
     public void returnItem(final long queueItemId) {
-        logger.info("Returning queue item " + queueItemId + " back to queue for second try in case of DB deadlock");
+        s_logger.info("Returning queue item " + queueItemId + " back to queue for second try in case of DB deadlock");
         try {
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
@@ -226,7 +228,7 @@ public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManage
                 }
             });
         } catch (Exception e) {
-            logger.error("Unexpected exception: ", e);
+            s_logger.error("Unexpected exception: ", e);
         }
     }
 
@@ -245,8 +247,8 @@ public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManage
         if (nActiveItems < queueVO.getQueueSizeLimit())
             return true;
 
-        if (logger.isDebugEnabled())
-            logger.debug("Queue (queue id, sync type, sync id) - (" + queueVO.getId()
+        if (s_logger.isDebugEnabled())
+            s_logger.debug("Queue (queue id, sync type, sync id) - (" + queueVO.getId()
                     + "," + queueVO.getSyncObjType() + ", " + queueVO.getSyncObjId()
                     + ") is reaching concurrency limit " + queueVO.getQueueSizeLimit());
         return false;
@@ -264,8 +266,8 @@ public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManage
     public void cleanupActiveQueueItems(Long msid, boolean exclusive) {
         List<SyncQueueItemVO> l = getActiveQueueItems(msid, false);
         for (SyncQueueItemVO item : l) {
-            if (logger.isInfoEnabled()) {
-                logger.info("Discard left-over queue item: " + item.toString());
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("Discard left-over queue item: " + item.toString());
             }
             purgeItem(item.getId());
         }

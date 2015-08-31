@@ -28,6 +28,7 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
@@ -54,6 +55,7 @@ import com.cloud.utils.db.SearchCriteria;
 @Component
 @Local(value = {HostJoinDao.class})
 public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements HostJoinDao {
+    public static final Logger s_logger = Logger.getLogger(HostJoinDaoImpl.class);
 
     @Inject
     private ConfigurationDao _configDao;
@@ -195,7 +197,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                     hostVoDetails = h.getDetails();
                     hostResponse.setDetails(hostVoDetails);
                 } catch (Exception e) {
-                    logger.debug("failed to get host details", e);
+                    s_logger.debug("failed to get host details", e);
                 }
             }
 

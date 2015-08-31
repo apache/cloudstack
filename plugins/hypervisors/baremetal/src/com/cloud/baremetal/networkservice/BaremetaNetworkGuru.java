@@ -23,6 +23,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
@@ -59,6 +60,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = {NetworkGuru.class})
 public class BaremetaNetworkGuru extends DirectPodBasedNetworkGuru {
+    private static final Logger s_logger = Logger.getLogger(BaremetaNetworkGuru.class);
     @Inject
     private HostDao _hostDao;
     @Inject
@@ -147,14 +149,14 @@ public class BaremetaNetworkGuru extends DirectPodBasedNetworkGuru {
          * nic.setBroadcastUri(null); nic.setIsolationUri(null);
          */
 
-        logger.debug("Allocated a nic " + nic + " for " + vm);
+        s_logger.debug("Allocated a nic " + nic + " for " + vm);
     }
 
     private void getBaremetalIp(NicProfile nic, Pod pod, VirtualMachineProfile vm, Network network, String requiredIp) throws
         InsufficientAddressCapacityException, ConcurrentOperationException {
         DataCenter dc = _dcDao.findById(pod.getDataCenterId());
         if (nic.getIPv4Address() == null) {
-            logger.debug(String.format("Requiring ip address: %s", nic.getIPv4Address()));
+            s_logger.debug(String.format("Requiring ip address: %s", nic.getIPv4Address()));
             PublicIp ip = _ipAddrMgr.assignPublicIpAddress(dc.getId(), pod.getId(), vm.getOwner(), VlanType.DirectAttached, network.getId(), requiredIp, false);
             nic.setIPv4Address(ip.getAddress().toString());
             nic.setFormat(AddressFormat.Ip4);

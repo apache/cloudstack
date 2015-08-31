@@ -24,6 +24,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
@@ -45,6 +46,7 @@ import com.cloud.utils.net.NetUtils;
 
 @Local(value = {Ipv6AddressManager.class})
 public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressManager {
+    public static final Logger s_logger = Logger.getLogger(Ipv6AddressManagerImpl.class.getName());
 
     String _name = null;
     int _ipv6RetryMax = 0;
@@ -78,7 +80,7 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
         }
         List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
         if (vlans == null) {
-            logger.debug("Cannot find related vlan attached to network " + networkId);
+            s_logger.debug("Cannot find related vlan attached to network " + networkId);
             return null;
         }
         String ip = null;

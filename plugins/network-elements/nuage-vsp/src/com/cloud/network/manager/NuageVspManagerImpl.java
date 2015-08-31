@@ -39,6 +39,7 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.AddNuageVspDeviceCmd;
@@ -81,6 +82,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @Local(value = {NuageVspManager.class})
 public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager, Configurable {
 
+    private static final Logger s_logger = Logger.getLogger(NuageVspManagerImpl.class);
 
     private static final int ONE_MINUTE_MULTIPLIER = 60 * 1000;
 
@@ -288,7 +290,7 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
         try {
             initNuageScheduledTasks();
         } catch (Exception ce) {
-            logger.warn("Failed to load NuageVsp configuration properties. Check if the NuageVsp properties are configured correctly");
+            s_logger.warn("Failed to load NuageVsp configuration properties. Check if the NuageVsp properties are configured correctly");
         }
         return true;
     }
@@ -316,7 +318,7 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
             scheduler
                     .scheduleWithFixedDelay(new NuageVspSyncTask("ENTERPRISE"), ONE_MINUTE_MULTIPLIER * 15, ONE_MINUTE_MULTIPLIER * syncUpIntervalInMinutes, TimeUnit.MILLISECONDS);
         } else {
-            logger.warn("NuageVsp configuration for syncWorkers=" + numOfSyncThreads + " syncInterval=" + syncUpIntervalInMinutes
+            s_logger.warn("NuageVsp configuration for syncWorkers=" + numOfSyncThreads + " syncInterval=" + syncUpIntervalInMinutes
                     + " could not be read properly. So, check if the properties are configured properly in global properties");
         }
     }

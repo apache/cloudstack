@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.api.query.dao.ResourceTagJoinDao;
 import com.cloud.dc.DataCenterVO;
@@ -90,6 +91,7 @@ import com.cloud.vm.snapshot.VMSnapshotVO;
 
 @Local(value = {TaggedResourceService.class})
 public class TaggedResourceManagerImpl extends ManagerBase implements TaggedResourceService {
+    public static final Logger s_logger = Logger.getLogger(TaggedResourceManagerImpl.class);
 
     private static final Map<ResourceObjectType, Class<?>> s_typeMap = new HashMap<ResourceObjectType, Class<?>>();
     static {
@@ -352,7 +354,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 for (ResourceTag tagToRemove : tagsToRemove) {
                     _resourceTagDao.remove(tagToRemove.getId());
-                    logger.debug("Removed the tag " + tagToRemove);
+                    s_logger.debug("Removed the tag " + tagToRemove);
                 }
             }
         });

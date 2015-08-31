@@ -34,6 +34,7 @@ import org.apache.cloudstack.api.AddBaremetalKickStartPxeCmd;
 import org.apache.cloudstack.api.AddBaremetalPxeCmd;
 import org.apache.cloudstack.api.ListBaremetalPxeServersCmd;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.baremetal.IpmISetBootDevCommand;
@@ -81,6 +82,7 @@ import com.cloud.vm.dao.NicDao;
 
 @Local(value = BaremetalPxeService.class)
 public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase implements BaremetalPxeService {
+    private static final Logger s_logger = Logger.getLogger(BaremetalKickStartServiceImpl.class);
     @Inject
     ResourceManager _resourceMgr;
     @Inject
@@ -170,7 +172,7 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
             throw new CloudRuntimeException(String.format("cannot find id_rsa.cloud"));
         }
         if (!keyFile.exists()) {
-            logger.error("Unable to locate id_rsa.cloud in your setup at " + keyFile.toString());
+            s_logger.error("Unable to locate id_rsa.cloud in your setup at " + keyFile.toString());
         }
         return keyFile;
     }
@@ -199,7 +201,7 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
         cmd.setTemplateUuid(template.getUuid());
         Answer aws = _agentMgr.send(pxeVo.getHostId(), cmd);
         if (!aws.getResult()) {
-            logger.warn("Unable to set host: " + dest.getHost().getId() + " to PXE boot because " + aws.getDetails());
+            s_logger.warn("Unable to set host: " + dest.getHost().getId() + " to PXE boot because " + aws.getDetails());
             return false;
         }
 
@@ -229,7 +231,7 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
         List<String> tuple =  parseKickstartUrl(profile);
         String cmd =  String.format("/opt/cloud/bin/prepare_pxe.sh %s %s %s %s %s %s", tuple.get(1), tuple.get(2), profile.getTemplate().getUuid(),
                 String.format("01-%s", nic.getMacAddress().replaceAll(":", "-")).toLowerCase(), tuple.get(0), nic.getMacAddress().toLowerCase());
-        logger.debug(String.format("prepare pxe on virtual router[ip:%s], cmd: %s", mgmtNic.getIPv4Address(), cmd));
+        s_logger.debug(String.format("prepare pxe on virtual router[ip:%s], cmd: %s", mgmtNic.getIPv4Address(), cmd));
         Pair<Boolean, String> ret = SshHelper.sshExecute(mgmtNic.getIPv4Address(), 3922, "root", getSystemVMKeyFile(), null, cmd);
         if (!ret.first()) {
             throw new CloudRuntimeException(String.format("failed preparing PXE in virtual router[id:%s], because %s", vr.getId(), ret.second()));
@@ -237,7 +239,7 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
 
         //String internalServerIp = "10.223.110.231";
         cmd = String.format("/opt/cloud/bin/baremetal_snat.sh %s %s %s", mgmtNic.getIPv4Address(), internalServerIp, mgmtNic.getIPv4Gateway());
-        logger.debug(String.format("prepare SNAT on virtual router[ip:%s], cmd: %s", mgmtNic.getIPv4Address(), cmd));
+        s_logger.debug(String.format("prepare SNAT on virtual router[ip:%s], cmd: %s", mgmtNic.getIPv4Address(), cmd));
         ret = SshHelper.sshExecute(mgmtNic.getIPv4Address(), 3922, "root", getSystemVMKeyFile(), null, cmd);
         if (!ret.first()) {
             throw new CloudRuntimeException(String.format("failed preparing PXE in virtual router[id:%s], because %s", vr.getId(), ret.second()));
@@ -262,12 +264,12 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
             IpmISetBootDevCommand bootCmd = new IpmISetBootDevCommand(BootDev.pxe);
             Answer aws = _agentMgr.send(dest.getHost().getId(), bootCmd);
             if (!aws.getResult()) {
-                logger.warn("Unable to set host: " + dest.getHost().getId() + " to PXE boot because " + aws.getDetails());
+                s_logger.warn("Unable to set host: " + dest.getHost().getId() + " to PXE boot because " + aws.getDetails());
             }
 
             return aws.getResult();
         } catch (Exception e) {
-            logger.warn("Cannot prepare PXE server", e);
+            s_logger.warn("Cannot prepare PXE server", e);
             return false;
         }
     }
@@ -319,7 +321,7 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
         try {
             uri = new URI(cmd.getUrl());
         } catch (Exception e) {
-            logger.debug(e);
+            s_logger.debug(e);
             throw new IllegalArgumentException(e.getMessage());
         }
         String ipAddress = uri.getHost();

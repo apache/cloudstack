@@ -22,6 +22,7 @@ import java.util.Formatter;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.simulator.MockConfigurationVO;
@@ -33,6 +34,7 @@ import com.cloud.utils.db.TransactionLegacy;
 @Component
 @Local(value = {MockConfigurationDao.class})
 public class MockConfigurationDaoImpl extends GenericDaoBase<MockConfigurationVO, Long> implements MockConfigurationDao {
+    final static Logger s_logger = Logger.getLogger(MockConfigurationDaoImpl.class);
     private final SearchBuilder<MockConfigurationVO> _searchByDcIdName;
     private final SearchBuilder<MockConfigurationVO> _searchByDcIDPodIdName;
     private final SearchBuilder<MockConfigurationVO> _searchByDcIDPodIdClusterIdName;
@@ -139,7 +141,7 @@ public class MockConfigurationDaoImpl extends GenericDaoBase<MockConfigurationVO
                 return toEntityBean(rs, false);
             }
         } catch (Exception e) {
-            logger.info("[ignored]"
+            s_logger.info("[ignored]"
                     + "error while executing dynamically build search: " + e.getLocalizedMessage());
         }
         return null;

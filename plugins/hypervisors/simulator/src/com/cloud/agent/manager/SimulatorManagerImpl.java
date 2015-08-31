@@ -32,6 +32,7 @@ import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.command.UploadStatusCommand;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
@@ -133,6 +134,7 @@ import com.google.gson.stream.JsonReader;
 @Component
 @Local(value = {SimulatorManager.class})
 public class SimulatorManagerImpl extends ManagerBase implements SimulatorManager, PluggableService {
+    private static final Logger s_logger = Logger.getLogger(SimulatorManagerImpl.class);
     private static final Gson s_gson = GsonHelper.getGson();
     @Inject
     MockVmManager _mockVmMgr;
@@ -221,7 +223,7 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                         try {
                             info.setTimeout(Integer.valueOf(entry.getValue()));
                         } catch (final NumberFormatException e) {
-                            logger.debug("invalid timeout parameter: " + e.toString());
+                            s_logger.debug("invalid timeout parameter: " + e.toString());
                         }
                     }
 
@@ -230,9 +232,9 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                             final int wait = Integer.valueOf(entry.getValue());
                             Thread.sleep(wait);
                         } catch (final NumberFormatException e) {
-                            logger.debug("invalid wait parameter: " + e.toString());
+                            s_logger.debug("invalid wait parameter: " + e.toString());
                         } catch (final InterruptedException e) {
-                            logger.debug("thread is interrupted: " + e.toString());
+                            s_logger.debug("thread is interrupted: " + e.toString());
                         }
                     }
 
@@ -420,7 +422,7 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                         cmd instanceof SecStorageFirewallCfgCommand) {
                     answer = new Answer(cmd);
                 } else {
-                    logger.error("Simulator does not implement command of type " + cmd.toString());
+                    s_logger.error("Simulator does not implement command of type " + cmd.toString());
                     answer = Answer.createUnsupportedCommandAnswer(cmd);
                 }
             }
@@ -434,7 +436,7 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
 
             return answer;
         } catch (final Exception e) {
-            logger.error("Failed execute cmd: ", e);
+            s_logger.error("Failed execute cmd: ", e);
             txn.rollback();
             return new Answer(cmd, false, e.toString());
         } finally {

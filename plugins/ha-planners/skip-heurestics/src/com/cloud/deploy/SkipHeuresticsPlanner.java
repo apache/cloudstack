@@ -17,6 +17,7 @@
 package com.cloud.deploy;
 
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.log4j.Logger;
 
 
 import javax.ejb.Local;
@@ -26,6 +27,7 @@ import java.util.Map;
 
 @Local(value=HAPlanner.class)
 public class SkipHeuresticsPlanner extends FirstFitPlanner implements HAPlanner {
+    private static final Logger s_logger = Logger.getLogger(SkipHeuresticsPlanner.class);
 
 
     /**
@@ -37,8 +39,8 @@ public class SkipHeuresticsPlanner extends FirstFitPlanner implements HAPlanner 
     @Override
     protected void removeClustersCrossingThreshold(List<Long> clusterListForVmAllocation, ExcludeList avoid,
                                                    VirtualMachineProfile vmProfile, DeploymentPlan plan){
-        if (logger.isDebugEnabled()) {
-            logger.debug("Deploying vm during HA process, so skipping disable threshold check");
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Deploying vm during HA process, so skipping disable threshold check");
         }
         return;
     }

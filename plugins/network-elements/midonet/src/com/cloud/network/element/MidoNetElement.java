@@ -32,6 +32,7 @@ import javax.naming.ConfigurationException;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
 import org.midonet.client.MidonetApi;
 import org.midonet.client.dto.DtoRule;
 import org.midonet.client.dto.DtoRule.DtoRange;
@@ -91,6 +92,7 @@ import com.sun.jersey.core.util.MultivaluedMapImpl;
 public class MidoNetElement extends AdapterBase implements ConnectivityProvider, DhcpServiceProvider, SourceNatServiceProvider, StaticNatServiceProvider, IpDeployer,
         PortForwardingServiceProvider, FirewallServiceProvider, PluggableService {
 
+    private static final Logger s_logger = Logger.getLogger(MidoNetElement.class);
 
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
@@ -145,7 +147,7 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
         }
 
         if (this.api == null) {
-            logger.info("midonet API server address is  " + value);
+            s_logger.info("midonet API server address is  " + value);
             setMidonetApi(new MidonetApi(value));
             this.api.enableLogging();
         }
@@ -175,12 +177,12 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
 
         if (service == null) {
             if (!_networkModel.isProviderForNetwork(getProvider(), network.getId())) {
-                logger.trace("Element " + getProvider().getName() + " is not a provider for the network " + network);
+                s_logger.trace("Element " + getProvider().getName() + " is not a provider for the network " + network);
                 return false;
             }
         } else {
             if (!_networkModel.isProviderSupportServiceInNetwork(network.getId(), service, getProvider())) {
-                logger.trace("Element " + getProvider().getName() + " doesn't support service " + service.getName() + " in the network " + network);
+                s_logger.trace("Element " + getProvider().getName() + " doesn't support service " + service.getName() + " in the network " + network);
                 return false;
             }
         }
@@ -285,7 +287,7 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
 
     public boolean associatePublicIP(Network network, final List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
 
-        logger.debug("associatePublicIP called with network: " + network.toString());
+        s_logger.debug("associatePublicIP called with network: " + network.toString());
         /*
          * Get Mido Router for this network and set source rules
          * These should only be allocated inside the for loop, because
@@ -350,7 +352,7 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
     @Override
     public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress, Set<Service> services) throws ResourceUnavailableException {
 
-        logger.debug("applyIps called with network: " + network.toString());
+        s_logger.debug("applyIps called with network: " + network.toString());
         if (!this.midoInNetwork(network)) {
             return false;
         }
@@ -374,7 +376,7 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
      */
     @Override
     public IpDeployer getIpDeployer(Network network) {
-        logger.debug("getIpDeployer called with network " + network.toString());
+        s_logger.debug("getIpDeployer called with network " + network.toString());
         return this;
     }
 
@@ -385,7 +387,7 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
     public boolean addDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
         throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
-        logger.debug("addDhcpEntry called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());
+        s_logger.debug("addDhcpEntry called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());
         if (!this.midoInNetwork(network)) {
             return false;
         }
@@ -419,7 +421,7 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
 
         // On DHCP subnet, add host using host details
         if (sub == null) {
-            logger.error("Failed to create DHCP subnet on Midonet bridge");
+            s_logger.error("Failed to create DHCP subnet on Midonet bridge");
             return false;
         } else {
             // Check if the host already exists - we may just be restarting an existing VM
@@ -578,7 +580,7 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
      */
     @Override
     public boolean applyStaticNats(Network network, List<? extends StaticNat> rules) throws ResourceUnavailableException {
-        logger.debug("applyStaticNats called with network: " + network.toString());
+        s_logger.debug("applyStaticNats called with network: " + network.toString());
         if (!midoInNetwork(network)) {
             return false;
         }
@@ -726,7 +728,7 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
     @Override
     public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
         ResourceUnavailableException, InsufficientCapacityException {
-        logger.debug("implement called with network: " + network.toString());
+        s_logger.debug("implement called with network: " + network.toString());
         if (!midoInNetwork(network)) {
             return false;
         }
@@ -746,7 +748,7 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
         throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        logger.debug("prepare called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());
+        s_logger.debug("prepare called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());
         if (!midoInNetwork(network)) {
             return false;
         }
@@ -806,7 +808,7 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
     @Override
     public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException,
         ResourceUnavailableException {
-        logger.debug("release called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());
+        s_logger.debug("release called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());
         if (!midoInNetwork(network)) {
             return false;
         }
@@ -846,7 +848,7 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
 
     @Override
     public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
-        logger.debug("shutdown called with network: " + network.toString());
+        s_logger.debug("shutdown called with network: " + network.toString());
         if (!midoInNetwork(network)) {
             return false;
         }
@@ -862,7 +864,7 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
 
     @Override
     public boolean destroy(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
-        logger.debug("destroy called with network: " + network.toString());
+        s_logger.debug("destroy called with network: " + network.toString());
         if (!midoInNetwork(network)) {
             return false;
         }
@@ -911,7 +913,7 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
 
     @Override
     public boolean applyPFRules(Network network, List<PortForwardingRule> rules) throws ResourceUnavailableException {
-        logger.debug("applyPFRules called with network " + network.toString());
+        s_logger.debug("applyPFRules called with network " + network.toString());
         if (!midoInNetwork(network)) {
             return false;
         }
@@ -1408,11 +1410,11 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
 
             String networkUUIDStr = String.valueOf(networkID);
 
-            logger.debug("Attempting to create guest network bridge");
+            s_logger.debug("Attempting to create guest network bridge");
             try {
                 netBridge = api.addBridge().tenantId(accountUuid).name(networkUUIDStr).create();
             } catch (HttpInternalServerError ex) {
-                logger.warn("Bridge creation failed, retrying bridge get in case it now exists.", ex);
+                s_logger.warn("Bridge creation failed, retrying bridge get in case it now exists.", ex);
                 netBridge = getNetworkBridge(networkID, accountUuid);
             }
         }

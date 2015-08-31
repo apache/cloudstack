@@ -23,6 +23,7 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageJobVO;
@@ -35,6 +36,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @Component
 @Local(value = {UsageJobDao.class})
 public class UsageJobDaoImpl extends GenericDaoBase<UsageJobVO, Long> implements UsageJobDao {
+    private static final Logger s_logger = Logger.getLogger(UsageJobDaoImpl.class.getName());
 
     private static final String GET_LAST_JOB_SUCCESS_DATE_MILLIS =
         "SELECT end_millis FROM cloud_usage.usage_job WHERE end_millis > 0 and success = 1 ORDER BY end_millis DESC LIMIT 1";
@@ -51,7 +53,7 @@ public class UsageJobDaoImpl extends GenericDaoBase<UsageJobVO, Long> implements
                 return rs.getLong(1);
             }
         } catch (Exception ex) {
-            logger.error("error getting last usage job success date", ex);
+            s_logger.error("error getting last usage job success date", ex);
         } finally {
             txn.close();
         }
@@ -77,7 +79,7 @@ public class UsageJobDaoImpl extends GenericDaoBase<UsageJobVO, Long> implements
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            logger.error("error updating job success date", ex);
+            s_logger.error("error updating job success date", ex);
             throw new CloudRuntimeException(ex.getMessage());
         } finally {
             txn.close();

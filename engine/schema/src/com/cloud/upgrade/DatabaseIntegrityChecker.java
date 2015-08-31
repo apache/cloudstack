@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.maint.Version;
@@ -38,6 +39,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @Component
 @Local(value = {SystemIntegrityChecker.class})
 public class DatabaseIntegrityChecker extends AdapterBase implements SystemIntegrityChecker {
+    private static final Logger s_logger = Logger.getLogger(DatabaseIntegrityChecker.class);
 
     @Inject
     VersionDao _dao;
@@ -101,32 +103,32 @@ public class DatabaseIntegrityChecker extends AdapterBase implements SystemInteg
                                 }
                                 catch (Exception e)
                                 {
-                                    logger.error("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage());
+                                    s_logger.error("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage());
                                     throw new CloudRuntimeException("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage(),e);
                                 }
                         }
                         catch (Exception e)
                         {
-                                logger.error("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage());
+                                s_logger.error("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage());
                                 throw new CloudRuntimeException("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage(),e);
                         }
                     }
                     if (noDuplicate) {
-                        logger.debug("No duplicate hosts with the same local storage found in database");
+                        s_logger.debug("No duplicate hosts with the same local storage found in database");
                     } else {
-                        logger.error(helpInfo.toString());
+                        s_logger.error(helpInfo.toString());
                     }
                     txn.commit();
                     return noDuplicate;
             }catch (Exception e)
             {
-                  logger.error("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage());
+                  s_logger.error("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage());
                   throw new CloudRuntimeException("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage(),e);
             }
         }
         catch (Exception e)
         {
-            logger.error("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage());
+            s_logger.error("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage());
             throw new CloudRuntimeException("checkDuplicateHostWithTheSameLocalStorage: Exception :" + e.getMessage(),e);
         }
         finally
@@ -137,7 +139,7 @@ public class DatabaseIntegrityChecker extends AdapterBase implements SystemInteg
                 }
             }catch(Exception e)
             {
-                logger.error("checkDuplicateHostWithTheSameLocalStorage: Exception:"+ e.getMessage());
+                s_logger.error("checkDuplicateHostWithTheSameLocalStorage: Exception:"+ e.getMessage());
             }
         }
     }
@@ -150,7 +152,7 @@ public class DatabaseIntegrityChecker extends AdapterBase implements SystemInteg
                 String tableName = rs.getString(1);
                 if (tableName.equalsIgnoreCase("usage_event") || tableName.equalsIgnoreCase("usage_port_forwarding") || tableName.equalsIgnoreCase("usage_network_offering")) {
                     num++;
-                    logger.debug("Checking 21to22PremiumUprage table " + tableName + " found");
+                    s_logger.debug("Checking 21to22PremiumUprage table " + tableName + " found");
                 }
                 if (num == 3) {
                     return true;
@@ -166,7 +168,7 @@ public class DatabaseIntegrityChecker extends AdapterBase implements SystemInteg
             boolean found = false;
             while (rs.next()) {
                 if (column.equalsIgnoreCase(rs.getString(1))) {
-                    logger.debug(String.format("Column %1$s.%2$s.%3$s found", dbName, tableName, column));
+                    s_logger.debug(String.format("Column %1$s.%2$s.%3$s found", dbName, tableName, column));
                     found = true;
                     break;
                 }
@@ -223,33 +225,33 @@ public class DatabaseIntegrityChecker extends AdapterBase implements SystemInteg
                     }
                 }
                 if (!hasUsage) {
-                    logger.debug("No cloud_usage found in database, no need to check missed premium upgrade");
+                    s_logger.debug("No cloud_usage found in database, no need to check missed premium upgrade");
                     txn.commit();
                     return true;
                 }
                 if (!check21to22PremiumUprage(conn)) {
-                    logger.error("21to22 premium upgrade missed");
+                    s_logger.error("21to22 premium upgrade missed");
                     txn.commit();
                     return false;
                 }
                 if (!check221to222PremiumUprage(conn)) {
-                    logger.error("221to222 premium upgrade missed");
+                    s_logger.error("221to222 premium upgrade missed");
                     txn.commit();
                     return false;
                 }
                 if (!check222to224PremiumUpgrade(conn)) {
-                    logger.error("222to224 premium upgrade missed");
+                    s_logger.error("222to224 premium upgrade missed");
                     txn.commit();
                     return false;
                 }
                 txn.commit();
                 return true;
             } catch (Exception e) {
-                logger.error("checkMissedPremiumUpgradeFor228: Exception:" + e.getMessage());
+                s_logger.error("checkMissedPremiumUpgradeFor228: Exception:" + e.getMessage());
                 throw new CloudRuntimeException("checkMissedPremiumUpgradeFor228: Exception:" + e.getMessage(), e);
             }
         }catch (Exception e) {
-            logger.error("checkMissedPremiumUpgradeFor228: Exception:"+ e.getMessage());
+            s_logger.error("checkMissedPremiumUpgradeFor228: Exception:"+ e.getMessage());
             throw new CloudRuntimeException("checkMissedPremiumUpgradeFor228: Exception:" + e.getMessage(),e);
         }
         finally
@@ -260,7 +262,7 @@ public class DatabaseIntegrityChecker extends AdapterBase implements SystemInteg
                 }
             }catch(Exception e)
             {
-                logger.error("checkMissedPremiumUpgradeFor228: Exception:"+ e.getMessage());
+                s_logger.error("checkMissedPremiumUpgradeFor228: Exception:"+ e.getMessage());
             }
         }
     }
@@ -269,19 +271,19 @@ public class DatabaseIntegrityChecker extends AdapterBase implements SystemInteg
     public void check() {
         GlobalLock lock = GlobalLock.getInternLock("DatabaseIntegrity");
         try {
-            logger.info("Grabbing lock to check for database integrity.");
+            s_logger.info("Grabbing lock to check for database integrity.");
             if (!lock.lock(20 * 60)) {
                 throw new CloudRuntimeException("Unable to acquire lock to check for database integrity.");
             }
 
             try {
-                logger.info("Performing database integrity check");
+                s_logger.info("Performing database integrity check");
                 if (!checkDuplicateHostWithTheSameLocalStorage()) {
                     throw new CloudRuntimeException("checkDuplicateHostWithTheSameLocalStorage detected error");
                 }
 
                 if (!checkMissedPremiumUpgradeFor228()) {
-                    logger.error("Your current database version is 2.2.8, management server detected some missed premium upgrade, please contact CloudStack support and attach log file. Thank you!");
+                    s_logger.error("Your current database version is 2.2.8, management server detected some missed premium upgrade, please contact CloudStack support and attach log file. Thank you!");
                     throw new CloudRuntimeException("Detected missed premium upgrade");
                 }
             } finally {
@@ -297,7 +299,7 @@ public class DatabaseIntegrityChecker extends AdapterBase implements SystemInteg
         try {
             check();
         } catch (Exception e) {
-            logger.error("System integrity check exception", e);
+            s_logger.error("System integrity check exception", e);
             System.exit(1);
         }
         return true;

@@ -24,6 +24,7 @@ import java.util.Map;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageVmDiskVO;
@@ -34,6 +35,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @Component
 @Local(value = {UsageVmDiskDao.class})
 public class UsageVmDiskDaoImpl extends GenericDaoBase<UsageVmDiskVO, Long> implements UsageVmDiskDao {
+    private static final Logger s_logger = Logger.getLogger(UsageVmDiskDaoImpl.class.getName());
     private static final String SELECT_LATEST_STATS =
         "SELECT uvd.account_id, uvd.zone_id, uvd.vm_id, uvd.volume_id, uvd.io_read, uvd.io_write, uvd.agg_io_read, uvd.agg_io_write, "
             + "uvd.bytes_read, uvd.bytes_write, uvd.agg_bytes_read, uvd.agg_bytes_write, uvd.event_time_millis "
@@ -81,7 +83,7 @@ public class UsageVmDiskDaoImpl extends GenericDaoBase<UsageVmDiskVO, Long> impl
             }
             return returnMap;
         } catch (Exception ex) {
-            logger.error("error getting recent usage disk stats", ex);
+            s_logger.error("error getting recent usage disk stats", ex);
         } finally {
             txn.close();
         }
@@ -101,7 +103,7 @@ public class UsageVmDiskDaoImpl extends GenericDaoBase<UsageVmDiskVO, Long> impl
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            logger.error("error deleting old usage disk stats", ex);
+            s_logger.error("error deleting old usage disk stats", ex);
         }
     }
 
@@ -133,7 +135,7 @@ public class UsageVmDiskDaoImpl extends GenericDaoBase<UsageVmDiskVO, Long> impl
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            logger.error("error saving usage_vm_disk to cloud_usage db", ex);
+            s_logger.error("error saving usage_vm_disk to cloud_usage db", ex);
             throw new CloudRuntimeException(ex.getMessage());
         }
     }

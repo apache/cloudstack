@@ -30,6 +30,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -73,6 +74,7 @@ import com.cloud.storage.StorageLayer;
  */
 @Local(value = Discoverer.class)
 public class HypervServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
+    private static final Logger s_logger = Logger.getLogger(HypervServerDiscoverer.class);
     Random _rand = new Random(System.currentTimeMillis());
 
     Map<String, String> _storageMounts = new HashMap<String, String>();
@@ -117,7 +119,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
 
         // assert
         if (startup.getHypervisorType() != HypervisorType.Hyperv) {
-            logger.debug("Not Hyper-V hypervisor, so moving on.");
+            s_logger.debug("Not Hyper-V hypervisor, so moving on.");
             return;
         }
 
@@ -133,8 +135,8 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
             _clusterDao.update(cluster.getId(), cluster);
         }
 
-        if (logger.isDebugEnabled()) {
-            logger.debug("Setting up host " + agentId);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Setting up host " + agentId);
         }
 
         HostEnvironment env = new HostEnvironment();
@@ -159,14 +161,14 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
                 if (reason == null) {
                     reason = " details were null";
                 }
-                logger.warn("Unable to setup agent " + agentId + " due to " + reason);
+                s_logger.warn("Unable to setup agent " + agentId + " due to " + reason);
             }
             // Error handling borrowed from XcpServerDiscoverer, may need to be
             // updated.
         } catch (AgentUnavailableException e) {
-            logger.warn("Unable to setup agent " + agentId + " because it became unavailable.", e);
+            s_logger.warn("Unable to setup agent " + agentId + " because it became unavailable.", e);
         } catch (OperationTimedoutException e) {
-            logger.warn("Unable to setup agent " + agentId + " because it timed out", e);
+            s_logger.warn("Unable to setup agent " + agentId + " because it timed out", e);
         }
         throw new ConnectionException(true, "Reinitialize agent after setup.");
     }
@@ -201,14 +203,14 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
     public final Map<? extends ServerResource, Map<String, String>> find(final long dcId, final Long podId, final Long clusterId, final URI uri, final String username,
         final String password, final List<String> hostTags) throws DiscoveryException {
 
-        if (logger.isInfoEnabled()) {
-            logger.info("Discover host. dc(zone): " + dcId + ", pod: " + podId + ", cluster: " + clusterId + ", uri host: " + uri.getHost());
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Discover host. dc(zone): " + dcId + ", pod: " + podId + ", cluster: " + clusterId + ", uri host: " + uri.getHost());
         }
 
         // Assertions
         if (podId == null) {
-            if (logger.isInfoEnabled()) {
-                logger.info("No pod is assigned, skipping the discovery in" + " Hyperv discoverer");
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("No pod is assigned, skipping the discovery in" + " Hyperv discoverer");
             }
             return null;
         }
@@ -216,20 +218,20 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
         // in the
         // database
         if (cluster == null) {
-            if (logger.isInfoEnabled()) {
-                logger.info("No cluster in database for cluster id " + clusterId);
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("No cluster in database for cluster id " + clusterId);
             }
             return null;
         }
         if (cluster.getHypervisorType() != HypervisorType.Hyperv) {
-            if (logger.isInfoEnabled()) {
-                logger.info("Cluster " + clusterId + "is not for Hyperv hypervisors");
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("Cluster " + clusterId + "is not for Hyperv hypervisors");
             }
             return null;
         }
         if (!uri.getScheme().equals("http")) {
             String msg = "urlString is not http so we're not taking care of" + " the discovery for this: " + uri;
-            logger.debug(msg);
+            s_logger.debug(msg);
             return null;
         }
 
@@ -241,11 +243,11 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
             String guidWithTail = calcServerResourceGuid(uuidSeed) + "-HypervResource";
 
             if (_resourceMgr.findHostByGuid(guidWithTail) != null) {
-                logger.debug("Skipping " + agentIp + " because " + guidWithTail + " is already in the database.");
+                s_logger.debug("Skipping " + agentIp + " because " + guidWithTail + " is already in the database.");
                 return null;
             }
 
-            logger.info("Creating" + HypervDirectConnectResource.class.getName() + " HypervDummyResourceBase for zone/pod/cluster " + dcId + "/" + podId + "/" +
+            s_logger.info("Creating" + HypervDirectConnectResource.class.getName() + " HypervDummyResourceBase for zone/pod/cluster " + dcId + "/" + podId + "/" +
                 clusterId);
 
             // Some Hypervisors organise themselves in pools.
@@ -286,7 +288,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
             Answer pingAns = resource.executeRequest(ping);
             if (pingAns == null || !pingAns.getResult()) {
                 String errMsg = "Agent not running, or no route to agent on at " + uri;
-                logger.debug(errMsg);
+                s_logger.debug(errMsg);
                 throw new DiscoveryException(errMsg);
             }
 
@@ -297,14 +299,14 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
             return resources;
         } catch (ConfigurationException e) {
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, dcId, podId, "Unable to add " + uri.getHost(), "Error is " + e.getMessage());
-            logger.warn("Unable to instantiate " + uri.getHost(), e);
+            s_logger.warn("Unable to instantiate " + uri.getHost(), e);
         } catch (UnknownHostException e) {
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, dcId, podId, "Unable to add " + uri.getHost(), "Error is " + e.getMessage());
 
-            logger.warn("Unable to instantiate " + uri.getHost(), e);
+            s_logger.warn("Unable to instantiate " + uri.getHost(), e);
         } catch (Exception e) {
             String msg = " can't setup agent, due to " + e.toString() + " - " + e.getMessage();
-            logger.warn(msg);
+            s_logger.warn(msg);
         }
         return null;
     }
@@ -381,7 +383,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
             return null;
         }
 
-        logger.info("Host: " + host.getName() + " connected with hypervisor type: " + HypervisorType.Hyperv + ". Checking CIDR...");
+        s_logger.info("Host: " + host.getName() + " connected with hypervisor type: " + HypervisorType.Hyperv + ". Checking CIDR...");
 
         HostPodVO pod = _podDao.findById(host.getPodId());
         DataCenterVO dc = _dcDao.findById(host.getDataCenterId());

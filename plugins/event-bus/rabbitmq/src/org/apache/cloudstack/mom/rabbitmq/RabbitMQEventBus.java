@@ -30,6 +30,7 @@ import java.util.concurrent.Executors;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AlreadyClosedException;
@@ -92,6 +93,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
 
     private ExecutorService executorService;
     private static DisconnectHandler disconnectHandler;
+    private static final Logger s_logger = Logger.getLogger(RabbitMQEventBus.class);
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -233,9 +235,9 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
             s_subscribers.put(queueName, queueDetails);
 
         } catch (AlreadyClosedException closedException) {
-            logger.warn("Connection to AMQP service is lost. Subscription:" + queueName + " will be active after reconnection");
+            s_logger.warn("Connection to AMQP service is lost. Subscription:" + queueName + " will be active after reconnection");
         } catch (ConnectException connectException) {
-            logger.warn("Connection to AMQP service is lost. Subscription:" + queueName + " will be active after reconnection");
+            s_logger.warn("Connection to AMQP service is lost. Subscription:" + queueName + " will be active after reconnection");
         } catch (Exception e) {
             throw new EventBusException("Failed to subscribe to event due to " + e.getMessage());
         }
@@ -355,7 +357,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
             try {
                 return createConnection();
             } catch (Exception e) {
-                logger.error("Failed to create a connection to AMQP server due to " + e.getMessage());
+                s_logger.error("Failed to create a connection to AMQP server due to " + e.getMessage());
                 throw e;
             }
         } else {
@@ -395,7 +397,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
                 s_connection.close();
             }
         } catch (Exception e) {
-            logger.warn("Failed to close connection to AMQP server due to " + e.getMessage());
+            s_logger.warn("Failed to close connection to AMQP server due to " + e.getMessage());
         }
         s_connection = null;
     }
@@ -407,7 +409,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
         try {
             s_connection.abort();
         } catch (Exception e) {
-            logger.warn("Failed to abort connection due to " + e.getMessage());
+            s_logger.warn("Failed to abort connection due to " + e.getMessage());
         }
         s_connection = null;
     }
@@ -424,7 +426,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
         try {
             return connection.createChannel();
         } catch (java.io.IOException exception) {
-            logger.warn("Failed to create a channel due to " + exception.getMessage());
+            s_logger.warn("Failed to create a channel due to " + exception.getMessage());
             throw exception;
         }
     }
@@ -433,7 +435,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
         try {
             channel.exchangeDeclare(exchangeName, "topic", true);
         } catch (java.io.IOException exception) {
-            logger.error("Failed to create exchange" + exchangeName + " on RabbitMQ server");
+            s_logger.error("Failed to create exchange" + exchangeName + " on RabbitMQ server");
             throw exception;
         }
     }
@@ -443,7 +445,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
             byte[] messageBodyBytes = eventDescription.getBytes();
             channel.basicPublish(exchangeName, routingKey, MessageProperties.PERSISTENT_TEXT_PLAIN, messageBodyBytes);
         } catch (Exception e) {
-            logger.error("Failed to publish event " + routingKey + " on exchange " + exchangeName + "  of message broker due to " + e.getMessage());
+            s_logger.error("Failed to publish event " + routingKey + " on exchange " + exchangeName + "  of message broker due to " + e.getMessage());
             throw e;
         }
     }
@@ -496,7 +498,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
                     channel.queueDelete(queueName);
                     channel.abort();
                 } catch (IOException ioe) {
-                    logger.warn("Failed to delete queue: " + queueName + " on AMQP server due to " + ioe.getMessage());
+                    s_logger.warn("Failed to delete queue: " + queueName + " on AMQP server due to " + ioe.getMessage());
                 }
             }
         }
@@ -519,7 +521,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
                 }
 
                 abortConnection(); // disconnected to AMQP server, so abort the connection and channels
-                logger.warn("Connection has been shutdown by AMQP server. Attempting to reconnect.");
+                s_logger.warn("Connection has been shutdown by AMQP server. Attempting to reconnect.");
 
                 // initiate re-connect process
                 ReconnectionTask reconnect = new ReconnectionTask();
@@ -597,7 +599,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
                         s_subscribers.put(subscriberId, subscriberDetails);
                     }
                 } catch (Exception e) {
-                    logger.warn("Failed to recreate queues and binding for the subscribers due to " + e.getMessage());
+                    s_logger.warn("Failed to recreate queues and binding for the subscribers due to " + e.getMessage());
                 }
             }
             return;

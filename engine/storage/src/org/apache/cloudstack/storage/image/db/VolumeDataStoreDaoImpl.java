@@ -25,6 +25,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -47,6 +48,7 @@ import com.cloud.utils.db.UpdateBuilder;
 
 @Component
 public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Long> implements VolumeDataStoreDao {
+    private static final Logger s_logger = Logger.getLogger(VolumeDataStoreDaoImpl.class);
     private SearchBuilder<VolumeDataStoreVO> updateStateSearch;
     private SearchBuilder<VolumeDataStoreVO> volumeSearch;
     private SearchBuilder<VolumeDataStoreVO> storeSearch;
@@ -139,7 +141,7 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         }
 
         int rows = update(dataObj, sc);
-        if (rows == 0 && logger.isDebugEnabled()) {
+        if (rows == 0 && s_logger.isDebugEnabled()) {
             VolumeDataStoreVO dbVol = findByIdIncludingRemoved(dataObj.getId());
             if (dbVol != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(dataObj.toString());
@@ -172,7 +174,7 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
                     .append("; updatedTime=")
                     .append(oldUpdatedTime);
             } else {
-                logger.debug("Unable to update objectIndatastore: id=" + dataObj.getId() + ", as there is no such object exists in the database anymore");
+                s_logger.debug("Unable to update objectIndatastore: id=" + dataObj.getId() + ", as there is no such object exists in the database anymore");
             }
         }
         return rows > 0;
@@ -279,14 +281,14 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         }
         // create an entry for each record, but with empty install path since the content is not yet on region-wide store yet
         if (vols != null) {
-            logger.info("Duplicate " + vols.size() + " volume cache store records to region store");
+            s_logger.info("Duplicate " + vols.size() + " volume cache store records to region store");
             for (VolumeDataStoreVO vol : vols) {
                 VolumeDataStoreVO volStore = findByStoreVolume(storeId, vol.getVolumeId());
                 if (volStore != null) {
-                    logger.info("There is already entry for volume " + vol.getVolumeId() + " on region store " + storeId);
+                    s_logger.info("There is already entry for volume " + vol.getVolumeId() + " on region store " + storeId);
                     continue;
                 }
-                logger.info("Persisting an entry for volume " + vol.getVolumeId() + " on region store " + storeId);
+                s_logger.info("Persisting an entry for volume " + vol.getVolumeId() + " on region store " + storeId);
                 VolumeDataStoreVO vs = new VolumeDataStoreVO();
                 vs.setVolumeId(vol.getVolumeId());
                 vs.setDataStoreId(storeId);
@@ -335,7 +337,7 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
             txn.commit();
         } catch (Exception e) {
             txn.rollback();
-            logger.warn("Failed expiring download urls for dcId: " + dcId, e);
+            s_logger.warn("Failed expiring download urls for dcId: " + dcId, e);
         }
 
     }

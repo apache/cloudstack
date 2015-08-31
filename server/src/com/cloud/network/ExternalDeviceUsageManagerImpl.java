@@ -31,6 +31,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
@@ -152,6 +153,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
 
     ScheduledExecutorService _executor;
     private int _externalNetworkStatsInterval;
+    private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalDeviceUsageManagerImpl.class);
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -208,24 +210,24 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
 
         LoadBalancerVO lb = _loadBalancerDao.findById(loadBalancerRuleId);
         if (lb == null) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Cannot update usage stats, LB rule is not found");
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Cannot update usage stats, LB rule is not found");
             }
             return;
         }
         long networkId = lb.getNetworkId();
         Network network = _networkDao.findById(networkId);
         if (network == null) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Cannot update usage stats, Network is not found");
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Cannot update usage stats, Network is not found");
             }
             return;
         }
 
         ExternalLoadBalancerDeviceVO lbDeviceVO = getExternalLoadBalancerForNetwork(network);
         if (lbDeviceVO == null) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Cannot update usage stats,  No external LB device found");
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Cannot update usage stats,  No external LB device found");
             }
             return;
         }
@@ -239,7 +241,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
             if (lbAnswer == null || !lbAnswer.getResult()) {
                 String details = (lbAnswer != null) ? lbAnswer.getDetails() : "details unavailable";
                 String msg = "Unable to get external load balancer stats for network" + networkId + " due to: " + details + ".";
-                logger.error(msg);
+                s_logger.error(msg);
                 return;
             }
         }
@@ -247,7 +249,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
         long accountId = lb.getAccountId();
         AccountVO account = _accountDao.findById(accountId);
         if (account == null) {
-            logger.debug("Skipping stats update for external LB for account with ID " + accountId);
+            s_logger.debug("Skipping stats update for external LB for account with ID " + accountId);
             return;
         }
 
@@ -281,7 +283,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
             }
 
             if (bytesSentAndReceived == null) {
-                logger.debug("Didn't get an external network usage answer for public IP " + publicIp);
+                s_logger.debug("Didn't get an external network usage answer for public IP " + publicIp);
             } else {
                 newCurrentBytesSent += bytesSentAndReceived[0];
                 newCurrentBytesReceived += bytesSentAndReceived[1];
@@ -310,23 +312,23 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
 
                     userStats.setCurrentBytesSent(newCurrentBytesSent);
                     if (oldCurrentBytesSent > newCurrentBytesSent) {
-                        logger.warn(warning + "Stored bytes sent: " + oldCurrentBytesSent + ", new bytes sent: " + newCurrentBytesSent + ".");
+                        s_logger.warn(warning + "Stored bytes sent: " + oldCurrentBytesSent + ", new bytes sent: " + newCurrentBytesSent + ".");
                         userStats.setNetBytesSent(oldNetBytesSent + oldCurrentBytesSent);
                     }
 
                     userStats.setCurrentBytesReceived(newCurrentBytesReceived);
                     if (oldCurrentBytesReceived > newCurrentBytesReceived) {
-                        logger.warn(warning + "Stored bytes received: " + oldCurrentBytesReceived + ", new bytes received: " + newCurrentBytesReceived + ".");
+                        s_logger.warn(warning + "Stored bytes received: " + oldCurrentBytesReceived + ", new bytes received: " + newCurrentBytesReceived + ".");
                         userStats.setNetBytesReceived(oldNetBytesReceived + oldCurrentBytesReceived);
                     }
 
                     if (_userStatsDao.update(userStats.getId(), userStats)) {
-                        logger.debug("Successfully updated stats for " + statsEntryIdentifier);
+                        s_logger.debug("Successfully updated stats for " + statsEntryIdentifier);
                     } else {
-                        logger.debug("Failed to update stats for " + statsEntryIdentifier);
+                        s_logger.debug("Failed to update stats for " + statsEntryIdentifier);
                     }
                 } else {
-                    logger.warn("Unable to find user stats entry for " + statsEntryIdentifier);
+                    s_logger.warn("Unable to find user stats entry for " + statsEntryIdentifier);
                 }
             }
         });
@@ -350,14 +352,14 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                     }
                 }
             } catch (Exception e) {
-                logger.warn("Problems while getting external device usage", e);
+                s_logger.warn("Problems while getting external device usage", e);
             } finally {
                 scanLock.releaseRef();
             }
         }
 
         private void runExternalDeviceNetworkUsageTask() {
-            logger.debug("External devices stats collector is running...");
+            s_logger.debug("External devices stats collector is running...");
 
             for (DataCenterVO zone : _dcDao.listAll()) {
                 List<DomainRouterVO> domainRoutersInZone = _routerDao.listByDataCenter(zone.getId());
@@ -372,8 +374,8 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                     long accountId = domainRouter.getAccountId();
 
                     if (accountsProcessed.contains(new Long(accountId))) {
-                        if (logger.isTraceEnabled()) {
-                            logger.trace("Networks for Account " + accountId + " are already processed for external network usage, so skipping usage check.");
+                        if (s_logger.isTraceEnabled()) {
+                            s_logger.trace("Networks for Account " + accountId + " are already processed for external network usage, so skipping usage check.");
                         }
                         continue;
                     }
@@ -387,7 +389,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
 
                     for (NetworkVO network : networksForAccount) {
                         if (!_networkModel.networkIsConfiguredForExternalNetworking(zoneId, network.getId())) {
-                            logger.debug("Network " + network.getId() + " is not configured for external networking, so skipping usage check.");
+                            s_logger.debug("Network " + network.getId() + " is not configured for external networking, so skipping usage check.");
                             continue;
                         }
 
@@ -411,17 +413,17 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                                         if (firewallAnswer == null || !firewallAnswer.getResult()) {
                                             String details = (firewallAnswer != null) ? firewallAnswer.getDetails() : "details unavailable";
                                             String msg = "Unable to get external firewall stats for network" + zone.getName() + " due to: " + details + ".";
-                                            logger.error(msg);
+                                            s_logger.error(msg);
                                         } else {
                                             fwDeviceUsageAnswerMap.put(fwDeviceId, firewallAnswer);
                                         }
                                     } catch (Exception e) {
                                         String msg = "Unable to get external firewall stats for network" + zone.getName();
-                                        logger.error(msg, e);
+                                        s_logger.error(msg, e);
                                     }
                                 } else {
-                                    if (logger.isTraceEnabled()) {
-                                        logger.trace("Reusing usage Answer for device id " + fwDeviceId + "for Network " + network.getId());
+                                    if (s_logger.isTraceEnabled()) {
+                                        s_logger.trace("Reusing usage Answer for device id " + fwDeviceId + "for Network " + network.getId());
                                     }
                                     firewallAnswer = fwDeviceUsageAnswerMap.get(fwDeviceId);
                                 }
@@ -442,17 +444,17 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                                         if (lbAnswer == null || !lbAnswer.getResult()) {
                                             String details = (lbAnswer != null) ? lbAnswer.getDetails() : "details unavailable";
                                             String msg = "Unable to get external load balancer stats for " + zone.getName() + " due to: " + details + ".";
-                                            logger.error(msg);
+                                            s_logger.error(msg);
                                         } else {
                                             lbDeviceUsageAnswerMap.put(lbDeviceId, lbAnswer);
                                         }
                                     } catch (Exception e) {
                                         String msg = "Unable to get external load balancer stats for " + zone.getName();
-                                        logger.error(msg, e);
+                                        s_logger.error(msg, e);
                                     }
                                 } else {
-                                    if (logger.isTraceEnabled()) {
-                                        logger.trace("Reusing usage Answer for device id " + lbDeviceId + "for Network " + network.getId());
+                                    if (s_logger.isTraceEnabled()) {
+                                        s_logger.trace("Reusing usage Answer for device id " + lbDeviceId + "for Network " + network.getId());
                                     }
                                     lbAnswer = lbDeviceUsageAnswerMap.get(lbDeviceId);
                                 }
@@ -465,7 +467,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
 
                         AccountVO account = _accountDao.findById(accountId);
                         if (account == null) {
-                            logger.debug("Skipping stats update for account with ID " + accountId);
+                            s_logger.debug("Skipping stats update for account with ID " + accountId);
                             continue;
                         }
 
@@ -492,13 +494,13 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
 
             userStats.setCurrentBytesSent(newCurrentBytesSent);
             if (oldCurrentBytesSent > newCurrentBytesSent) {
-                logger.warn(warning + "Stored bytes sent: " + oldCurrentBytesSent + ", new bytes sent: " + newCurrentBytesSent + ".");
+                s_logger.warn(warning + "Stored bytes sent: " + oldCurrentBytesSent + ", new bytes sent: " + newCurrentBytesSent + ".");
                 userStats.setNetBytesSent(oldNetBytesSent + oldCurrentBytesSent);
             }
 
             userStats.setCurrentBytesReceived(newCurrentBytesReceived);
             if (oldCurrentBytesReceived > newCurrentBytesReceived) {
-                logger.warn(warning + "Stored bytes received: " + oldCurrentBytesReceived + ", new bytes received: " + newCurrentBytesReceived + ".");
+                s_logger.warn(warning + "Stored bytes received: " + oldCurrentBytesReceived + ", new bytes received: " + newCurrentBytesReceived + ".");
                 userStats.setNetBytesReceived(oldNetBytesReceived + oldCurrentBytesReceived);
             }
 
@@ -551,7 +553,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                 }
 
                 if (bytesSentAndReceived == null) {
-                    logger.debug("Didn't get an external network usage answer for public IP " + publicIp);
+                    s_logger.debug("Didn't get an external network usage answer for public IP " + publicIp);
                 } else {
                     newCurrentBytesSent += bytesSentAndReceived[0];
                     newCurrentBytesReceived += bytesSentAndReceived[1];
@@ -559,14 +561,14 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
             } else {
                 URI broadcastURI = network.getBroadcastUri();
                 if (broadcastURI == null) {
-                    logger.debug("Not updating stats for guest network with ID " + network.getId() + " because the network is not implemented.");
+                    s_logger.debug("Not updating stats for guest network with ID " + network.getId() + " because the network is not implemented.");
                     return true;
                 } else {
                     long vlanTag = Integer.parseInt(BroadcastDomainType.getValue(broadcastURI));
                     long[] bytesSentAndReceived = answer.guestVlanBytes.get(String.valueOf(vlanTag));
 
                     if (bytesSentAndReceived == null) {
-                        logger.warn("Didn't get an external network usage answer for guest VLAN " + vlanTag);
+                        s_logger.warn("Didn't get an external network usage answer for guest VLAN " + vlanTag);
                     } else {
                         newCurrentBytesSent += bytesSentAndReceived[0];
                         newCurrentBytesReceived += bytesSentAndReceived[1];
@@ -578,15 +580,15 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
             try {
                 userStats = _userStatsDao.lock(accountId, zoneId, networkId, publicIp, hostId, host.getType().toString());
             } catch (Exception e) {
-                logger.warn("Unable to find user stats entry for " + statsEntryIdentifier);
+                s_logger.warn("Unable to find user stats entry for " + statsEntryIdentifier);
                 return false;
             }
 
             if (updateBytes(userStats, newCurrentBytesSent, newCurrentBytesReceived)) {
-                logger.debug("Successfully updated stats for " + statsEntryIdentifier);
+                s_logger.debug("Successfully updated stats for " + statsEntryIdentifier);
                 return true;
             } else {
-                logger.debug("Failed to update stats for " + statsEntryIdentifier);
+                s_logger.debug("Failed to update stats for " + statsEntryIdentifier);
                 return false;
             }
         }
@@ -674,7 +676,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                 });
                 return true;
             } catch (Exception e) {
-                logger.warn("Exception: ", e);
+                s_logger.warn("Exception: ", e);
                 return false;
             }
         }

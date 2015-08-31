@@ -22,6 +22,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DiskTO;
@@ -51,6 +52,7 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public abstract class HypervisorGuruBase extends AdapterBase implements HypervisorGuru {
+    public static final Logger s_logger = Logger.getLogger(HypervisorGuruBase.class);
 
     @Inject
     VMTemplateDetailsDao _templateDetailsDao;
@@ -113,7 +115,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
             }
             to.setNicSecIps(secIps);
         } else {
-            logger.warn("Unabled to load NicVO for NicProfile " + profile.getId());
+            s_logger.warn("Unabled to load NicVO for NicProfile " + profile.getId());
             //Workaround for dynamically created nics
             //FixMe: uuid and secondary IPs can be made part of nic profile
             to.setUuid(UUID.randomUUID().toString());

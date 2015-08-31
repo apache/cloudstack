@@ -23,6 +23,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.command.admin.account.DeleteAccountCmd;
@@ -48,6 +49,7 @@ import com.cloud.utils.component.ManagerBase;
 @Component
 @Local(value = {RegionService.class})
 public class RegionServiceImpl extends ManagerBase implements RegionService, Manager {
+    public static final Logger s_logger = Logger.getLogger(RegionServiceImpl.class);
 
     @Inject
     private RegionManager _regionMgr;
