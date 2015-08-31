@@ -285,7 +285,7 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                 } else if (cmd instanceof PrepareForMigrationCommand) {
                     answer = _mockVmMgr.prepareForMigrate((PrepareForMigrationCommand)cmd);
                 } else if (cmd instanceof MigrateCommand) {
-                    answer = _mockVmMgr.Migrate((MigrateCommand)cmd, info);
+                    answer = _mockVmMgr.migrate((MigrateCommand)cmd, info);
                 } else if (cmd instanceof StartCommand) {
                     answer = _mockVmMgr.startVM((StartCommand)cmd, info);
                 } else if (cmd instanceof CheckSshCommand) {
@@ -309,7 +309,7 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                 } else if (cmd instanceof VmDataCommand) {
                     answer = _mockVmMgr.setVmData((VmDataCommand)cmd);
                 } else if (cmd instanceof CleanupNetworkRulesCmd) {
-                    answer = _mockVmMgr.CleanupNetworkRules((CleanupNetworkRulesCmd)cmd, info);
+                    answer = _mockVmMgr.cleanupNetworkRules((CleanupNetworkRulesCmd)cmd, info);
                 } else if (cmd instanceof CheckNetworkCommand) {
                     answer = _mockAgentMgr.checkNetworkCommand((CheckNetworkCommand)cmd);
                 } else if (cmd instanceof StopCommand) {
@@ -319,13 +319,13 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                 } else if (cmd instanceof GetVncPortCommand) {
                     answer = _mockVmMgr.getVncPort((GetVncPortCommand)cmd);
                 } else if (cmd instanceof CheckConsoleProxyLoadCommand) {
-                    answer = _mockVmMgr.CheckConsoleProxyLoad((CheckConsoleProxyLoadCommand)cmd);
+                    answer = _mockVmMgr.checkConsoleProxyLoad((CheckConsoleProxyLoadCommand)cmd);
                 } else if (cmd instanceof WatchConsoleProxyLoadCommand) {
-                    answer = _mockVmMgr.WatchConsoleProxyLoad((WatchConsoleProxyLoadCommand)cmd);
+                    answer = _mockVmMgr.watchConsoleProxyLoad((WatchConsoleProxyLoadCommand)cmd);
                 } else if (cmd instanceof SecurityGroupRulesCmd) {
-                    answer = _mockVmMgr.AddSecurityGroupRules((SecurityGroupRulesCmd)cmd, info);
+                    answer = _mockVmMgr.addSecurityGroupRules((SecurityGroupRulesCmd)cmd, info);
                 } else if (cmd instanceof SavePasswordCommand) {
-                    answer = _mockVmMgr.SavePassword((SavePasswordCommand)cmd);
+                    answer = _mockVmMgr.savePassword((SavePasswordCommand)cmd);
                 } else if (cmd instanceof PrimaryStorageDownloadCommand) {
                     answer = _mockStorageMgr.primaryStorageDownload((PrimaryStorageDownloadCommand)cmd);
                 } else if (cmd instanceof CreateCommand) {

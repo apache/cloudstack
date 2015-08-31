@@ -174,7 +174,79 @@ class TestScaleVm(cloudstackTestCase):
         self.assertNotEqual(
             list_vm_response,
             None,
-            "Check virtual machine is listVirtualMachines"
+            "Check virtual machine is in listVirtualMachines"
+        )
+
+        vm_response = list_vm_response[0]
+        self.assertEqual(
+            vm_response.id,
+            self.virtual_machine.id,
+            "Check virtual machine ID of scaled VM"
+        )
+
+        self.debug(
+            "Scaling VM-ID: %s from service offering: %s to new service\
+                    offering %s and the response says %s" %
+            (self.virtual_machine.id,
+             self.virtual_machine.serviceofferingid,
+             self.big_offering.id,
+             vm_response.serviceofferingid))
+        self.assertEqual(
+            vm_response.serviceofferingid,
+            self.big_offering.id,
+            "Check service offering of the VM"
+        )
+
+        self.assertEqual(
+            vm_response.state,
+            'Running',
+            "Check the state of VM"
+        )
+        return
+
+    @attr(tags=["advanced", "basic"], required_hardware="false")
+    def test_02_scale_vm_without_hypervisor_specifics(self):
+        # Validate the following
+        # Scale up the vm and see if it scales to the new svc offering and is
+        # finally in running state
+
+        #        VirtualMachine should be updated to tell cloudstack
+        #        it has PV tools
+        #        available and successfully scaled. We will only mock
+        #        that behaviour
+        #        here but it is not expected in production since the VM
+        #        scaling is not
+        #        guaranteed until tools are installed, vm rebooted
+
+        self.virtual_machine.update(
+            self.apiclient,
+            isdynamicallyscalable='true')
+
+        self.debug("Scaling VM-ID: %s to service offering: %s and state %s" % (
+            self.virtual_machine.id,
+            self.big_offering.id,
+            self.virtual_machine.state
+        ))
+
+        cmd = scaleVirtualMachine.scaleVirtualMachineCmd()
+        cmd.serviceofferingid = self.big_offering.id
+        cmd.id = self.virtual_machine.id
+        self.apiclient.scaleVirtualMachine(cmd)
+
+        list_vm_response = VirtualMachine.list(
+            self.apiclient,
+            id=self.virtual_machine.id
+        )
+        self.assertEqual(
+            isinstance(list_vm_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+
+        self.assertNotEqual(
+            list_vm_response,
+            None,
+            "Check virtual machine is in listVirtualMachines"
         )
 
         vm_response = list_vm_response[0]
