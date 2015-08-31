@@ -140,7 +140,7 @@
                             dataType: 'json',
                             type: "POST",
                             success: function(json) {
-                                var jid = json.registernetscalercontrolcenterrresponse.jobid;
+                                var jid = json.registernetscalercontrolcenterresponse.jobid;
 
                                 var registerNetscalerControlCenterIntervalID = setInterval(function() {
                                     $.ajax({
