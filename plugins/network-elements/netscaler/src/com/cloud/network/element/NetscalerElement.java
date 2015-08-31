@@ -997,10 +997,13 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         if (result == null)
             throw new CloudRuntimeException("External Netscaler Control Center Table does not contain record with this ID");
         else {
-            List<Long> id_set_1 = _networkOfferingDao.listServicePackageUuid();
-            if (id_set_1.size() != 0) {
-                List<NetworkVO> id_set_2 = _networkDao.listNetworkOfferingId(id_set_1);
-                if (id_set_2 != null && id_set_2.size() != 0)
+            //ID list of Network Offering which are not removed and have service Package Uuid field not null.
+            List<Long> servicePackageId_list = _networkOfferingDao.listNetworkOfferingID();
+
+            if (servicePackageId_list.size() != 0) {
+                //VO list of Networks  which are using Network Offering.
+                List<NetworkVO> networkVO_list = _networkDao.listNetworkVO(servicePackageId_list);
+                if (networkVO_list != null && networkVO_list.size() != 0)
                     throw new CloudRuntimeException(
                             "ServicePackages published by NetScalerControlCenter are being used by NetworkOfferings. Try deleting NetworkOffering with ServicePackages and then delete NetScalerControlCenter.");
             }
@@ -1575,6 +1578,9 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     @Override
     @DB
     public NetScalerControlCenterVO registerNetscalerControlCenter(RegisterNetscalerControlCenterCmd cmd) {
+
+        if (_netscalerControlCenterDao.listAll() != null && _netscalerControlCenterDao.listAll().size() != 0)
+            throw new CloudRuntimeException("One Netscaler Control Center already exist in the DataBase. At a time only one Netscaler Control Center is allowed");
 
         final RegisterNetscalerControlCenterCmd cmdinfo = cmd;
         String ipAddress = cmd.getIpaddress();

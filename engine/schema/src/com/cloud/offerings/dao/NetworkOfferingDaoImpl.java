@@ -192,7 +192,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     }
 
     @Override
-    public List<Long> listServicePackageUuid() {
+    public List<Long> listNetworkOfferingID() {
         final SearchCriteria<NetworkOfferingVO> sc_1 = createSearchCriteria();
         final Filter searchFilter_1 = new Filter(NetworkOfferingVO.class, "created", false, null, null);
         sc_1.addAnd("servicePackageUuid", SearchCriteria.Op.NEQ, null);

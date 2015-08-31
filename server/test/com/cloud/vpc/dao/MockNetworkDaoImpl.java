@@ -383,7 +383,7 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
     }
 
     @Override
-    public List<NetworkVO> listNetworkOfferingId(List<Long> idset) {
+    public List<NetworkVO> listNetworkVO(List<Long> idset) {
         // TODO Auto-generated method stub
         return null;
     }

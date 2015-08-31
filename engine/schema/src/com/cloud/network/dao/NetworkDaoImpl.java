@@ -679,7 +679,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     }
 
     @Override
-    public List<NetworkVO> listNetworkOfferingId(List<Long> idset) {
+    public List<NetworkVO> listNetworkVO(List<Long> idset) {
         final SearchCriteria<NetworkVO> sc_2 = createSearchCriteria();
         final Filter searchFilter_2 = new Filter(NetworkVO.class, "id", false, null, null);
         sc_2.addAnd("networkOfferingId", SearchCriteria.Op.IN, idset);
