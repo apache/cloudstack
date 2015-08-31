@@ -1246,6 +1246,7 @@ public class LibvirtComputingResourceTest {
 
             when(libvirtComputingResource.getPrivateIp()).thenReturn("127.0.0.1");
             when(dm.getXMLDesc(8)).thenReturn("host_domain");
+            when(dm.getXMLDesc(1)).thenReturn("host_domain");
             when(dm.isPersistent()).thenReturn(1);
             doNothing().when(dm).undefine();
 
@@ -1273,9 +1274,19 @@ public class LibvirtComputingResourceTest {
         verify(libvirtComputingResource, times(1)).getDisks(conn, vmName);
         try {
             verify(conn, times(1)).domainLookupByName(vmName);
-            verify(dm, times(1)).getXMLDesc(8);
         } catch (final LibvirtException e) {
             fail(e.getMessage());
+        }
+
+        try {
+            verify(dm, times(1)).getXMLDesc(8);
+        } catch (final Throwable t) {
+            try {
+                verify(dm, times(1)).getXMLDesc(1);
+            }
+            catch (final LibvirtException e) {
+                fail(e.getMessage());
+            }
         }
     }
 
