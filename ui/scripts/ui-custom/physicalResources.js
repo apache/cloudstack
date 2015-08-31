@@ -141,7 +141,7 @@
                             type: "POST",
                             success: function(json) {
                                 var jid = json.registernetscalercontrolcenterrresponse.jobid;
-                                var count = 0;
+
                                 var registerNetscalerControlCenterIntervalID = setInterval(function() {
                                     $.ajax({
                                         url: createURL("queryAsyncJobResult&jobId=" + jid),
@@ -149,16 +149,7 @@
                                         success: function(json) {
                                             var result = json.queryasyncjobresultresponse;
                                             if (result.jobstatus == 0) {
-                                                if (count > 5) {
-                                                    cloudStack.dialog.notice({
-                                                        message: _l('message.register.failed') + ' ' + 'Check your Data.'
-                                                    });
-                                                    $loading.remove();
-                                                    clearInterval(registerNetscalerControlCenterIntervalID);
-                                                } else {
-                                                    count++;
-                                                    return; //Job has not completed
-                                                }
+                                                return; //Job has not completed
                                             } else {
                                                 clearInterval(registerNetscalerControlCenterIntervalID);
                                                 if (result.jobstatus == 1) {
