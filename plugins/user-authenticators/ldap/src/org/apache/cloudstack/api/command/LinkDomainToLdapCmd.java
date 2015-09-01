@@ -21,7 +21,6 @@ package org.apache.cloudstack.api.command;
 import javax.inject.Inject;
 
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import org.apache.cloudstack.api.APICommand;
@@ -47,7 +46,8 @@ public class LinkDomainToLdapCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(LinkDomainToLdapCmd.class.getName());
     private static final String s_name = "linkdomaintoldapresponse";
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "The id of the domain which has to be linked to LDAP.")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = true, entityType = DomainResponse.class, description = "The id of the domain which has to be "
+            + "linked to LDAP.")
     private Long domainId;
 
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true, description = "type of the ldap name. GROUP or OU")
@@ -59,15 +59,12 @@ public class LinkDomainToLdapCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ADMIN, type = CommandType.STRING, required = false, description = "domain admin username in LDAP ")
     private String admin;
 
-    @Parameter(name = ApiConstants.ACCOUNT_TYPE, type = CommandType.SHORT, required = true, description = "Type of the account to auto import. Specify 0 for user, 1 for root " +
-        "admin, and 2 for domain admin")
+    @Parameter(name = ApiConstants.ACCOUNT_TYPE, type = CommandType.SHORT, required = true, description = "Type of the account to auto import. Specify 0 for user and 2 for " +
+        "domain admin")
     private short accountType;
 
     @Inject
     private LdapManager _ldapManager;
-
-    @Inject
-    public AccountService _accountService;
 
     @Override
     public void execute() throws ServerApiException {

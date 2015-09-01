@@ -269,8 +269,8 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
         Validate.notNull(type, "type cannot be null. It should either be GROUP or OU");
         Validate.notNull(domainId, "domainId cannot be null.");
         Validate.notEmpty(name, "GROUP or OU name cannot be empty");
-        //Account type constants in com.cloud.user.Account
-        Validate.isTrue(accountType>=0 && accountType<=5, "accountype should be a number from 0-5");
+        //Account type should be 0 or 2. check the constants in com.cloud.user.Account
+        Validate.isTrue(accountType==0 || accountType==2, "accountype should be either 0(normal user) or 2(domain admin)");
         LinkType linkType = LdapManager.LinkType.valueOf(type.toUpperCase());
         LdapTrustMapVO vo = _ldapTrustMapDao.persist(new LdapTrustMapVO(domainId, linkType, name, accountType));
         LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(vo.getDomainId(), vo.getType().toString(), vo.getName(), vo.getAccountType());

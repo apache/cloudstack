@@ -484,7 +484,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         then:
             thrown(IllegalArgumentException)
         where:
-            accountType << [-1, 6, 20000, -500000]
+            accountType << [-1, 1, 3, 4, 5, 6, 20000, -500000]
     }
     def "test linkDomainToLdap when all is well"(){
         def ldapManager = new LdapManagerImpl()
