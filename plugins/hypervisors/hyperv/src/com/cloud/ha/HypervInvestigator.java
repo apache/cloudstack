@@ -45,9 +45,9 @@ public class HypervInvestigator extends AdapterBase implements Investigator {
     public Boolean isVmAlive(com.cloud.vm.VirtualMachine vm, Host host) {
         Status status = isAgentAlive(host);
         if (status == null) {
-            return false;
+            return null;
         }
-        return status == Status.Up ? true : false;
+        return status == Status.Up ? true : null;
     }
 
     @Override
