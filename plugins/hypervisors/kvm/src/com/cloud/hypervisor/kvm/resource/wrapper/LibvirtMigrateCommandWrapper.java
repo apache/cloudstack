@@ -87,8 +87,12 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 CVE-2015-3252: Get XML with sensitive information suitable for migration by using
                                VIR_DOMAIN_XML_MIGRATABLE flag (value = 8)
                                https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainXMLFlags
+
+                               Use VIR_DOMAIN_XML_SECURE (value = 1) prior to v1.0.0.
              */
-            xmlDesc = dm.getXMLDesc(8).replace(libvirtComputingResource.getPrivateIp(), command.getDestinationIp());
+            int xmlFlag = conn.getLibVirVersion() >= 1000000 ? 8 : 1; // 1000000 equals v1.0.0
+
+            xmlDesc = dm.getXMLDesc(xmlFlag).replace(libvirtComputingResource.getPrivateIp(), command.getDestinationIp());
 
             dconn = libvirtUtilitiesHelper.retrieveQemuConnection("qemu+tcp://" + command.getDestinationIp() + "/system");
 
