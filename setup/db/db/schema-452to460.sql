@@ -407,6 +407,5 @@ CREATE TABLE `cloud`.`ldap_trust_map` (
   `account_type` int(1) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_ldap_trust_map__domain_id` (`domain_id`),
-  KEY `fk_ldap_trust_map__domain_id` (`domain_id`),
   CONSTRAINT `fk_ldap_trust_map__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
