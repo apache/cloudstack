@@ -339,4 +339,48 @@ public class UsageVO implements Usage, InternalIdentity {
     public Date getEndDate() {
         return endDate;
     }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
+    }
+
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
+    }
+
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
+    }
+
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
+    }
+
+    public void setZoneId(Long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public void setUsageType(int usageType) {
+        this.usageType = usageType;
+    }
+
+    public void setRawUsage(Double rawUsage) {
+        this.rawUsage = rawUsage;
+    }
+
+    public void setSize(Long size) {
+        this.size = size;
+    }
+
+    public void setVirtualSize(Long virtualSize) {
+        this.virtualSize = virtualSize;
+    }
 }

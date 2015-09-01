@@ -24,8 +24,5 @@ import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.quota.vo.UserVmDetailVO;
 
 public interface UserVmDetailsDao extends GenericDao<UserVmDetailVO, Long> {
-
     Map<String, String> listDetailsKeyPairs(long resourceId);
-
-
 }

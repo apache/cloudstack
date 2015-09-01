@@ -90,6 +90,10 @@ public class QuotaTypes extends UsageTypes {
     }
 
     static public String getDescription(int quotaType) {
-        return listQuotaTypes().get(quotaType).getDescription();
+        HashMap<Integer, QuotaTypes> quotaMap = listQuotaTypes();
+        if (quotaMap.containsKey(quotaType)) {
+            return quotaMap.get(quotaType).getDescription();
+        }
+        return null;
     }
 }

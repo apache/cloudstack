@@ -16,43 +16,30 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
+import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.quota.vo.QuotaUsageVO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.ejb.Local;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import javax.ejb.Local;
-
-import org.springframework.stereotype.Component;
-import org.apache.cloudstack.quota.vo.QuotaUsageVO;
-
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.TransactionLegacy;
-
 @Component
 @Local(value = { QuotaUsageDao.class })
 public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implements QuotaUsageDao {
-
-    @Override
-    public Pair<List<QuotaUsageVO>, Integer> searchAndCountAllRecords(SearchCriteria<QuotaUsageVO> sc, Filter filter) {
-        return listAndCountIncludingRemovedBy(sc, filter);
-    }
-
-    @Override
-    public void saveQuotaUsage(List<QuotaUsageVO> records) {
-        for (QuotaUsageVO usageRecord : records) {
-            persist(usageRecord);
-        }
-    }
+    private static final Logger s_logger = Logger.getLogger(QuotaUsageDaoImpl.class.getName());
 
     @Override
     public BigDecimal findTotalQuotaUsage(final Long accountId, final Long domainId, final Integer usageType, final Date startDate, final Date endDate) {
         List<QuotaUsageVO> quotaUsage = findQuotaUsage(accountId, domainId, null, startDate, endDate);
         BigDecimal total = new BigDecimal(0);
-        for (final QuotaUsageVO quotaRecord : quotaUsage) {
+        for (QuotaUsageVO quotaRecord: quotaUsage) {
             total = total.add(quotaRecord.getQuotaUsed());
         }
         return total;
@@ -62,11 +49,9 @@ public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implem
     @Override
     public List<QuotaUsageVO> findQuotaUsage(final Long accountId, final Long domainId, final Integer usageType, final Date startDate, final Date endDate) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-        List<QuotaUsageVO> quotaUsageRecords = null;
-        try {
-            // TODO instead of max value query with reasonable number and
-            // iterate
+        List<QuotaUsageVO> quotaUsageRecords = new ArrayList<QuotaUsageVO>();
+        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
+            // TODO instead of max value query with reasonable number and iterate
             SearchCriteria<QuotaUsageVO> sc = createSearchCriteria();
             if (accountId != null) {
                 sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
@@ -84,11 +69,12 @@ public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implem
                 return new ArrayList<QuotaUsageVO>();
             }
             quotaUsageRecords = listBy(sc);
+        } catch (Exception e) {
+            s_logger.error("QuotaUsageDaoImpl::findQuotaUsage() failed due to: " + e.getMessage());
+            throw new CloudRuntimeException("Unable to find quota usage");
         } finally {
-            txn.close();
+            TransactionLegacy.open(opendb).close();
         }
-
-        TransactionLegacy.open(opendb).close();
         return quotaUsageRecords;
     }
 

@@ -23,6 +23,8 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
@@ -35,6 +37,8 @@ import com.cloud.utils.db.TransactionLegacy;
 @Component
 @Local(value = { QuotaCreditsDao.class })
 public class QuotaCreditsDaoImpl extends GenericDaoBase<QuotaCreditsVO, Long> implements QuotaCreditsDao {
+    private static final Logger s_logger = Logger.getLogger(QuotaCreditsDaoImpl.class.getName());
+
     @Inject
     QuotaBalanceDao _quotaBalanceDao;
 
@@ -42,31 +46,43 @@ public class QuotaCreditsDaoImpl extends GenericDaoBase<QuotaCreditsVO, Long> im
     @Override
     public List<QuotaCreditsVO> findCredits(final long accountId, final long domainId, final Date startDate, final Date endDate) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-        Filter filter = new Filter(QuotaCreditsVO.class, "updatedOn", true, 0L, Long.MAX_VALUE);
-        SearchCriteria<QuotaCreditsVO> sc = createSearchCriteria();
-        sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-        sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-        if ((startDate != null) && (endDate != null) && startDate.before(endDate)) {
-            sc.addAnd("updatedOn", SearchCriteria.Op.BETWEEN, startDate, endDate);
-        } else {
-            return new ArrayList<QuotaCreditsVO>();
+        List<QuotaCreditsVO> qc = new ArrayList<>();
+        try {
+            TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+            Filter filter = new Filter(QuotaCreditsVO.class, "updatedOn", true, 0L, Long.MAX_VALUE);
+            SearchCriteria<QuotaCreditsVO> sc = createSearchCriteria();
+            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+            if ((startDate != null) && (endDate != null) && startDate.before(endDate)) {
+                sc.addAnd("updatedOn", SearchCriteria.Op.BETWEEN, startDate, endDate);
+            } else {
+                return new ArrayList<QuotaCreditsVO>();
+            }
+            qc = search(sc, filter);
+        } catch (Exception e) {
+            s_logger.error("QuotaCreditsDaoImpl::findCredits() failed due to: " + e.getMessage());
+            throw new CloudRuntimeException("Unable to find quota credits");
+        } finally {
+            TransactionLegacy.open(opendb).close();
         }
-        List<QuotaCreditsVO> qc = search(sc, filter);
-        TransactionLegacy.open(opendb).close();
         return qc;
     }
 
     @Override
     public QuotaCreditsVO saveCredits(final QuotaCreditsVO credits) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-        persist(credits);
-        // make an entry in the balance table
-        QuotaBalanceVO bal = new QuotaBalanceVO(credits);
-        _quotaBalanceDao.persist(bal);
-        TransactionLegacy.open(opendb).close();
+        try {
+            TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+            super.persist(credits);
+            // make an entry in the balance table
+            QuotaBalanceVO bal = new QuotaBalanceVO(credits);
+            _quotaBalanceDao.persist(bal);
+        } catch (Exception e) {
+            s_logger.error("QuotaCreditsDaoImpl::saveCredits() failed due to: " + e.getMessage());
+            throw new CloudRuntimeException("Unable to save quota credits");
+        } finally {
+            TransactionLegacy.open(opendb).close();
+        }
         return credits;
     }
-
 }

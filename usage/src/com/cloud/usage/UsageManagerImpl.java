@@ -396,7 +396,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 }
                 try {
                     _alertManager.checkAndSendQuotaAlertEmails();
-                    _alertManager.sendMonthlyStatement();
+                    _alertManager.sendMonthlyStatement(new Date());
                 } catch (Exception e) {
                     s_logger.fatal("Exception received while sending alerts " + e.getMessage());
                     if (s_logger.isDebugEnabled()) {

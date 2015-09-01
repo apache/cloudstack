@@ -41,6 +41,10 @@ public class QuotaEmailTemplateListCmd extends BaseListCmd {
         return templateName;
     }
 
+    public void setTemplateName(String templateName) {
+        this.templateName = templateName;
+    }
+
     @Override
     public void execute() {
         final ListResponse<QuotaEmailTemplateResponse> response = new ListResponse<QuotaEmailTemplateResponse>();

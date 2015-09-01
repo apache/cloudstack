@@ -150,11 +150,10 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
 
-        Account userAccount = null;
-        Account caller = CallContext.current().getCallingAccount();
-
         // if accountId is not specified, use accountName and domainId
         if ((accountId == null) && (accountName != null) && (domainId != null)) {
+            Account userAccount = null;
+            Account caller = CallContext.current().getCallingAccount();
             if (_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
                 Filter filter = new Filter(AccountVO.class, "id", Boolean.FALSE, null, null);
                 List<AccountVO> accounts = _accountDao.listAccounts(accountName, domainId, filter);
@@ -211,18 +210,17 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
                 throw new InvalidParameterValueException("Incorrect Date Range. Start date: " + startDate + " is after end date:" + endDate);
             }
         }
-
     }
 
     @Override
     public List<QuotaUsageVO> getQuotaUsage(Long accountId, String accountName, Long domainId, Integer usageType, Date startDate, Date endDate) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
-        Account userAccount = null;
-        Account caller = CallContext.current().getCallingAccount();
 
         // if accountId is not specified, use accountName and domainId
         if ((accountId == null) && (accountName != null) && (domainId != null)) {
+            Account userAccount = null;
+            Account caller = CallContext.current().getCallingAccount();
             if (_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
                 Filter filter = new Filter(AccountVO.class, "id", Boolean.FALSE, null, null);
                 List<AccountVO> accounts = _accountDao.listAccounts(accountName, domainId, filter);

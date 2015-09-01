@@ -88,7 +88,7 @@ public class QuotaEmailTemplateUpdateCmd extends BaseCmd {
         return Account.ACCOUNT_ID_SYSTEM;
     }
 
-    private void setTemplateName(String templateName) {
+    public void setTemplateName(String templateName) {
         this.templateName = templateName;
     }
 
@@ -108,4 +108,15 @@ public class QuotaEmailTemplateUpdateCmd extends BaseCmd {
         return locale;
     }
 
+    public void setTemplateSubject(String templateSubject) {
+        this.templateSubject = templateSubject;
+    }
+
+    public void setTemplateBody(String templateBody) {
+        this.templateBody = templateBody;
+    }
+
+    public void setLocale(String locale) {
+        this.locale = locale;
+    }
 }

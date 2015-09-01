@@ -48,11 +48,11 @@ public class UserVmDetailsDaoImpl extends GenericDaoBase<UserVmDetailVO, Long> i
 
     @Override
     public Map<String, String> listDetailsKeyPairs(long resourceId) {
+        Map<String, String> details = new HashMap<String, String>();
         SearchCriteria<UserVmDetailVO> sc = AllFieldsSearch.create();
         sc.setParameters("resourceId", resourceId);
 
         List<UserVmDetailVO> results = search(sc, null);
-        Map<String, String> details = new HashMap<String, String>(results.size());
         for (UserVmDetailVO result : results) {
             details.put(result.getName(), result.getValue());
         }

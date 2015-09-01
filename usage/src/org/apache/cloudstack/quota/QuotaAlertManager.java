@@ -18,10 +18,9 @@ package org.apache.cloudstack.quota;
 
 import com.cloud.utils.component.Manager;
 
+import java.util.Date;
+
 public interface QuotaAlertManager extends Manager {
-
-    public void checkAndSendQuotaAlertEmails();
-
-    void sendMonthlyStatement();
-
+    void checkAndSendQuotaAlertEmails();
+    void sendMonthlyStatement(Date now);
 }

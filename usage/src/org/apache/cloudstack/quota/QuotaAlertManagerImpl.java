@@ -19,9 +19,9 @@ package org.apache.cloudstack.quota;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.user.Account;
+import com.cloud.user.Account.State;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
-import com.cloud.user.Account.State;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.DateUtil;
@@ -32,7 +32,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.sun.mail.smtp.SMTPMessage;
 import com.sun.mail.smtp.SMTPSSLTransport;
 import com.sun.mail.smtp.SMTPTransport;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.quota.constant.QuotaConfig.QuotaEmailTemplateTypes;
@@ -55,7 +54,6 @@ import javax.mail.Session;
 import javax.mail.URLName;
 import javax.mail.internet.InternetAddress;
 import javax.naming.ConfigurationException;
-
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -150,8 +148,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
 
     @SuppressWarnings("deprecation")
     @Override
-    public void sendMonthlyStatement() {
-        Date now = new Date();
+    public void sendMonthlyStatement(Date now) {
         Calendar aCalendar = Calendar.getInstance();
         aCalendar.add(Calendar.MONTH, -1);
         aCalendar.set(Calendar.DATE, 1);
@@ -170,22 +167,17 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
             Date lastStatementDate = quotaAccount.getLastStatementDate();
             if (now.getDate() < 6) {
                 AccountVO account = _accountDao.findById(quotaAccount.getId());
-                if (lastStatementDate == null) {
+                if (lastStatementDate == null || getDifferenceDays(lastStatementDate, new Date()) >= 7) {
                     BigDecimal quotaUsage = _quotaUsage.findTotalQuotaUsage(account.getAccountId(), account.getDomainId(), null, firstDateOfPreviousMonth, lastDateOfPreviousMonth);
                     s_logger.info("For account=" + quotaAccount.getId() + ", quota used = " + quotaUsage);
                     // send statement
                     deferredQuotaEmailList.add(new DeferredQuotaEmail(account, quotaAccount, quotaUsage, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_STATEMENT));
-                } else if (getDifferenceDays(lastStatementDate, new Date()) < 7) {
-                    s_logger.debug("For " + quotaAccount.getId() + " the statement has been sent recently");
                 } else {
-                    BigDecimal quotaUsage = _quotaUsage.findTotalQuotaUsage(account.getAccountId(), account.getDomainId(), null, firstDateOfPreviousMonth, lastDateOfPreviousMonth);
-                    s_logger.info("For account=" + quotaAccount.getId() + ", quota used = " + quotaUsage);
-                    deferredQuotaEmailList.add(new DeferredQuotaEmail(account, quotaAccount, quotaUsage, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_STATEMENT));
+                    s_logger.debug("For " + quotaAccount.getId() + " the statement has been sent recently");
                 }
             } else {
                 s_logger.info("For " + quotaAccount.getId() + " it is already more than " + getDifferenceDays(lastStatementDate, new Date()) + " days, will send statement in next cycle");
             }
-
         }
 
         for (DeferredQuotaEmail emailToBeSent : deferredQuotaEmailList) {
@@ -209,7 +201,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
             if (accountBalance != null) {
                 AccountVO account = _accountDao.findById(quotaAccount.getId());
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Check id " + account.getId() + " bal=" + accountBalance + " alertDate" + alertDate + " diff" + getDifferenceDays(alertDate, new Date()));
+                    s_logger.debug("Check id " + account.getId() + " bal=" + accountBalance + " alertDate" + alertDate + " current date" + new Date());
                 }
                 if (accountBalance.compareTo(zeroBalance) <= 0) {
                     if (_lockAccountEnforcement && (lockable == 1)) {
@@ -234,7 +226,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         }
     }
 
-    private void sendQuotaAlert(DeferredQuotaEmail emailToBeSent) {
+    public void sendQuotaAlert(DeferredQuotaEmail emailToBeSent) {
         final AccountVO account = emailToBeSent.getAccount();
         final BigDecimal balance = emailToBeSent.getQuotaBalance();
         final BigDecimal usage = emailToBeSent.getQuotaUsage();
@@ -278,7 +270,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
             final String body = templateEngine.replace(emailTemplate.getTemplateBody());
             try {
                 _emailQuotaAlert.sendQuotaAlert(emailRecipients, subject, body);
-                emailToBeSent.sentSuccessfully();
+                emailToBeSent.sentSuccessfully(_quotaAcc);
             } catch (Exception e) {
                 s_logger.error(String.format("Unable to send quota alert email (subject=%s; body=%s) to account %s (%s) recipients (%s) due to error (%s)", subject, body, account.getAccountName(),
                         account.getUuid(), emailRecipients, e));
@@ -288,7 +280,36 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         }
     }
 
-    class DeferredQuotaEmail {
+    public static long getDifferenceDays(Date d1, Date d2) {
+        long diff = d2.getTime() - d1.getTime();
+        return TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
+    }
+
+    protected boolean lockAccount(long accountId) {
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+        TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
+        boolean success = false;
+        Account account = _accountDao.findById(accountId);
+        if (account != null) {
+            if (account.getState().equals(State.locked)) {
+                return true; // already locked, no-op
+            } else if (account.getState().equals(State.enabled)) {
+                AccountVO acctForUpdate = _accountDao.createForUpdate();
+                acctForUpdate.setState(State.locked);
+                success = _accountDao.update(Long.valueOf(accountId), acctForUpdate);
+            } else {
+                if (s_logger.isInfoEnabled()) {
+                    s_logger.info("Attempting to lock a non-enabled account, current state is " + account.getState() + " (accountId: " + accountId + "), locking failed.");
+                }
+            }
+        } else {
+            s_logger.warn("Failed to lock account " + accountId + ", account not found.");
+        }
+        TransactionLegacy.open(opendb).close();
+        return success;
+    }
+
+    public static class DeferredQuotaEmail {
         private AccountVO account;
         private QuotaAccountVO quotaAccount;
         private QuotaConfig.QuotaEmailTemplateTypes emailTemplateType;
@@ -324,15 +345,14 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
             return emailTemplateType;
         }
 
-        public void sentSuccessfully() {
+        public void sentSuccessfully(final QuotaAccountDao quotaAccountDao) {
             if (emailTemplateType == QuotaEmailTemplateTypes.QUOTA_STATEMENT) {
                 quotaAccount.setLastStatementDate(new Date());
-                _quotaAcc.update(quotaAccount.getAccountId(), quotaAccount);
             } else {
                 quotaAccount.setQuotaAlertDate(new Date());
                 quotaAccount.setQuotaAlertType(emailTemplateType.ordinal());
-                _quotaAcc.update(quotaAccount.getAccountId(), quotaAccount);
             }
+            quotaAccountDao.update(quotaAccount.getAccountId(), quotaAccount);
         }
     };
 
@@ -421,54 +441,4 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
             }
         }
     }
-
-    public Date startOfNextDay() {
-        Calendar c = Calendar.getInstance();
-        c.setTime(new Date());
-        c.add(Calendar.DATE, 1);
-        Date dt = c.getTime();
-        return dt;
-    }
-
-    public static long getDifferenceDays(Date d1, Date d2) {
-        long diff = d2.getTime() - d1.getTime();
-        return TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
-    }
-
-    protected boolean lockAccount(long accountId) {
-        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
-        boolean success = false;
-        Account account = _accountDao.findById(accountId);
-        if (account != null) {
-            if (account.getState().equals(State.locked)) {
-                return true; // already locked, no-op
-            } else if (account.getState().equals(State.enabled)) {
-                AccountVO acctForUpdate = _accountDao.createForUpdate();
-                acctForUpdate.setState(State.locked);
-                success = _accountDao.update(Long.valueOf(accountId), acctForUpdate);
-            } else {
-                if (s_logger.isInfoEnabled()) {
-                    s_logger.info("Attempting to lock a non-enabled account, current state is " + account.getState() + " (accountId: " + accountId + "), locking failed.");
-                }
-            }
-        } else {
-            s_logger.warn("Failed to lock account " + accountId + ", account not found.");
-        }
-        TransactionLegacy.open(opendb).close();
-        return success;
-    }
-
-    public boolean enableAccount(long accountId) {
-        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
-        boolean success = false;
-        AccountVO acctForUpdate = _accountDao.createForUpdate();
-        acctForUpdate.setState(State.enabled);
-        acctForUpdate.setNeedsCleanup(false);
-        success = _accountDao.update(Long.valueOf(accountId), acctForUpdate);
-        TransactionLegacy.open(opendb).close();
-        return success;
-    }
-
 }

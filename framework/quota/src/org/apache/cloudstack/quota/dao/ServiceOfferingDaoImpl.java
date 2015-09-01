@@ -43,18 +43,19 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     @Override
     public ServiceOfferingVO findServiceOffering(final Long vmId, final long serviceOfferingId) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
-        ServiceOfferingVO result;
-        try {
+        ServiceOfferingVO result = null;
+        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB)) {
             result = findById(vmId, serviceOfferingId);
+        } catch (Exception e) {
+            s_logger.error("Quota ServiceOfferingDaoImpl::findServiceOffering() failed due to: " + e.getMessage());
+            throw new CloudRuntimeException("Unable to find service offering for quota calculations");
         } finally {
-            txn.close();
+            TransactionLegacy.open(opendb).close();
         }
-        TransactionLegacy.open(opendb).close();
         return result;
     }
 
-    public ServiceOfferingVO findById(Long vmId, long serviceOfferingId) {
+    private ServiceOfferingVO findById(Long vmId, long serviceOfferingId) {
         ServiceOfferingVO offering = super.findById(serviceOfferingId);
         if (offering.isDynamic()) {
             if (vmId == null) {
@@ -67,7 +68,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         return offering;
     }
 
-    public ServiceOfferingVO getcomputeOffering(ServiceOfferingVO serviceOffering, Map<String, String> customParameters) {
+    private ServiceOfferingVO getcomputeOffering(ServiceOfferingVO serviceOffering, Map<String, String> customParameters) {
         ServiceOfferingVO dummyoffering = new ServiceOfferingVO(serviceOffering);
         dummyoffering.setDynamicFlag(true);
         if (customParameters.containsKey(UsageEventVO.DynamicParameters.cpuNumber.name())) {

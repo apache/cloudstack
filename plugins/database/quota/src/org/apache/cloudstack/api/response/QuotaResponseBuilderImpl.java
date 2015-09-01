@@ -298,16 +298,15 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     public QuotaCreditsResponse addQuotaCredits(final Long accountId, final Long domainId, final Double amount, final Long updatedBy, final Date despositedOn) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         QuotaCreditsVO result = null;
-        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-        try {
+        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
             QuotaCreditsVO credits = new QuotaCreditsVO(accountId, domainId, new BigDecimal(amount), updatedBy);
             s_logger.info("addQuotaCredits: Depositing " + amount + " on adjusted date " + despositedOn);
             credits.setUpdatedOn(despositedOn);
             result = _quotaCreditsDao.saveCredits(credits);
-        } finally {
-            txn.close();
         }
+
         TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
+
         final AccountVO account = _accountDao.findById(accountId);
         final boolean lockAccountEnforcement = "true".equalsIgnoreCase(QuotaConfig.QuotaEnableEnforcement.value());
         final BigDecimal currentAccountBalance = _quotaBalanceDao.lastQuotaBalance(accountId, domainId, startOfNextDay(despositedOn));
@@ -372,16 +371,15 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     @Override
     public QuotaBalanceResponse createQuotaLastBalanceResponse(List<QuotaBalanceVO> quotaBalance, Date startDate) {
         if (quotaBalance == null || quotaBalance.size() == 0) {
-            new InvalidParameterValueException("There are no balance entries on or before the requested date.");
+            throw new InvalidParameterValueException("There are no balance entries on or before the requested date.");
         }
         if (startDate == null) {
             startDate = new Date();
         }
         QuotaBalanceResponse resp = new QuotaBalanceResponse();
         BigDecimal lastCredits = new BigDecimal(0);
-        for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
-            QuotaBalanceVO entry = it.next();
-            if (s_logger.isDebugEnabled()){
+        for (QuotaBalanceVO entry : quotaBalance) {
+            if (s_logger.isDebugEnabled()) {
                 s_logger.info("createQuotaLastBalanceResponse Date=" + entry.getUpdatedOn() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
             }
             lastCredits = lastCredits.add(entry.getCreditBalance());

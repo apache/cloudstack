@@ -16,25 +16,14 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
+import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.quota.vo.QuotaUsageVO;
+
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.cloudstack.quota.vo.QuotaUsageVO;
-
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.db.SearchCriteria;
-
 public interface QuotaUsageDao extends GenericDao<QuotaUsageVO, Long> {
-
     List<QuotaUsageVO> findQuotaUsage(Long accountId, Long domainId, Integer usageType, Date startDate, Date endDate);
-
-    Pair<List<QuotaUsageVO>, Integer> searchAndCountAllRecords(SearchCriteria<QuotaUsageVO> sc, Filter filter);
-
-    void saveQuotaUsage(List<QuotaUsageVO> credits);
-
     BigDecimal findTotalQuotaUsage(Long accountId, Long domainId, Integer usageType, Date startDate, Date endDate);
-
 }

@@ -16,23 +16,21 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-
-import javax.ejb.Local;
-
-import org.springframework.stereotype.Component;
-import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
-import org.apache.log4j.Logger;
-
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.ejb.Local;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 @Component
 @Local(value = { QuotaBalanceDao.class })
@@ -42,78 +40,97 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
     @SuppressWarnings("deprecation")
     @Override
     public QuotaBalanceVO findLastBalanceEntry(final Long accountId, final Long domainId, final Date beforeThis) {
+        List<QuotaBalanceVO> quotaBalanceEntries = new ArrayList<>();
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
-        Filter filter = new Filter(QuotaBalanceVO.class, "updatedOn", false, 0L, 1L);
-        SearchCriteria<QuotaBalanceVO> sc = createSearchCriteria();
-        sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-        sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-        sc.addAnd("creditsId", SearchCriteria.Op.EQ, 0);
-        sc.addAnd("updatedOn", SearchCriteria.Op.LT, beforeThis);
-        List<QuotaBalanceVO> quotab = this.search(sc, filter);
-        TransactionLegacy.open(opendb).close();
-        return quotab.size() > 0 ? quotab.get(0) : null;
+        try {
+            TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
+            Filter filter = new Filter(QuotaBalanceVO.class, "updatedOn", false, 0L, 1L);
+            SearchCriteria<QuotaBalanceVO> sc = createSearchCriteria();
+            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+            sc.addAnd("creditsId", SearchCriteria.Op.EQ, 0);
+            sc.addAnd("updatedOn", SearchCriteria.Op.LT, beforeThis);
+            quotaBalanceEntries = this.search(sc, filter);
+        } catch (Exception e) {
+            s_logger.error("QuotaBalanceDaoImpl::findLastBalanceEntry() failed due to: " + e.getMessage());
+            throw new CloudRuntimeException("Unable to find last quota balance entry for account");
+        } finally {
+            TransactionLegacy.open(opendb).close();
+        }
+        return quotaBalanceEntries.size() > 0 ? quotaBalanceEntries.get(0) : null;
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public QuotaBalanceVO findLaterBalanceEntry(final Long accountId, final Long domainId, final Date afterThis) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
-        Filter filter = new Filter(QuotaBalanceVO.class, "updatedOn", true, 0L, 1L);
-        SearchCriteria<QuotaBalanceVO> sc = createSearchCriteria();
-        sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-        sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-        sc.addAnd("creditsId", SearchCriteria.Op.EQ, 0);
-        sc.addAnd("updatedOn", SearchCriteria.Op.GT, afterThis);
-        List<QuotaBalanceVO> quotab = this.search(sc, filter);
-        TransactionLegacy.open(opendb).close();
-        return quotab.size() > 0 ? quotab.get(0) : null;
+        List<QuotaBalanceVO> quotaBalanceEntries = new ArrayList<>();
+        try {
+            TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
+            Filter filter = new Filter(QuotaBalanceVO.class, "updatedOn", true, 0L, 1L);
+            SearchCriteria<QuotaBalanceVO> sc = createSearchCriteria();
+            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+            sc.addAnd("creditsId", SearchCriteria.Op.EQ, 0);
+            sc.addAnd("updatedOn", SearchCriteria.Op.GT, afterThis);
+            quotaBalanceEntries = this.search(sc, filter);
+        } catch (Exception e) {
+            s_logger.error("QuotaBalanceDaoImpl::findLaterBalanceEntry() failed due to: " + e.getMessage());
+            throw new CloudRuntimeException("Unable to find later quota balance entry");
+        } finally {
+            TransactionLegacy.open(opendb).close();
+        }
+        return quotaBalanceEntries.size() > 0 ? quotaBalanceEntries.get(0) : null;
     }
 
     @Override
     public void saveQuotaBalance(final List<QuotaBalanceVO> credits) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-        try {
+        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
             for (QuotaBalanceVO credit : credits) {
                 persist(credit);
             }
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Unable to save quota balance");
         } finally {
-            txn.close();
+            TransactionLegacy.open(opendb).close();
         }
-        TransactionLegacy.open(opendb).close();
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public List<QuotaBalanceVO> findCreditBalance(final Long accountId, final Long domainId, final Date lastbalancedate, final Date beforeThis) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
-        Filter filter = new Filter(QuotaBalanceVO.class, "updatedOn", true, 0L, Long.MAX_VALUE);
-        SearchCriteria<QuotaBalanceVO> sc = createSearchCriteria();
-        sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-        sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-        sc.addAnd("creditsId", SearchCriteria.Op.GT, 0);
-        if ((lastbalancedate != null) && (beforeThis != null) && lastbalancedate.before(beforeThis)) {
-            sc.addAnd("updatedOn", SearchCriteria.Op.BETWEEN, lastbalancedate, beforeThis);
-        } else {
-            return new ArrayList<QuotaBalanceVO>();
+        List<QuotaBalanceVO> quotaBalances = new ArrayList<>();
+        try {
+            TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
+            Filter filter = new Filter(QuotaBalanceVO.class, "updatedOn", true, 0L, Long.MAX_VALUE);
+            SearchCriteria<QuotaBalanceVO> sc = createSearchCriteria();
+            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+            sc.addAnd("creditsId", SearchCriteria.Op.GT, 0);
+            if ((lastbalancedate != null) && (beforeThis != null) && lastbalancedate.before(beforeThis)) {
+                sc.addAnd("updatedOn", SearchCriteria.Op.BETWEEN, lastbalancedate, beforeThis);
+            } else {
+                return new ArrayList<QuotaBalanceVO>();
+            }
+            quotaBalances = search(sc, filter);
+        } catch (Exception e) {
+            s_logger.error("QuotaBalanceDaoImpl::findCreditBalance() failed due to: " + e.getMessage());
+            throw new CloudRuntimeException("Unable to find quota credit balance");
+        } finally {
+            TransactionLegacy.open(opendb).close();
         }
-        List<QuotaBalanceVO> qb = search(sc, filter);
-        TransactionLegacy.open(opendb).close();
-        return qb;
+        return quotaBalances;
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public List<QuotaBalanceVO> findQuotaBalance(final Long accountId, final Long domainId, final Date startDate, final Date endDate) {
-    // TODO account for series of credits around boundaries
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
 
-        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         List<QuotaBalanceVO> quotaUsageRecords = null;
-        try {
+        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
             SearchCriteria<QuotaBalanceVO> sc = createSearchCriteria();
             if (accountId != null) {
                 sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
@@ -130,11 +147,12 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
             if (quotaUsageRecords.size() == 0) {
                 quotaUsageRecords.addAll(lastQuotaBalanceVO(accountId, domainId, startDate));
             }
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Unable to find quota balance");
         } finally {
-            txn.close();
+            TransactionLegacy.open(opendb).close();
         }
 
-        TransactionLegacy.open(opendb).close();
         return quotaUsageRecords;
     }
 
@@ -143,11 +161,9 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
     @Override
     public List<QuotaBalanceVO> lastQuotaBalanceVO(final Long accountId, final Long domainId, final Date pivotDate) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-
-        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         List<QuotaBalanceVO> quotaUsageRecords = null;
         List<QuotaBalanceVO> trimmedRecords = new ArrayList<QuotaBalanceVO>();
-        try {
+        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
             Filter filter = new Filter(QuotaBalanceVO.class, "updatedOn", false, 0L, 100L);
             // ASSUMPTION there will be less than 100 continuous credit
             // transactions
@@ -164,8 +180,7 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
             quotaUsageRecords = search(sc, filter);
 
             // get records before startDate to find start balance
-            for (Iterator<QuotaBalanceVO> it = quotaUsageRecords.iterator(); it.hasNext();) {
-                QuotaBalanceVO entry = it.next();
+            for (QuotaBalanceVO entry : quotaUsageRecords) {
                 s_logger.info("findQuotaBalance Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
                 if (entry.getCreditsId() > 0) {
                     trimmedRecords.add(entry);
@@ -174,12 +189,11 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
                     break; // add only consecutive credit entries and last balance entry
                 }
             }
-
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Unable to get last quota balance");
         } finally {
-            txn.close();
+            TransactionLegacy.open(opendb).close();
         }
-
-        TransactionLegacy.open(opendb).close();
         return trimmedRecords;
     }
 
@@ -190,10 +204,9 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
             new InvalidParameterValueException("There are no balance entries on or before the requested date.");
         }
         BigDecimal finalBalance = new BigDecimal(0);
-        for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
-            QuotaBalanceVO entry = it.next();
-            s_logger.info("lastQuotaBalance Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
-            finalBalance.add(entry.getCreditBalance());
+        for (QuotaBalanceVO entry : quotaBalance) {
+            s_logger.debug("lastQuotaBalance Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
+            finalBalance = finalBalance.add(entry.getCreditBalance());
         }
         return finalBalance;
     }

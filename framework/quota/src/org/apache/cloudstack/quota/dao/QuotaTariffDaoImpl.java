@@ -22,6 +22,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.log4j.Logger;
@@ -56,27 +57,26 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
     @Override
     public QuotaTariffVO findTariffPlanByUsageType(final int quotaType, final Date effectiveDate) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        List<QuotaTariffVO> result = null;
-        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-        try {
+        List<QuotaTariffVO> result = new ArrayList<>();
+        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
             final Filter filter = new Filter(QuotaTariffVO.class, "effectiveOn", false, 0L, 1L);
             final SearchCriteria<QuotaTariffVO> sc = listAllIncludedUsageType.create();
             sc.setParameters("onorbefore", effectiveDate);
             sc.setParameters("quotatype", quotaType);
             result = search(sc, filter);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Unable to find tariff plan by usage type");
         } finally {
-            txn.close();
+            TransactionLegacy.open(opendb).close();
         }
-        // Switch back
-        TransactionLegacy.open(opendb).close();
         if (result.size() > 0) {
             if (s_logger.isDebugEnabled()){
-                s_logger.debug("findTariffPlanByUsageType: " + effectiveDate + "quota type " + quotaType  + " val=" + result.get(0).getCurrencyValue());
+                s_logger.debug("QuotaTariffDaoImpl::findTariffPlanByUsageType: " + effectiveDate + "quota type " + quotaType  + " val=" + result.get(0).getCurrencyValue());
             }
             return result.get(0);
         } else {
             if (s_logger.isDebugEnabled()){
-                s_logger.info("Missing quota type " + quotaType);
+                s_logger.info("QuotaTariffDaoImpl::findTariffPlanByUsageType: Missing quota type " + quotaType);
             }
             return null;
         }
@@ -86,8 +86,7 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
     public List<QuotaTariffVO> listAllTariffPlans(final Date effectiveDate) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         List<QuotaTariffVO> tariffs = new ArrayList<QuotaTariffVO>();
-        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-        try {
+        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
             final Filter filter = new Filter(QuotaTariffVO.class, "effectiveOn", false, 0L, 1L);
             final SearchCriteria<QuotaTariffVO> sc = listAllIncludedUsageType.create();
             sc.setParameters("onorbefore", effectiveDate);
@@ -96,47 +95,43 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
                 List<QuotaTariffVO> result = search(sc, filter);
                 if (result.size() > 0) {
                     tariffs.add(result.get(0));
-                    s_logger.info("listAllTariffPlans onorbefore" + effectiveDate +  "quota type " + result.get(0).getDescription() + " , effective Date=" + result.get(0).getEffectiveOn() + " val=" + result.get(0).getCurrencyValue());
+                    s_logger.info("listAllTariffPlans onorbefore" + effectiveDate + "quota type " + result.get(0).getDescription() + " , effective Date=" + result.get(0).getEffectiveOn() + " val=" + result.get(0).getCurrencyValue());
                 }
             }
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Unable to list all tariff plans");
         } finally {
-            txn.close();
+            TransactionLegacy.open(opendb).close();
         }
-        // Switch back
-        TransactionLegacy.open(opendb).close();
         return tariffs;
     }
 
     @Override
     public boolean updateQuotaTariff(QuotaTariffVO plan) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB); // Switch
-                                                                                    // to
         boolean result = false;
-        try {
-            // Usage DB
+        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
             result = this.update(plan.getId(), plan);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Unable to update quota tariff");
         } finally {
-            txn.close();
+            TransactionLegacy.open(opendb).close();
         }
-        TransactionLegacy.open(opendb).close(); // Switch back
         return result;
     }
 
     @Override
     public QuotaTariffVO addQuotaTariff(QuotaTariffVO plan) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB); // Switch
-                                                                                    // to
         QuotaTariffVO result = null;
-        try {
-            // Usage DB
+        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
             plan.setId(null);
             result = this.persist(plan);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Unable to save quota tariff");
         } finally {
-            txn.close();
+            TransactionLegacy.open(opendb).close();
         }
-        TransactionLegacy.open(opendb).close(); // Switch back
         return result;
     }
 }

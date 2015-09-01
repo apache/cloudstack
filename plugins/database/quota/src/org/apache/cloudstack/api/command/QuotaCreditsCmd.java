@@ -112,11 +112,15 @@ public class QuotaCreditsCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        Long accountId = _accountService.getActiveAccountByName(accountName, domainId).getAccountId();
+        Long accountId = null;
+        Account account = _accountService.getActiveAccountByName(accountName, domainId);
+        if (account != null) {
+            accountId = account.getAccountId();
+        }
         if (accountId == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "The account does not exists or has been removed/disabled");
         }
-        if (value == null) {
+        if (getValue() == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please send a valid non-empty quota value");
         }
         if (getQuotaEnforce() != null) {
@@ -126,10 +130,10 @@ public class QuotaCreditsCmd extends BaseCmd {
             _quotaService.setMinBalance(accountId, getMinBalance());
         }
         else {
-            _quotaService.setMinBalance(accountId, 0.2 * value);
+            _quotaService.setMinBalance(accountId, 0.2 * getValue());
         }
 
-        final QuotaCreditsResponse response = _responseBuilder.addQuotaCredits(accountId, domainId, value, CallContext.current().getCallingUserId());
+        final QuotaCreditsResponse response = _responseBuilder.addQuotaCredits(accountId, getDomainId(), getValue(), CallContext.current().getCallingUserId());
         response.setResponseName(getCommandName());
         response.setObjectName("quotacredits");
         setResponseObject(response);

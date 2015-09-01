@@ -21,7 +21,5 @@ import org.apache.cloudstack.quota.vo.ServiceOfferingVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface ServiceOfferingDao extends GenericDao<ServiceOfferingVO, Long> {
-
     ServiceOfferingVO findServiceOffering(Long vmId, long serviceOfferingId);
-
 }

@@ -16,27 +16,34 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
-import java.util.List;
-
-import javax.ejb.Local;
-
-import org.apache.cloudstack.quota.vo.QuotaAccountVO;
-import org.springframework.stereotype.Component;
-
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.quota.vo.QuotaAccountVO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.ejb.Local;
+import java.util.List;
 
 @Component
 @Local(value = { QuotaAccountDao.class })
 public class QuotaAccountDaoImpl extends GenericDaoBase<QuotaAccountVO, Long> implements QuotaAccountDao {
+    public static final Logger s_logger = Logger.getLogger(QuotaAccountDaoImpl.class.getName());
 
     @Override
     public List<QuotaAccountVO> listAll() {
         List<QuotaAccountVO> result = null;
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
-        result = super.listAll();
-        TransactionLegacy.open(opendb).close();
+        try {
+            TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
+            result = super.listAll();
+        } catch (Exception e) {
+            s_logger.error("QuotaAccountDaoImpl::listAll() failed due to: " + e.getMessage());
+            throw new CloudRuntimeException("Unable to list Quota Accounts");
+        } finally {
+            TransactionLegacy.open(opendb).close();
+        }
         return result;
     }
 
@@ -44,9 +51,15 @@ public class QuotaAccountDaoImpl extends GenericDaoBase<QuotaAccountVO, Long> im
     public QuotaAccountVO findById(Long id) {
         QuotaAccountVO result = null;
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
-        result = super.findById(id);
-        TransactionLegacy.open(opendb).close();
+        try {
+            TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
+            result = super.findById(id);
+        } catch (Exception e) {
+            s_logger.error("QuotaAccountDaoImpl::findById() failed due to: " + e.getMessage());
+            throw new CloudRuntimeException("Unable to find Quota Account by ID");
+        } finally {
+            TransactionLegacy.open(opendb).close();
+        }
         return result;
     }
 
@@ -54,9 +67,15 @@ public class QuotaAccountDaoImpl extends GenericDaoBase<QuotaAccountVO, Long> im
     public QuotaAccountVO persist(QuotaAccountVO entity) {
         QuotaAccountVO result = null;
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
-        result = super.persist(entity);
-        TransactionLegacy.open(opendb).close();
+        try {
+            TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
+            result = super.persist(entity);
+        } catch (Exception e) {
+            s_logger.error("QuotaAccountDaoImpl::persist() failed due to: " + e.getMessage());
+            throw new CloudRuntimeException("Unable to save Quota Account");
+        } finally {
+            TransactionLegacy.open(opendb).close();
+        }
         return result;
     }
 
@@ -64,9 +83,15 @@ public class QuotaAccountDaoImpl extends GenericDaoBase<QuotaAccountVO, Long> im
     public boolean update(Long id, QuotaAccountVO entity) {
         boolean result = false;
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
-        result = super.update(id, entity);
-        TransactionLegacy.open(opendb).close();
+        try {
+            TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
+            result = super.update(id, entity);
+        } catch (Exception e) {
+            s_logger.error("QuotaAccountDaoImpl::update() failed due to: " + e.getMessage());
+            throw new CloudRuntimeException("Unable to update Quota Account");
+        } finally {
+            TransactionLegacy.open(opendb).close();
+        }
         return result;
     }
 

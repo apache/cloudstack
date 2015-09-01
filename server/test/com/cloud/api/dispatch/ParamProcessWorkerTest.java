@@ -62,6 +62,9 @@ public class ParamProcessWorkerTest {
         @Parameter(name = "boolparam1", type = CommandType.BOOLEAN)
         boolean boolparam1;
 
+        @Parameter(name = "doubleparam1", type = CommandType.DOUBLE)
+        double doubleparam1;
+
         @Override
         public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
             ResourceAllocationException, NetworkRuleConflictException {
@@ -98,10 +101,12 @@ public class ParamProcessWorkerTest {
         params.put("strparam1", "foo");
         params.put("intparam1", "100");
         params.put("boolparam1", "true");
+        params.put("doubleparam1", "11.89");
         final TestCmd cmd = new TestCmd();
         paramProcessWorker.processParameters(cmd, params);
         Assert.assertEquals("foo", cmd.strparam1);
         Assert.assertEquals(100, cmd.intparam1);
+        Assert.assertTrue(Double.compare(cmd.doubleparam1, 11.89) == 0);
     }
 
 }
