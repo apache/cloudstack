@@ -39,6 +39,7 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
         Ready("The volume is ready to be used."),
         Migrating("The volume is migrating to other storage pool"),
         Snapshotting("There is a snapshot created on this volume, not backed up to secondary storage yet"),
+        RevertSnapshotting("There is a snapshot created on this volume, the volume is being reverting from snapshot"),
         Resizing("The volume is being resized"),
         Expunging("The volume is being expunging"),
         Expunged("The volume has been expunged"),
@@ -91,6 +92,9 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Ready, Event.SnapshotRequested, Snapshotting, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Snapshotting, Event.OperationSucceeded, Ready, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Snapshotting, Event.OperationFailed, Ready,null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Ready, Event.RevertSnapshotRequested, RevertSnapshotting, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(RevertSnapshotting, Event.OperationSucceeded, Ready, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(RevertSnapshotting, Event.OperationFailed, Ready,null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Allocated, Event.MigrationCopyRequested, Creating, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Creating, Event.MigrationCopyFailed, Allocated, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Creating, Event.MigrationCopySucceeded, Ready, Arrays.asList(new StateMachine2.Transition.Impact[]{StateMachine2.Transition.Impact.USAGE})));
@@ -131,6 +135,7 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
         MigrationCopySucceeded,
         MigrationCopyFailed,
         SnapshotRequested,
+        RevertSnapshotRequested,
         DestroyRequested,
         ExpungingRequested,
         ResizeRequested,

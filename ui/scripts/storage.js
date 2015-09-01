@@ -1862,6 +1862,9 @@
                         volumename: {
                             label: 'label.volume'
                         },
+                        name: {
+                            label: 'label.name'
+                        },
                         intervaltype: {
                             label: 'label.interval.type'
                         },

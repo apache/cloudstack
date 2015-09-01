@@ -37,7 +37,7 @@ public abstract class SnapshotStrategyBase implements SnapshotStrategy {
     }
 
     @Override
-    public boolean revertSnapshot(Long snapshotId) {
-        return snapshotSvr.revertSnapshot(snapshotId);
+    public boolean revertSnapshot(SnapshotInfo snapshot) {
+        return snapshotSvr.revertSnapshot(snapshot);
     }
 }

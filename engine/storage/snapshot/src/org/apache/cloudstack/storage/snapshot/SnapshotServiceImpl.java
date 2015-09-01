@@ -407,16 +407,16 @@ public class SnapshotServiceImpl implements SnapshotService {
     }
 
     @Override
-    public boolean revertSnapshot(Long snapshotId) {
-        SnapshotInfo snapshot = _snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
-        PrimaryDataStore store = (PrimaryDataStore)snapshot.getDataStore();
+    public boolean revertSnapshot(SnapshotInfo snapshot) {
+        SnapshotInfo snapshotOnPrimaryStore = _snapshotFactory.getSnapshot(snapshot.getId(), DataStoreRole.Primary);
+        PrimaryDataStore store = (PrimaryDataStore)snapshotOnPrimaryStore.getDataStore();
 
         AsyncCallFuture<SnapshotResult> future = new AsyncCallFuture<SnapshotResult>();
         RevertSnapshotContext<CommandResult> context = new RevertSnapshotContext<CommandResult>(null, snapshot, future);
         AsyncCallbackDispatcher<SnapshotServiceImpl, CommandResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().revertSnapshotCallback(null, null)).setContext(context);
 
-        ((PrimaryDataStoreDriver)store.getDriver()).revertSnapshot(snapshot, caller);
+        ((PrimaryDataStoreDriver)store.getDriver()).revertSnapshot(snapshot, snapshotOnPrimaryStore, caller);
 
         SnapshotResult result = null;
         try {

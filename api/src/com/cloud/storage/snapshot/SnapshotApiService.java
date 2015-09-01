@@ -106,7 +106,7 @@ public interface SnapshotApiService {
      */
     Long getHostIdForSnapshotOperation(Volume vol);
 
-    boolean revertSnapshot(Long snapshotId);
+    Snapshot revertSnapshot(Long snapshotId);
 
     SnapshotPolicy updateSnapshotPolicy(UpdateSnapshotPolicyCmd updateSnapshotPolicyCmd);
 }
