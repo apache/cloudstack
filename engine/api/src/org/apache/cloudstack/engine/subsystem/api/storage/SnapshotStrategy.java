@@ -29,7 +29,7 @@ public interface SnapshotStrategy {
 
     boolean deleteSnapshot(Long snapshotId);
 
-    boolean revertSnapshot(Long snapshotId);
+    boolean revertSnapshot(SnapshotInfo snapshot);
 
     StrategyPriority canHandle(Snapshot snapshot, SnapshotOperation op);
 }

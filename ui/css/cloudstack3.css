@@ -12675,6 +12675,7 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -167px -677px;
 }
 
+.revertSnapshot .icon,
 .restoreVM .icon,
 .restore .icon,
 .recover .icon {
@@ -12690,6 +12691,7 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -167px -66px;
 }
 
+.revertSnapshot:hover .icon,
 .restoreVM:hover .icon,
 .restore:hover .icon {
   background-position: -168px -613px;

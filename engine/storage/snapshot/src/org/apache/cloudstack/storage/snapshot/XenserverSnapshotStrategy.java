@@ -278,7 +278,7 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
     }
 
     @Override
-    public boolean revertSnapshot(Long snapshotId) {
+    public boolean revertSnapshot(SnapshotInfo snapshot) {
         throw new CloudRuntimeException("revert Snapshot is not supported");
     }
 
