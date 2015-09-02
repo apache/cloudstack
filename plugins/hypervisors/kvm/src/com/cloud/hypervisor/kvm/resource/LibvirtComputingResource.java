@@ -91,6 +91,7 @@ import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -319,6 +320,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private int _migrateSpeed;
     private int _migrateDowntime;
     private int _migratePauseAfter;
+    protected boolean _diskActivityCheckEnabled;
+    protected long _diskActivityCheckFileSizeMin = 10485760; // 10MB
+    protected int _diskActivityCheckTimeoutSeconds = 120; // 120s
+    protected long _diskActivityInactiveThresholdMilliseconds = 30000; // 30s
 
     private long _hvVersion;
     private long _kernelVersion;
@@ -969,6 +974,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         params.put("libvirtVersion", _hypervisorLibvirtVersion);
 
         configureVifDrivers(params);
+        configureDiskActivityChecks(params);
 
         KVMStorageProcessor storageProcessor = new KVMStorageProcessor(_storagePoolMgr, this);
         storageProcessor.configure(name, params);
@@ -980,6 +986,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         getOsVersion();
         return true;
+    }
+
+    protected void configureDiskActivityChecks(Map<String, Object> params) {
+        _diskActivityCheckEnabled = Boolean.parseBoolean((String)params.get("vm.diskactivity.checkenabled"));
+        if (_diskActivityCheckEnabled) {
+            int timeout = NumbersUtil.parseInt((String)params.get("vm.diskactivity.checktimeout_s"), 0);
+            if (timeout > 0) {
+                _diskActivityCheckTimeoutSeconds = timeout;
+            }
+            long inactiveTime = NumbersUtil.parseLong((String)params.get("vm.diskactivity.inactivetime_ms"), 0L);
+            if (inactiveTime > 0) {
+                _diskActivityInactiveThresholdMilliseconds = inactiveTime;
+            }
+        }
     }
 
     protected void configureVifDrivers(Map<String, Object> params) throws ConfigurationException {
@@ -3925,6 +3945,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             String volPath = null;
             if (physicalDisk != null) {
                 volPath = physicalDisk.getPath();
+            }
+
+            // check for disk activity, if detected we should exit because vm is running elsewhere
+            if (_diskActivityCheckEnabled && physicalDisk != null && physicalDisk.getFormat() == PhysicalDiskFormat.QCOW2) {
+                s_logger.debug("Checking physical disk file at path " + volPath + " for disk activity to ensure vm is not running elsewhere");
+                try {
+                    HypervisorUtils.checkVolumeFileForActivity(volPath, _diskActivityCheckTimeoutSeconds, _diskActivityInactiveThresholdMilliseconds, _diskActivityCheckFileSizeMin);
+                } catch (IOException ex) {
+                    throw new CloudRuntimeException("Unable to check physical disk file for activity", ex);
+                }
+                s_logger.debug("Disk activity check cleared");
             }
 
             // if params contains a rootDiskController key, use its value (this is what other HVs are doing)
