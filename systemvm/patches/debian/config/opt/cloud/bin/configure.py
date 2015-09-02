@@ -28,6 +28,7 @@ import re
 import time
 import shutil
 import os.path
+import os
 from fcntl import flock, LOCK_EX, LOCK_UN
 
 from cs.CsDatabag import CsDataBag, CsCmdLine
@@ -484,6 +485,170 @@ class CsSite2SiteVpn(CsDataBag):
         hrs = int(val) / 3600
         return "%sh" % hrs
 
+class CsVpnUser(CsDataBag):
+    PPP_CHAP='/etc/ppp/chap-secrets'
+
+    def process(self):
+        for user in self.dbag:
+            if user == 'id':
+                continue
+
+            userconfig=self.dbag[user]
+            if userconfig['add']:
+                self.add_l2tp_ipsec_user(user, userconfig)
+            else:
+                self.del_l2tp_ipsec_user(user, userconfig)
+
+    def add_l2tp_ipsec_user(self, user, obj):
+        userfound = False
+        password = obj['password']
+
+        userSearchEntry = "%s \* %s \*"%(user,password)
+        userAddEntry = "%s * %s *" %(user,password)
+        logging.debug("Adding vpn user %s" %userSearchEntry)
+
+        file = CsFile(self.PPP_CHAP)
+        userfound = file.searchString(userSearchEntry, '#')
+        if not userfound:
+            logging.debug("User is not there already, so adding user ")
+            self.del_l2tp_ipsec_user(user, obj)
+            file.add(userAddEntry)
+        file.commit()
+
+
+    def del_l2tp_ipsec_user(self, user, obj):
+        userfound = False
+        password = obj['password']
+        userentry = "%s \* %s \*"%(user,password)
+
+        logging.debug("Deleting the user %s " % user)
+        file = CsFile(self.PPP_CHAP)
+        file.deleteLine(userentry)
+        file.commit()
+
+        if not os.path.exists('/var/run/pppd2.tdb'):
+            return
+
+        logging.debug("kiing the PPPD process for the user %s " % user)
+
+        fileContents = CsHelper.execute("tdbdump /var/run/pppd2.tdb")
+        print fileContents
+
+        for line in fileContents:
+            if user in line:
+                contentlist = line.split(';')
+                for str in contentlist:
+                    print 'in del_l2tp str = '+ str
+                    pppd = str.split('=')[0]
+                    if pppd == 'PPPD_PID':
+                        pid = str.split('=')[1]
+                        if pid:
+                            logging.debug("killing process %s" %pid)
+                            CsHelper.execute('kill -9 %s' % pid)
+
+
+
+class CsRemoteAccessVpn(CsDataBag):
+    VPNCONFDIR = "/etc/ipsec.d"
+
+    def process(self):
+        self.confips = []
+
+        logging.debug(self.dbag)
+        for public_ip in self.dbag:
+            if public_ip == "id":
+                continue
+            vpnconfig=self.dbag[public_ip]
+
+            #Enable remote access vpn
+            if vpnconfig['create']:
+                logging.debug("Enabling  remote access vpn  on "+ public_ip)
+                self.configure_l2tpIpsec(public_ip, self.dbag[public_ip])
+                logging.debug("Remote accessvpn  data bag %s",  self.dbag)
+                self.remoteaccessvpn_iptables(public_ip, self.dbag[public_ip])
+
+                CsHelper.execute("ipsec auto --rereadall")
+                CsHelper.execute("service xl2tpd stop")
+                CsHelper.execute("service xl2tpd start")
+                CsHelper.execute("ipsec auto --rereadsecrets")
+                CsHelper.execute("ipsec auto --replace L2TP-PSK")
+            else:
+                logging.debug("Disabling remote access vpn .....")
+                #disable remote access vpn
+                CsHelper.execute("ipsec auto --down L2TP-PSK")
+                CsHelper.execute("service xl2tpd stop")
+
+
+    def configure_l2tpIpsec(self, left,  obj):
+        vpnconffile="%s/l2tp.conf" % (self.VPNCONFDIR)
+        vpnsecretfilte="%s/ipsec.any.secrets" % (self.VPNCONFDIR)
+        xl2tpdconffile="/etc/xl2tpd/xl2tpd.conf"
+        xl2tpoptionsfile='/etc/ppp/options.xl2tpd'
+
+        file = CsFile(vpnconffile)
+        localip=obj['local_ip']
+        localcidr=obj['local_cidr']
+        publicIface=obj['public_interface']
+        iprange=obj['ip_range']
+        psk=obj['preshared_key']
+
+        #left
+        file.addeq(" left=%s" % left)
+        file.commit()
+
+
+        secret = CsFile(vpnsecretfilte)
+        secret.addeq(": PSK \"%s\"" %psk)
+        secret.commit()
+
+        xl2tpdconf = CsFile(xl2tpdconffile)
+        xl2tpdconf.addeq("ip range = %s" %iprange)
+        xl2tpdconf.addeq("local ip = %s" %localip)
+        xl2tpdconf.commit()
+
+        xl2tpoptions=CsFile(xl2tpoptionsfile)
+        xl2tpoptions.search("ms-dns ", "ms-dns %s" %localip)
+        xl2tpoptions.commit()
+
+    def remoteaccessvpn_iptables(self, publicip, obj):
+        publicdev=obj['public_interface']
+        localcidr=obj['local_cidr']
+        local_ip=obj['local_ip']
+
+
+        self.fw.append(["", "", "-A INPUT -i %s --dst %s -p udp -m udp --dport 500 -j ACCEPT" % (publicdev, publicip)])
+        self.fw.append(["", "", "-A INPUT -i %s --dst %s -p udp -m udp --dport 4500 -j ACCEPT" % (publicdev, publicip)])
+        self.fw.append(["", "", "-A INPUT -i %s --dst %s -p udp -m udp --dport 1701 -j ACCEPT" % (publicdev, publicip)])
+        self.fw.append(["", "", "-A INPUT -i %s -p ah -j ACCEPT" % publicdev])
+        self.fw.append(["", "", "-A INPUT -i %s -p esp -j ACCEPT" % publicdev])
+
+        if self.config.is_vpc():
+            self.fw.append(["", ""," -N VPN_FORWARD"])
+            self.fw.append(["", "","-I FORWARD -i ppp+ -j VPN_FORWARD"])
+            self.fw.append(["", "","-I FORWARD -o ppp+ -j VPN_FORWARD"])
+            self.fw.append(["", "","-I FORWARD -o ppp+ -j VPN_FORWARD"])
+            self.fw.append(["", "","-A VPN_FORWARD -s  %s -j RETURN" %localcidr])
+            self.fw.append(["", "","-A VPN_FORWARD -i ppp+ -d %s -j RETURN" %localcidr])
+            self.fw.append(["", "","-A VPN_FORWARD -i ppp+  -o ppp+ -j RETURN"])
+        else:
+            self.fw.append(["", "","-A FORWARD -i ppp+ -o  ppp+ -j ACCEPT"])
+            self.fw.append(["", "","-A FORWARD -s %s -o  ppp+ -j ACCEPT" % localcidr])
+            self.fw.append(["", "","-A FORWARD -i ppp+ -d %s  -j ACCEPT" % localcidr])
+
+
+        self.fw.append(["", "","-A INPUT -i ppp+ -m udp -p udp --dport 53 -j ACCEPT"])
+        self.fw.append(["", "","-A INPUT -i ppp+ -m tcp -p tcp --dport 53 -j ACCEPT"])
+        self.fw.append(["nat", "","-I PREROUTING -i ppp+ -m tcp --dport 53 -j DNAT --to-destination %s" % local_ip])
+
+        if self.config.is_vpc():
+            return
+
+        self.fw.append(["mangle", "","-N  VPN_%s " %publicip])
+        self.fw.append(["mangle", "","-I PREROUTING  -d %s -j VPN_%s " % (publicip, publicip)])
+        self.fw.append(["mangle", "","-A VPN_%s -p ah  -j ACCEPT " % publicip])
+        self.fw.append(["mangle", "","-A VPN_%s -p esp  -j ACCEPT " % publicip])
+        self.fw.append(["mangle", "","-A VPN_%s -j RETURN " % publicip])
+
 
 class CsForwardingRules(CsDataBag):
 
@@ -672,14 +837,19 @@ def main(argv):
     fwd = CsForwardingRules("forwardingrules", config)
     fwd.process()
 
-    nf = CsNetfilters()
-    nf.compare(config.get_fw())
-
     red = CsRedundant(config)
     red.set()
 
     vpns = CsSite2SiteVpn("site2sitevpn", config)
     vpns.process()
+
+    #remote access vpn
+    rvpn = CsRemoteAccessVpn("remoteaccessvpn", config)
+    rvpn.process()
+
+    #remote access vpn users
+    vpnuser = CsVpnUser("vpnuserlist", config)
+    vpnuser.process()
 
     dhcp = CsDhcp("dhcpentry", config)
     dhcp.process()

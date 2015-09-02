@@ -130,5 +130,34 @@ class CsFile:
             return True
         return False
 
+
+    def searchString(self, search, ignoreLinesStartWith):
+        found = False
+        logging.debug("Searching for %s string " % search)
+
+        for index, line in enumerate(self.new_config):
+            print ' line = ' +line
+            if line.lstrip().startswith(ignoreLinesStartWith):
+                continue
+            if re.search(search, line):
+                found = True
+                break
+
+        return found
+
+
+    def deleteLine(self, search):
+        found = False
+        logging.debug("Searching for %s to remove the line " % search)
+        temp_config = []
+        for index, line in enumerate(self.new_config):
+            if line.lstrip().startswith("#"):
+                continue
+            if not re.search(search, line):
+                temp_config.append(line)
+
+        self.new_config = list(temp_config)
+
+
     def compare(self, o):
         return (isinstance(o, self.__class__) and set(self.config) == set(o.new_config))
