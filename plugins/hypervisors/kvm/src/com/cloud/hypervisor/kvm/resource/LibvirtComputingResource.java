@@ -3096,8 +3096,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                                VIR_DOMAIN_XML_MIGRATABLE flag (value = 8)
                                https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainXMLFlags
 
+                               Use VIR_DOMAIN_XML_SECURE (value = 1) prior to v1.0.0.
+
              */
-            xmlDesc = dm.getXMLDesc(8).replace(_privateIp, cmd.getDestinationIp());
+            int xmlFlag = conn.getLibVirVersion() >= 1000000 ? 8 : 1; // 1000000 equals v1.0.0
+
+            xmlDesc = dm.getXMLDesc(xmlFlag).replace(_privateIp, cmd.getDestinationIp());
 
             dconn = new Connect("qemu+tcp://" + cmd.getDestinationIp() + "/system");
 
