@@ -157,7 +157,7 @@ def get_hostname():
 
 def execute(command):
     """ Execute command """
-    logging.debug("Executing %s" % command)
+    logging.debug("Executing: %s" % command)
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     result = p.communicate()[0]
     return result.splitlines()
@@ -178,7 +178,7 @@ def save_iptables(command, iptables_file):
 
 def execute2(command):
     """ Execute command """
-    logging.debug("Executing %s" % command)
+    logging.debug("Executing: %s" % command)
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     p.wait()
     return p

@@ -32,6 +32,8 @@ import cs_vmdata
 import cs_dhcp
 import cs_forwardingrules
 import cs_site2sitevpn
+import cs_remoteaccessvpn
+import cs_vpnusers
 
 from pprint import pprint
 
@@ -66,6 +68,7 @@ class DataBag:
             logging.error("Could not write data bag %s", self.key)
         else:
             logging.debug("Writing data bag type %s", self.key)
+            logging.debug(dbag)
         jsono = json.dumps(dbag, indent=4, sort_keys=True)
         handle.write(jsono)
 
@@ -119,6 +122,10 @@ class updateDataBag:
             dbag = self.processForwardingRules(self.db.getDataBag())
         elif self.qFile.type == 'site2sitevpn':
             dbag = self.process_site2sitevpn(self.db.getDataBag())
+        elif self.qFile.type == 'remoteaccessvpn':
+            dbag = self.process_remoteaccessvpn(self.db.getDataBag())
+        elif self.qFile.type == 'vpnuserlist':
+            dbag = self.process_vpnusers(self.db.getDataBag())
         else:
             logging.error("Error I do not know what to do with file of type %s", self.qFile.type)
             return
@@ -146,6 +153,12 @@ class updateDataBag:
 
     def process_site2sitevpn(self, dbag):
         return cs_site2sitevpn.merge(dbag, self.qFile.data)
+
+    def process_remoteaccessvpn(self, dbag):
+        return cs_remoteaccessvpn.merge(dbag, self.qFile.data)
+
+    def process_vpnusers(self, dbag):
+        return cs_vpnusers.merge(dbag, self.qFile.data)
 
     def process_network_acl(self, dbag):
         return cs_network_acl.merge(dbag, self.qFile.data)
