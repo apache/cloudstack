@@ -623,12 +623,7 @@ public class NetworkHelperImpl implements NetworkHelper {
 
         networks.put(controlConfig, new ArrayList<NicProfile>());
 
-        // 2) Guest Network
-        final LinkedHashMap<Network, List<? extends NicProfile>> guestNic = configureGuestNic(routerDeploymentDefinition);
-        // The guest nic has to be added after the Control Nic.
-        networks.putAll(guestNic);
-
-        // 3) Public network
+        // 2) Public network
         if (routerDeploymentDefinition.isPublicNetwork()) {
             s_logger.debug("Adding nic for Virtual Router in Public network ");
             // if source nat service is supported by the network, get the source
@@ -651,10 +646,7 @@ public class NetworkHelperImpl implements NetworkHelper {
                 defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(sourceNatIp.getVlanTag()));
                 defaultNic.setIsolationUri(IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()));
             }
-            //If guest nic has already been addedd we will have 2 devices in the list.
-            if (networks.size() > 1) {
-                defaultNic.setDeviceId(2);
-            }
+
             final NetworkOffering publicOffering = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemPublicNetwork).get(0);
             final List<? extends Network> publicNetworks = _networkMgr.setupNetwork(s_systemAccount, publicOffering, routerDeploymentDefinition.getPlan(), null, null, false);
             final String publicIp = defaultNic.getIPv4Address();
@@ -667,6 +659,11 @@ public class NetworkHelperImpl implements NetworkHelper {
             }
             networks.put(publicNetworks.get(0), new ArrayList<NicProfile>(Arrays.asList(defaultNic)));
         }
+
+        // 3) Guest Network
+        final LinkedHashMap<Network, List<? extends NicProfile>> guestNic = configureGuestNic(routerDeploymentDefinition);
+        // The guest nic has to be added after the Control and Public nics.
+        networks.putAll(guestNic);
 
         return networks;
     }
