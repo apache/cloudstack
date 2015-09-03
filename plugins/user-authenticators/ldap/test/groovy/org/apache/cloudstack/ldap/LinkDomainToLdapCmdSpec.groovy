@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.command.LinkDomainToLdapCmd
 import org.apache.cloudstack.api.response.LinkDomainToLdapResponse
 import org.apache.cloudstack.ldap.LdapManager
 import org.apache.cloudstack.ldap.LdapUser
+import org.apache.cloudstack.ldap.NoLdapUserMatchingQueryException
 import spock.lang.Shared
 import spock.lang.Specification
 
@@ -160,6 +161,72 @@ class LinkDomainToLdapCmdSpec extends Specification {
         result.getType() == type
         result.getName() == name
         result.getAdminId() == String.valueOf(accountId)
+    }
+
+    def "test when admin doesnt exist in ldap"() {
+        def domainId = 1;
+        def type = "GROUP";
+        def name = "CN=test,DC=ccp,DC=Citrix,DC=com"
+        def accountType = 2;
+        def username = "admin"
+
+        LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(domainId, type, name, (short)accountType)
+        _ldapManager.linkDomainToLdap(_,_,_,_) >> response
+        _ldapManager.getUser(username, type, name) >> {throw new NoLdapUserMatchingQueryException("get ldap user failed from mock")}
+
+        linkDomainToLdapCmd.admin = username
+        linkDomainToLdapCmd.type = type
+        linkDomainToLdapCmd.name = name
+        linkDomainToLdapCmd.domainId = domainId
+
+        when:
+        linkDomainToLdapCmd.execute()
+        then:
+        LinkDomainToLdapResponse result = (LinkDomainToLdapResponse)linkDomainToLdapCmd.getResponseObject()
+        result.getObjectName() == "LinkDomainToLdap"
+        result.getResponseName() == linkDomainToLdapCmd.getCommandName()
+        result.getDomainId() == domainId
+        result.getType() == type
+        result.getName() == name
+        result.getAdminId() == null
+    }
+
+    /**
+     * api should not fail in this case as link domain to ldap is successful
+     */
+    def "test when create user account throws a run time exception"() {
+        def domainId = 1;
+        def type = "GROUP";
+        def name = "CN=test,DC=ccp,DC=Citrix,DC=com"
+        def accountType = 2;
+        def username = "admin"
+        def accountId = 24
+
+        LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(domainId, type, name, (short)accountType)
+        _ldapManager.linkDomainToLdap(_,_,_,_) >> response
+        _ldapManager.getUser(username, type, name) >> new LdapUser(username, "admin@ccp.citrix.com", "Admin", "Admin", name, "ccp", false)
+
+        _accountService.getActiveAccountByName(username, domainId) >> null
+        UserAccount userAccount = Mock(UserAccount)
+        userAccount.getAccountId() >> 24
+        _accountService.createUserAccount(username, "", "Admin", "Admin", "admin@ccp.citrix.com", null, username, Account.ACCOUNT_TYPE_DOMAIN_ADMIN, domainId,
+                username, null, _, _, User.Source.LDAP) >> { throw new RuntimeException("created failed from mock") }
+
+        linkDomainToLdapCmd.admin = username
+        linkDomainToLdapCmd.type = type
+        linkDomainToLdapCmd.name = name
+        linkDomainToLdapCmd.domainId = domainId
+
+        when:
+        linkDomainToLdapCmd.execute()
+        then:
+        LinkDomainToLdapResponse result = (LinkDomainToLdapResponse)linkDomainToLdapCmd.getResponseObject()
+        result.getObjectName() == "LinkDomainToLdap"
+        result.getResponseName() == linkDomainToLdapCmd.getCommandName()
+        result.getDomainId() == domainId
+        result.getType() == type
+        result.getName() == name
+        result.getAdminId() == null
     }
 
 }

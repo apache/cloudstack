@@ -71,24 +71,28 @@ public class LinkDomainToLdapCmd extends BaseCmd {
         try {
             LinkDomainToLdapResponse response = _ldapManager.linkDomainToLdap(domainId, type, name, accountType);
             if(admin!=null) {
+                LdapUser ldapUser = null;
                 try {
-                    LdapUser ldapUser = _ldapManager.getUser(admin, type, name);
-                    if(!ldapUser.isDisabled()) {
-                        Account account = _accountService.getActiveAccountByName(admin, domainId);
-                        if (account == null) {
-                            UserAccount userAccount =
-                                _accountService.createUserAccount(admin, "", ldapUser.getFirstname(), ldapUser.getLastname(), ldapUser.getEmail(), null, admin, Account.ACCOUNT_TYPE_DOMAIN_ADMIN, domainId, admin, null, UUID.randomUUID().toString(),
-                                                                  UUID.randomUUID().toString(), User.Source.LDAP);
+                    ldapUser = _ldapManager.getUser(admin, type, name);
+                } catch (NoLdapUserMatchingQueryException e) {
+                    s_logger.debug("no ldap user matching username " + admin + " in the given group/ou", e);
+                }
+                if (ldapUser != null && !ldapUser.isDisabled()) {
+                    Account account = _accountService.getActiveAccountByName(admin, domainId);
+                    if (account == null) {
+                        try {
+                            UserAccount userAccount = _accountService.createUserAccount(admin, "", ldapUser.getFirstname(), ldapUser.getLastname(), ldapUser.getEmail(), null,
+                                    admin, Account.ACCOUNT_TYPE_DOMAIN_ADMIN, domainId, admin, null, UUID.randomUUID().toString(), UUID.randomUUID().toString(), User.Source.LDAP);
                             response.setAdminId(String.valueOf(userAccount.getAccountId()));
                             s_logger.info("created an account with name " + admin + " in the given domain " + domainId);
-                        } else {
-                            s_logger.debug("an account with name " + admin + " already exists in the domain " + domainId);
+                        } catch (Exception e) {
+                            s_logger.info("an exception occurred while creating account with name " + admin +" in domain " + domainId, e);
                         }
                     } else {
-                        s_logger.debug("ldap user with username "+admin+" is disabled in the given group/ou");
+                        s_logger.debug("an account with name " + admin + " already exists in the domain " + domainId);
                     }
-                } catch (NoLdapUserMatchingQueryException e) {
-                    s_logger.debug("no ldap user matching username " + admin + " in the given group/ou");
+                } else {
+                    s_logger.debug("ldap user with username "+admin+" is disabled in the given group/ou");
                 }
             }
             response.setObjectName("LinkDomainToLdap");
