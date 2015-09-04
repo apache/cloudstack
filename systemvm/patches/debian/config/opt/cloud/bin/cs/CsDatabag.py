@@ -134,3 +134,7 @@ class CsCmdLine(CsDataBag):
         md5 = hashlib.md5()
         md5.update(passwd)
         return md5.hexdigest()
+    def get_gateway(self):
+        if "gateway" in self.idata():
+            return self.idata()['gateway']
+        return False

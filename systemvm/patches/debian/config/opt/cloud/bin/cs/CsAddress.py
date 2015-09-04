@@ -95,9 +95,17 @@ class CsAddress(CsDataBag):
                 return ip
         return None
 
+    def check_if_link_up(self,dev):
+        cmd="ip link show dev %s | tr '\n' ' ' | cut -d ' ' -f 9"%dev
+        result=CsHelper.execute(cmd)
+        if(result[0].lower()=="up"):
+            return True
+        else:
+            return False
+
+
     def process(self):
         route = CsRoute()
-        found_defaultroute = False
 
         for dev in self.dbag:
             if dev == "id":
@@ -105,8 +113,14 @@ class CsAddress(CsDataBag):
             ip = CsIP(dev, self.config)
 
             for address in self.dbag[dev]:
+                if(address["nw_type"]!="public"):
+                    continue
 
-                gateway = str(address["gateway"])
+                #check if link is up
+                if not self.check_if_link_up(dev):
+                   cmd="ip link set %s up"%dev
+                   CsHelper.execute(cmd)
+
                 network = str(address["network"])
 
                 ip.setAddress(address)
@@ -122,16 +136,14 @@ class CsAddress(CsDataBag):
                         "Address %s on device %s not configured", ip.ip(), dev)
                     if CsDevice(dev, self.config).waitfordevice():
                         ip.configure()
+                route.add_route(dev, network)
 
-                if address["nw_type"] != "control":
-                    route.add_route(dev, network)
+        # once we start processing public ip's we need to verify there
+        # is a default route and add if needed
+        if not route.defaultroute_exists():
+            cmdline=self.config.get_cmdline_instance()
+            route.add_defaultroute(cmdline.get_gateway())
 
-                # once we start processing public ip's we need to verify there
-                # is a default route and add if needed
-                if address["nw_type"] == "public" and not found_defaultroute:
-                    if not route.defaultroute_exists():
-                        if route.add_defaultroute(gateway):
-                            found_defaultroute = True
 
 
 class CsInterface:
