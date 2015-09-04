@@ -75,13 +75,9 @@ class OvmSecurityGroup(OvmObject):
     @staticmethod
     def add_fw_framework(bridge_name):
         try:
-            cfo = ConfigFileOps("/etc/sysctl.conf")
-            cfo.addEntry("net.bridge.bridge-nf-call-arptables", "1")
-            cfo.addEntry("net.bridge.bridge-nf-call-iptables", "1")
-            cfo.addEntry("net.bridge.bridge-nf-call-ip6tables", "1")
-            cfo.save()
-
-            execute("sysctl -p /etc/sysctl.conf")
+            execute("sysctl -w net.bridge.bridge-nf-call-arptables=1")
+            execute("sysctl -w net.bridge.bridge-nf-call-iptables=1")
+            execute("sysctl -w net.bridge.bridge-nf-call-ip6tables=1")
         except:
             logging.debug("failed to turn on bridge netfilter")
             return False
