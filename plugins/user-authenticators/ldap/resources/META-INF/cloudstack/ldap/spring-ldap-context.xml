@@ -35,5 +35,6 @@
     <bean id="LdapConfigurationDao"
         class="org.apache.cloudstack.ldap.dao.LdapConfigurationDaoImpl" />
     <bean id="LdapConfiguration" class="org.apache.cloudstack.ldap.LdapConfiguration" />
+    <bean id="LdapTrustMapDao" class="org.apache.cloudstack.ldap.dao.LdapTrustMapDaoImpl" />
 
 </beans>

@@ -32,7 +32,8 @@ import org.apache.log4j.Logger;
 
 public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements LdapUserManager {
     public static final Logger s_logger = Logger.getLogger(ADLdapUserManagerImpl.class.getName());
-    private static final String MICROSOFT_AD_NESTED_MEMBERS_FILTER = "memberOf:1.2.840.113556.1.4.1941";
+    private static final String MICROSOFT_AD_NESTED_MEMBERS_FILTER = "memberOf:1.2.840.113556.1.4.1941:";
+    private static final String MICROSOFT_AD_MEMBERS_FILTER = "memberOf";
 
     @Override
     public List<LdapUser> getUsersInGroup(String groupName, LdapContext context) throws NamingException {
@@ -66,7 +67,7 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
 
         final StringBuilder memberOfFilter = new StringBuilder();
         String groupCnName =  _ldapConfiguration.getCommonNameAttribute() + "=" +groupName + "," +  _ldapConfiguration.getBaseDn();
-        memberOfFilter.append("(" + MICROSOFT_AD_NESTED_MEMBERS_FILTER + ":=");
+        memberOfFilter.append("(").append(getMemberOfAttribute()).append("=");
         memberOfFilter.append(groupCnName);
         memberOfFilter.append(")");
 
@@ -78,5 +79,26 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
 
         s_logger.debug("group search filter = " + result);
         return result.toString();
+    }
+
+    protected boolean isUserDisabled(SearchResult result) throws NamingException {
+        boolean isDisabledUser = false;
+        String userAccountControl = LdapUtils.getAttributeValue(result.getAttributes(), _ldapConfiguration.getUserAccountControlAttribute());
+        if (userAccountControl != null) {
+            int control = Integer.valueOf(userAccountControl);
+            // second bit represents disabled user flag in AD
+            if ((control & 2) > 0) {
+                isDisabledUser = true;
+            }
+        }
+        return isDisabledUser;
+    }
+
+    protected String getMemberOfAttribute() {
+        if(_ldapConfiguration.isNestedGroupsEnabled()) {
+            return MICROSOFT_AD_NESTED_MEMBERS_FILTER;
+        } else {
+            return MICROSOFT_AD_MEMBERS_FILTER;
+        }
     }
 }

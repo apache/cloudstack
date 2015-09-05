@@ -127,7 +127,7 @@ class LdapConfigurationSpec extends spock.lang.Specification {
         when: "Get return attributes is called"
         String[] returnAttributes = ldapConfiguration.getReturnAttributes()
         then: "An array containing uid, mail, givenname, sn and cn is returned"
-        returnAttributes == ["uid", "mail", "givenname", "sn", "cn"]
+        returnAttributes == ["uid", "mail", "givenname", "sn", "cn", "userAccountControl"]
     }
 
     def "Test that getScope returns SearchControls.SUBTREE_SCOPE"() {

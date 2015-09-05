@@ -1066,6 +1066,10 @@ under the License.
 'label.ovm3.vip': '<fmt:message key="label.ovm3.vip" />',
 'label.local.file': '<fmt:message key="label.local.file" />',
 'label.local.storage.enabled.system.vms': '<fmt:message key="label.local.storage.enabled.system.vms" />',
+'label.link.domain.to.ldap': '<fmt:message key="label.link.domain.to.ldap" />',
+'message.link.domain.to.ldap': '<fmt:message key="message.link.domain.to.ldap" />',
+'label.ldap.link.type': '<fmt:message key="label.ldap.link.type" />',
+'label.account.type': '<fmt:message key="label.account.type" />'
 'label.create.ssh.key.pair': '<fmt:message key="label.create.ssh.key.pair" />',
 'label.fingerprint': '<fmt:message key="label.fingerprint" />',
 'label.host.tag': '<fmt:message key="label.host.tag" />',

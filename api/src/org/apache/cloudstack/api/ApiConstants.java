@@ -628,6 +628,8 @@ public class ApiConstants {
     public static final String OVM3_CLUSTER = "ovm3cluster";
     public static final String OVM3_VIP = "ovm3vip";
 
+    public static final String ADMIN = "admin";
+
     public enum HostDetails {
         all, capacity, events, stats, min;
     }
