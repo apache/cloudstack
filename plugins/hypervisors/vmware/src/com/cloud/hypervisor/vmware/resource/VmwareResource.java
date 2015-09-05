@@ -4663,7 +4663,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String instanceNameCustomField = "value[" + key + "]";
 
         ObjectContent[] ocs =
-                hyperHost.getVmPropertiesOnHyperHost(new String[] {"name", "summary.config.numCpu", "summary.quickStats.overallCpuUsage", instanceNameCustomField});
+                hyperHost.getVmPropertiesOnHyperHost(new String[] {"name", "summary.config.numCpu", "summary.quickStats.overallCpuUsage","summary.quickStats.guestMemoryUsage","resourceConfig.memoryAllocation.limit","config.hardware.memoryMB", instanceNameCustomField});
         if (ocs != null && ocs.length > 0) {
             for (ObjectContent oc : ocs) {
                 List<DynamicProperty> objProps = oc.getPropSet();
@@ -4671,6 +4671,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     String name = null;
                     String numberCPUs = null;
                     String maxCpuUsage = null;
+                    String memlimit = null;
+                    String memkb = null;
+                    String guestMemusage = null;
                     String vmNameOnVcenter = null;
                     String vmInternalCSName = null;
                     for (DynamicProperty objProp : objProps) {
@@ -4679,10 +4682,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         } else if (objProp.getName().contains(instanceNameCustomField)) {
                             if (objProp.getVal() != null)
                                 vmInternalCSName = ((CustomFieldStringValue)objProp.getVal()).getValue();
-                        } else if (objProp.getName().equals("summary.config.numCpu")) {
+                        }else if(objProp.getName().equals("summary.quickStats.guestMemoryUsage")){
+                            guestMemusage = objProp.getVal().toString();
+                        }else if (objProp.getName().equals("summary.config.numCpu")) {
                             numberCPUs = objProp.getVal().toString();
                         } else if (objProp.getName().equals("summary.quickStats.overallCpuUsage")) {
                             maxCpuUsage = objProp.getVal().toString();
+                        } else if (objProp.getName().equals("resourceConfig.memoryAllocation.limit")) {
+                            memlimit = objProp.getVal().toString();
+                        } else if (objProp.getName().equals("config.hardware.memoryMB")) {
+                            memkb = objProp.getVal().toString();
                         }
                     }
                     new VirtualMachineMO(hyperHost.getContext(), oc.getObj());
@@ -4751,7 +4760,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             }
                         }
                     }
-                    vmResponseMap.put(name, new VmStatsEntry(Integer.parseInt(maxCpuUsage), networkReadKBs, networkWriteKBs, Integer.parseInt(numberCPUs), "vm"));
+                    vmResponseMap.put(name, new VmStatsEntry(Double.parseDouble(memkb)*1000,Double.parseDouble(guestMemusage)*1000,Double.parseDouble(memlimit)*1000, Double.parseDouble(maxCpuUsage), networkReadKBs, networkWriteKBs, Integer.parseInt(numberCPUs), "vm"));
                 }
             }
         }
