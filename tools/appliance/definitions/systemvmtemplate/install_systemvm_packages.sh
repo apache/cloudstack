@@ -61,6 +61,7 @@ function install_packages() {
     apache2 ssl-cert \
     dnsmasq dnsmasq-utils \
     nfs-common \
+    qemu-utils \
     samba-common cifs-utils \
     xl2tpd bcrelay ppp ipsec-tools tdb-tools \
     openswan=1:2.6.37-3 \
