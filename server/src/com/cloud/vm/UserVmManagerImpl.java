@@ -1212,7 +1212,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (guestNic == null) {
             throw new CloudRuntimeException("Unable to add NIC to " + vmInstance);
         }
-        CallContext.current().putContextParameter(Nic.class.getName(), guestNic.getUuid());
+        CallContext.current().putContextParameter(Nic.class, guestNic.getUuid());
         s_logger.debug("Successful addition of " + network + " from " + vmInstance);
         return _vmDao.findById(vmInstance.getId());
     }

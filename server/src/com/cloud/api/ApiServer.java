@@ -277,11 +277,10 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             }
         }
         // For some reason, the instanceType / instanceId are not abstract, which means we may get null values.
-        org.apache.cloudstack.framework.events.Event event = new org.apache.cloudstack.framework.events.Event(
-                "management-server",
-                EventCategory.ASYNC_JOB_CHANGE_EVENT.getName(),
-                jobEvent,
-                (job.getInstanceType() != null ? job.getInstanceType().toString() : "unknown"), null);
+        String instanceType = job.getInstanceType() != null ? job.getInstanceType() : "unknown";
+        String instanceUuid = job.getInstanceId() != null ? ApiDBUtils.findJobInstanceUuid(job) : "";
+        org.apache.cloudstack.framework.events.Event event = new org.apache.cloudstack.framework.events.Event("management-server", EventCategory.ASYNC_JOB_CHANGE_EVENT.getName(),
+                jobEvent, instanceType, instanceUuid);
 
         Map<String, String> eventDescription = new HashMap<String, String>();
         eventDescription.put("command", job.getCmd());
@@ -289,8 +288,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         eventDescription.put("account", jobOwner.getUuid());
         eventDescription.put("processStatus", "" + job.getProcessStatus());
         eventDescription.put("resultCode", "" + job.getResultCode());
-        eventDescription.put("instanceUuid", (job.getInstanceId() != null ? ApiDBUtils.findJobInstanceUuid(job) : "" ) );
-        eventDescription.put("instanceType", (job.getInstanceType() != null ? job.getInstanceType().toString() : "unknown"));
+        eventDescription.put("instanceUuid", instanceUuid);
+        eventDescription.put("instanceType", instanceType);
         eventDescription.put("commandEventType", cmdEventType);
         eventDescription.put("jobId", job.getUuid());
         eventDescription.put("jobResult", job.getResult());
@@ -638,7 +637,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 params.put("id", objectId.toString());
                 Class entityClass = EventTypes.getEntityClassForEvent(createCmd.getEventType());
                 if (entityClass != null)
-                    ctx.putContextParameter(entityClass.getName(), objectUuid);
+                    ctx.putContextParameter(entityClass, objectUuid);
             } else {
                 // Extract the uuid before params are processed and id reflects internal db id
                 objectUuid = params.get(ApiConstants.ID);
