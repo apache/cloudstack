@@ -85,7 +85,7 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
         boolean isDisabledUser = false;
         String userAccountControl = LdapUtils.getAttributeValue(result.getAttributes(), _ldapConfiguration.getUserAccountControlAttribute());
         if (userAccountControl != null) {
-            int control = Integer.valueOf(userAccountControl);
+            int control = Integer.parseInt(userAccountControl);
             // second bit represents disabled user flag in AD
             if ((control & 2) > 0) {
                 isDisabledUser = true;
