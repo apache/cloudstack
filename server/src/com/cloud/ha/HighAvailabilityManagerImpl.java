@@ -763,9 +763,25 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         work.setDateTaken(null);
     }
 
+    private long getRescheduleTime(WorkType workType) {
+        switch (workType) {
+            case Migration:
+                return ((System.currentTimeMillis() >> 10) + _migrateRetryInterval);
+            case HA:
+                return ((System.currentTimeMillis() >> 10) + _restartRetryInterval);
+            case Stop:
+            case CheckStop:
+            case ForceStop:
+                return ((System.currentTimeMillis() >> 10) + _stopRetryInterval);
+            case Destroy:
+                return ((System.currentTimeMillis() >> 10) + _restartRetryInterval);
+        }
+        return 0;
+    }
+
     private void processWork(final HaWorkVO work) {
+        final WorkType wt = work.getWorkType();
         try {
-            final WorkType wt = work.getWorkType();
             Long nextTime = null;
             if (wt == WorkType.Migration) {
                 nextTime = migrate(work);
@@ -789,7 +805,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         } catch (Exception e) {
             s_logger.warn("Encountered unhandled exception during HA process, reschedule work", e);
 
-            long nextTime = (System.currentTimeMillis() >> 10) + _restartRetryInterval;
+            long nextTime = getRescheduleTime(wt);
             rescheduleWork(work, nextTime);
 
             // if restart failed in the middle due to exception, VM state may has been changed
