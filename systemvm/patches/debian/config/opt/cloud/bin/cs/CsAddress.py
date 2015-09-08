@@ -299,6 +299,10 @@ class CsIP:
             CsRpsrfs(self.dev).enable()
             self.post_config_change("add")
 
+        '''For isolated/redundant and dhcpsrvr routers, call this method after the post_config is complete '''
+        if not self.config.is_vpc():
+            self.setup_router_control()
+
     def check_is_up(self):
         """ Ensure device is up """
         cmd = "ip link show %s | grep 'state DOWN'" % self.getDevice()
@@ -336,6 +340,19 @@ class CsIP:
             return self.address['public_ip']
         return "unknown"
 
+    def setup_router_control(self):
+        if self.config.is_vpc():
+            return
+        
+        self.fw.append(
+            ["filter", "", "-A FW_OUTBOUND -m state --state RELATED,ESTABLISHED -j ACCEPT"])
+        self.fw.append(
+            ["filter", "", "-A INPUT -i eth1 -p tcp -m tcp --dport 3922 -m state --state NEW,ESTABLISHED -j ACCEPT"])
+        
+        self.fw.append(["filter", "", "-P INPUT DROP"])
+        self.fw.append(["filter", "", "-P FORWARD DROP"])
+
+        
     def fw_router(self):
         if self.config.is_vpc():
             return
@@ -402,11 +419,6 @@ class CsIP:
                             "-A PREROUTING -i %s -m state --state NEW " % self.dev +
                             "-j CONNMARK --set-xmark %s/0xffffffff" % self.dnum])
 
-        if self.get_type() in ["control"]:
-            self.fw.append(
-                ["filter", "", "-A FW_OUTBOUND -m state --state RELATED,ESTABLISHED -j ACCEPT"])
-            self.fw.append(
-                ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 3922 -m state --state NEW -j ACCEPT" % self.dev])
         self.fw.append(['', 'front', '-A FORWARD -j NETWORK_STATS'])
         self.fw.append(['', 'front', '-A INPUT -j NETWORK_STATS'])
         self.fw.append(['', 'front', '-A OUTPUT -j NETWORK_STATS'])
@@ -414,7 +426,7 @@ class CsIP:
         self.fw.append(['', '', '-A NETWORK_STATS -i eth2 -o eth0'])
         self.fw.append(['', '', '-A NETWORK_STATS -o eth2 ! -i eth0 -p tcp'])
         self.fw.append(['', '', '-A NETWORK_STATS -i eth2 ! -o eth0 -p tcp'])
-
+        
     def fw_vpcrouter(self):
         if not self.config.is_vpc():
             return
@@ -480,6 +492,11 @@ class CsIP:
         self.fw.append(["", "", "-A NETWORK_STATS -i eth2 -o eth0 -p tcp"])
         self.fw.append(["", "", "-A NETWORK_STATS ! -i eth0 -o eth2 -p tcp"])
         self.fw.append(["", "", "-A NETWORK_STATS -i eth2 ! -o eth0 -p tcp"])
+        
+        self.fw.append(["filter", "", "-A INPUT -i eth0 -p tcp -m tcp --dport 3922 -m state --state NEW,ESTABLISHED -j ACCEPT"])
+        
+        self.fw.append(["filter", "", "-P INPUT DROP"])
+        self.fw.append(["filter", "", "-P FORWARD DROP"])
 
     def post_config_change(self, method):
         route = CsRoute()
@@ -491,6 +508,7 @@ class CsIP:
 
         self.fw_router()
         self.fw_vpcrouter()
+
         # On deletion nw_type will no longer be known
         if self.get_type() in ["guest"] and self.config.is_vpc():
 
