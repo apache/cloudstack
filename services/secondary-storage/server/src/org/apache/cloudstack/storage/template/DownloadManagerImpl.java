@@ -41,13 +41,12 @@ import java.util.concurrent.Executors;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.Proxy;
@@ -67,9 +66,9 @@ import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.QCOW2Processor;
 import com.cloud.storage.template.RawImageProcessor;
-import com.cloud.storage.template.TARProcessor;
 import com.cloud.storage.template.S3TemplateDownloader;
 import com.cloud.storage.template.ScpTemplateDownloader;
+import com.cloud.storage.template.TARProcessor;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateDownloader;
 import com.cloud.storage.template.TemplateDownloader.DownloadCompleteCallback;
@@ -228,6 +227,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     private final Map<String, DownloadJob> jobs = new ConcurrentHashMap<String, DownloadJob>();
     private String listTmpltScr;
     private String listVolScr;
+    private String getVirtualDiskSizeScr;
     private int installTimeoutPerGig = 180 * 60 * 1000;
 
     public void setThreadPool(ExecutorService threadPool) {
@@ -297,7 +297,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                 S3TemplateDownloader std = (S3TemplateDownloader)td;
                 long size = std.totalBytes;
                 DownloadJob dnld = jobs.get(jobId);
-                dnld.setTemplatesize(size);
+                dnld.setTemplatesize(std.getVirtualSize(getVirtualDiskSizeScr));
                 dnld.setTemplatePhysicalSize(size);
                 dnld.setTmpltPath(std.getDownloadLocalPath()); // update template path to include file name.
             }
@@ -975,6 +975,12 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             throw new ConfigurationException("Unable to find createvolume.sh");
         }
         s_logger.info("createvolume.sh found in " + createVolScr);
+
+        getVirtualDiskSizeScr = Script.findScript(scriptsDir, "get_virtual_disk_size.sh");
+        if (getVirtualDiskSizeScr == null) {
+            throw new ConfigurationException("Unable to find get_virtual_disk_size.sh");
+        }
+        s_logger.info("get_virtual_disk_size.sh found in " + getVirtualDiskSizeScr);
 
         _processors = new HashMap<String, Processor>();
 
