@@ -29,9 +29,8 @@ import java.security.GeneralSecurityException;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.utils.security.SSLUtils;
+import org.apache.log4j.Logger;
 
 public class NioClient extends NioConnection {
     private static final Logger s_logger = Logger.getLogger(NioClient.class);
@@ -40,12 +39,12 @@ public class NioClient extends NioConnection {
     protected String _bindAddress;
     protected SocketChannel _clientConnection;
 
-    public NioClient(String name, String host, int port, int workers, HandlerFactory factory) {
+    public NioClient(final String name, final String host, final int port, final int workers, final HandlerFactory factory) {
         super(name, port, workers, factory);
         _host = host;
     }
 
-    public void setBindAddress(String ipAddress) {
+    public void setBindAddress(final String ipAddress) {
         _bindAddress = ipAddress;
     }
 
@@ -62,18 +61,18 @@ public class NioClient extends NioConnection {
             if (_bindAddress != null) {
                 s_logger.info("Binding outbound interface at " + _bindAddress);
 
-                InetSocketAddress bindAddr = new InetSocketAddress(_bindAddress, 0);
+                final InetSocketAddress bindAddr = new InetSocketAddress(_bindAddress, 0);
                 _clientConnection.socket().bind(bindAddr);
             }
 
-            InetSocketAddress peerAddr = new InetSocketAddress(_host, _port);
+            final InetSocketAddress peerAddr = new InetSocketAddress(_host, _port);
             _clientConnection.connect(peerAddr);
 
             SSLEngine sslEngine = null;
             // Begin SSL handshake in BLOCKING mode
             _clientConnection.configureBlocking(true);
 
-            SSLContext sslContext = Link.initSSLContext(true);
+            final SSLContext sslContext = Link.initSSLContext(true);
             sslEngine = sslContext.createSSLEngine(_host, _port);
             sslEngine.setUseClientMode(true);
             sslEngine.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslEngine.getEnabledProtocols()));
@@ -83,32 +82,31 @@ public class NioClient extends NioConnection {
             s_logger.info("Connected to " + _host + ":" + _port);
 
             _clientConnection.configureBlocking(false);
-            Link link = new Link(peerAddr, this);
+            final Link link = new Link(peerAddr, this);
             link.setSSLEngine(sslEngine);
-            SelectionKey key = _clientConnection.register(_selector, SelectionKey.OP_READ);
+            final SelectionKey key = _clientConnection.register(_selector, SelectionKey.OP_READ);
             link.setKey(key);
             key.attach(link);
             // Notice we've already connected due to the handshake, so let's get the
             // remaining task done
             task = _factory.create(Task.Type.CONNECT, link, null);
-        } catch (GeneralSecurityException e) {
+        } catch (final GeneralSecurityException e) {
             _selector.close();
             throw new IOException("Failed to initialise security", e);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             _selector.close();
             throw e;
         }
-
-        _executor.execute(task);
+        _executor.submit(task);
     }
 
     @Override
-    protected void registerLink(InetSocketAddress saddr, Link link) {
+    protected void registerLink(final InetSocketAddress saddr, final Link link) {
         // don't do anything.
     }
 
     @Override
-    protected void unregisterLink(InetSocketAddress saddr) {
+    protected void unregisterLink(final InetSocketAddress saddr) {
         // don't do anything.
     }
 
@@ -119,7 +117,5 @@ public class NioClient extends NioConnection {
             _clientConnection.close();
         }
         s_logger.info("NioClient connection closed");
-
     }
-
 }

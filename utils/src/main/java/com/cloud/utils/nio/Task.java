@@ -19,14 +19,14 @@
 
 package com.cloud.utils.nio;
 
-import org.apache.log4j.Logger;
+import java.util.concurrent.Callable;
+
+import com.cloud.utils.exception.TaskExecutionException;
 
 /**
  * Task represents one todo item for the AgentManager or the AgentManager
- *
  */
-public abstract class Task implements Runnable {
-    private static final Logger s_logger = Logger.getLogger(Task.class);
+public abstract class Task implements Callable<Boolean> {
 
     public enum Type {
         CONNECT,     // Process a new connection.
@@ -40,13 +40,13 @@ public abstract class Task implements Runnable {
     Type _type;
     Link _link;
 
-    public Task(Type type, Link link, byte[] data) {
+    public Task(final Type type, final Link link, final byte[] data) {
         _data = data;
         _type = type;
         _link = link;
     }
 
-    public Task(Type type, Link link, Object data) {
+    public Task(final Type type, final Link link, final Object data) {
         _data = data;
         _type = type;
         _link = link;
@@ -76,14 +76,11 @@ public abstract class Task implements Runnable {
         return _type.toString();
     }
 
-    abstract protected void doTask(Task task) throws Exception;
+    abstract protected void doTask(Task task) throws TaskExecutionException;
 
     @Override
-    public final void run() {
-        try {
-            doTask(this);
-        } catch (Throwable e) {
-            s_logger.warn("Caught the following exception but pushing on", e);
-        }
+    public Boolean call() throws TaskExecutionException {
+        doTask(this);
+        return true;
     }
 }

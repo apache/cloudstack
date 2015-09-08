@@ -27,6 +27,7 @@ import junit.framework.TestCase;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 
+import com.cloud.utils.exception.NioConnectionException;
 import com.cloud.utils.nio.HandlerFactory;
 import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.NioClient;
@@ -56,7 +57,7 @@ public class NioTest extends TestCase {
     private boolean isTestsDone() {
         boolean result;
         synchronized (this) {
-            result = (_testCount == _completedCount);
+            result = _testCount == _completedCount;
         }
         return result;
     }
@@ -81,16 +82,24 @@ public class NioTest extends TestCase {
         _completedCount = 0;
 
         _server = new NioServer("NioTestServer", 7777, 5, new NioTestServer());
-        _server.start();
+        try {
+            _server.start();
+        } catch (final NioConnectionException e) {
+            fail(e.getMessage());
+        }
 
         _client = new NioClient("NioTestServer", "127.0.0.1", 7777, 5, new NioTestClient());
-        _client.start();
+        try {
+            _client.start();
+        } catch (final NioConnectionException e) {
+            fail(e.getMessage());
+        }
 
         while (_clientLink == null) {
             try {
                 s_logger.debug("Link is not up! Waiting ...");
                 Thread.sleep(1000);
-            } catch (InterruptedException e) {
+            } catch (final InterruptedException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
@@ -101,9 +110,9 @@ public class NioTest extends TestCase {
     public void tearDown() {
         while (!isTestsDone()) {
             try {
-                s_logger.debug(this._completedCount + "/" + this._testCount + " tests done. Waiting for completion");
+                s_logger.debug(_completedCount + "/" + _testCount + " tests done. Waiting for completion");
                 Thread.sleep(1000);
-            } catch (InterruptedException e) {
+            } catch (final InterruptedException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
@@ -122,7 +131,7 @@ public class NioTest extends TestCase {
         s_logger.info("Server stopped.");
     }
 
-    protected void setClientLink(Link link) {
+    protected void setClientLink(final Link link) {
         _clientLink = link;
     }
 
@@ -140,13 +149,13 @@ public class NioTest extends TestCase {
             getOneMoreTest();
             _clientLink.send(_testBytes);
             s_logger.info("Client: Data sent");
-        } catch (ClosedChannelException e) {
+        } catch (final ClosedChannelException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
 
-    protected void doServerProcess(byte[] data) {
+    protected void doServerProcess(final byte[] data) {
         oneMoreTestDone();
         Assert.assertArrayEquals(_testBytes, data);
         s_logger.info("Verify done.");
@@ -155,13 +164,13 @@ public class NioTest extends TestCase {
     public class NioTestClient implements HandlerFactory {
 
         @Override
-        public Task create(Type type, Link link, byte[] data) {
+        public Task create(final Type type, final Link link, final byte[] data) {
             return new NioTestClientHandler(type, link, data);
         }
 
         public class NioTestClientHandler extends Task {
 
-            public NioTestClientHandler(Type type, Link link, byte[] data) {
+            public NioTestClientHandler(final Type type, final Link link, final byte[] data) {
                 super(type, link, data);
             }
 
@@ -186,13 +195,13 @@ public class NioTest extends TestCase {
     public class NioTestServer implements HandlerFactory {
 
         @Override
-        public Task create(Type type, Link link, byte[] data) {
+        public Task create(final Type type, final Link link, final byte[] data) {
             return new NioTestServerHandler(type, link, data);
         }
 
         public class NioTestServerHandler extends Task {
 
-            public NioTestServerHandler(Type type, Link link, byte[] data) {
+            public NioTestServerHandler(final Type type, final Link link, final byte[] data) {
                 super(type, link, data);
             }
 
