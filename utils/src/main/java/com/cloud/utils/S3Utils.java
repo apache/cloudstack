@@ -62,6 +62,7 @@ import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
@@ -253,6 +254,21 @@ public final class S3Utils {
         }
 
         return acquireClient(clientOptions).getObject(bucketName, key);
+
+    }
+
+    // Note that whenever S3Object is returned, client code needs to close the internal stream to avoid resource leak.
+    public static S3ObjectInputStream getObjectStream(final ClientOptions clientOptions, final String bucketName, final String key) {
+
+        assert clientOptions != null;
+        assert !isBlank(bucketName);
+        assert !isBlank(key);
+
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(format("Get S3 object %1$s in " + "bucket %2$s", key, bucketName));
+        }
+
+        return acquireClient(clientOptions).getObject(bucketName, key).getObjectContent();
 
     }
 

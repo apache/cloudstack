@@ -41,13 +41,12 @@ import java.util.concurrent.Executors;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.Proxy;
@@ -67,9 +66,9 @@ import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.QCOW2Processor;
 import com.cloud.storage.template.RawImageProcessor;
-import com.cloud.storage.template.TARProcessor;
 import com.cloud.storage.template.S3TemplateDownloader;
 import com.cloud.storage.template.ScpTemplateDownloader;
+import com.cloud.storage.template.TARProcessor;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateDownloader;
 import com.cloud.storage.template.TemplateDownloader.DownloadCompleteCallback;
@@ -83,6 +82,7 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import com.cloud.utils.storage.QCOW2Utils;
 
 @Local(value = DownloadManager.class)
 public class DownloadManagerImpl extends ManagerBase implements DownloadManager {
@@ -129,10 +129,10 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             this.tmpltName = tmpltName;
             this.format = format;
             this.hvm = hvm;
-            description = descr;
-            checksum = cksum;
+            this.description = descr;
+            this.checksum = cksum;
             this.installPathPrefix = installPathPrefix;
-            templatesize = 0;
+            this.templatesize = 0;
             this.id = id;
             this.resourceType = resourceType;
         }
@@ -276,11 +276,27 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             threadPool.execute(td);
             break;
         case DOWNLOAD_FINISHED:
-            if (!(td instanceof S3TemplateDownloader)) {
-                // we currently only create template.properties for NFS by
-                // running some post download script
+            if(td instanceof S3TemplateDownloader) {
+                // For S3 and Swift, which are considered "remote",
+                // as in the file cannot be accessed locally,
+                // we run the postRemoteDownload() method.
                 td.setDownloadError("Download success, starting install ");
-                String result = postDownload(jobId);
+                String result = postRemoteDownload(jobId);
+                if (result != null) {
+                    s_logger.error("Failed post download install: " + result);
+                    td.setStatus(Status.UNRECOVERABLE_ERROR);
+                    td.setDownloadError("Failed post download install: " + result);
+                    ((S3TemplateDownloader) td).cleanupAfterError();
+                } else {
+                    td.setStatus(Status.POST_DOWNLOAD_FINISHED);
+                    td.setDownloadError("Install completed successfully at " + new SimpleDateFormat().format(new Date()));
+                }
+            }
+            else {
+                // For other TemplateDownloaders where files are locally available,
+                // we run the postLocalDownload() method.
+                td.setDownloadError("Download success, starting install ");
+                String result = postLocalDownload(jobId);
                 if (result != null) {
                     s_logger.error("Failed post download script: " + result);
                     td.setStatus(Status.UNRECOVERABLE_ERROR);
@@ -289,17 +305,6 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     td.setStatus(Status.POST_DOWNLOAD_FINISHED);
                     td.setDownloadError("Install completed successfully at " + new SimpleDateFormat().format(new Date()));
                 }
-            } else {
-                // for s3 and swift, we skip post download step and just set
-                // status to trigger callback.
-                td.setStatus(Status.POST_DOWNLOAD_FINISHED);
-                // set template size for S3
-                S3TemplateDownloader std = (S3TemplateDownloader)td;
-                long size = std.totalBytes;
-                DownloadJob dnld = jobs.get(jobId);
-                dnld.setTemplatesize(size);
-                dnld.setTemplatePhysicalSize(size);
-                dnld.setTmpltPath(std.getDownloadLocalPath()); // update template path to include file name.
             }
             dj.cleanup();
             break;
@@ -339,12 +344,48 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     }
 
     /**
-     * Post download activity (install and cleanup). Executed in context of
+     * Post remote download activity (install and cleanup). Executed in context of the downloader thread.
+     */
+    private String postRemoteDownload(String jobId) {
+        String result = null;
+        DownloadJob dnld = jobs.get(jobId);
+        S3TemplateDownloader td = (S3TemplateDownloader)dnld.getTemplateDownloader();
+
+        if (td.getFileExtension().equalsIgnoreCase("QCOW2")) {
+            // The QCOW2 is the only format with a header,
+            // and as such can be easily read.
+
+            try {
+                InputStream inputStream = td.getS3ObjectInputStream();
+
+                dnld.setTemplatesize(QCOW2Utils.getVirtualSize(inputStream));
+
+                inputStream.close();
+            }
+            catch (IOException e) {
+                result = "Couldn't read QCOW2 virtual size. Error: " + e.getMessage();
+            }
+
+        }
+        else {
+            // For the other formats, both the virtual
+            // and actual file size are set the same.
+            dnld.setTemplatesize(td.getTotalBytes());
+        }
+
+        dnld.setTemplatePhysicalSize(td.getTotalBytes());
+        dnld.setTmpltPath(td.getDownloadLocalPath());
+
+        return result;
+    }
+
+    /**
+     * Post local download activity (install and cleanup). Executed in context of
      * downloader thread
      *
      * @throws IOException
      */
-    private String postDownload(String jobId) {
+    private String postLocalDownload(String jobId) {
         DownloadJob dnld = jobs.get(jobId);
         TemplateDownloader td = dnld.getTemplateDownloader();
         String resourcePath = dnld.getInstallPathPrefix(); // path with mount
