@@ -17,6 +17,7 @@
 package com.cloud.storage;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
@@ -41,8 +42,10 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
@@ -51,6 +54,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
@@ -87,6 +91,12 @@ public class VolumeApiServiceImplTest {
 
     @Mock
     VMInstanceDao _vmInstanceDao;
+    @Mock
+    VolumeInfo volumeInfoMock;
+    @Mock
+    SnapshotInfo snapshotInfoMock;
+    @Mock
+    VolumeService volService;
 
     DetachVolumeCmd detachCmd = new DetachVolumeCmd();
     Class<?> _detachCmdClass = detachCmd.getClass();
@@ -103,6 +113,7 @@ public class VolumeApiServiceImplTest {
         _svc._vmInstanceDao = _vmInstanceDao;
         _svc._jobMgr = _jobMgr;
         _svc.volFactory = _volFactory;
+        _svc.volService = volService;
 
         // mock caller context
         AccountVO account = new AccountVO("admin", 1L, "networkDomain", Account.ACCOUNT_TYPE_NORMAL, "uuid");
@@ -325,6 +336,23 @@ public class VolumeApiServiceImplTest {
     public void attachRootVolumePositive() throws NoSuchFieldException, IllegalAccessException {
         thrown.expect(NullPointerException.class);
         _svc.attachVolumeToVM(2L, 6L, 0L);
+    }
+
+    // volume not Ready
+    @Test(expected = InvalidParameterValueException.class)
+    public void testTakeSnapshotF1() throws ResourceAllocationException {
+        when(_volFactory.getVolume(anyLong())).thenReturn(volumeInfoMock);
+        when(volumeInfoMock.getState()).thenReturn(Volume.State.Allocated);
+        _svc.takeSnapshot(5L, Snapshot.MANUAL_POLICY_ID, 3L, null, false);
+    }
+
+    @Test
+    public void testTakeSnapshotF2() throws ResourceAllocationException {
+        when(_volFactory.getVolume(anyLong())).thenReturn(volumeInfoMock);
+        when(volumeInfoMock.getState()).thenReturn(Volume.State.Ready);
+        when(volumeInfoMock.getInstanceId()).thenReturn(null);
+        when (volService.takeSnapshot(Mockito.any(VolumeInfo.class))).thenReturn(snapshotInfoMock);
+        _svc.takeSnapshot(5L, Snapshot.MANUAL_POLICY_ID, 3L, null, false);
     }
 
     @After
