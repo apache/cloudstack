@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.commons.httpclient.ChunkedInputStream;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.Header;
@@ -50,15 +52,13 @@ import com.amazonaws.services.s3.model.ProgressEvent;
 import com.amazonaws.services.s3.model.ProgressListener;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.StorageClass;
-
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
-
 import com.cloud.agent.api.storage.Proxy;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.S3Utils;
 import com.cloud.utils.UriUtils;
+import com.cloud.utils.script.OutputInterpreter.AllLinesParser;
+import com.cloud.utils.script.Script;
 
 /**
  * Download a template file using HTTP
@@ -417,4 +417,21 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
         return resourceType;
     }
 
+
+    /**
+     * @return the virtual size of the template.
+     */
+    public long getVirtualSize(String getVirtualDiskSizeScr) {
+        final Script command = new Script(getVirtualDiskSizeScr, 30 * 1000, s_logger);
+        final AllLinesParser parser = new AllLinesParser();
+        command.add("-f");
+        command.add(this.downloadUrl);
+
+        String details = command.execute(parser);
+        if (details == null) {
+            details = parser.getLines();
+        }
+
+        return Long.parseLong(details);
+    }
 }
