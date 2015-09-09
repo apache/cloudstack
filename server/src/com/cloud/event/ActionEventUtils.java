@@ -120,7 +120,7 @@ public class ActionEventUtils {
     public static void onStartedActionEventFromContext(String eventType, String eventDescription, boolean eventDisplayEnabled) {
         CallContext ctx = CallContext.current();
         long userId = ctx.getCallingUserId();
-        long accountId = ctx.getCallingAccountId();
+        long accountId = ctx.getProject() != null ? ctx.getProject().getProjectAccountId() : ctx.getCallingAccountId();    //This should be the entity owner id rather than the Calling User Account Id.
         long startEventId = ctx.getStartEventId();
 
         if (!eventType.equals(""))
