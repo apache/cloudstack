@@ -578,6 +578,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         cancelWorkItems(_nodeId);
 
         volumeMgr.cleanupStorageJobs();
+        _vmSnapshotMgr.cleanupVmSnapshotJobs();
         // cleanup left over place holder works
         _workJobDao.expungeLeftoverWorkJobs(ManagementServerNode.getManagementServerId());
         return true;

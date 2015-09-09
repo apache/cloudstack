@@ -1297,4 +1297,51 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         }
         return true;
     }
+
+    @Override
+    public void cleanupVmSnapshotJobs(){
+        List<AsyncJobVO> jobs = _jobMgr.findFailureAsyncJobs(VmWorkCreateVMSnapshot.class.getName(), VmWorkRevertToVMSnapshot.class.getName());
+
+        for (AsyncJobVO job : jobs) {
+            try {
+                if (job.getCmd().equalsIgnoreCase(VmWorkCreateVMSnapshot.class.getName())) {
+                    VmWorkCreateVMSnapshot work = VmWorkSerializer.deserialize(VmWorkCreateVMSnapshot.class, job.getCmdInfo());
+                    cleanupVmSnapshotCreateFailure(work.getVmSnapshotId());
+                } else if(job.getCmd().equalsIgnoreCase(VmWorkRevertToVMSnapshot.class.getName())) {
+                    VmWorkRevertToVMSnapshot work = VmWorkSerializer.deserialize(VmWorkRevertToVMSnapshot.class, job.getCmdInfo());
+                    cleanupVmSnapshotRevertFailure(work.getVmSnapshotId());
+                }
+            } catch (Exception e) {
+                s_logger.error("clean up job failure, will continue", e);
+            }
+        }
+    }
+
+    private void cleanupVmSnapshotRevertFailure(Long vmSnapshotId) {
+        VMSnapshotVO vmSnapshotVO = _vmSnapshotDao.findById(vmSnapshotId);
+
+        if(vmSnapshotVO == null) {
+            return;
+        }
+
+        if(vmSnapshotVO.getState().equals(VMSnapshot.State.Reverting)) {
+            s_logger.debug("Change VM snapshot state to Error : " + vmSnapshotId);
+            vmSnapshotVO.setState(VMSnapshot.State.Ready);
+            _vmSnapshotDao.update(vmSnapshotId, vmSnapshotVO);
+        }
+    }
+
+    private void cleanupVmSnapshotCreateFailure(Long vmSnapshotId) {
+        VMSnapshotVO vmSnapshotVO = _vmSnapshotDao.findById(vmSnapshotId);
+
+        if(vmSnapshotVO == null) {
+            return;
+        }
+
+        if(vmSnapshotVO.getState().equals(VMSnapshot.State.Creating)) {
+            s_logger.debug("Change VM snapshot state to Error : " + vmSnapshotId);
+            vmSnapshotVO.setState(VMSnapshot.State.Error);
+            _vmSnapshotDao.update(vmSnapshotId, vmSnapshotVO);
+        }
+    }
 }
