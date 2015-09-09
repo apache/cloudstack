@@ -354,6 +354,10 @@ CREATE VIEW `cloud`.`user_vm_view` AS
            left join
         `cloud`.`user_vm_details` `custom_ram_size`  ON (((`custom_ram_size`.`vm_id` = `cloud`.`vm_instance`.`id`) and (`custom_ram_size`.`name` = 'memory')));
 
+---Additional checks to ensure duplicate keys are not registered and remove the previously stored duplicate keys.
+DELETE `s1` FROM `ssh_keypairs` `s1`, `ssh_keypairs` `s2` WHERE `s1`.`id` > `s2`.`id` AND `s1`.`public_key` = `s2`.`public_key` AND `s1`.`account_id` = `s2`.`account_id`;
+ALTER TABLE `ssh_keypairs` ADD UNIQUE `unique_index`(`fingerprint`,`account_id`);
+
 -- ovm3 stuff
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("Ovm3", 'Sun Solaris 10(32-bit)', 79);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("Ovm3", 'Sun Solaris 10(64-bit)', 80);
