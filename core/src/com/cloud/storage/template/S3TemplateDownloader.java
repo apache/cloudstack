@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.commons.httpclient.ChunkedInputStream;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.Header;
@@ -50,10 +52,6 @@ import com.amazonaws.services.s3.model.ProgressEvent;
 import com.amazonaws.services.s3.model.ProgressListener;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.StorageClass;
-
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
-
 import com.cloud.agent.api.storage.Proxy;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.utils.Pair;
@@ -61,46 +59,48 @@ import com.cloud.utils.S3Utils;
 import com.cloud.utils.UriUtils;
 
 /**
- * Download a template file using HTTP
- *
+ * Download a template file using HTTP(S)
  */
 public class S3TemplateDownloader extends ManagedContextRunnable implements TemplateDownloader {
-    public static final Logger s_logger = Logger.getLogger(S3TemplateDownloader.class.getName());
+    private static final Logger s_logger = Logger.getLogger(S3TemplateDownloader.class.getName());
     private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
 
     private String downloadUrl;
     private String installPath;
     private String s3Key;
     private String fileName;
-    public TemplateDownloader.Status status = TemplateDownloader.Status.NOT_STARTED;
-    public String errorString = " ";
-    private long remoteSize = 0;
-    public long downloadTime = 0;
-    public long totalBytes;
+    private String fileExtension;
+    private String errorString = " ";
+
+    private TemplateDownloader.Status status = TemplateDownloader.Status.NOT_STARTED;
+    private ResourceType resourceType = ResourceType.TEMPLATE;
     private final HttpClient client;
+    private final HttpMethodRetryHandler myretryhandler;
     private GetMethod request;
-    private boolean resume = false;
     private DownloadCompleteCallback completionCallback;
-    private S3TO s3;
+    private S3TO s3to;
+
+    private long remoteSize = 0;
+    private long downloadTime = 0;
+    private long totalBytes;
+    private long maxTemplateSizeInByte;
+
+    private boolean resume = false;
     private boolean inited = true;
 
-    private long maxTemplateSizeInByte;
-    private ResourceType resourceType = ResourceType.TEMPLATE;
-    private final HttpMethodRetryHandler myretryhandler;
-
-    public S3TemplateDownloader(S3TO storageLayer, String downloadUrl, String installPath, DownloadCompleteCallback callback, long maxTemplateSizeInBytes, String user,
-            String password, Proxy proxy, ResourceType resourceType) {
-        s3 = storageLayer;
+    public S3TemplateDownloader(S3TO s3to, String downloadUrl, String installPath, DownloadCompleteCallback callback,
+            long maxTemplateSizeInBytes, String user, String password, Proxy proxy, ResourceType resourceType) {
+        this.s3to = s3to;
         this.downloadUrl = downloadUrl;
         this.installPath = installPath;
-        status = TemplateDownloader.Status.NOT_STARTED;
+        this.status = TemplateDownloader.Status.NOT_STARTED;
         this.resourceType = resourceType;
-        maxTemplateSizeInByte = maxTemplateSizeInBytes;
+        this.maxTemplateSizeInByte = maxTemplateSizeInBytes;
 
-        totalBytes = 0;
-        client = new HttpClient(s_httpClientManager);
+        this.totalBytes = 0;
+        this.client = new HttpClient(s_httpClientManager);
 
-        myretryhandler = new HttpMethodRetryHandler() {
+        this.myretryhandler = new HttpMethodRetryHandler() {
             @Override
             public boolean retryMethod(final HttpMethod method, final IOException exception, int executionCount) {
                 if (executionCount >= 2) {
@@ -128,6 +128,7 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
 
             Pair<String, Integer> hostAndPort = UriUtils.validateUrl(downloadUrl);
             fileName = StringUtils.substringAfterLast(downloadUrl, "/");
+            fileExtension = StringUtils.substringAfterLast(fileName, ".");
 
             if (proxy != null) {
                 client.getHostConfiguration().setProxy(proxy.getHost(), proxy.getPort());
@@ -139,8 +140,10 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
             if ((user != null) && (password != null)) {
                 client.getParams().setAuthenticationPreemptive(true);
                 Credentials defaultcreds = new UsernamePasswordCredentials(user, password);
-                client.getState().setCredentials(new AuthScope(hostAndPort.first(), hostAndPort.second(), AuthScope.ANY_REALM), defaultcreds);
-                s_logger.info("Added username=" + user + ", password=" + password + "for host " + hostAndPort.first() + ":" + hostAndPort.second());
+                client.getState().setCredentials(
+                        new AuthScope(hostAndPort.first(), hostAndPort.second(), AuthScope.ANY_REALM), defaultcreds);
+                s_logger.info("Added username=" + user + ", password=" + password + "for host " + hostAndPort.first()
+                        + ":" + hostAndPort.second());
             } else {
                 s_logger.info("No credentials configured for host=" + hostAndPort.first() + ":" + hostAndPort.second());
             }
@@ -160,11 +163,11 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
     @Override
     public long download(boolean resume, DownloadCompleteCallback callback) {
         switch (status) {
-            case ABORTED:
-            case UNRECOVERABLE_ERROR:
-            case DOWNLOAD_FINISHED:
-                return 0;
-            default:
+        case ABORTED:
+        case UNRECOVERABLE_ERROR:
+        case DOWNLOAD_FINISHED:
+            return 0;
+        default:
 
         }
 
@@ -215,10 +218,11 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
                 contentType = contentTypeHeader.getValue();
             }
 
-            InputStream in = !chunked ? new BufferedInputStream(request.getResponseBodyAsStream()) : new ChunkedInputStream(request.getResponseBodyAsStream());
+            InputStream in = !chunked ? new BufferedInputStream(request.getResponseBodyAsStream())
+                    : new ChunkedInputStream(request.getResponseBodyAsStream());
 
-            s_logger.info("Starting download from " + getDownloadUrl() + " to s3 bucket " + s3.getBucketName() + " remoteSize=" + remoteSize + " , max size=" +
-                maxTemplateSizeInByte);
+            s_logger.info("Starting download from " + getDownloadUrl() + " to s3 bucket " + s3to.getBucketName()
+                    + " remoteSize=" + remoteSize + " , max size=" + maxTemplateSizeInByte);
 
             Date start = new Date();
             // compute s3 key
@@ -230,9 +234,9 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
             if (contentType != null) {
                 metadata.setContentType(contentType);
             }
-            PutObjectRequest putObjectRequest = new PutObjectRequest(s3.getBucketName(), s3Key, in, metadata);
+            PutObjectRequest putObjectRequest = new PutObjectRequest(s3to.getBucketName(), s3Key, in, metadata);
             // check if RRS is enabled
-            if (s3.getEnableRRS()) {
+            if (s3to.getEnableRRS()) {
                 putObjectRequest = putObjectRequest.withStorageClass(StorageClass.ReducedRedundancy);
             }
             // register progress listenser
@@ -257,14 +261,15 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
 
             });
 
-            if (!s3.getSingleUpload(remoteSize)) {
+            if (!s3to.getSingleUpload(remoteSize)) {
                 // use TransferManager to do multipart upload
-                S3Utils.mputObject(s3, putObjectRequest);
+                S3Utils.mputObject(s3to, putObjectRequest);
             } else {
                 // single part upload, with 5GB limit in Amazon
-                S3Utils.putObject(s3, putObjectRequest);
-                while (status != TemplateDownloader.Status.DOWNLOAD_FINISHED && status != TemplateDownloader.Status.UNRECOVERABLE_ERROR &&
-                    status != TemplateDownloader.Status.ABORTED) {
+                S3Utils.putObject(s3to, putObjectRequest);
+                while (status != TemplateDownloader.Status.DOWNLOAD_FINISHED
+                        && status != TemplateDownloader.Status.UNRECOVERABLE_ERROR
+                        && status != TemplateDownloader.Status.ABORTED) {
                     // wait for completion
                 }
             }
@@ -324,32 +329,59 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
         return totalBytes;
     }
 
+    /**
+     * Returns an InputStream only when the status is DOWNLOAD_FINISHED.
+     *
+     * The caller of this method must close the InputStream to prevent resource leaks!
+     *
+     * @return S3ObjectInputStream of the object.
+     */
+    public InputStream getS3ObjectInputStream() {
+        // Check if the download is finished
+        if (status != Status.DOWNLOAD_FINISHED) {
+            return null;
+        }
+
+        return S3Utils.getObjectStream(s3to, s3to.getBucketName(), s3Key);
+    }
+
+    public void cleanupAfterError() {
+        if (status != Status.UNRECOVERABLE_ERROR) {
+            s_logger.debug("S3Template downloader does not have state UNRECOVERABLE_ERROR, no cleanup neccesarry.");
+            return;
+        }
+
+        s_logger.info("Cleanup after UNRECOVERABLE_ERROR, trying to remove object: " + s3Key);
+
+        S3Utils.deleteObject(s3to, s3to.getBucketName(), s3Key);
+    }
+
     @Override
     @SuppressWarnings("fallthrough")
     public boolean stopDownload() {
         switch (getStatus()) {
-            case IN_PROGRESS:
-                if (request != null) {
-                    request.abort();
-                }
-                status = TemplateDownloader.Status.ABORTED;
-                return true;
-            case UNKNOWN:
-            case NOT_STARTED:
-            case RECOVERABLE_ERROR:
-            case UNRECOVERABLE_ERROR:
-            case ABORTED:
-                status = TemplateDownloader.Status.ABORTED;
-            case DOWNLOAD_FINISHED:
-                try {
-                    S3Utils.deleteObject(s3, s3.getBucketName(), s3Key);
-                } catch (Exception ex) {
-                    // ignore delete exception if it is not there
-                }
-                return true;
+        case IN_PROGRESS:
+            if (request != null) {
+                request.abort();
+            }
+            status = TemplateDownloader.Status.ABORTED;
+            return true;
+        case UNKNOWN:
+        case NOT_STARTED:
+        case RECOVERABLE_ERROR:
+        case UNRECOVERABLE_ERROR:
+        case ABORTED:
+            status = TemplateDownloader.Status.ABORTED;
+        case DOWNLOAD_FINISHED:
+            try {
+                S3Utils.deleteObject(s3to, s3to.getBucketName(), s3Key);
+            } catch (Exception ex) {
+                // ignore delete exception if it is not there
+            }
+            return true;
 
-            default:
-                return true;
+        default:
+            return true;
         }
     }
 
@@ -359,7 +391,7 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
             return 0;
         }
 
-        return (int)(100.0 * totalBytes / remoteSize);
+        return (int) (100.0 * totalBytes / remoteSize);
     }
 
     @Override
@@ -417,4 +449,11 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
         return resourceType;
     }
 
+    public long getTotalBytes() {
+        return totalBytes;
+    }
+
+    public String getFileExtension() {
+        return fileExtension;
+    }
 }
