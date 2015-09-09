@@ -109,7 +109,7 @@ public class NetworkHelperImpl implements NetworkHelper {
     @Inject
     protected NicDao _nicDao;
     @Inject
-    private NetworkDao _networkDao;
+    protected NetworkDao _networkDao;
     @Inject
     protected DomainRouterDao _routerDao;
     @Inject
@@ -136,8 +136,6 @@ public class NetworkHelperImpl implements NetworkHelper {
     protected IPAddressDao _ipAddressDao;
     @Inject
     private UserIpv6AddressDao _ipv6Dao;
-    @Inject
-    private RouterControlHelper _routerControlHelper;
     @Inject
     protected NetworkOrchestrationService _networkMgr;
     @Inject
@@ -610,20 +608,22 @@ public class NetworkHelperImpl implements NetworkHelper {
         throw new CloudRuntimeException(errMsg);
     }
 
-    @Override
-    public LinkedHashMap<Network, List<? extends NicProfile>> configureDefaultNics(final RouterDeploymentDefinition routerDeploymentDefinition) throws ConcurrentOperationException, InsufficientAddressCapacityException {
+    protected LinkedHashMap<Network, List<? extends NicProfile>> configureControlNic(final RouterDeploymentDefinition routerDeploymentDefinition) {
+        final LinkedHashMap<Network, List<? extends NicProfile>> controlConfig = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
 
-        final LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
-
-        // 1) Control network
         s_logger.debug("Adding nic for Virtual Router in Control network ");
         final List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
         final NetworkOffering controlOffering = offerings.get(0);
-        final Network controlConfig = _networkMgr.setupNetwork(s_systemAccount, controlOffering, routerDeploymentDefinition.getPlan(), null, null, false).get(0);
+        final Network controlNic = _networkMgr.setupNetwork(s_systemAccount, controlOffering, routerDeploymentDefinition.getPlan(), null, null, false).get(0);
 
-        networks.put(controlConfig, new ArrayList<NicProfile>());
+        controlConfig.put(controlNic, new ArrayList<NicProfile>());
 
-        // 2) Public network
+        return controlConfig;
+    }
+
+    protected LinkedHashMap<Network, List<? extends NicProfile>> configurePublicNic(final RouterDeploymentDefinition routerDeploymentDefinition, final boolean hasGuestNic) {
+        final LinkedHashMap<Network, List<? extends NicProfile>> publicConfig = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
+
         if (routerDeploymentDefinition.isPublicNetwork()) {
             s_logger.debug("Adding nic for Virtual Router in Public network ");
             // if source nat service is supported by the network, get the source
@@ -647,6 +647,11 @@ public class NetworkHelperImpl implements NetworkHelper {
                 defaultNic.setIsolationUri(IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()));
             }
 
+            //If guest nic has already been added we will have 2 devices in the list.
+            if (hasGuestNic) {
+                defaultNic.setDeviceId(2);
+            }
+
             final NetworkOffering publicOffering = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemPublicNetwork).get(0);
             final List<? extends Network> publicNetworks = _networkMgr.setupNetwork(s_systemAccount, publicOffering, routerDeploymentDefinition.getPlan(), null, null, false);
             final String publicIp = defaultNic.getIPv4Address();
@@ -657,13 +662,28 @@ public class NetworkHelperImpl implements NetworkHelper {
                 s_logger.info("Use same MAC as previous RvR, the MAC is " + peerNic.getMacAddress());
                 defaultNic.setMacAddress(peerNic.getMacAddress());
             }
-            networks.put(publicNetworks.get(0), new ArrayList<NicProfile>(Arrays.asList(defaultNic)));
+            publicConfig.put(publicNetworks.get(0), new ArrayList<NicProfile>(Arrays.asList(defaultNic)));
         }
 
-        // 3) Guest Network
+        return publicConfig;
+    }
+
+    @Override
+    public LinkedHashMap<Network, List<? extends NicProfile>> configureDefaultNics(final RouterDeploymentDefinition routerDeploymentDefinition) throws ConcurrentOperationException, InsufficientAddressCapacityException {
+
+        final LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
+
+        // 1) Guest Network
         final LinkedHashMap<Network, List<? extends NicProfile>> guestNic = configureGuestNic(routerDeploymentDefinition);
-        // The guest nic has to be added after the Control and Public nics.
         networks.putAll(guestNic);
+
+        // 2) Control network
+        final LinkedHashMap<Network, List<? extends NicProfile>> controlNic = configureControlNic(routerDeploymentDefinition);
+        networks.putAll(controlNic);
+
+        // 3) Public network
+        final LinkedHashMap<Network, List<? extends NicProfile>> publicNic = configurePublicNic(routerDeploymentDefinition, networks.size() > 1);
+        networks.putAll(publicNic);
 
         return networks;
     }
