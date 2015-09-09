@@ -1041,5 +1041,7 @@ dictionary = {
 'label.role': '<fmt:message key="label.role" />',
 'label.root.disk.controller': '<fmt:message key="label.root.disk.controller" />',
 'label.root.disk.offering': '<fmt:message key="label.root.disk.offering" />',
+'message.configure.firewall.rules.allow.traffic': '<fmt:message key="message.configure.firewall.rules.allow.traffic" />',
+'message.configure.firewall.rules.block.traffic': '<fmt:message key="message.configure.firewall.rules.block.traffic" />',
 };
 </script>
