@@ -180,7 +180,7 @@ public interface IpAddressManager {
 
     String allocatePublicIpForGuestNic(Network network, Long podId, Account ipOwner, String requestedIp) throws InsufficientAddressCapacityException;
 
-    public AcquirePodIpCmdResponse allocatePodIp(Long zoneId, String cidr) throws ConcurrentOperationException,
+    public AcquirePodIpCmdResponse allocatePodIp(String zoneId, String podId) throws ConcurrentOperationException,
             ResourceAllocationException;
 
     public void releasePodIp(Long id) throws CloudRuntimeException;

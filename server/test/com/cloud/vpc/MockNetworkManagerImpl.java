@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
+import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -902,25 +903,15 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
-    public AcquirePodIpCmdResponse allocatePodIp(Account ipOwner, long zoneId, String cidr) throws ResourceAllocationException, ConcurrentOperationException {
-
-        Account caller = CallContext.current().getCallingAccount();
-        long callerUserId = CallContext.current().getCallingUserId();
-        DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
-
-        if (zone == null)
-            throw new InvalidParameterValueException("Invalid zone Id is Null");
-        if (_accountMgr.checkAccessAndSpecifyAuthority(caller, zoneId) != zoneId)
-            throw new InvalidParameterValueException("Caller does not have permission for this Zone" + "(" + zoneId + ")");
-        if (s_logger.isDebugEnabled())
-            s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
-        return _ipAddrMgr.allocatePodIp(zoneId, cidr);
-    }
-
-    @Override
     public boolean releasePodIp(ReleasePodIpCmdByAdmin ip) throws CloudRuntimeException {
         _ipAddrMgr.releasePodIp(ip.getId());
         return true;
+    }
+
+    @Override
+    public AcquirePodIpCmdResponse allocatePodIp(Account account, String zoneId, String podId) throws ResourceAllocationException, ConcurrentOperationException {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

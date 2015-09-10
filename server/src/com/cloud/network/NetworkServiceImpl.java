@@ -4195,4 +4195,27 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         return _ipAddressDao.findById(id);
     }
 
+    @Override
+    public AcquirePodIpCmdResponse allocatePodIp(Account ipOwner, String zoneId, String podId) throws ResourceAllocationException {
+
+        Account caller = CallContext.current().getCallingAccount();
+        long callerUserId = CallContext.current().getCallingUserId();
+        DataCenter zone = _entityMgr.findByUuid(DataCenter.class, zoneId);
+
+        if (zone == null)
+            throw new InvalidParameterValueException("Invalid zone Id is Null");
+        if (_accountMgr.checkAccessAndSpecifyAuthority(caller, zone.getId()) != zone.getId())
+            throw new InvalidParameterValueException("Caller does not have permission for this Zone" + "(" + zoneId + ")");
+        if (s_logger.isDebugEnabled())
+            s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
+        return _ipAddrMgr.allocatePodIp(zoneId, podId);
+
+    }
+
+    @Override
+    public boolean releasePodIp(ReleasePodIpCmdByAdmin ip) throws CloudRuntimeException {
+        _ipAddrMgr.releasePodIp(ip.getId());
+        return true;
+    }
+
 }

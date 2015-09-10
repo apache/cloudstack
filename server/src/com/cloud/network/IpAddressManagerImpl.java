@@ -1013,9 +1013,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     @DB
     @Override
-    public AcquirePodIpCmdResponse allocatePodIp(Long zoneId, String cidr) throws ConcurrentOperationException, ResourceAllocationException {
+    public AcquirePodIpCmdResponse allocatePodIp(String zoneId, String podId) throws ConcurrentOperationException, ResourceAllocationException {
 
-        DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
+        DataCenter zone = _entityMgr.findByUuid(DataCenter.class, zoneId);
         Account caller = CallContext.current().getCallingAccount();
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
             ResourceAllocationException ex = new ResourceAllocationException("Cannot perform this operation, " + "Zone is currently disabled" + "zoneId=" + zone.getUuid(),
@@ -1024,15 +1024,20 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         }
 
         DataCenterIpAddressVO vo = null;
-        if (cidr != null) {
-            List<HostPodVO> pod_list = _hpDao.listAllPodsByCidr(zoneId, cidr);
-            if (pod_list.get(0) == null)
-                throw new ResourceAllocationException("No sush pod exists", ResourceType.network);
-            vo = _privateIPAddressDao.takeIpAddress(zoneId, pod_list.get(0).getId(), 0, caller.getId() + "");
-            if (vo.getIpAddress() == null)
-                throw new ResourceAllocationException("Unable to allocate IP from this Pod", ResourceType.network);
-        } else
-            vo = _privateIPAddressDao.takeDataCenterIpAddress(zoneId, caller.getId() + "");
+        if (podId == null)
+            throw new ResourceAllocationException("Please do not provide NULL podId", ResourceType.network);
+        HostPodVO podvo = null;
+        podvo = _hpDao.findByUuid(podId);
+        if (podvo == null)
+            throw new ResourceAllocationException("No sush pod exists", ResourceType.network);
+        vo = _privateIPAddressDao.takeIpAddress(zone.getId(), podvo.getId(), 0, caller.getId() + "");
+
+        if (vo.getIpAddress() == null)
+            throw new ResourceAllocationException("Unable to allocate IP from this Pod", ResourceType.network);
+
+        vo = _privateIPAddressDao.takeIpAddress(zone.getId(), podvo.getId(), 0, caller.getId() + "");
+        if (vo.getIpAddress() == null)
+            throw new ResourceAllocationException("Unable to allocate IP from this Pod", ResourceType.network);
 
         HostPodVO pod_vo = _hpDao.findById(vo.getPodId());
         AcquirePodIpCmdResponse ret = new AcquirePodIpCmdResponse();
