@@ -95,6 +95,14 @@ class CsAddress(CsDataBag):
                 return ip
         return None
 
+    def check_if_link_exists(self,dev):
+        cmd="ip link show dev %s"%dev
+        result=CsHelper.execute(cmd)
+        if(len(result)!=0):
+           return True
+        else:
+           return False
+
     def check_if_link_up(self,dev):
         cmd="ip link show dev %s | tr '\n' ' ' | cut -d ' ' -f 9"%dev
         result=CsHelper.execute(cmd)
@@ -117,6 +125,9 @@ class CsAddress(CsDataBag):
                     continue
 
                 #check if link is up
+                if (not self.check_if_link_exists(dev)):
+                    logging.info("link %s does not exist, so not processing"%dev)
+                    continue
                 if not self.check_if_link_up(dev):
                    cmd="ip link set %s up"%dev
                    CsHelper.execute(cmd)
@@ -142,7 +153,8 @@ class CsAddress(CsDataBag):
         # is a default route and add if needed
         if not route.defaultroute_exists():
             cmdline=self.config.get_cmdline_instance()
-            route.add_defaultroute(cmdline.get_gateway())
+            if(cmdline.get_gateway()):
+                route.add_defaultroute(cmdline.get_gateway())
 
 
 

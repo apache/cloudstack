@@ -262,7 +262,7 @@ class CsRedundant(object):
         self.set_lock()
         logging.debug("Setting router to master")
         self.address.process()
-        logging.info("added default rotue")
+        logging.info("added default routes")
 
         # ip route add default via $gw table Table_$dev proto static
         cmd = "%s -C %s" % (self.CONNTRACKD_BIN, self.CONNTRACKD_CONF)
