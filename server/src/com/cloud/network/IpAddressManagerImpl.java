@@ -287,6 +287,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     VpcDao _vpcDao;
     @Inject
     DataCenterIpAddressDao _privateIPAddressDao;
+    @Inject
     HostPodDao _hpDao;
 
     SearchBuilder<IPAddressVO> AssignIpAddressSearch;

@@ -4203,7 +4203,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         DataCenter zone = _entityMgr.findByUuid(DataCenter.class, zoneId);
 
         if (zone == null)
-            throw new InvalidParameterValueException("Invalid zone Id is Null");
+            throw new InvalidParameterValueException("Invalid zone Id ");
         if (_accountMgr.checkAccessAndSpecifyAuthority(caller, zone.getId()) != zone.getId())
             throw new InvalidParameterValueException("Caller does not have permission for this Zone" + "(" + zoneId + ")");
         if (s_logger.isDebugEnabled())
