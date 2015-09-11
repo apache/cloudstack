@@ -124,6 +124,11 @@ CLUSTERTAG1 = "cwps1"
 CLUSTERTAG2 = "cwps2"
 
 '''
+Host Tags
+'''
+HOSTTAG1 = "host1"
+
+'''
 Traffic Types
 '''
 PUBLIC_TRAFFIC = "public"

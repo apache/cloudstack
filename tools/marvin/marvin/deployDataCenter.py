@@ -30,9 +30,11 @@ from marvin.cloudstackException import (
     InvalidParameterException,
     GetDetailExceptionInfo)
 from marvin.cloudstackAPI import *
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.codes import (FAILED, SUCCESS)
 from marvin.lib.utils import (random_gen)
 from marvin.config.test_data import test_data
+from marvin.lib.base import NetworkOffering
 from sys import exit
 import os
 import pickle
@@ -133,6 +135,14 @@ class DeployDataCenters(object):
                 hostcmd.username = host.username
                 hostcmd.zoneid = zoneId
                 hostcmd.hypervisor = hypervisor
+                if "hostmac" in host.__dict__.keys():
+                    hostcmd.hostmac = host.hostmac
+                if "cpunumber" in host.__dict__.keys():
+                    hostcmd.cpunumber = host.cpunumber
+                if "cpuspeed" in host.__dict__.keys():
+                    hostcmd.cpuspeed = host.cpuspeed
+                if "memory" in host.__dict__.keys():
+                    hostcmd.memory = host.memory
                 ret = self.__apiClient.addHost(hostcmd)
                 if ret:
                     self.__tcRunLogger.debug("=== Add Host Successful ===")
@@ -526,6 +536,43 @@ class DeployDataCenters(object):
                         self.enableProvider(pnetprovres[0].id)
                     elif provider.name == 'SecurityGroupProvider':
                         self.enableProvider(pnetprovres[0].id)
+                    elif provider.name == 'BaremetalPxeProvider':
+                        self.enableProvider(pnetprovres[0].id)
+                        for device in provider.devices:
+                            dev = addBaremetalPxeKickStartServer. \
+                                addBaremetalPxeKickStartServerCmd()
+                            dev.username = device.username
+                            dev.password = device.password
+                            dev.url = device.url
+                            dev.tftpdir = device.tftpdir
+                            dev.pxeservertype = device.type
+                            dev.physicalnetworkid = phynetwrk.id
+                            ret = self.__apiClient.addBaremetalPxeKickStartServer\
+                                (dev)
+                            if ret.id:
+                                self.__tcRunLogger. \
+                                    debug("==== AddBaremetalPxeKickStartServer "
+                                          "Successful=====")
+                                self.__addToCleanUp(
+                                    "BaremetalPxeKickStartServer",
+                                    ret.id)
+                    elif provider.name == 'BaremetalDhcpProvider':
+                        self.enableProvider(pnetprovres[0].id)
+                        for device in provider.devices:
+                            dev = addBaremetalDhcp.addBaremetalDhcpCmd()
+                            dev.username = device.username
+                            dev.password = device.password
+                            dev.url = device.url
+                            dev.dhcpservertype = device.type
+                            dev.physicalnetworkid = phynetwrk.id
+                            ret = self.__apiClient.addBaremetalDhcp(dev)
+                            if ret.id:
+                                self.__tcRunLogger. \
+                                    debug("==== AddBaremetalDhcp"
+                                          "Successful=====")
+                                self.__addToCleanUp(
+                                    "BaremetalDhcp",
+                                    ret.id)
                 elif provider.name in ['JuniperContrailRouter',
                                        'JuniperContrailVpcRouter']:
                     netprov = addNetworkServiceProvider.\
@@ -729,15 +776,21 @@ class DeployDataCenters(object):
                     self.updatePhysicalNetwork(phynetwrk.id, "Enabled",
                                                vlan=pnet.vlan)
                 if zone.networktype == "Basic":
-                    listnetworkoffering =\
-                        listNetworkOfferings.listNetworkOfferingsCmd()
-                    listnetworkoffering.name =\
-                        "DefaultSharedNetscalerEIPandELBNetworkOffering" \
-                        if len(filter(lambda x:
-                                      x.typ == 'Public',
-                                      zone.physical_networks[0].
-                                      traffictypes)) > 0 \
-                        else "DefaultSharedNetworkOfferingWithSGService"
+                    if self.isBareMetalZone(zone):
+                        baremetal_nw_off = self.createNetwrokOffering()
+                        listnetworkoffering = listNetworkOfferings.\
+                            listNetworkOfferingsCmd()
+                        listnetworkoffering.name = baremetal_nw_off.name
+                    else:
+                        listnetworkoffering =\
+                            listNetworkOfferings.listNetworkOfferingsCmd()
+                        listnetworkoffering.name =\
+                            "DefaultSharedNetscalerEIPandELBNetworkOffering" \
+                            if len(filter(lambda x:
+                                          x.typ == 'Public',
+                                          zone.physical_networks[0].
+                                          traffictypes)) > 0 \
+                            else "DefaultSharedNetworkOfferingWithSGService"
                     if zone.networkofferingname is not None:
                         listnetworkoffering.name = zone.networkofferingname
                     listnetworkofferingresponse = \
@@ -864,6 +917,40 @@ class DeployDataCenters(object):
         except Exception as e:
             self.__tcRunLogger.exception("====AddS3 Failed===")
             self.__cleanAndExit()
+
+    def createNetwrokOffering(self):
+        services = {
+            "name": 'BareMetalNetworkOffering',
+            "displaytext": 'BareMetalNetworkOffering',
+            "guestiptype": 'Shared',
+            "supportedservices": 'Dhcp,SecurityGroup,BaremetalPxeService',
+            "traffictype": 'GUEST',
+            "availability": 'Optional',
+            "specifyIpRanges": 'true',
+            "specifyVlan": 'true',
+            "serviceProviderList": {
+                "Dhcp": 'BaremetalDhcpProvider',
+                "SecurityGroup": 'SecurityGroupProvider',
+                "BaremetalPxeService": 'BaremetalPxeProvider',
+            },
+        }
+        network_offering = NetworkOffering.create(self.__apiClient, services)
+        # ut = cloudstackTestCase()
+        # ut.assertIsNone(
+        #     network_offering,
+        #     "Failed to create Baremetal network offering"
+        # )
+        network_offering.update(self.__apiClient, state='Enabled')
+        return network_offering
+
+    def isBareMetalZone(self, zone):
+        isBareMetal = False
+        for pod in zone.pods:
+            for cluster in pod.clusters:
+                if cluster.hypervisor.lower() == 'baremetal':
+                    isBareMetal = True
+                    break
+        return isBareMetal
 
     def deploy(self):
         try:

@@ -1586,6 +1586,16 @@ test_data = {
         "ostypeid":"2e02e376-cdf3-11e4-beb3-8aa6272b57ef"
                 },
                               },
+    "baremetal_template": {
+        "name": "Centos-6.4-x86",
+        "displaytext": "Centos-6.4-x86",
+        "ostype": 'CentOS 6.4 (64-bit)',
+        "url": "ks=http://10.147.42.200/cblr/svc/op/ks/profile/Centos-6.4-x86_64;kernel=10.147.42.200:/var/lib/tftpboot/images/Centos-6.4-x86_64/vmlinuz;initrd=10.147.42.200:/var/lib/tftpboot/images/Centos-6.4-x86_64/initrd.img",
+        "hypervisor": 'BareMetal',
+        "format": 'BareMetal',
+        "isfeatured": True,
+        "ispublic": True,
+    },
     "configurableData":
         {
             "portableIpRange": {
