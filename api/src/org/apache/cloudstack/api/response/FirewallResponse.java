@@ -37,11 +37,11 @@ public class FirewallResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.START_PORT)
     @Param(description = "the starting port of firewall rule's port range")
-    private String startPort;
+    private Integer startPort;
 
     @SerializedName(ApiConstants.END_PORT)
     @Param(description = "the ending port of firewall rule's port range")
-    private String endPort;
+    private Integer endPort;
 
     @SerializedName(ApiConstants.IP_ADDRESS_ID)
     @Param(description = "the public ip address id for the firewall rule")
