@@ -159,16 +159,4 @@ public class LocalTemplateDownloader extends TemplateDownloaderBase implements T
             }
         }
     }
-
-    public static void main(String[] args) {
-        String url = "file:///home/ahuang/Download/E3921_P5N7A-VM_manual.zip";
-        TemplateDownloader td = new LocalTemplateDownloader(null, url, "/tmp/mysql", TemplateDownloader.DEFAULT_MAX_TEMPLATE_SIZE_IN_BYTES, null);
-        long bytes = td.download(true, null);
-        if (bytes > 0) {
-            System.out.println("Downloaded  (" + bytes + " bytes)" + " in " + td.getDownloadTime() / 1000 + " secs");
-        } else {
-            System.out.println("Failed download");
-        }
-
-    }
 }
