@@ -1410,6 +1410,7 @@
                                 title: 'label.egress.rules',
                                 custom: function(args) {
                                     var context = args.context;
+                                    var isConfigRulesMsgShown = false;
 
                                     return $('<div>').multiEdit({
                                         context: context,
@@ -1612,6 +1613,34 @@
                                                     });
                                                 }
                                             });
+
+                                            if (!isConfigRulesMsgShown) {
+                                                isConfigRulesMsgShown = true;
+                                                $.ajax({
+                                                    url: createURL('listNetworkOfferings'),
+                                                    data: {
+                                                        id: args.context.networks[0].networkofferingid
+                                                    },
+                                                    dataType: 'json',
+                                                    async: true,
+                                                    success: function(json) {
+                                                        var response = json.listnetworkofferingsresponse.networkoffering ?
+                                                        json.listnetworkofferingsresponse.networkoffering[0] : null;
+
+                                                        if (response != null) {
+                                                            if (response.egressdefaultpolicy == true) {
+                                                                cloudStack.dialog.notice({
+                                                                    message: _l('message.configure.firewall.rules.block.traffic')
+                                                                });
+                                                            } else {
+                                                                cloudStack.dialog.notice({
+                                                                    message: _l('message.configure.firewall.rules.allow.traffic')
+                                                                });
+                                                            }
+                                                        }
+                                                    }
+                                                });
+                                            }
                                         }
                                     });
                                 }
