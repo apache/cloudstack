@@ -103,6 +103,8 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.HypervisorVersionChangedException;
+import com.cloud.utils.exception.NioConnectionException;
+import com.cloud.utils.exception.TaskExecutionException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.nio.HandlerFactory;
@@ -593,7 +595,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         startDirectlyConnectedHosts();
 
         if (_connection != null) {
-            _connection.start();
+            try {
+                _connection.start();
+            } catch (final NioConnectionException e) {
+                s_logger.error("Error when connecting to the NioServer!", e);
+            }
         }
 
         _monitorExecutor.scheduleWithFixedDelay(new MonitorTask(), PingInterval.value(), PingInterval.value(), TimeUnit.SECONDS);
@@ -827,7 +833,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 Status determinedState = investigate(attache);
                 // if state cannot be determined do nothing and bail out
                 if (determinedState == null) {
-                    if (((System.currentTimeMillis() >> 10) - host.getLastPinged()) > AlertWait.value()) {
+                    if ((System.currentTimeMillis() >> 10) - host.getLastPinged() > AlertWait.value()) {
                         s_logger.warn("Agent " + hostId + " state cannot be determined for more than " + AlertWait + "(" + AlertWait.value() + ") seconds, will go to Alert state");
                         determinedState = Status.Alert;
                     } else {
@@ -840,7 +846,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 s_logger.info("The agent " + hostId + " state determined is " + determinedState);
 
                 if (determinedState == Status.Down) {
-                    String message = "Host is down: " + host.getId() + "-" + host.getName() + ". Starting HA on the VMs";
+                    final String message = "Host is down: " + host.getId() + "-" + host.getName() + ". Starting HA on the VMs";
                     s_logger.error(message);
                     if (host.getType() != Host.Type.SecondaryStorage && host.getType() != Host.Type.ConsoleProxy) {
                         _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host down, " + host.getId(), message);
@@ -1299,7 +1305,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
 
         @Override
-        protected void doTask(final Task task) throws Exception {
+        protected void doTask(final Task task) throws TaskExecutionException {
             final TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             try {
                 final Type type = task.getType();
@@ -1315,6 +1321,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     } catch (final UnsupportedVersionException e) {
                         s_logger.warn(e.getMessage());
                         // upgradeAgent(task.getLink(), data, e.getReason());
+                    } catch (final ClassNotFoundException e) {
+                        final String message = String.format("Exception occured when executing taks! Error '%s'", e.getMessage());
+                        s_logger.error(message);
+                        throw new TaskExecutionException(message, e);
                     }
                 } else if (type == Task.Type.CONNECT) {
                 } else if (type == Task.Type.DISCONNECT) {
