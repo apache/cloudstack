@@ -63,6 +63,7 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
         resourceType = that.resourceType;
         installPath = that.installPath;
         _store = that._store;
+        _proxy = that._proxy;
     }
 
     public DownloadCommand(TemplateObjectTO template, Long maxDownloadSizeInBytes) {
