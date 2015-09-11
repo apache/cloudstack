@@ -409,6 +409,9 @@ public class SnapshotServiceImpl implements SnapshotService {
     @Override
     public boolean revertSnapshot(SnapshotInfo snapshot) {
         SnapshotInfo snapshotOnPrimaryStore = _snapshotFactory.getSnapshot(snapshot.getId(), DataStoreRole.Primary);
+        if (snapshotOnPrimaryStore == null) {
+            throw new CloudRuntimeException("Cannot find an entry for snapshot " + snapshot.getId() + " on primary storage pools");
+        }
         PrimaryDataStore store = (PrimaryDataStore)snapshotOnPrimaryStore.getDataStore();
 
         AsyncCallFuture<SnapshotResult> future = new AsyncCallFuture<SnapshotResult>();
