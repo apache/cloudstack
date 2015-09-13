@@ -87,11 +87,11 @@ public class FirewallResponse extends BaseResponse {
         this.protocol = protocol;
     }
 
-    public void setStartPort(String startPort) {
+    public void setStartPort(Integer startPort) {
         this.startPort = startPort;
     }
 
-    public void setEndPort(String endPort) {
+    public void setEndPort(Integer endPort) {
         this.endPort = endPort;
     }
 
