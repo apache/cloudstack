@@ -617,7 +617,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
 
         // Specifies that load balancing rules can be made for either TCP or UDP
         // traffic
-        lbCapabilities.put(Capability.SupportedProtocols, "tcp,udp");
+        lbCapabilities.put(Capability.SupportedProtocols, "tcp,udp,http");
 
         // Specifies that this element can measure network usage on a per public
         // IP basis
