@@ -255,8 +255,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             } else {
                 // if the network offering has service package implement it with
                 // Netscaler Control Center
-                manageGuestNetworkWithNetscalerControlCenter(true, guestConfig, offering);
-                return true;
+                return manageGuestNetworkWithNetscalerControlCenter(true, guestConfig, offering);
             }
         } catch (InsufficientCapacityException capacityException) {
             throw new ResourceUnavailableException(
@@ -385,147 +384,33 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         if (add) {
             //TODO After getting the answer check with the job id and do poll on the job and then save the selfip or acquired guest ip to the Nics table
             if (answer != null) {
-                if (add) {
-                    // Insert a new NIC for this guest network to reserve the self IP
-                    _networkService.savePlaceholderNic(guestConfig, selfIp, null, null);
+                if (answer.getResult() == true) {
+                    if (add) {
+                        // Insert a new NIC for this guest network to reserve the self IP
+                        _networkService.savePlaceholderNic(guestConfig, selfIp, null, null);
+                    }
+                } else {
+                    return false;
                 }
             }
         } else {
+            if (answer != null) {
+                if (answer.getResult() == true) {
+                    //TODO remove the guest ip acquired
+                    /*Nic selfipNic = getPlaceholderNic(guestConfig);
+                    _nicDao.remove(selfipNic.getId());*/
+                    return true;
+                } else {
+                    return false;
+                }
+            }
             // release the self-ip obtained from guest network
             /*Nic selfipNic = getPlaceholderNic(guestConfig);
             _nicDao.remove(selfipNic.getId());*/
             // release the load balancer allocated for the network
-            return true;
+            return false;
             //write code to remove the self nic or the clean up work
         }
-        // Send a command to the external load balancer to implement or shutdown the guest network
-        /*        long guestVlanTag = Long.parseLong(BroadcastDomainType.getValue(guestConfig.getBroadcastUri()));
-        String selfIp = null;
-        String guestVlanNetmask = NetUtils.cidr2Netmask(guestConfig.getCidr());
-        Integer networkRate = _networkModel.getNetworkRate(guestConfig.getId(), null);
-        if (add) {
-            // on restart network, network could have already been implemented. If already implemented then return
-            Nic selfipNic = getPlaceholderNic(guestConfig);
-            if (selfipNic != null) {
-                return true;
-            }
-            // Acquire a self-ip address from the guest network IP address range
-            selfIp = _ipAddrMgr.acquireGuestIpAddress(guestConfig, null);
-            if (selfIp == null) {
-                String msg = "failed to acquire guest IP address so not implementing the network on the external load balancer ";
-                s_logger.error(msg);
-                throw new InsufficientNetworkCapacityException(msg, Network.class, guestConfig.getId());
-            }
-        } else {
-            // get the self-ip used by the load balancer
-            Nic selfipNic = getPlaceholderNic(guestConfig);
-            if (selfipNic == null) {
-                s_logger.warn("Network shutdwon requested on external load balancer element, which did not implement the network."
-                    + " Either network implement failed half way through or already network shutdown is completed. So just returning.");
-                return true;
-            }
-            selfIp = selfipNic.getIp4Address();
-        }
-        */
-        // It's a hack, using isOneToOneNat field for indicate if it's inline or not
-        /*        boolean inline = _networkMgr.isNetworkInlineMode(guestConfig);
-        IpAddressTO ip =
-            new IpAddressTO(guestConfig.getAccountId(), null, add, false, true, String.valueOf(guestVlanTag), selfIp, guestVlanNetmask, null, networkRate, inline);
-        IpAddressTO[] ips = new IpAddressTO[1];
-        ips[0] = ip;
-        IpAssocCommand cmd = new IpAssocCommand(ips);
-        Answer answer = _agentMgr.easySend(netscalerControlCenter.getId(), cmd);
-        */
-        /*        if (answer == null || !answer.getResult()) {
-            String action = add ? "implement" : "shutdown";
-            String answerDetails = (answer != null) ? answer.getDetails() : null;
-            answerDetails = (answerDetails != null) ? " due to " + answerDetails : "";
-            String msg = "External load balancer was unable to " + action + " the guest network on the external load balancer in zone " + zone.getName() + answerDetails;
-            s_logger.error(msg);
-            throw new ResourceUnavailableException(msg, Network.class, guestConfig.getId());
-        }
-        =======
-        NetScalerImplementNetworkCommand cmd = new NetScalerImplementNetworkCommand(zoneId,
-                netscalerControlCenter.getId(), networkPayload.toString());
-        >>>>>>> Stashed changes
-        if (add) {
-            Answer answer = _agentMgr.easySend(netscalerControlCenter.getId(), cmd);
-            // TODO After getting the answer check with the job id and do poll
-            // on the job and then save the selfip or acquired guest ip to the
-            // Nics table
-            if (answer != null) {
-                if (add) {
-                    // Insert a new NIC for this guest network to reserve the
-                    // self IP
-                    _networkService.savePlaceholderNic(guestConfig, selfIp, null, null);
-                }
-            }
-        }
-        // Send a command to the external load balancer to implement or shutdown
-        // the guest network
-        /*
-         * long guestVlanTag =
-         * Long.parseLong(BroadcastDomainType.getValue(guestConfig.
-         * getBroadcastUri())); String selfIp = null; String guestVlanNetmask =
-         * NetUtils.cidr2Netmask(guestConfig.getCidr()); Integer networkRate =
-         * _networkModel.getNetworkRate(guestConfig.getId(), null); if (add) {
-         * // on restart network, network could have already been implemented.
-         * If already implemented then return Nic selfipNic =
-         * getPlaceholderNic(guestConfig); if (selfipNic != null) { return true;
-         * } // Acquire a self-ip address from the guest network IP address
-         * range selfIp = _ipAddrMgr.acquireGuestIpAddress(guestConfig, null);
-         * if (selfIp == null) { String msg =
-         * "failed to acquire guest IP address so not implementing the network on the external load balancer "
-         * ; s_logger.error(msg); throw new
-         * InsufficientNetworkCapacityException(msg, Network.class,
-         * guestConfig.getId()); } } else { // get the self-ip used by the load
-         * balancer Nic selfipNic = getPlaceholderNic(guestConfig); if
-         * (selfipNic == null) { s_logger.warn(
-         * "Network shutdwon requested on external load balancer element, which did not implement the network."
-         * +
-         * " Either network implement failed half way through or already network shutdown is completed. So just returning."
-         * ); return true; } selfIp = selfipNic.getIp4Address(); }
-         */
-        // It's a hack, using isOneToOneNat field for indicate if it's inline or
-        // not
-        /*
-         * boolean inline = _networkMgr.isNetworkInlineMode(guestConfig);
-         * IpAddressTO ip = new IpAddressTO(guestConfig.getAccountId(), null,
-         * add, false, true, String.valueOf(guestVlanTag), selfIp,
-         * guestVlanNetmask, null, networkRate, inline); IpAddressTO[] ips = new
-         * IpAddressTO[1]; ips[0] = ip; IpAssocCommand cmd = new
-         * IpAssocCommand(ips); Answer answer =
-         * _agentMgr.easySend(netscalerControlCenter.getId(), cmd);
-         */
-        /*
-         * if (answer == null || !answer.getResult()) { String action = add ?
-         * "implement" : "shutdown"; String answerDetails = (answer != null) ?
-         * answer.getDetails() : null; answerDetails = (answerDetails != null) ?
-         * " due to " + answerDetails : ""; String msg =
-         * "External load balancer was unable to " + action +
-         * " the guest network on the external load balancer in zone " +
-         * zone.getName() + answerDetails; s_logger.error(msg); throw new
-         * ResourceUnavailableException(msg, Network.class,
-         * guestConfig.getId()); } if (add) { // Insert a new NIC for this guest
-         * network to reserve the self IP
-         * _networkMgr.savePlaceholderNic(guestConfig, selfIp, null, null); }
-         * else { // release the self-ip obtained from guest network Nic
-         * selfipNic = getPlaceholderNic(guestConfig);
-         * _nicDao.remove(selfipNic.getId()); // release the load balancer
-         * allocated for the network boolean releasedLB =
-         * freeLoadBalancerForNetwork(guestConfig); if (!releasedLB) { String
-         * msg =
-         * "Failed to release the external load balancer used for the network: "
-         * + guestConfig.getId(); s_logger.error(msg); } } if
-         * (s_logger.isDebugEnabled()) { Account account =
-         * _accountDao.findByIdIncludingRemoved(guestConfig.getAccountId());
-         * String action = add ? "implemented" : "shut down"; s_logger.debug(
-         * "External load balancer has " + action +
-         * " the guest network for account " + account.getAccountName() +
-         * "(id = " + account.getAccountId() + ") with VLAN tag " +
-         * guestVlanTag); }
-         */
-
         return true;
     }
 
