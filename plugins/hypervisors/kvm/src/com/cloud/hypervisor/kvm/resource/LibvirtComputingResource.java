@@ -1161,12 +1161,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             final String fname = interfaces[i].getName();
             s_logger.debug("matchPifFileInDirectory: file name '" + fname + "'");
             if (fname.startsWith("eth") || fname.startsWith("bond") || fname.startsWith("vlan") || fname.startsWith("vx") || fname.startsWith("em") ||
-                    fname.matches("^p\\d+p\\d+.*")) {
+                    fname.matches("^p\\d+p\\d+.*") || fname.startsWith("ens") || fname.startsWith("eno") || fname.startsWith("enp") || fname.startsWith("enx")) {
                 return fname;
             }
         }
 
-        s_logger.debug("failing to get physical interface from bridge " + bridgeName + ", did not find an eth*, bond*, vlan*, em*, or p*p* in " + brif.getAbsolutePath());
+        s_logger.debug("failing to get physical interface from bridge " + bridgeName + ", did not find an eth*, bond*, vlan*, em*, p*p*, ens*, eno*, enp*, or enx* in " + brif.getAbsolutePath());
         return "";
     }
 
