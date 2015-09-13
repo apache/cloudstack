@@ -37,11 +37,11 @@ public class FirewallResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.START_PORT)
     @Param(description = "the starting port of firewall rule's port range")
-    private String startPort;
+    private Integer startPort;
 
     @SerializedName(ApiConstants.END_PORT)
     @Param(description = "the ending port of firewall rule's port range")
-    private String endPort;
+    private Integer endPort;
 
     @SerializedName(ApiConstants.IP_ADDRESS_ID)
     @Param(description = "the public ip address id for the firewall rule")
@@ -87,11 +87,11 @@ public class FirewallResponse extends BaseResponse {
         this.protocol = protocol;
     }
 
-    public void setStartPort(String startPort) {
+    public void setStartPort(Integer startPort) {
         this.startPort = startPort;
     }
 
-    public void setEndPort(String endPort) {
+    public void setEndPort(Integer endPort) {
         this.endPort = endPort;
     }
 
