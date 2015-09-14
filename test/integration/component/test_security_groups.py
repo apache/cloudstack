@@ -115,7 +115,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
 
         return
 
-    @attr(tags=["sg", "eip", "advancedsg"])
+    @attr(tags=["sg", "basic", "eip", "advancedsg"])
     def test_01_deployVM_InDefaultSecurityGroup(self):
         """Test deploy VM in default security group
         """
@@ -193,7 +193,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["sg", "eip", "advancedsg"])
+    @attr(tags=["sg", "basic", "eip", "advancedsg"])
     def test_02_listSecurityGroups(self):
         """Test list security groups for admin account
         """
@@ -228,7 +228,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["sg", "eip", "advancedsg"])
+    @attr(tags=["sg", "basic", "eip", "advancedsg"])
     def test_03_accessInDefaultSecurityGroup(self):
         """Test access in default security group
         """
@@ -389,7 +389,7 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
 
         return
 
-    @attr(tags=["sg", "eip", "advancedsg"])
+    @attr(tags=["sg", "basic", "eip", "advancedsg"])
     def test_01_authorizeIngressRule(self):
         """Test authorize ingress rule
         """
@@ -535,7 +535,7 @@ class TestRevokeIngressRule(cloudstackTestCase):
         self.apiclient.revokeSecurityGroupIngress(cmd)
         return
 
-    @attr(tags=["sg", "eip", "advancedsg"])
+    @attr(tags=["sg", "basic", "eip", "advancedsg"])
     def test_01_revokeIngressRule(self):
         """Test revoke ingress rule
         """
@@ -717,7 +717,7 @@ class TestDhcpOnlyRouter(cloudstackTestCase):
 
         return
 
-    @attr(tags=["sg", "eip", "basic"], required_hardware="true")
+    @attr(tags=["sg", "basic", "eip", "basic"], required_hardware="true")
     def test_01_dhcpOnlyRouter(self):
         """Test router services for user account
         """
@@ -851,7 +851,7 @@ class TestdeployVMWithUserData(cloudstackTestCase):
 
         return
 
-    @attr(tags=["sg", "eip", "advancedsg"])
+    @attr(tags=["sg", "basic", "eip", "advancedsg"])
     def test_01_deployVMWithUserData(self):
         """Test Deploy VM with User data"""
 
@@ -1029,7 +1029,7 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
 
         return
 
-    @attr(tags=["sg", "eip", "advancedsg"])
+    @attr(tags=["sg", "basic", "eip", "advancedsg"])
     def test_01_delete_security_grp_running_vm(self):
         """Test delete security group with running VM"""
 
@@ -1113,7 +1113,7 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["sg", "eip", "advancedsg"])
+    @attr(tags=["sg", "basic", "eip", "advancedsg"])
     def test_02_delete_security_grp_withoout_running_vm(self):
         """Test delete security group without running VM"""
 
@@ -1260,7 +1260,7 @@ class TestIngressRule(cloudstackTestCase):
 
         return
 
-    @attr(tags=["sg", "eip", "advancedsg"])
+    @attr(tags=["sg", "basic", "eip", "advancedsg"])
     def test_01_authorizeIngressRule_AfterDeployVM(self):
         """Test delete security group with running VM"""
 
@@ -1377,7 +1377,7 @@ class TestIngressRule(cloudstackTestCase):
                       % (ingress_rule_2["id"], e))
         return
 
-    @attr(tags=["sg", "eip", "advancedsg"])
+    @attr(tags=["sg", "basic", "eip", "advancedsg"])
     def test_02_revokeIngressRule_AfterDeployVM(self):
         """Test Revoke ingress rule after deploy VM"""
 
@@ -1549,7 +1549,7 @@ class TestIngressRule(cloudstackTestCase):
                           % (icmp_rule["ruleid"], e))
         return
 
-    @attr(tags=["sg", "eip", "advancedsg"])
+    @attr(tags=["sg", "basic", "eip", "advancedsg"])
     def test_03_stopStartVM_verifyIngressAccess(self):
         """Test Start/Stop VM and Verify ingress rule"""
 
@@ -1791,7 +1791,7 @@ class TestIngressRuleSpecificIpSet(cloudstackTestCase):
         self.apiclient.revokeSecurityGroupIngress(cmd)
         return
 
-    @attr(tags=["sg", "eip", "advancedsg"])
+    @attr(tags=["sg", "basic", "eip", "advancedsg"])
     def test_ingress_rules_specific_IP_set(self):
         """Test ingress rules for specific IP set
 
@@ -1983,7 +1983,7 @@ class TestIngressRuleSpecificIpSet(cloudstackTestCase):
                           self.mgtSvrDetails["mgtSvrIp"]))
         return
 
-    @attr(tags=["sg", "eip", "advancedsg"])
+    @attr(tags=["sg", "basic", "eip", "advancedsg"])
     def test_ingress_rules_specific_IP_set_non_def_sec_group(self):
         """Test ingress rules for specific IP set and non default security group
 
