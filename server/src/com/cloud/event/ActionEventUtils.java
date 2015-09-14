@@ -37,7 +37,6 @@ import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
 
 import com.cloud.configuration.Config;
-import com.cloud.domain.Domain;
 import com.cloud.event.dao.EventDao;
 import com.cloud.server.ManagementService;
 import com.cloud.user.Account;
@@ -121,7 +120,7 @@ public class ActionEventUtils {
     public static void onStartedActionEventFromContext(String eventType, String eventDescription, boolean eventDisplayEnabled) {
         CallContext ctx = CallContext.current();
         long userId = ctx.getCallingUserId();
-        long accountId = ctx.getCallingAccountId();
+        long accountId = ctx.getProject() != null ? ctx.getProject().getProjectAccountId() : ctx.getCallingAccountId();    //This should be the entity owner id rather than the Calling User Account Id.
         long startEventId = ctx.getStartEventId();
 
         if (!eventType.equals(""))
@@ -204,20 +203,15 @@ public class ActionEventUtils {
         String entityType = null;
         String entityUuid = null;
         CallContext context = CallContext.current();
-        Class<?> entityKey = getEntityKey(eventType);
-        if (entityKey != null){
-            //FIXME - Remove this since it should be covered by the else if condition below.
-            entityUuid = (String)context.getContextParameter(entityKey);
-            if (entityUuid != null)
-                entityType = entityKey.getName();
-        }else if (EventTypes.getEntityClassForEvent(eventType) != null){
-            //Get entity Class(Example - VirtualMachine.class) from the event Type eg. - VM.CREATE
-            Class<?> entityClass = EventTypes.getEntityClassForEvent(eventType);
-
+        //Get entity Class(Example - VirtualMachine.class) from the event Type eg. - VM.CREATE
+        Class<?> entityClass = EventTypes.getEntityClassForEvent(eventType);
+        if (entityClass != null){
             //Get uuid from id
-            if(context.getContextParameter(entityClass.getName()) != null){
+            Object param = context.getContextParameter(entityClass);
+            if(param != null){
                 try {
-                    entityUuid = getEntityUuid(entityClass, context.getContextParameter(entityClass.getName()));
+                    entityUuid = getEntityUuid(entityClass, param);
+                    entityType = entityClass.getName();
                 } catch (Exception e){
                     s_logger.debug("Caught exception while finding entityUUID, moving on");
                 }
@@ -312,22 +306,4 @@ public class ActionEventUtils {
 
     }
 
-    private static Class<?> getEntityKey(String eventType)
-    {
-        // FIXME - Remove this
-        if (eventType.startsWith("DOMAIN."))
-        {
-            return Domain.class;
-        }
-        else if (eventType.startsWith("ACCOUNT."))
-        {
-            return Account.class;
-        }
-        else if (eventType.startsWith("USER."))
-        {
-            return User.class;
-        }
-
-        return null;
-    }
 }

@@ -63,10 +63,8 @@ import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.User;
-import com.cloud.vm.ConsoleProxy;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
-import com.cloud.vm.SecondaryStorageVm;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.usage.Usage;
@@ -557,13 +555,13 @@ public class EventTypes {
         entityEventDetails.put(EVENT_ROUTER_HA, VirtualRouter.class);
         entityEventDetails.put(EVENT_ROUTER_UPGRADE, VirtualRouter.class);
 
-        entityEventDetails.put(EVENT_PROXY_CREATE, ConsoleProxy.class);
-        entityEventDetails.put(EVENT_PROXY_DESTROY, ConsoleProxy.class);
-        entityEventDetails.put(EVENT_PROXY_START, ConsoleProxy.class);
-        entityEventDetails.put(EVENT_PROXY_STOP, ConsoleProxy.class);
-        entityEventDetails.put(EVENT_PROXY_REBOOT, ConsoleProxy.class);
-        entityEventDetails.put(EVENT_ROUTER_HA, ConsoleProxy.class);
-        entityEventDetails.put(EVENT_PROXY_HA, ConsoleProxy.class);
+        entityEventDetails.put(EVENT_PROXY_CREATE, VirtualMachine.class);
+        entityEventDetails.put(EVENT_PROXY_DESTROY, VirtualMachine.class);
+        entityEventDetails.put(EVENT_PROXY_START, VirtualMachine.class);
+        entityEventDetails.put(EVENT_PROXY_STOP, VirtualMachine.class);
+        entityEventDetails.put(EVENT_PROXY_REBOOT, VirtualMachine.class);
+        entityEventDetails.put(EVENT_ROUTER_HA, VirtualMachine.class);
+        entityEventDetails.put(EVENT_PROXY_HA, VirtualMachine.class);
 
         entityEventDetails.put(EVENT_VNC_CONNECT, "VNC");
         entityEventDetails.put(EVENT_VNC_DISCONNECT, "VNC");
@@ -668,12 +666,12 @@ public class EventTypes {
         entityEventDetails.put(EVENT_ISO_UPLOAD, "Iso");
 
         // SSVM
-        entityEventDetails.put(EVENT_SSVM_CREATE, SecondaryStorageVm.class);
-        entityEventDetails.put(EVENT_SSVM_DESTROY, SecondaryStorageVm.class);
-        entityEventDetails.put(EVENT_SSVM_START, SecondaryStorageVm.class);
-        entityEventDetails.put(EVENT_SSVM_STOP, SecondaryStorageVm.class);
-        entityEventDetails.put(EVENT_SSVM_REBOOT, SecondaryStorageVm.class);
-        entityEventDetails.put(EVENT_SSVM_HA, SecondaryStorageVm.class);
+        entityEventDetails.put(EVENT_SSVM_CREATE, VirtualMachine.class);
+        entityEventDetails.put(EVENT_SSVM_DESTROY, VirtualMachine.class);
+        entityEventDetails.put(EVENT_SSVM_START, VirtualMachine.class);
+        entityEventDetails.put(EVENT_SSVM_STOP, VirtualMachine.class);
+        entityEventDetails.put(EVENT_SSVM_REBOOT, VirtualMachine.class);
+        entityEventDetails.put(EVENT_SSVM_HA, VirtualMachine.class);
 
         // Service Offerings
         entityEventDetails.put(EVENT_SERVICE_OFFERING_CREATE, ServiceOffering.class);
