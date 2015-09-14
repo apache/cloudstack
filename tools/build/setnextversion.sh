@@ -16,6 +16,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
+set -e
+
 version='TESTBUILD'
 sourcedir=~/cloudstack/
 branch='master'
