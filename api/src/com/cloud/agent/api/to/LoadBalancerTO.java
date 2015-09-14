@@ -86,6 +86,15 @@ public class LoadBalancerTO {
         this(id, srcIp, srcPort, protocol, algorithm, revoked, alreadyAdded, inline, argDestinations, stickinessPolicies, null, null, null);
     }
 
+    public LoadBalancerTO(String id, List<DestinationTO> destinations) {
+        this.uuid = id;
+        int i = 0;
+        this.destinations = new DestinationTO[destinations.size()];
+        for (DestinationTO destination : destinations) {
+            this.destinations[i++] = new DestinationTO(destination.getDestIp(), destination.getDestPort(), destination.getMonitorState());
+        }
+    }
+
     public LoadBalancerTO(String id, String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, boolean inline,
             List<LbDestination> argDestinations, List<LbStickinessPolicy> stickinessPolicies, List<LbHealthCheckPolicy> healthCheckPolicies, LbSslCert sslCert,
             String lbProtocol) {
@@ -319,6 +328,12 @@ public class LoadBalancerTO {
             this.destPort = destPort;
             this.revoked = revoked;
             this.alreadyAdded = alreadyAdded;
+        }
+
+        public DestinationTO(String destIp, int destPort, String monitorState) {
+            this.destIp = destIp;
+            this.destPort = destPort;
+            this.monitorState = monitorState;
         }
 
         protected DestinationTO() {

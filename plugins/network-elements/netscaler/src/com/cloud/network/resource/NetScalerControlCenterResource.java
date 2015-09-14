@@ -53,6 +53,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.BasicClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -576,29 +577,23 @@ public class NetScalerControlCenterResource implements ServerResource {
                 return new HealthCheckLBConfigAnswer(hcLB);
             }
             String result = getLBHealthChecks(cmd.getNetworkId());
-            for (LoadBalancerTO loadBalancer : loadBalancers) {
-                HealthCheckPolicyTO[] healthCheckPolicies = loadBalancer.getHealthCheckPolicies();
-                if ((healthCheckPolicies != null) && (healthCheckPolicies.length > 0) && (healthCheckPolicies[0] != null)) {
-                    String nsVirtualServerName = generateNSVirtualServerName(loadBalancer.getSrcIp(), loadBalancer.getSrcPort());
-
-                    com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding[] serviceBindings =
-                            com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding.get(_netscalerService, nsVirtualServerName);
-
-                    if (serviceBindings != null) {
-                        for (DestinationTO destination : loadBalancer.getDestinations()) {
-                            String nsServiceName = generateNSServiceName(destination.getDestIp(), destination.getDestPort());
-                            for (com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding binding : serviceBindings) {
-                                if (nsServiceName.equalsIgnoreCase(binding.get_servicename())) {
-                                    destination.setMonitorState(binding.get_curstate());
-                                    break;
-                                }
-                            }
-                        }
-                        hcLB.add(loadBalancer);
+            JSONObject res =  new JSONObject(result);
+            JSONArray lbstatus = res.getJSONArray("lbhealthstatus");
+            for(int i=0; i<lbstatus.length(); i++) {
+                JSONObject lbstat = lbstatus.getJSONObject(i);
+                LoadBalancerTO loadBalancer = null;// new LoadBalancerTO(lbstat.getString("lb_uuid"));
+                JSONArray dest = lbstat.getJSONArray("destinations");
+                List<DestinationTO> listDestTo = new ArrayList<DestinationTO>();
+                for(int d=0; d<dest.length(); d++ ) {
+                    JSONObject dt = dest.getJSONObject(d);
+                    if( dt!=null ) {
+                        DestinationTO destTO = new DestinationTO(dt.getString("destIp"), dt.getInt("destPort"), dt.getString("monitorState"));
+                        listDestTo.add(destTO);
                     }
                 }
+                loadBalancer = new LoadBalancerTO(lbstat.getString("lb_uuid"),listDestTo);
+                hcLB.add(loadBalancer);
             }
-
         } catch (ExecutionException e) {
             s_logger.error("Failed to execute HealthCheckLBConfigCommand due to ", e);
             if (shouldRetry(numRetries)) {

@@ -1203,14 +1203,28 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             return null;
         }
 
-        ExternalLoadBalancerDeviceVO lbDeviceVO = getExternalLoadBalancerForNetwork(network);
+        HostVO externalLoadBalancer = null;
+
+        if(isNccServiceProvider(network)) {
+            externalLoadBalancer  = getNetScalerControlCenterForNetwork(network);
+        } else {
+            ExternalLoadBalancerDeviceVO lbDeviceVO = getExternalLoadBalancerForNetwork(network);
+            if (lbDeviceVO == null) {
+                s_logger.warn("There is no external load balancer device assigned to this network either network is not implement are already shutdown so just returning");
+                return null;
+            } else {
+                externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
+            }
+        }
+
+/*        ExternalLoadBalancerDeviceVO lbDeviceVO = getExternalLoadBalancerForNetwork(network);
         if (lbDeviceVO == null) {
             s_logger.warn("There is no external load balancer device assigned to this network either network is not implement are already shutdown so just returning");
             return null;
         }
 
         HostVO externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
-
+*/
         boolean externalLoadBalancerIsInline = _networkMgr.isNetworkInlineMode(network);
 
         if (network.getState() == Network.State.Allocated) {
