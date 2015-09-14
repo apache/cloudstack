@@ -7,7 +7,7 @@
 # with the License.  You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -86,7 +86,7 @@ Requires: iptables-services
 Group:     System Environment/Libraries
 %description management
 The CloudStack management server is the central point of coordination,
-management, and intelligence in CloudStack.  
+management, and intelligence in CloudStack.
 
 %package common
 Summary: Apache CloudStack common files and scripts
@@ -134,9 +134,6 @@ The CloudStack baremetal agent
 %package usage
 Summary: CloudStack Usage calculation server
 Requires: java => 1.7.0
-Requires: jsvc
-Requires: jakarta-commons-daemon
-Requires: jakarta-commons-daemon-jsvc
 Requires: mysql-connector-java
 Group: System Environment/Libraries
 %description usage
@@ -179,10 +176,10 @@ if [ "%{_ossnoss}" == "NOREDIST" -o "%{_ossnoss}" == "noredist" ] ; then
    FLAGS="$FLAGS -Dnoredist"
 fi
 
-if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then 
+if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then
    echo "Adding simulator flag to the maven build"
    FLAGS="$FLAGS -Dsimulator"
-fi 
+fi
 
 mvn -Psystemvm -DskipTests $FLAGS clean package
 
@@ -215,7 +212,7 @@ python -m py_compile ${RPM_BUILD_ROOT}%{python_sitearch}/cloud_utils.py
 python -m compileall ${RPM_BUILD_ROOT}%{python_sitearch}/cloudutils
 cp build/gitrev.txt ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
 cp packaging/centos7/cloudstack-sccs ${RPM_BUILD_ROOT}/usr/bin
- 
+
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts/network/cisco
 cp -r plugins/network-elements/cisco-vnmc/scripts/network/cisco/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts/network/cisco
 
@@ -313,11 +310,7 @@ install -D usage/target/cloud-usage-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir
 install -D usage/target/transformed/db.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/usage/db.properties
 install -D usage/target/transformed/log4j-cloud_usage.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/usage/log4j-cloud.xml
 cp usage/target/dependencies/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-usage/lib/
-install -D packaging/centos7/cloud-usage.service ${RPM_BUILD_ROOT}%{_unitdir}/%{name}-usage.service
-install -D packaging/centos7/cloud-usage.sysconfig ${RPM_BUILD_ROOT}%{_sysconfdir}/sysconfig/%{name}-usage
-install -D packaging/centos7/cloud-usage-sysd ${RPM_BUILD_ROOT}/usr/sbin/%{name}-usage-sysd
-mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/run
-touch ${RPM_BUILD_ROOT}%{_localstatedir}/run/%{name}-usage.pid
+install -D packaging/cloudstack-usage.service ${RPM_BUILD_ROOT}%{_unitdir}/%{name}-usage.service
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/usage/
 
 # CLI
@@ -365,7 +358,7 @@ if [ "$1" == "1" ] ; then
 fi
 
 if [ ! -f %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util ] ; then
-    echo Please download vhd-util from http://download.cloud.com.s3.amazonaws.com/tools/vhd-util and put it in 
+    echo Please download vhd-util from http://download.cloud.com.s3.amazonaws.com/tools/vhd-util and put it in
     echo %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/
 fi
 
@@ -413,7 +406,6 @@ id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged us
 /sbin/service cloudstack-usage stop || true
 if [ "$1" == "0" ] ; then
     /sbin/chkconfig --del cloudstack-usage > /dev/null 2>&1 || true
-    /sbin/service cloudstack-usage stop > /dev/null 2>&1 || true
 fi
 
 %post usage
@@ -421,8 +413,7 @@ if [ -f "%{_sysconfdir}/%{name}/management/db.properties" ]; then
     echo Replacing db.properties with management server db.properties
     rm -f %{_sysconfdir}/%{name}/usage/db.properties
     ln -s %{_sysconfdir}/%{name}/management/db.properties %{_sysconfdir}/%{name}/usage/db.properties
-    /sbin/chkconfig --add cloudstack-usage > /dev/null 2>&1 || true
-    /sbin/chkconfig --level 345 cloudstack-usage on > /dev/null 2>&1 || true
+    /usr/bin/systemctl enable cloudstack-usage > /dev/null 2>&1 || true
 fi
 
 if [ -f "%{_sysconfdir}/%{name}/management/key" ]; then
@@ -516,7 +507,6 @@ fi
 %{_defaultdocdir}/%{name}-common-%{version}/NOTICE
 
 %files usage
-%attr(0644,root,root) %{_sysconfdir}/sysconfig/%{name}-usage
 %attr(0755,root,root) /usr/sbin/%{name}-usage-sysd
 %attr(0644,root,root) %{_unitdir}/%{name}-usage.service
 %attr(0644,root,root) %{_datadir}/%{name}-usage/*.jar
@@ -524,7 +514,6 @@ fi
 %dir %attr(0770,root,cloud) %{_localstatedir}/log/%{name}/usage
 %attr(0644,root,root) %{_sysconfdir}/%{name}/usage/db.properties
 %attr(0644,root,root) %{_sysconfdir}/%{name}/usage/log4j-cloud.xml
-%attr(0644,cloud,cloud) %{_localstatedir}/run/%{name}-usage.pid
 %{_defaultdocdir}/%{name}-usage-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-usage-%{version}/NOTICE
 

@@ -48,7 +48,7 @@ under the License.
       </rollingPolicy>
 
       <layout class="org.apache.log4j.EnhancedPatternLayout">
-         <param name="ConversionPattern" value="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
+         <param name="ConversionPattern" value="%-5p [%c{3}] (%t:%x) %m%n"/>
       </layout>
    </appender>
 
@@ -59,7 +59,7 @@ under the License.
    <category name="com.cloud">
      <priority value="DEBUG"/>
    </category>
-   
+
    <!-- Limit the org.apache category to INFO as its DEBUG is verbose -->
    <category name="org.apache">
       <priority value="INFO"/>
@@ -68,7 +68,7 @@ under the License.
    <category name="org">
       <priority value="INFO"/>
    </category>
-   
+
    <category name="net">
      <priority value="INFO"/>
    </category>
