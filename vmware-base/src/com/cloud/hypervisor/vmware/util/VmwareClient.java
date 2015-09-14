@@ -156,6 +156,7 @@ public class VmwareClient {
         vimPort.login(serviceContent.getSessionManager(), userName, password, null);
 
         if (cookies == null) {
+            // Get the cookie from the response header. See vmware sample program com.vmware.httpfileaccess.GetVMFiles
             @SuppressWarnings("unchecked")
             Map<String, List<String>> responseHeaders = (Map<String, List<String>>)((BindingProvider)vimPort).getResponseContext().get(MessageContext.HTTP_RESPONSE_HEADERS);
             cookies = responseHeaders.get("Set-cookie");
@@ -627,9 +628,12 @@ public class VmwareClient {
                     }
                 }
             }
-        } catch (Exception e) {
-            s_logger.debug("Failed to get mor for name: " + name + " and type: " + type, e);
-            throw e;
+        } catch (InvalidPropertyFaultMsg invalidPropertyException) {
+            s_logger.debug("Failed to get Vmware ManagedObjectReference for name: " + name + " and type: " + type + " due to " + invalidPropertyException.getMessage());
+            throw invalidPropertyException;
+        } catch (RuntimeFaultFaultMsg runtimeFaultException) {
+            s_logger.debug("Failed to get Vmware ManagedObjectReference for name: " + name + " and type: " + type + " due to " + runtimeFaultException.getMessage());
+            throw runtimeFaultException;
         }
 
         return null;
