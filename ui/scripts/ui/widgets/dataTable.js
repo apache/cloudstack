@@ -141,7 +141,6 @@
          * @param columnIndex Index of column (starting at 0) to sort by
          */
         var sortTable = function(columnIndex) {
-            return false;
             var direction = 'asc';
 
             if ($table.find('thead th').hasClass('sorted ' + direction)) {
@@ -157,22 +156,25 @@
 
             var sortData = [];
             $elems.each(function() {
-                sortData.push($(this).html());
-                sortData.sort();
-
-                if (direction == 'asc') {
-                    sortData.reverse();
-                }
+                sortData.push($(this));
+            });
+            sortData.sort(function(a, b) {
+                return a.html().localeCompare(b.html());
             });
 
-            $(sortData).each(function() {
-                var sortKey = this;
-                var $targetCell = $elems.filter(function() {
-                    return $(this).html() == sortKey;
-                });
-                var $targetContainer = $targetCell.parent();
+            if (direction == 'asc') {
+                sortData.reverse();
+            }
 
-                $targetContainer.remove().appendTo($table.find('tbody'));
+            var elements = [];
+            $(sortData).each(function() {
+                elements.push($(this).parent().clone(true));
+            });
+
+            var $tbody = $table.find('tbody');
+            $tbody.empty();
+            $(elements).each(function() {
+                $(this).appendTo($tbody);
             });
 
             computeEvenOddRows();
