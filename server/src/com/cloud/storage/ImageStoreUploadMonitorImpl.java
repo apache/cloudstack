@@ -54,12 +54,14 @@ import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.alert.AlertManager;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.Volume.Event;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.component.ManagerBase;
@@ -96,6 +98,10 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
     private DataStoreManager storeMgr;
     @Inject
     ResourceLimitService _resourceLimitMgr;
+    @Inject
+    private AlertManager _alertMgr;
+    @Inject
+    private VMTemplateZoneDao _vmTemplateZoneDao;
 
     private long _nodeId;
     private ScheduledExecutorService _executor = null;
@@ -275,6 +281,8 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                 public void doInTransactionWithoutResult(TransactionStatus status) {
                     VolumeVO tmpVolume = _volumeDao.findById(volume.getId());
                     VolumeDataStoreVO tmpVolumeDataStore = _volumeDataStoreDao.findById(volumeDataStore.getId());
+                    boolean sendAlert = false;
+                    String msg = null;
                     try {
                         switch (answer.getStatus()) {
                         case COMPLETED:
@@ -305,9 +313,9 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                                     tmpVolumeDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
                                     tmpVolumeDataStore.setState(State.Failed);
                                     stateMachine.transitTo(tmpVolume, Event.OperationFailed, null, _volumeDao);
-                                    if (s_logger.isDebugEnabled()) {
-                                        s_logger.debug("Volume " + tmpVolume.getUuid() + " failed to upload due to operation timed out");
-                                    }
+                                    msg = "Volume " + tmpVolume.getUuid() + " failed to upload due to operation timed out";
+                                    s_logger.error(msg);
+                                    sendAlert = true;
                                 } else {
                                     tmpVolumeDataStore.setDownloadPercent(answer.getDownloadPercent());
                                 }
@@ -317,9 +325,9 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                             tmpVolumeDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
                             tmpVolumeDataStore.setState(State.Failed);
                             stateMachine.transitTo(tmpVolume, Event.OperationFailed, null, _volumeDao);
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Volume " + tmpVolume.getUuid() + " failed to upload. Error details: " + answer.getDetails());
-                            }
+                            msg = "Volume " + tmpVolume.getUuid() + " failed to upload. Error details: " + answer.getDetails();
+                            s_logger.error(msg);
+                            sendAlert = true;
                             break;
                         case UNKNOWN:
                             if (tmpVolume.getState() == Volume.State.NotUploaded) { // check for timeout
@@ -327,9 +335,9 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                                     tmpVolumeDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.ABANDONED);
                                     tmpVolumeDataStore.setState(State.Failed);
                                     stateMachine.transitTo(tmpVolume, Event.OperationTimeout, null, _volumeDao);
-                                    if (s_logger.isDebugEnabled()) {
-                                        s_logger.debug("Volume " + tmpVolume.getUuid() + " failed to upload due to operation timed out");
-                                    }
+                                    msg = "Volume " + tmpVolume.getUuid() + " failed to upload due to operation timed out";
+                                    s_logger.error(msg);
+                                    sendAlert = true;
                                 }
                             }
                             break;
@@ -337,6 +345,10 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                         _volumeDataStoreDao.update(tmpVolumeDataStore.getId(), tmpVolumeDataStore);
                     } catch (NoTransitionException e) {
                         s_logger.error("Unexpected error " + e.getMessage());
+                    } finally {
+                        if (sendAlert) {
+                            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED, tmpVolume.getDataCenterId(), null, msg, msg);
+                        }
                     }
                 }
             });
@@ -349,6 +361,8 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                 public void doInTransactionWithoutResult(TransactionStatus status) {
                     VMTemplateVO tmpTemplate = _templateDao.findById(template.getId());
                     TemplateDataStoreVO tmpTemplateDataStore = _templateDataStoreDao.findById(templateDataStore.getId());
+                    boolean sendAlert = false;
+                    String msg = null;
                     try {
                         switch (answer.getStatus()) {
                         case COMPLETED:
@@ -380,9 +394,9 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                                     tmpTemplateDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
                                     tmpTemplateDataStore.setState(State.Failed);
                                     stateMachine.transitTo(tmpTemplate, VirtualMachineTemplate.Event.OperationFailed, null, _templateDao);
-                                    if (s_logger.isDebugEnabled()) {
-                                        s_logger.debug("Template " + tmpTemplate.getUuid() + " failed to upload due to operation timed out");
-                                    }
+                                    msg = "Template " + tmpTemplate.getUuid() + " failed to upload due to operation timed out";
+                                    s_logger.error(msg);
+                                    sendAlert = true;
                                 } else {
                                     tmpTemplateDataStore.setDownloadPercent(answer.getDownloadPercent());
                                 }
@@ -392,9 +406,9 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                             tmpTemplateDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
                             tmpTemplateDataStore.setState(State.Failed);
                             stateMachine.transitTo(tmpTemplate, VirtualMachineTemplate.Event.OperationFailed, null, _templateDao);
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Template " + tmpTemplate.getUuid() + " failed to upload. Error details: " + answer.getDetails());
-                            }
+                            msg = "Template " + tmpTemplate.getUuid() + " failed to upload. Error details: " + answer.getDetails();
+                            s_logger.error(msg);
+                            sendAlert = true;
                             break;
                         case UNKNOWN:
                             if (tmpTemplate.getState() == VirtualMachineTemplate.State.NotUploaded) { // check for timeout
@@ -402,9 +416,9 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                                     tmpTemplateDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.ABANDONED);
                                     tmpTemplateDataStore.setState(State.Failed);
                                     stateMachine.transitTo(tmpTemplate, VirtualMachineTemplate.Event.OperationTimeout, null, _templateDao);
-                                    if (s_logger.isDebugEnabled()) {
-                                        s_logger.debug("Template " + tmpTemplate.getUuid() + " failed to upload due to operation timed out");
-                                    }
+                                    msg = "Template " + tmpTemplate.getUuid() + " failed to upload due to operation timed out";
+                                    s_logger.error(msg);
+                                    sendAlert = true;
                                 }
                             }
                             break;
@@ -412,6 +426,11 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                         _templateDataStoreDao.update(tmpTemplateDataStore.getId(), tmpTemplateDataStore);
                     } catch (NoTransitionException e) {
                         s_logger.error("Unexpected error " + e.getMessage());
+                    } finally {
+                        if (sendAlert) {
+                            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED,
+                                    _vmTemplateZoneDao.listByTemplateId(tmpTemplate.getId()).get(0).getZoneId(), null, msg, msg);
+                        }
                     }
                 }
             });
