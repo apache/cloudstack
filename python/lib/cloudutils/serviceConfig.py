@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -56,7 +56,7 @@ class serviceCfgBase(object):
             if self.syscfg.env.mode == "Server":
                 raise CloudRuntimeException("Configure %s failed, Please check the /var/log/cloudstack/setupManagement.log for detail"%self.serviceName)
             else:
-                raise CloudRuntimeException("Configure %s failed, Please check the /var/log/cloudstack/setupAgent.log for detail"%self.serviceName)
+                raise CloudRuntimeException("Configure %s failed, Please check the /var/log/cloudstack/agent/setup.log for detail"%self.serviceName)
 
     def backup(self):
         if self.status is None:
@@ -428,7 +428,7 @@ class securityPolicyConfigUbuntu(serviceCfgBase):
 
             return True
         except:
-            raise CloudRuntimeException("Failed to configure apparmor, please see the /var/log/cloudstack/setupAgent.log for detail, \
+            raise CloudRuntimeException("Failed to configure apparmor, please see the /var/log/cloudstack/agent/setup.log for detail, \
                                         or you can manually disable it before starting myCloud")
 
     def restore(self):
@@ -458,7 +458,7 @@ class securityPolicyConfigRedhat(serviceCfgBase):
                 cfo.replace_line("SELINUX=", "SELINUX=permissive")
                 return True
             except:
-                raise CloudRuntimeException("Failed to configure selinux, please see the /var/log/cloudstack/setupAgent.log for detail, \
+                raise CloudRuntimeException("Failed to configure selinux, please see the /var/log/cloudstack/agent/setup.log for detail, \
                                             or you can manually disable it before starting myCloud")
         else:
             return True
@@ -493,7 +493,6 @@ class libvirtConfigRedhat(serviceCfgBase):
             filename = "/etc/libvirt/qemu.conf"
 
             cfo = configFileOps(filename, self)
-            cfo.addEntry("cgroup_controllers", "[\"cpu\"]")
             cfo.addEntry("security_driver", "\"none\"")
             cfo.addEntry("user", "\"root\"")
             cfo.addEntry("group", "\"root\"")
