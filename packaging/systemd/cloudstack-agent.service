@@ -27,7 +27,10 @@ Environment=JAVA_HOME=/usr/lib/jvm/jre
 Environment=JAVA_HEAP_INITIAL=256m
 Environment=JAVA_HEAP_MAX=2048m
 Environment=JAVA_CLASS=com.cloud.agent.AgentShell
-ExecStart=/usr/libexec/cloudstack/cloudstack-agent-systemd-wrapper.sh
+ExecStart=/bin/sh -ec '\
+    export ACP=`ls /usr/share/cloudstack-agent/lib/*.jar /usr/share/cloudstack-agent/plugins/*.jar 2>/dev/null|tr "\\n" ":"`; \
+    export CLASSPATH="$ACP:/etc/cloudstack/agent:/usr/share/cloudstack-common/scripts"; \
+    ${JAVA_HOME}/bin/java -Xms${JAVA_HEAP_INITIAL} -Xmx${JAVA_HEAP_MAX} -cp "$CLASSPATH" $JAVA_CLASS'
 Restart=always
 RestartSec=10s
 
