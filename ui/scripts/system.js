@@ -7705,7 +7705,21 @@
                                             });
                                         }
                                     }
-                                }
+                                },
+                                viewMetrics: {
+                                    label: 'label.view.metrics',
+                                    isHeader: true,
+                                    addRow: false,
+                                    action: {
+                                        custom: cloudStack.uiCustom.zoneWizard(
+                                        cloudStack.zoneWizard)
+                                    },
+                                    messages: {
+                                        notification: function (args) {
+                                            return 'label.view.metrics';
+                                        }
+                                    }
+                                },
                             },
                             
                             detailView: {
