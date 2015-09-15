@@ -46,6 +46,7 @@ import com.vmware.vim25.VirtualCdromRemotePassthroughBackingInfo;
 import com.vmware.vim25.VirtualDevice;
 import com.vmware.vim25.VirtualDeviceBackingInfo;
 import com.vmware.vim25.VirtualDeviceConnectInfo;
+import com.vmware.vim25.VirtualUSBController;
 import com.vmware.vim25.VirtualDisk;
 import com.vmware.vim25.VirtualDiskFlatVer1BackingInfo;
 import com.vmware.vim25.VirtualDiskFlatVer2BackingInfo;
@@ -649,6 +650,15 @@ public class VmwareHelper {
         vmConfig.setMemoryAllocation(memInfo);
 
         vmConfig.setGuestId(guestOsIdentifier);
+    }
+
+    public static VirtualDevice prepareUSBControllerDevice() {
+        s_logger.debug("Preparing USB controller(EHCI+UHCI) device");
+        VirtualUSBController usbController = new VirtualUSBController(); //EHCI+UHCI
+        usbController.setEhciEnabled(true);
+        usbController.setAutoConnectDevices(true);
+
+        return usbController;
     }
 
     public static ManagedObjectReference getDiskDeviceDatastore(VirtualDisk diskDevice) throws Exception {
