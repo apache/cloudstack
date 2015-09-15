@@ -832,6 +832,7 @@ dictionary = {
 'label.menu.virtual.appliances': '<fmt:message key="label.menu.virtual.appliances" />',
 'label.menu.virtual.resources': '<fmt:message key="label.menu.virtual.resources" />',
 'label.menu.volumes': '<fmt:message key="label.menu.volumes" />',
+'label.metrics': '<fmt:message key="label.metrics" />',
 'label.migrate.instance.to': '<fmt:message key="label.migrate.instance.to" />',
 'label.migrate.instance.to.host': '<fmt:message key="label.migrate.instance.to.host" />',
 'label.migrate.instance.to.ps': '<fmt:message key="label.migrate.instance.to.ps" />',

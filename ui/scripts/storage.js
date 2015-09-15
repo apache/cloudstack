@@ -254,7 +254,7 @@
                         },
 
                         viewMetrics: {
-                            label: 'label.view.metrics',
+                            label: 'label.metrics',
                             isHeader: true,
                             addRow: false,
                             action: {
@@ -262,7 +262,7 @@
                             },
                             messages: {
                                 notification: function (args) {
-                                    return 'label.view.metrics';
+                                    return 'label.metrics';
                                 }
                             }
                         },

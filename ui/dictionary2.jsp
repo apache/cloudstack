@@ -203,7 +203,6 @@ $.extend(dictionary, {
 'label.version': '<fmt:message key="label.version" />',
 'label.view.all': '<fmt:message key="label.view.all" />',
 'label.view.console': '<fmt:message key="label.view.console" />',
-'label.view.metrics': '<fmt:message key="label.view.metrics" />',
 'label.view': '<fmt:message key="label.view" />',
 'label.viewing': '<fmt:message key="label.viewing" />',
 'label.virtual.appliance': '<fmt:message key="label.virtual.appliance" />',
