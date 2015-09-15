@@ -19,7 +19,42 @@
 
 package org.apache.cloudstack.saml;
 
-import com.cloud.utils.HttpUtils;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
+import java.net.URLEncoder;
+import java.security.InvalidKeyException;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.Security;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.List;
+import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
+
+import javax.security.auth.x500.X500Principal;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletResponse;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.FactoryConfigurationError;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.LoginCmdResponse;
 import org.apache.log4j.Logger;
@@ -63,41 +98,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import javax.security.auth.x500.X500Principal;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletResponse;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.FactoryConfigurationError;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
-import java.net.URLEncoder;
-import java.nio.charset.Charset;
-import java.security.InvalidKeyException;
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SecureRandom;
-import java.security.Security;
-import java.security.Signature;
-import java.security.SignatureException;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.X509Certificate;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.List;
-import java.util.zip.Deflater;
-import java.util.zip.DeflaterOutputStream;
+import com.cloud.utils.HttpUtils;
+import com.cloud.utils.StringUtils;
 
 public class SAMLUtils {
     public static final Logger s_logger = Logger.getLogger(SAMLUtils.class);
@@ -219,7 +221,7 @@ public class SAMLUtils {
         Deflater deflater = new Deflater(Deflater.DEFLATED, true);
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(byteArrayOutputStream, deflater);
-        deflaterOutputStream.write(requestMessage.getBytes(Charset.forName("UTF-8")));
+        deflaterOutputStream.write(requestMessage.getBytes(StringUtils.getPreferredCharset()));
         deflaterOutputStream.close();
         String encodedRequestMessage = Base64.encodeBytes(byteArrayOutputStream.toByteArray(), Base64.DONT_BREAK_LINES);
         encodedRequestMessage = URLEncoder.encode(encodedRequestMessage, HttpUtils.UTF_8).trim();
@@ -263,7 +265,7 @@ public class SAMLUtils {
         String url = urlEncodedString + "&SigAlg=" + URLEncoder.encode(opensamlAlgoIdSignature, HttpUtils.UTF_8);
         Signature signature = Signature.getInstance(javaSignatureAlgorithmName);
         signature.initSign(signingKey);
-        signature.update(url.getBytes(Charset.forName("UTF-8")));
+        signature.update(url.getBytes(StringUtils.getPreferredCharset()));
         String signatureString = Base64.encodeBytes(signature.sign(), Base64.DONT_BREAK_LINES);
         if (signatureString != null) {
             return url + "&Signature=" + URLEncoder.encode(signatureString, HttpUtils.UTF_8);
@@ -287,7 +289,7 @@ public class SAMLUtils {
             KeyFactory keyFactory = SAMLUtils.getKeyFactory();
             if (keyFactory == null) return null;
             X509EncodedKeySpec spec = keyFactory.getKeySpec(key, X509EncodedKeySpec.class);
-            return new String(org.bouncycastle.util.encoders.Base64.encode(spec.getEncoded()), Charset.forName("UTF-8"));
+            return new String(org.bouncycastle.util.encoders.Base64.encode(spec.getEncoded()), StringUtils.getPreferredCharset());
         } catch (InvalidKeySpecException e) {
             s_logger.error("Unable to create KeyFactory:" + e.getMessage());
         }
@@ -300,7 +302,7 @@ public class SAMLUtils {
             if (keyFactory == null) return null;
             PKCS8EncodedKeySpec spec = keyFactory.getKeySpec(key,
                     PKCS8EncodedKeySpec.class);
-            return new String(org.bouncycastle.util.encoders.Base64.encode(spec.getEncoded()), Charset.forName("UTF-8"));
+            return new String(org.bouncycastle.util.encoders.Base64.encode(spec.getEncoded()), StringUtils.getPreferredCharset());
         } catch (InvalidKeySpecException e) {
             s_logger.error("Unable to create KeyFactory:" + e.getMessage());
         }
