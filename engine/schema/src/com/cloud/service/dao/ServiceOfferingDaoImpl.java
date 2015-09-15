@@ -25,7 +25,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.event.UsageEventVO;
@@ -44,7 +43,6 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 @Local(value = {ServiceOfferingDao.class})
 @DB()
 public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Long> implements ServiceOfferingDao {
-    protected static final Logger s_logger = Logger.getLogger(ServiceOfferingDaoImpl.class);
 
     @Inject
     protected ServiceOfferingDetailsDao detailsDao;
@@ -286,7 +284,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         ServiceOfferingVO serviceOffering = findByName(name);
         if (serviceOffering == null) {
             String message = "System service offering " + name + " not found";
-            s_logger.error(message);
+            logger.error(message);
             throw new CloudRuntimeException(message);
         }
         return serviceOffering;

@@ -23,7 +23,6 @@ import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMEntityVO;
@@ -39,7 +38,6 @@ import com.cloud.utils.db.TransactionLegacy;
 @Local(value = {VMEntityDao.class})
 public class VMEntityDaoImpl extends GenericDaoBase<VMEntityVO, Long> implements VMEntityDao {
 
-    public static final Logger s_logger = Logger.getLogger(VMEntityDaoImpl.class);
 
     @Inject
     protected VMReservationDao _vmReservationDao;

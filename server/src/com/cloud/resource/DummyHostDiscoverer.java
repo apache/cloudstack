@@ -25,7 +25,6 @@ import java.util.UUID;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostVO;
@@ -35,7 +34,6 @@ import com.cloud.utils.component.AdapterBase;
 @Component
 @Local(value = Discoverer.class)
 public class DummyHostDiscoverer extends AdapterBase implements Discoverer {
-    private static final Logger s_logger = Logger.getLogger(DummyHostDiscoverer.class);
 
     @Override
     public Map<ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, String username, String password, List<String> hostTags) {
@@ -62,7 +60,7 @@ public class DummyHostDiscoverer extends AdapterBase implements Discoverer {
         try {
             resource.configure("Dummy Host Server", params);
         } catch (ConfigurationException e) {
-            s_logger.warn("Unable to instantiate dummy host server resource");
+            logger.warn("Unable to instantiate dummy host server resource");
         }
         resource.start();
         resources.put(resource, details);

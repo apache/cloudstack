@@ -29,7 +29,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.persistence.TableGenerator;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity;
@@ -63,9 +62,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @DB
 @TableGenerator(name = "host_req_sq", table = "op_host", pkColumnName = "id", valueColumnName = "sequence", allocationSize = 1)
 public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implements EngineHostDao {
-    private static final Logger s_logger = Logger.getLogger(EngineHostDaoImpl.class);
-    private static final Logger status_logger = Logger.getLogger(Status.class);
-    private static final Logger state_logger = Logger.getLogger(ResourceState.class);
 
     protected final SearchBuilder<EngineHostVO> TypePodDcStatusSearch;
 
@@ -509,10 +505,10 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
                     result.add(findById(id));
                 }
             }catch (Exception e) {
-                s_logger.warn("Exception: ", e);
+                logger.warn("Exception: ", e);
             }
         } catch (Exception e) {
-            s_logger.warn("Exception: ", e);
+            logger.warn("Exception: ", e);
         }
         return result;
     }
@@ -611,9 +607,9 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
                 l.add(info);
             }
         } catch (SQLException e) {
-            s_logger.error("sql exception while getting running hosts: " + e.getLocalizedMessage());
+            logger.error("sql exception while getting running hosts: " + e.getLocalizedMessage());
         } catch (Throwable e) {
-            s_logger.info("[ignored]"
+            logger.info("[ignored]"
                     + "caught something while getting running hosts: " + e.getLocalizedMessage());
         }
         return l;
@@ -621,8 +617,8 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
 
     @Override
     public long getNextSequence(long hostId) {
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("getNextSequence(), hostId: " + hostId);
+        if (logger.isTraceEnabled()) {
+            logger.trace("getNextSequence(), hostId: " + hostId);
         }
 
         TableGenerator tg = _tgs.get("host_req_sq");
@@ -656,7 +652,7 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
 
         int rows = update(vo, sc);
 
-        if (rows == 0 && s_logger.isDebugEnabled()) {
+        if (rows == 0 && logger.isDebugEnabled()) {
             EngineHostVO dbHost = findByIdIncludingRemoved(vo.getId());
             if (dbHost != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
@@ -678,7 +674,7 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
                     .append("; updatedTime=")
                     .append(oldUpdatedTime);
             } else {
-                s_logger.debug("Unable to update dataCenter: id=" + vo.getId() + ", as there is no such dataCenter exists in the database anymore");
+                logger.debug("Unable to update dataCenter: id=" + vo.getId() + ", as there is no such dataCenter exists in the database anymore");
             }
         }
         return rows > 0;
@@ -702,7 +698,7 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
         int result = update(ub, sc, null);
         assert result <= 1 : "How can this update " + result + " rows? ";
 
-        if (state_logger.isDebugEnabled() && result == 0) {
+        if (logger.isDebugEnabled() && result == 0) {
             EngineHostVO ho = findById(host.getId());
             assert ho != null : "How how how? : " + host.getId();
 
@@ -712,7 +708,7 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
             str.append("; old state = " + oldState);
             str.append("; event = " + event);
             str.append("; new state = " + newState + "]");
-            state_logger.debug(str.toString());
+            logger.debug(str.toString());
         } else {
             StringBuilder msg = new StringBuilder("Resource state update: [");
             msg.append("id = " + host.getId());
@@ -720,7 +716,7 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
             msg.append("; old state = " + oldState);
             msg.append("; event = " + event);
             msg.append("; new state = " + newState + "]");
-            state_logger.debug(msg.toString());
+            logger.debug(msg.toString());
         }
 
         return result > 0;

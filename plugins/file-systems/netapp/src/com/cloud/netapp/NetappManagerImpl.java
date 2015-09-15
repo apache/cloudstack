@@ -35,7 +35,6 @@ import netapp.manage.NaElement;
 import netapp.manage.NaException;
 import netapp.manage.NaServer;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.commands.netapp.AssociateLunCmd;
@@ -68,7 +67,6 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
         roundrobin, leastfull
     }
 
-    public static final Logger s_logger = Logger.getLogger(NetappManagerImpl.class.getName());
     @Inject
     public VolumeDao _volumeDao;
     @Inject
@@ -85,8 +83,8 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
 
     @Override
     public void createPool(String poolName, String algorithm) throws InvalidParameterValueException {
-        if (s_logger.isDebugEnabled())
-            s_logger.debug("Request --> createPool ");
+        if (logger.isDebugEnabled())
+            logger.debug("Request --> createPool ");
 
         PoolVO pool = null;
         validAlgorithm(algorithm);
@@ -94,8 +92,8 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
             pool = new PoolVO(poolName, algorithm);
             _poolDao.persist(pool);
 
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Response --> createPool:success");
+            if (logger.isDebugEnabled())
+                logger.debug("Response --> createPool:success");
 
         } catch (CloudRuntimeException cre) {
             pool = _poolDao.findPool(poolName);
@@ -174,8 +172,8 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
 
     @Override
     public void deletePool(String poolName) throws InvalidParameterValueException, ResourceInUseException {
-        if (s_logger.isDebugEnabled())
-            s_logger.debug("Request --> deletePool ");
+        if (logger.isDebugEnabled())
+            logger.debug("Request --> deletePool ");
 
         PoolVO pool = _poolDao.findPool(poolName);
         if (pool == null) {
@@ -186,8 +184,8 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
 
         if (volCount == 0) {
             _poolDao.remove(pool.getId());
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Request --> deletePool: Success ");
+            if (logger.isDebugEnabled())
+                logger.debug("Request --> deletePool: Success ");
 
         } else {
             throw new ResourceInUseException("Cannot delete non-empty pool");
@@ -218,14 +216,14 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
         volume = _volumeDao.findVolume(ipAddress, aggrName, volName);
 
         if (volume == null) {
-            s_logger.warn("The volume does not exist in our system");
+            logger.warn("The volume does not exist in our system");
             throw new InvalidParameterValueException("The given tuple:" + ipAddress + "," + aggrName + "," + volName + " doesn't exist in our system");
         }
 
         List<LunVO> lunsOnVol = _lunDao.listLunsByVolId(volume.getId());
 
         if (lunsOnVol != null && lunsOnVol.size() > 0) {
-            s_logger.warn("There are luns on the volume");
+            logger.warn("There are luns on the volume");
             throw new ResourceInUseException("There are luns on the volume");
         }
 
@@ -258,12 +256,12 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
             txn.commit();
 
         } catch (UnknownHostException uhe) {
-            s_logger.warn("Unable to delete volume on filer ", uhe);
+            logger.warn("Unable to delete volume on filer ", uhe);
             throw new ServerException("Unable to delete volume on filer", uhe);
         } catch (NaAPIFailedException naf) {
-            s_logger.warn("Unable to delete volume on filer ", naf);
+            logger.warn("Unable to delete volume on filer ", naf);
             if (naf.getErrno() == 13040) {
-                s_logger.info("Deleting the volume: " + volName);
+                logger.info("Deleting the volume: " + volName);
                 _volumeDao.remove(volume.getId());
                 txn.commit();
             }
@@ -271,11 +269,11 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
             throw new ServerException("Unable to delete volume on filer", naf);
         } catch (NaException nae) {
             txn.rollback();
-            s_logger.warn("Unable to delete volume on filer ", nae);
+            logger.warn("Unable to delete volume on filer ", nae);
             throw new ServerException("Unable to delete volume on filer", nae);
         } catch (IOException ioe) {
             txn.rollback();
-            s_logger.warn("Unable to delete volume on filer ", ioe);
+            logger.warn("Unable to delete volume on filer ", ioe);
             throw new ServerException("Unable to delete volume on filer", ioe);
         } finally {
             if (pool != null) {
@@ -306,8 +304,8 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
     public void createVolumeOnFiler(String ipAddress, String aggName, String poolName, String volName, String volSize, String snapshotPolicy,
         Integer snapshotReservation, String username, String password) throws UnknownHostException, ServerException, InvalidParameterValueException {
 
-        if (s_logger.isDebugEnabled())
-            s_logger.debug("Request --> createVolume " + "serverIp:" + ipAddress);
+        if (logger.isDebugEnabled())
+            logger.debug("Request --> createVolume " + "serverIp:" + ipAddress);
 
         boolean snapPolicy = false;
         boolean snapshotRes = false;
@@ -394,7 +392,7 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
         }
         pool = _poolDao.acquireInLockTable(pool.getId());
         if (pool == null) {
-            s_logger.warn("Failed to acquire lock on pool " + poolName);
+            logger.warn("Failed to acquire lock on pool " + poolName);
             throw new ConcurrentModificationException("Failed to acquire lock on pool " + poolName);
         }
         volume = new NetappVolumeVO(ipAddress, aggName, pool.getId(), volName, volSize, "", 0, username, password, 0, pool.getName());
@@ -419,34 +417,34 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
             txn.commit();
         } catch (NaException nae) {
             //zapi call failed, log and throw e
-            s_logger.warn("Failed to create volume on the netapp filer:", nae);
+            logger.warn("Failed to create volume on the netapp filer:", nae);
             txn.rollback();
             if (volumeCreated) {
                 try {
                     deleteRogueVolume(volName, s);//deletes created volume on filer
                 } catch (NaException e) {
-                    s_logger.warn("Failed to cleanup created volume whilst rolling back on the netapp filer:", e);
+                    logger.warn("Failed to cleanup created volume whilst rolling back on the netapp filer:", e);
                     throw new ServerException("Unable to create volume via cloudtools."
                         + "Failed to cleanup created volume on netapp filer whilst rolling back on the cloud db:", e);
                 } catch (IOException e) {
-                    s_logger.warn("Failed to cleanup created volume whilst rolling back on the netapp filer:", e);
+                    logger.warn("Failed to cleanup created volume whilst rolling back on the netapp filer:", e);
                     throw new ServerException("Unable to create volume via cloudtools."
                         + "Failed to cleanup created volume on netapp filer whilst rolling back on the cloud db:", e);
                 }
             }
             throw new ServerException("Unable to create volume", nae);
         } catch (IOException ioe) {
-            s_logger.warn("Failed to create volume on the netapp filer:", ioe);
+            logger.warn("Failed to create volume on the netapp filer:", ioe);
             txn.rollback();
             if (volumeCreated) {
                 try {
                     deleteRogueVolume(volName, s);//deletes created volume on filer
                 } catch (NaException e) {
-                    s_logger.warn("Failed to cleanup created volume whilst rolling back on the netapp filer:", e);
+                    logger.warn("Failed to cleanup created volume whilst rolling back on the netapp filer:", e);
                     throw new ServerException("Unable to create volume via cloudtools."
                         + "Failed to cleanup created volume on netapp filer whilst rolling back on the cloud db:", e);
                 } catch (IOException e) {
-                    s_logger.warn("Failed to cleanup created volume whilst rolling back on the netapp filer:", e);
+                    logger.warn("Failed to cleanup created volume whilst rolling back on the netapp filer:", e);
                     throw new ServerException("Unable to create volume via cloudtools."
                         + "Failed to cleanup created volume on netapp filer whilst rolling back on the cloud db:", e);
                 }
@@ -497,7 +495,7 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
                 vol.setSnapshotPolicy(snapScheduleOnFiler);
 
             } catch (ServerException e) {
-                s_logger.warn("Error trying to get snapshot schedule for volume" + vol.getVolumeName());
+                logger.warn("Error trying to get snapshot schedule for volume" + vol.getVolumeName());
             }
         }
         return vols;
@@ -538,10 +536,10 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
                 .append(whichMinutes);
             return sB.toString();
         } catch (NaException nae) {
-            s_logger.warn("Failed to get volume size ", nae);
+            logger.warn("Failed to get volume size ", nae);
             throw new ServerException("Failed to get volume size", nae);
         } catch (IOException ioe) {
-            s_logger.warn("Failed to get volume size ", ioe);
+            logger.warn("Failed to get volume size ", ioe);
             throw new ServerException("Failed to get volume size", ioe);
         } finally {
             if (s != null)
@@ -597,10 +595,10 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
             }
 
         } catch (NaException nae) {
-            s_logger.warn("Failed to get volume size ", nae);
+            logger.warn("Failed to get volume size ", nae);
             throw new ServerException("Failed to get volume size", nae);
         } catch (IOException ioe) {
-            s_logger.warn("Failed to get volume size ", ioe);
+            logger.warn("Failed to get volume size ", ioe);
             throw new ServerException("Failed to get volume size", ioe);
         } finally {
             if (s != null)
@@ -646,7 +644,7 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
         }
         pool = _poolDao.acquireInLockTable(pool.getId());
         if (pool == null) {
-            s_logger.warn("Failed to acquire lock on the pool " + poolName);
+            logger.warn("Failed to acquire lock on the pool " + poolName);
             return result;
         }
         NaServer s = null;
@@ -663,8 +661,8 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
                 throw new ServerException("Could not find a suitable volume to create lun on");
             }
 
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Request --> createLun " + "serverIp:" + selectedVol.getIpAddress());
+            if (logger.isDebugEnabled())
+                logger.debug("Request --> createLun " + "serverIp:" + selectedVol.getIpAddress());
 
             StringBuilder exportPath = new StringBuilder("/vol/");
             exportPath.append(selectedVol.getVolumeName());
@@ -715,7 +713,7 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
             } catch (NaAPIFailedException e) {
                 if (e.getErrno() == 9004) {
                     //igroup already exists hence no error
-                    s_logger.warn("Igroup already exists");
+                    logger.warn("Igroup already exists");
                 }
             }
 
@@ -794,15 +792,15 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
 
         NetappVolumeVO vol = _volumeDao.acquireInLockTable(lun.getVolumeId());
         if (vol == null) {
-            s_logger.warn("Failed to lock volume id= " + lun.getVolumeId());
+            logger.warn("Failed to lock volume id= " + lun.getVolumeId());
             return;
         }
         NaServer s = null;
         try {
             s = getServer(vol.getIpAddress(), vol.getUsername(), vol.getPassword());
 
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Request --> destroyLun " + ":serverIp:" + vol.getIpAddress());
+            if (logger.isDebugEnabled())
+                logger.debug("Request --> destroyLun " + ":serverIp:" + vol.getIpAddress());
 
             try {
                 //Unmap lun
@@ -812,7 +810,7 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
                 s.invokeElem(xi2);
             } catch (NaAPIFailedException naf) {
                 if (naf.getErrno() == 9016)
-                    s_logger.warn("no map exists excpn 9016 caught in deletelun, continuing with delete");
+                    logger.warn("no map exists excpn 9016 caught in deletelun, continuing with delete");
             }
 
             //destroy lun
@@ -831,30 +829,30 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
             txn.commit();
         } catch (UnknownHostException uhe) {
             txn.rollback();
-            s_logger.warn("Failed to delete lun", uhe);
+            logger.warn("Failed to delete lun", uhe);
             throw new ServerException("Failed to delete lun", uhe);
         } catch (IOException ioe) {
             txn.rollback();
-            s_logger.warn("Failed to delete lun", ioe);
+            logger.warn("Failed to delete lun", ioe);
             throw new ServerException("Failed to delete lun", ioe);
         } catch (NaAPIFailedException naf) {
             if (naf.getErrno() == 9017) {//no such group exists excpn
-                s_logger.warn("no such group exists excpn 9017 caught in deletelun, continuing with delete");
+                logger.warn("no such group exists excpn 9017 caught in deletelun, continuing with delete");
                 _lunDao.remove(lun.getId());
                 txn.commit();
             } else if (naf.getErrno() == 9029) {//LUN maps for this initiator group exist
-                s_logger.warn("LUN maps for this initiator group exist errno 9029 caught in deletelun, continuing with delete");
+                logger.warn("LUN maps for this initiator group exist errno 9029 caught in deletelun, continuing with delete");
                 _lunDao.remove(lun.getId());
                 txn.commit();
             } else {
                 txn.rollback();
-                s_logger.warn("Failed to delete lun", naf);
+                logger.warn("Failed to delete lun", naf);
                 throw new ServerException("Failed to delete lun", naf);
             }
 
         } catch (NaException nae) {
             txn.rollback();
-            s_logger.warn("Failed to delete lun", nae);
+            logger.warn("Failed to delete lun", nae);
             throw new ServerException("Failed to delete lun", nae);
         } finally {
             if (vol != null) {
@@ -875,8 +873,8 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
      */
     @Override
     public List<LunVO> listLunsOnFiler(String poolName) {
-        if (s_logger.isDebugEnabled())
-            s_logger.debug("Request --> listLunsOnFiler ");
+        if (logger.isDebugEnabled())
+            logger.debug("Request --> listLunsOnFiler ");
 
         List<LunVO> luns = new ArrayList<LunVO>();
 
@@ -886,8 +884,8 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
             luns.addAll(_lunDao.listLunsByVolId(vol.getId()));
         }
 
-        if (s_logger.isDebugEnabled())
-            s_logger.debug("Response --> listLunsOnFiler:success");
+        if (logger.isDebugEnabled())
+            logger.debug("Response --> listLunsOnFiler:success");
 
         return luns;
     }
@@ -910,8 +908,8 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
         try {
             s = getServer(vol.getIpAddress(), vol.getUsername(), vol.getPassword());
 
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Request --> disassociateLun " + ":serverIp:" + vol.getIpAddress());
+            if (logger.isDebugEnabled())
+                logger.debug("Request --> disassociateLun " + ":serverIp:" + vol.getIpAddress());
 
             xi = new NaElement("igroup-remove");
             xi.addNewChild("force", "true");
@@ -972,8 +970,8 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
         try {
             s = getServer(vol.getIpAddress(), vol.getUsername(), vol.getPassword());
 
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Request --> associateLun " + ":serverIp:" + vol.getIpAddress());
+            if (logger.isDebugEnabled())
+                logger.debug("Request --> associateLun " + ":serverIp:" + vol.getIpAddress());
 
             //add iqn to the group
             xi2 = new NaElement("igroup-add");
@@ -984,19 +982,19 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
 
             return returnVal;
         } catch (UnknownHostException uhe) {
-            s_logger.warn("Unable to associate LUN ", uhe);
+            logger.warn("Unable to associate LUN ", uhe);
             throw new ServerException("Unable to associate LUN", uhe);
         } catch (NaAPIFailedException naf) {
             if (naf.getErrno() == 9008) { //initiator group already contains node
                 return returnVal;
             }
-            s_logger.warn("Unable to associate LUN ", naf);
+            logger.warn("Unable to associate LUN ", naf);
             throw new ServerException("Unable to associate LUN", naf);
         } catch (NaException nae) {
-            s_logger.warn("Unable to associate LUN ", nae);
+            logger.warn("Unable to associate LUN ", nae);
             throw new ServerException("Unable to associate LUN", nae);
         } catch (IOException ioe) {
-            s_logger.warn("Unable to associate LUN ", ioe);
+            logger.warn("Unable to associate LUN ", ioe);
             throw new ServerException("Unable to associate LUN", ioe);
         } finally {
             if (s != null)

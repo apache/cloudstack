@@ -21,7 +21,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.QuerySelector;
@@ -38,7 +37,6 @@ import com.cloud.utils.component.AdapterBase;
 
 public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySelector {
 
-    private static final Logger s_logger = Logger.getLogger(RoleBasedEntityQuerySelector.class.getName());
 
     @Inject
     IAMService _iamService;

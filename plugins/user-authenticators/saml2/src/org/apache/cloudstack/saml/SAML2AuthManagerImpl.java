@@ -37,7 +37,6 @@ import org.apache.cloudstack.framework.security.keystore.KeystoreDao;
 import org.apache.cloudstack.framework.security.keystore.KeystoreVO;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.HttpClient;
-import org.apache.log4j.Logger;
 import org.opensaml.DefaultBootstrap;
 import org.opensaml.common.xml.SAMLConstants;
 import org.opensaml.saml2.metadata.ContactPerson;
@@ -93,7 +92,6 @@ import java.util.TimerTask;
 @Component
 @Local(value = {SAML2AuthManager.class, PluggableAPIAuthenticator.class})
 public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManager, Configurable {
-    private static final Logger s_logger = Logger.getLogger(SAML2AuthManagerImpl.class);
 
     private SAMLProviderMetadata _spMetadata = new SAMLProviderMetadata();
     private Map<String, SAMLProviderMetadata> _idpMetadataMap = new HashMap<String, SAMLProviderMetadata>();
@@ -124,10 +122,10 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
     @Override
     public boolean start() {
         if (isSAMLPluginEnabled()) {
-            s_logger.info("SAML auth plugin loaded");
+            logger.info("SAML auth plugin loaded");
             return setup();
         } else {
-            s_logger.info("SAML auth plugin not enabled so not loading");
+            logger.info("SAML auth plugin not enabled so not loading");
             return super.start();
         }
     }
@@ -147,9 +145,9 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
                 KeyPair keyPair = SAMLUtils.generateRandomKeyPair();
                 _ksDao.save(SAMLPluginConstants.SAMLSP_KEYPAIR, SAMLUtils.savePrivateKey(keyPair.getPrivate()), SAMLUtils.savePublicKey(keyPair.getPublic()), "samlsp-keypair");
                 keyStoreVO = _ksDao.findByName(SAMLPluginConstants.SAMLSP_KEYPAIR);
-                s_logger.info("No SAML keystore found, created and saved a new Service Provider keypair");
+                logger.info("No SAML keystore found, created and saved a new Service Provider keypair");
             } catch (NoSuchProviderException | NoSuchAlgorithmException e) {
-                s_logger.error("Unable to create and save SAML keypair: " + e.toString());
+                logger.error("Unable to create and save SAML keypair: " + e.toString());
             }
         }
 
@@ -178,7 +176,7 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
                         _ksDao.save(SAMLPluginConstants.SAMLSP_X509CERT, Base64.encodeBase64String(bos.toByteArray()), "", "samlsp-x509cert");
                         bos.close();
                     } catch (NoSuchAlgorithmException | NoSuchProviderException | CertificateEncodingException | SignatureException | InvalidKeyException | IOException e) {
-                        s_logger.error("SAML Plugin won't be able to use X509 signed authentication");
+                        logger.error("SAML Plugin won't be able to use X509 signed authentication");
                     }
                 } else {
                     try {
@@ -187,7 +185,7 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
                         spX509Key = (X509Certificate) si.readObject();
                         bi.close();
                     } catch (IOException | ClassNotFoundException ignored) {
-                        s_logger.error("SAML Plugin won't be able to use X509 signed authentication. Failed to load X509 Certificate from Database.");
+                        logger.error("SAML Plugin won't be able to use X509 signed authentication. Failed to load X509 Certificate from Database.");
                     }
                 }
             }
@@ -214,7 +212,7 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
     private void addIdpToMap(EntityDescriptor descriptor, Map<String, SAMLProviderMetadata> idpMap) {
         SAMLProviderMetadata idpMetadata = new SAMLProviderMetadata();
         idpMetadata.setEntityId(descriptor.getEntityID());
-        s_logger.debug("Adding IdP to the list of discovered IdPs: " + descriptor.getEntityID());
+        logger.debug("Adding IdP to the list of discovered IdPs: " + descriptor.getEntityID());
         if (descriptor.getOrganization() != null) {
             if (descriptor.getOrganization().getDisplayNames() != null) {
                 for (OrganizationDisplayName orgName : descriptor.getOrganization().getDisplayNames()) {
@@ -288,21 +286,21 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
                         try {
                             idpMetadata.setSigningCertificate(KeyInfoHelper.getCertificates(kd.getKeyInfo()).get(0));
                         } catch (CertificateException ignored) {
-                            s_logger.info("[ignored] encountered invalid certificate signing.", ignored);
+                            logger.info("[ignored] encountered invalid certificate signing.", ignored);
                         }
                     }
                     if (kd.getUse() == UsageType.ENCRYPTION) {
                         try {
                             idpMetadata.setEncryptionCertificate(KeyInfoHelper.getCertificates(kd.getKeyInfo()).get(0));
                         } catch (CertificateException ignored) {
-                            s_logger.info("[ignored] encountered invalid certificate encryption.", ignored);
+                            logger.info("[ignored] encountered invalid certificate encryption.", ignored);
                         }
                     }
                     if (kd.getUse() == UsageType.UNSPECIFIED) {
                         try {
                             unspecifiedKey = KeyInfoHelper.getCertificates(kd.getKeyInfo()).get(0);
                         } catch (CertificateException ignored) {
-                            s_logger.info("[ignored] encountered invalid certificate.", ignored);
+                            logger.info("[ignored] encountered invalid certificate.", ignored);
                         }
                     }
                 }
@@ -314,7 +312,7 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
                 idpMetadata.setEncryptionCertificate(unspecifiedKey);
             }
             if (idpMap.containsKey(idpMetadata.getEntityId())) {
-                s_logger.warn("Duplicate IdP metadata found with entity Id: " + idpMetadata.getEntityId());
+                logger.warn("Duplicate IdP metadata found with entity Id: " + idpMetadata.getEntityId());
             }
             idpMap.put(idpMetadata.getEntityId(), idpMetadata);
         }
@@ -345,16 +343,16 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
             if (_idpMetaDataProvider == null) {
                 return;
             }
-            s_logger.debug("Starting SAML IDP Metadata Refresh Task");
+            logger.debug("Starting SAML IDP Metadata Refresh Task");
 
             Map <String, SAMLProviderMetadata> metadataMap = new HashMap<String, SAMLProviderMetadata>();
             try {
                 discoverAndAddIdp(_idpMetaDataProvider.getMetadata(), metadataMap);
                 _idpMetadataMap = metadataMap;
                 expireTokens();
-                s_logger.debug("Finished refreshing SAML Metadata and expiring old auth tokens");
+                logger.debug("Finished refreshing SAML Metadata and expiring old auth tokens");
             } catch (MetadataProviderException e) {
-                s_logger.warn("SAML Metadata Refresh task failed with exception: " + e.getMessage());
+                logger.warn("SAML Metadata Refresh task failed with exception: " + e.getMessage());
             }
 
         }
@@ -362,7 +360,7 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
 
     private boolean setup() {
         if (!initSP()) {
-            s_logger.error("SAML Plugin failed to initialize, please fix the configuration and restart management server");
+            logger.error("SAML Plugin failed to initialize, please fix the configuration and restart management server");
             return false;
         }
         _timer = new Timer();
@@ -378,11 +376,11 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
             } else {
                 File metadataFile = PropertiesUtil.findConfigFile(idpMetaDataUrl);
                 if (metadataFile == null) {
-                    s_logger.error("Provided Metadata is not a URL, Unable to locate metadata file from local path: " + idpMetaDataUrl);
+                    logger.error("Provided Metadata is not a URL, Unable to locate metadata file from local path: " + idpMetaDataUrl);
                     return false;
                 }
                 else{
-                    s_logger.debug("Provided Metadata is not a URL, trying to read metadata file from local path: " + metadataFile.getAbsolutePath());
+                    logger.debug("Provided Metadata is not a URL, trying to read metadata file from local path: " + metadataFile.getAbsolutePath());
                     _idpMetaDataProvider = new FilesystemMetadataProvider(_timer, metadataFile);
                 }
             }
@@ -392,14 +390,14 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
             _timer.scheduleAtFixedRate(new MetadataRefreshTask(), 0, _refreshInterval * 1000);
 
         } catch (MetadataProviderException e) {
-            s_logger.error("Unable to read SAML2 IDP MetaData URL, error:" + e.getMessage());
-            s_logger.error("SAML2 Authentication may be unavailable");
+            logger.error("Unable to read SAML2 IDP MetaData URL, error:" + e.getMessage());
+            logger.error("SAML2 Authentication may be unavailable");
             return false;
         } catch (ConfigurationException | FactoryConfigurationError e) {
-            s_logger.error("OpenSAML bootstrapping failed: error: " + e.getMessage());
+            logger.error("OpenSAML bootstrapping failed: error: " + e.getMessage());
             return false;
         } catch (NullPointerException e) {
-            s_logger.error("Unable to setup SAML Auth Plugin due to NullPointerException" +
+            logger.error("Unable to setup SAML Auth Plugin due to NullPointerException" +
                     " please check the SAML global settings: " + e.getMessage());
             return false;
         }
@@ -477,7 +475,7 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
         if (_samlTokenDao.findByUuid(authnId) == null) {
             _samlTokenDao.persist(token);
         } else {
-            s_logger.warn("Duplicate SAML token for entity=" + entity + " token id=" + authnId + " domain=" + domainPath);
+            logger.warn("Duplicate SAML token for entity=" + entity + " token id=" + authnId + " domain=" + domainPath);
         }
     }
 

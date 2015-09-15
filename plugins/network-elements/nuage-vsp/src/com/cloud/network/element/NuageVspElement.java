@@ -31,7 +31,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.StartupCommand;
@@ -93,7 +92,6 @@ import com.cloud.vm.dao.NicDao;
 public class NuageVspElement extends AdapterBase implements ConnectivityProvider, IpDeployer, SourceNatServiceProvider, StaticNatServiceProvider, FirewallServiceProvider,
         DhcpServiceProvider, NetworkACLServiceProvider, ResourceStateAdapter {
 
-    private static final Logger s_logger = Logger.getLogger(NuageVspElement.class);
 
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
@@ -194,14 +192,14 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
     @Override
     public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
             ResourceUnavailableException, InsufficientCapacityException {
-        s_logger.debug("Entering NuageElement implement function for network " + network.getDisplayText() + " (state " + network.getState() + ")");
+        logger.debug("Entering NuageElement implement function for network " + network.getDisplayText() + " (state " + network.getState() + ")");
 
         if (!canHandle(network, Service.Connectivity)) {
             return false;
         }
 
         if (network.getBroadcastUri() == null) {
-            s_logger.error("Nic has no broadcast Uri with the virtual router IP");
+            logger.error("Nic has no broadcast Uri with the virtual router IP");
             return false;
         }
 
@@ -216,7 +214,7 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
         }
 
         if (network.getBroadcastUri() == null) {
-            s_logger.error("Nic has no broadcast Uri with the virtual router IP");
+            logger.error("Nic has no broadcast Uri with the virtual router IP");
             return false;
         }
 
@@ -230,7 +228,7 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
         }
 
         if (network.getBroadcastUri() == null) {
-            s_logger.error("Nic has no broadcast Uri with the virtual router IP");
+            logger.error("Nic has no broadcast Uri with the virtual router IP");
             return false;
         }
 
@@ -275,12 +273,12 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
         // This element can only function in a NuageVsp based
         // SDN network, so Connectivity needs to be present here
         if (!services.contains(Service.Connectivity)) {
-            s_logger.warn("Unable to support services combination without Connectivity service provided by Nuage VSP.");
+            logger.warn("Unable to support services combination without Connectivity service provided by Nuage VSP.");
             return false;
         }
 
         if ((services.contains(Service.StaticNat)) && (!services.contains(Service.SourceNat))) {
-            s_logger.warn("Unable to provide StaticNat without the SourceNat service.");
+            logger.warn("Unable to provide StaticNat without the SourceNat service.");
             return false;
         }
 
@@ -289,7 +287,7 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
             // NuageVsp doesn't implement any of these services, and we don't
             // want anyone else to do it for us. So if these services
             // exist, we can't handle it.
-            s_logger.warn("Unable to support services combination. The services list contains service(s) not supported by Nuage VSP.");
+            logger.warn("Unable to support services combination. The services list contains service(s) not supported by Nuage VSP.");
             return false;
         }
 
@@ -303,13 +301,13 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
         }
 
         if (!_networkModel.isProviderForNetwork(getProvider(), network.getId())) {
-            s_logger.debug("NuageElement is not a provider for network " + network.getDisplayText());
+            logger.debug("NuageElement is not a provider for network " + network.getDisplayText());
             return false;
         }
 
         if (service != null) {
             if (!_ntwkSrvcDao.canProviderSupportServiceInNetwork(network.getId(), service, getProvider())) {
-                s_logger.debug("NuageElement can't provide the " + service.getName() + " service on network " + network.getDisplayText());
+                logger.debug("NuageElement can't provide the " + service.getName() + " service on network " + network.getDisplayText());
                 return false;
             }
         }
@@ -373,13 +371,13 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
                 ApplyStaticNatVspCommand cmd = new ApplyStaticNatVspCommand(networkDomain.getUuid(), vpcOrSubnetUuid, isL3Network, sourceNatDetails);
                 ApplyStaticNatVspAnswer answer = (ApplyStaticNatVspAnswer)_agentMgr.easySend(nuageVspHost.getId(), cmd);
                 if (answer == null || !answer.getResult()) {
-                    s_logger.error("ApplyStaticNatNuageVspCommand for network " + config.getUuid() + " failed");
+                    logger.error("ApplyStaticNatNuageVspCommand for network " + config.getUuid() + " failed");
                     if ((null != answer) && (null != answer.getDetails())) {
                         throw new ResourceUnavailableException(answer.getDetails(), Network.class, config.getId());
                     }
                 }
             } catch (Exception e) {
-                s_logger.warn("Failed to apply static Nat in Vsp " + e.getMessage());
+                logger.warn("Failed to apply static Nat in Vsp " + e.getMessage());
             }
         } catch (Exception e) {
             throw new ResourceUnavailableException("Failed to apply Static NAT in VSP", Network.class, config.getId(), e);
@@ -395,9 +393,9 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
 
     @Override
     public boolean applyFWRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
-        s_logger.debug("Handling applyFWRules for network " + network.getName() + " with " + rules.size() + " FWRules");
+        logger.debug("Handling applyFWRules for network " + network.getName() + " with " + rules.size() + " FWRules");
         if (rules != null && rules.size() == 1 && rules.iterator().next().getType().equals(FirewallRuleType.System)) {
-            s_logger.debug("Default ACL added by CS as system is ignored for network " + network.getName() + " with rule " + rules);
+            logger.debug("Default ACL added by CS as system is ignored for network " + network.getName() + " with rule " + rules);
             return true;
         }
         return applyACLRules(network, rules, false);
@@ -406,12 +404,12 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
     @Override
     public boolean applyNetworkACLs(Network network, List<? extends NetworkACLItem> rules) throws ResourceUnavailableException {
         if (rules == null || rules.isEmpty()) {
-            s_logger.debug("No rules to apply. So, delete all the existing ACL in VSP from Subnet with uuid " + network.getUuid());
+            logger.debug("No rules to apply. So, delete all the existing ACL in VSP from Subnet with uuid " + network.getUuid());
         } else {
-            s_logger.debug("New rules has to applied. So, delete all the existing ACL in VSP from Subnet with uuid " + network.getUuid());
+            logger.debug("New rules has to applied. So, delete all the existing ACL in VSP from Subnet with uuid " + network.getUuid());
         }
         if (rules != null) {
-            s_logger.debug("Handling applyNetworkACLs for network " + network.getName() + " with " + rules.size() + " Network ACLs");
+            logger.debug("Handling applyNetworkACLs for network " + network.getName() + " with " + rules.size() + " Network ACLs");
             applyACLRules(network, rules, true);
         }
         return true;
@@ -440,7 +438,7 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
                     isVpc, network.getId());
             ApplyAclRuleVspAnswer answer = (ApplyAclRuleVspAnswer)_agentMgr.easySend(nuageVspHost.getId(), cmd);
             if (answer == null || !answer.getResult()) {
-                s_logger.error("ApplyAclRuleNuageVspCommand for network " + network.getUuid() + " failed");
+                logger.error("ApplyAclRuleNuageVspCommand for network " + network.getUuid() + " failed");
                 if ((null != answer) && (null != answer.getDetails())) {
                     throw new ResourceUnavailableException(answer.getDetails(), Network.class, network.getId());
                 }

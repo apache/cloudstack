@@ -23,7 +23,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
@@ -53,7 +52,6 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = DeploymentPlanner.class)
 public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
-    private static final Logger s_logger = Logger.getLogger(BareMetalPlanner.class);
     @Inject
     protected DataCenterDao _dcDao;
     @Inject
@@ -84,7 +82,7 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
             DataCenter dc = _dcDao.findById(h.getDataCenterId());
             Pod pod = _podDao.findById(h.getPodId());
             Cluster c = _clusterDao.findById(h.getClusterId());
-            s_logger.debug("Start baremetal vm " + vm.getId() + " on last stayed host " + h.getId());
+            logger.debug("Start baremetal vm " + vm.getId() + " on last stayed host " + h.getId());
             return new DeployDestination(dc, pod, c, h);
         }
 
@@ -116,7 +114,7 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
         }
 
         if (target == null) {
-            s_logger.warn("Cannot find host with tag " + hostTag + " use capacity from service offering");
+            logger.warn("Cannot find host with tag " + hostTag + " use capacity from service offering");
             cpu_requested = offering.getCpu() * offering.getSpeed();
             ram_requested = offering.getRamSize() * 1024L * 1024L;
         } else {
@@ -128,7 +126,7 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
             if (haVmTag == null) {
                 hosts = _resourceMgr.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
             } else {
-                s_logger.warn("Cannot find HA host with tag " + haVmTag + " in cluster id=" + cluster.getId() + ", pod id=" + cluster.getPodId() + ", data center id=" +
+                logger.warn("Cannot find HA host with tag " + haVmTag + " in cluster id=" + cluster.getId() + ", pod id=" + cluster.getPodId() + ", data center id=" +
                     cluster.getDataCenterId());
                 return null;
             }
@@ -140,7 +138,7 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
                 Float memoryOvercommitRatio = Float.parseFloat(cluster_detail_ram.getValue());
 
                 if (_capacityMgr.checkIfHostHasCapacity(h.getId(), cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio, true)) {
-                    s_logger.debug("Find host " + h.getId() + " has enough capacity");
+                    logger.debug("Find host " + h.getId() + " has enough capacity");
                     DataCenter dc = _dcDao.findById(h.getDataCenterId());
                     Pod pod = _podDao.findById(h.getPodId());
                     return new DeployDestination(dc, pod, cluster, h);
@@ -148,7 +146,7 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
             }
         }
 
-        s_logger.warn(String.format("Cannot find enough capacity(requested cpu=%1$s memory=%2$s)", cpu_requested, ram_requested));
+        logger.warn(String.format("Cannot find enough capacity(requested cpu=%1$s memory=%2$s)", cpu_requested, ram_requested));
         return null;
     }
 

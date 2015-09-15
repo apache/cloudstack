@@ -32,7 +32,6 @@ import org.apache.cloudstack.network.contrail.model.InstanceIpModel;
 import org.apache.cloudstack.network.contrail.model.VMInterfaceModel;
 import org.apache.cloudstack.network.contrail.model.VirtualMachineModel;
 import org.apache.cloudstack.network.contrail.model.VirtualNetworkModel;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.deploy.DeployDestination;
@@ -85,7 +84,6 @@ public class ContrailElementImpl extends AdapterBase
     NicDao _nicDao;
     @Inject
     ServerDBSync _dbSync;
-    private static final Logger s_logger = Logger.getLogger(ContrailElement.class);
 
     // PluggableService
     @Override
@@ -122,9 +120,9 @@ public class ContrailElementImpl extends AdapterBase
     @Override
     public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
         ResourceUnavailableException, InsufficientCapacityException {
-        s_logger.debug("NetworkElement implement: " + network.getName() + ", traffic type: " + network.getTrafficType());
+        logger.debug("NetworkElement implement: " + network.getName() + ", traffic type: " + network.getTrafficType());
         if (network.getTrafficType() == TrafficType.Guest) {
-            s_logger.debug("ignore network " + network.getName());
+            logger.debug("ignore network " + network.getName());
             return true;
         }
         VirtualNetworkModel vnModel = _manager.getDatabase().lookupVirtualNetwork(network.getUuid(), _manager.getCanonicalName(network), network.getTrafficType());
@@ -139,7 +137,7 @@ public class ContrailElementImpl extends AdapterBase
             }
             _manager.getDatabase().getVirtualNetworks().add(vnModel);
         } catch (Exception ex) {
-            s_logger.warn("virtual-network update: ", ex);
+            logger.warn("virtual-network update: ", ex);
         }
         return true;
     }
@@ -148,14 +146,14 @@ public class ContrailElementImpl extends AdapterBase
     public boolean prepare(Network network, NicProfile nicProfile, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
         throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
 
-        s_logger.debug("NetworkElement prepare: " + network.getName() + ", traffic type: " + network.getTrafficType());
+        logger.debug("NetworkElement prepare: " + network.getName() + ", traffic type: " + network.getTrafficType());
 
         if (network.getTrafficType() == TrafficType.Guest) {
-            s_logger.debug("ignore network " + network.getName());
+            logger.debug("ignore network " + network.getName());
             return true;
         }
 
-        s_logger.debug("network: " + network.getId());
+        logger.debug("network: " + network.getId());
 
         VirtualNetworkModel vnModel = _manager.getDatabase().lookupVirtualNetwork(network.getUuid(), _manager.getCanonicalName(network), network.getTrafficType());
 
@@ -185,7 +183,7 @@ public class ContrailElementImpl extends AdapterBase
         try {
             vmiModel.build(_manager.getModelController(), (VMInstanceVO)vm.getVirtualMachine(), nic);
         } catch (IOException ex) {
-            s_logger.warn("vm interface set", ex);
+            logger.warn("vm interface set", ex);
             return false;
         }
 
@@ -199,7 +197,7 @@ public class ContrailElementImpl extends AdapterBase
         try {
             vmModel.update(_manager.getModelController());
         } catch (Exception ex) {
-            s_logger.warn("virtual-machine-update", ex);
+            logger.warn("virtual-machine-update", ex);
             return false;
         }
         _manager.getDatabase().getVirtualMachines().add(vmModel);
@@ -213,7 +211,7 @@ public class ContrailElementImpl extends AdapterBase
         if (network.getTrafficType() == TrafficType.Guest) {
             return true;
         } else if (!_manager.isManagedPhysicalNetwork(network)) {
-            s_logger.debug("release ignore network " + network.getId());
+            logger.debug("release ignore network " + network.getId());
             return true;
         }
 
@@ -222,7 +220,7 @@ public class ContrailElementImpl extends AdapterBase
 
         VirtualMachineModel vmModel = _manager.getDatabase().lookupVirtualMachine(vm.getUuid());
         if (vmModel == null) {
-            s_logger.debug("vm " + vm.getInstanceName() + " not in local database");
+            logger.debug("vm " + vm.getInstanceName() + " not in local database");
             return true;
         }
         VMInterfaceModel vmiModel = vmModel.getVMInterface(nic.getUuid());
@@ -230,7 +228,7 @@ public class ContrailElementImpl extends AdapterBase
             try {
                 vmiModel.destroy(_manager.getModelController());
             } catch (IOException ex) {
-                s_logger.warn("virtual-machine-interface delete", ex);
+                logger.warn("virtual-machine-interface delete", ex);
             }
             vmModel.removeSuccessor(vmiModel);
         }
@@ -252,7 +250,7 @@ public class ContrailElementImpl extends AdapterBase
      */
     @Override
     public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
-        s_logger.debug("NetworkElement shutdown");
+        logger.debug("NetworkElement shutdown");
         return true;
     }
 
@@ -261,7 +259,7 @@ public class ContrailElementImpl extends AdapterBase
      */
     @Override
     public boolean destroy(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
-        s_logger.debug("NetworkElement destroy");
+        logger.debug("NetworkElement destroy");
         return true;
     }
 
@@ -275,11 +273,11 @@ public class ContrailElementImpl extends AdapterBase
                 List<NetworkVO> systemNets = _manager.findSystemNetworks(types);
                 if (systemNets != null && !systemNets.isEmpty()) {
                     for (NetworkVO net: systemNets) {
-                        s_logger.debug("update system network service: " + net.getName() + "; service provider: " + serviceMap);
+                        logger.debug("update system network service: " + net.getName() + "; service provider: " + serviceMap);
                         _networksDao.update(net.getId(), net, serviceMap);
                     }
                 } else {
-                    s_logger.debug("no system networks created yet");
+                    logger.debug("no system networks created yet");
                 }
                 serviceMap = ((ConfigurationServerImpl)_configServer).getServicesAndProvidersForNetwork( _manager.getPublicRouterOffering().getId());
                 types = new ArrayList<TrafficType>();
@@ -287,11 +285,11 @@ public class ContrailElementImpl extends AdapterBase
                 systemNets = _manager.findSystemNetworks(types);
                 if (systemNets != null && !systemNets.isEmpty()) {
                     for (NetworkVO net: systemNets) {
-                        s_logger.debug("update system network service: " + net.getName() + "; service provider: " + serviceMap);
+                        logger.debug("update system network service: " + net.getName() + "; service provider: " + serviceMap);
                         _networksDao.update(net.getId(), net, serviceMap);
                     }
                 } else {
-                    s_logger.debug("no system networks created yet");
+                    logger.debug("no system networks created yet");
                 }
                 return true;
        }
@@ -299,7 +297,7 @@ public class ContrailElementImpl extends AdapterBase
     @Override
     public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
         ResourceUnavailableException {
-        s_logger.debug("NetworkElement shutdown ProviderInstances");
+        logger.debug("NetworkElement shutdown ProviderInstances");
         return true;
     }
 
@@ -311,8 +309,8 @@ public class ContrailElementImpl extends AdapterBase
     @Override
     public boolean verifyServicesCombination(Set<Service> services) {
         // TODO Auto-generated method stub
-        s_logger.debug("NetworkElement verifyServices");
-        s_logger.debug("Services: " + services);
+        logger.debug("NetworkElement verifyServices");
+        logger.debug("Services: " + services);
         return true;
     }
 
@@ -330,11 +328,11 @@ public class ContrailElementImpl extends AdapterBase
             }
             if (isFloatingIpCreate(ip)) {
                 if (_manager.createFloatingIp(ip)) {
-                    s_logger.debug("Successfully created floating ip: " + ip.getAddress().addr());
+                    logger.debug("Successfully created floating ip: " + ip.getAddress().addr());
                 }
             } else {
                 if (_manager.deleteFloatingIp(ip)) {
-                    s_logger.debug("Successfully deleted floating ip: " + ip.getAddress().addr());
+                    logger.debug("Successfully deleted floating ip: " + ip.getAddress().addr());
                 }
             }
         }

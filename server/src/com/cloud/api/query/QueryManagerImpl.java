@@ -107,7 +107,6 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.dao.AccountJoinDao;
@@ -227,7 +226,6 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 @Local(value = {QueryService.class})
 public class QueryManagerImpl extends ManagerBase implements QueryService, Configurable {
 
-    public static final Logger s_logger = Logger.getLogger(QueryManagerImpl.class);
 
     @Inject
     private AccountManager _accountMgr;
@@ -1565,10 +1563,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService, Confi
         // FIXME: do we need to support list hosts with VmId, maybe we should
         // create another command just for this
         // Right now it is handled separately outside this QueryService
-        s_logger.debug(">>>Searching for hosts>>>");
+        logger.debug(">>>Searching for hosts>>>");
         Pair<List<HostJoinVO>, Integer> hosts = searchForServersInternal(cmd);
         ListResponse<HostResponse> response = new ListResponse<HostResponse>();
-        s_logger.debug(">>>Generating Response>>>");
+        logger.debug(">>>Generating Response>>>");
         List<HostResponse> hostResponses = ViewResponseHelper.createHostResponse(cmd.getDetails(), hosts.first().toArray(new HostJoinVO[hosts.first().size()]));
         response.setResponses(hostResponses, hosts.second());
         return response;
@@ -2562,7 +2560,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService, Confi
                 domainIds = new ArrayList<Long>();
                 DomainVO domainRecord = _domainDao.findById(account.getDomainId());
                 if ( domainRecord == null ){
-                    s_logger.error("Could not find the domainId for account:" + account.getAccountName());
+                    logger.error("Could not find the domainId for account:" + account.getAccountName());
                     throw new CloudAuthenticationException("Could not find the domainId for account:" + account.getAccountName());
                 }
                 domainIds.add(domainRecord.getId());
@@ -2733,13 +2731,13 @@ public class QueryManagerImpl extends ManagerBase implements QueryService, Confi
                     UserVmVO vmInstance = _userVmDao.findById(vmId);
                     domainRecord = _domainDao.findById(vmInstance.getDomainId());
                     if ( domainRecord == null ){
-                        s_logger.error("Could not find the domainId for vmId:" + vmId);
+                        logger.error("Could not find the domainId for vmId:" + vmId);
                         throw new CloudAuthenticationException("Could not find the domainId for vmId:" + vmId);
                     }
                 } else {
                     domainRecord = _domainDao.findById(caller.getDomainId());
                     if ( domainRecord == null ){
-                        s_logger.error("Could not find the domainId for account:" + caller.getAccountName());
+                        logger.error("Could not find the domainId for account:" + caller.getAccountName());
                         throw new CloudAuthenticationException("Could not find the domainId for account:" + caller.getAccountName());
                     }
                 }
@@ -2885,7 +2883,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService, Confi
                 List<Long> domainIds = new ArrayList<Long>();
                 DomainVO domainRecord = _domainDao.findById(account.getDomainId());
                 if (domainRecord == null) {
-                    s_logger.error("Could not find the domainId for account:" + account.getAccountName());
+                    logger.error("Could not find the domainId for account:" + account.getAccountName());
                     throw new CloudAuthenticationException("Could not find the domainId for account:" + account.getAccountName());
                 }
                 domainIds.add(domainRecord.getId());
@@ -2926,7 +2924,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService, Confi
                 List<Long> domainIds = new ArrayList<Long>();
                 DomainVO domainRecord = _domainDao.findById(account.getDomainId());
                 if (domainRecord == null) {
-                    s_logger.error("Could not find the domainId for account:" + account.getAccountName());
+                    logger.error("Could not find the domainId for account:" + account.getAccountName());
                     throw new CloudAuthenticationException("Could not find the domainId for account:" + account.getAccountName());
                 }
                 domainIds.add(domainRecord.getId());
@@ -3118,14 +3116,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService, Confi
                 throw new InvalidParameterValueException("Please specify a valid template ID.");
             }// If ISO requested then it should be ISO.
             if (isIso && template.getFormat() != ImageFormat.ISO) {
-                s_logger.error("Template Id " + templateId + " is not an ISO");
+                logger.error("Template Id " + templateId + " is not an ISO");
                 InvalidParameterValueException ex = new InvalidParameterValueException(
                         "Specified Template Id is not an ISO");
                 ex.addProxyObject(template.getUuid(), "templateId");
                 throw ex;
             }// If ISO not requested then it shouldn't be an ISO.
             if (!isIso && template.getFormat() == ImageFormat.ISO) {
-                s_logger.error("Incorrect format of the template id " + templateId);
+                logger.error("Incorrect format of the template id " + templateId);
                 InvalidParameterValueException ex = new InvalidParameterValueException("Incorrect format "
                         + template.getFormat() + " of the specified template id");
                 ex.addProxyObject(template.getUuid(), "templateId");

@@ -22,7 +22,6 @@ package com.cloud.storage.template;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.component.AdapterBase;
-import org.apache.log4j.Logger;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -31,21 +30,20 @@ import java.util.Map;
 
 @Local(value = Processor.class)
 public class TARProcessor extends AdapterBase implements Processor {
-    private static final Logger s_logger = Logger.getLogger(TARProcessor.class);
 
     private StorageLayer _storage;
 
     @Override
     public FormatInfo process(String templatePath, ImageFormat format, String templateName) {
         if (format != null) {
-            s_logger.debug("We currently don't handle conversion from " + format + " to TAR.");
+            logger.debug("We currently don't handle conversion from " + format + " to TAR.");
             return null;
         }
 
         String tarPath = templatePath + File.separator + templateName + "." + ImageFormat.TAR.getFileExtension();
 
         if (!_storage.exists(tarPath)) {
-            s_logger.debug("Unable to find the tar file: " + tarPath);
+            logger.debug("Unable to find the tar file: " + tarPath);
             return null;
         }
 

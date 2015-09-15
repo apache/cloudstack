@@ -39,7 +39,6 @@ import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.Command;
@@ -107,7 +106,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = HypervisorGuru.class)
 public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Configurable {
-    private static final Logger s_logger = Logger.getLogger(VMwareGuru.class);
 
     @Inject
     private NetworkDao _networkDao;
@@ -149,12 +147,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     public static final ConfigKey<Boolean> VmwareReserveCpu = new ConfigKey<Boolean>(Boolean.class, "vmware.reserve.cpu", "Advanced", "false",
-        "Specify whether or not to reserve CPU when not overprovisioning, In case of cpu overprovisioning we will always reserve cpu.", true, ConfigKey.Scope.Cluster,
-        null);
+            "Specify whether or not to reserve CPU when not overprovisioning, In case of cpu overprovisioning we will always reserve cpu.", true, ConfigKey.Scope.Cluster,
+            null);
 
     public static final ConfigKey<Boolean> VmwareReserveMemory = new ConfigKey<Boolean>(Boolean.class, "vmware.reserve.mem", "Advanced", "false",
-        "Specify whether or not to reserve memory when not overprovisioning, In case of memory overprovisioning we will always reserve memory.", true,
-        ConfigKey.Scope.Cluster, null);
+            "Specify whether or not to reserve memory when not overprovisioning, In case of memory overprovisioning we will always reserve memory.", true,
+            ConfigKey.Scope.Cluster, null);
 
     @Override
     public HypervisorType getHypervisorType() {
@@ -183,7 +181,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 try {
                     VirtualEthernetCardType.valueOf(nicDeviceType);
                 } catch (Exception e) {
-                    s_logger.warn("Invalid NIC device type " + nicDeviceType + " is specified in VM details, switch to default E1000");
+                    logger.warn("Invalid NIC device type " + nicDeviceType + " is specified in VM details, switch to default E1000");
                     details.put(VmDetailConstants.NIC_ADAPTER, VirtualEthernetCardType.E1000.toString());
                 }
             }
@@ -195,7 +193,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 try {
                     VirtualEthernetCardType.valueOf(nicDeviceType);
                 } catch (Exception e) {
-                    s_logger.warn("Invalid NIC device type " + nicDeviceType + " is specified in VM details, switch to default E1000");
+                    logger.warn("Invalid NIC device type " + nicDeviceType + " is specified in VM details, switch to default E1000");
                     details.put(VmDetailConstants.NIC_ADAPTER, VirtualEthernetCardType.E1000.toString());
                 }
             }
@@ -303,7 +301,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         if (userVm) {
             String nestedVirt = _configDao.getValue(Config.VmwareEnableNestedVirtualization.key());
             if (nestedVirt != null) {
-                s_logger.debug("Nested virtualization requested, adding flag to vm configuration");
+                logger.debug("Nested virtualization requested, adding flag to vm configuration");
                 details.put(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG, nestedVirt);
                 to.setDetails(details);
 
@@ -405,7 +403,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             }
 
             if (destData.getObjectType() == DataObjectType.VOLUME && destStoreTO.getRole() == DataStoreRole.Primary &&
-                srcData.getObjectType() == DataObjectType.TEMPLATE && srcStoreTO.getRole() == DataStoreRole.Primary) {
+                    srcData.getObjectType() == DataObjectType.TEMPLATE && srcStoreTO.getRole() == DataStoreRole.Primary) {
                 needDelegation = false;
             } else {
                 needDelegation = true;
@@ -449,8 +447,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             cmd.setContextParam("vCenterSessionTimeout", String.valueOf(_vmwareMgr.getVcenterSessionTimeout()));
 
             if (cmd instanceof BackupSnapshotCommand || cmd instanceof CreatePrivateTemplateFromVolumeCommand ||
-                cmd instanceof CreatePrivateTemplateFromSnapshotCommand || cmd instanceof CopyVolumeCommand || cmd instanceof CopyCommand ||
-                cmd instanceof CreateVolumeOVACommand || cmd instanceof PrepareOVAPackingCommand || cmd instanceof CreateVolumeFromSnapshotCommand) {
+                    cmd instanceof CreatePrivateTemplateFromSnapshotCommand || cmd instanceof CopyVolumeCommand || cmd instanceof CopyCommand ||
+                    cmd instanceof CreateVolumeOVACommand || cmd instanceof PrepareOVAPackingCommand || cmd instanceof CreateVolumeFromSnapshotCommand) {
 
                 String workerName = _vmwareMgr.composeWorkerName();
                 long checkPointId = 1;
@@ -477,13 +475,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         return true;
     }
 
-    private static String resolveNameInGuid(String guid) {
+    private String resolveNameInGuid(String guid) {
         String tokens[] = guid.split("@");
         assert (tokens.length == 2);
 
         String vCenterIp = NetUtils.resolveToIp(tokens[1]);
         if (vCenterIp == null) {
-            s_logger.error("Fatal : unable to resolve vCenter address " + tokens[1] + ", please check your DNS configuration");
+            logger.error("Fatal : unable to resolve vCenter address " + tokens[1] + ", please check your DNS configuration");
             return guid;
         }
 
@@ -500,13 +498,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         for (NicVO nic : nicVOs) {
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
             if (network.getBroadcastDomainType() == BroadcastDomainType.Lswitch) {
-                s_logger.debug("Nic " + nic.toString() + " is connected to an lswitch, cleanup required");
+                logger.debug("Nic " + nic.toString() + " is connected to an lswitch, cleanup required");
                 NetworkVO networkVO = _networkDao.findById(nic.getNetworkId());
                 // We need the traffic label to figure out which vSwitch has the
                 // portgroup
                 PhysicalNetworkTrafficTypeVO trafficTypeVO = _physicalNetworkTrafficTypeDao.findBy(networkVO.getPhysicalNetworkId(), networkVO.getTrafficType());
                 UnregisterNicCommand unregisterNicCommand =
-                    new UnregisterNicCommand(vm.getInstanceName(), trafficTypeVO.getVmwareNetworkLabel(), UUID.fromString(nic.getUuid()));
+                        new UnregisterNicCommand(vm.getInstanceName(), trafficTypeVO.getVmwareNetworkLabel(), UUID.fromString(nic.getUuid()));
                 commands.add(unregisterNicCommand);
             }
         }

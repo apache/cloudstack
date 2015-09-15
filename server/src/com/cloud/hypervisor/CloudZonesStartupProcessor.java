@@ -23,7 +23,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.ResourceDetail;
@@ -61,7 +60,6 @@ import com.cloud.utils.net.NetUtils;
 @Component
 @Local(value = StartupCommandProcessor.class)
 public class CloudZonesStartupProcessor extends AdapterBase implements StartupCommandProcessor {
-    private static final Logger s_logger = Logger.getLogger(CloudZonesStartupProcessor.class);
     @Inject
     ClusterDao _clusterDao = null;
     @Inject
@@ -115,8 +113,8 @@ public class CloudZonesStartupProcessor extends AdapterBase implements StartupCo
             server = _hostDao.findByGuid(startup.getGuidWithoutResource());
         }
         if (server != null && server.getRemoved() == null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Found the host " + server.getId() + " by guid: "
+            if (logger.isDebugEnabled()) {
+                logger.debug("Found the host " + server.getId() + " by guid: "
                         + startup.getGuid());
             }
             found = true;
@@ -140,7 +138,7 @@ public class CloudZonesStartupProcessor extends AdapterBase implements StartupCo
                         "Agent cannot connect because the current state is "
                         + server.getStatus().toString());
             }
-            s_logger.info("Old " + server.getType().toString()
+            logger.info("Old " + server.getType().toString()
                     + " host reconnected w/ id =" + server.getId());
         }
         */
@@ -152,7 +150,7 @@ public class CloudZonesStartupProcessor extends AdapterBase implements StartupCo
 
         String zoneToken = startup.getDataCenter();
         if (zoneToken == null) {
-            s_logger.warn("No Zone Token passed in, cannot not find zone for the agent");
+            logger.warn("No Zone Token passed in, cannot not find zone for the agent");
             throw new AgentAuthnException("No Zone Token passed in, cannot not find zone for agent");
         }
 
@@ -171,8 +169,8 @@ public class CloudZonesStartupProcessor extends AdapterBase implements StartupCo
                 }
             }
         }
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Successfully loaded the DataCenter from the zone token passed in ");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Successfully loaded the DataCenter from the zone token passed in ");
         }
 
         long zoneId = zone.getId();
@@ -180,8 +178,8 @@ public class CloudZonesStartupProcessor extends AdapterBase implements StartupCo
         if (maxHostsInZone != null) {
             long maxHosts = Long.parseLong(maxHostsInZone.getValue());
             long currentCountOfHosts = _hostDao.countRoutingHostsByDataCenter(zoneId);
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Number of hosts in Zone:" + currentCountOfHosts + ", max hosts limit: " + maxHosts);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Number of hosts in Zone:" + currentCountOfHosts + ", max hosts limit: " + maxHosts);
             }
             if (currentCountOfHosts >= maxHosts) {
                 throw new AgentAuthnException("Number of running Routing hosts in the Zone:" + zone.getName() + " is already at the max limit:" + maxHosts +
@@ -192,24 +190,24 @@ public class CloudZonesStartupProcessor extends AdapterBase implements StartupCo
         HostPodVO pod = null;
 
         if (startup.getPrivateIpAddress() == null) {
-            s_logger.warn("No private IP address passed in for the agent, cannot not find pod for agent");
+            logger.warn("No private IP address passed in for the agent, cannot not find pod for agent");
             throw new AgentAuthnException("No private IP address passed in for the agent, cannot not find pod for agent");
         }
 
         if (startup.getPrivateNetmask() == null) {
-            s_logger.warn("No netmask passed in for the agent, cannot not find pod for agent");
+            logger.warn("No netmask passed in for the agent, cannot not find pod for agent");
             throw new AgentAuthnException("No netmask passed in for the agent, cannot not find pod for agent");
         }
 
         if (host.getPodId() != null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Pod is already created for this agent, looks like agent is reconnecting...");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Pod is already created for this agent, looks like agent is reconnecting...");
             }
             pod = _podDao.findById(host.getPodId());
             if (!checkCIDR(type, pod, startup.getPrivateIpAddress(), startup.getPrivateNetmask())) {
                 pod = null;
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Subnet of Pod does not match the subnet of the agent, not using this Pod: " + host.getPodId());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Subnet of Pod does not match the subnet of the agent, not using this Pod: " + host.getPodId());
                 }
             } else {
                 updatePodNetmaskIfNeeded(pod, startup.getPrivateNetmask());
@@ -217,8 +215,8 @@ public class CloudZonesStartupProcessor extends AdapterBase implements StartupCo
         }
 
         if (pod == null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Trying to detect the Pod to use from the agent's ip address and netmask passed in ");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Trying to detect the Pod to use from the agent's ip address and netmask passed in ");
             }
 
             //deduce pod
@@ -236,12 +234,12 @@ public class CloudZonesStartupProcessor extends AdapterBase implements StartupCo
             }
 
             if (!podFound) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Creating a new Pod since no default Pod found that matches the agent's ip address and netmask passed in ");
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Creating a new Pod since no default Pod found that matches the agent's ip address and netmask passed in ");
                 }
 
                 if (startup.getGatewayIpAddress() == null) {
-                    s_logger.warn("No Gateway IP address passed in for the agent, cannot create a new pod for the agent");
+                    logger.warn("No Gateway IP address passed in for the agent, cannot create a new pod for the agent");
                     throw new AgentAuthnException("No Gateway IP address passed in for the agent, cannot create a new pod for the agent");
                 }
                 //auto-create a new pod, since pod matching the agent's ip is not found
@@ -266,8 +264,8 @@ public class CloudZonesStartupProcessor extends AdapterBase implements StartupCo
 
         ClusterVO cluster = null;
         if (host.getClusterId() != null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Cluster is already created for this agent, looks like agent is reconnecting...");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Cluster is already created for this agent, looks like agent is reconnecting...");
             }
             cluster = _clusterDao.findById(host.getClusterId());
         }
@@ -278,8 +276,8 @@ public class CloudZonesStartupProcessor extends AdapterBase implements StartupCo
             if (existingCluster != null) {
                 cluster = existingCluster;
             } else {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Creating a new Cluster for this agent with name: " + clusterName + " in Pod: " + pod.getId() + ", in Zone:" + zoneId);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Creating a new Cluster for this agent with name: " + clusterName + " in Pod: " + pod.getId() + ", in Zone:" + zoneId);
                 }
 
                 cluster = new ClusterVO(zoneId, pod.getId(), clusterName);
@@ -293,8 +291,8 @@ public class CloudZonesStartupProcessor extends AdapterBase implements StartupCo
             }
         }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Detected Zone: " + zoneId + ", Pod: " + pod.getId() + ", Cluster:" + cluster.getId());
+        if (logger.isDebugEnabled()) {
+            logger.debug("Detected Zone: " + zoneId + ", Pod: " + pod.getId() + ", Cluster:" + cluster.getId());
         }
         host.setDataCenterId(zone.getId());
         host.setPodId(pod.getId());
@@ -370,8 +368,8 @@ public class CloudZonesStartupProcessor extends AdapterBase implements StartupCo
             server = _hostDao.findByGuid(startup.getGuidWithoutResource());
         }
         if (server != null && server.getRemoved() == null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Found the host " + server.getId() + " by guid: "
+            if (logger.isDebugEnabled()) {
+                logger.debug("Found the host " + server.getId() + " by guid: "
                         + startup.getGuid());
             }
             found = true;
@@ -395,7 +393,7 @@ public class CloudZonesStartupProcessor extends AdapterBase implements StartupCo
                         "Agent cannot connect because the current state is "
                         + server.getStatus().toString());
             }
-            s_logger.info("Old " + server.getType().toString()
+            logger.info("Old " + server.getType().toString()
                     + " host reconnected w/ id =" + server.getId());
         }
         */
@@ -407,7 +405,7 @@ public class CloudZonesStartupProcessor extends AdapterBase implements StartupCo
 
         String zoneToken = startup.getDataCenter();
         if (zoneToken == null) {
-            s_logger.warn("No Zone Token passed in, cannot not find zone for the agent");
+            logger.warn("No Zone Token passed in, cannot not find zone for the agent");
             throw new AgentAuthnException("No Zone Token passed in, cannot not find zone for agent");
         }
 
@@ -426,14 +424,14 @@ public class CloudZonesStartupProcessor extends AdapterBase implements StartupCo
                 }
             }
         }
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Successfully loaded the DataCenter from the zone token passed in ");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Successfully loaded the DataCenter from the zone token passed in ");
         }
 
         HostPodVO pod = findPod(startup, zone.getId(), Host.Type.Routing); //yes, routing
         Long podId = null;
         if (pod != null) {
-            s_logger.debug("Found pod " + pod.getName() + " for the secondary storage host " + startup.getName());
+            logger.debug("Found pod " + pod.getName() + " for the secondary storage host " + startup.getName());
             podId = pod.getId();
         }
         host.setDataCenterId(zone.getId());

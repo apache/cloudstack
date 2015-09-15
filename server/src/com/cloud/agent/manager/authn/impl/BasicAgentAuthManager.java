@@ -22,7 +22,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -39,7 +38,6 @@ import com.cloud.utils.component.AdapterBase;
 @Component
 @Local(value = {AgentAuthorizer.class, StartupCommandProcessor.class})
 public class BasicAgentAuthManager extends AdapterBase implements AgentAuthorizer, StartupCommandProcessor {
-    private static final Logger s_logger = Logger.getLogger(BasicAgentAuthManager.class);
     @Inject
     HostDao _hostDao = null;
     @Inject
@@ -54,7 +52,7 @@ public class BasicAgentAuthManager extends AdapterBase implements AgentAuthorize
         } catch (AgentAuthnException e) {
             throw new ConnectionException(true, "Failed to authenticate/authorize", e);
         }
-        s_logger.debug("Authorized agent with guid " + cmd[0].getGuid());
+        logger.debug("Authorized agent with guid " + cmd[0].getGuid());
         return false;//so that the next host creator can process it
     }
 

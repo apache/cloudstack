@@ -22,7 +22,6 @@ import java.util.Map;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.iam.server.IAMGroupAccountMapVO;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 
@@ -36,7 +35,6 @@ public class IAMGroupAccountMapDaoImpl extends GenericDaoBase<IAMGroupAccountMap
     private SearchBuilder<IAMGroupAccountMapVO> ListByAccountId;
     private SearchBuilder<IAMGroupAccountMapVO> _findByAccountAndGroupId;
 
-    public static final Logger s_logger = Logger.getLogger(IAMGroupAccountMapDaoImpl.class.getName());
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -113,7 +111,7 @@ public class IAMGroupAccountMapDaoImpl extends GenericDaoBase<IAMGroupAccountMap
 
         int rowsRemoved = remove(sc);
         if (rowsRemoved > 0) {
-            s_logger.debug("Removed account id=" + accountId + " from " + rowsRemoved + " groups");
+            logger.debug("Removed account id=" + accountId + " from " + rowsRemoved + " groups");
         }
     }
 }

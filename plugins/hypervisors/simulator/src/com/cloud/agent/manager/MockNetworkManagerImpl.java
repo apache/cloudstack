@@ -21,7 +21,6 @@ package com.cloud.agent.manager;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckS2SVpnConnectionsCommand;
@@ -60,7 +59,6 @@ import com.cloud.simulator.dao.MockVMDao;
 import com.cloud.utils.component.ManagerBase;
 
 public class MockNetworkManagerImpl extends ManagerBase implements MockNetworkManager {
-    private static final Logger s_logger = Logger.getLogger(MockVmManagerImpl.class);
 
     @Inject
     MockVMDao _mockVmDao;
@@ -123,10 +121,10 @@ public class MockNetworkManagerImpl extends ManagerBase implements MockNetworkMa
     public PlugNicAnswer plugNic(PlugNicCommand cmd) {
         String vmname = cmd.getVmName();
         if (_mockVmDao.findByVmName(vmname) != null) {
-            s_logger.debug("Plugged NIC (dev=" + cmd.getNic().getDeviceId() + ", " + cmd.getNic().getIp() + ") into " + cmd.getVmName());
+            logger.debug("Plugged NIC (dev=" + cmd.getNic().getDeviceId() + ", " + cmd.getNic().getIp() + ") into " + cmd.getVmName());
             return new PlugNicAnswer(cmd, true, "success");
         }
-        s_logger.error("Plug NIC failed for (dev=" + cmd.getNic().getDeviceId() + ", " + cmd.getNic().getIp() + ") into " + cmd.getVmName());
+        logger.error("Plug NIC failed for (dev=" + cmd.getNic().getDeviceId() + ", " + cmd.getNic().getIp() + ") into " + cmd.getVmName());
         return new PlugNicAnswer(cmd, false, "failure");
     }
 
@@ -134,10 +132,10 @@ public class MockNetworkManagerImpl extends ManagerBase implements MockNetworkMa
     public UnPlugNicAnswer unplugNic(UnPlugNicCommand cmd) {
         String vmname = cmd.getVmName();
         if (_mockVmDao.findByVmName(vmname) != null) {
-            s_logger.debug("Plugged NIC (dev=" + cmd.getNic().getDeviceId() + ", " + cmd.getNic().getIp() + ") into " + cmd.getVmName());
+            logger.debug("Plugged NIC (dev=" + cmd.getNic().getDeviceId() + ", " + cmd.getNic().getIp() + ") into " + cmd.getVmName());
             return new UnPlugNicAnswer(cmd, true, "success");
         }
-        s_logger.error("Plug NIC failed for (dev=" + cmd.getNic().getDeviceId() + ", " + cmd.getNic().getIp() + ") into " + cmd.getVmName());
+        logger.error("Plug NIC failed for (dev=" + cmd.getNic().getDeviceId() + ", " + cmd.getNic().getIp() + ") into " + cmd.getVmName());
         return new UnPlugNicAnswer(cmd, false, "failure");
     }
 
@@ -211,7 +209,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements MockNetworkMa
             return new Answer(cmd, true, "success");
         } catch (Exception e) {
             String msg = "Creating guest network failed due to " + e.toString();
-            s_logger.warn(msg, e);
+            logger.warn(msg, e);
             return new Answer(cmd, false, msg);
         }
     }

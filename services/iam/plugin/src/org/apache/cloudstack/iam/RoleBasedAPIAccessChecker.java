@@ -26,7 +26,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.PermissionScope;
@@ -58,7 +57,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @Local(value=APIChecker.class)
 public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker {
 
-    protected static final Logger s_logger = Logger.getLogger(RoleBasedAPIAccessChecker.class);
 
     @Inject
     AccountService _accountService;
@@ -202,7 +200,7 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
                         commandsPropertiesRoleBasedApisMap.get(roleType).add(apiName);
                 }
             } catch (NumberFormatException nfe) {
-                s_logger.info("Malformed key=value pair for entry: " + entry.toString());
+                logger.info("Malformed key=value pair for entry: " + entry.toString());
              }
          }
      }

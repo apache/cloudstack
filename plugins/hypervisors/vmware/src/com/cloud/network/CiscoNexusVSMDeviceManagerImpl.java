@@ -20,7 +20,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.dc.ClusterDetailsDao;
@@ -65,7 +64,6 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     @Inject
     PortProfileDao _ppDao;
 
-    private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalLoadBalancerDeviceManagerImpl.class);
 
     @DB
     //public CiscoNexusVSMDeviceVO addCiscoNexusVSM(long clusterId, String ipaddress, String username, String password, ServerResource resource, String vsmName) {
@@ -107,7 +105,7 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
             netconfClient = new NetconfHelper(ipaddress, username, password);
         } catch (CloudRuntimeException e) {
             String msg = "Failed to connect to Nexus VSM " + ipaddress + " with credentials of user " + username;
-            s_logger.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
 
@@ -203,7 +201,7 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
                 if (hosts != null && hosts.size() > 0) {
                     for (Host host : hosts) {
                         if (host.getType() == Host.Type.Routing) {
-                            s_logger.info("Non-empty cluster with id" + clusterId + "still has a host that uses this VSM. Please empty the cluster first");
+                            logger.info("Non-empty cluster with id" + clusterId + "still has a host that uses this VSM. Please empty the cluster first");
                             throw new ResourceInUseException("Non-empty cluster with id" + clusterId +
                                 "still has a host that uses this VSM. Please empty the cluster first");
                         }
@@ -267,7 +265,7 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     public CiscoNexusVSMDeviceVO getCiscoVSMbyClusId(long clusterId) {
         ClusterVSMMapVO mapVO = _clusterVSMDao.findByClusterId(clusterId);
         if (mapVO == null) {
-            s_logger.info("Couldn't find a VSM associated with the specified cluster Id");
+            logger.info("Couldn't find a VSM associated with the specified cluster Id");
             return null;
         }
         // Else, pull out the VSM associated with the VSM id in mapVO.

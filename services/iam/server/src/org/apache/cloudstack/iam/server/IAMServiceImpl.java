@@ -28,7 +28,6 @@ import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.iam.api.IAMGroup;
@@ -65,7 +64,6 @@ import com.cloud.utils.db.TransactionStatus;
 @Local(value = {IAMService.class})
 public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
-    public static final Logger s_logger = Logger.getLogger(IAMServiceImpl.class);
     private String _name;
 
     @Inject
@@ -101,7 +99,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
             final int idle = NumbersUtil.parseInt((String)params.get("cache.time.to.idle"), 300);
             _iamCache = new Cache(getName(), maxElements, false, live == -1, live == -1 ? Integer.MAX_VALUE : live, idle);
             cm.addCache(_iamCache);
-            s_logger.info("IAM Cache created: " + _iamCache.toString());
+            logger.info("IAM Cache created: " + _iamCache.toString());
         } else {
             _iamCache = null;
         }
@@ -111,10 +109,10 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
     public void addToIAMCache(Object accessKey, Object allowDeny) {
         if (_iamCache != null) {
             try {
-                s_logger.debug("Put IAM access check for " + accessKey + " in cache");
+                logger.debug("Put IAM access check for " + accessKey + " in cache");
                 _iamCache.put(new Element(accessKey, allowDeny));
             } catch (final Exception e) {
-                s_logger.debug("Can't put " + accessKey + " to IAM cache", e);
+                logger.debug("Can't put " + accessKey + " to IAM cache", e);
             }
         }
     }
@@ -123,7 +121,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
     public void invalidateIAMCache() {
         //This may need to use event bus to publish to other MS, but event bus now is missing this functionality to handle PublishScope.GLOBAL
         if (_iamCache != null) {
-            s_logger.debug("Invalidate IAM cache");
+            logger.debug("Invalidate IAM cache");
             _iamCache.removeAll();
         }
     }

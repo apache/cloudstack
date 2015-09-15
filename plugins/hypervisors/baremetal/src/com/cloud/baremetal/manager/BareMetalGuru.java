@@ -28,7 +28,6 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.dao.HostDao;
@@ -43,7 +42,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = HypervisorGuru.class)
 public class BareMetalGuru extends HypervisorGuruBase implements HypervisorGuru {
-    private static final Logger s_logger = Logger.getLogger(BareMetalGuru.class);
     @Inject
     GuestOSDao _guestOsDao;
     @Inject
