@@ -24,7 +24,6 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -49,6 +48,7 @@ import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.apache.log4j.Logger;
 
+import com.cloud.utils.StringUtils;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -301,7 +301,7 @@ public class BigSwitchBcfApi {
         }
 
         String authString = username + ":" + password;
-        String encodedAuthString = "Basic " + Base64.encodeBase64String(authString.getBytes(Charset.forName("UTF-8")));
+        String encodedAuthString = "Basic " + Base64.encodeBase64String(authString.getBytes(StringUtils.getPreferredCharset()));
         m.setRequestHeader("Authorization", encodedAuthString);
     }
 

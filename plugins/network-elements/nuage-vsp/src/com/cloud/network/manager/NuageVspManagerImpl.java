@@ -19,7 +19,6 @@
 
 package com.cloud.network.manager;
 
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -73,6 +72,7 @@ import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
@@ -159,7 +159,7 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
         params.put("name", "Nuage VSD - " + cmd.getHostName());
         params.put("hostname", cmd.getHostName());
         params.put("cmsuser", cmd.getUserName());
-        String cmsUserPasswordBase64 = org.apache.commons.codec.binary.StringUtils.newStringUtf8(Base64.encodeBase64(cmd.getPassword().getBytes(Charset.forName("UTF-8"))));
+        String cmsUserPasswordBase64 = org.apache.commons.codec.binary.StringUtils.newStringUtf8(Base64.encodeBase64(cmd.getPassword().getBytes(StringUtils.getPreferredCharset())));
         params.put("cmsuserpass", cmsUserPasswordBase64);
         int port = cmd.getPort();
         if (0 == port) {
@@ -301,6 +301,7 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
 
         if (numOfSyncThreads != null && syncUpIntervalInMinutes != null) {
             ThreadFactory threadFactory = new ThreadFactory() {
+                @Override
                 public Thread newThread(Runnable runnable) {
                     Thread thread = new Thread(runnable, "Nuage Vsp sync task");
                     if (thread.isDaemon())
