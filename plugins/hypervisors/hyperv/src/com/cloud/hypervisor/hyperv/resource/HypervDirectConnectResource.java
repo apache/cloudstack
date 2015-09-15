@@ -24,7 +24,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.Charset;
 import java.rmi.RemoteException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
@@ -43,6 +42,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.HttpResponse;
@@ -61,11 +61,6 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.BasicClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
-
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
-import org.apache.cloudstack.storage.command.CopyCommand;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckRouterAnswer;
@@ -156,6 +151,8 @@ import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachineName;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 
 /**
@@ -653,7 +650,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
     public ExecutionResult createFileInVR(String routerIp, String filePath, String fileName, String content) {
         File keyFile = getSystemVMKeyFile();
         try {
-            SshHelper.scpTo(routerIp, 3922, "root", keyFile, null, filePath, content.getBytes(Charset.forName("UTF-8")), fileName, null);
+            SshHelper.scpTo(routerIp, 3922, "root", keyFile, null, filePath, content.getBytes(StringUtils.getPreferredCharset()), fileName, null);
         } catch (Exception e) {
             s_logger.warn("Fail to create file " + filePath + fileName + " in VR " + routerIp, e);
             return new ExecutionResult(false, e.getMessage());
@@ -1318,7 +1315,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         }
 
         try {
-            SshHelper.scpTo(controlIp, DEFAULT_DOMR_SSHPORT, "root", keyFile, null, "/tmp/", tmpCfgFileContents.toString().getBytes(Charset.forName("UTF-8")), routerIp.replace('.', '_') +
+            SshHelper.scpTo(controlIp, DEFAULT_DOMR_SSHPORT, "root", keyFile, null, "/tmp/", tmpCfgFileContents.toString().getBytes(StringUtils.getPreferredCharset()), routerIp.replace('.', '_') +
                     ".cfg", null);
 
             try {
@@ -1515,7 +1512,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         String json = new Gson().toJson(data);
         s_logger.debug("VM data JSON IS:" + json);
 
-        json = Base64.encodeBase64String(json.getBytes(Charset.forName("UTF-8")));
+        json = Base64.encodeBase64String(json.getBytes(StringUtils.getPreferredCharset()));
 
         String args = "-d " + json;
 

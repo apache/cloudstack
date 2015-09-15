@@ -19,7 +19,6 @@ package com.cloud.hypervisor.hyperv.discoverer;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,8 +42,8 @@ import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.configuration.Config;
 import com.cloud.alert.AlertManager;
+import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -66,6 +65,7 @@ import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.storage.StorageLayer;
+import com.cloud.utils.StringUtils;
 
 /**
  * Methods to discover and managem a Hyper-V agent. Prepares a
@@ -256,7 +256,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
             // pool in the database
             // This GUID may change.
             if (cluster.getGuid() == null) {
-                cluster.setGuid(UUID.nameUUIDFromBytes(String.valueOf(clusterId).getBytes(Charset.forName("UTF-8"))).toString());
+                cluster.setGuid(UUID.nameUUIDFromBytes(String.valueOf(clusterId).getBytes(StringUtils.getPreferredCharset())).toString());
                 _clusterDao.update(clusterId, cluster);
             }
 
@@ -322,7 +322,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
      * @return GUID in form of a string.
      */
     public static String calcServerResourceGuid(final String uuidSeed) {
-        String guid = UUID.nameUUIDFromBytes(uuidSeed.getBytes(Charset.forName("UTF-8"))).toString();
+        String guid = UUID.nameUUIDFromBytes(uuidSeed.getBytes(StringUtils.getPreferredCharset())).toString();
         return guid;
     }
 
