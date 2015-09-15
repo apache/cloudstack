@@ -273,7 +273,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                         s.undefine();
                         s.free();
                     } catch (LibvirtException l) {
-                        s_logger.debug("Failed to undefine the libvirt secret: " + l.toString());
+                        s_logger.error("Failed to undefine the libvirt secret: " + l.toString());
                     }
                 }
                 return null;
@@ -288,7 +288,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             sp = conn.storagePoolCreateXML(spd.toString(), 0);
             return sp;
         } catch (LibvirtException e) {
-            s_logger.debug("Failed to create RBD storage pool: " + e.toString());
+            s_logger.error("Failed to create RBD storage pool: " + e.toString());
             if (sp != null) {
                 try {
                     if (sp.isPersistent() == 1) {
@@ -299,17 +299,17 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     }
                     sp.free();
                 } catch (LibvirtException l) {
-                    s_logger.debug("Failed to undefine RBD storage pool: " + l.toString());
+                    s_logger.error("Failed to undefine RBD storage pool: " + l.toString());
                 }
             }
 
             if (s != null) {
                 try {
-                    s_logger.debug("Failed to create the RBD storage pool, cleaning up the libvirt secret");
+                    s_logger.error("Failed to create the RBD storage pool, cleaning up the libvirt secret");
                     s.undefine();
                     s.free();
                 } catch (LibvirtException se) {
-                    s_logger.debug("Failed to remove the libvirt secret: " + se.toString());
+                    s_logger.error("Failed to remove the libvirt secret: " + se.toString());
                 }
             }
 
@@ -615,7 +615,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         try {
             s = conn.secretLookupByUUIDString(uuid);
         } catch (LibvirtException e) {
-            s_logger.debug("Storage pool " + uuid + " has no corresponding secret. Not removing any secret.");
+            s_logger.info("Storage pool " + uuid + " has no corresponding secret. Not removing any secret.");
         }
 
         try {
@@ -877,8 +877,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 rbd.close(image);
                 r.ioCtxDestroy(io);
 
-                s_logger.debug("Succesfully unprotected and removed any snapshots of " + pool.getSourceDir() + "/" + uuid +
-                        " Continuing to remove the RBD image");
+                s_logger.info("Succesfully unprotected and removed any remaining snapshots (" + snaps.size() + ") of "
+                              + pool.getSourceDir() + "/" + uuid + " Continuing to remove the RBD image");
             } catch (RadosException e) {
                 throw new CloudRuntimeException(e.toString());
             } catch (RbdException e) {
