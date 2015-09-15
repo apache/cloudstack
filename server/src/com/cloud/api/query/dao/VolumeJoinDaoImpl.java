@@ -83,14 +83,18 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
         volResponse.setZoneId(volume.getDataCenterUuid());
         volResponse.setZoneName(volume.getDataCenterName());
 
-        volResponse.setVolumeType(volume.getVolumeType().toString());
+        if (volume.getVolumeType() != null) {
+            volResponse.setVolumeType(volume.getVolumeType().toString());
+        }
         volResponse.setDeviceId(volume.getDeviceId());
 
         long instanceId = volume.getVmId();
         if (instanceId > 0 && volume.getState() != Volume.State.Destroy) {
             volResponse.setVirtualMachineId(volume.getVmUuid());
             volResponse.setVirtualMachineName(volume.getVmName());
-            volResponse.setVirtualMachineState(volume.getVmState().toString());
+            if (volume.getVmState() != null) {
+                volResponse.setVirtualMachineState(volume.getVmState().toString());
+            }
             if (volume.getVmDisplayName() != null) {
                 volResponse.setVirtualMachineDisplayName(volume.getVmDisplayName());
             } else {
@@ -98,7 +102,9 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
             }
         }
 
-        volResponse.setProvisioningType(volume.getProvisioningType().toString());
+        if (volume.getProvisioningType() != null) {
+            volResponse.setProvisioningType(volume.getProvisioningType().toString());
+        }
 
         // Show the virtual size of the volume
         volResponse.setSize(volume.getSize());
@@ -107,7 +113,9 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
         volResponse.setMaxIops(volume.getMaxIops());
 
         volResponse.setCreated(volume.getCreated());
-        volResponse.setState(volume.getState().toString());
+        if (volume.getState() != null) {
+            volResponse.setState(volume.getState().toString());
+        }
         if (volume.getState() == Volume.State.UploadOp) {
             // com.cloud.storage.VolumeHostVO volumeHostRef =
             // ApiDBUtils.findVolumeHostRef(volume.getId(),
