@@ -379,7 +379,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             e.printStackTrace();
         }
 
-        NetScalerImplementNetworkCommand cmd = new NetScalerImplementNetworkCommand(zoneId, netscalerControlCenter.getId(), networkPayload.toString());
+        NetScalerImplementNetworkCommand cmd = new NetScalerImplementNetworkCommand(zone.getUuid(), netscalerControlCenter.getId(), networkPayload.toString());
         Answer answer = _agentMgr.easySend(netscalerControlCenter.getId(), cmd);
         if (add) {
             //TODO After getting the answer check with the job id and do poll on the job and then save the selfip or acquired guest ip to the Nics table
