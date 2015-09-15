@@ -7711,8 +7711,7 @@
                                     isHeader: true,
                                     addRow: false,
                                     action: {
-                                        custom: cloudStack.uiCustom.zoneWizard(
-                                        cloudStack.zoneWizard)
+                                        custom: cloudStack.uiCustom.metricsView({resource: 'zones'})
                                     },
                                     messages: {
                                         notification: function (args) {
@@ -14385,6 +14384,19 @@
                                     }
                                 });
                             }
+                        },
+                        viewMetrics: {
+                            label: 'label.view.metrics',
+                            isHeader: true,
+                            addRow: false,
+                            action: {
+                                custom: cloudStack.uiCustom.metricsView({resource: 'clusters'})
+                            },
+                            messages: {
+                                notification: function (args) {
+                                    return 'label.view.metrics';
+                                }
+                            }
                         }
                     },
                     
@@ -15620,6 +15632,19 @@
                             messages: {
                                 notification: function (args) {
                                     return 'label.add.host';
+                                }
+                            }
+                        },
+                        viewMetrics: {
+                            label: 'label.view.metrics',
+                            isHeader: true,
+                            addRow: false,
+                            action: {
+                                custom: cloudStack.uiCustom.metricsView({resource: 'hosts'})
+                            },
+                            messages: {
+                                notification: function (args) {
+                                    return 'label.view.metrics';
                                 }
                             }
                         }
@@ -17426,6 +17451,19 @@
                             messages: {
                                 notification: function (args) {
                                     return 'label.add.primary.storage';
+                                }
+                            }
+                        },
+                        viewMetrics: {
+                            label: 'label.view.metrics',
+                            isHeader: true,
+                            addRow: false,
+                            action: {
+                                custom: cloudStack.uiCustom.metricsView({resource: 'primarystorage'})
+                            },
+                            messages: {
+                                notification: function (args) {
+                                    return 'label.view.metrics';
                                 }
                             }
                         }

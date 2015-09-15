@@ -12420,6 +12420,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: 0px -707px;
 }
 
+.viewMetrics .icon {
+  background-position: -40px -32px;
+}
+
+.viewMetrics:hover .icon {
+  background-position: -40px -32px;
+}
+
 .attach .icon,
 .attachISO .icon,
 .attachDisk .icon,
