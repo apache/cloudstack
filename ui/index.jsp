@@ -1763,6 +1763,8 @@
         <script type="text/javascript" src="scripts/ui-custom/granularSettings.js?t=<%=now%>"></script>
         <script type="text/javascript" src="scripts/ui-custom/zoneChart.js?t=<%=now%>"></script>
         <script type="text/javascript" src="scripts/ui-custom/dashboard.js?t=<%=now%>"></script>
+        <script type="text/javascript" src="scripts/ui-custom/metricsView.js?t=<%=now%>"></script>
+        <script type="text/javascript" src="scripts/metrics.js?t=<%=now%>"></script>
         <script type="text/javascript" src="scripts/installWizard.js?t=<%=now%>"></script>
         <script type="text/javascript" src="scripts/ui-custom/installWizard.js?t=<%=now%>"></script>
         <script type="text/javascript" src="scripts/projects.js?t=<%=now%>"></script>
