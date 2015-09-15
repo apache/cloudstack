@@ -36,7 +36,7 @@ public class ConstantTimeComparator {
     }
 
     public static boolean compareStrings(String s1, String s2) {
-        final Charset encoding = StringUtils.getPreferredCharset();
+        final Charset encoding = Charset.forName("UTF-8");
         return compareBytes(s1.getBytes(encoding), s2.getBytes(encoding));
     }
 }

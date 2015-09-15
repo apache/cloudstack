@@ -24,11 +24,10 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 
 import org.junit.Before;
 import org.junit.Test;
-
-import com.cloud.utils.StringUtils;
 
 public class QCOW2UtilsTest {
 
@@ -68,7 +67,7 @@ public class QCOW2UtilsTest {
         ByteBuffer byteBuffer = ByteBuffer.allocate(72);
 
         // Magic
-        byteBuffer.put("QFI".getBytes(StringUtils.getPreferredCharset()));
+        byteBuffer.put("QFI".getBytes(Charset.forName("UTF-8")));
         byteBuffer.put((byte)0xfb);
 
         // Version

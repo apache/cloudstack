@@ -23,8 +23,8 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.Charset;
 
-import javax.persistence.Basic;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
@@ -45,9 +45,21 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.log4j.Logger;
 
-import com.cloud.dc.Vlan;
-import com.cloud.utils.StringUtils;
-import com.cloud.utils.cisco.n1kv.vsm.PortProfile;
+import com.cloud.network.schema.interfacevlan.InterfaceVlan;
+import com.cloud.network.schema.interfacevlan.Interface;
+import com.cloud.network.schema.interfacevlan.Vlan;
+import com.cloud.network.schema.portprofile.PortProfile;
+import com.cloud.network.schema.portprofile.PortProfile.Activate;
+import com.cloud.network.schema.portprofile.PortProfile.Static;
+import com.cloud.network.schema.portprofile.PortProfileGlobal;
+import com.cloud.network.schema.portprofile.VlanProfile;
+import com.cloud.network.schema.portprofile.VlanProfile.Switchport;
+import com.cloud.network.schema.portprofile.VlanProfile.Switchport.Mode;
+import com.cloud.network.schema.portprofile.VlanProfile.Switchport.Trunk;
+import com.cloud.network.schema.portprofile.VlanProfile.Switchport.Trunk.Allowed;
+import com.cloud.network.schema.portprofile.VlanProfile.SwitchportBasic;
+import com.cloud.network.schema.portprofile.VlanProfile.SwitchportBasic.Basic;
+import com.cloud.network.schema.showvcs.Output;
 
 public class BrocadeVcsApi {
     private static final Logger s_logger = Logger.getLogger(BrocadeVcsApi.class);
@@ -449,7 +461,7 @@ public class BrocadeVcsApi {
             throw new BrocadeVcsApiException("Failed to retreive status : " + errorMessage);
         }
 
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), StringUtils.getPreferredCharset()))) {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), Charset.forName("UTF-8")))) {
             sb = new StringBuffer();
 
             while (((readLine = br.readLine()) != null)) {
@@ -519,7 +531,7 @@ public class BrocadeVcsApi {
 
         if ("text/html".equals(response.getEntity().getContentType().getValue())) {
 
-            try (BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), StringUtils.getPreferredCharset()))) {
+            try (BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), Charset.forName("UTF-8")))) {
 
                 StringBuffer result = new StringBuffer();
                 String line = "";
