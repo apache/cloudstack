@@ -18,8 +18,16 @@
 
     cloudStack.uiCustom.metricsView = function(args) {
         return function() {
-            // TODO: implement switch/case to select metrics view: zone, cluster, host etc.
             var metricsListView = cloudStack.sections.metrics.listView;
+
+            if (args.resource == 'zones') {
+            } else if (args.resource == 'clusters') {
+                metricsListView = cloudStack.sections.metrics.cluster.listView;
+            } else if (args.resource == 'hosts') {
+            } else if (args.resource == 'primarystorage') {
+            } else if (args.resource == 'vms') {
+            } else if (args.resource == 'volumes') {
+            }
 
             var $browser = $('#browser .container');
             return $browser.cloudBrowser('addPanel', {
