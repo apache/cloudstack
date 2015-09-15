@@ -21,17 +21,43 @@
             id: 'metrics',
             fields: {
                 name: {
+                    label: 'metrics'
+                }
+            },
+            hideSearchBar: true
+        }
+    };
+
+    // Cluster Metrics
+    cloudStack.sections.metrics.cluster = {
+        title: 'label.metrics',
+        listView: {
+            id: 'metrics',
+            fields: {
+                name: {
                     label: 'label.name'
                 }
             },
             dataProvider: function(args) {
-                var data = {};
-                listViewDataProvider(args, data);
-                // TODO implement provider
+                console.log("Metris view dataprovider triggered");
+                console.log(args);
             },
             actions: {
-                // TODO implement refresh action
-            }
+                refreshMetric: {
+                    label: 'label.refresh',
+                    isHeader: true,
+                    addRow: true,
+                    action: {
+                        custom: function (args) {
+                            return function() {
+                                return console.log("Cluster Refresh metrics");
+                            };
+                        }
+                    }
+                }
+            },
+            hideSearchBar: true,
+            needsRefresh: true
         }
     };
 
