@@ -360,7 +360,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             networkDetails.put("cidr", guestConfig.getCidr());
             networkDetails.put("gateway", guestConfig.getGateway());
             networkDetails.put("servicepackage_id", offering.getServicePackage());
-            networkDetails.put("zone_id", zoneId);
+            networkDetails.put("zone_id", zone.getUuid());
             networkDetails.put("account_id", guestConfig.getAccountId());
             networkDetails.put("add", Boolean.toString(add));
             selfIp = _ipAddrMgr.acquireGuestIpAddress(guestConfig, null);
