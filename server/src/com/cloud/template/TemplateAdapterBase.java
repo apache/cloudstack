@@ -23,7 +23,6 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
@@ -74,7 +73,6 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 
 public abstract class TemplateAdapterBase extends AdapterBase implements TemplateAdapter {
-    private final static Logger s_logger = Logger.getLogger(TemplateAdapterBase.class);
     protected @Inject
     DomainDao _domainDao;
     protected @Inject
@@ -202,7 +200,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         try {
             imgfmt = ImageFormat.valueOf(format.toUpperCase());
         } catch (IllegalArgumentException e) {
-            s_logger.debug("ImageFormat IllegalArgumentException: " + e.getMessage());
+            logger.debug("ImageFormat IllegalArgumentException: " + e.getMessage());
             throw new IllegalArgumentException("Image format: " + format + " is incorrect. Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
         }
 

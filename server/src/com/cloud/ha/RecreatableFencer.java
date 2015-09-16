@@ -21,7 +21,6 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -35,7 +34,6 @@ import com.cloud.vm.VirtualMachine;
 @Component
 @Local(value = FenceBuilder.class)
 public class RecreatableFencer extends AdapterBase implements FenceBuilder {
-    private static final Logger s_logger = Logger.getLogger(RecreatableFencer.class);
     @Inject
     VolumeDao _volsDao;
     @Inject
@@ -49,22 +47,22 @@ public class RecreatableFencer extends AdapterBase implements FenceBuilder {
     public Boolean fenceOff(VirtualMachine vm, Host host) {
         VirtualMachine.Type type = vm.getType();
         if (type != VirtualMachine.Type.ConsoleProxy && type != VirtualMachine.Type.DomainRouter && type != VirtualMachine.Type.SecondaryStorageVm) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Don't know how to fence off " + type);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Don't know how to fence off " + type);
             }
             return null;
         }
         List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
         for (VolumeVO vol : vols) {
             if (!vol.isRecreatable()) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Unable to fence off volumes that are not recreatable: " + vol);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Unable to fence off volumes that are not recreatable: " + vol);
                 }
                 return null;
             }
             if (vol.getPoolType().isShared()) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Unable to fence off volumes that are shared: " + vol);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Unable to fence off volumes that are shared: " + vol);
                 }
                 return null;
             }

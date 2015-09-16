@@ -65,7 +65,6 @@ import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
@@ -115,7 +114,6 @@ import com.cloud.utils.net.NetUtils;
  **/
 @DB
 public abstract class GenericDaoBase<T, ID extends Serializable> extends ComponentLifecycleBase implements GenericDao<T, ID>, ComponentMethodInterceptable {
-    private final static Logger s_logger = Logger.getLogger(GenericDaoBase.class);
 
     protected final static TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
 
@@ -255,26 +253,26 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         _searchEnhancer.setSuperclass(_entityBeanType);
         _searchEnhancer.setCallback(new UpdateBuilder(this));
 
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Select SQL: " + _partialSelectSql.first().toString());
-            s_logger.trace("Remove SQL: " + (_removeSql != null ? _removeSql.first() : "No remove sql"));
-            s_logger.trace("Select by Id SQL: " + _selectByIdSql);
-            s_logger.trace("Table References: " + _tables);
-            s_logger.trace("Insert SQLs:");
+        if (logger.isTraceEnabled()) {
+            logger.trace("Select SQL: " + _partialSelectSql.first().toString());
+            logger.trace("Remove SQL: " + (_removeSql != null ? _removeSql.first() : "No remove sql"));
+            logger.trace("Select by Id SQL: " + _selectByIdSql);
+            logger.trace("Table References: " + _tables);
+            logger.trace("Insert SQLs:");
             for (final Pair<String, Attribute[]> insertSql : _insertSqls) {
-                s_logger.trace(insertSql.first());
+                logger.trace(insertSql.first());
             }
 
-            s_logger.trace("Delete SQLs");
+            logger.trace("Delete SQLs");
             for (final Pair<String, Attribute[]> deletSql : _deleteSqls) {
-                s_logger.trace(deletSql.first());
+                logger.trace(deletSql.first());
             }
 
-            s_logger.trace("Collection SQLs");
+            logger.trace("Collection SQLs");
             for (Attribute attr : _ecAttributes) {
                 EcInfo info = (EcInfo)attr.attache;
-                s_logger.trace(info.insertSql);
-                s_logger.trace(info.selectSql);
+                logger.trace(info.insertSql);
+                logger.trace(info.selectSql);
             }
         }
 
@@ -413,7 +411,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 }
             }
 
-            if (s_logger.isDebugEnabled() && lock != null) {
+            if (logger.isDebugEnabled() && lock != null) {
                 txn.registerLock(pstmt.toString());
             }
             final ResultSet rs = pstmt.executeQuery();
@@ -778,8 +776,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             }
         }
 
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("join search statement is " + pstmt);
+        if (logger.isTraceEnabled()) {
+            logger.trace("join search statement is " + pstmt);
         }
         return count;
     }
@@ -1597,7 +1595,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             try {
                 _cache.put(new Element(_idField.get(entity), entity));
             } catch (final Exception e) {
-                s_logger.debug("Can't put it in the cache", e);
+                logger.debug("Can't put it in the cache", e);
             }
         }
 
@@ -1619,7 +1617,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             try {
                 _cache.put(new Element(_idField.get(entity), entity));
             } catch (final Exception e) {
-                s_logger.debug("Can't put it in the cache", e);
+                logger.debug("Can't put it in the cache", e);
             }
         }
 
@@ -1798,7 +1796,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             final int idle = NumbersUtil.parseInt((String)params.get("cache.time.to.idle"), 300);
             _cache = new Cache(getName(), maxElements, false, live == -1, live == -1 ? Integer.MAX_VALUE : live, idle);
             cm.addCache(_cache);
-            s_logger.info("Cache created: " + _cache.toString());
+            logger.info("Cache created: " + _cache.toString());
         } else {
             _cache = null;
         }

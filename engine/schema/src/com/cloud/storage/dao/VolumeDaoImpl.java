@@ -26,7 +26,6 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -55,7 +54,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @Component
 @Local(value = VolumeDao.class)
 public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements VolumeDao {
-    private static final Logger s_logger = Logger.getLogger(VolumeDaoImpl.class);
     protected final SearchBuilder<VolumeVO> DetachedAccountIdSearch;
     protected final SearchBuilder<VolumeVO> TemplateZoneSearch;
     protected final GenericSearchBuilder<VolumeVO, SumCount> TotalSizeByPoolSearch;
@@ -268,7 +266,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
                 else if (scope == ScopeType.ZONE)
                     sql = SELECT_HYPERTYPE_FROM_ZONE_VOLUME;
                 else
-                    s_logger.error("Unhandled scope type '" + scope + "' when running getHypervisorType on volume id " + volumeId);
+                    logger.error("Unhandled scope type '" + scope + "' when running getHypervisorType on volume id " + volumeId);
 
                 pstmt = txn.prepareAutoCloseStatement(sql);
                 pstmt.setLong(1, volumeId);
@@ -297,7 +295,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         } else if (type.equals(HypervisorType.VMware)) {
             return ImageFormat.OVA;
         } else {
-            s_logger.warn("Do not support hypervisor " + type.toString());
+            logger.warn("Do not support hypervisor " + type.toString());
             return null;
         }
     }
@@ -483,7 +481,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         builder.set(vo, "updated", new Date());
 
         int rows = update((VolumeVO)vo, sc);
-        if (rows == 0 && s_logger.isDebugEnabled()) {
+        if (rows == 0 && logger.isDebugEnabled()) {
             VolumeVO dbVol = findByIdIncludingRemoved(vo.getId());
             if (dbVol != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
@@ -516,7 +514,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
                     .append("; updatedTime=")
                     .append(oldUpdatedTime);
             } else {
-                s_logger.debug("Unable to update volume: id=" + vo.getId() + ", as there is no such volume exists in the database anymore");
+                logger.debug("Unable to update volume: id=" + vo.getId() + ", as there is no such volume exists in the database anymore");
             }
         }
         return rows > 0;

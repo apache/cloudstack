@@ -27,7 +27,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.deploy.DeploymentPlan;
@@ -42,14 +41,13 @@ import com.cloud.vm.VirtualMachineProfile;
 @Component
 @Local(value = StoragePoolAllocator.class)
 public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocator {
-    private static final Logger s_logger = Logger.getLogger(ClusterScopeStoragePoolAllocator.class);
 
     @Inject
     DiskOfferingDao _diskOfferingDao;
 
     @Override
     protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
-        s_logger.debug("ClusterScopeStoragePoolAllocator looking for storage pool");
+        logger.debug("ClusterScopeStoragePoolAllocator looking for storage pool");
 
         if (dskCh.useLocalStorage()) {
             // cluster wide allocator should bail out in case of local disk
@@ -70,36 +68,36 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
             return null;
         }
         if (dskCh.getTags() != null && dskCh.getTags().length != 0) {
-            s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId + " having tags:" + Arrays.toString(dskCh.getTags()) +
+            logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId + " having tags:" + Arrays.toString(dskCh.getTags()) +
                     ". Disabled pools will be ignored.");
         } else {
-            s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId + ". Disabled pools will be ignored.");
+            logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId + ". Disabled pools will be ignored.");
         }
 
-        if (s_logger.isTraceEnabled()) {
+        if (logger.isTraceEnabled()) {
             // Log the pools details that are ignored because they are in disabled state
             List<StoragePoolVO> disabledPools = _storagePoolDao.findDisabledPoolsByScope(dcId, podId, clusterId, ScopeType.CLUSTER);
             if (disabledPools != null && !disabledPools.isEmpty()) {
                 for (StoragePoolVO pool : disabledPools) {
-                    s_logger.trace("Ignoring pool " + pool + " as it is in disabled state.");
+                    logger.trace("Ignoring pool " + pool + " as it is in disabled state.");
                 }
             }
         }
 
         List<StoragePoolVO> pools = _storagePoolDao.findPoolsByTags(dcId, podId, clusterId, dskCh.getTags());
-        s_logger.debug("Found pools matching tags: " + pools);
+        logger.debug("Found pools matching tags: " + pools);
 
         // add remaining pools in cluster, that did not match tags, to avoid set
         List<StoragePoolVO> allPools = _storagePoolDao.findPoolsByTags(dcId, podId, clusterId, null);
         allPools.removeAll(pools);
         for (StoragePoolVO pool : allPools) {
-            s_logger.debug("Adding pool " + pool + " to avoid set since it did not match tags");
+            logger.debug("Adding pool " + pool + " to avoid set since it did not match tags");
             avoid.addPool(pool.getId());
         }
 
         if (pools.size() == 0) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("No storage pools available for " + ServiceOffering.StorageType.shared.toString() + " volume allocation, returning");
+            if (logger.isDebugEnabled()) {
+                logger.debug("No storage pools available for " + ServiceOffering.StorageType.shared.toString() + " volume allocation, returning");
             }
             return suitablePools;
         }
@@ -116,8 +114,8 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
             }
         }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("ClusterScopeStoragePoolAllocator returning " + suitablePools.size() + " suitable storage pools");
+        if (logger.isDebugEnabled()) {
+            logger.debug("ClusterScopeStoragePoolAllocator returning " + suitablePools.size() + " suitable storage pools");
         }
 
         return suitablePools;

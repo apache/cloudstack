@@ -25,7 +25,6 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
@@ -33,21 +32,20 @@ import com.cloud.utils.component.AdapterBase;
 
 @Local(value = Processor.class)
 public class IsoProcessor extends AdapterBase implements Processor {
-    private static final Logger s_logger = Logger.getLogger(IsoProcessor.class);
 
     StorageLayer _storage;
 
     @Override
     public FormatInfo process(String templatePath, ImageFormat format, String templateName) {
         if (format != null) {
-            s_logger.debug("We don't handle conversion from " + format + " to ISO.");
+            logger.debug("We don't handle conversion from " + format + " to ISO.");
             return null;
         }
 
         String isoPath = templatePath + File.separator + templateName + "." + ImageFormat.ISO.getFileExtension();
 
         if (!_storage.exists(isoPath)) {
-            s_logger.debug("Unable to find the iso file: " + isoPath);
+            logger.debug("Unable to find the iso file: " + isoPath);
             return null;
         }
 

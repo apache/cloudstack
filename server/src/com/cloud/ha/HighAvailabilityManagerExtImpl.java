@@ -64,8 +64,8 @@ public class HighAvailabilityManagerExtImpl extends HighAvailabilityManagerImpl 
     protected class UsageServerMonitorTask extends ManagedContextRunnable {
         @Override
         protected void runInContext() {
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("checking health of usage server");
+            if (logger.isInfoEnabled()) {
+                logger.info("checking health of usage server");
             }
 
             try {
@@ -80,8 +80,8 @@ public class HighAvailabilityManagerExtImpl extends HighAvailabilityManagerImpl 
                             isRunning = true;
                         }
                     }
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("usage server running? " + isRunning + ", heartbeat: " + lastHeartbeat);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("usage server running? " + isRunning + ", heartbeat: " + lastHeartbeat);
                     }
                 } finally {
                     txn.close();
@@ -98,7 +98,7 @@ public class HighAvailabilityManagerExtImpl extends HighAvailabilityManagerImpl 
                     _alertMgr.clearAlert(AlertManager.AlertType.ALERT_TYPE_USAGE_SERVER, 0, 0);
                 }
             } catch (Exception ex) {
-                s_logger.warn("Error while monitoring usage job", ex);
+                logger.warn("Error while monitoring usage job", ex);
             }
         }
     }

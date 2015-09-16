@@ -20,7 +20,6 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.netapp.LunVO;
@@ -32,7 +31,6 @@ import com.cloud.utils.db.SearchCriteria;
 @Component
 @Local(value = {LunDao.class})
 public class LunDaoImpl extends GenericDaoBase<LunVO, Long> implements LunDao {
-    private static final Logger s_logger = Logger.getLogger(PoolDaoImpl.class);
 
     protected final SearchBuilder<LunVO> LunSearch;
     protected final SearchBuilder<LunVO> LunNameSearch;

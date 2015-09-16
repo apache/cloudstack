@@ -24,7 +24,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-// import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
 import org.apache.cloudstack.api.command.user.solidfire.GetSolidFireAccountIdCmd;
@@ -55,7 +54,6 @@ import com.cloud.utils.component.AdapterBase;
 @Component
 @Local(value = APIChecker.class)
 public class ApiSolidFireServiceImpl extends AdapterBase implements APIChecker, ApiSolidFireService {
-    // private static final Logger s_logger = Logger.getLogger(ApiSolidFireServiceImpl.class);
 
     @Inject private AccountDetailsDao _accountDetailsDao;
     @Inject private DataStoreProviderManager _dataStoreProviderMgr;

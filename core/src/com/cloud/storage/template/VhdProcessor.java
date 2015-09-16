@@ -27,7 +27,6 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
@@ -43,7 +42,6 @@ import com.cloud.utils.component.AdapterBase;
 @Local(value = Processor.class)
 public class VhdProcessor extends AdapterBase implements Processor {
 
-    private static final Logger s_logger = Logger.getLogger(VhdProcessor.class);
     StorageLayer _storage;
     private int vhdFooterSize = 512;
     private int vhdFooterCreatorAppOffset = 28;
@@ -54,13 +52,13 @@ public class VhdProcessor extends AdapterBase implements Processor {
     @Override
     public FormatInfo process(String templatePath, ImageFormat format, String templateName) {
         if (format != null) {
-            s_logger.debug("We currently don't handle conversion from " + format + " to VHD.");
+            logger.debug("We currently don't handle conversion from " + format + " to VHD.");
             return null;
         }
 
         String vhdPath = templatePath + File.separator + templateName + "." + ImageFormat.VHD.getFileExtension();
         if (!_storage.exists(vhdPath)) {
-            s_logger.debug("Unable to find the vhd file: " + vhdPath);
+            logger.debug("Unable to find the vhd file: " + vhdPath);
             return null;
         }
 
@@ -74,7 +72,7 @@ public class VhdProcessor extends AdapterBase implements Processor {
         try {
             info.virtualSize = getVirtualSize(vhdFile);
         } catch (IOException e) {
-            s_logger.error("Unable to get the virtual size for " + vhdPath);
+            logger.error("Unable to get the virtual size for " + vhdPath);
             return null;
         }
 

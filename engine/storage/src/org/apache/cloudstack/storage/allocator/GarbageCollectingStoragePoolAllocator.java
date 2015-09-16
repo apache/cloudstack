@@ -23,7 +23,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -38,7 +37,6 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = StoragePoolAllocator.class)
 public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAllocator {
-    private static final Logger s_logger = Logger.getLogger(GarbageCollectingStoragePoolAllocator.class);
 
     StoragePoolAllocator _firstFitStoragePoolAllocator;
     StoragePoolAllocator _localStoragePoolAllocator;
@@ -50,9 +48,9 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
 
     @Override
     public List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
-        s_logger.debug("GarbageCollectingStoragePoolAllocator looking for storage pool");
+        logger.debug("GarbageCollectingStoragePoolAllocator looking for storage pool");
         if (!_storagePoolCleanupEnabled) {
-            s_logger.debug("Storage pool cleanup is not enabled, so GarbageCollectingStoragePoolAllocator is being skipped.");
+            logger.debug("Storage pool cleanup is not enabled, so GarbageCollectingStoragePoolAllocator is being skipped.");
             return null;
         }
 

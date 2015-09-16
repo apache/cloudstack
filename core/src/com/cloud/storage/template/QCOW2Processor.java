@@ -27,7 +27,6 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
@@ -36,7 +35,6 @@ import com.cloud.utils.component.AdapterBase;
 
 @Local(value = Processor.class)
 public class QCOW2Processor extends AdapterBase implements Processor {
-    private static final Logger s_logger = Logger.getLogger(QCOW2Processor.class);
     private static final int VIRTUALSIZE_HEADER_LOCATION = 24;
 
     private StorageLayer _storage;
@@ -44,14 +42,14 @@ public class QCOW2Processor extends AdapterBase implements Processor {
     @Override
     public FormatInfo process(String templatePath, ImageFormat format, String templateName) {
         if (format != null) {
-            s_logger.debug("We currently don't handle conversion from " + format + " to QCOW2.");
+            logger.debug("We currently don't handle conversion from " + format + " to QCOW2.");
             return null;
         }
 
         String qcow2Path = templatePath + File.separator + templateName + "." + ImageFormat.QCOW2.getFileExtension();
 
         if (!_storage.exists(qcow2Path)) {
-            s_logger.debug("Unable to find the qcow2 file: " + qcow2Path);
+            logger.debug("Unable to find the qcow2 file: " + qcow2Path);
             return null;
         }
 
@@ -66,7 +64,7 @@ public class QCOW2Processor extends AdapterBase implements Processor {
         try {
             info.virtualSize = getVirtualSize(qcow2File);
         } catch (IOException e) {
-            s_logger.error("Unable to get virtual size from " + qcow2File.getName());
+            logger.error("Unable to get virtual size from " + qcow2File.getName());
             return null;
         }
 

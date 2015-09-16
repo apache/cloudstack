@@ -21,7 +21,6 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.vpc.NetworkACLItem.State;
@@ -40,7 +39,6 @@ import com.cloud.utils.db.TransactionLegacy;
 @Local(value = NetworkACLItemDao.class)
 @DB()
 public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long> implements NetworkACLItemDao {
-    private static final Logger s_logger = Logger.getLogger(NetworkACLItemDaoImpl.class);
 
     protected final SearchBuilder<NetworkACLItemVO> AllFieldsSearch;
     protected final SearchBuilder<NetworkACLItemVO> NotRevokedSearch;

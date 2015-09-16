@@ -22,7 +22,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.PermissionScope;
@@ -43,7 +42,6 @@ import com.cloud.user.AccountService;
 
 public class RoleBasedEntityAccessChecker extends DomainChecker implements SecurityChecker {
 
-    private static final Logger s_logger = Logger.getLogger(RoleBasedEntityAccessChecker.class.getName());
 
     @Inject
     AccountService _accountService;
@@ -95,7 +93,7 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
         String accessKey = buildAccessCacheKey(caller, entity, accessType, action);
         CheckAccessResult allowDeny = (CheckAccessResult)_iamSrv.getFromIAMCache(accessKey);
         if (allowDeny != null) {
-            s_logger.debug("IAM access check for " + accessKey + " from cache: " + allowDeny.isAllow());
+            logger.debug("IAM access check for " + accessKey + " from cache: " + allowDeny.isAllow());
             if (allowDeny.isAllow()) {
                 return true;
             } else {
@@ -188,8 +186,8 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
 
             String msg = "Account " + caller + " does not have permission to access resource " + entity
                     + " for access type: " + accessType;
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(msg);
+            if (logger.isDebugEnabled()) {
+                logger.debug(msg);
             }
             _iamSrv.addToIAMCache(accessKey, new CheckAccessResult(msg));
             throw new PermissionDeniedException(msg);

@@ -24,7 +24,6 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.storage.LaunchPermissionVO;
@@ -41,7 +40,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @Component
 @Local(value = {LaunchPermissionDao.class})
 public class LaunchPermissionDaoImpl extends GenericDaoBase<LaunchPermissionVO, Long> implements LaunchPermissionDao {
-    private static final Logger s_logger = Logger.getLogger(LaunchPermissionDaoImpl.class);
     private static final String REMOVE_LAUNCH_PERMISSION = "DELETE FROM `cloud`.`launch_permission`" + "  WHERE template_id = ? AND account_id = ?";
 
     private static final String LIST_PERMITTED_TEMPLATES =
@@ -82,7 +80,7 @@ public class LaunchPermissionDaoImpl extends GenericDaoBase<LaunchPermissionVO, 
             txn.commit();
         } catch (Exception e) {
             txn.rollback();
-            s_logger.warn("Error removing launch permissions", e);
+            logger.warn("Error removing launch permissions", e);
             throw new CloudRuntimeException("Error removing launch permissions", e);
         }
     }
@@ -147,7 +145,7 @@ public class LaunchPermissionDaoImpl extends GenericDaoBase<LaunchPermissionVO, 
                 permittedTemplates.add(template);
             }
         } catch (Exception e) {
-            s_logger.warn("Error listing permitted templates", e);
+            logger.warn("Error listing permitted templates", e);
         }
         return permittedTemplates;
     }

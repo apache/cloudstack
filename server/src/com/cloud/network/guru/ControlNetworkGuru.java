@@ -23,7 +23,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
@@ -55,7 +54,6 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = {NetworkGuru.class})
 public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGuru {
-    private static final Logger s_logger = Logger.getLogger(ControlNetworkGuru.class);
     @Inject
     DataCenterDao _dcDao;
     @Inject
@@ -86,7 +84,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         if (offering.isSystemOnly() && isMyTrafficType(offering.getTrafficType())) {
             return true;
         } else {
-            s_logger.trace("We only care about System only Control network");
+            logger.trace("We only care about System only Control network");
             return false;
         }
     }
@@ -178,14 +176,14 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
             DataCenterVO dcVo = _dcDao.findById(dcId);
             if (dcVo.getNetworkType() != NetworkType.Basic) {
                 super.release(nic, vm, reservationId);
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Released nic: " + nic);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Released nic: " + nic);
                 }
                 return true;
             } else {
                 nic.deallocate();
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Released nic: " + nic);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Released nic: " + nic);
                 }
                 return true;
             }
@@ -194,8 +192,8 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         _dcDao.releaseLinkLocalIpAddress(nic.getId(), reservationId);
 
         nic.deallocate();
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Released nic: " + nic);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Released nic: " + nic);
         }
 
         return true;
@@ -233,7 +231,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
             _gateway = NetUtils.getLinkLocalGateway();
         }
 
-        s_logger.info("Control network setup: cidr=" + _cidr + "; gateway = " + _gateway);
+        logger.info("Control network setup: cidr=" + _cidr + "; gateway = " + _gateway);
 
         return true;
     }

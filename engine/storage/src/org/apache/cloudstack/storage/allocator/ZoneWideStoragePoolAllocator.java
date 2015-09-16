@@ -23,7 +23,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -41,7 +40,6 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Component
 public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
-    private static final Logger s_logger = Logger.getLogger(ZoneWideStoragePoolAllocator.class);
     @Inject
     PrimaryDataStoreDao _storagePoolDao;
     @Inject
@@ -50,18 +48,18 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
 
     @Override
     protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
-        s_logger.debug("ZoneWideStoragePoolAllocator to find storage pool");
+        logger.debug("ZoneWideStoragePoolAllocator to find storage pool");
 
         if (dskCh.useLocalStorage()) {
             return null;
         }
 
-        if (s_logger.isTraceEnabled()) {
+        if (logger.isTraceEnabled()) {
             // Log the pools details that are ignored because they are in disabled state
             List<StoragePoolVO> disabledPools = _storagePoolDao.findDisabledPoolsByScope(plan.getDataCenterId(), null, null, ScopeType.ZONE);
             if (disabledPools != null && !disabledPools.isEmpty()) {
                 for (StoragePoolVO pool : disabledPools) {
-                    s_logger.trace("Ignoring pool " + pool + " as it is in disabled state.");
+                    logger.trace("Ignoring pool " + pool + " as it is in disabled state.");
                 }
             }
         }
@@ -114,8 +112,8 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
         long dcId = plan.getDataCenterId();
 
         List<Long> poolIdsByVolCount = _volumeDao.listZoneWidePoolIdsByVolumeCount(dcId, account.getAccountId());
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("List of pools in ascending order of number of volumes for account id: " + account.getAccountId() + " is: " + poolIdsByVolCount);
+        if (logger.isDebugEnabled()) {
+            logger.debug("List of pools in ascending order of number of volumes for account id: " + account.getAccountId() + " is: " + poolIdsByVolCount);
         }
 
         // now filter the given list of Pools by this ordered list

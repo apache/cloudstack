@@ -39,7 +39,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
@@ -170,7 +169,6 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
 public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiService, VmWorkJobHandler {
-    private final static Logger s_logger = Logger.getLogger(VolumeApiServiceImpl.class);
     public static final String VM_WORK_JOB_HANDLER = VolumeApiServiceImpl.class.getSimpleName();
 
     @Inject
@@ -400,7 +398,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         try {
             ImageFormat.valueOf(format.toUpperCase());
         } catch (IllegalArgumentException e) {
-            s_logger.debug("ImageFormat IllegalArgumentException: " + e.getMessage());
+            logger.debug("ImageFormat IllegalArgumentException: " + e.getMessage());
             throw new IllegalArgumentException("Image format: " + format + " is incorrect. Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
         }
 
@@ -761,8 +759,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                         message.append(cmd.getVirtualMachineId());
                         message.append(" due to error: ");
                         message.append(ex.getMessage());
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug(message, ex);
+                        if (logger.isDebugEnabled()) {
+                            logger.debug(message, ex);
                         }
                         throw new CloudRuntimeException(message.toString());
                     }
@@ -776,7 +774,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new CloudRuntimeException("Failed to create volume: " + volume.getId(), e);
         } finally {
             if (!created) {
-                s_logger.trace("Decrementing volume resource count for account id=" + volume.getAccountId() + " as volume failed to create on the backend");
+                logger.trace("Decrementing volume resource count for account id=" + volume.getAccountId() + " as volume failed to create on the backend");
                 _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume, cmd.getDisplayVolume());
                 _resourceLimitMgr.recalculateResourceCount(volume.getAccountId(), volume.getDomainId(), ResourceType.primary_storage.getOrdinal());
             }
@@ -979,7 +977,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         /* If this volume has never been beyond allocated state, short circuit everything and simply update the database. */
         if (volume.getState() == Volume.State.Allocated) {
-            s_logger.debug("Volume is in the allocated state, but has never been created. Simply updating database with new size and IOPS.");
+            logger.debug("Volume is in the allocated state, but has never been created. Simply updating database with new size and IOPS.");
 
             volume.setSize(newSize);
             volume.setMinIops(newMinIops);
@@ -1145,7 +1143,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             VolumeApiResult result = future.get();
 
             if (result.isFailed()) {
-                s_logger.warn("Failed to resize the volume " + volume);
+                logger.warn("Failed to resize the volume " + volume);
                 String details = "";
                 if (result.getResult() != null && !result.getResult().isEmpty()) {
                     details = result.getResult();
@@ -1169,13 +1167,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
             return volume;
         } catch (InterruptedException e) {
-            s_logger.warn("failed get resize volume result", e);
+            logger.warn("failed get resize volume result", e);
             throw new CloudRuntimeException(e.getMessage());
         } catch (ExecutionException e) {
-            s_logger.warn("failed get resize volume result", e);
+            logger.warn("failed get resize volume result", e);
             throw new CloudRuntimeException(e.getMessage());
         } catch (Exception e) {
-            s_logger.warn("failed get resize volume result", e);
+            logger.warn("failed get resize volume result", e);
             throw new CloudRuntimeException(e.getMessage());
         }
     }
@@ -1240,26 +1238,26 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             // expunge volume from primary if volume is on primary
             VolumeInfo volOnPrimary = volFactory.getVolume(volume.getId(), DataStoreRole.Primary);
             if (volOnPrimary != null) {
-                s_logger.info("Expunging volume " + volume.getId() + " from primary data store");
+                logger.info("Expunging volume " + volume.getId() + " from primary data store");
                 AsyncCallFuture<VolumeApiResult> future = volService.expungeVolumeAsync(volOnPrimary);
                 future.get();
             }
             // expunge volume from secondary if volume is on image store
             VolumeInfo volOnSecondary = volFactory.getVolume(volume.getId(), DataStoreRole.Image);
             if (volOnSecondary != null) {
-                s_logger.info("Expunging volume " + volume.getId() + " from secondary data store");
+                logger.info("Expunging volume " + volume.getId() + " from secondary data store");
                 AsyncCallFuture<VolumeApiResult> future2 = volService.expungeVolumeAsync(volOnSecondary);
                 future2.get();
             }
             // delete all cache entries for this volume
             List<VolumeInfo> cacheVols = volFactory.listVolumeOnCache(volume.getId());
             for (VolumeInfo volOnCache : cacheVols) {
-                s_logger.info("Delete volume from image cache store: " + volOnCache.getDataStore().getName());
+                logger.info("Delete volume from image cache store: " + volOnCache.getDataStore().getName());
                 volOnCache.delete();
             }
 
         } catch (Exception e) {
-            s_logger.warn("Failed to expunge volume:", e);
+            logger.warn("Failed to expunge volume:", e);
             return false;
         }
 
@@ -1320,7 +1318,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             try {
                 newVolumeOnPrimaryStorage = _volumeMgr.createVolumeOnPrimaryStorage(vm, volumeToAttach, rootDiskHyperType, destPrimaryStorage);
             } catch (NoTransitionException e) {
-                s_logger.debug("Failed to create volume on primary storage", e);
+                logger.debug("Failed to create volume on primary storage", e);
                 throw new CloudRuntimeException("Failed to create volume on primary storage", e);
             }
         }
@@ -1341,10 +1339,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 newVolumeOnPrimaryStorage = _volumeMgr.moveVolume(newVolumeOnPrimaryStorage, vmRootVolumePool.getDataCenterId(), vmRootVolumePool.getPodId(),
                         vmRootVolumePool.getClusterId(), volumeToAttachHyperType);
             } catch (ConcurrentOperationException e) {
-                s_logger.debug("move volume failed", e);
+                logger.debug("move volume failed", e);
                 throw new CloudRuntimeException("move volume failed", e);
             } catch (StorageUnavailableException e) {
-                s_logger.debug("move volume failed", e);
+                logger.debug("move volume failed", e);
                 throw new CloudRuntimeException("move volume failed", e);
             }
         }
@@ -1464,8 +1462,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (asyncExecutionContext != null) {
             AsyncJob job = asyncExecutionContext.getJob();
 
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Trying to attaching volume " + volumeId + " to vm instance:" + vm.getId() + ", update async job-" + job.getId() + " progress status");
+            if (logger.isInfoEnabled()) {
+                logger.info("Trying to attaching volume " + volumeId + " to vm instance:" + vm.getId() + ", update async job-" + job.getId() + " progress status");
             }
 
             _jobMgr.updateAsyncJobAttachment(job.getId(), "Volume", volumeId);
@@ -1672,8 +1670,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (asyncExecutionContext != null) {
             AsyncJob job = asyncExecutionContext.getJob();
 
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Trying to attaching volume " + volumeId + "to vm instance:" + vm.getId() + ", update async job-" + job.getId() + " progress status");
+            if (logger.isInfoEnabled()) {
+                logger.info("Trying to attaching volume " + volumeId + "to vm instance:" + vm.getId() + ", update async job-" + job.getId() + " progress status");
             }
 
             _jobMgr.updateAsyncJobAttachment(job.getId(), "Volume", volumeId);
@@ -1965,10 +1963,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 newVol = _volumeMgr.migrateVolume(vol, destPool);
             }
         } catch (StorageUnavailableException e) {
-            s_logger.debug("Failed to migrate volume", e);
+            logger.debug("Failed to migrate volume", e);
             throw new CloudRuntimeException(e.getMessage());
         }  catch (Exception e) {
-            s_logger.debug("Failed to migrate volume", e);
+            logger.debug("Failed to migrate volume", e);
             throw new CloudRuntimeException(e.getMessage());
         }
         return newVol;
@@ -1981,15 +1979,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         try {
             VolumeApiResult result = future.get();
             if (result.isFailed()) {
-                s_logger.debug("migrate volume failed:" + result.getResult());
+                logger.debug("migrate volume failed:" + result.getResult());
                 throw new StorageUnavailableException("Migrate volume failed: " + result.getResult(), destPool.getId());
             }
             return result.getVolume();
         } catch (InterruptedException e) {
-            s_logger.debug("migrate volume failed", e);
+            logger.debug("migrate volume failed", e);
             throw new CloudRuntimeException(e.getMessage());
         } catch (ExecutionException e) {
-            s_logger.debug("migrate volume failed", e);
+            logger.debug("migrate volume failed", e);
             throw new CloudRuntimeException(e.getMessage());
         }
     }
@@ -2160,7 +2158,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // Extract activity only for detached volumes or for volumes whose
         // instance is stopped
         if (volume.getInstanceId() != null && ApiDBUtils.findVMInstanceById(volume.getInstanceId()).getState() != State.Stopped) {
-            s_logger.debug("Invalid state of the volume with ID: " + volumeId + ". It should be either detached or the VM should be in stopped state.");
+            logger.debug("Invalid state of the volume with ID: " + volumeId + ". It should be either detached or the VM should be in stopped state.");
             PermissionDeniedException ex = new PermissionDeniedException(
                     "Invalid state of the volume with specified ID. It should be either detached or the VM should be in stopped state.");
             ex.addProxyObject(volume.getUuid(), "volumeId");
@@ -2264,10 +2262,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         try {
             cvResult = cvAnswer.get();
         } catch (InterruptedException e1) {
-            s_logger.debug("failed copy volume", e1);
+            logger.debug("failed copy volume", e1);
             throw new CloudRuntimeException("Failed to copy volume", e1);
         } catch (ExecutionException e1) {
-            s_logger.debug("failed copy volume", e1);
+            logger.debug("failed copy volume", e1);
             throw new CloudRuntimeException("Failed to copy volume", e1);
         }
         if (cvResult == null || cvResult.isFailed()) {
@@ -2654,7 +2652,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
         AsyncJobVO jobVo = _jobMgr.getAsyncJob(workJob.getId());
-        s_logger.debug("New job " + workJob.getId() + ", result field: " + jobVo.getResult());
+        logger.debug("New job " + workJob.getId() + ", result field: " + jobVo.getResult());
 
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
 

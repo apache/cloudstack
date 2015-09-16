@@ -28,7 +28,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupOvsCommand;
@@ -107,7 +106,6 @@ StaticNatServiceProvider, IpDeployer {
     @Inject
     NetworkTopologyContext _networkTopologyContext;
 
-    private static final Logger s_logger = Logger.getLogger(OvsElement.class);
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
     @Override
@@ -121,21 +119,21 @@ StaticNatServiceProvider, IpDeployer {
     }
 
     protected boolean canHandle(final Network network, final Service service) {
-        s_logger.debug("Checking if OvsElement can handle service "
+        logger.debug("Checking if OvsElement can handle service "
                 + service.getName() + " on network " + network.getDisplayText());
         if (network.getBroadcastDomainType() != BroadcastDomainType.Vswitch) {
             return false;
         }
 
         if (!_networkModel.isProviderForNetwork(getProvider(), network.getId())) {
-            s_logger.debug("OvsElement is not a provider for network "
+            logger.debug("OvsElement is not a provider for network "
                     + network.getDisplayText());
             return false;
         }
 
         if (!_ntwkSrvcDao.canProviderSupportServiceInNetwork(network.getId(),
                 service, Network.Provider.Ovs)) {
-            s_logger.debug("OvsElement can't provide the " + service.getName()
+            logger.debug("OvsElement can't provide the " + service.getName()
                     + " service on network " + network.getDisplayText());
             return false;
         }
@@ -156,7 +154,7 @@ StaticNatServiceProvider, IpDeployer {
             final DeployDestination dest, final ReservationContext context)
                     throws ConcurrentOperationException, ResourceUnavailableException,
                     InsufficientCapacityException {
-        s_logger.debug("entering OvsElement implement function for network "
+        logger.debug("entering OvsElement implement function for network "
                 + network.getDisplayText() + " (state " + network.getState()
                 + ")");
 
@@ -254,7 +252,7 @@ StaticNatServiceProvider, IpDeployer {
     @Override
     public boolean verifyServicesCombination(final Set<Service> services) {
         if (!services.contains(Service.Connectivity)) {
-            s_logger.warn("Unable to provide services without Connectivity service enabled for this element");
+            logger.warn("Unable to provide services without Connectivity service enabled for this element");
             return false;
         }
 
@@ -443,7 +441,7 @@ StaticNatServiceProvider, IpDeployer {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
                     network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
-                s_logger.debug("Virtual router element doesn't need to associate ip addresses on the backend; virtual "
+                logger.debug("Virtual router element doesn't need to associate ip addresses on the backend; virtual "
                         + "router doesn't exist in the network "
                         + network.getId());
                 return true;
@@ -467,7 +465,7 @@ StaticNatServiceProvider, IpDeployer {
         List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
                 network.getId(), Role.VIRTUAL_ROUTER);
         if (routers == null || routers.isEmpty()) {
-            s_logger.debug("Ovs element doesn't need to apply static nat on the backend; virtual "
+            logger.debug("Ovs element doesn't need to apply static nat on the backend; virtual "
                     + "router doesn't exist in the network " + network.getId());
             return true;
         }
@@ -487,7 +485,7 @@ StaticNatServiceProvider, IpDeployer {
         List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
                 network.getId(), Role.VIRTUAL_ROUTER);
         if (routers == null || routers.isEmpty()) {
-            s_logger.debug("Ovs element doesn't need to apply firewall rules on the backend; virtual "
+            logger.debug("Ovs element doesn't need to apply firewall rules on the backend; virtual "
                     + "router doesn't exist in the network " + network.getId());
             return true;
         }
@@ -509,7 +507,7 @@ StaticNatServiceProvider, IpDeployer {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
                     network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
-                s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual "
+                logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual "
                         + "router doesn't exist in the network "
                         + network.getId());
                 return true;
@@ -559,7 +557,7 @@ StaticNatServiceProvider, IpDeployer {
             if (schemeCaps != null) {
                 for (LoadBalancingRule rule : rules) {
                     if (!schemeCaps.contains(rule.getScheme().toString())) {
-                        s_logger.debug("Scheme " + rules.get(0).getScheme()
+                        logger.debug("Scheme " + rules.get(0).getScheme()
                                 + " is not supported by the provider "
                                 + getName());
                         return false;

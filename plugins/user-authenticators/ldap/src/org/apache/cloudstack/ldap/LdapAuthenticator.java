@@ -24,14 +24,12 @@ import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.Pair;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.Map;
 import java.util.UUID;
 
 public class LdapAuthenticator extends DefaultUserAuthenticator {
-    private static final Logger s_logger = Logger.getLogger(LdapAuthenticator.class.getName());
 
     @Inject
     private LdapManager _ldapManager;
@@ -54,7 +52,7 @@ public class LdapAuthenticator extends DefaultUserAuthenticator {
     public Pair<Boolean, ActionOnFailedAuthentication> authenticate(final String username, final String password, final Long domainId, final Map<String, Object[]> requestParameters) {
 
         if (StringUtils.isEmpty(username) || StringUtils.isEmpty(password)) {
-            s_logger.debug("Username or Password cannot be empty");
+            logger.debug("Username or Password cannot be empty");
             return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
         }
 
@@ -82,7 +80,7 @@ public class LdapAuthenticator extends DefaultUserAuthenticator {
                         disableUserInCloudStack(user);
                     }
                 } catch (NoLdapUserMatchingQueryException e) {
-                    s_logger.debug(e.getMessage());
+                    logger.debug(e.getMessage());
                 }
 
             } else {
@@ -93,10 +91,10 @@ public class LdapAuthenticator extends DefaultUserAuthenticator {
                         if(!ldapUser.isDisabled()) {
                             result = _ldapManager.canAuthenticate(ldapUser.getPrincipal(), password);
                         } else {
-                            s_logger.debug("user with principal "+ ldapUser.getPrincipal() + " is disabled in ldap");
+                            logger.debug("user with principal "+ ldapUser.getPrincipal() + " is disabled in ldap");
                         }
                     } catch (NoLdapUserMatchingQueryException e) {
-                        s_logger.debug(e.getMessage());
+                        logger.debug(e.getMessage());
                     }
                 }
             }

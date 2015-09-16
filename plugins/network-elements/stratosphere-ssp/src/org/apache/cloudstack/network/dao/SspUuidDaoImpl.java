@@ -20,7 +20,6 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.network.Network;
 import com.cloud.utils.db.GenericDaoBase;
@@ -32,7 +31,6 @@ import com.cloud.vm.NicProfile;
 @Local(SspUuidDao.class)
 public class SspUuidDaoImpl extends GenericDaoBase<SspUuidVO, Long> implements SspUuidDao {
 
-    private static final Logger s_logger = Logger.getLogger(SspUuidDaoImpl.class);
 
     protected final SearchBuilder<SspUuidVO> native2uuid;
     protected final SearchBuilder<SspUuidVO> uuid2native;

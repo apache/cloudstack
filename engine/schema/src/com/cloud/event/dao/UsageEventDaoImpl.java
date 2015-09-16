@@ -26,7 +26,6 @@ import java.util.TimeZone;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.Vlan;
@@ -44,7 +43,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @Component
 @Local(value = {UsageEventDao.class})
 public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implements UsageEventDao {
-    public static final Logger s_logger = Logger.getLogger(UsageEventDaoImpl.class.getName());
 
     private final SearchBuilder<UsageEventVO> latestEventsSearch;
     private final SearchBuilder<UsageEventVO> IpeventsSearch;
@@ -103,8 +101,8 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
         // Copy events from cloud db to usage db
         String sql = COPY_EVENTS;
         if (recentEventId == 0) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("no recent event date, copying all events");
+            if (logger.isDebugEnabled()) {
+                logger.debug("no recent event date, copying all events");
             }
             sql = COPY_ALL_EVENTS;
         }
@@ -122,7 +120,7 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            s_logger.error("error copying events from cloud db to usage db", ex);
+            logger.error("error copying events from cloud db to usage db", ex);
             throw new CloudRuntimeException(ex.getMessage());
         } finally {
             txn.close();
@@ -131,8 +129,8 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
         // Copy event details from cloud db to usage db
         sql = COPY_EVENT_DETAILS;
         if (recentEventId == 0) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("no recent event date, copying all event detailss");
+            if (logger.isDebugEnabled()) {
+                logger.debug("no recent event date, copying all event detailss");
             }
             sql = COPY_ALL_EVENT_DETAILS;
         }
@@ -150,7 +148,7 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            s_logger.error("error copying event details from cloud db to usage db", ex);
+            logger.error("error copying event details from cloud db to usage db", ex);
             throw new CloudRuntimeException(ex.getMessage());
         } finally {
             txn.close();
@@ -173,7 +171,7 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
             }
             return 0;
         } catch (Exception ex) {
-            s_logger.error("error getting most recent event id", ex);
+            logger.error("error getting most recent event id", ex);
             throw new CloudRuntimeException(ex.getMessage());
         } finally {
             txn.close();
@@ -185,7 +183,7 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
         try {
             return listLatestEvents(endDate);
         } catch (Exception ex) {
-            s_logger.error("error getting most recent event date", ex);
+            logger.error("error getting most recent event date", ex);
             throw new CloudRuntimeException(ex.getMessage());
         } finally {
             txn.close();
@@ -205,7 +203,7 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
             }
             return 0;
         } catch (Exception ex) {
-            s_logger.error("error getting max event id", ex);
+            logger.error("error getting max event id", ex);
             throw new CloudRuntimeException(ex.getMessage());
         } finally {
             txn.close();

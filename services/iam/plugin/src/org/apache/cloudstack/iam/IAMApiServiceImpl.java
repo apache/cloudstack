@@ -26,7 +26,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.bouncycastle.util.IPAddress;
 
 import com.amazonaws.auth.policy.Condition;
@@ -119,7 +118,6 @@ import com.cloud.vm.snapshot.VMSnapshot;
 @Local(value = {IAMApiService.class})
 public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Manager {
 
-    public static final Logger s_logger = Logger.getLogger(IAMApiServiceImpl.class);
     private String _name;
 
     @Inject
@@ -194,7 +192,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
                 HashMap<Long, Long> acctGroupMap = (HashMap<Long, Long>) obj;
                 for (Long accountId : acctGroupMap.keySet()) {
                     Long groupId = acctGroupMap.get(accountId);
-                    s_logger.debug("MessageBus message: new Account Added: " + accountId + ", adding it to groupId :"
+                    logger.debug("MessageBus message: new Account Added: " + accountId + ", adding it to groupId :"
                             + groupId);
                     addAccountToIAMGroup(accountId, groupId);
                     // add it to domain group too
@@ -218,7 +216,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
             public void onPublishMessage(String senderAddress, String subject, Object obj) {
                 Long accountId = ((Long) obj);
                 if (accountId != null) {
-                    s_logger.debug("MessageBus message: Account removed: " + accountId
+                    logger.debug("MessageBus message: Account removed: " + accountId
                             + ", releasing the group associations");
                     removeAccountFromIAMGroups(accountId);
                 }
@@ -230,7 +228,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
             public void onPublishMessage(String senderAddress, String subject, Object obj) {
                 Long domainId = ((Long) obj);
                 if (domainId != null) {
-                    s_logger.debug("MessageBus message: new Domain created: " + domainId + ", creating a new group");
+                    logger.debug("MessageBus message: new Domain created: " + domainId + ", creating a new group");
                     Domain domain = _domainDao.findById(domainId);
                     _iamSrv.createIAMGroup("DomainGrp-" + domain.getUuid(), "Domain group", domain.getPath());
                 }
@@ -242,7 +240,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
             public void onPublishMessage(String senderAddress, String subject, Object obj) {
                 Long domainId = ((Long) obj);
                 if (domainId != null) {
-                    s_logger.debug("MessageBus message: Domain removed: " + domainId + ", removing the domain group");
+                    logger.debug("MessageBus message: Domain removed: " + domainId + ", removing the domain group");
                     Domain domain = _domainDao.findById(domainId);
                     List<IAMGroup> groups = listDomainGroup(domain);
                     for (IAMGroup group : groups) {
@@ -257,7 +255,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
             public void onPublishMessage(String senderAddress, String subject, Object obj) {
                 Long templateId = (Long)obj;
                 if (templateId != null) {
-                    s_logger.debug("MessageBus message: new public template registered: " + templateId
+                    logger.debug("MessageBus message: new public template registered: " + templateId
                             + ", grant permission to default root admin, domain admin and normal user policies");
                     _iamSrv.addIAMPermissionToIAMPolicy(new Long(Account.ACCOUNT_TYPE_ADMIN + 1), VirtualMachineTemplate.class.getSimpleName(),
                             PermissionScope.RESOURCE.toString(), templateId, "listTemplates", AccessType.UseEntry.toString(), Permission.Allow, false);
@@ -274,7 +272,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
             public void onPublishMessage(String senderAddress, String subject, Object obj) {
                 Long templateId = (Long)obj;
                 if (templateId != null) {
-                    s_logger.debug("MessageBus message: reset template permission: " + templateId);
+                    logger.debug("MessageBus message: reset template permission: " + templateId);
                     resetTemplatePermission(templateId);
                 }
             }
@@ -287,7 +285,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
                 if (entity != null) {
                     String entityType = entity.first().getSimpleName();
                     Long entityId = entity.second();
-                    s_logger.debug("MessageBus message: delete an entity: (" + entityType + "," + entityId + "), remove its related permission");
+                    logger.debug("MessageBus message: delete an entity: (" + entityType + "," + entityId + "), remove its related permission");
                     _iamSrv.removeIAMPermissionForEntity(entityType, entityId);
                 }
             }
@@ -304,7 +302,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
                     AccessType accessType = (AccessType)permit.get(ApiConstants.ACCESS_TYPE);
                     String action = (String)permit.get(ApiConstants.IAM_ACTION);
                     List<Long> acctIds = (List<Long>)permit.get(ApiConstants.ACCOUNTS);
-                    s_logger.debug("MessageBus message: grant accounts permission to an entity: (" + entityType + "," + entityId + ")");
+                    logger.debug("MessageBus message: grant accounts permission to an entity: (" + entityType + "," + entityId + ")");
                     grantEntityPermissioinToAccounts(entityType.getSimpleName(), entityId, accessType, action, acctIds);
                 }
             }
@@ -320,7 +318,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
                     AccessType accessType = (AccessType)permit.get(ApiConstants.ACCESS_TYPE);
                     String action = (String)permit.get(ApiConstants.IAM_ACTION);
                     List<Long> acctIds = (List<Long>)permit.get(ApiConstants.ACCOUNTS);
-                    s_logger.debug("MessageBus message: revoke from accounts permission to an entity: (" + entityType + "," + entityId + ")");
+                    logger.debug("MessageBus message: revoke from accounts permission to an entity: (" + entityType + "," + entityId + ")");
                     revokeEntityPermissioinFromAccounts(entityType.getSimpleName(), entityId, accessType, action, acctIds);
                 }
             }
@@ -341,7 +339,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
 
     @Override
     public boolean start() {
-        s_logger.info("Populating IAM group and account association for default accounts...");
+        logger.info("Populating IAM group and account association for default accounts...");
 
         // populate group <-> account association if not present for CS admin
         // and system accounts
@@ -740,7 +738,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
         // there should already a policy with only this permission added to it, this call is mainly used
         IAMPolicy policy = _iamSrv.getResourceGrantPolicy(entityType, entityId, accessType.toString(), action);
         if (policy == null) {
-            s_logger.warn("Cannot find a policy associated with this entity permissioin to be revoked, just return");
+            logger.warn("Cannot find a policy associated with this entity permissioin to be revoked, just return");
             return;
         }
         // detach this policy from list of accounts if not detached already
@@ -772,7 +770,7 @@ public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Man
         // check if there is a policy with only UseEntry permission for this template added
         IAMPolicy policy = _iamSrv.getResourceGrantPolicy(VirtualMachineTemplate.class.getSimpleName(), templateId, AccessType.UseEntry.toString(), "listTemplates");
         if ( policy == null ){
-            s_logger.info("No policy found for this template grant: " + templateId + ", no detach to be done");
+            logger.info("No policy found for this template grant: " + templateId + ", no detach to be done");
             return;
         }
         // delete the policy, which should detach it from groups and accounts
