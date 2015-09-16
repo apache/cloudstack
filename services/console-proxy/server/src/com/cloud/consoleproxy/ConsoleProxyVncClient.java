@@ -82,28 +82,45 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
                 String tunnelUrl = getClientParam().getClientTunnelUrl();
                 String tunnelSession = getClientParam().getClientTunnelSession();
 
-                try {
-                    if (tunnelUrl != null && !tunnelUrl.isEmpty() && tunnelSession != null && !tunnelSession.isEmpty()) {
-                        URI uri = new URI(tunnelUrl);
-                        s_logger.info("Connect to VNC server via tunnel. url: " + tunnelUrl + ", session: " + tunnelSession);
+                for (int i = 0; i < 10 && !workerDone; i++) {
+                    try {
+                        if (tunnelUrl != null && !tunnelUrl.isEmpty() && tunnelSession != null && !tunnelSession.isEmpty()) {
+                            URI uri = new URI(tunnelUrl);
+                            s_logger.info("Connect to VNC server via tunnel. url: " + tunnelUrl + ", session: " + tunnelSession);
 
-                        ConsoleProxy.ensureRoute(uri.getHost());
-                        client.connectTo(
-                                uri.getHost(), uri.getPort(),
-                                uri.getPath() + "?" + uri.getQuery(),
-                                tunnelSession, "https".equalsIgnoreCase(uri.getScheme()),
-                                getClientHostPassword());
-                    } else {
-                        s_logger.info("Connect to VNC server directly. host: " + getClientHostAddress() + ", port: " + getClientHostPort());
-                        ConsoleProxy.ensureRoute(getClientHostAddress());
-                        client.connectTo(getClientHostAddress(), getClientHostPort(), getClientHostPassword());
+                            ConsoleProxy.ensureRoute(uri.getHost());
+                            client.connectTo(uri.getHost(), uri.getPort(), uri.getPath() + "?" + uri.getQuery(), tunnelSession,
+                                "https".equalsIgnoreCase(uri.getScheme()), getClientHostPassword());
+                        } else {
+                            s_logger.info("Connect to VNC server directly. host: " + getClientHostAddress() + ", port: " + getClientHostPort());
+                            ConsoleProxy.ensureRoute(getClientHostAddress());
+                            client.connectTo(getClientHostAddress(), getClientHostPort(), getClientHostPassword());
+                        }
+                    } catch (UnknownHostException e) {
+                        s_logger.error("Unexpected exception (will retry until timeout)", e);
+                    } catch (IOException e) {
+                        s_logger.error("Unexpected exception (will retry until timeout) ", e);
+                    } catch (Throwable e) {
+                        s_logger.error("Unexpected exception (will retry until timeout) ", e);
                     }
-                } catch (UnknownHostException e) {
-                    s_logger.error("Unexpected exception", e);
-                } catch (IOException e) {
-                    s_logger.error("Unexpected exception", e);
-                } catch (Throwable e) {
-                    s_logger.error("Unexpected exception", e);
+
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                    }
+
+                    if (tunnelUrl != null && !tunnelUrl.isEmpty() && tunnelSession != null && !tunnelSession.isEmpty()) {
+                        ConsoleProxyAuthenticationResult authResult = ConsoleProxy.reAuthenticationExternally(getClientParam());
+                        if (authResult != null && authResult.isSuccess()) {
+                            if (authResult.getTunnelUrl() != null && !authResult.getTunnelUrl().isEmpty() && authResult.getTunnelSession() != null &&
+                                !authResult.getTunnelSession().isEmpty()) {
+                                tunnelUrl = authResult.getTunnelUrl();
+                                tunnelSession = authResult.getTunnelSession();
+
+                                s_logger.info("Reset XAPI session. url: " + tunnelUrl + ", session: " + tunnelSession);
+                            }
+                        }
+                    }
                 }
 
                 s_logger.info("Receiver thread stopped.");
@@ -147,23 +164,23 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
 
         updateFrontEndActivityTime();
 
-        switch(event) {
-        case KEY_DOWN :
-            sendModifierEvents(modifiers);
-            client.sendClientKeyboardEvent(RfbConstants.KEY_DOWN, code, 0);
-            break;
+        switch (event) {
+            case KEY_DOWN:
+                sendModifierEvents(modifiers);
+                client.sendClientKeyboardEvent(RfbConstants.KEY_DOWN, code, 0);
+                break;
 
-        case KEY_UP :
-            client.sendClientKeyboardEvent(RfbConstants.KEY_UP, code, 0);
-            sendModifierEvents(0);
-            break;
+            case KEY_UP:
+                client.sendClientKeyboardEvent(RfbConstants.KEY_UP, code, 0);
+                sendModifierEvents(0);
+                break;
 
-        case KEY_PRESS :
-            break;
+            case KEY_PRESS:
+                break;
 
-        default :
-            assert(false);
-            break;
+            default:
+                assert (false);
+                break;
         }
     }
 
@@ -207,13 +224,13 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
         if ((modifiers & SHIFT_KEY_MASK) != (lastModifierStates & SHIFT_KEY_MASK))
             client.sendClientKeyboardEvent((modifiers & SHIFT_KEY_MASK) != 0 ? RfbConstants.KEY_DOWN : RfbConstants.KEY_UP, X11_KEY_SHIFT, 0);
 
-        if((modifiers & CTRL_KEY_MASK) != (lastModifierStates & CTRL_KEY_MASK))
+        if ((modifiers & CTRL_KEY_MASK) != (lastModifierStates & CTRL_KEY_MASK))
             client.sendClientKeyboardEvent((modifiers & CTRL_KEY_MASK) != 0 ? RfbConstants.KEY_DOWN : RfbConstants.KEY_UP, X11_KEY_CTRL, 0);
 
         if ((modifiers & META_KEY_MASK) != (lastModifierStates & META_KEY_MASK))
             client.sendClientKeyboardEvent((modifiers & META_KEY_MASK) != 0 ? RfbConstants.KEY_DOWN : RfbConstants.KEY_UP, X11_KEY_META, 0);
 
-        if((modifiers & ALT_KEY_MASK) != (lastModifierStates & ALT_KEY_MASK))
+        if ((modifiers & ALT_KEY_MASK) != (lastModifierStates & ALT_KEY_MASK))
             client.sendClientKeyboardEvent((modifiers & ALT_KEY_MASK) != 0 ? RfbConstants.KEY_DOWN : RfbConstants.KEY_UP, X11_KEY_ALT, 0);
 
         lastModifierStates = modifiers;

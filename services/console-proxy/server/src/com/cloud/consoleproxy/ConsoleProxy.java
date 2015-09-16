@@ -411,6 +411,12 @@ public class ConsoleProxy {
         String clientKey = param.getClientMapKey();
         synchronized (connectionMap) {
             viewer = connectionMap.get(clientKey);
+            if(viewer != null && !(viewer.getClientHostPort() == param.getClientHostPort())) {
+                viewer.closeClient();
+                connectionMap.remove(clientKey);
+                viewer = null;
+            }
+
             if (viewer == null) {
                 viewer = getClient(param);
                 viewer.initClient(param);
@@ -445,6 +451,12 @@ public class ConsoleProxy {
         String clientKey = param.getClientMapKey();
         synchronized (connectionMap) {
             ConsoleProxyClient viewer = connectionMap.get(clientKey);
+            if(viewer != null && !(viewer.getClientHostPort() == param.getClientHostPort())) {
+                viewer.closeClient();
+                connectionMap.remove(clientKey);
+                viewer = null;
+            }
+
             if (viewer == null) {
                 authenticationExternally(param);
                 viewer = getClient(param);
