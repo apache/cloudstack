@@ -5048,14 +5048,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (oldAccount == null) {
             throw new InvalidParameterValueException("Invalid account for VM " + vm.getAccountId() + " in domain.");
         }
-        // don't allow to move the vm from the project
-        if (oldAccount.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Specified Vm id belongs to the project and can't be moved");
-            ex.addProxyObject(vm.getUuid(), "vmId");
-            throw ex;
-        }
-        final Account newAccount = _accountService.getActiveAccountByName(cmd.getAccountName(), cmd.getDomainId());
-        if (newAccount == null || newAccount.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        final Account newAccount = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
+        if (newAccount == null) {
             throw new InvalidParameterValueException("Invalid accountid=" + cmd.getAccountName() + " in domain " + cmd.getDomainId());
         }
 
@@ -5356,7 +5350,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 s_logger.debug("AssignVM: Advance virtual, adding networks no " + networks.size() + " to " + vm.getInstanceName());
             } // END IF NON SEC GRP ENABLED
         } // END IF ADVANCED
-        s_logger.info("AssignVM: vm " + vm.getInstanceName() + " now belongs to account " + cmd.getAccountName());
+        s_logger.info("AssignVM: vm " + vm.getInstanceName() + " now belongs to account " + newAccount.getAccountName());
         return vm;
     }
 
