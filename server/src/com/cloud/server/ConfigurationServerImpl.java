@@ -155,6 +155,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
     protected ConfigDepot _configDepot;
     @Inject
     protected ConfigurationManager _configMgr;
+    @Inject
+    protected ManagementService _mgrService;
 
 
     public ConfigurationServerImpl() {
@@ -668,7 +670,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         if (already == null) {
             TransactionLegacy txn = TransactionLegacy.currentTxn();
             try {
-                String rpassword = PasswordGenerator.generatePresharedKey(8);
+                String rpassword = _mgrService.generateRandomPassword();
                 String wSql = "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) "
                 + "VALUES ('Secure','DEFAULT', 'management-server','system.vm.password', ?,'randmon password generated each management server starts for system vm')";
                 PreparedStatement stmt = txn.prepareAutoCloseStatement(wSql);

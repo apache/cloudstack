@@ -19,13 +19,73 @@ package com.cloud.server;
 import java.io.File;
 import java.io.IOException;
 
+import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.dao.ResourceCountDao;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.HostPodDao;
+import com.cloud.dc.dao.VlanDao;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.db.TransactionLegacy;
+import org.apache.cloudstack.framework.config.ConfigDepot;
+import org.apache.cloudstack.framework.config.ConfigDepotAdmin;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.Spy;
+import org.mockito.runners.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class ConfigurationServerImplTest {
+
+    @Mock
+    private ConfigurationDao _configDao;
+    @Mock
+    private DataCenterDao _zoneDao;
+    @Mock
+    private HostPodDao _podDao;
+    @Mock
+    private DiskOfferingDao _diskOfferingDao;
+    @Mock
+    private ServiceOfferingDao _serviceOfferingDao;
+    @Mock
+    private NetworkOfferingDao _networkOfferingDao;
+    @Mock
+    private DataCenterDao _dataCenterDao;
+    @Mock
+    private NetworkDao _networkDao;
+    @Mock
+    private VlanDao _vlanDao;
+    @Mock
+    private DomainDao _domainDao;
+    @Mock
+    private AccountDao _accountDao;
+    @Mock
+    private ResourceCountDao _resourceCountDao;
+    @Mock
+    private NetworkOfferingServiceMapDao _ntwkOfferingServiceMapDao;
+    @Mock
+    private ConfigDepotAdmin _configDepotAdmin;
+    @Mock
+    private ConfigDepot _configDepot;
+    @Mock
+    private ConfigurationManager _configMgr;
+    @Mock
+    private ManagementService _mgrService;
+
+    @InjectMocks
+    private ConfigurationServerImpl configurationServer;
 
     @Spy
     ConfigurationServerImpl windowsImpl = new ConfigurationServerImpl() {
@@ -83,5 +143,23 @@ public class ConfigurationServerImplTest {
 
       Assert.assertFalse(linuxImpl.isOnWindows());
       Assert.assertEquals("scripts/vm/systemvm/injectkeys.sh", linuxImpl.getInjectScript());
+    }
+
+    @Test
+    public void testUpdateSystemvmPassword() {
+        //setup
+        String realusername = System.getProperty("user.name");
+        System.setProperty("user.name", "cloud");
+        Mockito.when(_configDao.getValue("system.vm.random.password")).thenReturn(String.valueOf(true));
+        TransactionLegacy.open("cloud");
+        Mockito.when(_mgrService.generateRandomPassword()).thenReturn("randomPassword");
+
+        //call the method to test
+        configurationServer.updateSystemvmPassword();
+
+        //verify that generateRandomPassword() is called
+        Mockito.verify(_mgrService, Mockito.times(1)).generateRandomPassword();
+        //teardown
+        System.setProperty("user.name", realusername);
     }
 }
