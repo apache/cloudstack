@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
@@ -133,6 +134,9 @@ public class AssignVMCmd extends BaseCmd  {
             UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Full, "virtualmachine", userVm).get(0);
             response.setResponseName(getCommandName());
             setResponseObject(response);
+        } catch (InvalidParameterValueException e){
+            e.printStackTrace();
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to move vm " + e.getMessage());

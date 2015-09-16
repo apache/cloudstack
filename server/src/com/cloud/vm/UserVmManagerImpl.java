@@ -5240,8 +5240,131 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             s_logger.debug("AssignVM: Basic zone, adding security groups no " + securityGroupIdList.size() + " to " + vm.getInstanceName());
         } else {
-            if (zone.isSecurityGroupEnabled())  {
-                throw new InvalidParameterValueException("Not yet implemented for SecurityGroupEnabled advanced networks.");
+            if (zone.isSecurityGroupEnabled())  { // advanced zone with security groups
+                // cleanup the old security groups
+                _securityGroupMgr.removeInstanceFromGroups(cmd.getVmId());
+
+                Set<NetworkVO> applicableNetworks = new HashSet<NetworkVO>();
+                String requestedIPv4ForDefaultNic = null;
+                String requestedIPv6ForDefaultNic = null;
+                // if networkIdList is null and the first network of vm is shared network, then keep it if possible
+                if (networkIdList == null || networkIdList.isEmpty()) {
+                    NicVO defaultNicOld = _nicDao.findDefaultNicForVM(vm.getId());
+                    if (defaultNicOld != null) {
+                        NetworkVO defaultNetworkOld = _networkDao.findById(defaultNicOld.getNetworkId());
+                        if (defaultNetworkOld != null && defaultNetworkOld.getGuestType() == Network.GuestType.Shared && defaultNetworkOld.getAclType() == ACLType.Domain) {
+                            try {
+                                _networkModel.checkNetworkPermissions(newAccount, defaultNetworkOld);
+                                applicableNetworks.add(defaultNetworkOld);
+                                requestedIPv4ForDefaultNic = defaultNicOld.getIPv4Address();
+                                requestedIPv6ForDefaultNic = defaultNicOld.getIPv6Address();
+                                s_logger.debug("AssignVM: use old shared network " + defaultNetworkOld.getName() + " with old ip " + requestedIPv4ForDefaultNic + " on default nic of vm:" + vm.getInstanceName());
+                            } catch (PermissionDeniedException e) {
+                                s_logger.debug("AssignVM: the shared network on old default nic can not be applied to new account");
+                            }
+                        }
+                    }
+                }
+                // cleanup the network for the oldOwner
+                _networkMgr.cleanupNics(vmOldProfile);
+                _networkMgr.expungeNics(vmOldProfile);
+
+                if (networkIdList != null && !networkIdList.isEmpty()) {
+                    // add any additional networks
+                    for (Long networkId : networkIdList) {
+                        NetworkVO network = _networkDao.findById(networkId);
+                        if (network == null) {
+                            InvalidParameterValueException ex = new InvalidParameterValueException(
+                                    "Unable to find specified network id");
+                            ex.addProxyObject(networkId.toString(), "networkId");
+                            throw ex;
+                        }
+
+                        _networkModel.checkNetworkPermissions(newAccount, network);
+
+                        // don't allow to use system networks
+                        NetworkOffering networkOffering = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
+                        if (networkOffering.isSystemOnly()) {
+                            InvalidParameterValueException ex = new InvalidParameterValueException(
+                                    "Specified Network id is system only and can't be used for vm deployment");
+                            ex.addProxyObject(network.getUuid(), "networkId");
+                            throw ex;
+                        }
+                        applicableNetworks.add(network);
+                    }
+                }
+
+                // add the new nics
+                LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>();
+                int toggle = 0;
+                NetworkVO defaultNetwork = null;
+                for (NetworkVO appNet : applicableNetworks) {
+                    NicProfile defaultNic = new NicProfile();
+                    if (toggle == 0) {
+                        defaultNic.setDefaultNic(true);
+                        defaultNic.setRequestedIPv4(requestedIPv4ForDefaultNic);
+                        defaultNic.setRequestedIPv6(requestedIPv6ForDefaultNic);
+                        defaultNetwork = appNet;
+                        toggle++;
+                    }
+                    networks.put(appNet, new ArrayList<NicProfile>(Arrays.asList(defaultNic)));
+
+                }
+
+                boolean isVmWare = (template.getHypervisorType() == HypervisorType.VMware);
+                if (securityGroupIdList != null && isVmWare) {
+                    throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
+                } else if (!isVmWare && (defaultNetwork == null || _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork)) && _networkModel.canAddDefaultSecurityGroup()) {
+                    if (securityGroupIdList == null) {
+                        securityGroupIdList = new ArrayList<Long>();
+                    }
+                    SecurityGroup defaultGroup = _securityGroupMgr
+                            .getDefaultSecurityGroup(newAccount.getId());
+                    if (defaultGroup != null) {
+                        // check if security group id list already contains Default
+                        // security group, and if not - add it
+                        boolean defaultGroupPresent = false;
+                        for (Long securityGroupId : securityGroupIdList) {
+                            if (securityGroupId.longValue() == defaultGroup.getId()) {
+                                defaultGroupPresent = true;
+                                break;
+                            }
+                        }
+
+                        if (!defaultGroupPresent) {
+                            securityGroupIdList.add(defaultGroup.getId());
+                        }
+
+                    } else {
+                        // create default security group for the account
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Couldn't find default security group for the account "
+                                    + newAccount + " so creating a new one");
+                        }
+                        defaultGroup = _securityGroupMgr.createSecurityGroup(
+                                SecurityGroupManager.DEFAULT_GROUP_NAME,
+                                SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION,
+                                newAccount.getDomainId(), newAccount.getId(),
+                                newAccount.getAccountName());
+                        securityGroupIdList.add(defaultGroup.getId());
+                    }
+                }
+
+                VirtualMachine vmi = _itMgr.findById(vm.getId());
+                VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmi);
+
+                if (applicableNetworks.isEmpty()) {
+                    throw new InvalidParameterValueException("No network is specified, please specify one when you move the vm. For now, please add a network to VM on NICs tab.");
+                } else {
+                    _networkMgr.allocate(vmProfile, networks);
+                }
+
+                _securityGroupMgr.addInstanceToGroups(vm.getId(),
+                        securityGroupIdList);
+                s_logger.debug("AssignVM: Advanced zone, adding security groups no "
+                        + securityGroupIdList.size() + " to "
+                        + vm.getInstanceName());
+
             } else {
                 if (securityGroupIdList != null && !securityGroupIdList.isEmpty()) {
                     throw new InvalidParameterValueException("Can't move vm with security groups; security group feature is not enabled in this zone");

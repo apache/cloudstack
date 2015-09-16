@@ -1905,7 +1905,25 @@
                         label: 'label.assign.instance.another',
                         createForm: {
                             title: 'label.assign.instance.another',
-                            desc: 'Please specify the account type, domain, account name and network (optional) of the new account. <br> If the default nic of the vm is on a shared network, CloudStack will check if the network can be used by the new account if you do not specify one network. <br> If the default nic of the vm is on a isolated network, and the new account has more one isolated networks, you should specify one.',
+                            desc: 'message.assign.instance.another',
+                            preFilter: function(args) {
+                                var zone;
+                                $.ajax({
+                                    url: createURL('listZones'),
+                                    data: {
+                                        id: args.context.instances[0].zoneid
+                                    },
+                                    async: false,
+                                    success: function(json) {
+                                        zone = json.listzonesresponse.zone[0];
+                                    }
+                                });
+                                if (zone.securitygroupsenabled == true) {
+                                    args.$form.find('.form-item[rel=securitygroup]').css('display', 'inline-block');
+                                } else {
+                                    args.$form.find('.form-item[rel=securitygroup]').hide();
+                                }
+                            },
                             fields: {
                                 accountType: {
                                     label: 'Account Type',
@@ -2157,6 +2175,11 @@
                                     networkIds: args.data.network
                                 });
                             } 
+                            if (args.data.securitygroup != null && args.data.securitygroup != '') {
+                                $.extend(dataObj, {
+                                    securitygroupIds: args.data.securitygroup
+                                });
+                            }
 
                             $.ajax({
                                 url: createURL('assignVirtualMachine', {
@@ -2168,6 +2191,9 @@
                                     args.response.success({
                                         data: item
                                     });
+                                },
+                                error: function(data) {
+                                    args.response.error(parseXMLHttpResponse(data));
                                 }
                             });
                         },
