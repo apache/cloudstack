@@ -43,6 +43,8 @@ public interface DataCenterIpAddressDao extends GenericDao<DataCenterIpAddressVO
 
     int countIPs(long podId, long dcId, boolean onlyCountAllocated);
 
+    int countIPs(long dcId, boolean onlyCountAllocated);
+
     boolean deleteIpAddressByPod(long podId);
 
 }
