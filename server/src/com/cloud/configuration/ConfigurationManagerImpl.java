@@ -134,6 +134,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.gpu.GPU;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
@@ -182,6 +183,7 @@ import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.test.IPRangeConfig;
 import com.cloud.user.Account;
 import com.cloud.user.AccountDetailVO;
@@ -214,6 +216,7 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = {ConfigurationManager.class, ConfigurationService.class})
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
@@ -227,6 +230,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     ConfigDepot _configDepot;
     @Inject
     HostPodDao _podDao;
+    @Inject
+    HostDao _hostDao;
+    @Inject
+    VolumeDao _volumeDao;
+    @Inject
+    VMInstanceDao _vmInstanceDao;
     @Inject
     AccountVlanMapDao _accountVlanMapDao;
     @Inject
@@ -878,81 +887,34 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return count > 0;
     }
 
-    @DB
     protected void checkIfPodIsDeletable(final long podId) {
-        final List<List<String>> tablesToCheck = new ArrayList<List<String>>();
-
         final HostPodVO pod = _podDao.findById(podId);
+
+        final String errorMsg = "The pod cannot be deleted because ";
 
         // Check if there are allocated private IP addresses in the pod
         if (_privateIpAddressDao.countIPs(podId, pod.getDataCenterId(), true) != 0) {
-            throw new CloudRuntimeException("There are private IP addresses allocated for this pod");
+            throw new CloudRuntimeException(errorMsg + "there are private IP addresses allocated in this pod");
         }
 
-        final List<String> volumes = new ArrayList<String>();
-        volumes.add(0, "volumes");
-        volumes.add(1, "pod_id");
-        volumes.add(2, "there are storage volumes for this pod");
-        tablesToCheck.add(volumes);
+        // Check if there are any non-removed volumes in the pod.
+        if (!_volumeDao.findByPod(podId).isEmpty()) {
+            throw new CloudRuntimeException(errorMsg + "there are storage volumes in this pod.");
+        }
 
-        final List<String> host = new ArrayList<String>();
-        host.add(0, "host");
-        host.add(1, "pod_id");
-        host.add(2, "there are servers running in this pod");
-        tablesToCheck.add(host);
+        // Check if there are any non-removed hosts in the pod.
+        if (!_hostDao.findByPodId(podId).isEmpty()) {
+            throw new CloudRuntimeException(errorMsg + "there are servers in this pod.");
+        }
 
-        final List<String> vmInstance = new ArrayList<String>();
-        vmInstance.add(0, "vm_instance");
-        vmInstance.add(1, "pod_id");
-        vmInstance.add(2, "there are virtual machines running in this pod");
-        tablesToCheck.add(vmInstance);
+        // Check if there are any non-removed vms in the pod.
+        if (!_vmInstanceDao.listByPodId(podId).isEmpty()) {
+            throw new CloudRuntimeException(errorMsg + "there are virtual machines in this pod.");
+        }
 
-        final List<String> cluster = new ArrayList<String>();
-        cluster.add(0, "cluster");
-        cluster.add(1, "pod_id");
-        cluster.add(2, "there are clusters in this pod");
-        tablesToCheck.add(cluster);
-
-        for (final List<String> table : tablesToCheck) {
-            final String tableName = table.get(0);
-            final String column = table.get(1);
-            final String errorMsg = table.get(2);
-
-            String dbName;
-            if (tableName.equals("event") || tableName.equals("cloud_usage") || tableName.equals("usage_vm_instance") || tableName.equals("usage_ip_address")
-                    || tableName.equals("usage_network") || tableName.equals("usage_job") || tableName.equals("account") || tableName.equals("user_statistics")) {
-                dbName = "cloud_usage";
-            } else {
-                dbName = "cloud";
-            }
-
-            String selectSql = "SELECT * FROM `?`.`?` WHERE ? = ?";
-
-            if(tableName.equals("vm_instance")) {
-                selectSql += " AND state != ? AND removed IS NULL";
-            }
-
-            if (tableName.equals("host") || tableName.equals("cluster") || tableName.equals("volumes")) {
-                selectSql += " and removed IS NULL";
-            }
-
-            final TransactionLegacy txn = TransactionLegacy.currentTxn();
-            try {
-                final PreparedStatement stmt = txn.prepareAutoCloseStatement(selectSql);
-                stmt.setString(1,dbName);
-                stmt.setString(2,tableName);
-                stmt.setString(3,column);
-                stmt.setLong(4, podId);
-                if(tableName.equals("vm_instance")) {
-                    stmt.setString(5, VirtualMachine.State.Expunging.toString());
-                }
-                final ResultSet rs = stmt.executeQuery();
-                if (rs != null && rs.next()) {
-                    throw new CloudRuntimeException("The pod cannot be deleted because " + errorMsg);
-                }
-            } catch (final SQLException ex) {
-                throw new CloudRuntimeException("The Management Server failed to detect if pod is deletable. Please contact Cloud Support.");
-            }
+        // Check if there are any non-removed clusters in the pod.
+        if (!_clusterDao.listByPodId(podId).isEmpty()) {
+            throw new CloudRuntimeException(errorMsg + "there are clusters in this pod.");
         }
     }
 
