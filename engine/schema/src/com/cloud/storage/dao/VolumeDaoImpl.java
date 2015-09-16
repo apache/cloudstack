@@ -190,6 +190,14 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
+    public List<VolumeVO> findByPod(long podId) {
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
+        sc.setParameters("pod", podId);
+
+        return listBy(sc);
+    }
+
+    @Override
     public List<VolumeVO> findByAccountAndPod(long accountId, long podId) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
