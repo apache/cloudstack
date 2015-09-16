@@ -47,7 +47,7 @@ under the License.
       <param name="Threshold" value="INFO"/>
 
       <layout class="org.apache.log4j.PatternLayout">
-         <param name="ConversionPattern" value="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
+         <param name="ConversionPattern" value="%-5p [%c{3}] (%t:%x) %m%n"/>
       </layout>
    </appender>
 

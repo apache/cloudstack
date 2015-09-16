@@ -7,7 +7,7 @@
 # with the License.  You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -86,7 +86,7 @@ Requires: iptables-services
 Group:     System Environment/Libraries
 %description management
 The CloudStack management server is the central point of coordination,
-management, and intelligence in CloudStack.  
+management, and intelligence in CloudStack.
 
 %package common
 Summary: Apache CloudStack common files and scripts
@@ -107,9 +107,6 @@ Requires: iptables
 Requires: ethtool
 Requires: iproute
 Requires: ipset
-Requires: jsvc
-Requires: jakarta-commons-daemon
-Requires: jakarta-commons-daemon-jsvc
 Requires: perl
 Requires: libvirt-python
 Requires: qemu-img
@@ -179,10 +176,10 @@ if [ "%{_ossnoss}" == "NOREDIST" -o "%{_ossnoss}" == "noredist" ] ; then
    FLAGS="$FLAGS -Dnoredist"
 fi
 
-if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then 
+if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then
    echo "Adding simulator flag to the maven build"
    FLAGS="$FLAGS -Dsimulator"
-fi 
+fi
 
 mvn -Psystemvm -DskipTests $FLAGS clean package
 
@@ -215,7 +212,7 @@ python -m py_compile ${RPM_BUILD_ROOT}%{python_sitearch}/cloud_utils.py
 python -m compileall ${RPM_BUILD_ROOT}%{python_sitearch}/cloudutils
 cp build/gitrev.txt ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
 cp packaging/centos7/cloudstack-sccs ${RPM_BUILD_ROOT}/usr/bin
- 
+
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts/network/cisco
 cp -r plugins/network-elements/cisco-vnmc/scripts/network/cisco/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts/network/cisco
 
@@ -294,7 +291,7 @@ mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/agent
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/plugins
-install -D packaging/centos7/cloud-agent.rc ${RPM_BUILD_ROOT}%{_sysconfdir}/init.d/%{name}-agent
+install -D packaging/systemd/cloudstack-agent.service ${RPM_BUILD_ROOT}%{_unitdir}/%{name}-agent.service
 install -D agent/target/transformed/agent.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/agent.properties
 install -D agent/target/transformed/environment.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/environment.properties
 install -D agent/target/transformed/log4j-cloud.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/log4j-cloud.xml
@@ -365,7 +362,7 @@ if [ "$1" == "1" ] ; then
 fi
 
 if [ ! -f %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util ] ; then
-    echo Please download vhd-util from http://download.cloud.com.s3.amazonaws.com/tools/vhd-util and put it in 
+    echo Please download vhd-util from http://download.cloud.com.s3.amazonaws.com/tools/vhd-util and put it in
     echo %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/
 fi
 
@@ -373,7 +370,6 @@ fi
 /sbin/service cloudstack-agent stop || true
 if [ "$1" == "0" ] ; then
     /sbin/chkconfig --del cloudstack-agent > /dev/null 2>&1 || true
-    /sbin/service cloudstack-agent stop > /dev/null 2>&1 || true
 fi
 
 %pre agent
@@ -393,8 +389,7 @@ if [ "$1" == "1" ] ; then
     fi
     cp -a ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib/libvirtqemuhook %{_sysconfdir}/libvirt/hooks/qemu
     /sbin/service libvirtd restart
-    /sbin/chkconfig --add cloudstack-agent > /dev/null 2>&1 || true
-    /sbin/chkconfig --level 345 cloudstack-agent on > /dev/null 2>&1 || true
+    /sbin/systemctl enable cloudstack-agent > /dev/null 2>&1 || true
 fi
 
 # if saved configs from upgrade exist, copy them over
@@ -490,7 +485,7 @@ fi
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
 %attr(0755,root,root) %{_bindir}/%{name}-agent-upgrade
 %attr(0755,root,root) %{_bindir}/%{name}-ssh
-%attr(0755,root,root) %{_sysconfdir}/init.d/%{name}-agent
+%attr(0644,root,root) %{_unitdir}/%{name}-agent.service
 %attr(0644,root,root) %{_sysconfdir}/profile.d/%{name}-agent-profile.sh
 %attr(0755,root,root) %{_datadir}/%{name}-common/scripts/network/cisco
 %config(noreplace) %{_sysconfdir}/%{name}/agent
