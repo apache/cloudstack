@@ -507,7 +507,6 @@ fi
 %{_defaultdocdir}/%{name}-common-%{version}/NOTICE
 
 %files usage
-%attr(0755,root,root) /usr/sbin/%{name}-usage-sysd
 %attr(0644,root,root) %{_unitdir}/%{name}-usage.service
 %attr(0644,root,root) %{_datadir}/%{name}-usage/*.jar
 %attr(0644,root,root) %{_datadir}/%{name}-usage/lib/*.jar
