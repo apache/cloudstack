@@ -47,6 +47,8 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     List<VolumeVO> findByPod(long podId);
 
+    List<VolumeVO> findByDc(long dcId);
+
     List<VolumeVO> findByAccountAndPod(long accountId, long podId);
 
     List<VolumeVO> findByTemplateAndZone(long templateId, long zoneId);
