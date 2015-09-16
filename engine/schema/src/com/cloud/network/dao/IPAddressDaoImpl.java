@@ -56,6 +56,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     protected SearchBuilder<IPAddressVO> VlanDbIdSearchUnallocated;
     protected GenericSearchBuilder<IPAddressVO, Integer> AllIpCount;
     protected GenericSearchBuilder<IPAddressVO, Integer> AllocatedIpCount;
+    protected GenericSearchBuilder<IPAddressVO, Integer> AllocatedIpCountForDc;
     protected GenericSearchBuilder<IPAddressVO, Integer> AllIpCountForDashboard;
     protected SearchBuilder<IPAddressVO> DeleteAllExceptGivenIp;
     protected GenericSearchBuilder<IPAddressVO, Long> AllocatedIpCountForAccount;
@@ -106,6 +107,12 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         AllocatedIpCount.and("vlan", AllocatedIpCount.entity().getVlanId(), Op.EQ);
         AllocatedIpCount.and("allocated", AllocatedIpCount.entity().getAllocatedTime(), Op.NNULL);
         AllocatedIpCount.done();
+
+        AllocatedIpCountForDc = createSearchBuilder(Integer.class);
+        AllocatedIpCountForDc.select(null, Func.COUNT, AllocatedIpCountForDc.entity().getAddress());
+        AllocatedIpCountForDc.and("dc", AllocatedIpCountForDc.entity().getDataCenterId(), Op.EQ);
+        AllocatedIpCountForDc.and("allocated", AllocatedIpCountForDc.entity().getAllocatedTime(), Op.NNULL);
+        AllocatedIpCountForDc.done();
 
         AllIpCountForDashboard = createSearchBuilder(Integer.class);
         AllIpCountForDashboard.select(null, Func.COUNT, AllIpCountForDashboard.entity().getAddress());
@@ -279,6 +286,14 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("associatedVmIp", vmIp);
         return findOneBy(sc);
+    }
+
+    @Override
+    public int countIPs(long dcId, boolean onlyCountAllocated) {
+        SearchCriteria<Integer> sc = onlyCountAllocated ? AllocatedIpCount.create() : AllIpCount.create();
+        sc.setParameters("dc", dcId);
+
+        return customSearch(sc, null).get(0);
     }
 
     @Override
