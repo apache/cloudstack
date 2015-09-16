@@ -5246,11 +5246,26 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (securityGroupIdList != null && !securityGroupIdList.isEmpty()) {
                     throw new InvalidParameterValueException("Can't move vm with security groups; security group feature is not enabled in this zone");
                 }
+                Set<NetworkVO> applicableNetworks = new HashSet<NetworkVO>();
+                // if networkIdList is null and the first network of vm is shared network, then keep it if possible
+                if (networkIdList == null || networkIdList.isEmpty()) {
+                    NicVO defaultNicOld = _nicDao.findDefaultNicForVM(vm.getId());
+                    if (defaultNicOld != null) {
+                        NetworkVO defaultNetworkOld = _networkDao.findById(defaultNicOld.getNetworkId());
+                        if (defaultNetworkOld != null && defaultNetworkOld.getGuestType() == Network.GuestType.Shared && defaultNetworkOld.getAclType() == ACLType.Domain) {
+                            try {
+                                _networkModel.checkNetworkPermissions(newAccount, defaultNetworkOld);
+                                applicableNetworks.add(defaultNetworkOld);
+                            } catch (PermissionDeniedException e) {
+                                s_logger.debug("AssignVM: the shared network on old default nic can not be applied to new account");
+                            }
+                        }
+                    }
+                }
+
                 // cleanup the network for the oldOwner
                 _networkMgr.cleanupNics(vmOldProfile);
                 _networkMgr.expungeNics(vmOldProfile);
-
-                Set<NetworkVO> applicableNetworks = new HashSet<NetworkVO>();
 
                 if (networkIdList != null && !networkIdList.isEmpty()) {
                     // add any additional networks
@@ -5273,7 +5288,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         }
                         applicableNetworks.add(network);
                     }
-                } else {
+                } else if (applicableNetworks.isEmpty()) {
                     NetworkVO defaultNetwork = null;
                     List<NetworkOfferingVO> requiredOfferings = _networkOfferingDao.listByAvailability(Availability.Required, false);
                     if (requiredOfferings.size() < 1) {
