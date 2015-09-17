@@ -200,7 +200,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     @Override
     public List<VolumeVO> findByDc(long dcId) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
-        sc.setParameters("data_center_id", dcId);
+        sc.setParameters("dcId", dcId);
 
         return listBy(sc);
     }
@@ -322,6 +322,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.EQ);
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), Op.EQ);
+        AllFieldsSearch.and("dcId", AllFieldsSearch.entity().getDataCenterId(), Op.EQ);
         AllFieldsSearch.and("pod", AllFieldsSearch.entity().getPodId(), Op.EQ);
         AllFieldsSearch.and("instanceId", AllFieldsSearch.entity().getInstanceId(), Op.EQ);
         AllFieldsSearch.and("deviceId", AllFieldsSearch.entity().getDeviceId(), Op.EQ);

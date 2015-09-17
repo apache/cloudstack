@@ -155,6 +155,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         AllFieldsSearch.and("lastHost", AllFieldsSearch.entity().getLastHostId(), Op.EQ);
         AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.EQ);
         AllFieldsSearch.and("zone", AllFieldsSearch.entity().getDataCenterId(), Op.EQ);
+        AllFieldsSearch.and("pod", AllFieldsSearch.entity().getPodIdToDeployIn(), Op.EQ);
         AllFieldsSearch.and("type", AllFieldsSearch.entity().getType(), Op.EQ);
         AllFieldsSearch.and("account", AllFieldsSearch.entity().getAccountId(), Op.EQ);
         AllFieldsSearch.done();
