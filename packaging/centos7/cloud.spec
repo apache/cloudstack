@@ -131,9 +131,6 @@ The CloudStack baremetal agent
 %package usage
 Summary: CloudStack Usage calculation server
 Requires: java => 1.7.0
-Requires: jsvc
-Requires: jakarta-commons-daemon
-Requires: jakarta-commons-daemon-jsvc
 Requires: mysql-connector-java
 Group: System Environment/Libraries
 %description usage
@@ -310,11 +307,7 @@ install -D usage/target/cloud-usage-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir
 install -D usage/target/transformed/db.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/usage/db.properties
 install -D usage/target/transformed/log4j-cloud_usage.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/usage/log4j-cloud.xml
 cp usage/target/dependencies/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-usage/lib/
-install -D packaging/centos7/cloud-usage.service ${RPM_BUILD_ROOT}%{_unitdir}/%{name}-usage.service
-install -D packaging/centos7/cloud-usage.sysconfig ${RPM_BUILD_ROOT}%{_sysconfdir}/sysconfig/%{name}-usage
-install -D packaging/centos7/cloud-usage-sysd ${RPM_BUILD_ROOT}/usr/sbin/%{name}-usage-sysd
-mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/run
-touch ${RPM_BUILD_ROOT}%{_localstatedir}/run/%{name}-usage.pid
+install -D packaging/systemd/cloudstack-usage.service ${RPM_BUILD_ROOT}%{_unitdir}/%{name}-usage.service
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/usage/
 
 # CLI
@@ -408,7 +401,6 @@ id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged us
 /sbin/service cloudstack-usage stop || true
 if [ "$1" == "0" ] ; then
     /sbin/chkconfig --del cloudstack-usage > /dev/null 2>&1 || true
-    /sbin/service cloudstack-usage stop > /dev/null 2>&1 || true
 fi
 
 %post usage
@@ -416,8 +408,7 @@ if [ -f "%{_sysconfdir}/%{name}/management/db.properties" ]; then
     echo Replacing db.properties with management server db.properties
     rm -f %{_sysconfdir}/%{name}/usage/db.properties
     ln -s %{_sysconfdir}/%{name}/management/db.properties %{_sysconfdir}/%{name}/usage/db.properties
-    /sbin/chkconfig --add cloudstack-usage > /dev/null 2>&1 || true
-    /sbin/chkconfig --level 345 cloudstack-usage on > /dev/null 2>&1 || true
+    /usr/bin/systemctl enable cloudstack-usage > /dev/null 2>&1 || true
 fi
 
 if [ -f "%{_sysconfdir}/%{name}/management/key" ]; then
@@ -511,15 +502,12 @@ fi
 %{_defaultdocdir}/%{name}-common-%{version}/NOTICE
 
 %files usage
-%attr(0644,root,root) %{_sysconfdir}/sysconfig/%{name}-usage
-%attr(0755,root,root) /usr/sbin/%{name}-usage-sysd
 %attr(0644,root,root) %{_unitdir}/%{name}-usage.service
 %attr(0644,root,root) %{_datadir}/%{name}-usage/*.jar
 %attr(0644,root,root) %{_datadir}/%{name}-usage/lib/*.jar
 %dir %attr(0770,root,cloud) %{_localstatedir}/log/%{name}/usage
 %attr(0644,root,root) %{_sysconfdir}/%{name}/usage/db.properties
 %attr(0644,root,root) %{_sysconfdir}/%{name}/usage/log4j-cloud.xml
-%attr(0644,cloud,cloud) %{_localstatedir}/run/%{name}-usage.pid
 %{_defaultdocdir}/%{name}-usage-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-usage-%{version}/NOTICE
 
