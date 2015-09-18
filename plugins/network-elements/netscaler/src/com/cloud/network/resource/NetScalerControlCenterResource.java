@@ -638,14 +638,21 @@ public class NetScalerControlCenterResource implements ServerResource {
             if (loadBalancers == null) {
                 return new Answer(cmd);
             }
+            JSONObject as=new JSONObject(cmd.getLoadBalancers()[0].getAutoScaleVmGroupTO().toString());
             JSONObject lbConfigPaylod = new JSONObject(cmd);
+            String gsonLBConfig =  _gson.toJson(cmd);
             URI agentUri = null;
             agentUri =
                     new URI("https", null, _ip, DEFAULT_PORT,
                             "/cs/adcaas/v1/loadbalancerCmds", null, null);
             JSONObject lbConfigCmd = new JSONObject();
-            lbConfigCmd.put("LoadBalancerConfigCommand", lbConfigPaylod.getJSONArray("loadBalancers"));
-            s_logger.debug("LB config paylod : " + lbConfigCmd.toString());
+            JSONObject lbcmd = new JSONObject(gsonLBConfig);
+/*            lbConfigCmd.put("LoadBalancerConfigCommand", lbConfigPaylod.getJSONArray("loadBalancers"));
+            s_logger.debug("LB config paylod : " + gsonLBConfig);*/
+            s_logger.debug("LB config from gsonstring to JSONObject : " +  lbcmd.toString() + "\n" + "gson cmd is :: \t" + gsonLBConfig);
+            lbConfigCmd.put("LoadBalancerConfigCommand",  lbcmd.getJSONArray("loadBalancers"));
+            s_logger.debug("LB config paylod : " +  lbConfigCmd.toString());
+
             String result = postHttpRequest(lbConfigCmd.toString(), agentUri, _sessionid);
             s_logger.debug("Result of lbconfigcmg is "+ result);
             result = queryAsyncJob(result);
