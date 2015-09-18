@@ -3247,6 +3247,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             _affinityGroupVMMapDao.updateMap(vm.getId(), affinityGroupIdList);
         }
 
+        CallContext.current().putContextParameter(VirtualMachine.class, vm.getUuid());
         return vm;
     }
 
