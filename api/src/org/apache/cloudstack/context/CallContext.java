@@ -89,8 +89,19 @@ public class CallContext {
         context.put(key, value);
     }
 
+    /**
+     * @param key any not null key object
+     * @return the value of the key from context map
+     * @throws NullPointerException if the specified key is nul
+     */
     public Object getContextParameter(Object key) {
-        return context.get(key);
+        Object value = context.get(key);
+        //check if the value is present in the toString value of the key
+        //due to a bug in the way we update the key by serializing and deserializing, it sometimes gets toString value of the key. @see com.cloud.api.ApiAsyncJobDispatcher#runJob
+        if(value == null ) {
+            value = context.get(key.toString());
+        }
+        return value;
     }
 
     public long getCallingUserId() {
