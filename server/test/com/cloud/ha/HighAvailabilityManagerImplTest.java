@@ -33,6 +33,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContext;
+import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -70,6 +71,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class HighAvailabilityManagerImplTest {
+    private static final Logger s_logger = Logger.getLogger(HighAvailabilityManagerImplTest.class);
     @Mock
     HighAvailabilityDao _haDao;
     @Mock
@@ -121,6 +123,7 @@ public class HighAvailabilityManagerImplTest {
             processWorkMethod = HighAvailabilityManagerImpl.class.getDeclaredMethod("processWork", HaWorkVO.class);
             processWorkMethod.setAccessible(true);
         } catch (NoSuchMethodException e) {
+            s_logger.info("[ignored] expected NoSuchMethodException caught: " + e.getLocalizedMessage());
         }
     }
 
@@ -230,8 +233,11 @@ public class HighAvailabilityManagerImplTest {
         try {
             processWorkMethod.invoke(highAvailabilityManagerSpy, work);
         } catch (IllegalAccessException e) {
+            s_logger.info("[ignored] expected IllegalAccessException caught: " + e.getLocalizedMessage());
         } catch (IllegalArgumentException e) {
+            s_logger.info("[ignored] expected IllegalArgumentException caught: " + e.getLocalizedMessage());
         } catch (InvocationTargetException e) {
+            s_logger.info("[ignored] expected InvocationTargetException caught: " + e.getLocalizedMessage());
         }
         assertTrue(work.getStep() == expectedStep);
     }
