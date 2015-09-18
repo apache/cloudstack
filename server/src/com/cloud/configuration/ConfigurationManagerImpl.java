@@ -3891,8 +3891,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Boolean egressDefaultPolicy = cmd.getEgressDefaultPolicy();
         Integer maxconn = null;
         boolean enableKeepAlive = false;
-
-
+        String servicePackageuuid = cmd.getServicePackageId();
+        s_logger.debug("service package description is: " + cmd.getDetails().get(NetworkOffering.Detail.servicepackagedescription + ""));
         // Verify traffic type
         for (final TrafficType tType : TrafficType.values()) {
             if (tType.name().equalsIgnoreCase(trafficTypeString)) {
@@ -4267,6 +4267,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             final Integer networkRate, final Map<Service, Set<Provider>> serviceProviderMap, final boolean isDefault, final Network.GuestType type, final boolean systemOnly, final Long serviceOfferingId,
             final boolean conserveMode, final Map<Service, Map<Capability, String>> serviceCapabilityMap, final boolean specifyIpRanges, final boolean isPersistent,
             final Map<NetworkOffering.Detail, String> details, final boolean egressDefaultPolicy, final Integer maxconn, final boolean enableKeepAlive) {
+
+        String servicePackageUuid;
+        if (details == null) {
+            servicePackageUuid = null;
+        } else {
+            servicePackageUuid = details.get(NetworkOffering.Detail.servicepackageuuid+ "");
+        }
+
 
         final String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         final int multicastRate = multicastRateStr == null ? 10 : Integer.parseInt(multicastRateStr);
