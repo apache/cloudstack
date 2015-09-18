@@ -39,6 +39,8 @@
                           context: cloudStack.context,
                           listView: metricsListView
                       });
+                      // Make metrics tables horizontally scrollable
+                      $('.panel::has(.data-table)::not(.reduced)').css({overflow: 'auto'});
                   }
             });
         };
