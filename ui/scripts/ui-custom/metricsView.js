@@ -54,7 +54,9 @@
                           listView: metricsListView
                       });
                       // Make metrics tables horizontally scrollable
-                      $('.panel::has(.data-table)::not(.reduced)').css({overflow: 'auto'});
+                      $panel = $('.panel::has(.data-table)::not(.reduced)');
+                      $panel.css({'overflow': 'auto'});
+                      $panel.find('.list-view').css({'overflow-x': 'visible'});
                       // Refresh metrics when refresh button is clicked
                       $('.refreshMetrics').click(metricsListView.refreshMetrics);
                   }
