@@ -40,8 +40,19 @@
                 name: {
                     label: 'label.name'
                 },
-                state: {
-                    label: 'label.state'
+                allocationstate: {
+                    label: 'label.state',
+                    converter: function (str) {
+                        // For localization
+                        return str;
+                    },
+                    indicator: {
+                        'Enabled': 'on',
+                        'Destroyed': 'off'
+                    }
+                },
+                hosts: {
+                    label: 'label.hosts'
                 },
                 cpuavg: {
                     label: 'Avg CPU Used'
@@ -70,6 +81,20 @@
             },
             dataProvider: function(args) {
                 console.log(args);
+
+                var data = {};
+                listViewDataProvider(args, data);
+                $.ajax({
+                    url: createURL('listClusters'),
+                    data: data,
+                    success: function(json) {
+                        var items = json.listclustersresponse.cluster;
+                        console.log(items);
+                        args.response.success({
+                            data: items
+                        });
+                    }
+                });
             },
             refreshMetrics: function() {
                 console.log("Refreshing Cluster metrics");
