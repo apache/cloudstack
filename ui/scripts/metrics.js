@@ -36,10 +36,36 @@
             fields: {
                 name: {
                     label: 'label.name'
+                },
+                state: {
+                    label: 'label.state'
+                },
+                cpuavg: {
+                    label: 'Avg CPU Used'
+                },
+                cpumaxdev: {
+                    label: 'CPU Used Max Dev'
+                },
+                cpuallocated: {
+                    label: 'CPU Allocated'
+                },
+                cputotal: {
+                    label: 'Total CPU Ghz'
+                },
+                memavg: {
+                    label: 'Avg Memory Used'
+                },
+                memmaxdev: {
+                    label: 'Memory Used Max Dev'
+                },
+                memallocated: {
+                    label: 'Memory Allocated'
+                },
+                memtotal: {
+                    label: 'Total Memory GB'
                 }
             },
             dataProvider: function(args) {
-                console.log("Metris view dataprovider triggered");
                 console.log(args);
             },
             actions: {
