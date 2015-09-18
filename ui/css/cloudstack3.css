@@ -12428,6 +12428,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -40px -32px;
 }
 
+.refreshMetrics .icon {
+  background-position: 0px -62px;
+}
+
+.refreshMetrics:hover .icon {
+  background-position: 0px -62px;
+}
+
 .attach .icon,
 .attachISO .icon,
 .attachDisk .icon,

@@ -29,6 +29,20 @@
             } else if (args.resource == 'volumes') {
             }
 
+            metricsListView.actions = {
+                refreshMetrics: {
+                    label: 'label.refresh',
+                    isHeader: true,
+                    addRow: true,
+                    action: {
+                        custom: function (args) {
+                            return function() {
+                            };
+                        }
+                    }
+                }
+            };
+
             var $browser = $('#browser .container');
             return $browser.cloudBrowser('addPanel', {
                   title: 'Metrics',
@@ -41,6 +55,8 @@
                       });
                       // Make metrics tables horizontally scrollable
                       $('.panel::has(.data-table)::not(.reduced)').css({overflow: 'auto'});
+                      // Refresh metrics when refresh button is clicked
+                      $('.refreshMetrics').click(metricsListView.refreshMetrics);
                   }
             });
         };

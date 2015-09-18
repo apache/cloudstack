@@ -24,6 +24,9 @@
                     label: 'metrics'
                 }
             },
+            refreshMetrics: function() {
+                console.log("Refreshing metrics");
+            },
             hideSearchBar: true
         }
     };
@@ -68,19 +71,8 @@
             dataProvider: function(args) {
                 console.log(args);
             },
-            actions: {
-                refreshMetric: {
-                    label: 'label.refresh',
-                    isHeader: true,
-                    addRow: true,
-                    action: {
-                        custom: function (args) {
-                            return function() {
-                                return console.log("Cluster Refresh metrics");
-                            };
-                        }
-                    }
-                }
+            refreshMetrics: function() {
+                console.log("Refreshing Cluster metrics");
             },
             hideSearchBar: true,
             needsRefresh: true
