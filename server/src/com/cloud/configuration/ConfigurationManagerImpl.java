@@ -4269,10 +4269,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             final Map<NetworkOffering.Detail, String> details, final boolean egressDefaultPolicy, final Integer maxconn, final boolean enableKeepAlive) {
 
         String servicePackageUuid;
+        String spDescription = null;
         if (details == null) {
             servicePackageUuid = null;
         } else {
-            servicePackageUuid = details.get(NetworkOffering.Detail.servicepackageuuid+ "");
+            servicePackageUuid = details.get(NetworkOffering.Detail.servicepackageuuid);
+            spDescription = details.get(NetworkOffering.Detail.servicepackagedescription);
         }
 
 
@@ -4437,6 +4439,30 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // validate the details
         if (details != null) {
             validateNtwkOffDetails(details, serviceProviderMap);
+        }
+
+        boolean vpcOff = false;
+        boolean nsOff = false;
+
+        if (serviceProviderMap != null && spDescription != null) {
+            for (final Network.Service service : serviceProviderMap.keySet()) {
+                final Set<Provider> providers = serviceProviderMap.get(service);
+                if (providers != null && !providers.isEmpty()) {
+                    for (final Network.Provider provider : providers) {
+                        if (provider == Provider.VPCVirtualRouter) {
+                            vpcOff = true;
+                        }
+                        if (provider == Provider.Netscaler) {
+                            nsOff = true;
+                        }
+                    }
+                }
+            }
+            if(vpcOff && nsOff) {
+                if(!spDescription.equalsIgnoreCase("A NetScalerVPX is dedicated per network.")) {
+                    throw new InvalidParameterValueException("Only NetScaler Service Pacakge with Dedicated Device Mode is Supported in VPC Type Guest Network");
+                }
+            }
         }
 
         return Transaction.execute(new TransactionCallback<NetworkOfferingVO>() {
