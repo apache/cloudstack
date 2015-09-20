@@ -1204,18 +1204,13 @@
                                         url: createURL("deleteNetscalerControlCenter"),
                                         data: data,
                                         success: function(json) {
-                                            var jid = json.deleteNetscalerControlCenter.jobid;
+                                            var status = json.deleteNetscalerControlCenter ? json.deleteNetscalerControlCenter.success : null;
                                             args.response.success({
-                                                _custom: {
-                                                    jobId: jid
-                                                }
+                                                data: status
                                             });
                                         }
                                     });
                                 },
-                                notification: {
-                                    poll: pollAsyncJobResult
-                                }
                             }
                         },
                         tabs: {
