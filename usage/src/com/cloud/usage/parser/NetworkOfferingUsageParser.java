@@ -41,8 +41,8 @@ import com.cloud.utils.Pair;
 public class NetworkOfferingUsageParser {
     public static final Logger s_logger = Logger.getLogger(NetworkOfferingUsageParser.class.getName());
 
-    private static UsageDao s_usageDao;
-    private static UsageNetworkOfferingDao s_usageNetworkOfferingDao;
+    protected static UsageDao s_usageDao;
+    protected static UsageNetworkOfferingDao s_usageNetworkOfferingDao;
 
     @Inject
     private UsageDao _usageDao;
@@ -83,9 +83,9 @@ public class NetworkOfferingUsageParser {
         for (UsageNetworkOfferingVO usageNO : usageNOs) {
             long vmId = usageNO.getVmInstanceId();
             long noId = usageNO.getNetworkOfferingId();
-            String key = "" + vmId + "NO" + noId;
-
-            noMap.put(key, new NOInfo(vmId, usageNO.getZoneId(), noId, usageNO.isDefault()));
+            Long nicId = usageNO.getNicId();
+            String key = "" + vmId + "NO" + noId  + "Nic" + (nicId == null ? 0:nicId);
+            noMap.put(key, new NOInfo(vmId, usageNO.getZoneId(), noId, usageNO.isDefault(), nicId));
 
             Date noCreateDate = usageNO.getCreated();
             Date noDeleteDate = usageNO.getDeleted();
@@ -116,7 +116,7 @@ public class NetworkOfferingUsageParser {
             // Only create a usage record if we have a runningTime of bigger than zero.
             if (useTime > 0L) {
                 NOInfo info = noMap.get(noIdKey);
-                createUsageRecord(UsageTypes.NETWORK_OFFERING, useTime, startDate, endDate, account, info.getVmId(), info.getNOId(), info.getZoneId(), info.isDefault());
+                createUsageRecord(UsageTypes.NETWORK_OFFERING, useTime, startDate, endDate, account, info.getVmId(), info.getNOId(), info.getZoneId(), info.isDefault(), info.getNicId());
             }
         }
 
@@ -136,7 +136,7 @@ public class NetworkOfferingUsageParser {
     }
 
     private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long vmId, long noId, long zoneId,
-        boolean isDefault) {
+        boolean isDefault, Long nicId) {
         // Our smallest increment is hourly for now
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Total running time " + runningTime + "ms");
@@ -157,8 +157,8 @@ public class NetworkOfferingUsageParser {
 
         long defaultNic = (isDefault) ? 1 : 0;
         UsageVO usageRecord =
-            new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), vmId, null, noId, null, defaultNic,
-                null, startDate, endDate);
+            new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), vmId, noId, defaultNic,
+                    nicId, startDate, endDate);
         s_usageDao.persist(usageRecord);
     }
 
@@ -167,12 +167,14 @@ public class NetworkOfferingUsageParser {
         private final long zoneId;
         private final long noId;
         private final boolean isDefault;
+        private final Long nicId;
 
-        public NOInfo(long vmId, long zoneId, long noId, boolean isDefault) {
+        public NOInfo(long vmId, long zoneId, long noId, boolean isDefault, Long nicId) {
             this.vmId = vmId;
             this.zoneId = zoneId;
             this.noId = noId;
             this.isDefault = isDefault;
+            this.nicId = nicId;
         }
 
         public long getZoneId() {
@@ -189,6 +191,10 @@ public class NetworkOfferingUsageParser {
 
         public boolean isDefault() {
             return isDefault;
+        }
+
+        public Long getNicId() {
+            return nicId;
         }
     }
 

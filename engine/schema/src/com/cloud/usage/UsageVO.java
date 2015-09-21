@@ -136,6 +136,25 @@ public class UsageVO implements Usage, InternalIdentity {
         this.endDate = endDate  == null ? null : new Date(endDate.getTime());
     }
 
+    //Network Offering Usage
+    public UsageVO(Long zoneId, Long accountId, Long domainId, String description, String usageDisplay, int usageType, Double rawUsage, Long vmId,
+                   Long offeringId, Long usageId, Long networkId, Date startDate, Date endDate) {
+        this.zoneId = zoneId;
+        this.accountId = accountId;
+        this.domainId = domainId;
+        this.description = description;
+        this.usageDisplay = usageDisplay;
+        this.usageType = usageType;
+        this.rawUsage = rawUsage;
+        this.vmInstanceId = vmId;
+        this.offeringId = offeringId;
+        this.usageId = usageId;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.networkId = networkId;
+    }
+
+
     public UsageVO(Long zoneId, Long accountId, Long domainId, String description, String usageDisplay, int usageType, Double rawUsage, Long vmId, String vmName,
             Long offeringId, Long templateId, Long usageId, Long size, Long virtualSize, Date startDate, Date endDate) {
         this.zoneId = zoneId;
