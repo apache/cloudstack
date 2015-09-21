@@ -569,7 +569,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpNetscalerServicePackages: {
-        desc: 'Choose the Netscaler Service Package you want to use.',
+        desc: 'Choose the Netscaler Service Package you want to use. Hover the mouse pointer on the service package to see the description.',
         externalLink: ''
     },
     // Add network offering
