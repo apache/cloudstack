@@ -3067,7 +3067,7 @@
                                                             return {
                                                                 id: elem.id,
                                                                 description: elem.name,
-                                                                title: elem.description
+                                                                desc: elem.description
                                                             };
                                                         })
                                                     });
