@@ -253,4 +253,8 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
     public void setMemory(Long memory) {
         this.memory = memory;
     }
+
+    public String getDomainName(){
+        return domainName;
+    }
 }
