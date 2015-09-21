@@ -403,6 +403,8 @@ CREATE TABLE `cloud`.`external_bigswitch_bcf_devices` (
   CONSTRAINT `fk_external_bigswitch_bcf_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+UPDATE `cloud`.`host` SET `resource`='com.cloud.hypervisor.xenserver.resource.XenServer600Resource' WHERE `resource`='com.cloud.hypervisor.xenserver.resource.XenServer602Resource';
+
 CREATE TABLE `cloud`.`ldap_trust_map` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `domain_id` bigint unsigned NOT NULL,
