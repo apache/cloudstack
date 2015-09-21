@@ -88,6 +88,7 @@ public abstract class NioConnection implements Callable<Boolean> {
             init();
         } catch (final ConnectException e) {
             s_logger.warn("Unable to connect to remote: is there a server running on port " + _port);
+            return;
         } catch (final IOException e) {
             s_logger.error("Unable to initialize the threads.", e);
             throw new NioConnectionException(e.getMessage(), e);
