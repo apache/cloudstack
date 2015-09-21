@@ -79,12 +79,13 @@ public class NicProfileHelperImpl implements NicProfileHelper {
         }
 
         NicProfile privateNicProfile = new NicProfile();
+        final long trafficId = _networkModel.getPhysicalNetworkTrafficId(privateNetwork.getPhysicalNetworkId(), privateNetwork.getTrafficType());
 
         if (privateNic != null) {
             privateNicProfile =
                     new NicProfile(privateNic, privateNetwork, privateNic.getBroadcastUri(), privateNic.getIsolationUri(), _networkModel.getNetworkRate(
                             privateNetwork.getId(), router.getId()), _networkModel.isSecurityGroupSupportedInNetwork(privateNetwork), _networkModel.getNetworkTag(
-                                    router.getHypervisorType(), privateNetwork));
+                                    router.getHypervisorType(), privateNetwork), trafficId);
 
             if (router.getIsRedundantRouter()) {
               String newMacAddress = NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress(), NetworkModel.MACIdentifier.value()));
@@ -108,6 +109,7 @@ public class NicProfileHelperImpl implements NicProfileHelper {
             privateNicProfile.setFormat(AddressFormat.Ip4);
             privateNicProfile.setReservationId(String.valueOf(ip.getBroadcastUri()));
             privateNicProfile.setMacAddress(ip.getMacAddress());
+            privateNicProfile.setTrafficId(trafficId);
         }
 
         return privateNicProfile;
@@ -129,6 +131,7 @@ public class NicProfileHelperImpl implements NicProfileHelper {
         guestNic.setMode(guestNetwork.getMode());
         final String gatewayCidr = guestNetwork.getCidr();
         guestNic.setIPv4Netmask(NetUtils.getCidrNetmask(gatewayCidr));
+        guestNic.setTrafficId(_networkModel.getPhysicalNetworkTrafficId(guestNetwork.getPhysicalNetworkId(), guestNetwork.getTrafficType()));
 
         return guestNic;
     }

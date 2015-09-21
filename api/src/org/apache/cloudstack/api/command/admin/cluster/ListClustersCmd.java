@@ -72,6 +72,9 @@ public class ListClustersCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.SHOW_CAPACITIES, type = CommandType.BOOLEAN, description = "flag to display the capacity of the clusters")
     private Boolean showCapacities;
 
+    @Parameter(name = ApiConstants.SHOW_TRAFFIC_LABEL_INFO, type = CommandType.BOOLEAN, description = "flag to display the traffic labels overridden at the clusters")
+    private Boolean showTrafficLabelInfo;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -116,6 +119,10 @@ public class ListClustersCmd extends BaseListCmd {
         return showCapacities;
     }
 
+    public Boolean getShowTrafficLabelInfo() {
+        return showTrafficLabelInfo;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -129,7 +136,7 @@ public class ListClustersCmd extends BaseListCmd {
         Pair<List<? extends Cluster>, Integer> result = _mgr.searchForClusters(this);
         List<ClusterResponse> clusterResponses = new ArrayList<ClusterResponse>();
         for (Cluster cluster : result.first()) {
-            ClusterResponse clusterResponse = _responseGenerator.createClusterResponse(cluster, showCapacities);
+            ClusterResponse clusterResponse = _responseGenerator.createClusterResponse(cluster, showCapacities, showTrafficLabelInfo);
             clusterResponse.setObjectName("cluster");
             clusterResponses.add(clusterResponse);
         }

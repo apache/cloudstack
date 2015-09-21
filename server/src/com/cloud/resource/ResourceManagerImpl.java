@@ -20,6 +20,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -75,6 +76,7 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.dc.ClusterPhysicalNetworkTrafficInfoDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -122,6 +124,12 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.discoverer.KvmDummyResourceBase;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
+import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
+import com.cloud.network.Networks;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
@@ -190,6 +198,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Inject
     private ClusterDetailsDao _clusterDetailsDao;
     @Inject
+    private ClusterPhysicalNetworkTrafficInfoDao _clusterPhysicalNetworkTrafficInfoDao;
+    @Inject
     private ClusterDao _clusterDao;
     @Inject
     private CapacityDao _capacityDao;
@@ -213,6 +223,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private DataCenterIpAddressDao _privateIPAddressDao;
     @Inject
     private IPAddressDao _publicIPAddressDao;
+    @Inject
+    private PhysicalNetworkDao _physicalNetworkDao;
+    @Inject
+    private PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
     @Inject
     private VirtualMachineManager _vmMgr;
     @Inject
@@ -430,6 +444,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
         }
 
+        if ((cmd.getVSwitchTypeGuestTraffic() != null || cmd.getVSwitchTypePublicTraffic() != null || cmd.getVSwitchNameGuestTraffic() != null
+                || cmd.getVSwitchNamePublicTraffic() != null) && hypervisorType != HypervisorType.VMware) {
+            throw new InvalidParameterValueException("vSwitch details not are supported for hypervisor type " + hypervisorType);
+        }
+
+        if (cmd.getPhysicalNetworkTrafficLabels() != null && hypervisorType != HypervisorType.VMware) {
+            throw new InvalidParameterValueException("Physical network traffic labels not are supported for hypervisor type " + hypervisorType);
+        }
+
         Cluster.ClusterType clusterType = null;
         if (cmd.getClusterType() != null && !cmd.getClusterType().isEmpty()) {
             clusterType = Cluster.ClusterType.valueOf(cmd.getClusterType());
@@ -458,6 +481,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         if (hypervisorType == HypervisorType.VMware) {
             final Map<String, String> allParams = cmd.getFullUrlParams();
+            discoverer.clearParam();
             discoverer.putParam(allParams);
         }
 
@@ -506,6 +530,14 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         boolean success = false;
         try {
+            // save cluster physical network traffic labels
+            if (cmd.getPhysicalNetworkTrafficLabels() != null && !cmd.getPhysicalNetworkTrafficLabels().isEmpty()) {
+                final Map<Long, String> physicalNetworkTrafficLabels = getPhysicalNetworkTrafficLabels(cmd.getPhysicalNetworkTrafficLabels(), dcId);
+                if (physicalNetworkTrafficLabels != null) {
+                    _clusterPhysicalNetworkTrafficInfoDao.persist(cluster.getId(), physicalNetworkTrafficLabels);
+                }
+            }
+
             try {
                 uri = new URI(UriUtils.encodeURIComponent(url));
                 if (uri.getScheme() == null) {
@@ -542,10 +574,57 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new DiscoveryException("Unable to add the external cluster");
         } finally {
             if (!success) {
+                _clusterPhysicalNetworkTrafficInfoDao.deleteDetails(cluster.getId());
                 _clusterDetailsDao.deleteDetails(cluster.getId());
                 _clusterDao.remove(cluster.getId());
             }
         }
+    }
+
+    private Map<Long, String> getPhysicalNetworkTrafficLabels(Map<String, String> physicalNetworkTrafficLabelsMap, long dcId) throws InvalidParameterValueException {
+        if (physicalNetworkTrafficLabelsMap == null || physicalNetworkTrafficLabelsMap.isEmpty()) {
+            return null;
+        }
+
+        final Map<Long, String> physicalNetworkTrafficLabels = new HashMap<Long, String>();
+        Collection physicalNetworkTrafficLabelsCollection = physicalNetworkTrafficLabelsMap.values();
+        Iterator iter = physicalNetworkTrafficLabelsCollection.iterator();
+        while (iter.hasNext()) {
+            HashMap<String, String> trafficLabelMap = (HashMap<String, String>)iter.next();
+            String physicalNetworkTrafficUuid = trafficLabelMap.get("physicalnetworktrafficid");
+            String networkLabel = trafficLabelMap.get("networklabel");
+
+            if (physicalNetworkTrafficUuid == null || physicalNetworkTrafficUuid.isEmpty()) {
+                throw new InvalidParameterValueException("Please specify the physical network traffic id");
+            }
+
+            if (networkLabel == null || networkLabel.isEmpty()) {
+                throw new InvalidParameterValueException("Please specify network label for the physical network traffic id: " + physicalNetworkTrafficUuid);
+            }
+
+            final PhysicalNetworkTrafficTypeVO physicalNetworkTrafficType = _physicalNetworkTrafficTypeDao.findByUuid(physicalNetworkTrafficUuid);
+            if (physicalNetworkTrafficType == null) {
+                throw new InvalidParameterValueException("Can't find physical network traffic id: " + physicalNetworkTrafficUuid + " in the zone of the cluster");
+            }
+
+            if (physicalNetworkTrafficType.getTrafficType() != Networks.TrafficType.Guest && physicalNetworkTrafficType.getTrafficType() != Networks.TrafficType.Public) {
+                throw new InvalidParameterValueException("Physical network traffic type not supported. Only guest and public are supported");
+            }
+
+            final PhysicalNetworkVO physicalNetworkVO = _physicalNetworkDao.findById(physicalNetworkTrafficType.getPhysicalNetworkId());
+            if (physicalNetworkVO == null) {
+                throw new InvalidParameterValueException("No physical network exists for the traffic id: " + physicalNetworkTrafficUuid + " in the zone of the cluster");
+            }
+
+            if (physicalNetworkVO.getDataCenterId() != dcId) {
+                throw new InvalidParameterValueException("Can't find physical network for the traffic id: " + physicalNetworkTrafficUuid + " in the zone of the cluster");
+            }
+
+            Long physicalNetworkTrafficId = physicalNetworkTrafficType.getId();
+            physicalNetworkTrafficLabels.put(physicalNetworkTrafficId, networkLabel);
+        }
+
+        return physicalNetworkTrafficLabels;
     }
 
     @Override
@@ -1017,7 +1096,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     @DB
-    public Cluster updateCluster(final Cluster clusterToUpdate, final String clusterType, final String hypervisor, final String allocationState, final String managedstate) {
+    public Cluster updateCluster(final Cluster clusterToUpdate, final String clusterType, final String hypervisor, final String allocationState, final String managedstate, final Map<String, String> physicalNetworkTrafficLabels) {
 
         final ClusterVO cluster = (ClusterVO)clusterToUpdate;
         // Verify cluster information and update the cluster if needed
@@ -1025,7 +1104,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         if (hypervisor != null && !hypervisor.isEmpty()) {
             final Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.getType(hypervisor);
-            if (hypervisorType == null) {
+            if (hypervisorType == HypervisorType.None) {
                 s_logger.error("Unable to resolve " + hypervisor + " to a valid supported hypervisor type");
                 throw new InvalidParameterValueException("Unable to resolve " + hypervisor + " to a supported type");
             } else {
@@ -1048,6 +1127,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 cluster.setClusterType(newClusterType);
                 doUpdate = true;
             }
+        }
+
+        if (physicalNetworkTrafficLabels != null && cluster.getHypervisorType() != HypervisorType.VMware) {
+            throw new InvalidParameterValueException("Physical network traffic labels not are supported for hypervisor type " + cluster.getHypervisorType());
         }
 
         Grouping.AllocationState newAllocationState = null;
@@ -1079,6 +1162,26 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 throw new InvalidParameterValueException("Unable to resolve Managed State '" + managedstate + "' to a supported state");
             } else {
                 doUpdate = true;
+            }
+        }
+
+        if (physicalNetworkTrafficLabels != null && !physicalNetworkTrafficLabels.isEmpty()) {
+            final Map<Long, String> physicalNetworkTrafficLabelsInfo = getPhysicalNetworkTrafficLabels(physicalNetworkTrafficLabels, cluster.getDataCenterId());
+            if (physicalNetworkTrafficLabelsInfo != null && !physicalNetworkTrafficLabelsInfo.isEmpty()) {
+                // Check the switch type overridden at the cluster for the respective traffic type (Guest or Public)
+                for (Map.Entry<Long, String> trafficLabelInfo : physicalNetworkTrafficLabelsInfo.entrySet()) {
+                    if (_physicalNetworkTrafficTypeDao.getTrafficType(trafficLabelInfo.getKey()) == TrafficType.Guest
+                            && !_clusterDetailsDao.isTrafficOverriddenAtCluster(cluster.getId(), TrafficType.Guest)) {
+                        throw new InvalidParameterValueException("Update network label for guest traffic is not supported for this cluster as Guest traffic is not overridden");
+                    }
+
+                    if (_physicalNetworkTrafficTypeDao.getTrafficType(trafficLabelInfo.getKey()) == TrafficType.Public
+                            && !_clusterDetailsDao.isTrafficOverriddenAtCluster(cluster.getId(), TrafficType.Public)) {
+                        throw new InvalidParameterValueException("Update network label for public traffic is not supported for this cluster as Public traffic is not overridden");
+                    }
+                }
+
+                _clusterPhysicalNetworkTrafficInfoDao.persist(cluster.getId(), physicalNetworkTrafficLabelsInfo);
             }
         }
 

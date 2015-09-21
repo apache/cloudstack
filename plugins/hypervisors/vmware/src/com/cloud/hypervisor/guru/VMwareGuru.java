@@ -551,8 +551,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 // We need the traffic label to figure out which vSwitch has the
                 // portgroup
                 PhysicalNetworkTrafficTypeVO trafficTypeVO = _physicalNetworkTrafficTypeDao.findBy(networkVO.getPhysicalNetworkId(), networkVO.getTrafficType());
+                long trafficId = _networkMgr.getPhysicalNetworkTrafficId(network.getPhysicalNetworkId(), network.getTrafficType());
                 UnregisterNicCommand unregisterNicCommand =
-                    new UnregisterNicCommand(vm.getInstanceName(), trafficTypeVO.getVmwareNetworkLabel(), UUID.fromString(nic.getUuid()));
+                    new UnregisterNicCommand(vm.getInstanceName(), trafficTypeVO.getVmwareNetworkLabel(), UUID.fromString(nic.getUuid()), trafficId);
                 commands.add(unregisterNicCommand);
             }
         }

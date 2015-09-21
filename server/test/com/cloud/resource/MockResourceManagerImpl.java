@@ -108,7 +108,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceService#updateCluster(com.cloud.org.Cluster, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
      */
     @Override
-    public Cluster updateCluster(final Cluster cluster, final String clusterType, final String hypervisor, final String allocationState, final String managedstate) {
+    public Cluster updateCluster(final Cluster cluster, final String clusterType, final String hypervisor, final String allocationState, final String managedstate, final Map<String, String> physicalNetworkTrafficLabels) {
         // TODO Auto-generated method stub
         return null;
     }

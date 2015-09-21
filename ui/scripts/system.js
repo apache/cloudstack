@@ -37,6 +37,80 @@
         });
     };
 
+    var getClusterFields = function (args) {
+    	
+    	var clusterfields = [ {
+            name: {
+                label: 'label.name'
+            }
+        },
+        {
+            id: {
+                label: 'label.id'
+            },
+            zonename: {
+                label: 'label.zone'
+            },
+            podname: {
+                label: 'label.pod'
+            },
+            hypervisortype: {
+                label: 'label.hypervisor'
+            },
+            clustertype: {
+                label: 'label.cluster.type'
+            },
+            //allocationstate: { label: 'label.allocation.state' },
+            //managedstate: { label: 'Managed State' },
+            state: {
+                label: 'label.state'
+            }
+        }, {
+            isdedicated: {
+                label: 'label.dedicated'
+            },
+            domainid: {
+                label: 'label.domain.id'
+            }
+        }];
+    	
+    	var dynamicclusterfields ={};
+    	if (args.trafficlabelinfo) {
+    		for (var i = 0; i < args.trafficlabelinfo.length; i++) {
+    			$.ajax({
+    				url: createURL('listPhysicalNetworks'),
+    				data: {
+                        id: args.trafficlabelinfo[i].physicalnetworkid
+                    },
+                    async: false,
+                    success: function (json) {
+                    	var physicalNetwork = json.listphysicalnetworksresponse.physicalnetwork[0];
+                    	var trafficLabelField = args.trafficlabelinfo[i].physicalnetworktrafficid;
+            			if (args.trafficlabelinfo[i].networklabel == null || args.trafficlabelinfo[i].networklabel == 0) {
+            				args[trafficLabelField] = _l('label.network.label.display.for.blank.value');
+            			} else {
+            				args[trafficLabelField] = args.trafficlabelinfo[i].networklabel;
+            			}
+            			
+            			var switchDisplayLabel = "";
+            			if(args.trafficlabelinfo[i].traffictype == 'Guest') {
+            				switchDisplayLabel = _l('label.guest.vswitch.name') + " " + physicalNetwork.name;
+            			} else {
+            				switchDisplayLabel = _l('label.public.vswitch.name') + " " + physicalNetwork.name;
+            			}
+            			dynamicclusterfields[trafficLabelField] = { label: switchDisplayLabel, isEditable: true}
+                    }
+    			});
+    		}
+    	}
+    	
+    	if(dynamicclusterfields) {
+    		clusterfields.push(dynamicclusterfields)
+    	}
+    	
+    	return clusterfields;
+    }
+
     cloudStack.publicIpRangeAccount = {
         dialog: function (args) {
             return function (args) {
@@ -8900,7 +8974,7 @@
                                     listViewDataProvider(args, data);
 
                                     $.ajax({
-                                        url: createURL('listClusters'),
+                                        url: createURL('listClusters&showtrafficlabelinfo=true'),
                                         data: data,
                                         success: function (json) {
                                             args.response.success({
@@ -13886,7 +13960,7 @@
                         if ("pods" in args.context)
                         array1.push("&podid=" + args.context.pods[0].id);
                         $.ajax({
-                            url: createURL("listClusters" + array1.join("") + "&page=" + args.page + "&pagesize=" + pageSize),
+                            url: createURL("listClusters" + array1.join("") + "&page=" + args.page + "&pagesize=" + pageSize + "&showtrafficlabelinfo=true"),
                             dataType: "json",
                             async: true,
                             success: function (json) {
@@ -14297,7 +14371,61 @@
 
                                     vSwitchPublicName: {
                                         label: 'label.public.traffic.vswitch.name',
-                                        isHidden: true
+                                        isHidden: true,
+                                        dependsOn: 'zoneid',
+                                        dynamic: function(args) {
+                                            //list all physical networks and for each physical network, list traffic types
+                                            //create field if public traffic type exists
+                                        	if(args.formData.zoneid) {
+                                        		$.ajax({
+                                                    url: createURL('listPhysicalNetworks'),
+                                                    data: {
+                                                        zoneid: args.formData.zoneid
+                                                    },
+                                                    async: false,
+                                                    success: function (json) {
+                                                    	var physicalNetworkObjs = json.listphysicalnetworksresponse.physicalnetwork;
+                                                    	if (physicalNetworkObjs) {
+                                                    		var trafficLabelInfo =[];
+                                                    		var publicswitchnamefields ={};
+                                                            for (var i = 0; i < physicalNetworkObjs.length; i++) {
+                                                            	$.ajax({
+                                                                    url: createURL('listTrafficTypes'),
+                                                                    data: {
+                                                                        physicalnetworkid: physicalNetworkObjs[i].id
+                                                                    },
+                                                                    async: false,
+                                                                    success: function (json) {
+                                                                        var trafficType = $.grep(
+                                                                        json.listtraffictypesresponse.traffictype,
+                                                                        function (trafficType) {
+                                                                            return trafficType.traffictype == 'Public';
+                                                                        })[0];
+                                                                        
+                                                                        if (trafficType) {
+                                                                        	trafficLabelInfo.push({
+                                                                        		physicalnetworkid: trafficType.physicalnetworkid,
+                                                                        		physicalnetworktrafficid: trafficType.id
+                                                                        	});
+                                                                        	publicswitchnamefields[trafficType.id] = {
+                        														label : physicalNetworkObjs[i].name
+                        													}
+                                                                        }
+                                                                    }
+                                                                });
+                                                            }
+                                                            args.response.success({
+                												fields : publicswitchnamefields,
+                												clearForm: args.clearForm
+                											})
+                                                            $.extend(args.context, {
+                                                            	publictrafficlabelinfo: trafficLabelInfo
+                											})
+                                                        }
+                                                    }
+                                                });
+                                        	}
+                                        }
                                     },
 
                                     overrideguesttraffic: {
@@ -14326,7 +14454,6 @@
                                                     }
                                                 }
                                             });
-
 
                                             if (useNexusDvs) {
                                                 items.push({
@@ -14365,9 +14492,62 @@
 
                                     vSwitchGuestName: {
                                         label: 'label.guest.traffic.vswitch.name',
-                                        isHidden: true
+                                        isHidden: true,
+                                        dependsOn: 'zoneid',
+                                        dynamic: function(args) {
+                                            //list all physical networks and for each physical network, list traffic types
+                                            //create field if guest traffic type exists
+                                        	if(args.formData.zoneid) {
+                                        		$.ajax({
+                                                    url: createURL('listPhysicalNetworks'),
+                                                    data: {
+                                                        zoneid: args.formData.zoneid
+                                                    },
+                                                    async: false,
+                                                    success: function (json) {
+                                                    	var physicalNetworkObjs = json.listphysicalnetworksresponse.physicalnetwork;
+                                                    	if (physicalNetworkObjs) {
+                                                    		var trafficLabelInfo =[];
+                                                    		var guestswitchnamefields ={};
+                                                            for (var i = 0; i < physicalNetworkObjs.length; i++) {
+                                                            	$.ajax({
+                                                                    url: createURL('listTrafficTypes'),
+                                                                    data: {
+                                                                        physicalnetworkid: physicalNetworkObjs[i].id
+                                                                    },
+                                                                    async: false,
+                                                                    success: function (json) {
+                                                                        var trafficType = $.grep(
+                                                                        json.listtraffictypesresponse.traffictype,
+                                                                        function (trafficType) {
+                                                                            return trafficType.traffictype == 'Guest';
+                                                                        })[0];
+                                                                        
+                                                                        if (trafficType) {
+                                                                        	trafficLabelInfo.push({
+                                                                        		physicalnetworkid: trafficType.physicalnetworkid,
+                                                                        		physicalnetworktrafficid: trafficType.id
+                                                                        	});
+                                                                        	guestswitchnamefields[trafficType.id] = {
+                        														label : physicalNetworkObjs[i].name
+                        													}
+                                                                        }
+                                                                    }
+                                                                });
+                                                            }
+                                                            args.response.success({
+                												fields : guestswitchnamefields,
+                												clearForm: args.clearForm
+                											})
+                                                            $.extend(args.context, {
+                                                            	guesttrafficlabelinfo: trafficLabelInfo
+                											})
+                                                        }
+                                                    }
+                                                });
+                                        	}
+                                        }
                                     },
-
 
                                     vsmipaddress: {
                                         label: 'label.cisco.nexus1000v.ip.address',
@@ -14444,16 +14624,31 @@
                                     if (args.$form.find('.form-item[rel=vSwitchPublicType]').css('display') != 'none' && args.data.vSwitchPublicType != "") {
                                         array1.push("&publicvswitchtype=" + args.data.vSwitchPublicType);
                                     }
-                                    if (args.$form.find('.form-item[rel=vSwitchPublicName]').css('display') != 'none' && args.data.vSwitchPublicName != "") {
-                                        array1.push("&publicvswitchname=" + args.data.vSwitchPublicName);
+                                    var j = 0;
+                                    if (args.$form.find('.form-item[rel=vSwitchPublicName]').css('display') != 'none' && args.context.publictrafficlabelinfo) {
+                                    	for (var i = 0; i < args.context.publictrafficlabelinfo.length; i++) {
+                                    		var networkTrafficId = args.context.publictrafficlabelinfo[i].physicalnetworktrafficid;
+                                    		var networkLabel = args.data[networkTrafficId];
+                                    		if (networkLabel != null && networkLabel.length > 0) {
+                                    			array1.push("&physicalnetworktrafficlabels[" + j + "].physicalnetworktrafficid=" + networkTrafficId + "&physicalnetworktrafficlabels[" + j + "].networklabel=" + networkLabel);
+                                    			j++;
+                                    		}
+                                    	}
                                     }
 
                                     //vSwitch Guest Type
                                     if (args.$form.find('.form-item[rel=vSwitchGuestType]').css('display') != 'none' && args.data.vSwitchGuestType != "") {
                                         array1.push("&guestvswitchtype=" + args.data.vSwitchGuestType);
                                     }
-                                    if (args.$form.find('.form-item[rel=vSwitchGuestName]').css('display') != 'none' && args.data.vSwitchGuestName != "") {
-                                        array1.push("&guestvswitchname=" + args.data.vSwitchGuestName);
+                                    if (args.$form.find('.form-item[rel=vSwitchGuestName]').css('display') != 'none' && args.context.guesttrafficlabelinfo) {
+                                    	for (var i = 0; i < args.context.guesttrafficlabelinfo.length; i++) {
+                                    		var networkTrafficId = args.context.guesttrafficlabelinfo[i].physicalnetworktrafficid;
+                                    		var networkLabel = args.data[networkTrafficId];
+                                    		if (networkLabel != null && networkLabel.length > 0) {
+                                    			array1.push("&physicalnetworktrafficlabels[" + j + "].physicalnetworktrafficid=" + networkTrafficId + "&physicalnetworktrafficlabels[" + j + "].networklabel=" + networkLabel);
+                                    			j++;
+                                    		}
+                                    	}
                                     }
 
                                     //Nexus VSM fields
@@ -14611,6 +14806,20 @@
                                 label: 'label.edit',
                                 action: function (args) {
                                     var array1 =[];
+
+                                    if (args.context.clusters[0].trafficlabelinfo) {
+                                    	for (var i = 0,j = 0; i < args.context.clusters[0].trafficlabelinfo.length; i++) {
+                                    		var networkTrafficId = args.context.clusters[0].trafficlabelinfo[i].physicalnetworktrafficid;
+                                    		var trafficLabelField = networkTrafficId;
+                                        	var oldNetworkLabel = args.context.clusters[0].trafficlabelinfo[i].networklabel;
+                                        	var newNetworkLabel = args.data[trafficLabelField];
+                                        	
+                                        	if (newNetworkLabel != _l( 'label.network.label.display.for.blank.value') && oldNetworkLabel != newNetworkLabel) {
+                                        		array1.push("&physicalnetworktrafficlabels[" + j + "].physicalnetworktrafficid=" + networkTrafficId + "&physicalnetworktrafficlabels[" + j + "].networklabel=" + newNetworkLabel);
+                                        		j++;
+                                        	}
+                                    	}
+                                    }
 
                                     $.ajax({
                                         url: createURL("updateCluster&id=" + args.context.clusters[0].id + array1.join("")),
@@ -14987,43 +15196,10 @@
                         tabs: {
                             details: {
                                 title: 'label.details',
-                                fields:[ {
-                                    name: {
-                                        label: 'label.name'
-                                    }
-                                },
-                                {
-                                    id: {
-                                        label: 'label.id'
-                                    },
-                                    zonename: {
-                                        label: 'label.zone'
-                                    },
-                                    podname: {
-                                        label: 'label.pod'
-                                    },
-                                    hypervisortype: {
-                                        label: 'label.hypervisor'
-                                    },
-                                    clustertype: {
-                                        label: 'label.cluster.type'
-                                    },
-                                    //allocationstate: { label: 'label.allocation.state' },
-                                    //managedstate: { label: 'Managed State' },
-                                    state: {
-                                        label: 'label.state'
-                                    }
-                                }, {
-                                    isdedicated: {
-                                        label: 'label.dedicated'
-                                    },
-                                    domainid: {
-                                        label: 'label.domain.id'
-                                    }
-                                }],
+                                fieldsfn: getClusterFields,
                                 dataProvider: function (args) {
                                     $.ajax({
-                                        url: createURL("listClusters&id=" + args.context.clusters[0].id),
+                                        url: createURL("listClusters&id=" + args.context.clusters[0].id + "&showtrafficlabelinfo=true"),
                                         dataType: "json",
                                         success: function (json) {
                                             var item = json.listclustersresponse.cluster[0];
@@ -21258,12 +21434,16 @@
             //managed, allocation enabled
             allowedActions.push("unmanage");
             allowedActions.push("disable");
-            //allowedActions.push("edit"); // No fields to edit
+            if(jsonObj.trafficlabelinfo) {
+            	allowedActions.push("edit");
+            }
         } else if (jsonObj.state == "Disabled") {
             //managed, allocation disabled
             allowedActions.push("unmanage");
             allowedActions.push("enable");
-            //allowedActions.push("edit"); // No fields to edit
+            if(jsonObj.trafficlabelinfo) {
+            	allowedActions.push("edit");
+            }
         } else {
             //Unmanaged, PrepareUnmanaged , PrepareUnmanagedError
             allowedActions.push("manage");

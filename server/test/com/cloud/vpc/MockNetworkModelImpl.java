@@ -51,6 +51,7 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.Pair;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
@@ -559,10 +560,46 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     /* (non-Javadoc)
+     * @see com.cloud.network.NetworkModel#getPublicTrafficInfo(long, com.cloud.hypervisor.Hypervisor.HypervisorType)
+     */
+    @Override
+    public Map<Long, String> getPublicTrafficInfo(long dcId, HypervisorType vmware) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkModel#getGuestTrafficInfo(long, com.cloud.hypervisor.Hypervisor.HypervisorType)
+     */
+    @Override
+    public Map<Long, String> getGuestTrafficInfo(long dcId, HypervisorType vmware) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkModel#getDefaultPublicTrafficInfo(long, com.cloud.hypervisor.Hypervisor.HypervisorType)
+     */
+    @Override
+    public Pair<Long, String> getDefaultPublicTrafficInfo(long dcId, HypervisorType vmware) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
      * @see com.cloud.network.NetworkModel#getDefaultPublicTrafficLabel(long, com.cloud.hypervisor.Hypervisor.HypervisorType)
      */
     @Override
     public String getDefaultPublicTrafficLabel(long dcId, HypervisorType vmware) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkModel#getDefaultGuestTrafficInfo(long, com.cloud.hypervisor.Hypervisor.HypervisorType)
+     */
+    @Override
+    public Pair<Long, String> getDefaultGuestTrafficInfo(long dcId, HypervisorType vmware) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -706,6 +743,15 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
      */
     @Override
     public long findPhysicalNetworkId(long zoneId, String tag, TrafficType trafficType) {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkModel#getPhysicalNetworkTrafficId(Long, java.lang.String, com.cloud.network.Networks.TrafficType)
+     */
+    @Override
+    public long getPhysicalNetworkTrafficId(Long networkId, TrafficType trafficType) {
         // TODO Auto-generated method stub
         return 0;
     }

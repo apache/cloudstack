@@ -92,6 +92,10 @@ public class ClusterResponse extends BaseResponse {
     @Param(description = "Meta data associated with the zone (key/value pairs)")
     private Map<String, String> resourceDetails;
 
+    @SerializedName("trafficlabelinfo")
+    @Param(description = "Traffic label info overridden at the cluster")
+    private List<ClusterTrafficLabelInfoResponse> trafficLabelInfo;
+
     public String getId() {
         return id;
     }
@@ -209,5 +213,13 @@ public class ClusterResponse extends BaseResponse {
             return;
         }
         this.resourceDetails = new HashMap<>(details);
+    }
+
+    public List<ClusterTrafficLabelInfoResponse> getTrafficLabelInfo() {
+        return trafficLabelInfo;
+    }
+
+    public void setTrafficLabelInfo(ArrayList<ClusterTrafficLabelInfoResponse> trafficLabelInfoList) {
+        this.trafficLabelInfo = trafficLabelInfoList;
     }
 }

@@ -267,7 +267,7 @@ public interface ResponseGenerator {
 
     StoragePoolResponse createStoragePoolForMigrationResponse(StoragePool pool);
 
-    ClusterResponse createClusterResponse(Cluster cluster, Boolean showCapacities);
+    ClusterResponse createClusterResponse(Cluster cluster, Boolean showCapacities, Boolean showTrafficLabelInfo);
 
     FirewallRuleResponse createPortForwardingRuleResponse(PortForwardingRule fwRule);
 

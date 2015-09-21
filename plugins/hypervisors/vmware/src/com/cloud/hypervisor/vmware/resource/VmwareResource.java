@@ -322,8 +322,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected Integer storageNfsVersion;
 
     protected String _privateNetworkVSwitchName;
-    protected VmwareTrafficLabel _guestTrafficInfo = new VmwareTrafficLabel(TrafficType.Guest);
-    protected VmwareTrafficLabel _publicTrafficInfo = new VmwareTrafficLabel(TrafficType.Public);
+    protected Map<Long, VmwareTrafficLabel> _guestTrafficInfo = new HashMap<Long, VmwareTrafficLabel>();
+    protected Map<Long, VmwareTrafficLabel> _publicTrafficInfo = new HashMap<Long, VmwareTrafficLabel>();
+    protected VmwareTrafficLabel _publicTrafficLabel = null;
     protected Map<String, String> _vsmCredentials = null;
     protected int _portsPerDvPortGroup;
     protected boolean _fullCloneFlag = false;
@@ -1166,21 +1167,21 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     private void plugPublicNic(VirtualMachineMO vmMo, final String vlanId, final String vifMacAddress) throws Exception {
         // TODO : probably need to set traffic shaping
         Pair<ManagedObjectReference, String> networkInfo = null;
+        String vSwitchName = null;
         VirtualSwitchType vSwitchType = VirtualSwitchType.StandardVirtualSwitch;
-        if (_publicTrafficInfo != null) {
-            vSwitchType = _publicTrafficInfo.getVirtualSwitchType();
+        if (_publicTrafficLabel != null) {
+            vSwitchName = _publicTrafficLabel.getVirtualSwitchName();
+            vSwitchType = _publicTrafficLabel.getVirtualSwitchType();
         }
         /** FIXME We have no clue which network this nic is on and that means that we can't figure out the BroadcastDomainType
          *  so we assume that it's VLAN for now
          */
         if (VirtualSwitchType.StandardVirtualSwitch == vSwitchType) {
-            networkInfo = HypervisorHostHelper.prepareNetwork(_publicTrafficInfo.getVirtualSwitchName(),
-                    "cloud.public", vmMo.getRunningHost(), vlanId, null, null,
+            networkInfo = HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.public", vmMo.getRunningHost(), vlanId, null, null,
                     _opsTimeout, true, BroadcastDomainType.Vlan, null);
         } else {
-            networkInfo =
-                    HypervisorHostHelper.prepareNetwork(_publicTrafficInfo.getVirtualSwitchName(), "cloud.public", vmMo.getRunningHost(), vlanId, null, null, null,
-                            _opsTimeout, vSwitchType, _portsPerDvPortGroup, null, false, BroadcastDomainType.Vlan, _vsmCredentials);
+            networkInfo = HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.public", vmMo.getRunningHost(), vlanId, null, null, null,
+                    _opsTimeout, vSwitchType, _portsPerDvPortGroup, null, false, BroadcastDomainType.Vlan, _vsmCredentials);
         }
 
         int nicIndex = allocPublicNicIndex(vmMo);
@@ -2990,7 +2991,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VirtualSwitchType switchType = VirtualSwitchType.StandardVirtualSwitch;
         String vlanId = Vlan.UNTAGGED;
 
-        if(nicTo.getName() != null && !nicTo.getName().isEmpty()) {
+        // Get switch type/name from resource property which is dictated by cluster property
+        // If a virtual switch type is specified while adding cluster that will be used.
+        // Else If virtual switch type/name is specified in physical traffic label that will be used
+        // Else use standard vSwitch
+        if (trafficType == TrafficType.Guest && _guestTrafficInfo != null && _guestTrafficInfo.containsKey(nicTo.getTrafficId())) {
+            switchType = _guestTrafficInfo.get(nicTo.getTrafficId()).getVirtualSwitchType();
+            switchName = _guestTrafficInfo.get(nicTo.getTrafficId()).getVirtualSwitchName();
+        } else if (trafficType == TrafficType.Public && _publicTrafficLabel != null) {
+            switchType = _publicTrafficLabel.getVirtualSwitchType();
+            switchName = _publicTrafficLabel.getVirtualSwitchName();
+        } else if (nicTo.getName() != null && !nicTo.getName().isEmpty()) {
             // Format of network traffic label is <VSWITCH>,<VLANID>,<VSWITCHTYPE>
             // If all 3 fields are mentioned then number of tokens would be 3.
             // If only <VSWITCH>,<VLANID> are mentioned then number of tokens would be 2.
@@ -3000,14 +3011,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             switchName = mgmtTrafficLabelObj.getVirtualSwitchName();
             vlanId = mgmtTrafficLabelObj.getVlanId();
             switchType = mgmtTrafficLabelObj.getVirtualSwitchType();
-        } else {
-            if (trafficType == TrafficType.Guest && _guestTrafficInfo != null) {
-                switchType = _guestTrafficInfo.getVirtualSwitchType();
-                switchName = _guestTrafficInfo.getVirtualSwitchName();
-            } else if (trafficType == TrafficType.Public && _publicTrafficInfo != null) {
-                switchType = _publicTrafficInfo.getVirtualSwitchType();
-                switchName = _publicTrafficInfo.getVirtualSwitchName();
-            }
         }
 
         if (switchName == null
@@ -3040,6 +3043,25 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         } else {
             throw new Exception("Unsupported traffic type: " + nicTo.getType().toString());
         }
+    }
+
+    private boolean doesGuestTrafficContainsDistributedVirtualSwitch() {
+        return (doesGuestTrafficContainsVirtualSwitchType(VirtualSwitchType.VMwareDistributedVirtualSwitch)
+                || doesGuestTrafficContainsVirtualSwitchType(VirtualSwitchType.NexusDistributedVirtualSwitch));
+    }
+
+    private boolean doesGuestTrafficContainsVirtualSwitchType(VirtualSwitchType virtualSwitchType) {
+        if (_guestTrafficInfo == null || _guestTrafficInfo.isEmpty()) {
+            return false;
+        }
+
+        for (Map.Entry<Long, VmwareTrafficLabel> trafficInfo : _guestTrafficInfo.entrySet()) {
+            if (trafficInfo.getValue().getVirtualSwitchType() == virtualSwitchType) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private VirtualMachineMO takeVmFromOtherHyperHost(VmwareHypervisorHost hyperHost, String vmName) throws Exception {
@@ -4595,18 +4617,23 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected Answer execute(UnregisterNicCommand cmd) {
         s_logger.info("Executing resource UnregisterNicCommand: " + _gson.toJson(cmd));
 
-        if (_guestTrafficInfo == null) {
+        if (cmd.getTrafficId() == 0) {
+            return new Answer(cmd, false, "No Guest Traffic Id in cmd, unable to determine where to clean up");
+        }
+
+        if (_guestTrafficInfo == null || _guestTrafficInfo.isEmpty() || !_guestTrafficInfo.containsKey(cmd.getTrafficId())) {
             return new Answer(cmd, false, "No Guest Traffic Info found, unable to determine where to clean up");
         }
 
         try {
-            if (_guestTrafficInfo.getVirtualSwitchType() != VirtualSwitchType.StandardVirtualSwitch) {
+            if (_guestTrafficInfo.get(cmd.getTrafficId()).getVirtualSwitchType() != VirtualSwitchType.StandardVirtualSwitch) {
                 // For now we only need to cleanup the nvp specific portgroups
                 // on the standard switches
                 return new Answer(cmd, true, "Nothing to do");
             }
 
-            s_logger.debug("Cleaning up portgroup " + cmd.getNicUuid() + " on switch " + _guestTrafficInfo.getVirtualSwitchName());
+            s_logger.debug("Cleaning up portgroup " + cmd.getNicUuid() + " of traffic id: " + cmd.getTrafficId() + " on switch type: "
+                    + _guestTrafficInfo.get(cmd.getTrafficId()).getVirtualSwitchType() + " and name: " + _guestTrafficInfo.get(cmd.getTrafficId()).getVirtualSwitchName());
             VmwareContext context = getServiceContext();
             VmwareHypervisorHost host = getHyperHost(context);
             ManagedObjectReference clusterMO = host.getHyperHostCluster();
@@ -5502,8 +5529,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             _morHyperHost.setType(hostTokens[0]);
             _morHyperHost.setValue(hostTokens[1]);
 
-            _guestTrafficInfo = (VmwareTrafficLabel)params.get("guestTrafficInfo");
-            _publicTrafficInfo = (VmwareTrafficLabel)params.get("publicTrafficInfo");
+            _guestTrafficInfo = (Map<Long, VmwareTrafficLabel>)params.get("guestTrafficInfo"); // Map of Physical Network Traffic Id and VMware Traffic Label for Guest Traffic
+            _publicTrafficInfo = (Map<Long, VmwareTrafficLabel>)params.get("publicTrafficInfo"); // Map of Physical Network Traffic Id and VMware Traffic Label for Public Traffic (only one item in the list as Public network would be on single physical network)
+            _publicTrafficLabel = (_publicTrafficInfo != null && _publicTrafficInfo.size() > 0) ? (VmwareTrafficLabel)_publicTrafficInfo.values().toArray()[0] : new VmwareTrafficLabel(TrafficType.Public); // Public network would be on single physical network hence getting first object of the list would suffice.
+
             VmwareContext context = getServiceContext();
             VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
             if (mgr == null) {
@@ -5513,8 +5542,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             CustomFieldsManagerMO cfmMo = new CustomFieldsManagerMO(context, context.getServiceContent().getCustomFieldsManager());
             cfmMo.ensureCustomFieldDef("Datastore", CustomFieldConstants.CLOUD_UUID);
-            if (_publicTrafficInfo != null && _publicTrafficInfo.getVirtualSwitchType() != VirtualSwitchType.StandardVirtualSwitch || _guestTrafficInfo != null &&
-                    _guestTrafficInfo.getVirtualSwitchType() != VirtualSwitchType.StandardVirtualSwitch) {
+            if (_publicTrafficLabel.getVirtualSwitchType() != VirtualSwitchType.StandardVirtualSwitch ||
+                    doesGuestTrafficContainsDistributedVirtualSwitch()) {
                 cfmMo.ensureCustomFieldDef("DistributedVirtualPortgroup", CustomFieldConstants.CLOUD_GC_DVP);
             }
             cfmMo.ensureCustomFieldDef("Network", CustomFieldConstants.CLOUD_GC);
@@ -5527,8 +5556,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareHypervisorHost hostMo = this.getHyperHost(context);
             _hostName = hostMo.getHyperHostName();
 
-            if (_guestTrafficInfo.getVirtualSwitchType() == VirtualSwitchType.NexusDistributedVirtualSwitch ||
-                    _publicTrafficInfo.getVirtualSwitchType() == VirtualSwitchType.NexusDistributedVirtualSwitch) {
+            if (doesGuestTrafficContainsVirtualSwitchType(VirtualSwitchType.NexusDistributedVirtualSwitch) ||
+                    _publicTrafficLabel.getVirtualSwitchType() == VirtualSwitchType.NexusDistributedVirtualSwitch) {
                 _privateNetworkVSwitchName = mgr.getPrivateVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
                 _vsmCredentials = mgr.getNexusVSMCredentialsByClusterId(Long.parseLong(_cluster));
             }
@@ -5554,8 +5583,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 _portsPerDvPortGroup = intObj.intValue();
 
             s_logger.info("VmwareResource network configuration info." + " private traffic over vSwitch: " + _privateNetworkVSwitchName + ", public traffic over " +
-                    _publicTrafficInfo.getVirtualSwitchType() + " : " + _publicTrafficInfo.getVirtualSwitchName() + ", guest traffic over " +
-                    _guestTrafficInfo.getVirtualSwitchType() + " : " + _guestTrafficInfo.getVirtualSwitchName());
+                    _publicTrafficLabel.getVirtualSwitchType() + " : " + _publicTrafficLabel.getVirtualSwitchName() + ", guest traffic over =>");
+
+            for (Map.Entry<Long, VmwareTrafficLabel> trafficInfo : _guestTrafficInfo.entrySet()) {
+                s_logger.info(trafficInfo.getValue().getVirtualSwitchType() + " : " + trafficInfo.getValue().getVirtualSwitchName());
+            }
 
             Boolean boolObj = (Boolean)params.get("vmware.create.full.clone");
             if (boolObj != null && boolObj.booleanValue()) {

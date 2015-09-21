@@ -453,32 +453,63 @@
                     $input = $('<div>').addClass('dynamic-input').appendTo($value);
                     $form.hide();
 
-                    field.dynamic({
-                        context: args.context,
-                        response: {
-                            success: function(args) {
-                                var form = cloudStack.dialog.createForm({
-                                    noDialog: true,
-                                    form: {
-                                        title: '',
-                                        fields: args.fields
+                    var dynamicargs = {
+                            context: args.context,
+                            response: {
+                                success: function(args) {
+                                	if(args.clearForm) {
+                                		$input.empty();
+                                	}
+                                    var form = cloudStack.dialog.createForm({
+                                        noDialog: true,
+                                        form: {
+                                            title: '',
+                                            fields: args.fields
+                                        }
+                                    });
+
+                                    var $fields = form.$formContainer.find('.form-item').appendTo($input);
+                                    $form.show();
+
+                                    // Form should be slightly wider
+                                    $form.closest(':ui-dialog').dialog('option', {
+                                        position: 'center',
+                                        closeOnEscape: false
+                                    });
+                                    if ((!isNoDialog) && isLastAsync(idx)) {
+                                        ret();
                                     }
-                                });
-
-                                var $fields = form.$formContainer.find('.form-item').appendTo($input);
-                                $form.show();
-
-                                // Form should be slightly wider
-                                $form.closest(':ui-dialog').dialog('option', {
-                                    position: 'center',
-                                    closeOnEscape: false
-                                });
-                                if ((!isNoDialog) && isLastAsync(idx)) {
-                                    ret();
                                 }
                             }
-                        }
-                    });
+                    };
+                    
+                    field.dynamic(
+                    	$.extend(dynamicargs, {
+                    	formData: cloudStack.serializeForm($form)
+                    	})
+                    );
+                    
+                    if (field.dependsOn) {
+                    	$dependsOn = $input.closest('form').find('input, select').filter(function() {
+                            return $.isArray(field.dependsOn) ?
+                                $.inArray($(this).attr('name'), field.dependsOn) > -1 :
+                                $(this).attr('name') === field.dependsOn;
+                        });
+
+                        // Reload selects linked to in dependsOn
+                        $dependsOn.each(function() {
+                            var $targetDependsOn = $(this);
+
+                            $targetDependsOn.bind('change', function(event) {
+                            	field.dynamic(
+                                    	$.extend(dynamicargs, {
+                                    	formData: cloudStack.serializeForm($form),
+                                    	clearForm: true
+                                    	})
+                                    );
+                            });
+                        });
+                    }
                 } else if (field.isTextarea) {
                     $input = $('<textarea>').attr({
                         name: key

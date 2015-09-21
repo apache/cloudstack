@@ -20,11 +20,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -146,5 +147,24 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
         if (tokens != null && tokens.length > 3)
             dcName = tokens[3];
         return dcName;
+    }
+
+    @Override
+    public boolean isTrafficOverriddenAtCluster(long clusterId, TrafficType trafficType) {
+        if (trafficType != TrafficType.Guest && trafficType != TrafficType.Public) {
+            return false;
+        }
+
+        SearchCriteria<ClusterDetailsVO> sc = DetailSearch.create();
+        sc.setParameters("clusterId", clusterId);
+        String name = (trafficType == TrafficType.Guest) ? ApiConstants.VSWITCH_TYPE_GUEST_TRAFFIC : ApiConstants.VSWITCH_TYPE_PUBLIC_TRAFFIC;
+        sc.setParameters("name", name);
+
+        ClusterDetailsVO detail = findOneBy(sc);
+        if (detail == null || detail.getValue() == null || detail.getValue().isEmpty()) {
+            return false;
+        }
+
+        return true;
     }
 }

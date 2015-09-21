@@ -195,6 +195,7 @@ import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.CapabilityResponse;
 import org.apache.cloudstack.api.response.CapacityResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
+import org.apache.cloudstack.api.response.ClusterTrafficLabelInfoResponse;
 import org.apache.cloudstack.api.response.ConditionResponse;
 import org.apache.cloudstack.api.response.ConfigurationResponse;
 import org.apache.cloudstack.api.response.ControlledEntityResponse;
@@ -1079,7 +1080,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public ClusterResponse createClusterResponse(Cluster cluster, Boolean showCapacities) {
+    public ClusterResponse createClusterResponse(Cluster cluster, Boolean showCapacities, Boolean showTrafficLabelInfo) {
         ClusterResponse clusterResponse = new ClusterResponse();
         clusterResponse.setId(cluster.getUuid());
         clusterResponse.setName(cluster.getName());
@@ -1130,6 +1131,35 @@ public class ApiResponseHelper implements ResponseGenerator {
             capacityResponses.addAll(getStatsCapacityresponse(null, cluster.getId(), pod.getId(), pod.getDataCenterId()));
             clusterResponse.setCapacitites(new ArrayList<CapacityResponse>(capacityResponses));
         }
+
+        if (showTrafficLabelInfo != null && showTrafficLabelInfo) {
+            Map<Long, String> trafficLabelInfo = ApiDBUtils.getTrafficLabelInfoForCluster(cluster.getId());
+            if (trafficLabelInfo != null && trafficLabelInfo.size() > 0) {
+                Set<ClusterTrafficLabelInfoResponse> clusterTrafficLabelInfoResponses = new HashSet<ClusterTrafficLabelInfoResponse>();
+
+                for (Map.Entry<Long, String> trafficDetail : trafficLabelInfo.entrySet()) {
+                    ClusterTrafficLabelInfoResponse clusterTrafficLabelInfoResponse = new ClusterTrafficLabelInfoResponse();
+
+                    PhysicalNetworkTrafficType trafficType = ApiDBUtils.findPhysicalNetworkTrafficTypeById(trafficDetail.getKey());
+                    if (trafficType != null) {
+                        PhysicalNetwork physicalNetwork = ApiDBUtils.findPhysicalNetworkById(trafficType.getPhysicalNetworkId());
+                        if (physicalNetwork != null) {
+                            clusterTrafficLabelInfoResponse.setPhysicalNetworkId(physicalNetwork.getUuid());
+                        }
+
+                        clusterTrafficLabelInfoResponse.setPhysicalNetworkTrafficId(trafficType.getUuid());
+                        clusterTrafficLabelInfoResponse.setTrafficType(trafficType.getTrafficType().toString());
+                    }
+
+                    clusterTrafficLabelInfoResponse.setNetworkLabel(trafficDetail.getValue());
+
+                    clusterTrafficLabelInfoResponses.add(clusterTrafficLabelInfoResponse);
+                }
+
+                clusterResponse.setTrafficLabelInfo(new ArrayList<ClusterTrafficLabelInfoResponse>(clusterTrafficLabelInfoResponses));
+            }
+        }
+
         clusterResponse.setObjectName("cluster");
         return clusterResponse;
     }

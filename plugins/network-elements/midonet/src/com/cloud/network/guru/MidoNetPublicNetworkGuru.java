@@ -111,6 +111,7 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
             nic.setFormat(Networks.AddressFormat.Ip4);
             nic.setReservationId(String.valueOf(ip.getVlanTag()));
             nic.setMacAddress(ip.getMacAddress());
+            nic.setTrafficId(_networkModel.getPhysicalNetworkTrafficId(network.getPhysicalNetworkId(), network.getTrafficType()));
         }
 
         nic.setIPv4Dns1(dc.getDns1());
@@ -153,6 +154,7 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
         }
 
         nic.setBroadcastUri(generateBroadcastUri(network));
+        nic.setTrafficId(_networkModel.getPhysicalNetworkTrafficId(network.getPhysicalNetworkId(), network.getTrafficType()));
 
         return nic;
     }

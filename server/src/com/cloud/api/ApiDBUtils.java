@@ -126,6 +126,7 @@ import com.cloud.configuration.ConfigurationService;
 import com.cloud.configuration.Resource;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.AccountVlanMapVO;
+import com.cloud.dc.ClusterPhysicalNetworkTrafficInfoDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
@@ -420,6 +421,7 @@ public class ApiDBUtils {
     static AsyncJobDao s_asyncJobDao;
     static HostDetailsDao s_hostDetailsDao;
     static VMSnapshotDao s_vmSnapshotDao;
+    static ClusterPhysicalNetworkTrafficInfoDao s_clusterPhysicalNetworkTrafficInfoDao;
     static ClusterDetailsDao s_clusterDetailsDao;
     static NicSecondaryIpDao s_nicSecondaryIpDao;
     static VpcProvisioningService s_vpcProvSvc;
@@ -637,6 +639,8 @@ public class ApiDBUtils {
     @Inject
     private HostDetailsDao hostDetailsDao;
     @Inject
+    private ClusterPhysicalNetworkTrafficInfoDao clusterPhysicalNetworkTrafficInfoDao;
+    @Inject
     private ClusterDetailsDao clusterDetailsDao;
     @Inject
     private VMSnapshotDao vmSnapshotDao;
@@ -768,6 +772,7 @@ public class ApiDBUtils {
         s_snapshotPolicyDao = snapshotPolicyDao;
         s_asyncJobDao = asyncJobDao;
         s_hostDetailsDao = hostDetailsDao;
+        s_clusterPhysicalNetworkTrafficInfoDao = clusterPhysicalNetworkTrafficInfoDao;
         s_clusterDetailsDao = clusterDetailsDao;
         s_vmSnapshotDao = vmSnapshotDao;
         s_nicSecondaryIpDao = nicSecondaryIpDao;
@@ -803,6 +808,10 @@ public class ApiDBUtils {
 
     public static List<SummedCapacity> getCapacityByClusterPodZone(Long zoneId, Long podId, Long clusterId) {
         return s_capacityDao.findByClusterPodZone(zoneId, podId, clusterId);
+    }
+
+    public static Map<Long, String> getTrafficLabelInfoForCluster(Long clusterId) {
+        return s_clusterPhysicalNetworkTrafficInfoDao.getTrafficInfo(clusterId);
     }
 
     public static List<SummedCapacity> findNonSharedStorageForClusterPodZone(Long zoneId, Long podId, Long clusterId) {

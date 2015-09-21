@@ -16,12 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.cluster;
 
+import java.util.Map;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ClusterResponse;
@@ -33,7 +36,7 @@ import com.cloud.user.Account;
 @APICommand(name = "updateCluster", description = "Updates an existing cluster", responseObject = ClusterResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateClusterCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(AddClusterCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(UpdateClusterCmd.class.getName());
 
     private static final String s_name = "updateclusterresponse";
 
@@ -54,6 +57,9 @@ public class UpdateClusterCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.MANAGED_STATE, type = CommandType.STRING, description = "whether this cluster is managed by cloudstack")
     private String managedState;
+
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_TRAFFIC_LABELS, type = CommandType.MAP, description = "Map of physical network traffic id (of guest and public traffic in the zone) and vmware network label (vSwitch name) in the cluster.")
+    private Map physicalNetworkTrafficLabels;
 
     public String getClusterName() {
         return clusterName;
@@ -101,15 +107,19 @@ public class UpdateClusterCmd extends BaseCmd {
         this.managedState = managedstate;
     }
 
+    public Map<String, String> getPhysicalNetworkTrafficLabels() {
+        return physicalNetworkTrafficLabels;
+    }
+
     @Override
     public void execute() {
         Cluster cluster = _resourceService.getCluster(getId());
         if (cluster == null) {
             throw new InvalidParameterValueException("Unable to find the cluster by id=" + getId());
         }
-        Cluster result = _resourceService.updateCluster(cluster, getClusterType(), getHypervisor(), getAllocationState(), getManagedstate());
+        Cluster result = _resourceService.updateCluster(cluster, getClusterType(), getHypervisor(), getAllocationState(), getManagedstate(), getPhysicalNetworkTrafficLabels());
         if (result != null) {
-            ClusterResponse clusterResponse = _responseGenerator.createClusterResponse(cluster, false);
+            ClusterResponse clusterResponse = _responseGenerator.createClusterResponse(cluster, false, true);
             clusterResponse.setResponseName(getCommandName());
             this.setResponseObject(clusterResponse);
         } else {

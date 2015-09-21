@@ -19,20 +19,17 @@ package com.cloud.dc;
 import java.util.Map;
 
 import com.cloud.utils.db.GenericDao;
-import com.cloud.network.Networks.TrafficType;
 
-public interface ClusterDetailsDao extends GenericDao<ClusterDetailsVO, Long> {
-    Map<String, String> findDetails(long clusterId);
+public interface ClusterPhysicalNetworkTrafficInfoDao extends GenericDao<ClusterPhysicalNetworkTrafficInfoVO, Long> {
+    void persist(long clusterId, long physicalNetworkTrafficId, String vmwareNetworkLabel);
 
-    void persist(long clusterId, Map<String, String> details);
+    void persist(long clusterId, Map<Long, String> physicalNetworkTrafficLabels);
 
-    void persist(long clusterId, String name, String value);
+    ClusterPhysicalNetworkTrafficInfoVO findDetail(long clusterId, long physicalNetworkTrafficId);
 
-    ClusterDetailsVO findDetail(long clusterId, String name);
+    String getVmwareNetworkLabel(long clusterId, long physicalNetworkTrafficId);
+
+    Map<Long, String> getTrafficInfo(long clusterId);
 
     void deleteDetails(long clusterId);
-
-    String getVmwareDcName(Long clusterId);
-
-    boolean isTrafficOverriddenAtCluster(long clusterId, TrafficType trafficType);
 }

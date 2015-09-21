@@ -1006,6 +1006,9 @@
         var $header;
         var detailViewArgs = $detailView.data('view-args');
         var fields = $.isArray(tabData.fields) ? tabData.fields.slice() : tabData.fields;
+        if (!fields && tabData.fieldsfn) {
+        	fields = tabData.fieldsfn(data);
+        }
         var hiddenFields;
         var context = $.extend(true, {}, detailViewArgs ? detailViewArgs.context : cloudStack.context);
         var isMultiple = tabData.multiple || tabData.isMultiple;

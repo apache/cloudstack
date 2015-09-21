@@ -49,6 +49,8 @@ public interface Discoverer extends Adapter {
 
     public void putParam(Map<String, String> params);
 
+    public void clearParam();
+
     ServerResource reloadResource(HostVO host);
 
 }

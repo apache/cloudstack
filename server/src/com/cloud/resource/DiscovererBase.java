@@ -74,6 +74,14 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
     }
 
     @Override
+    public void clearParam() {
+        if (_params == null) {
+            return;
+        }
+        _params.clear();
+    }
+
+    @Override
     public boolean start() {
         return true;
     }

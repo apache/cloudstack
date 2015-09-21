@@ -20,7 +20,10 @@ package com.cloud.upgrade.dao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
+import com.cloud.network.Networks.TrafficType;
+
 import org.apache.log4j.Logger;
+import org.apache.cloudstack.api.ApiConstants;
 
 import java.io.File;
 import java.sql.Connection;
@@ -31,6 +34,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 public class Upgrade4930to41000 implements DbUpgrade {
     final static Logger LOG = Logger.getLogger(Upgrade4930to41000.class);
@@ -82,6 +86,8 @@ public class Upgrade4930to41000 implements DbUpgrade {
         updateSystemVmTemplates(conn);
         populateGuestOsDetails(conn);
         updateSourceCidrs(conn);
+        updateClusterLevelPhysicalNetworkTrafficInfo(conn, TrafficType.Guest);
+        updateClusterLevelPhysicalNetworkTrafficInfo(conn, TrafficType.Public);
     }
 
     @SuppressWarnings("serial")
@@ -506,5 +512,73 @@ public class Upgrade4930to41000 implements DbUpgrade {
         }catch (SQLException e) {
             throw new CloudRuntimeException("updateSourceCidrs:Exception:" + e.getMessage(), e);
         }
+    }
+
+    private void updateClusterLevelPhysicalNetworkTrafficInfo(Connection conn, TrafficType trafficType) {
+        if (conn == null) {
+            LOG.debug("DB connection is null");
+            return;
+        }
+
+        if (trafficType != TrafficType.Guest && trafficType != TrafficType.Public) {
+            LOG.debug("Cluster level physical network traffic info update is supported for guest and public traffic only");
+            return;
+        }
+
+        String phyNetworktrafficType = (trafficType == TrafficType.Guest) ? "Guest" : "Public";
+        String vswitchParamName = (trafficType == TrafficType.Guest) ? ApiConstants.VSWITCH_NAME_GUEST_TRAFFIC : ApiConstants.VSWITCH_NAME_PUBLIC_TRAFFIC;
+
+        String vswitchNameAtClusterDetailsSelectSql = "SELECT cluster_id, value FROM `cloud`.`cluster_details` where name = ?";
+        String vswitchNameAtClusterDetailsDeleteSql = "DELETE FROM `cloud`.`cluster_details` where name = ?";
+        String physicalNetworkTrafficIdSelectSql = "SELECT traffictype.id FROM `cloud`.`physical_network` as network, `cloud`.`physical_network_traffic_types` as traffictype where network.id=traffictype.physical_network_id and network.data_center_id=(SELECT data_center_id FROM `cloud`.`cluster` where id=?) and traffictype.traffic_type=?";
+        String clusterPhysicalNwTrafficInsertSql = "INSERT INTO `cloud`.`cluster_physical_network_traffic_info` (uuid, cluster_id, physical_network_traffic_id, vmware_network_label) VALUES (?,?,?,?)";
+
+        LOG.debug("Updating cluster level physical network traffic info for " + phyNetworktrafficType + " traffic");
+
+        try (PreparedStatement pstmtSelectVswitchNameAtClusterDetails = conn.prepareStatement(vswitchNameAtClusterDetailsSelectSql);
+                PreparedStatement pstmtDeleteVswitchNameAtClusterDetails = conn.prepareStatement(vswitchNameAtClusterDetailsDeleteSql);) {
+            pstmtSelectVswitchNameAtClusterDetails.setString(1, vswitchParamName);
+            ResultSet rsVswitchNameAtClusters = pstmtSelectVswitchNameAtClusterDetails.executeQuery();
+
+            // for each vswitch name at the cluster
+            while (rsVswitchNameAtClusters.next()) {
+                // get the cluster id
+                long clusterId = rsVswitchNameAtClusters.getLong(1);
+                // get vswitch name at cluster
+                String vswitchNameAtCluster = rsVswitchNameAtClusters.getString(2);
+                if (vswitchNameAtCluster == null || vswitchNameAtCluster.isEmpty()) {
+                    continue;
+                }
+
+                try (PreparedStatement pstmtSelectPhysicalNetworkTrafficId = conn.prepareStatement(physicalNetworkTrafficIdSelectSql);
+                        PreparedStatement pstmtInsertClusterPhysicalNwTraffic = conn.prepareStatement(clusterPhysicalNwTrafficInsertSql);) {
+                    pstmtSelectPhysicalNetworkTrafficId.setLong(1, clusterId);
+                    pstmtSelectPhysicalNetworkTrafficId.setString(2, phyNetworktrafficType);
+                    ResultSet rsPhysicalNetworkTrafficIds = pstmtSelectPhysicalNetworkTrafficId.executeQuery();
+
+                    while (rsPhysicalNetworkTrafficIds.next()) {
+                        long physicalNetworkTrafficId = rsPhysicalNetworkTrafficIds.getLong(1);
+                        String uuid = UUID.randomUUID().toString();
+
+                        pstmtInsertClusterPhysicalNwTraffic.setString(1, uuid);
+                        pstmtInsertClusterPhysicalNwTraffic.setLong(2, clusterId);
+                        pstmtInsertClusterPhysicalNwTraffic.setLong(3, physicalNetworkTrafficId);
+                        pstmtInsertClusterPhysicalNwTraffic.setString(4, vswitchNameAtCluster);
+
+                        pstmtInsertClusterPhysicalNwTraffic.executeUpdate();
+                        break; // Perform only for first physical network traffic id
+                    }
+                } catch (SQLException e) {
+                    throw new CloudRuntimeException("Exception while adding cluster level traffic info for " + phyNetworktrafficType + " traffic", e);
+                }
+            }
+
+            pstmtDeleteVswitchNameAtClusterDetails.setString(1, vswitchParamName);
+            pstmtDeleteVswitchNameAtClusterDetails.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Exception while updating cluster level physical network traffic info for " + phyNetworktrafficType + " traffic", e);
+        }
+
+        LOG.debug("Updated cluster level physical network traffic info for " + phyNetworktrafficType + " traffic");
     }
 }

@@ -85,7 +85,11 @@ public class DummyHostDiscoverer extends AdapterBase implements Discoverer {
     @Override
     public void putParam(Map<String, String> params) {
         // TODO Auto-generated method stub
+    }
 
+    @Override
+    public void clearParam() {
+        // TODO Auto-generated method stub
     }
 
     @Override

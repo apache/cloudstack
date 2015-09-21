@@ -466,10 +466,11 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
 
         final Network guestNetwork = _ntwkModel.getNetwork(guestNetworkId);
         final Nic guestNic = _nicDao.findByNtwkIdAndInstanceId(guestNetwork.getId(), internalLbVm.getId());
+        final long trafficId = _ntwkModel.getPhysicalNetworkTrafficId(guestNetwork.getPhysicalNetworkId(), guestNetwork.getTrafficType());
         final NicProfile guestNicProfile =
                 new NicProfile(guestNic, guestNetwork, guestNic.getBroadcastUri(), guestNic.getIsolationUri(), _ntwkModel.getNetworkRate(guestNetwork.getId(),
                         internalLbVm.getId()), _ntwkModel.isSecurityGroupSupportedInNetwork(guestNetwork), _ntwkModel.getNetworkTag(internalLbVm.getHypervisorType(),
-                                guestNetwork));
+                                guestNetwork), trafficId);
 
         final NetworkOffering offering = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId());
         String maxconn = null;
@@ -683,6 +684,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
             final String gatewayCidr = guestNetwork.getCidr();
             guestNic.setIPv4Netmask(NetUtils.getCidrNetmask(gatewayCidr));
             guestNic.setDefaultNic(true);
+            guestNic.setTrafficId(_ntwkModel.getPhysicalNetworkTrafficId(guestNetwork.getPhysicalNetworkId(), guestNetwork.getTrafficType()));
             networks.put(guestNetwork, new ArrayList<NicProfile>(Arrays.asList(guestNic)));
         }
 

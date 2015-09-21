@@ -102,14 +102,21 @@ public class PhysicalNetworkTrafficTypeDaoImpl extends GenericDaoBase<PhysicalNe
 
     @Override
     public boolean isTrafficTypeSupported(long physicalNetworkId, TrafficType trafficType) {
-        SearchCriteria<PhysicalNetworkTrafficTypeVO> sc = physicalNetworkSearch.create();
-        sc.setParameters("physicalNetworkId", physicalNetworkId);
-        sc.setParameters("trafficType", trafficType);
-        if (findOneBy(sc) != null) {
+        if (findBy(physicalNetworkId, trafficType) != null) {
             return true;
         } else {
             return false;
         }
+    }
+
+    @Override
+    public long getPhysicalNetworkTrafficId(long physicalNetworkId, TrafficType trafficType) {
+        PhysicalNetworkTrafficTypeVO physicalNetworkTrafficType = findBy(physicalNetworkId, trafficType);
+        if (physicalNetworkTrafficType == null) {
+            return 0;
+        }
+
+        return physicalNetworkTrafficType.getId();
     }
 
     @Override
@@ -156,5 +163,14 @@ public class PhysicalNetworkTrafficTypeDaoImpl extends GenericDaoBase<PhysicalNe
         SearchCriteria<PhysicalNetworkTrafficTypeVO> sc = physicalNetworkSearch.create();
         sc.setParameters("physicalNetworkId", physicalNetworkId);
         remove(sc);
+    }
+
+    @Override
+    public TrafficType getTrafficType(long physicalNetworkTrafficId) {
+        PhysicalNetworkTrafficTypeVO PhysicalNetworkTrafficTypeVO = findById(physicalNetworkTrafficId);
+        if (PhysicalNetworkTrafficTypeVO == null)
+            return TrafficType.None;
+
+        return PhysicalNetworkTrafficTypeVO.getTrafficType();
     }
 }

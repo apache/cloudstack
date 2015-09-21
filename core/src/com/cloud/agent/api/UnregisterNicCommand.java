@@ -31,11 +31,13 @@ public class UnregisterNicCommand extends Command {
     private String vmName;
     private String trafficLabel;
     private UUID nicUuid;
+    private long trafficId;
 
-    public UnregisterNicCommand(String vmName, String trafficLabel, UUID nicUuid) {
+    public UnregisterNicCommand(String vmName, String trafficLabel, UUID nicUuid, long trafficId) {
         this.nicUuid = nicUuid;
         this.vmName = vmName;
         this.trafficLabel = trafficLabel;
+        this.trafficId = trafficId;
     }
 
     public UUID getNicUuid() {
@@ -48,6 +50,10 @@ public class UnregisterNicCommand extends Command {
 
     public String getTrafficLabel() {
         return trafficLabel;
+    }
+
+    public long getTrafficId() {
+        return trafficId;
     }
 
     @Override
