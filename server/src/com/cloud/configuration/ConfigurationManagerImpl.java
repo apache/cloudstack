@@ -4459,7 +4459,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
             }
             if(vpcOff && nsOff) {
-                if(!spDescription.equalsIgnoreCase("A NetScalerVPX is dedicated per network.")) {
+                if(!(spDescription.equalsIgnoreCase("A NetScalerVPX is dedicated per network.") || spDescription.contains("dedicated NetScaler"))) {
                     throw new InvalidParameterValueException("Only NetScaler Service Pacakge with Dedicated Device Mode is Supported in VPC Type Guest Network");
                 }
             }
