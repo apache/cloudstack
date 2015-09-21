@@ -155,6 +155,7 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
         }
 
         nic.setBroadcastUri(generateBroadcastUri(network));
+        nic.setTrafficId(_networkModel.getPhysicalNetworkTrafficId(network.getPhysicalNetworkId(), network.getTrafficType()));
 
         return nic;
     }

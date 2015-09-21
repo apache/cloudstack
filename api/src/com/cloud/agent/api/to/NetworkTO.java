@@ -33,6 +33,7 @@ public class NetworkTO {
     protected String dns1;
     protected String dns2;
     protected BroadcastDomainType broadcastType;
+    protected long trafficId;
     protected TrafficType type;
     protected URI broadcastUri;
     protected URI isolationUri;
@@ -80,6 +81,10 @@ public class NetworkTO {
 
     public void setDns2(String dns2) {
         this.dns2 = dns2;
+    }
+
+    public void setTrafficId(long trafficId) {
+        this.trafficId = trafficId;
     }
 
     public void setType(TrafficType type) {
@@ -152,6 +157,10 @@ public class NetworkTO {
 
     public String getDns2() {
         return dns2;
+    }
+
+    public long getTrafficId() {
+        return trafficId;
     }
 
     public TrafficType getType() {
