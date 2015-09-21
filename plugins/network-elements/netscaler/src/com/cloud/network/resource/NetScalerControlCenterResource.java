@@ -638,7 +638,6 @@ public class NetScalerControlCenterResource implements ServerResource {
             if (loadBalancers == null) {
                 return new Answer(cmd);
             }
-            JSONObject as=new JSONObject(cmd.getLoadBalancers()[0].getAutoScaleVmGroupTO().toString());
             JSONObject lbConfigPaylod = new JSONObject(cmd);
             String gsonLBConfig =  _gson.toJson(cmd);
             URI agentUri = null;
