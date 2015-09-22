@@ -19,6 +19,7 @@
 
 package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,7 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.storage.Volume;
 import com.cloud.vm.VirtualMachine;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
@@ -92,20 +94,29 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
                 citrixResourceBase.createVGPU(conn, command, vm, gpuDevice);
             }
 
+            if (vmSpec.getType() != VirtualMachine.Type.User) {
+                citrixResourceBase.createPatchVbd(conn, vmName, vm);
+            }
+            // put cdrom at the first place in the list
+            List<DiskTO> disks = new ArrayList<DiskTO>(vmSpec.getDisks().length);
+            int index = 0;
             for (final DiskTO disk : vmSpec.getDisks()) {
+                if (Volume.Type.ISO.equals(disk.getType())) {
+                    disks.add(0, disk);
+                } else {
+                    disks.add(index, disk);
+                }
+                index++;
+            }
+            for (DiskTO disk : disks) {
                 final VDI newVdi = citrixResourceBase.prepareManagedDisk(conn, disk, vmName);
 
                 if (newVdi != null) {
                     final String path = newVdi.getUuid(conn);
-
                     iqnToPath.put(disk.getDetails().get(DiskTO.IQN), path);
                 }
 
                 citrixResourceBase.createVbd(conn, disk, vmName, vm, vmSpec.getBootloader(), newVdi);
-            }
-
-            if (vmSpec.getType() != VirtualMachine.Type.User) {
-                citrixResourceBase.createPatchVbd(conn, vmName, vm);
             }
 
             for (final NicTO nic : vmSpec.getNics()) {
