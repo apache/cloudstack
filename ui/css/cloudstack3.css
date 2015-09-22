@@ -347,8 +347,8 @@ table th div.ui-resizable-handle {
 }
 
 .no-split tbody {
-  height: 570px;
-  padding-top: 30px;
+  height: 520px;
+  padding-top: 58px;
 }
 
 .horizontal-overflow tbody td, .horizontal-overflow thead th {
@@ -357,6 +357,21 @@ table th div.ui-resizable-handle {
 
 .horizontal-overflow tbody {
   overflow: auto;
+}
+
+.groupable-header {
+  background: url(../images/bg-table-head.png);
+  border-left: 1px solid #C6C3C3;
+  border-right: 1px solid #C6C3C3;
+}
+
+.groupable-header-columns th {
+  border: none;
+}
+
+.groupable-header-border {
+  border-left: 1px solid #C6C3C3;
+  border-right: 1px solid #C6C3C3;
 }
 
 /** Header, misc*/

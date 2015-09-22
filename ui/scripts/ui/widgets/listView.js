@@ -765,10 +765,12 @@
     var createHeader = function(preFilter, fields, $table, actions, options) {
         if (!options) options = {};
 
-        var $thead = $('<thead>').prependTo($table).append($('<tr>'));
+        var $tr = $('<tr>');
+        var $thead = $('<thead>').prependTo($table).append($tr);
         var reorder = options.reorder;
         var detailView = options.detailView;
         var multiSelect = options.multiSelect;
+        var groupableColumns = options.groupableColumns;
         var viewArgs = $table.closest('.list-view').data('view-args');
         var uiCustom = viewArgs.uiCustom;
         var hiddenFields = [];
@@ -776,8 +778,37 @@
         if (preFilter != null)
             hiddenFields = preFilter();
 
+        var addColumnToTr = function($tr, key, colspan, label) {
+            var $th = $('<th>').addClass(key).attr('colspan', colspan).appendTo($tr);
+            if ($th.index()) $th.addClass('reduced-hide');
+            if (colspan > 1) {
+                $th.css({'border-right': '1px solid #C6C3C3', 'border-left': '1px solid #C6C3C3'});
+                $th.addClass('collapsible-column');
+                $('<span>').html(_l(label)).appendTo($th);
+                $('<span>').html('&raquo').css({'float': 'right'}).appendTo($th);
+            } else {
+                $th.html(_l(label));
+            }
+        };
+
+        if (groupableColumns) {
+            $tr.addClass('groupable-header-columns').addClass('groupable-header');
+            $.each(fields, function(key) {
+                var field = this;
+                if (field.columns) {
+                    var colspan = Object.keys(field.columns).length;
+                    addColumnToTr($tr, key, colspan, field.label);
+                } else {
+                    addColumnToTr($tr, key, 1, '');
+                }
+                return true;
+            });
+            $tr = $('<tr>').appendTo($thead);
+            $tr.addClass('groupable-header');
+        }
+
         if (multiSelect) {
-            var $th = $('<th>').addClass('multiselect').appendTo($thead.find('tr'));
+            var $th = $('<th>').addClass('multiselect').appendTo($tr);
             var content = $('<input>')
                 .attr('type', 'checkbox')
                 .addClass('multiSelectMasterCheckbox')
@@ -794,18 +825,21 @@
             if ($.inArray(key, hiddenFields) != -1)
                 return true;
             var field = this;
-            var $th = $('<th>').addClass(key).appendTo($thead.find('tr'));
-
-            if ($th.index()) $th.addClass('reduced-hide');
-
-            $th.html(_l(field.label));
-
+            if (field.columns) {
+                $.each(field.columns, function(idx) {
+                    var subfield = this;
+                    addColumnToTr($tr, key, 1, subfield.label);
+                    return true;
+                });
+            } else {
+                addColumnToTr($tr, key, 1, field.label);
+            }
             return true;
         });
 
         // Re-order row buttons
         if (reorder) {
-            $thead.find('tr').append(
+            $tr.append(
                 $('<th>').html(_l('label.order')).addClass('reorder-actions reduced-hide')
             );
         }
@@ -826,7 +860,7 @@
         );
 
         if (actions && !options.noActionCol && renderActionCol(actions) && actionsArray.length != headerActionsArray.length) {
-            $thead.find('tr').append(
+            $tr.append(
                 $('<th></th>')
                 .html(_l('label.actions'))
                 .addClass('actions reduced-hide')
@@ -835,7 +869,7 @@
 
         // Quick view
         if (detailView && !$.isFunction(detailView) && !detailView.noCompact && !uiCustom) {
-            $thead.find('tr').append(
+            $tr.append(
                 $('<th></th>')
                 .html(_l('label.quickview'))
                 .addClass('quick-view reduced-hide')
@@ -1088,8 +1122,21 @@
                 );
             }
 
-            // Add field data
+            var reducedFields = {};
             $.each(fields, function(key) {
+                var field = this;
+                if (field.columns) {
+                    $.each(field.columns, function(innerKey) {
+                        reducedFields[innerKey] = this;
+                    });
+                } else {
+                    reducedFields[key] = this;
+                }
+                return true;
+            });
+
+            // Add field data
+            $.each(reducedFields, function(key) {
                 if ($.inArray(key, hiddenFields) != -1)
                     return true;
                 var field = this;
@@ -1794,7 +1841,8 @@
                 reorder: reorder,
                 detailView: listViewData.detailView,
                 'multiSelect': multiSelect,
-                noActionCol: listViewData.noActionCol
+                noActionCol: listViewData.noActionCol,
+                groupableColumns: listViewData.groupableColumns
             });
 
         if (listViewData.noSplit == true) {

@@ -55,28 +55,52 @@
                     label: 'label.hosts'
                 },
                 cpuused: {
-                    label: 'Avg CPU Used'
-                },
-                cpumaxdev: {
-                    label: 'CPU Used Max Dev'
+                    label: 'label.cpu.used',
+                    collapsible: true,
+                    columns: {
+                        cpuusedavg: {
+                            label: 'label.cpu.used.avg',
+                        },
+                        cpumaxdev: {
+                            label: 'label.cpu.max.dev'
+                        }
+                    }
                 },
                 cpuallocated: {
-                    label: 'CPU Allocated'
-                },
-                cputotal: {
-                    label: 'Total CPU Ghz'
+                    label: 'label.cpu.allocated',
+                    collapsible: true,
+                    columns: {
+                        cpuallocated: {
+                            label: 'label.allocated'
+                        },
+                        cputotal: {
+                            label: 'label.cpu.total'
+                        }
+                    }
                 },
                 memused: {
-                    label: 'Avg Memory Used'
-                },
-                memmaxdev: {
-                    label: 'Memory Used Max Dev'
+                    label: 'label.mem.used',
+                    collapsible: true,
+                    columns: {
+                        memusedavg: {
+                            label: 'label.mem.used.avg'
+                        },
+                        memmaxdev: {
+                            label: 'label.mem.max.dev'
+                        }
+                    }
                 },
                 memallocated: {
-                    label: 'Memory Allocated'
-                },
-                memtotal: {
-                    label: 'Total Memory GB'
+                    label: 'label.mem.allocated',
+                    collapsible: true,
+                    columns: {
+                        memallocated: {
+                            label: 'label.allocated'
+                        },
+                        memtotal: {
+                            label: 'label.mem.total'
+                        }
+                    }
                 }
             },
             dataProvider: function(args) {
@@ -93,18 +117,18 @@
                                 data: {clusterid: cluster.id},
                                 success: function(json) {
                                     items[idx].hosts = json.listhostsresponse.count;
-                                    items[idx].cpuused = 0.0;
+                                    items[idx].cpuusedavg = 0.0;
                                     items[idx].cpumaxdev = 0.0;
                                     items[idx].cpuallocated = 0.0;
                                     items[idx].cputotal = 0.0;
-                                    items[idx].memused = 0.0;
+                                    items[idx].memusedavg = 0.0;
                                     items[idx].memmaxdev = 0.0;
                                     items[idx].memallocated = 0.0;
                                     items[idx].memtotal = 0.0;
                                     var maxCpuUsed = 0.0;
                                     $.each(json.listhostsresponse.host, function(i, host) {
                                         if (host.hasOwnProperty('cpuused')) {
-                                            items[idx].cpuused += host.cpuused;
+                                            items[idx].cpuusedavg += host.cpuused;
                                             if (host.cpuused > maxCpuUsed) {
                                                 maxCpuUsed = host.cpuused;
                                             }
@@ -116,7 +140,7 @@
 
                                     });
 
-                                    items[idx].cpuused = 100.0 * items[idx].cpuused / items[idx].hosts;
+                                    items[idx].cpuusedavg = 100.0 * items[idx].cpuusedavg / items[idx].hosts;
                                     items[idx].cpuallocated = (items[idx].cpuallocated / items[idx].hosts).toFixed(2);
                                 },
                                 async: false
@@ -134,7 +158,8 @@
             hideSearchBar: true,
             needsRefresh: true,
             noSplit: true,
-            horizontalOverflow: true
+            horizontalOverflow: true,
+            groupableColumns: true
         }
     };
 

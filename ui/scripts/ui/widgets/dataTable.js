@@ -143,12 +143,12 @@
         var sortTable = function(columnIndex) {
             var direction = 'asc';
 
-            if ($table.find('thead th').hasClass('sorted ' + direction)) {
+            if ($table.find('thead tr:last th').hasClass('sorted ' + direction)) {
                 direction = 'desc';
             }
 
-            $table.find('thead th').removeClass('sorted desc asc');
-            $($table.find('thead th')[columnIndex]).addClass('sorted').addClass(direction);
+            $table.find('thead tr:last th').removeClass('sorted desc asc');
+            $($table.find('thead tr:last th')[columnIndex]).addClass('sorted').addClass(direction);
 
             var $elems = $table.find('tbody td').filter(function() {
                 return $(this).index() == columnIndex;
@@ -242,7 +242,7 @@
 
             $table.find('th:not(:has(input))').bind('mousemove mouseout', hoverResizableEvent);
             $table.find('th:not(:has(input))').bind('mousedown mousemove mouseup mouseout', resizeDragEvent);
-            $table.find('th:not(:has(input))').bind('click', function(event) {
+            $table.find('th:not(:has(input)):not(.collapsible-column)').bind('click', function(event) {
                 if ($(this).hasClass('resizable')) {
                     return false;
                 }
