@@ -338,6 +338,27 @@ table th div.ui-resizable-handle {
   float: right;
 }
 
+.no-split thead, .no-split tbody {
+  display: block;
+}
+
+.no-split thead {
+  position: absolute;
+}
+
+.no-split tbody {
+  height: 570px;
+  padding-top: 30px;
+}
+
+.horizontal-overflow tbody td, .horizontal-overflow thead th {
+  min-width: 120px;
+}
+
+.horizontal-overflow tbody {
+  overflow: auto;
+}
+
 /** Header, misc*/
 #template {
   display: none;

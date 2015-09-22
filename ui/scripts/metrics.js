@@ -132,7 +132,9 @@
                 console.log("Refreshing Cluster metrics");
             },
             hideSearchBar: true,
-            needsRefresh: true
+            needsRefresh: true,
+            noSplit: true,
+            horizontalOverflow: true
         }
     };
 

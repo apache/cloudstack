@@ -181,7 +181,7 @@
         };
 
         var resizeHeaders = function() {
-            var $thead = $table.closest('div.data-table').find('thead');
+            var $thead = $table.hasClass('no-split') ? $table.find('thead') : $table.closest('div.data-table').find('thead');
             var $tbody = $table.find('tbody');
             var $ths = $thead.find('th');
             var $tds = $tbody.find('tr:first td');

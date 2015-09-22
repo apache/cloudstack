@@ -1796,6 +1796,16 @@
                 'multiSelect': multiSelect,
                 noActionCol: listViewData.noActionCol
             });
+
+        if (listViewData.noSplit == true) {
+            $table.addClass('no-split');
+        }
+
+        if (listViewData.horizontalOverflow == true) {
+            $table.addClass('horizontal-overflow');
+            $table.parent().css({'overflow-x': 'auto'});
+        }
+
         createFilters($toolbar, listViewData.filters);
                 
         if (listViewData.hideSearchBar != true) {
