@@ -1507,7 +1507,9 @@
                             },
                             complete: function(args) {
                                 if (args.password != null) {
-                                    alert('Password of the VM is ' + args.password);
+                                    cloudStack.dialog.notice({
+                                        message: 'Password of the VM is ' + args.password
+                                    });
                                 }
                                 return 'label.action.start.instance';
                             }

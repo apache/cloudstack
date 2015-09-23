@@ -1068,7 +1068,9 @@
                             getUpdatedItem: function(json) {
                                 var item = json.queryasyncjobresultresponse.jobresult.virtualmachine;
                                 if (item.password != null)
-                                    alert("Password of new VM " + item.displayname + " is  " + item.password);
+                                    cloudStack.dialog.notice({
+                                        message: "Password of new VM " + item.displayname + " is  " + item.password
+                                    });
                                 return item;
                             },
                             getActionFilter: function() {
