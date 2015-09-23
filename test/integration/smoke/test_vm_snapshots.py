@@ -362,12 +362,12 @@ class TestSnapshots(cloudstackTestCase):
     @attr(tags=["advanced", "basic", "smoke"], required_hardware="true")
     def test_01_test_vm_volume_snapshot(self):
         """
-        @Desc: Test that Volume snapshot for root volume not allowed
+        @Desc: Test that Volume snapshot for root volume is allowed
         when VM snapshot is present for the VM
         @Steps:
         1: Deploy a VM and create a VM snapshot for VM
         2: Try to create snapshot for the root volume of the VM,
-        It should fail
+        It should not fail
         """
 
         # Creating Virtual Machine
