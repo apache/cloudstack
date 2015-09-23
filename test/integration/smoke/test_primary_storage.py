@@ -42,6 +42,12 @@ class TestPrimaryStorageServices(cloudstackTestCase):
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.pod = get_pod(self.apiclient, self.zone.id)
         self.hypervisor = self.testClient.getHypervisorInfo()
+        self.domain = get_domain(self.apiclient)
+        self.template = get_template(
+            self.apiclient ,
+            self.zone.id ,
+            self.services["ostype"]
+        )
 
         return
 
@@ -249,6 +255,107 @@ class TestPrimaryStorageServices(cloudstackTestCase):
 
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_01_add_primary_storage_disabled_host(self):
+        """Test add primary storage pool with disabled host
+        """
+
+        #Disable a host
+        clusters = list_clusters(
+            self.apiclient,
+            zoneid=self.zone.id
+        )
+        assert isinstance(clusters,list) and len(clusters)>0
+        for cluster in clusters:
+
+            list_hosts_response = list_hosts(
+                self.apiclient,
+                clusterid=cluster.id,
+                type="Routing"
+            )
+            assert isinstance(list_hosts_response,list)
+            if len(list_hosts_response) < 2:
+                continue
+            selected_cluster = cluster
+            selected_host = list_hosts_response[0]
+            Host.update(self.apiclient, id=selected_host.id, allocationstate="Disable")
+
+
+            #create a pool
+            storage_pool_2 = StoragePool.create(
+                self.apiclient,
+                self.services["nfs2"],
+                clusterid=selected_cluster.id,
+                zoneid=self.zone.id,
+                podid=self.pod.id
+            )
+            #self.cleanup.append(storage_pool_2)
+
+            #Enable host and disable others
+            Host.update(self.apiclient, id=selected_host.id, allocationstate="Enable")
+            for host in list_hosts_response :
+                if(host.id == selected_host.id) :
+                    continue
+                Host.update(self.apiclient, id=host.id, allocationstate="Disable")
+
+
+            #put other pools in maintenance
+            storage_pool_list = StoragePool.list(self.apiclient, zoneid = self.zone.id)
+            for pool in storage_pool_list :
+                if(pool.id == storage_pool_2.id) :
+                    continue
+                StoragePool.update(self.apiclient,id=pool.id, enabled=False)
+
+            #deployvm
+            try:
+                # Create Account
+                account = Account.create(
+                    self.apiclient,
+                    self.services["account"],
+                    domainid=self.domain.id
+                )
+
+                service_offering = ServiceOffering.create(
+                    self.apiclient,
+                    self.services["service_offerings"]["tiny"]
+                )
+                self.cleanup.append(service_offering)
+
+                self.virtual_machine = VirtualMachine.create(
+                    self.apiclient,
+                    self.services["virtual_machine"],
+                    accountid=account.name,
+                    zoneid=self.zone.id,
+                    domainid=self.domain.id,
+                    templateid=self.template.id,
+                    serviceofferingid=service_offering.id
+                )
+                self.cleanup.append(self.virtual_machine)
+                self.cleanup.append(account)
+            finally:
+                #cancel maintenance
+                for pool in storage_pool_list :
+                    if(pool.id == storage_pool_2.id) :
+                        continue
+                    StoragePool.update(self.apiclient,id=pool.id, enabled=True)
+                #Enable all hosts
+                for host in list_hosts_response :
+                    if(host.id == selected_host.id) :
+                        continue
+                    Host.update(self.apiclient, id=host.id, allocationstate="Enable")
+
+                cleanup_resources(self.apiclient, self.cleanup)
+                self.cleanup = []
+                StoragePool.enableMaintenance(self.apiclient,storage_pool_2.id)
+                time.sleep(30);
+                cmd = deleteStoragePool.deleteStoragePoolCmd()
+                cmd.id = storage_pool_2.id
+                cmd.forced = True
+                self.apiclient.deleteStoragePool(cmd)
+
+        return
+
+
 class StorageTagsServices:
     """Test Storage Tags Data Class.
     """
@@ -380,7 +487,7 @@ class TestStorageTags(cloudstackTestCase):
             cmd.id = cls.storage_pool_1.id
             cmd.forced = True
             cls.apiclient.deleteStoragePool(cmd)
-            
+
             cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Cleanup failed with %s" % e)
@@ -549,10 +656,10 @@ class TestStorageTags(cloudstackTestCase):
             listall=True
         )
         vol = vm_1_volumes[0]
-        
+
         if self.hypervisor.lower() not in ["vmware", "xenserver"]:
             self.virtual_machine_1.stop(self.apiclient)
-            
+
         # Check migration options for volume
         pools_response = StoragePool.listForMigration(
             self.apiclient,
