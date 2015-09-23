@@ -347,16 +347,11 @@ table th div.ui-resizable-handle {
 }
 
 .no-split tbody {
-  height: 520px;
   padding-top: 58px;
 }
 
 .horizontal-overflow tbody td, .horizontal-overflow thead th {
   min-width: 120px;
-}
-
-.horizontal-overflow tbody {
-  overflow: auto;
 }
 
 .groupable-header {
