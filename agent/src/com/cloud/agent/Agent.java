@@ -394,15 +394,17 @@ public class Agent implements HandlerFactory, IAgentControl {
         } while (inProgress > 0);
 
         _connection.stop();
-        while (_connection.isStartup()) {
-            _shell.getBackoffAlgorithm().waitBeforeRetry();
-        }
 
         try {
             _connection.cleanUp();
         } catch (final IOException e) {
             s_logger.warn("Fail to clean up old connection. " + e);
         }
+
+        while (_connection.isStartup()) {
+            _shell.getBackoffAlgorithm().waitBeforeRetry();
+        }
+
         _connection = new NioClient("Agent", _shell.getHost(), _shell.getPort(), _shell.getWorkers(), this);
         do {
             s_logger.info("Reconnecting...");
