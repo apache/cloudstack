@@ -17,14 +17,15 @@
 package org.apache.cloudstack.api.command.user.vpn;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.Site2SiteCustomerGatewayResponse;
 import org.apache.cloudstack.context.CallContext;
 
@@ -84,6 +85,10 @@ public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
                    + "gateway associated with the account for the specified domain.")
     private Long domainId;
 
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class,
+            description = "create site-to-site VPN customer gateway for the project")
+    private Long projectId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -132,6 +137,10 @@ public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
         return domainId;
     }
 
+    public Long getProjectId() {
+        return projectId;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -143,7 +152,7 @@ public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, null, true);
+        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             accountId = CallContext.current().getCallingAccount().getId();
         }
