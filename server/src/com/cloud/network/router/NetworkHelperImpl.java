@@ -84,6 +84,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
+import com.cloud.user.UserVO;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -486,7 +487,10 @@ public class NetworkHelperImpl implements NetworkHelper {
 
                 long userId = CallContext.current().getCallingUserId();
                 if (CallContext.current().getCallingAccount().getId() != owner.getId()) {
-                    userId =  _userDao.listByAccount(owner.getAccountId()).get(0).getId();
+                    List<UserVO> userVOs = _userDao.listByAccount(owner.getAccountId());
+                    if (!userVOs.isEmpty()) {
+                        userId =  userVOs.get(0).getId();
+                    }
                 }
 
                 router = new DomainRouterVO(id, routerOffering.getId(), routerDeploymentDefinition.getVirtualProvider().getId(), VirtualMachineName.getRouterName(id,
