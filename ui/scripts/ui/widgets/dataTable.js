@@ -186,6 +186,10 @@
             var $ths = $thead.find('th');
             var $tds = $tbody.find('tr:first td');
 
+            if ($table.hasClass('no-split')) {
+                $tbody.width($thead.width());
+            }
+
             if ($ths.size() > $tds.size()) {
                 $ths.width(
                     $table.width() / $ths.size()
@@ -195,6 +199,10 @@
 
             $ths.each(function() {
                 var $th = $(this);
+
+                if ($th.hasClass('collapsible-column')) {
+                    return true;
+                }
 
                 var $td = $tds.filter(function() {
                     return $(this).index() == $th.index();
@@ -240,8 +248,8 @@
                 $table.find('tbody').closest('table').addClass('body');
             }
 
-            $table.find('th:not(:has(input))').bind('mousemove mouseout', hoverResizableEvent);
-            $table.find('th:not(:has(input))').bind('mousedown mousemove mouseup mouseout', resizeDragEvent);
+            $table.find('th:not(:has(input)):not(.collapsible-column)').bind('mousemove mouseout', hoverResizableEvent);
+            $table.find('th:not(:has(input)):not(.collapsible-column)').bind('mousedown mousemove mouseup mouseout', resizeDragEvent);
             $table.find('th:not(:has(input)):not(.collapsible-column)').bind('click', function(event) {
                 if ($(this).hasClass('resizable')) {
                     return false;
