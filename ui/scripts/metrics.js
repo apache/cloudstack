@@ -55,7 +55,7 @@
                     label: 'label.hosts'
                 },
                 cpuused: {
-                    label: 'label.cpu.used',
+                    label: 'label.cpu.usage',
                     collapsible: true,
                     columns: {
                         cpuusedavg: {
@@ -74,31 +74,31 @@
                             label: 'label.allocated'
                         },
                         cputotal: {
-                            label: 'label.cpu.total'
+                            label: 'label.cpu.total.ghz'
                         }
                     }
                 },
                 memused: {
-                    label: 'label.mem.used',
+                    label: 'label.memory.usage',
                     collapsible: true,
                     columns: {
                         memusedavg: {
-                            label: 'label.mem.used.avg'
+                            label: 'label.memory.used.avg'
                         },
                         memmaxdev: {
-                            label: 'label.mem.max.dev'
+                            label: 'label.memory.max.dev'
                         }
                     }
                 },
                 memallocated: {
-                    label: 'label.mem.allocated',
+                    label: 'label.memory.allocated',
                     collapsible: true,
                     columns: {
                         memallocated: {
                             label: 'label.allocated'
                         },
                         memtotal: {
-                            label: 'label.mem.total'
+                            label: 'label.memory.total.gb'
                         }
                     }
                 }
