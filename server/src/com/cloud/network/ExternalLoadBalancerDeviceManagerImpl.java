@@ -1009,7 +1009,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         }
 
         // Send a command to the external load balancer to implement or shutdown the guest network
-        long guestVlanTag = Long.parseLong(BroadcastDomainType.getValue(guestConfig.getBroadcastUri()));
+        String guestVlanTag = BroadcastDomainType.getValue(guestConfig.getBroadcastUri());
         String selfIp = null;
         String guestVlanNetmask = NetUtils.cidr2Netmask(guestConfig.getCidr());
         Integer networkRate = _networkModel.getNetworkRate(guestConfig.getId(), null);
@@ -1042,7 +1042,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         // It's a hack, using isOneToOneNat field for indicate if it's inline or not
         boolean inline = _networkMgr.isNetworkInlineMode(guestConfig);
         IpAddressTO ip =
-            new IpAddressTO(guestConfig.getAccountId(), null, add, false, true, String.valueOf(guestVlanTag), selfIp, guestVlanNetmask, null, networkRate, inline);
+            new IpAddressTO(guestConfig.getAccountId(), null, add, false, true, guestVlanTag, selfIp, guestVlanNetmask, null, networkRate, inline);
         IpAddressTO[] ips = new IpAddressTO[1];
         ips[0] = ip;
         IpAssocCommand cmd = new IpAssocCommand(ips);
