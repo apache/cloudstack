@@ -782,13 +782,37 @@
             var $th = $('<th>').addClass(key).attr('colspan', colspan).appendTo($tr);
             if ($th.index()) $th.addClass('reduced-hide');
             if (colspan > 1) {
-                $th.css({'border-right': '1px solid #C6C3C3', 'border-left': '1px solid #C6C3C3'});
-                $th.addClass('collapsible-column');
+                $th.css({'border-right': 'none', 'border-left': '1px solid #C6C3C3'});
                 $('<span>').html(_l(label)).appendTo($th);
-                $('<span>').html('&raquo').css({'float': 'right'}).appendTo($th);
+
+                var karet = addColumnToTr($tr, 'collapsible-column', 1, '&laquo');
+                karet.css({'border-right': '1px solid #C6C3C3', 'border-left': 'none', 'min-width': '10px', 'width': '10px', 'max-width': '10px'});
+                karet.click(function(event) {
+                    event.stopPropagation();
+                    var prevTh = $(this).prev('th');
+                    var startIndex = 0;
+                    prevTh.prevAll('th').each(function() {
+                        startIndex += parseInt($(this).attr('colspan'));
+                    });
+                    var endIndex = startIndex + parseInt(prevTh.attr('colspan'));
+                    prevTh.closest('table').find('tbody td').filter(function() {
+                        return $(this).index() >= startIndex && $(this).index() < endIndex;
+                    }).toggle();
+                    prevTh.closest('table').find('thead tr:last th').filter(function() {
+                        return $(this).index() >= startIndex && $(this).index() < endIndex;
+                    }).toggle();
+                    prevTh.toggle();
+                    if (prevTh.is(':visible')) {
+                        $(this).html('&laquo');
+                    } else {
+                        $(this).html('&raquo');
+                    }
+                    $tr.closest('.list-view').find('.no-split').dataTable('refresh');
+                });
             } else {
                 $th.html(_l(label));
             }
+            return $th;
         };
 
         if (groupableColumns) {
@@ -831,6 +855,9 @@
                     addColumnToTr($tr, key, 1, subfield.label);
                     return true;
                 });
+                var blankCell = addColumnToTr($tr, 'collapsible-column', 1, '');
+                blankCell.css({'border-right': '1px solid #C6C3C3', 'border-left': 'none', 'min-width': '10px', 'width': '10px', 'max-width': '10px'});
+                blankCell.prev('th').css({'border-right': 'none'});
             } else {
                 addColumnToTr($tr, key, 1, field.label);
             }
@@ -1123,12 +1150,15 @@
             }
 
             var reducedFields = {};
+            var idx = 0;
             $.each(fields, function(key) {
                 var field = this;
                 if (field.columns) {
                     $.each(field.columns, function(innerKey) {
                         reducedFields[innerKey] = this;
                     });
+                    reducedFields['blank-cell-' + idx] = {blankCell: true};
+                    idx += 1;
                 } else {
                     reducedFields[key] = this;
                 }
@@ -1148,6 +1178,11 @@
 
                 if (field.truncate) {
                     $td.addClass('truncated');
+                }
+
+                if (field.blankCell) {
+                    $td.css({'min-width': '10px', 'width': '10px', 'max-width': '10px', 'border-left': 'none'});
+                    $td.prev('td').css({'border-right': 'none'});
                 }
 
                 if (field.indicator) {
