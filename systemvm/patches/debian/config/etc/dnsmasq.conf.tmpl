@@ -87,7 +87,7 @@ local=/2.vmops-test.vmops.com/
 # specified interfaces (and the loopback) give the name of the
 # interface (eg eth0) here.
 # Repeat the line for more than one interface.
-interface=eth0
+#interface=eth0
 # Or you can specify which interface _not_ to listen on
 except-interface=eth1
 except-interface=eth2
@@ -108,7 +108,7 @@ no-dhcp-interface=eth2
 # want dnsmasq to really bind only the interfaces it is listening on,
 # uncomment this option. About the only time you may need this is when
 # running another nameserver on the same machine.
-bind-interfaces
+#bind-interfaces
 
 # If you don't want dnsmasq to read /etc/hosts, uncomment the
 # following line.

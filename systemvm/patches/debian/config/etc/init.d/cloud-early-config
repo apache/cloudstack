@@ -706,7 +706,7 @@ setup_dnsmasq() {
     sed -i -e "s/^dhcp-range_ip6=.*$//" /etc/dnsmasq.conf
   fi
 
-  sed -i -e "s/^[#]*listen-address=.*$/listen-address=$LOCAL_ADDRS/" /etc/dnsmasq.conf
+  #sed -i -e "s/^[#]*listen-address=.*$/listen-address=$LOCAL_ADDRS/" /etc/dnsmasq.conf
 
   if [ "$RROUTER" == "1" ]
   then
