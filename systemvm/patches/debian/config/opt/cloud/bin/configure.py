@@ -818,50 +818,65 @@ def main(argv):
                         format=config.get_format())
     config.set_address()
 
+    logging.debug("Configuring ip addresses")
     # IP configuration
     config.address().compare()
     config.address().process()
 
+    logging.debug("Configuring vmpassword")
     password = CsPassword("vmpassword", config)
     password.process()
 
+    logging.debug("Configuring vmdata")
     metadata = CsVmMetadata('vmdata', config)
     metadata.process()
 
+    logging.debug("Configuring networkacl")
     acls = CsAcl('networkacl', config)
     acls.process()
 
+    logging.debug("Configuring firewall rules")
     acls = CsAcl('firewallrules', config)
     acls.process()
 
+    logging.debug("Configuring PF rules")
     fwd = CsForwardingRules("forwardingrules", config)
     fwd.process()
 
     red = CsRedundant(config)
     red.set()
 
+    logging.debug("Configuring s2s vpn")
     vpns = CsSite2SiteVpn("site2sitevpn", config)
     vpns.process()
 
+    logging.debug("Configuring remote access vpn")
     #remote access vpn
     rvpn = CsRemoteAccessVpn("remoteaccessvpn", config)
     rvpn.process()
 
+    logging.debug("Configuring vpn users list")
     #remote access vpn users
     vpnuser = CsVpnUser("vpnuserlist", config)
     vpnuser.process()
 
+    logging.debug("Configuring dhcp entry")
     dhcp = CsDhcp("dhcpentry", config)
     dhcp.process()
 
+    logging.debug("Configuring load balancer")
     lb = CsLoadBalancer("loadbalancer", config)
     lb.process()
 
+    logging.debug("Configuring monitor service")
     mon = CsMonitor("monitorservice", config)
     mon.process()
 
+    logging.debug("Configuring iptables rules .....")
     nf = CsNetfilters()
     nf.compare(config.get_fw())
+
+    logging.debug("Configuring iptables rules done ...saving rules")
 
     # Save iptables configuration - will be loaded on reboot by the iptables-restore that is configured on /etc/rc.local
     CsHelper.save_iptables("iptables-save", "/etc/iptables/router_rules.v4")
