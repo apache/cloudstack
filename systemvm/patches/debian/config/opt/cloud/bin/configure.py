@@ -124,6 +124,7 @@ class CsAcl(CsDataBag):
                                     " -m %s " % rule['protocol'] +
                                     " --dport %s -j RETURN" % rnge])
             if self.direction == 'egress':
+                self.fw.append(["filter", "", " -A FW_OUTBOUND -j FIREWALL_EGRESS_RULES"])
                 if rule['protocol'] == "icmp":
                     self.fw.append(["filter", "front",
                                     " -A FIREWALL_EGRESS_RULES" +
