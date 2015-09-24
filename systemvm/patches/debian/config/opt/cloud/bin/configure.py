@@ -662,6 +662,20 @@ class CsForwardingRules(CsDataBag):
                 elif rule["type"] == "staticnat":
                     self.processStaticNatRule(rule)
 
+    #return the VR guest interface ipo
+    def getGuestIp(self):
+        ipr = []
+        ipAddr = None
+        for ip in self.config.address().get_ips():
+            if ip.is_guest():
+                ipr.append(ip)
+            if len(ipr) > 0:
+                ipAddr = sorted(ipr)[-1]
+            if ipAddr:
+                return ipAddr.get_ip()
+
+        return None
+
     def getDeviceByIp(self, ipa):
         for ip in self.config.address().get_ips():
             if ip.ip_in_subnet(ipa):
@@ -725,7 +739,7 @@ class CsForwardingRules(CsDataBag):
               )
         fw4 = "-j SNAT --to-source %s -A POSTROUTING -s %s -d %s/32 -o %s -p %s -m %s --dport %s" % \
               (
-                self.getGatewayByIp(rule['internal_ip']),
+                self.getGuestIp(),
                 self.getNetworkByIp(rule['internal_ip']),
                 rule['internal_ip'],
                 self.getDeviceByIp(rule['internal_ip']),
@@ -809,6 +823,14 @@ class CsForwardingRules(CsDataBag):
                         "-A POSTROUTING -o %s -s %s/32 -j SNAT --to-source %s" % (device, rule["internal_ip"], rule["public_ip"])])
         self.fw.append(["nat", "front",
                         "-A OUTPUT -d %s/32 -j DNAT --to-destination %s" % (rule["public_ip"], rule["internal_ip"])])
+        self.fw.append(["filter", "",
+                        "-A FORWARD -i %s -o eth0  -d %s  -m state  --state NEW -j ACCEPT " % (device, rule["internal_ip"])])
+
+        #configure the hairpin nat
+        self.fw.append(["nat", "front",
+                        "-A PREROUTING -d %s -i eth0 -j DNAT --to-destination %s" % (rule["public_ip"], rule["internal_ip"])])
+
+        self.fw.append(["nat", "front", "-A POSTROUTING -s %s -d %s -j SNAT -o eth0 --to-source %s" % (self.getNetworkByIp(rule['internal_ip']),rule["internal_ip"], self.getGuestIp())])
 
 
 def main(argv):
