@@ -121,8 +121,8 @@ class CsAddress(CsDataBag):
             ip = CsIP(dev, self.config)
 
             for address in self.dbag[dev]:
-                if(address["nw_type"]!="public"):
-                    continue
+               # if(address["nw_type"]!="public"):
+               #     continue
 
                 #check if link is up
                 if (not self.check_if_link_exists(dev)):
