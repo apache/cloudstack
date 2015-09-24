@@ -1116,10 +1116,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             name = oldPodName;
         }
 
-        if (gateway == null) {
-            gateway = pod.getGateway();
-        }
-
         if (startIp == null) {
             startIp = existingPodIpRange[0];
         }
@@ -1133,7 +1129,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         // Verify pod's attributes
-        final String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
+        final String cidr = NetUtils.ipAndNetMaskToCidr(startIp, netmask);
         final boolean checkForDuplicates = !oldPodName.equals(name);
         checkPodAttributes(id, name, pod.getDataCenterId(), gateway, cidr, startIp, endIp, allocationStateStr, checkForDuplicates, false);
 
