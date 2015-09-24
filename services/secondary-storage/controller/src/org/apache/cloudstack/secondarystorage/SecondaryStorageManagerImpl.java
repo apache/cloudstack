@@ -1102,7 +1102,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 if (NetUtils.isValidCIDR(mgmt_cidr)) {
                     buf.append(" mgmtcidr=").append(mgmt_cidr);
                 }
-                buf.append(" localgw=").append(dest.getPod().getGateway());
+                if (dest.getPod().getGateway() != null) {
+                    buf.append(" localgw=").append(dest.getPod().getGateway());
+                }
                 buf.append(" private.network.device=").append("eth").append(deviceId);
             } else if (nic.getTrafficType() == TrafficType.Public) {
                 buf.append(" public.network.device=").append("eth").append(deviceId);

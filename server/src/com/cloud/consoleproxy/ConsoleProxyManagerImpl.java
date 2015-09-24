@@ -1345,7 +1345,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                 if (NetUtils.isValidCIDR(mgmt_cidr)) {
                     buf.append(" mgmtcidr=").append(mgmt_cidr);
                 }
-                buf.append(" localgw=").append(dest.getPod().getGateway());
+                if (dest.getPod().getGateway() != null) {
+                    buf.append(" localgw=").append(dest.getPod().getGateway());
+                }
             }
         }
 
