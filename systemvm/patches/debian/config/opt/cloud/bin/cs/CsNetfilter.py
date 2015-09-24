@@ -177,6 +177,8 @@ class CsNetfilters(object):
         These standard firewall rules vary according to the device type
         """
         type = CsCmdLine("cmdline").get_type()
+        if type == 'dhcpsrvr':
+            type = 'router'
 
         try:
             table = ''
