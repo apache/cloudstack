@@ -31,7 +31,7 @@ public class LocalTemplateDownloaderTest {
     @Test
     public void localTemplateDownloaderTest() {
         String url =  "file://" + new File("pom.xml").getAbsolutePath();
-        TemplateDownloader td = new LocalTemplateDownloader(null, url, "/tmp", TemplateDownloader.DEFAULT_MAX_TEMPLATE_SIZE_IN_BYTES, null);
+        TemplateDownloader td = new LocalTemplateDownloader(null, url, System.getProperty("java.io.tmpdir"), TemplateDownloader.DEFAULT_MAX_TEMPLATE_SIZE_IN_BYTES, null);
         long bytes = td.download(true, null);
         if (!(bytes > 0)) {
             fail("Failed download");
