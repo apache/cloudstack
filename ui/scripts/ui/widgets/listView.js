@@ -786,7 +786,7 @@
                 $('<span>').html(_l(label)).appendTo($th);
 
                 var karet = addColumnToTr($tr, 'collapsible-column', 1, '&laquo');
-                karet.css({'border-right': '1px solid #C6C3C3', 'border-left': 'none', 'min-width': '10px', 'width': '10px', 'max-width': '10px'});
+                karet.css({'border-right': '1px solid #C6C3C3', 'border-left': 'none', 'min-width': '10px', 'width': '10px', 'max-width': '10px', 'padding': '2px', 'font-size': 'medium' });
                 karet.click(function(event) {
                     event.stopPropagation();
                     var prevTh = $(this).prev('th');
