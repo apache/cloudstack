@@ -718,7 +718,7 @@
                     reservedSystemGateway: {
                         label: 'label.reserved.system.gateway',
                         validation: {
-                            required: true
+                            required: false
                         },
                         desc: 'message.tooltip.reserved.system.gateway'
                     },
