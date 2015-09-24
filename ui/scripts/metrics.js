@@ -40,7 +40,7 @@
                 name: {
                     label: 'label.name'
                 },
-                allocationstate: {
+                state: {
                     label: 'label.state',
                     converter: function (str) {
                         // For localization
@@ -48,7 +48,9 @@
                     },
                     indicator: {
                         'Enabled': 'on',
-                        'Destroyed': 'off'
+                        'Unmanaged': 'off',
+                        'Destroyed': 'off',
+                        'Disabled': 'off'
                     }
                 },
                 hosts: {
@@ -112,25 +114,28 @@
                     success: function(json) {
                         var items = json.listclustersresponse.cluster;
                         $.each(items, function(idx, cluster) {
+                            items[idx].hosts = 0;
+                            items[idx].cpuusedavg = 0.0;
+                            items[idx].cpumaxdev = 0.0;
+                            items[idx].cpuallocated = 0.0;
+                            items[idx].maxCpuUsed = 0;
+                            items[idx].memusedavg = 0.0;
+                            items[idx].memmaxdev = 0.0;
+                            items[idx].memallocated = 0.0;
+                            items[idx].maxMemUsed = 0;
+
                             $.ajax({
                                 url: createURL('listHosts'),
                                 data: {clusterid: cluster.id},
                                 success: function(json) {
-                                    items[idx].hosts = json.listhostsresponse.count;
-                                    items[idx].cpuusedavg = 0.0;
-                                    items[idx].cpumaxdev = 0.0;
-                                    items[idx].cpuallocated = 0.0;
-                                    items[idx].cputotal = 0.0;
-                                    items[idx].memusedavg = 0.0;
-                                    items[idx].memmaxdev = 0.0;
-                                    items[idx].memallocated = 0.0;
-                                    items[idx].memtotal = 0.0;
+                                    items[idx].hosts += parseInt(json.listhostsresponse.count);
                                     var maxCpuUsed = 0.0;
+                                    var maxMemUsed = 0;
                                     $.each(json.listhostsresponse.host, function(i, host) {
                                         if (host.hasOwnProperty('cpuused')) {
                                             items[idx].cpuusedavg += host.cpuused;
-                                            if (host.cpuused > maxCpuUsed) {
-                                                maxCpuUsed = host.cpuused;
+                                            if (host.cpuused > items[idx].maxCpuUsed) {
+                                                items[idx].maxCpuUsed = host.cpuused;
                                             }
                                         }
 
@@ -138,13 +143,61 @@
                                             items[idx].cpuallocated += parseFloat(host.cpuallocated.replace('%', ''));
                                         }
 
+                                        if (host.hasOwnProperty('memused')) {
+                                            items[idx].memusedavg += parseFloat(host.memused);
+                                            if (host.memused > items[idx].maxMemUsed) {
+                                                items[idx].maxMemUsed = host.memused;
+                                            }
+                                        }
+
+                                        if (host.hasOwnProperty('memoryallocated')) {
+                                            items[idx].memallocated += parseFloat(100.0 * parseFloat(host.memoryallocated)/parseFloat(host.memorytotal));
+                                        }
+
                                     });
 
-                                    items[idx].cpuusedavg = 100.0 * items[idx].cpuusedavg / items[idx].hosts;
-                                    items[idx].cpuallocated = (items[idx].cpuallocated / items[idx].hosts).toFixed(2);
                                 },
                                 async: false
                             });
+
+                            $.ajax({
+                                url: createURL('listCapacity'),
+                                data: {clusterid: cluster.id},
+                                success: function(json) {
+                                    $.each(json.listcapacityresponse.capacity, function(i, capacity) {
+                                        // CPU
+                                        if (capacity.type == 1) {
+                                            items[idx].cputotal = (parseInt(capacity.capacitytotal)/(1000.0)).toFixed(2) + "Ghz";
+                                        }
+                                        // Memory
+                                        if (capacity.type == 0) {
+                                            items[idx].memtotal = (parseInt(capacity.capacitytotal)/(1024.0*1024.0*1024.0)).toFixed(2) + "GB";
+                                        }
+                                    });
+                                },
+                                async: false
+                            });
+
+                            items[idx].cpuusedavg = (100.0 * items[idx].cpuusedavg / items[idx].hosts);
+                            items[idx].cpumaxdev = (items[idx].maxCpuUsed - items[idx].cpuusedavg);
+                            items[idx].cpuallocated = (items[idx].cpuallocated / items[idx].hosts).toFixed(2) + "%";
+
+                            items[idx].memusedavg = (100.0 * items[idx].memusedavg / items[idx].hosts);
+                            items[idx].memmaxdev = (items[idx].maxMemUsed - items[idx].memusedavg);
+                            items[idx].memallocated = (items[idx].memallocated / items[idx].hosts).toFixed(2) + "%";
+
+                            items[idx].state = items[idx].allocationstate;
+                            if (items[idx].managedstate == 'Unmanaged') {
+                                items[idx].state = 'Unmanaged';
+                            }
+
+                            if (items[idx].managedstate == 'Managed' && items[idx].allocationstate == 'Enabled') {
+                                items[idx].state = 'Enabled';
+                            }
+
+                            if (items[idx].managedstate == 'Managed' && items[idx].allocationstate == 'Disabled') {
+                                items[idx].state = 'Disabled';
+                            }
                         });
                         args.response.success({
                             data: items
