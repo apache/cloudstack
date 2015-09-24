@@ -138,4 +138,6 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
     HashMap<String, Long> countVgpuVMs(Long dcId, Long podId, Long clusterId);
 
     VMInstanceVO findVMByHostNameInZone(String hostName, long zoneId);
+
+    boolean isPowerStateUpToDate(long instanceId);
 }

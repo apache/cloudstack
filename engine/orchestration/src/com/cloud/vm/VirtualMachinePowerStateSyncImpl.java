@@ -111,7 +111,14 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
 
             for (VMInstanceVO instance : vmsThatAreMissingReport) {
 
-                Date vmStateUpdateTime = instance.getUpdateTime();
+                // Make sure powerState is up to date for missing VMs
+                if (!_instanceDao.isPowerStateUpToDate(instance.getId())) {
+                    s_logger.warn("Detected missing VM but power state is outdated, wait for another process report run for VM id: " + instance.getId());
+                    _instanceDao.resetVmPowerStateTracking(instance.getId());
+                    continue;
+                }
+
+                Date vmStateUpdateTime = instance.getPowerStateUpdateTime();
                 if (vmStateUpdateTime == null) {
                     s_logger.warn("VM state was updated but update time is null?! vm id: " + instance.getId());
                     vmStateUpdateTime = currentTime;
