@@ -426,7 +426,8 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                 // we allow port forwarding rules with the same parameters but different protocols
                 boolean allowPf =
                     (rule.getPurpose() == Purpose.PortForwarding && newRule.getPurpose() == Purpose.PortForwarding && !newRule.getProtocol().equalsIgnoreCase(
-                        rule.getProtocol()));
+                        rule.getProtocol())) || (rule.getPurpose() == Purpose.Vpn && newRule.getPurpose() == Purpose.PortForwarding && !newRule.getProtocol().equalsIgnoreCase(
+                            rule.getProtocol()));
                 boolean allowStaticNat =
                     (rule.getPurpose() == Purpose.StaticNat && newRule.getPurpose() == Purpose.StaticNat && !newRule.getProtocol().equalsIgnoreCase(rule.getProtocol()));
 
