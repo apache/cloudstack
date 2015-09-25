@@ -100,7 +100,7 @@ if [ $? -eq 0 ]; then
     conntrackd -F
     conntrackd -k
 else
-   conntrackd -F
+    conntrackd -F
 fi
 log_it "VR config: Flushing conntrack table completed"
 
