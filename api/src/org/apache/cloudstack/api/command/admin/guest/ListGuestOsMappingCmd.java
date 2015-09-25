@@ -44,10 +44,10 @@ public class ListGuestOsMappingCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GuestOsMappingResponse.class, required = false, description = "list mapping by its UUID")
-    private Long id;
+    private String id;
 
     @Parameter(name = ApiConstants.OS_TYPE_ID, type = CommandType.UUID, entityType = GuestOSResponse.class, required = false, description = "list mapping by Guest OS Type UUID")
-    private Long osTypeId;
+    private String osTypeId;
 
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = false, description = "list Guest OS mapping by hypervisor")
     private String hypervisor;
@@ -59,11 +59,11 @@ public class ListGuestOsMappingCmd extends BaseListCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public Long getOsTypeId() {
+    public String getOsTypeId() {
         return osTypeId;
     }
 
