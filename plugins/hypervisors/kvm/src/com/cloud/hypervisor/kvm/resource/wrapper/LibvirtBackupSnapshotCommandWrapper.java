@@ -34,7 +34,7 @@ import org.libvirt.LibvirtException;
 
 import com.ceph.rados.IoCTX;
 import com.ceph.rados.Rados;
-import com.ceph.rados.RadosException;
+import com.ceph.rados.exceptions.RadosException;
 import com.ceph.rbd.Rbd;
 import com.ceph.rbd.RbdException;
 import com.ceph.rbd.RbdImage;
