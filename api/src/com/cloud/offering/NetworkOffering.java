@@ -133,4 +133,6 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     boolean getSupportsStrechedL2();
 
     boolean getSupportsPublicAccess();
+
+    String getServicePackage();
 }

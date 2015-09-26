@@ -192,6 +192,7 @@ public class ExternalLoadBalancerDeviceManagerImplTest {
 
     private void setupLBHealthChecksMocks() throws URISyntaxException {
         Mockito.when(network.getId()).thenReturn(42l);
+        Mockito.when(network.getNetworkOfferingId()).thenReturn(1l);
         Mockito.when(network.getBroadcastUri()).thenReturn(new URI("vlan://1"));
         NetworkExternalLoadBalancerVO externalLb = Mockito
                 .mock(NetworkExternalLoadBalancerVO.class);

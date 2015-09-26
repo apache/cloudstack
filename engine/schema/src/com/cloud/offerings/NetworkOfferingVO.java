@@ -156,6 +156,9 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name = "public_lb")
     boolean publicLb;
 
+    @Column(name="service_package_id")
+    String servicePackageUuid = null;
+
     @Override
     public boolean isKeepAliveEnabled() {
         return keepAliveEnabled;
@@ -503,5 +506,10 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Override
     public boolean getSupportsPublicAccess() {
         return supportsPublicAccess;
+    }
+
+    @Override
+    public String getServicePackage() {
+        return servicePackageUuid;
     }
 }
