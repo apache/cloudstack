@@ -97,20 +97,19 @@ class CsAddress(CsDataBag):
 
     def check_if_link_exists(self,dev):
         cmd="ip link show dev %s"%dev
-        result=CsHelper.execute(cmd)
-        if(len(result)!=0):
+        result = CsHelper.execute(cmd)
+        if(len(result) != 0):
            return True
         else:
            return False
 
     def check_if_link_up(self,dev):
         cmd="ip link show dev %s | tr '\n' ' ' | cut -d ' ' -f 9"%dev
-        result=CsHelper.execute(cmd)
-        if(result[0].lower()=="up"):
+        result = CsHelper.execute(cmd)
+        if(result and result[0].lower() == "up"):
             return True
         else:
             return False
-
 
     def process(self):
         route = CsRoute()
