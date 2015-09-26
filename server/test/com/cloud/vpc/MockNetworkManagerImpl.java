@@ -25,6 +25,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
@@ -73,6 +74,7 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicSecondaryIp;
@@ -904,7 +906,6 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
 
     @Override
     public boolean releasePodIp(ReleasePodIpCmdByAdmin ip) throws CloudRuntimeException {
-        _ipAddrMgr.releasePodIp(ip.getId());
         return true;
     }
 

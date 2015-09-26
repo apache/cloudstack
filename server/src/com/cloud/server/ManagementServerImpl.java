@@ -48,6 +48,7 @@ import org.apache.cloudstack.api.command.admin.account.EnableAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.ListAccountsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.account.LockAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
+import org.apache.cloudstack.api.command.admin.address.AcquirePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.address.AssociateIPAddrCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.address.ListPublicIpAddressesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
