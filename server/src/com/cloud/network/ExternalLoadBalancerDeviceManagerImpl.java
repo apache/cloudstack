@@ -867,9 +867,9 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         return nic;
     }
 
-    private boolean isNccServiceProvider(Network network) {
+    public boolean isNccServiceProvider(Network network) {
         NetworkOffering networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        if(networkOffering.getServicePackage() != null ) {
+        if(null!= networkOffering && networkOffering.getServicePackage() != null ) {
             return true;
         }
         else {
