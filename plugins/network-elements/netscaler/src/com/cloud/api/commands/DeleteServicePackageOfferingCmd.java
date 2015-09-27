@@ -38,7 +38,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.network.element.NetscalerLoadBalancerElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "deleteServicePackageOffering", responseObject = SuccessResponse.class, description = "Delete Service Package Offering")
+@APICommand(name = "deleteServicePackage", responseObject = SuccessResponse.class, description = "Delete Service Package Offering")
 public class DeleteServicePackageOfferingCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(DeleteServicePackageOfferingCmd.class.getName());

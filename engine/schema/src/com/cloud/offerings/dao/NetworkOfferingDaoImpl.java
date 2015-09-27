@@ -206,4 +206,17 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         }
         return id_set;
     }
+
+    @Override
+    public boolean isUsingServicePackage(String uuid) {
+        final SearchCriteria<NetworkOfferingVO> sc = createSearchCriteria();
+        final Filter searchFilter= new Filter(NetworkOfferingVO.class, "created", false, null, null);
+        sc.addAnd("state", SearchCriteria.Op.EQ, NetworkOffering.State.Enabled);
+        sc.addAnd("servicePackageUuid", SearchCriteria.Op.EQ, uuid);
+        List<NetworkOfferingVO> list = this.search(sc, searchFilter);
+        if(list!=null && !list.isEmpty())
+            return true;
+
+        return false;
+    }
 }

@@ -858,17 +858,25 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     @Override
     public boolean deleteServicePackageOffering(DeleteServicePackageOfferingCmd cmd) throws CloudRuntimeException {
         NetScalerServicePackageVO result = null;
-        boolean flag;
+        boolean flag=false;
         try {
             result = _netscalerServicePackageDao.findByUuid(cmd.getId());
+            if (result == null)
+                throw new CloudRuntimeException("Record does not Exists in the Table");
+
+            if(_networkOfferingDao.isUsingServicePackage(result.getUuid()))
+            {
+                throw new CloudRuntimeException("Network offering is using the service package. First delete the NeworkOffering and then delete ServicePackage");
+            }
+
             flag = _netscalerServicePackageDao.remove(result.getId());
+
         } catch (Exception e) {
             if (e instanceof InvalidParameterValueException)
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.getMessage());
-            else if (result == null)
-                throw new CloudRuntimeException("Record does not Exists in the Table");
             else
-                throw new CloudRuntimeException("Network offering is using the service package. First delete the nework offering and then delete ServicePackage");
+               throw e;
+
         }
         return flag;
 
