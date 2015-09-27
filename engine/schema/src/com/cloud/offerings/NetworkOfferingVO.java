@@ -503,6 +503,10 @@ public class NetworkOfferingVO implements NetworkOffering {
         return supportsStrechedL2;
     }
 
+    public void  setServicePackage(String servicePackageUuid) {
+        this.servicePackageUuid = servicePackageUuid;
+    }
+
     @Override
     public boolean getSupportsPublicAccess() {
         return supportsPublicAccess;
