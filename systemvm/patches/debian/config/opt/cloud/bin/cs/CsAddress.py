@@ -97,23 +97,23 @@ class CsAddress(CsDataBag):
 
     def check_if_link_exists(self,dev):
         cmd="ip link show dev %s"%dev
-        result=CsHelper.execute(cmd)
-        if(len(result)!=0):
+        result = CsHelper.execute(cmd)
+        if(len(result) != 0):
            return True
         else:
            return False
 
     def check_if_link_up(self,dev):
         cmd="ip link show dev %s | tr '\n' ' ' | cut -d ' ' -f 9"%dev
-        result=CsHelper.execute(cmd)
-        if(result[0].lower()=="up"):
+        result = CsHelper.execute(cmd)
+        if(result and result[0].lower() == "up"):
             return True
         else:
             return False
 
-
     def process(self):
         route = CsRoute()
+        found_defaultroute = False
 
         for dev in self.dbag:
             if dev == "id":
@@ -121,17 +121,12 @@ class CsAddress(CsDataBag):
             ip = CsIP(dev, self.config)
 
             for address in self.dbag[dev]:
-                if(address["nw_type"]!="public"):
-                    continue
-
                 #check if link is up
-                if (not self.check_if_link_exists(dev)):
-                    logging.info("link %s does not exist, so not processing"%dev)
-                    continue
                 if not self.check_if_link_up(dev):
                    cmd="ip link set %s up"%dev
                    CsHelper.execute(cmd)
 
+                gateway = str(address["gateway"])
                 network = str(address["network"])
 
                 ip.setAddress(address)
@@ -147,15 +142,23 @@ class CsAddress(CsDataBag):
                         "Address %s on device %s not configured", ip.ip(), dev)
                     if CsDevice(dev, self.config).waitfordevice():
                         ip.configure()
+
                 route.add_route(dev, network)
+
+                # The code looks redundant here, but we actually have to cater for routers and
+                # VPC routers in a different manner. Please do not remove this block otherwise
+                # The VPC default route will be broken.
+                if address["nw_type"] == "public" and not found_defaultroute:
+                    if not route.defaultroute_exists():
+                        if route.add_defaultroute(gateway):
+                            found_defaultroute = True
 
         # once we start processing public ip's we need to verify there
         # is a default route and add if needed
         if not route.defaultroute_exists():
-            cmdline=self.config.get_cmdline_instance()
+            cmdline = self.config.cmdline()
             if(cmdline.get_gateway()):
                 route.add_defaultroute(cmdline.get_gateway())
-
 
 
 class CsInterface:
@@ -516,9 +519,10 @@ class CsIP:
         self.fw.append(["", "", "-A NETWORK_STATS -i eth2 -o eth0 -p tcp"])
         self.fw.append(["", "", "-A NETWORK_STATS ! -i eth0 -o eth2 -p tcp"])
         self.fw.append(["", "", "-A NETWORK_STATS -i eth2 ! -o eth0 -p tcp"])
-        
+
+        self.fw.append(["filter", "", "-A INPUT -p icmp -j ACCEPT"])
         self.fw.append(["filter", "", "-A INPUT -i eth0 -p tcp -m tcp --dport 3922 -m state --state NEW,ESTABLISHED -j ACCEPT"])
-        
+
         self.fw.append(["filter", "", "-P INPUT DROP"])
         self.fw.append(["filter", "", "-P FORWARD DROP"])
 
