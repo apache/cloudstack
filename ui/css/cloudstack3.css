@@ -338,20 +338,8 @@ table th div.ui-resizable-handle {
   float: right;
 }
 
-.no-split thead, .no-split tbody {
-  display: block;
-}
-
-.no-split thead {
-  position: absolute;
-}
-
-.no-split tbody {
-  padding-top: 58px;
-}
-
 .horizontal-overflow tbody td, .horizontal-overflow thead th {
-  min-width: 120px;
+  min-width: 50px;
 }
 
 .groupable-header {
@@ -362,6 +350,10 @@ table th div.ui-resizable-handle {
 
 .groupable-header-columns th {
   border: none;
+}
+
+table.no-split td.first {
+  min-width: 120px;
 }
 
 .groupable-header-border {
