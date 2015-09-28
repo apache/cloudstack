@@ -1021,7 +1021,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService, Confi
             sc.setParameters("displayVm", 1);
         }
         // search vm details by ids
-        Pair<List<UserVmJoinVO>, Integer> uniqueVmPair = _userVmJoinDao.searchAndCount(sc, searchFilter);
+        Pair<List<UserVmJoinVO>, Integer> uniqueVmPair = _userVmJoinDao.searchAndDistinctCount(sc, searchFilter);
         Integer count = uniqueVmPair.second();
         if (count.intValue() == 0) {
             // handle empty result cases
