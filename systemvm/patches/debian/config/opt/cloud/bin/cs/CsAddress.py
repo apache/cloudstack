@@ -142,16 +142,16 @@ class CsAddress(CsDataBag):
                         "Address %s on device %s not configured", ip.ip(), dev)
                     if CsDevice(dev, self.config).waitfordevice():
                         ip.configure()
+                        
+                        route.add_route(dev, network)
 
-                route.add_route(dev, network)
-
-                # The code looks redundant here, but we actually have to cater for routers and
-                # VPC routers in a different manner. Please do not remove this block otherwise
-                # The VPC default route will be broken.
-                if address["nw_type"] == "public" and not found_defaultroute:
-                    if not route.defaultroute_exists():
-                        if route.add_defaultroute(gateway):
-                            found_defaultroute = True
+                        # The code looks redundant here, but we actually have to cater for routers and
+                        # VPC routers in a different manner. Please do not remove this block otherwise
+                        # The VPC default route will be broken.
+                        if address["nw_type"] == "public" and not found_defaultroute:
+                            if not route.defaultroute_exists():
+                                if route.add_defaultroute(gateway):
+                                    found_defaultroute = True
 
         # once we start processing public ip's we need to verify there
         # is a default route and add if needed
