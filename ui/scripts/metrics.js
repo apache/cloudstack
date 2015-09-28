@@ -499,9 +499,128 @@
                 });
             },
             refreshMetrics: function() {
-                console.log("Refreshing Cluster metrics");
+                console.log("Refreshing Hosts metrics");
+            },
+            browseBy: {
+                filterBy: 'hostid',
+                resource: 'vms'
             }
         }
     };
+
+
+    // VMs Metrics
+    cloudStack.sections.metrics.instances = {
+        title: 'label.metrics',
+        listView: {
+            id: 'metrics',
+            fields: {
+                name: {
+                    label: 'label.name'
+                },
+                state: {
+                    label: 'label.state',
+                    converter: function (str) {
+                        // For localization
+                        return str;
+                    },
+                    indicator: {
+                        'Enabled': 'on',
+                        'Unmanaged': 'off',
+                        'Destroyed': 'off',
+                        'Disabled': 'off'
+                    }
+                },
+                cpuused: {
+                    label: 'label.cpu.usage',
+                    collapsible: true,
+                    columns: {
+                        cores: {
+                            label: 'label.num.cpu.cores',
+                        },
+                        cputotal: {
+                            label: 'label.cpu.total.ghz'
+                        },
+                        cpuused: {
+                            label: 'label.cpu.used.avg',
+                        }
+                    }
+                },
+                memused: {
+                    label: 'label.memory.usage',
+                    collapsible: true,
+                    columns: {
+                        memallocated: {
+                            label: 'label.allocated'
+                        },
+                        memused: {
+                            label: 'label.memory.used.avg'
+                        }
+                    }
+                },
+                network: {
+                    label: 'label.network',
+                    collapsible: true,
+                    columns: {
+                        networkread: {
+                            label: 'label.network.read'
+                        },
+                        networkwrite: {
+                            label: 'label.network.write'
+                        }
+                    }
+                },
+                disk: {
+                    label: 'label.disk.volume',
+                    collapsible: true,
+                    columns: {
+                        diskread: {
+                            label: 'label.disk.read.bytes'
+                        },
+                        diskwrite: {
+                            label: 'label.disk.write.bytes'
+                        },
+                        diskiops: {
+                            label: 'label.disk.iops.total'
+                        }
+                    }
+                }
+            },
+            dataProvider: function(args) {
+                var data = {};
+                listViewDataProvider(args, data);
+                if (args.context.metricsFilterData && args.context.metricsFilterData.key && args.context.metricsFilterData.value) {
+                    data[args.context.metricsFilterData.key] = args.context.metricsFilterData.value;
+                }
+                $.ajax({
+                    url: createURL('listVirtualMachines'),
+                    data: data,
+                    success: function(json) {
+                        var items = json.listvirtualmachinesresponse.virtualmachine;
+                        $.each(items, function(idx, host) {
+                            items[idx].cores = 0;
+                            items[idx].cputotal = 0;
+                            items[idx].cpuused = 0.0;
+                            items[idx].memallocated = 0.0;
+                            items[idx].memused = 0.0;
+                            items[idx].networkread = 0.0;
+                            items[idx].networkwrite = 0.0;
+                        });
+                        args.response.success({
+                            data: items
+                        });
+                    }
+                });
+            },
+            refreshMetrics: function() {
+                console.log("Refreshing Instances metrics");
+            },
+            browseBy: {
+                filterBy: 'virtualmachineid',
+                resource: 'volumes'
+            }
+        }
+    };
+
 
 })(cloudStack);

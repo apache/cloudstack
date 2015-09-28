@@ -33,6 +33,7 @@
             } else if (args.resource == 'primarystorage') {
                 metricsLabel = _l('label.primary.storage') + ' ' + metricsLabel;
             } else if (args.resource == 'vms') {
+                metricsListView = cloudStack.sections.metrics.instances.listView;
                 metricsLabel = _l('label.instances') + ' ' + metricsLabel;
             } else if (args.resource == 'volumes') {
                 metricsLabel = _l('label.volumes') + ' ' + metricsLabel;
@@ -59,6 +60,9 @@
             metricsListView.groupableColumns = true;
 
             var metricsContext = cloudStack.context;
+            if (metricsContext.metricsFilterData) {
+                delete metricsContext.metricsFilterData;
+            }
             if (args.filterBy) {
                 metricsContext.metricsFilterData = {
                     key: args.filterBy,
