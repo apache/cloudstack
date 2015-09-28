@@ -206,6 +206,10 @@
             },
             refreshMetrics: function() {
                 console.log("Refreshing Cluster metrics");
+            },
+            browseBy: {
+                filterBy: 'zoneid',
+                resource: 'clusters'
             }
         }
     };
@@ -288,6 +292,9 @@
             dataProvider: function(args) {
                 var data = {};
                 listViewDataProvider(args, data);
+                if (args.context.metricsFilterData && args.context.metricsFilterData.key && args.context.metricsFilterData.value) {
+                    data[args.context.metricsFilterData.key] = args.context.metricsFilterData.value;
+                }
                 $.ajax({
                     url: createURL('listClusters'),
                     data: data,
@@ -387,6 +394,10 @@
             },
             refreshMetrics: function() {
                 console.log("Refreshing Cluster metrics");
+            },
+            browseBy: {
+                filterBy: 'clusterid',
+                resource: 'hosts'
             }
         }
     };
@@ -462,6 +473,9 @@
             dataProvider: function(args) {
                 var data = {};
                 listViewDataProvider(args, data);
+                if (args.context.metricsFilterData && args.context.metricsFilterData.key && args.context.metricsFilterData.value) {
+                    data[args.context.metricsFilterData.key] = args.context.metricsFilterData.value;
+                }
                 $.ajax({
                     url: createURL('listHosts'),
                     data: data,
