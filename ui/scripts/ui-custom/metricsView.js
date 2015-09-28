@@ -58,6 +58,14 @@
             metricsListView.horizontalOverflow = true;
             metricsListView.groupableColumns = true;
 
+            var metricsContext = cloudStack.context;
+            if (args.filterBy) {
+                metricsContext.metricsFilterData = {
+                    key: args.filterBy,
+                    value: args.id
+                };
+            }
+
             var $browser = $('#browser .container');
             return $browser.cloudBrowser('addPanel', {
                   title: metricsLabel,
@@ -65,15 +73,26 @@
                   complete: function($newPanel) {
                       $newPanel.listView({
                           $browser: $browser,
-                          context: cloudStack.context,
+                          context: metricsContext,
                           listView: metricsListView
                       });
                       // Make metrics tables horizontally scrollable
-                      $panel = $('.panel::has(.data-table)::not(.reduced)');
-                      $panel.css({'overflow': 'auto'});
-                      $panel.find('.list-view').css({'overflow-x': 'visible'});
+                      $newPanel.find('.list-view').css({'overflow-x': 'visible'});
                       // Refresh metrics when refresh button is clicked
-                      $('.refreshMetrics').click(metricsListView.refreshMetrics);
+                      $newPanel.find('.refreshMetrics').click(metricsListView.refreshMetrics);
+
+                      var filterMetricView = metricsListView.browseBy;
+                      if (filterMetricView) {
+                          $newPanel.bind('click', function(event) {
+                              var $target = $(event.target);
+                              var id = $target.closest('tr').data('list-view-item-id');
+                              var jsonObj = $target.closest('tr').data('jsonObj');
+                              if (id && ($target.hasClass('first') || $target.parent().hasClass('first')) && ($target.is('td') || $target.parent().is('td'))) {
+                                  filterMetricView.id = id;
+                                  cloudStack.uiCustom.metricsView(filterMetricView)();
+                              }
+                          });
+                      }
                   }
             });
         };
