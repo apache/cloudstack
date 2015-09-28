@@ -19,14 +19,23 @@
     cloudStack.uiCustom.metricsView = function(args) {
         return function() {
             var metricsListView = cloudStack.sections.metrics.listView;
+            var metricsLabel = _l('label.metrics');
 
             if (args.resource == 'zones') {
+                metricsListView = cloudStack.sections.metrics.zones.listView;
+                metricsLabel = _l('label.zones') + ' ' + metricsLabel;
             } else if (args.resource == 'clusters') {
-                metricsListView = cloudStack.sections.metrics.cluster.listView;
+                metricsListView = cloudStack.sections.metrics.clusters.listView;
+                metricsLabel = _l('label.clusters') + ' ' + metricsLabel;
             } else if (args.resource == 'hosts') {
+                metricsListView = cloudStack.sections.metrics.hosts.listView;
+                metricsLabel = _l('label.hosts') + ' ' + metricsLabel;
             } else if (args.resource == 'primarystorage') {
+                metricsLabel = _l('label.primary.storage') + ' ' + metricsLabel;
             } else if (args.resource == 'vms') {
+                metricsLabel = _l('label.instances') + ' ' + metricsLabel;
             } else if (args.resource == 'volumes') {
+                metricsLabel = _l('label.volumes') + ' ' + metricsLabel;
             }
 
             metricsListView.actions = {
@@ -43,9 +52,15 @@
                 }
             };
 
+            metricsListView.hideSearchBar = true;
+            metricsListView.needsRefresh = true;
+            metricsListView.noSplit = true;
+            metricsListView.horizontalOverflow = true;
+            metricsListView.groupableColumns = true;
+
             var $browser = $('#browser .container');
             return $browser.cloudBrowser('addPanel', {
-                  title: 'Metrics',
+                  title: metricsLabel,
                   maximizeIfSelected: true,
                   complete: function($newPanel) {
                       $newPanel.listView({
