@@ -27,6 +27,7 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.InternalErrorException;
 import org.apache.log4j.Logger;
 
 import com.cloud.storage.Storage.ImageFormat;
@@ -52,7 +53,7 @@ public class VhdProcessor extends AdapterBase implements Processor {
     private byte[][] citrixCreatorApp = { {0x74, 0x61, 0x70, 0x00}, {0x43, 0x54, 0x58, 0x53}}; /*"tap ", and "CTXS"*/
 
     @Override
-    public FormatInfo process(String templatePath, ImageFormat format, String templateName) {
+    public FormatInfo process(String templatePath, ImageFormat format, String templateName) throws InternalErrorException {
         if (format != null) {
             s_logger.debug("We currently don't handle conversion from " + format + " to VHD.");
             return null;
@@ -72,10 +73,10 @@ public class VhdProcessor extends AdapterBase implements Processor {
         info.size = _storage.getSize(vhdPath);
 
         try {
-            info.virtualSize = getVirtualSize(vhdFile);
+            info.virtualSize = getTemplateVirtualSize(vhdFile);
         } catch (IOException e) {
             s_logger.error("Unable to get the virtual size for " + vhdPath);
-            return null;
+            throw new InternalErrorException("unable to get virtual size from vhd file");
         }
 
         return info;
@@ -83,6 +84,16 @@ public class VhdProcessor extends AdapterBase implements Processor {
 
     @Override
     public long getVirtualSize(File file) throws IOException {
+        try {
+            long size = getTemplateVirtualSize(file);
+            return size;
+        } catch (Exception e) {
+            s_logger.info("[ignored]" + "failed to get template virtual size for VHD: " + e.getLocalizedMessage());
+        }
+        return file.length();
+    }
+
+    protected long getTemplateVirtualSize(File file) throws IOException {
         byte[] currentSize = new byte[8];
         byte[] creatorApp = new byte[4];
 

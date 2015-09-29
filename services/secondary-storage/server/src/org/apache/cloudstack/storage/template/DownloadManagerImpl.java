@@ -482,7 +482,10 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                 return e.toString();
             }
             if (info != null) {
-                loc.addFormat(info);
+                if(!loc.addFormat(info)) {
+                    loc.purge();
+                    return "Unable to install due to invalid file format";
+                }
                 dnld.setTemplatesize(info.virtualSize);
                 dnld.setTemplatePhysicalSize(info.size);
                 break;
