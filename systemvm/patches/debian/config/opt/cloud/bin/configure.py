@@ -663,7 +663,7 @@ class CsForwardingRules(CsDataBag):
                 elif rule["type"] == "staticnat":
                     self.processStaticNatRule(rule)
 
-    #return the VR guest interface ipo
+    #return the VR guest interface ip
     def getGuestIp(self):
         ipr = []
         ipAddr = None
