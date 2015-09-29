@@ -287,8 +287,6 @@ class TestVPCRedundancy(cloudstackTestCase):
                 cnts[vals.index(router.redundantstate)] += 1
         if cnts[vals.index('MASTER')] != 1:
             self.fail("No Master or too many master routers found %s" % cnts[vals.index('MASTER')])
-        # if cnts[vals.index('UNKNOWN')] > 0:
-            # self.fail("Router has unknown status")
 
     def stop_router(self, type):
         self.check_master_status(2)
@@ -430,6 +428,7 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.check_master_status(2)
         self.add_nat_rules()
         self.do_vpc_test(False)
+        time.sleep(15)
 
         self.stop_router("MASTER")
         # wait for the backup router to transit to master state
@@ -443,6 +442,7 @@ class TestVPCRedundancy(cloudstackTestCase):
 
         self.start_router()
         self.add_nat_rules()
+        time.sleep(15)
         self.check_master_status(2)
         self.do_vpc_test(False)
 

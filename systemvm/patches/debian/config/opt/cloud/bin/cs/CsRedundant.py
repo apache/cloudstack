@@ -310,7 +310,7 @@ class CsRedundant(object):
                 if(cmdline.get_type()=='router'):
                     str = "        %s brd %s dev %s\n" % (cmdline.get_guest_gw(), o.get_broadcast(), o.get_device())
                 else:
-                    str = "        %s brd %s dev %s\n" % (o.get_ip(), o.get_broadcast(), o.get_device())
+                    str = "        %s brd %s dev %s\n" % (o.get_gateway_cidr(), o.get_broadcast(), o.get_device())
                 lines.append(str)
                 self.check_is_up(o.get_device())
         return lines

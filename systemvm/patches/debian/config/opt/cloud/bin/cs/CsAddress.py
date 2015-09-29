@@ -292,8 +292,8 @@ class CsIP:
 
     def post_configure(self, address):
         """ The steps that must be done after a device is configured """
+        route = CsRoute()
         if not self.get_type() in ["control"]:
-            route = CsRoute()
             route.add_table(self.dev)
             
             CsRule(self.dev).addMark()
