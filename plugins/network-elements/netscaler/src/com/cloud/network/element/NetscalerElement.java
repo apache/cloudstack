@@ -28,6 +28,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import org.apache.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -1488,7 +1489,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         hostDetails.put("zoneId", "1");
         hostDetails.put("ip", ipAddress);
         hostDetails.put("username", cmd.getUsername());
-        hostDetails.put("password", cmd.getPassword());
+        hostDetails.put("password", DBEncryptionUtil.encrypt(cmd.getPassword()));
         hostDetails.put("deviceName", "Netscaler ControlCenter");
         ServerResource resource = new NetScalerControlCenterResource();
         try {

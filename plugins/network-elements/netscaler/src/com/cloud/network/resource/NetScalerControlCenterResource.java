@@ -35,6 +35,7 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -234,7 +235,7 @@ public class NetScalerControlCenterResource implements ServerResource {
                 throw new ConfigurationException("Unable to find username in the configuration parameters");
             }
 
-            _password = (String)params.get("password");
+            _password =  DBEncryptionUtil.encrypt((String)params.get("password"));
             if (_password == null) {
                 throw new ConfigurationException("Unable to find password in the configuration parameters");
             }
