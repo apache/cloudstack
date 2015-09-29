@@ -30,11 +30,12 @@
         }
     };
 
+
     // Zones Metrics
     cloudStack.sections.metrics.zones = {
         title: 'label.metrics',
         listView: {
-            id: 'metrics',
+            id: 'zones',
             fields: {
                 name: {
                     label: 'label.name'
@@ -219,7 +220,7 @@
     cloudStack.sections.metrics.clusters = {
         title: 'label.metrics',
         listView: {
-            id: 'metrics',
+            id: 'clusters',
             fields: {
                 name: {
                     label: 'label.name'
@@ -398,15 +399,17 @@
             browseBy: {
                 filterBy: 'clusterid',
                 resource: 'hosts'
-            }
+            },
+            detailView: cloudStack.sections.system.subsections.clusters.listView.detailView
         }
     };
+
 
     // Hosts Metrics
     cloudStack.sections.metrics.hosts = {
         title: 'label.metrics',
         listView: {
-            id: 'metrics',
+            id: 'hosts',
             fields: {
                 name: {
                     label: 'label.name'
@@ -504,7 +507,8 @@
             browseBy: {
                 filterBy: 'hostid',
                 resource: 'vms'
-            }
+            },
+            detailView: cloudStack.sections.system.subsections.hosts.listView.detailView
         }
     };
 
@@ -513,7 +517,7 @@
     cloudStack.sections.metrics.instances = {
         title: 'label.metrics',
         listView: {
-            id: 'metrics',
+            id: 'instances',
             fields: {
                 name: {
                     label: 'label.name'
@@ -618,7 +622,8 @@
             browseBy: {
                 filterBy: 'virtualmachineid',
                 resource: 'volumes'
-            }
+            },
+            detailView: cloudStack.sections.instances.listView.detailView
         }
     };
 
