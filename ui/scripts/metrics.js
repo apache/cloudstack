@@ -249,6 +249,11 @@
                     columns: {
                         cpuusedavg: {
                             label: 'label.cpu.used.avg',
+                            thresholdcolor: true,
+                            thresholds: {
+                                notification: 'cpunotificationthreshold',
+                                disable: 'cpudisablethreshold'
+                            }
                         },
                         cpumaxdev: {
                             label: 'label.cpu.max.dev'
@@ -260,7 +265,12 @@
                     collapsible: true,
                     columns: {
                         cpuallocated: {
-                            label: 'label.allocated'
+                            label: 'label.allocated',
+                            thresholdcolor: true,
+                            thresholds: {
+                                notification: 'cpunotificationthreshold',
+                                disable: 'cpudisablethreshold'
+                            }
                         },
                         cputotal: {
                             label: 'label.cpu.total.ghz'
@@ -272,7 +282,12 @@
                     collapsible: true,
                     columns: {
                         memusedavg: {
-                            label: 'label.memory.used.avg'
+                            label: 'label.memory.used.avg',
+                            thresholdcolor: true,
+                            thresholds: {
+                                notification: 'memnotificationthreshold',
+                                disable: 'memdisablethreshold'
+                            }
                         },
                         memmaxdev: {
                             label: 'label.memory.max.dev'
@@ -284,7 +299,12 @@
                     collapsible: true,
                     columns: {
                         memallocated: {
-                            label: 'label.allocated'
+                            label: 'label.allocated',
+                            thresholdcolor: true,
+                            thresholds: {
+                                notification: 'memnotificationthreshold',
+                                disable: 'memdisablethreshold'
+                            }
                         },
                         memtotal: {
                             label: 'label.memory.total.gb'
@@ -314,6 +334,38 @@
                                 items[idx].memmaxdev = 0.0;
                                 items[idx].memallocated = 0.0;
                                 items[idx].maxMemUsed = 0;
+
+                                // Threshold color coding
+                                items[idx].cpunotificationthreshold = 0.0;
+                                items[idx].cpudisablethreshold = 0.0;
+                                items[idx].memnotificationthreshold = 0.0;
+                                items[idx].memdisablethreshold = 0.0;
+
+                                $.ajax({
+                                    url: createURL('listConfigurations'),
+                                    data: {clusterid: cluster.id, listAll: true},
+                                    success: function(json) {
+                                        if (json.listconfigurationsresponse && json.listconfigurationsresponse.configuration) {
+                                            $.each(json.listconfigurationsresponse.configuration, function(i, config) {
+                                                switch (config.name) {
+                                                    case 'cluster.cpu.allocated.capacity.disablethreshold':
+                                                        items[idx].cpudisablethreshold = 100 * parseFloat(config.value);
+                                                        break;
+                                                    case 'cluster.cpu.allocated.capacity.notificationthreshold':
+                                                        items[idx].cpunotificationthreshold = 100 * parseFloat(config.value);
+                                                        break;
+                                                    case 'cluster.memory.allocated.capacity.disablethreshold':
+                                                        items[idx].memdisablethreshold = 100 * parseFloat(config.value);
+                                                        break;
+                                                    case 'cluster.memory.allocated.capacity.notificationthreshold':
+                                                        items[idx].memnotificationthreshold = 100 * parseFloat(config.value);
+                                                        break;
+                                                }
+                                            });
+                                        }
+                                    },
+                                    async: false
+                                });
 
                                 $.ajax({
                                     url: createURL('listHosts'),
