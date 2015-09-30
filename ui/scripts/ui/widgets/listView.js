@@ -1199,6 +1199,19 @@
                     //$tr.find('td:first').addClass('item-state-' + field.indicator[content]);
                 }
 
+                if (field.thresholdcolor && field.thresholds) {
+                    if ((field.thresholds.disable in dataItem) && (field.thresholds.notification in dataItem)) {
+                        var disableThreshold = parseFloat(dataItem[field.thresholds.disable]);
+                        var notificationThreshold = parseFloat(dataItem[field.thresholds.notification]);
+                        var value = parseFloat(content);
+                        if (value >= disableThreshold) {
+                            $td.addClass('alert-disable-threshold');
+                        } else if (value >= notificationThreshold) {
+                            $td.addClass('alert-notification-threshold');
+                        }
+                    }
+                }
+
                 if (field.id == true) id = field.id;
                 if ($td.index()) $td.addClass('reduced-hide');
                 if (field.action) {
