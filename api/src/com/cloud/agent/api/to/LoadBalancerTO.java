@@ -240,20 +240,20 @@ public class LoadBalancerTO {
     }
 
     public static class StickinessPolicyTO {
-        private String _methodName;
-        private List<Pair<String, String>> _paramsList;
+        private String methodName;
+        private List<Pair<String, String>> params;
 
         public String getMethodName() {
-            return _methodName;
+            return methodName;
         }
 
         public List<Pair<String, String>> getParams() {
-            return _paramsList;
+            return params;
         }
 
         public StickinessPolicyTO(String methodName, List<Pair<String, String>> paramsList) {
-            this._methodName = methodName;
-            this._paramsList = paramsList;
+            this.methodName = methodName;
+            this.params = paramsList;
         }
     }
 
