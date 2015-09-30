@@ -279,7 +279,6 @@ class TestVPCNics(cloudstackTestCase):
                 conservemode=False)
 
             nw_off.update(self.apiclient, state='Enabled')
-            self._cleanup.append(nw_off)
             self.debug('Created and Enabled NetworkOffering')
 
             self.services["network"]["name"] = "NETWORK-" + str(gateway)
@@ -294,6 +293,7 @@ class TestVPCNics(cloudstackTestCase):
                 gateway=gateway,
                 vpcid=vpc.id if vpc else self.vpc.id
             )
+            
             self.debug("Created network with ID: %s" % obj_network.id)
         except Exception, e:
             self.fail('Unable to create a Network with offering=%s because of %s ' % (net_offerring, e))
@@ -369,8 +369,8 @@ class TestVPCNics(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_01_VPC_nics_after_destroy(self):
-        """ Create a vpc with two networks with two vms in each network """
-        self.debug("Starting test 1")
+        """ Create a VPC with two networks with one VM in each network and test nics after destroy"""
+        self.debug("Starting test_01_VPC_nics_after_destroy")
         self.query_routers()
 
         net1 = self.create_network(self.services["network_offering"], "10.1.1.1")
@@ -380,7 +380,7 @@ class TestVPCNics(cloudstackTestCase):
         self.networks.append(net2)
 
         self.add_nat_rules()
-        self.do_vpc_test()
+        self.test_ssh_to_vm()
 
         self.stop_router()
         self.destroy_router()
@@ -388,7 +388,22 @@ class TestVPCNics(cloudstackTestCase):
 
         net1.add_vm(self.deployvm_in_network(net1.get_net()))
         self.add_nat_rules()
-        self.do_vpc_test()
+        self.test_ssh_to_vm()
+
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
+    def test_02_VPC_default_routes(self):
+        """ Create a VPC with two networks with one VM in each network and test default routes"""
+        self.debug("Starting test_02_VPC_default_routes")
+        self.query_routers()
+
+        net1 = self.create_network(self.services["network_offering"], "10.1.1.1")
+        net2 = self.create_network(self.services["network_offering_no_lb"], "10.1.2.1")
+
+        self.networks.append(net1)
+        self.networks.append(net2)
+
+        self.add_nat_rules()
+        self.test_default_routes()
 
     def delete_nat_rules(self):
         for o in self.networks:
@@ -406,10 +421,39 @@ class TestVPCNics(cloudstackTestCase):
                     vm.set_nat(self.create_natrule(vm.get_vm(), vm.get_ip(), o.get_net()))
                     time.sleep(5)
 
-    def do_vpc_test(self):
+    def test_ssh_to_vm(self):
         for o in self.networks:
             for vm in o.get_vms():
                 self.check_ssh_into_vm(vm.get_vm(), vm.get_ip())
+
+    def test_default_routes(self):
+        for o in self.networks:
+            for vmObj in o.get_vms():
+                ssh_command = "ping -c 3 8.8.8.8"
+
+                # Should be able to SSH VM
+                result = 'failed'
+                try:
+                    vm = vmObj.get_vm()
+                    public_ip = vmObj.get_ip()
+                    self.debug("SSH into VM: %s" % public_ip.ipaddress.ipaddress)
+                    
+                    ssh = vm.get_ssh_client(ipaddress=public_ip.ipaddress.ipaddress)
+        
+                    self.debug("Ping to google.com from VM")
+                    result = ssh.execute(ssh_command)
+
+                    self.debug("SSH result: %s" % str(result))
+                except Exception as e:
+                    self.fail("SSH Access failed for %s: %s" % \
+                              (vmObj.get_ip(), e)
+                              )
+        
+                self.assertEqual(
+                                 result.count("0% packet loss"),
+                                 1,
+                                 "Ping to outside world from VM should be successful"
+                                 )
 
 
 class networkO(object):
