@@ -264,7 +264,7 @@ public class LoadBalancerTO {
         private int healthcheckInterval;
         private int healthcheckThresshold;
         private int unhealthThresshold;
-        private boolean revoke = false;
+        private boolean revoked = false;
 
         public HealthCheckPolicyTO(String pingPath, String description, int responseTime, int healthcheckInterval, int healthcheckThresshold, int unhealthThresshold,
                 boolean revoke) {
@@ -275,7 +275,7 @@ public class LoadBalancerTO {
             this.healthcheckInterval = healthcheckInterval;
             this.healthcheckThresshold = healthcheckThresshold;
             this.unhealthThresshold = unhealthThresshold;
-            this.revoke = revoke;
+            this.revoked = revoke;
         }
 
         public HealthCheckPolicyTO() {
@@ -307,11 +307,11 @@ public class LoadBalancerTO {
         }
 
         public void setRevoke(boolean revoke) {
-            this.revoke = revoke;
+            this.revoked = revoke;
         }
 
         public boolean isRevoked() {
-            return revoke;
+            return revoked;
         }
 
     }
