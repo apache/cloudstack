@@ -361,6 +361,16 @@ table.no-split td.first {
   border-right: 1px solid #C6C3C3;
 }
 
+td.alert-notification-threshold {
+  color: #E87900;
+  background-color: rgba(255, 231, 175, 0.75);
+}
+
+td.alert-disable-threshold {
+  color: #F50000;
+  background-color: rgba(255, 190, 190, 0.75);
+}
+
 /** Header, misc*/
 #template {
   display: none;
