@@ -1537,7 +1537,6 @@ test_data = {
         "ostype": "Windows 8 (64-bit)"
     },
 },
-
     "browser_upload_volume":{
           "VHD": {
         "diskname": "XenUploadVol",
@@ -1554,12 +1553,29 @@ test_data = {
         "url": "http://10.147.28.7/templates/rajani-thin-volume.qcow2",
         "checksum": "02de0576dd3a61ab59c03fd795fc86ac",
                 },
+          "TAR": {
+        "diskname": "LXCUploadVol",
+        "url": "http://10.147.28.7/templates/lxc/rhel63_x64.tar.gz",
+        "checksum": "aa29a468bd77aba6c723af4db61c734a",
+                },
     'browser_resized_disk_offering': {
         "displaytext": "Resizeddisk",
         "name": "Resizeddisk",
         "disksize": 3,
     }
 },
+    "browser_upload_volume_extended":{
+          "VHD": {
+        "diskname": "XenUploadVol",
+        "url": "http://10.147.28.7/templates/builtin/centos56-x86_64.vhd.bz2",
+        "checksum": "09b08b6abb1b903fca7711d3ac8d6598",
+                },
+          "QCOW2": {
+        "diskname": "KVMUploadVol",
+        "url": "http://10.147.28.7/templates/builtin/eec2209b-9875-3c8d-92be-c001bd8a0faf.qcow2.bz2",
+        "checksum": "02de0576dd3a61ab59c03fd795fc86ac",
+                },
+            },
     "browser_upload_template": {
           "VHD": {
         "templatename": "XenUploadtemplate",
@@ -1567,7 +1583,7 @@ test_data = {
         "url": "http://10.147.28.7/templates/builtin/centos56-x86_64.vhd.bz2",
         "hypervisor":"XenServer",
         "checksum": "09b08b6abb1b903fca7711d3ac8d6598",
-        "ostypeid":"74affaea-c658-11e4-ad38-a6d1374244b4"
+        "ostypeid":"142"
                 },
           "OVA": {
         "templatename": "VMwareUploadtemplate",
@@ -1575,17 +1591,26 @@ test_data = {
         "url": "http://nfs1.lab.vmops.com/templates/vmware/CentOS5.3-x86_64.ova",
         "checksum": "02de0576dd3a61ab59c03fd795fc86ac",
         "hypervisor":"VMware",
-        "ostypeid":"74affaea-c658-11e4-ad38-a6d1374244b4"
+        "ostypeid":"142"
                 },
           "QCOW2": {
         "templatename": "KVMUploadtemplate",
-        "displaytext": "VMwareUploadtemplate",
+        "displaytext": "KVMUploadtemplate",
         "url": "http://10.147.28.7/templates/builtin/eec2209b-9875-3c8d-92be-c001bd8a0faf.qcow2.bz2",
-        "checksum": "da997b697feaa2f1f6e0d4785b0cece2",
+        "checksum": "d06b5f6a-d44e-11e4-9d99-4af3a393b3ac",
         "hypervisor":"KVM",
-        "ostypeid":"2e02e376-cdf3-11e4-beb3-8aa6272b57ef"
+        "ostypeid":"142"
+                },
+          "TAR": {
+        "templatename": "LXCUploadtemplate",
+        "displaytext": "LXCUploadtemplate",
+        "url": "http://10.147.28.7/templates/lxc/rhel63_x64.tar.gz",
+        "checksum": "aa29a468bd77aba6c723af4db61c734a",
+        "hypervisor":"LXC",
+        "ostypeid":"142",
                 },
                               },
+
     "configurableData":
         {
             "portableIpRange": {
