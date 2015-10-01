@@ -14,8 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-""" P1 tests for routers
-"""
+
 # Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
@@ -45,7 +44,7 @@ from marvin.lib.common import (get_zone,
 
 # Import System modules
 import time
-
+import logging
 
 class TestCreatePFOnStoppedRouter(cloudstackTestCase):
 
@@ -90,6 +89,12 @@ class TestCreatePFOnStoppedRouter(cloudstackTestCase):
             cls.account,
             cls.service_offering
         ]
+        
+        cls.logger = logging.getLogger('TestCreatePFOnStoppedRouter')
+        cls.stream_handler = logging.StreamHandler()
+        cls.logger.setLevel(logging.DEBUG)
+        cls.logger.addHandler(cls.stream_handler)
+
         return
 
     @classmethod
@@ -126,7 +131,7 @@ class TestCreatePFOnStoppedRouter(cloudstackTestCase):
         routers = list_routers(
             self.apiclient,
             account=self.account.name,
-            domainid=self.account.domainid,
+            domainid=self.account.domainid
         )
 
         self.assertEqual(
@@ -141,7 +146,7 @@ class TestCreatePFOnStoppedRouter(cloudstackTestCase):
         )
         router = routers[0]
 
-        self.debug("Stopping router ID: %s" % router.id)
+        self.logger.debug("Stopping router ID: %s" % router.id)
 
         # Stop the router
         cmd = stopRouter.stopRouterCmd()
@@ -151,7 +156,7 @@ class TestCreatePFOnStoppedRouter(cloudstackTestCase):
         routers = list_routers(
             self.apiclient,
             account=self.account.name,
-            domainid=self.account.domainid,
+            domainid=self.account.domainid
         )
         self.assertEqual(
             isinstance(routers, list),
@@ -190,7 +195,7 @@ class TestCreatePFOnStoppedRouter(cloudstackTestCase):
             endport=self.services["natrule"]["publicport"]
         )
 
-        self.debug("Creating NAT rule for VM ID: %s" % self.vm_1.id)
+        self.logger.debug("Creating NAT rule for VM ID: %s" % self.vm_1.id)
         # Create NAT rule
         nat_rule = NATRule.create(
             self.apiclient,
@@ -199,7 +204,7 @@ class TestCreatePFOnStoppedRouter(cloudstackTestCase):
             public_ip.id
         )
 
-        self.debug("Starting router ID: %s" % router.id)
+        self.logger.debug("Starting router ID: %s" % router.id)
         # Start the router
         cmd = startRouter.startRouterCmd()
         cmd.id = router.id
@@ -240,7 +245,7 @@ class TestCreatePFOnStoppedRouter(cloudstackTestCase):
         )
         try:
 
-            self.debug("SSH into VM with ID: %s" % nat_rule.ipaddress)
+            self.logger.debug("SSH into VM with ID: %s" % nat_rule.ipaddress)
 
             self.vm_1.get_ssh_client(
                 ipaddress=nat_rule.ipaddress,
@@ -296,6 +301,12 @@ class TestCreateLBOnStoppedRouter(cloudstackTestCase):
             cls.account,
             cls.service_offering
         ]
+
+        cls.logger = logging.getLogger('TestCreateLBOnStoppedRouter')
+        cls.stream_handler = logging.StreamHandler()
+        cls.logger.setLevel(logging.DEBUG)
+        cls.logger.addHandler(cls.stream_handler)
+
         return
 
     @classmethod
@@ -331,7 +342,7 @@ class TestCreateLBOnStoppedRouter(cloudstackTestCase):
         routers = list_routers(
             self.apiclient,
             account=self.account.name,
-            domainid=self.account.domainid,
+            domainid=self.account.domainid
         )
 
         self.assertEqual(
@@ -348,7 +359,7 @@ class TestCreateLBOnStoppedRouter(cloudstackTestCase):
 
         router = routers[0]
 
-        self.debug("Stopping router with ID: %s" % router.id)
+        self.logger.debug("Stopping router with ID: %s" % router.id)
         # Stop the router
         cmd = stopRouter.stopRouterCmd()
         cmd.id = router.id
@@ -357,7 +368,7 @@ class TestCreateLBOnStoppedRouter(cloudstackTestCase):
         routers = list_routers(
             self.apiclient,
             account=self.account.name,
-            domainid=self.account.domainid,
+            domainid=self.account.domainid
         )
         self.assertEqual(
             isinstance(routers, list),
@@ -393,7 +404,7 @@ class TestCreateLBOnStoppedRouter(cloudstackTestCase):
             startport=self.services["lbrule"]["publicport"],
             endport=self.services["lbrule"]["publicport"]
         )
-        self.debug("Creating LB rule for public IP: %s" % public_ip.id)
+        self.logger.debug("Creating LB rule for public IP: %s" % public_ip.id)
         # Create Load Balancer rule and assign VMs to rule
         lb_rule = LoadBalancerRule.create(
             self.apiclient,
@@ -401,7 +412,7 @@ class TestCreateLBOnStoppedRouter(cloudstackTestCase):
             public_ip.id,
             accountid=self.account.name
         )
-        self.debug("Assigning VM %s to LB rule: %s" % (
+        self.logger.debug("Assigning VM %s to LB rule: %s" % (
             self.vm_1.id,
             lb_rule.id
         ))
@@ -415,7 +426,7 @@ class TestCreateLBOnStoppedRouter(cloudstackTestCase):
         routers = list_routers(
             self.apiclient,
             account=self.account.name,
-            domainid=self.account.domainid,
+            domainid=self.account.domainid
         )
         self.assertEqual(
             isinstance(routers, list),
@@ -451,7 +462,7 @@ class TestCreateLBOnStoppedRouter(cloudstackTestCase):
         )
 
         try:
-            self.debug("SSH into VM with IP: %s" % public_ip.ipaddress)
+            self.logger.debug("SSH into VM with IP: %s" % public_ip.ipaddress)
             self.vm_1.ssh_port = self.services["lbrule"]["publicport"]
             self.vm_1.get_ssh_client(public_ip.ipaddress)
         except Exception as e:
@@ -504,6 +515,12 @@ class TestCreateFWOnStoppedRouter(cloudstackTestCase):
             cls.account,
             cls.service_offering
         ]
+
+        cls.logger = logging.getLogger('TestCreateFWOnStoppedRouter')
+        cls.stream_handler = logging.StreamHandler()
+        cls.logger.setLevel(logging.DEBUG)
+        cls.logger.addHandler(cls.stream_handler)
+
         return
 
     @classmethod
@@ -540,7 +557,7 @@ class TestCreateFWOnStoppedRouter(cloudstackTestCase):
         routers = list_routers(
             self.apiclient,
             account=self.account.name,
-            domainid=self.account.domainid,
+            domainid=self.account.domainid
         )
 
         self.assertEqual(
@@ -557,7 +574,7 @@ class TestCreateFWOnStoppedRouter(cloudstackTestCase):
 
         router = routers[0]
 
-        self.debug("Stopping the router: %s" % router.id)
+        self.logger.debug("Stopping the router: %s" % router.id)
         # Stop the router
         cmd = stopRouter.stopRouterCmd()
         cmd.id = router.id
@@ -566,7 +583,7 @@ class TestCreateFWOnStoppedRouter(cloudstackTestCase):
         routers = list_routers(
             self.apiclient,
             account=self.account.name,
-            domainid=self.account.domainid,
+            domainid=self.account.domainid
         )
         self.assertEqual(
             isinstance(routers, list),
@@ -602,9 +619,9 @@ class TestCreateFWOnStoppedRouter(cloudstackTestCase):
             startport=self.services["fwrule"]["startport"],
             endport=self.services["fwrule"]["endport"]
         )
-        self.debug("Created firewall rule: %s" % fw_rule.id)
+        self.logger.debug("Created firewall rule: %s" % fw_rule.id)
 
-        self.debug("Starting the router: %s" % router.id)
+        self.logger.debug("Starting the router: %s" % router.id)
         # Start the router
         cmd = startRouter.startRouterCmd()
         cmd.id = router.id
@@ -613,7 +630,7 @@ class TestCreateFWOnStoppedRouter(cloudstackTestCase):
         routers = list_routers(
             self.apiclient,
             account=self.account.name,
-            domainid=self.account.domainid,
+            domainid=self.account.domainid
         )
         self.assertEqual(
             isinstance(routers, list),
@@ -695,8 +712,8 @@ class TestCreateFWOnStoppedRouter(cloudstackTestCase):
                             credentials to run %s" %
                     self._testMethodName)
 
-        self.debug("iptables -t nat -L: %s" % result)
-        self.debug("Public IP: %s" % public_ip.ipaddress)
+        self.logger.debug("iptables -t nat -L: %s" % result)
+        self.logger.debug("Public IP: %s" % public_ip.ipaddress)
         res = str(result)
         self.assertEqual(
             res.count(str(public_ip.ipaddress)),
