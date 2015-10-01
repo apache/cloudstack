@@ -54,12 +54,14 @@ import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
+import com.cloud.agent.manager.Commands;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.AddNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.ConfigureNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.DeleteNetscalerControlCenterCmd;
 import com.cloud.api.commands.DeleteNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.DeleteServicePackageOfferingCmd;
+import com.cloud.api.commands.DeployNetscalerVpxCmd;
 import com.cloud.api.commands.ListNetscalerControlCenterCmd;
 import com.cloud.api.commands.ListNetscalerLoadBalancerNetworksCmd;
 import com.cloud.api.commands.ListNetscalerLoadBalancersCmd;
@@ -78,7 +80,9 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
+import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlan;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -146,11 +150,15 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.UrlUtil;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineProfile;
 //import com.cloud.network.dao.RegisteredServicePackageVO;
 
-public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider, NetscalerLoadBalancerElementService,
-        ExternalLoadBalancerDeviceManager, IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
+public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
+        implements LoadBalancingServiceProvider, NetscalerLoadBalancerElementService, ExternalLoadBalancerDeviceManager,
+        IpDeployer, StaticNatServiceProvider, GslbServiceProvider, VirtualMachineGuru {
 
     private static final Logger s_logger = Logger.getLogger(NetscalerElement.class);
     public static final AutoScaleCounterType AutoScaleCounterSnmp = new AutoScaleCounterType("snmp");
@@ -292,7 +300,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             hostDetails.put("zoneId", Long.toString(guestConfig.getDataCenterId()));
             hostDetails.put("ip", ipAddress);
             hostDetails.put("username", nccVO.getUsername());
-            hostDetails.put("password", nccVO.getPassword());
+            hostDetails.put("password", DBEncryptionUtil.encrypt(nccVO.getPassword()));
             hostDetails.put("deviceName", "netscaler control center");
             hostDetails.put("cmdTimeOut", Long.toString(NumbersUtil.parseInt(_configDao.getValue(Config.NCCCmdTimeOut.key()), 600000)));
             ServerResource resource = new NetScalerControlCenterResource();
@@ -781,8 +789,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         cmdList.add(ListNetscalerControlCenterCmd.class);
         cmdList.add(DeleteServicePackageOfferingCmd.class);
         cmdList.add(DeleteNetscalerControlCenterCmd.class);
-        /*cmdList.add(ReleasePodIpCmdByAdmin.class);
-        cmdList.add(AcquirePodIpCmdByAdmin.class);*/
+        cmdList.add(DeployNetscalerVpxCmd.class);
         return cmdList;
     }
 
@@ -1497,7 +1504,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             return Transaction.execute(new TransactionCallback<NetScalerControlCenterVO>() {
                 @Override
                 public NetScalerControlCenterVO doInTransaction(TransactionStatus status) {
-                    NetScalerControlCenterVO nccVO = new NetScalerControlCenterVO(cmdinfo.getUsername(), cmdinfo.getPassword(),
+                    NetScalerControlCenterVO nccVO = new NetScalerControlCenterVO(cmdinfo.getUsername(), DBEncryptionUtil.encrypt(cmdinfo.getPassword()),
                             cmdinfo.getIpaddress(), cmdinfo.getNumretries());
                     _netscalerControlCenterDao.persist(nccVO);
                     /*DetailVO hostDetail = new DetailVO(host.getId(), ApiConstants.NETSCALER_CONTROLCENTER_ID , String.valueOf(nccVO.getId()));
@@ -1511,25 +1518,66 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         }
     }
 
-   /* @Override
+/*   @Override
     public VirtualMachine deployNetscalerServiceVm(DeployNetscalerVpxCmd deployNetscalerVpxCmd) {
         // TODO Auto-generated method stub
         return null;
     }*/
 
-/*    @Override
+    @Override
     public VMInstanceVO deployNetscalerServiceVm(DeployNetscalerVpxCmd cmd) {
         DataCenter zone = _dcDao.findById(cmd.getZoneId());
         DeployDestination dest = new DeployDestination(zone, null, null, null);//DeployDestination dest = new DeployDestination(zone, null, null, null);
         //USERVO CALLERUSER = _USERDAO.FINDBYID(CALLCONTEXT.CURRENT().GETCALLINGUSERID());
         //JOURNAL JOURNAL = NEW JOURNAL.LOGJOURNAL("IMPLEMENTING "  NETWORK, S_LOGGER);
         VMInstanceVO vmvo = null;
+        DeploymentPlan plan = new DataCenterDeployment(dest.getDataCenter().getId());
         try {
-            //vmvo = (VMInstanceVO)implementNsVpxDeployment(null, null, dest, null);
-        } catch (ConcurrentOperationException | ResourceUnavailableException | InsufficientCapacityException e) {
+            vmvo = deployNsVpx(cmd.getAccount(), dest, plan, 17l);
+        } catch (InsufficientCapacityException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+        //vmvo = (VMInstanceVO)implementNsVpxDeployment(null, null, dest, null);
         return vmvo;
-    }*/
+    }
+
+    @Override
+    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean finalizeStart(VirtualMachineProfile profile, long hostId, Commands cmds, ReservationContext context) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile profile) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public void finalizeStop(VirtualMachineProfile profile, Answer answer) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void finalizeExpunge(VirtualMachine vm) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void prepareStop(VirtualMachineProfile profile) {
+        // TODO Auto-generated method stub
+    }
 }

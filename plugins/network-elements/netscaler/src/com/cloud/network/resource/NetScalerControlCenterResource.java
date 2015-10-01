@@ -235,7 +235,7 @@ public class NetScalerControlCenterResource implements ServerResource {
                 throw new ConfigurationException("Unable to find username in the configuration parameters");
             }
 
-            _password =  DBEncryptionUtil.encrypt((String)params.get("password"));
+            _password =  DBEncryptionUtil.decrypt((String)params.get("password"));
             if (_password == null) {
                 throw new ConfigurationException("Unable to find password in the configuration parameters");
             }
