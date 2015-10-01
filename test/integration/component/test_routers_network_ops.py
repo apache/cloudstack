@@ -52,7 +52,7 @@ class TestCreatePFOnStoppedRouter(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.testClient = super(TestRouterStopCreatePF, cls).getClsTestClient()
+        cls.testClient = super(TestCreatePFOnStoppedRouter, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
         cls.services = cls.testClient.getParsedTestDataConfig()
@@ -96,7 +96,7 @@ class TestCreatePFOnStoppedRouter(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             cls.api_client = super(
-                TestRouterStopCreatePF,
+                TestCreatePFOnStoppedRouter,
                 cls).getClsTestClient().getApiClient()
             # Clean up, terminate the created resources
             cleanup_resources(cls.api_client, cls._cleanup)
@@ -258,7 +258,7 @@ class TestCreateLBOnStoppedRouter(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.testClient = super(TestRouterStopCreateLB, cls).getClsTestClient()
+        cls.testClient = super(TestCreateLBOnStoppedRouter, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
         cls.services = cls.testClient.getParsedTestDataConfig()
@@ -302,7 +302,7 @@ class TestCreateLBOnStoppedRouter(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             cls.api_client = super(
-                TestRouterStopCreateLB,
+                TestCreateLBOnStoppedRouter,
                 cls).getClsTestClient().getApiClient()
             # Clean up, terminate the created resources
             cleanup_resources(cls.api_client, cls._cleanup)
@@ -467,7 +467,7 @@ class TestCreateFWOnStoppedRouter(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.testClient = super(TestRouterStopCreateFW, cls).getClsTestClient()
+        cls.testClient = super(TestCreateFWOnStoppedRouter, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
         cls.services = cls.testClient.getParsedTestDataConfig()
@@ -510,7 +510,7 @@ class TestCreateFWOnStoppedRouter(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             cls.api_client = super(
-                TestRouterStopCreateFW,
+                TestCreateFWOnStoppedRouter,
                 cls).getClsTestClient().getApiClient()
             # Clean up, terminate the created templates
             cleanup_resources(cls.api_client, cls._cleanup)
