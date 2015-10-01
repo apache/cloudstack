@@ -48,6 +48,7 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.network.Networks.BroadcastDomainType;
 
 public abstract class HypervisorGuruBase extends AdapterBase implements HypervisorGuru {
     public static final Logger s_logger = Logger.getLogger(HypervisorGuruBase.class);
@@ -134,7 +135,12 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         NicTO[] nics = new NicTO[nicProfiles.size()];
         int i = 0;
         for (NicProfile nicProfile : nicProfiles) {
-            nics[i++] = toNicTO(nicProfile);
+            if(vm.getType() == VirtualMachine.Type.NetScalerVm) {
+                //if(i == 0){
+                    nicProfile.setBroadcastType(BroadcastDomainType.Native);
+                //}
+            }
+                nics[i++] = toNicTO(nicProfile);
         }
 
         to.setNics(nics);

@@ -24,6 +24,7 @@ import com.cloud.api.commands.DeleteNetscalerControlCenterCmd;
 import com.cloud.api.commands.DeleteNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.DeleteServicePackageOfferingCmd;
 import com.cloud.api.commands.ListNetscalerControlCenterCmd;
+import com.cloud.api.commands.DeployNetscalerVpxCmd;
 import com.cloud.api.commands.ListNetscalerLoadBalancerNetworksCmd;
 import com.cloud.api.commands.ListNetscalerLoadBalancersCmd;
 import com.cloud.api.commands.ListRegisteredServicePackageCmd;
@@ -38,6 +39,7 @@ import com.cloud.network.Network;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceVO;
 
 public interface NetscalerLoadBalancerElementService extends PluggableService {
 
@@ -137,4 +139,5 @@ public interface NetscalerLoadBalancerElementService extends PluggableService {
 
     //public VirtualMachine deployNetscalerServiceVm(DeployNetscalerVpxCmd deployNetscalerVpxCmd);
 
+    public VMInstanceVO deployNetscalerServiceVm(DeployNetscalerVpxCmd cmd);
 }

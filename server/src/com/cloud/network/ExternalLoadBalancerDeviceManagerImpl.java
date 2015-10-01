@@ -20,6 +20,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -27,12 +28,14 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -57,16 +60,19 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
-import com.cloud.host.HostVO;
 import com.cloud.host.Host.Type;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -87,6 +93,7 @@ import com.cloud.network.dao.NetworkExternalFirewallDao;
 import com.cloud.network.dao.NetworkExternalLoadBalancerDao;
 import com.cloud.network.dao.NetworkExternalLoadBalancerVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
@@ -98,6 +105,8 @@ import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.resource.CreateLoadBalancerApplianceAnswer;
 import com.cloud.network.resource.DestroyLoadBalancerApplianceAnswer;
+import com.cloud.network.router.VirtualRouter.RedundantState;
+import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.StaticNat;
@@ -111,6 +120,10 @@ import com.cloud.resource.ResourceState;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
@@ -126,11 +139,20 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.net.UrlUtil;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.Nic.ReservationStrategy;
+import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineName;
+import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase implements ExternalLoadBalancerDeviceManager, ResourceStateAdapter {
 
@@ -194,6 +216,14 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     protected HostPodDao _podDao = null;
     @Inject
     IpAddressManager _ipAddrMgr;
+    @Inject
+    VirtualMachineManager _itMgr;
+    @Inject
+    VMInstanceDao _vmDao;
+    @Inject
+    VMTemplateDao _templateDao;
+    @Inject
+    ServiceOfferingDao _serviceOfferingDao;
 
     private long _defaultLbCapacity;
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalLoadBalancerDeviceManagerImpl.class);
@@ -1299,5 +1329,164 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             }
         }
         return null;
+    }
+
+    public VMInstanceVO deployNsVpx(Account owner, DeployDestination dest, DeploymentPlan plan, long svcOffId) throws InsufficientCapacityException {
+        VMTemplateVO template = _templateDao.findByUuid("04d57a01-641e-11e5-bf54-8a4fc6ef9475") ;// replace with ns vpx name
+        long id = _vmDao.getNextInSequence(Long.class, "id");
+
+        if (template == null) {
+            s_logger.error(" Unable to find the NS VPX template");
+            //return false;
+        }
+
+        DataCenterIpAddressVO dcPrivateIp = _dcDao.allocatePrivateIpAddress(dest.getDataCenter().getId(),  UUID.randomUUID().toString());//"9cc7c7d8-82bf-11e4-889a-8a4fc6ef9475"); // providing some uuid
+        DataCenterVO dc = _dcDao.findById(dest.getDataCenter().getId());
+        if (dcPrivateIp == null) {
+            throw new InsufficientNetworkCapacityException("failed to acquire a priavate IP in the zone " + dest.getDataCenter().getId() +
+                " needed for management IP of the load balancer appliance", DataCenter.class, dest.getDataCenter().getId());
+        }
+        Pod pod = _podDao.findById(dcPrivateIp.getPodId());
+        String lbIP = dcPrivateIp.getIpAddress();
+        String netmask = NetUtils.getCidrNetmask(pod.getCidrSize());
+        String gateway = pod.getGateway();
+        String nxVpxName = VirtualMachineName.getSystemVmName(id, "Vpx", "NS");
+
+        ServiceOfferingVO vpxOffering =   _serviceOfferingDao.findById(11L); //using 2GB and 2CPU  offering
+/*     // Construct Nic profiles
+        //Form networks
+        LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(4);
+*/
+        // Construct Nic profiles
+        //Form networks
+        LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(4);
+
+        NetworkVO defaultNetwork = null;
+/*        if (dc.getNetworkType() == NetworkType.Advanced && dc.isSecurityGroupEnabled()) {
+            List<NetworkVO> networks = _networkDao.listByZoneSecurityGroup(dest.getDataCenter().getId());
+            if (networks == null || networks.size() == 0) {
+                throw new CloudRuntimeException("Can not found security enabled network in SG Zone " + dc);
+            }
+            defaultNetwork = networks.get(0);
+        } else {
+            TrafficType defaultTrafficType = TrafficType.Public;
+            if (dc.getNetworkType() == NetworkType.Basic || dc.isSecurityGroupEnabled()) {
+                defaultTrafficType = TrafficType.Guest;
+            }
+            List<NetworkVO> defaultNetworks = _networkDao.listByZoneAndTrafficType(dest.getDataCenter().getId(), defaultTrafficType);
+
+            // api should never allow this situation to happen
+            if (defaultNetworks.size() != 1) {
+                throw new CloudRuntimeException("Found " + defaultNetworks.size() + " networks of type " + defaultTrafficType + " when expect to find 1");
+            }
+            defaultNetwork = defaultNetworks.get(0);
+        }*/
+
+        //s_logger.debug("Adding nic for Internal LB vm in Control network ");
+
+        NicProfile defaultNic = new NicProfile();
+        defaultNic.setDefaultNic(true);
+        defaultNic.setIPv4Address(lbIP);
+        defaultNic.setIPv4Gateway(gateway);
+        defaultNic.setIPv4Netmask(netmask);
+        List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemManagementNetwork);
+        NetworkOffering controlOffering = offerings.get(0);
+        Network controlConfig = _networkMgr.setupNetwork(_accountMgr.getSystemAccount(), controlOffering, plan, null, null, false).get(0);
+        /*String mac = _networkModel.getNextAvailableMacAddressInNetwork(controlOffering.getId());
+        defaultNic.setMacAddress(mac);*/
+        networks.put(controlConfig, new ArrayList<NicProfile>());
+
+        /*        if (guestConfig != null) {
+        s_logger.debug("Adding nic for VPx in Guest network " + guestConfig);*/
+/*        NicProfile controlNic = new NicProfile();
+        controlNic.setGateway(gateway);
+        controlNic.setIp4Address(lbIP);
+        controlNic.setNetmask(netmask);
+        controlNic.setTrafficType(TrafficType.Management);
+        //controlNic.setMode( );
+        controlNic.setDefaultNic(true);
+        networks.put(guestConfig, new ArrayList<NicProfile>(Arrays.asList(controlNic)));*/
+    //}
+//*/      //2) Control network
+
+
+        offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering. SystemPublicNetwork);
+        controlOffering = offerings.get(0);
+        controlConfig = _networkMgr.setupNetwork(_accountMgr.getSystemAccount(), controlOffering, plan, null, null, false).get(0);
+        networks.put(controlConfig, new ArrayList<NicProfile>());
+
+/*        offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering. System);
+        controlOffering = offerings.get(0);
+        controlConfig = _networkMgr.setupNetwork(_accountMgr.getSystemAccount(), controlOffering, plan, null, null, false).get(0);
+        networks.put(controlConfig, new ArrayList<NicProfile>());*/
+
+/*        offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering. SystemManagementNetwork);
+        controlOffering = offerings.get(0);
+        controlConfig = _networkMgr.setupNetwork(_accountMgr.getSystemAccount(), controlOffering, plan, null, null, false).get(0);
+        networks.put(controlConfig, new ArrayList<NicProfile>());*/
+
+        // For Guest
+
+/*        offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemManagementNetwork);
+        controlOffering = offerings.get(0);
+        controlConfig = _networkMgr.setupNetwork(_accountMgr.getSystemAccount(), controlOffering, plan, null, null, false).get(0);
+        networks.put(controlConfig, new ArrayList<NicProfile>());*/
+
+        //1) Guest network - default
+/*        if (guestConfig != null) {
+            s_logger.debug("Adding nic for VPx in Guest network " + guestConfig);
+            NicProfile controlNic = new NicProfile();
+            controlNic.setGateway(gateway);
+            controlNic.setIp4Address(lbIP);
+            controlNic.setNetmask(netmask);
+            controlNic.setTrafficType(TrafficType.Management);
+            //controlNic.setMode( );
+            controlNic.setDefaultNic(true);
+            networks.put(guestConfig, new ArrayList<NicProfile>(Arrays.asList(controlNic)));
+        }
+*/      //2) Control network
+
+//        networks.put(controlConfig, new ArrayList<NicProfile>());
+
+/*        //2) Control network
+        s_logger.debug("Adding nic for Internal LB vm in Control network ");
+        List<? extends NetworkOffering> offerings = _ntwkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
+        NetworkOffering controlOffering = offerings.get(0);
+        Network controlConfig = _ntwkMgr.setupNetwork(_accountMgr.getSystemAccount(), controlOffering, plan, null, null, false).get(0);
+        networks.put(controlConfig, new ArrayList<NicProfile>());
+*/
+/*        VMInstanceVO nsVpx = new VMInstanceVO(id, vpxOffering.getId(), nxVpxName, nxVpxName, VirtualMachine.Type.ExternalLoadBalancerVm ,
+                template.getId(), HypervisorType.XenServer, 103, 1, 1, false);*/
+        // currently provider id is set to 6. modify the same in VR_providers table id.
+
+/*        DomainRouterVO nsVpx =
+                new DomainRouterVO(id, vpxOffering.getId(), 6, nxVpxName, template.getId(), HypervisorType.XenServer, 103, owner.getDomainId(), owner.getId(), false, 0, false,
+                   RedundantState.UNKNOWN,false, false, VirtualMachine.Type.NetScalerVm, null);*/
+        long userId = CallContext.current().getCallingUserId();
+        DomainRouterVO nsVpx = new DomainRouterVO(id, vpxOffering.getId(), /*internalLbProviderId*/6, nxVpxName,
+                template.getId(), template.getHypervisorType(), 103, owner.getDomainId(), owner.getId(), userId, false, RedundantState.UNKNOWN, false,
+                false, VirtualMachine.Type.NetScalerVm, null);
+/*        new DomainRouterVO(id, vpxOffering.getId(), internalLbProviderId6, VirtualMachineName.getSystemVmName(id, _instance, InternalLbVmNamePrefix),
+                template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), userId, false, RedundantState.UNKNOWN, false, false,
+                VirtualMachine.Type.InternalLoadBalancerVm, vpcId);*/
+            //nsVpx.setType(VirtualMachine.Type.NetScalerVm);
+            nsVpx.setRole(Role.NETSCALER_VM);
+        // TODO: need to set the TYPe as it is NPE on persiting.
+
+       //FIXEM: create a map in Virtual router providers to the NCC provider in the physical network service. map element id to id in NSP
+/*        vmVO = new DomainRo
+                new DomainRouterVO(id, vpxOffering.getId(), internalLbProviderId, VirtualMachineName.getSystemVmName(id, _instance, InternalLbVmNamePrefix),
+                    template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), false, 0, false,
+                    RedundantState.UNKNOWN, false, false, VirtualMachine.Type.InternalLoadBalancerVm, vpcId);
+            internalLbVm.setRole(Role.INTERNAL_LB_VM);
+*/
+        //persist the VO
+         _routerDao.persist(nsVpx);
+         VMInstanceVO vmVO= _vmDao.findVMByHostName(nxVpxName);
+        //_vmDao.persist(nsVpx);
+        _itMgr.allocate(nxVpxName, template, vpxOffering, networks, plan, HypervisorType.XenServer);
+        Map<Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
+        params.put(VirtualMachineProfile.Param.ControlNic,lbIP + ";" + gateway +";" + netmask);
+        return vmVO;
     }
 }
