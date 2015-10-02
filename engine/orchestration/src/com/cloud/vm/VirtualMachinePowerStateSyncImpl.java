@@ -24,13 +24,13 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStateSync {
@@ -112,9 +112,14 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
             for (VMInstanceVO instance : vmsThatAreMissingReport) {
 
                 // Make sure powerState is up to date for missing VMs
-                if (!_instanceDao.isPowerStateUpToDate(instance.getId())) {
-                    s_logger.warn("Detected missing VM but power state is outdated, wait for another process report run for VM id: " + instance.getId());
-                    _instanceDao.resetVmPowerStateTracking(instance.getId());
+                try {
+                    if (!_instanceDao.isPowerStateUpToDate(instance.getId())) {
+                        s_logger.warn("Detected missing VM but power state is outdated, wait for another process report run for VM id: " + instance.getId());
+                        _instanceDao.resetVmPowerStateTracking(instance.getId());
+                        continue;
+                    }
+                } catch (CloudRuntimeException e) {
+                    s_logger.warn("Checked for missing powerstate of a none existing vm", e);
                     continue;
                 }
 
