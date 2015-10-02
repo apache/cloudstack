@@ -27,6 +27,7 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.InternalErrorException;
 import org.apache.log4j.Logger;
 
 import com.cloud.storage.Storage.ImageFormat;
@@ -42,7 +43,7 @@ public class QCOW2Processor extends AdapterBase implements Processor {
     private StorageLayer _storage;
 
     @Override
-    public FormatInfo process(String templatePath, ImageFormat format, String templateName) {
+    public FormatInfo process(String templatePath, ImageFormat format, String templateName) throws InternalErrorException {
         if (format != null) {
             s_logger.debug("We currently don't handle conversion from " + format + " to QCOW2.");
             return null;
@@ -64,10 +65,10 @@ public class QCOW2Processor extends AdapterBase implements Processor {
         info.size = _storage.getSize(qcow2Path);
 
         try {
-            info.virtualSize = getVirtualSize(qcow2File);
+            info.virtualSize = getTemplateVirtualSize(qcow2File);
         } catch (IOException e) {
             s_logger.error("Unable to get virtual size from " + qcow2File.getName());
-            return null;
+            throw new InternalErrorException("unable to get virtual size from qcow2 file");
         }
 
         return info;
@@ -75,6 +76,16 @@ public class QCOW2Processor extends AdapterBase implements Processor {
 
     @Override
     public long getVirtualSize(File file) throws IOException {
+        try {
+            long size = getTemplateVirtualSize(file);
+            return size;
+        } catch (Exception e) {
+            s_logger.info("[ignored]" + "failed to get template virtual size for QCOW2: " + e.getLocalizedMessage());
+        }
+        return file.length();
+    }
+
+    protected long getTemplateVirtualSize(File file) throws IOException {
         byte[] b = new byte[8];
         try (FileInputStream strm = new FileInputStream(file)) {
             if (strm.skip(VIRTUALSIZE_HEADER_LOCATION) != VIRTUALSIZE_HEADER_LOCATION) {

@@ -180,7 +180,9 @@ public class TemplateLocation {
         deleteFormat(newInfo.format);
 
         if (!checkFormatValidity(newInfo)) {
-            s_logger.warn("Format is invalid ");
+            s_logger.warn("Format is invalid");
+            s_logger.debug("Format: " + newInfo.format + " size: " + newInfo.size + " virtualsize: " + newInfo.virtualSize + " filename: " + newInfo.filename);
+            s_logger.debug("format, filename cannot be null and size, virtual size should be  > 0 ");
             return false;
         }
 
