@@ -52,7 +52,8 @@ RUN (/usr/bin/mysqld_safe &); \
     sleep 3; \
     mvn -Pdeveloper -pl developer -Ddeploydb; \
     mvn -Pdeveloper -pl developer -Ddeploydb-simulator; \
-    pip install tools/marvin/dist/Marvin-4.6.0-SNAPSHOT.tar.gz
+    MARVIN_FILE=`find tools/marvin/dist/ -name "Marvin*.tar.gz"` \
+    pip install $MARVIN_FILE
 
 EXPOSE 8080 8096
 
