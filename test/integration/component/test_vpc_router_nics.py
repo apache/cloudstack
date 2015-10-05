@@ -456,7 +456,7 @@ class TestVPCNics(cloudstackTestCase):
                               )
         
                 self.assertEqual(
-                                 result.count("0% packet loss"),
+                                 result.count("3 packets received"),
                                  1,
                                  "Ping to outside world from VM should be successful"
                                  )
