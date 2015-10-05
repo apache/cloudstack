@@ -300,7 +300,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
             hostDetails.put("zoneId", Long.toString(guestConfig.getDataCenterId()));
             hostDetails.put("ip", ipAddress);
             hostDetails.put("username", nccVO.getUsername());
-            hostDetails.put("password", DBEncryptionUtil.encrypt(nccVO.getPassword()));
+            hostDetails.put("password", DBEncryptionUtil.decrypt(nccVO.getPassword()));
             hostDetails.put("deviceName", "netscaler control center");
             hostDetails.put("cmdTimeOut", Long.toString(NumbersUtil.parseInt(_configDao.getValue(Config.NCCCmdTimeOut.key()), 600000)));
             ServerResource resource = new NetScalerControlCenterResource();
@@ -1532,12 +1532,12 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
         //JOURNAL JOURNAL = NEW JOURNAL.LOGJOURNAL("IMPLEMENTING "  NETWORK, S_LOGGER);
         VMInstanceVO vmvo = null;
         DeploymentPlan plan = new DataCenterDeployment(dest.getDataCenter().getId());
-        try {
-            vmvo = deployNsVpx(cmd.getAccount(), dest, plan, 17l);
+        /*try {
+            //vmvo = deployNsVpx(cmd.getAccount(), dest, plan, 17l);
         } catch (InsufficientCapacityException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        }
+        }*/
         //vmvo = (VMInstanceVO)implementNsVpxDeployment(null, null, dest, null);
         return vmvo;
     }
