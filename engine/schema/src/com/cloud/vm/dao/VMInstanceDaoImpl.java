@@ -805,6 +805,15 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
+    public boolean isPowerStateUpToDate(final long instanceId) {
+        VMInstanceVO instance = findById(instanceId);
+        if(instance == null) {
+            throw new CloudRuntimeException("checking power state update count on non existing instance " + instanceId);
+        }
+        return instance.getPowerStateUpdateCount() < MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT;
+    }
+
+    @Override
     public void resetVmPowerStateTracking(final long instanceId) {
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
