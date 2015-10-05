@@ -100,9 +100,11 @@ class CsRedundant(object):
         CsHelper.copy_if_needed(
             "%s/%s" % (self.CS_TEMPLATES_DIR, "keepalived.conf.templ"), self.KEEPALIVED_CONF)
         CsHelper.copy_if_needed(
-            "%s/%s" % (self.CS_TEMPLATES_DIR, "conntrackd.conf.templ"), self.CONNTRACKD_CONF)
-        CsHelper.copy_if_needed(
             "%s/%s" % (self.CS_TEMPLATES_DIR, "checkrouter.sh.templ"), "/opt/cloud/bin/checkrouter.sh")
+        #The file is always copied so the RVR doesn't't get the wrong config.
+        #Concerning the r-VPC, the configuration will be applied in a different manner
+        CsHelper.copy(
+            "%s/%s" % (self.CS_TEMPLATES_DIR, "conntrackd.conf.templ"), self.CONNTRACKD_CONF)
 
         CsHelper.execute(
             'sed -i "s/--exec\ \$DAEMON;/--exec\ \$DAEMON\ --\ --vrrp;/g" /etc/init.d/keepalived')
