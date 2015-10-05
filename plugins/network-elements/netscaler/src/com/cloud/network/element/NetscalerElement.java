@@ -1496,7 +1496,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
         hostDetails.put("zoneId", "1");
         hostDetails.put("ip", ipAddress);
         hostDetails.put("username", cmd.getUsername());
-        hostDetails.put("password", DBEncryptionUtil.encrypt(cmd.getPassword()));
+        hostDetails.put("password", cmd.getPassword());
         hostDetails.put("deviceName", "Netscaler ControlCenter");
         ServerResource resource = new NetScalerControlCenterResource();
         try {
