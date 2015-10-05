@@ -110,6 +110,11 @@ class TestCreatePFOnStoppedRouter(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.cleanup = []
+        return
+
     def tearDown(self):
         try:
             # Clean up, terminate the created resources
@@ -118,10 +123,6 @@ class TestCreatePFOnStoppedRouter(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    def setUp(self):
-        self.apiclient = self.testClient.getApiClient()
-        self.cleanup = []
-        return
 
     @attr(tags=["advanced", "advancedns"], required_hardware="true")
     def test_01_CreatePFOnStoppedRouter(self):
@@ -322,16 +323,16 @@ class TestCreateLBOnStoppedRouter(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.cleanup = []
+        return
+
     def tearDown(self):
         try:
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
-
-    def setUp(self):
-        self.apiclient = self.testClient.getApiClient()
-        self.cleanup = []
         return
 
     @attr(tags=["advanced", "advancedns"], required_hardware="true")

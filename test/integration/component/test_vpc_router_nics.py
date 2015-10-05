@@ -224,7 +224,6 @@ class TestVPCNics(cloudstackTestCase):
             admin=True,
             domainid=self.domain.id)
 
-        self.cleanup = [self.account]
         self.logger.debug("Creating a VPC offering..")
         self.vpc_off = VpcOffering.create(
             self.apiclient,
@@ -242,10 +241,13 @@ class TestVPCNics(cloudstackTestCase):
             zoneid=self.zone.id,
             account=self.account.name,
             domainid=self.account.domainid)
+        
+        self.cleanup = [self.vpc, self.vpc_off, self.account]
         return
 
     def tearDown(self):
         try:
+            self.destroy_routers()
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             self.logger.debug("Warning: Exception during cleanup : %s" % e)
@@ -261,19 +263,20 @@ class TestVPCNics(cloudstackTestCase):
             isinstance(self.routers, list), True,
             "Check for list routers response return valid data")
 
-    def stop_router(self):
+    def stop_router(self, router):
         self.logger.debug('Stopping router')
-        for router in self.routers:
-            cmd = stopRouter.stopRouterCmd()
-            cmd.id = router.id
-            self.apiclient.stopRouter(cmd)
+        cmd = stopRouter.stopRouterCmd()
+        cmd.id = router.id
+        self.apiclient.stopRouter(cmd)
 
-    def destroy_router(self):
-        self.logger.debug('Stopping router')
+    def destroy_routers(self):
+        self.logger.debug('Destroying routers')
         for router in self.routers:
+            self.stop_router(router)
             cmd = destroyRouter.destroyRouterCmd()
             cmd.id = router.id
             self.apiclient.destroyRouter(cmd)
+        self.routers = []
 
     def create_network(self, net_offerring, gateway='10.1.1.1', vpc=None):
         try:
@@ -299,12 +302,19 @@ class TestVPCNics(cloudstackTestCase):
                 gateway=gateway,
                 vpcid=vpc.id if vpc else self.vpc.id
             )
-            
+
+
             self.logger.debug("Created network with ID: %s" % obj_network.id)
         except Exception, e:
             self.fail('Unable to create a Network with offering=%s because of %s ' % (net_offerring, e))
         o = networkO(obj_network)
-        o.add_vm(self.deployvm_in_network(obj_network))
+        
+        vm1 = self.deployvm_in_network(obj_network)
+
+        self.cleanup.insert(1, obj_network)
+        self.cleanup.insert(2, nw_off)
+
+        o.add_vm(vm1)
         return o
 
     def deployvm_in_network(self, network):
@@ -318,7 +328,9 @@ class TestVPCNics(cloudstackTestCase):
                 serviceofferingid=self.service_offering.id,
                 networkids=[str(network.id)]
             )
+
             self.logger.debug('Created VM=%s in network=%s' % (vm.id, network.name))
+            self.cleanup.insert(0, vm)
             return vm
         except:
             self.fail('Unable to create VM in a Network=%s' % network.name)
@@ -362,17 +374,6 @@ class TestVPCNics(cloudstackTestCase):
         self.logger.debug('nwacl_nat=%s' % nwacl_nat.__dict__)
         return nat_rule
 
-    def check_ssh_into_vm(self, vm, public_ip):
-        self.logger.debug("Checking if we can SSH into VM=%s on public_ip=%s" %
-                   (vm.name, public_ip.ipaddress.ipaddress))
-        vm.ssh_client = None
-        try:
-            vm.get_ssh_client(ipaddress=public_ip.ipaddress.ipaddress)
-            self.logger.debug("SSH into VM=%s on public_ip=%s is successful" %
-                       (vm.name, public_ip.ipaddress.ipaddress))
-        except:
-            self.fail("Failed to SSH into VM - %s" % (public_ip.ipaddress.ipaddress))
-
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_01_VPC_nics_after_destroy(self):
         """ Create a VPC with two networks with one VM in each network and test nics after destroy"""
@@ -386,15 +387,16 @@ class TestVPCNics(cloudstackTestCase):
         self.networks.append(net2)
 
         self.add_nat_rules()
-        self.test_ssh_to_vm()
+        self.check_ssh_into_vm()
 
-        self.stop_router()
-        self.destroy_router()
+        self.destroy_routers()
         time.sleep(30)
 
         net1.add_vm(self.deployvm_in_network(net1.get_net()))
+        self.query_routers()
+        
         self.add_nat_rules()
-        self.test_ssh_to_vm()
+        self.check_ssh_into_vm()
 
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_02_VPC_default_routes(self):
@@ -409,7 +411,7 @@ class TestVPCNics(cloudstackTestCase):
         self.networks.append(net2)
 
         self.add_nat_rules()
-        self.test_default_routes()
+        self.do_default_routes_test()
 
     def delete_nat_rules(self):
         for o in self.networks:
@@ -427,12 +429,25 @@ class TestVPCNics(cloudstackTestCase):
                     vm.set_nat(self.create_natrule(vm.get_vm(), vm.get_ip(), o.get_net()))
                     time.sleep(5)
 
-    def test_ssh_to_vm(self):
+    def check_ssh_into_vm(self):
         for o in self.networks:
             for vm in o.get_vms():
-                self.check_ssh_into_vm(vm.get_vm(), vm.get_ip())
+                try:
+                    virtual_machine = vm.get_vm()
+                    virtual_machine.ssh_client = None
 
-    def test_default_routes(self):
+                    public_ip = vm.get_ip()
+
+                    self.logger.debug("Checking if we can SSH into VM=%s on public_ip=%s" %
+                               (virtual_machine.name, public_ip.ipaddress.ipaddress))
+
+                    virtual_machine.get_ssh_client(ipaddress=public_ip.ipaddress.ipaddress)
+                    self.logger.debug("SSH into VM=%s on public_ip=%s is successful" %
+                               (virtual_machine.name, public_ip.ipaddress.ipaddress))
+                except:
+                    self.fail("Failed to SSH into VM - %s" % (public_ip.ipaddress.ipaddress))
+
+    def do_default_routes_test(self):
         for o in self.networks:
             for vmObj in o.get_vms():
                 ssh_command = "ping -c 3 8.8.8.8"
@@ -449,7 +464,7 @@ class TestVPCNics(cloudstackTestCase):
                     self.logger.debug("Ping to google.com from VM")
                     result = str(ssh.execute(ssh_command))
 
-                    self.logger.debug("SSH result: %s; COUNT is ==> %s" % (result, result.count("0% packet loss")))
+                    self.logger.debug("SSH result: %s; COUNT is ==> %s" % (result, result.count("3 packets received")))
                 except Exception as e:
                     self.fail("SSH Access failed for %s: %s" % \
                               (vmObj.get_ip(), e)
