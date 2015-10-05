@@ -1974,7 +1974,7 @@
             $form.find('input[type=submit]')
                 .show()
                 .appendTo($form)
-                .val(_('label.search'));
+                .val(_l('label.search'));
 
             // Cancel button
             $form.append(

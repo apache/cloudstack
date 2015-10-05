@@ -1211,7 +1211,7 @@
 
                 // Show launch button if last step
                 if ($targetStep.index() == $steps.size() - 1 || options.nextStep) {
-                    $nextButton.find('span').html(options.nextStep ? _('label.save.changes') : _('label.launch.zone'));
+                    $nextButton.find('span').html(options.nextStep ? _l('label.save.changes') : _l('label.launch.zone'));
                     $nextButton.addClass('final');
 
                     if (options.nextStep) {
