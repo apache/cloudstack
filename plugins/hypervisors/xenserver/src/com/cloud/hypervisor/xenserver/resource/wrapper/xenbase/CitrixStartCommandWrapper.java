@@ -87,7 +87,15 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
 
             final Host host = Host.getByUuid(conn, citrixResourceBase.getHost().getUuid());
             vm = citrixResourceBase.createVmFromTemplate(conn, vmSpec, host);
-
+            //Add xenstore data for the NetscalerVM
+/*            if(vmSpec.getType()== VirtualMachine.Type.NetScalerVm) {
+                NicTO mgmtNic = vmSpec.getNics()[0];
+                if(mgmtNic != null ) {
+                    vm.addToXenstoreData(conn, "vm-data/ip", mgmtNic.getIp().toString().trim());
+                    vm.addToXenstoreData(conn, "vm-data/gateway", mgmtNic.getIp().toString().trim());
+                    vm.addToXenstoreData(conn, "vm-data/netmask", mgmtNic.getIp().toString().trim());
+                }
+            }*/
             final GPUDeviceTO gpuDevice = vmSpec.getGpuDevice();
             if (gpuDevice != null) {
                 s_logger.debug("Creating VGPU for of VGPU type: " + gpuDevice.getVgpuType() + " in GPU group " + gpuDevice.getGpuGroup() + " for VM " + vmName);

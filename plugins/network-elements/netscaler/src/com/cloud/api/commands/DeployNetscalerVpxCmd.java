@@ -15,7 +15,12 @@
 
 package com.cloud.api.commands;
 
+import java.util.List;
+import java.util.Map;
+
 import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -24,14 +29,12 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.api.response.NetscalerLoadBalancerResponse;
 import com.cloud.event.EventTypes;
@@ -88,9 +91,11 @@ public class DeployNetscalerVpxCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException {
         try {
-           VirtualMachine vm = _netsclarLbService.deployNetscalerServiceVm(this);
-           if (vm != null) {
-               SystemVmResponse response = _responseGenerator.createSystemVmResponse(vm);
+            Map<String,Object> resp = _netsclarLbService.deployNetscalerServiceVm(this);
+           if (resp.size() > 0) {
+               SystemVmResponse response =  _responseGenerator.createSystemVmResponse((VirtualMachine)resp.get("vm"));
+               response.setGuestVlan((String)resp.get("guestvlan"));
+               response.setPublicVlan((List<String>)resp.get("publicvlan"));
                response.setResponseName(getCommandName());
                setResponseObject(response);
            } else {
@@ -102,6 +107,14 @@ public class DeployNetscalerVpxCmd extends BaseAsyncCmd {
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());
         }
+    }
+
+    public Long getServiceOfferingId() {
+        return serviceOfferingId;
+    }
+
+    public Long getTemplateId() {
+        return templateId;
     }
 
     @Override

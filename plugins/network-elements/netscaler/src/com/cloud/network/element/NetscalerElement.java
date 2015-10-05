@@ -28,7 +28,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.crypt.DBEncryptionUtil;
 import org.apache.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -141,6 +140,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
@@ -234,6 +234,50 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
 
         return (_networkManager.isProviderForNetwork(getProvider(), config.getId()) && _ntwkSrvcDao
                 .canProviderSupportServiceInNetwork(config.getId(), service, Network.Provider.Netscaler));
+    }
+
+    @Override
+    public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
+        super.configure(name, params);
+/*        _instance = configs.get("instance.name");
+        if (_instance == null) {
+            _instance = "DEFAULT";
+        }
+
+        _mgmtHost = configs.get("host");
+        _mgmtCidr = _configDao.getValue(Config.ManagementNetwork.key());
+
+        final String offUUID = configs.get(Config.InternalLbVmServiceOfferingId.key());
+        if (offUUID != null && !offUUID.isEmpty()) {
+            //get the id by offering UUID
+            final ServiceOfferingVO off = _serviceOfferingDao.findByUuid(offUUID);
+            if (off != null) {
+                _internalLbVmOfferingId = off.getId();
+            } else {
+                s_logger.warn("Invalid offering UUID is passed in " + Config.InternalLbVmServiceOfferingId.key() + "; the default offering will be used instead");
+            }
+        }*/
+
+/*        //if offering wasn't set, try to get the default one
+        if (_internalLbVmOfferingId == 0L) {
+            List<ServiceOfferingVO> offerings = _serviceOfferingDao.createSystemServiceOfferings("System Offering For Internal LB VM",
+                    ServiceOffering.internalLbVmDefaultOffUniqueName, 1, InternalLoadBalancerVMManager.DEFAULT_INTERNALLB_VM_RAMSIZE,
+                    InternalLoadBalancerVMManager.DEFAULT_INTERNALLB_VM_CPU_MHZ, null, null, true, null,
+                    Storage.ProvisioningType.THIN, true, null, true, VirtualMachine.Type.InternalLoadBalancerVm, true);
+            if (offerings == null || offerings.size() < 2) {
+                String msg = "Data integrity problem : System Offering For Internal LB VM has been removed?";
+                s_logger.error(msg);
+                throw new ConfigurationException(msg);
+            }
+        }
+*/
+        _itMgr.registerGuru(VirtualMachine.Type.NetScalerVm, this);
+
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info(getName() + " has been configured");
+        }
+
+        return true;
     }
 
     private boolean isBasicZoneNetwok(Network config) {
@@ -1525,45 +1569,59 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
     }*/
 
     @Override
-    public VMInstanceVO deployNetscalerServiceVm(DeployNetscalerVpxCmd cmd) {
+    public Map<String,Object> deployNetscalerServiceVm(DeployNetscalerVpxCmd cmd) {
         DataCenter zone = _dcDao.findById(cmd.getZoneId());
         DeployDestination dest = new DeployDestination(zone, null, null, null);//DeployDestination dest = new DeployDestination(zone, null, null, null);
         //USERVO CALLERUSER = _USERDAO.FINDBYID(CALLCONTEXT.CURRENT().GETCALLINGUSERID());
         //JOURNAL JOURNAL = NEW JOURNAL.LOGJOURNAL("IMPLEMENTING "  NETWORK, S_LOGGER);
         VMInstanceVO vmvo = null;
+        Map<String,Object> resp = new HashMap<String, Object>();
+        Long templateId = cmd.getTemplateId();
+        Long serviceOfferingId = cmd.getServiceOfferingId();
         DeploymentPlan plan = new DataCenterDeployment(dest.getDataCenter().getId());
-        /*try {
-            //vmvo = deployNsVpx(cmd.getAccount(), dest, plan, 17l);
+        try {
+             resp = deployNsVpx(cmd.getAccount(), dest, plan, serviceOfferingId, templateId);
         } catch (InsufficientCapacityException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        }*/
+        }
         //vmvo = (VMInstanceVO)implementNsVpxDeployment(null, null, dest, null);
-        return vmvo;
+        return resp;
     }
+
+/*    protected void stopInternalLbVm() throws ResourceUnavailableException,
+    ConcurrentOperationException {
+        s_logger.debug("Stopping internal lb vm " + internalLbVm);
+        try {
+            _itMgr.advanceStop(internalLbVm.getUuid(), true);
+            //return _internalLbVmDao.findById(internalLbVm.getId());
+        } catch (final OperationTimedoutException e) {
+            throw new CloudRuntimeException("Unable to stop " + internalLbVm, e);
+        }
+    }*/
 
     @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
         // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
     @Override
     public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
     @Override
     public boolean finalizeStart(VirtualMachineProfile profile, long hostId, Commands cmds, ReservationContext context) {
         // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
     @Override
     public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile profile) {
         // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
     @Override
