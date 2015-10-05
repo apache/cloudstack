@@ -3938,7 +3938,6 @@
                         $.ajax({
                             url: createURL('createStorageNetworkIpRange'),
                             data: $.extend(true, {}, item, {
-                                zoneid: args.data.returnedZone.id,
                                 podid: args.data.returnedPod.id
                             }),
                             success: function(json) {
