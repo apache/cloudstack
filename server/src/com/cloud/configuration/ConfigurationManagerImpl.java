@@ -388,6 +388,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add("ovm3.heartbeat.timeout");
         configValuesForValidation.add("incorrect.login.attempts.allowed");
         configValuesForValidation.add("vm.password.length");
+        configValuesForValidation.add("externaldhcp.vmip.retrieval.interval");
+        configValuesForValidation.add("externaldhcp.vmip.max.retry");
+        configValuesForValidation.add("externaldhcp.vmipFetch.threadPool.max");
         configValuesForValidation.add("remote.access.vpn.psk.length");
     }
 
