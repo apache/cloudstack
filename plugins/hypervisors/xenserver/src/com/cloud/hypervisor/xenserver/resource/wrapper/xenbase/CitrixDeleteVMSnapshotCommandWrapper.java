@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 
@@ -79,8 +80,12 @@ public final class CitrixDeleteVMSnapshotCommandWrapper extends CommandWrapper<D
             }
             // re-calculate used capacify for this VM snapshot
             for (final VolumeObjectTO volumeTo : command.getVolumeTOs()) {
-                final long size = citrixResourceBase.getVMSnapshotChainSize(conn, volumeTo, command.getVmName());
-                volumeTo.setSize(size);
+                try {
+                    final long size = citrixResourceBase.getVMSnapshotChainSize(conn, volumeTo, command.getVmName(), snapshotName);
+                    volumeTo.setSize(size);
+                } catch (final CloudRuntimeException cre) {
+
+                }
             }
 
             return new DeleteVMSnapshotAnswer(command, command.getVolumeTOs());

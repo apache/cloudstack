@@ -3333,7 +3333,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return _instance;
     }
 
-    public long getVMSnapshotChainSize(final Connection conn, final VolumeObjectTO volumeTo, final String vmName) throws BadServerResponse, XenAPIException, XmlRpcException {
+    public long getVMSnapshotChainSize(final Connection conn, final VolumeObjectTO volumeTo, final String vmName, final String vmSnapshotName) throws BadServerResponse, XenAPIException, XmlRpcException {
         if (volumeTo.getVolumeType() == Volume.Type.DATADISK) {
             final VDI dataDisk = VDI.getByUuid(conn, volumeTo.getPath());
             if (dataDisk != null) {
@@ -3364,25 +3364,33 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
         }
         if (volumeTo.getVolumeType() == Volume.Type.ROOT) {
-            final Map<VM, VM.Record> allVMs = VM.getAllRecords(conn);
-            // add size of memory snapshot vdi
-            if (allVMs != null && allVMs.size() > 0) {
-                for (final VM vmr : allVMs.keySet()) {
-                    try {
-                        final String vName = vmr.getNameLabel(conn);
-                        if (vName != null && vName.contains(vmName) && vmr.getIsASnapshot(conn)) {
-                            final VDI memoryVDI = vmr.getSuspendVDI(conn);
-                            if (!isRefNull(memoryVDI)) {
-                                size = size + memoryVDI.getPhysicalUtilisation(conn);
-                                final VDI pMemoryVDI = memoryVDI.getParent(conn);
-                                if (!isRefNull(pMemoryVDI)) {
-                                    size = size + pMemoryVDI.getPhysicalUtilisation(conn);
+            VM vm = getVM(conn, vmName);
+            if(vm != null){
+                Set<VM> vmSnapshots=vm.getSnapshots(conn);
+                if(vmSnapshots != null){
+                    for(VM vmsnap: vmSnapshots){
+                        try {
+                            final String vmSnapName = vmsnap.getNameLabel(conn);
+                            s_logger.debug("snapname " + vmSnapName);
+                            if (vmSnapName != null && vmSnapName.contains(vmSnapshotName) && vmsnap.getIsASnapshot(conn)) {
+                                s_logger.debug("snapname " + vmSnapName + "isASnapshot");
+                                VDI memoryVDI = vmsnap.getSuspendVDI(conn);
+                                if (!isRefNull(memoryVDI)) {
+                                    size = size + memoryVDI.getPhysicalUtilisation(conn);
+                                    s_logger.debug("memoryVDI size :"+size);
+                                    String parentUuid = memoryVDI.getSmConfig(conn).get("vhd-parent");
+                                    VDI pMemoryVDI = VDI.getByUuid(conn, parentUuid);
+                                    if (!isRefNull(pMemoryVDI)) {
+                                        size = size + pMemoryVDI.getPhysicalUtilisation(conn);
+                                    }
+                                    s_logger.debug("memoryVDI size+parent :"+size);
                                 }
                             }
+                           } catch (Exception e) {
+                            s_logger.debug("Exception occurs when calculate snapshot capacity for memory: due to " + e.toString());
+                            continue;
                         }
-                    } catch (final Exception e) {
-                        s_logger.debug("Exception occurs when calculate snapshot capacity for memory: due to " + e.toString());
-                        continue;
+
                     }
                 }
             }
