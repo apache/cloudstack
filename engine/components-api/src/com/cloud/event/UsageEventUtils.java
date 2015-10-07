@@ -177,7 +177,7 @@ public class UsageEventUtils {
             return; // no provider is configured to provide events bus, so just return
         }
 
-        Account account = s_accountDao.findById(accountId);
+        Account account = s_accountDao.findByIdIncludingRemoved(accountId);
         DataCenterVO dc = s_dcDao.findById(zoneId);
 
         // if account has been deleted, this might be called during cleanup of resources and results in null pointer
