@@ -1684,11 +1684,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             return requestedIp;
         }
 
-        String result;
-        do {
-            result = NetUtils.long2Ip(array[_rand.nextInt(array.length)]);
-        } while (result.split("\\.")[3].equals("1"));
-        return result;
+        return NetUtils.long2Ip(array[_rand.nextInt(array.length)]);
     }
 
     Random _rand = new Random(System.currentTimeMillis());
