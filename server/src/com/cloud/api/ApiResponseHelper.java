@@ -1319,7 +1319,11 @@ public class ApiResponseHelper implements ResponseGenerator {
                         vmResponse.setPrivateIp(singleNicProfile.getIPv4Address());
                         vmResponse.setPrivateMacAddress(singleNicProfile.getMacAddress());
                         vmResponse.setPrivateNetmask(singleNicProfile.getIPv4Netmask());
-                    } else if (network.getTrafficType() == TrafficType.Control) {
+                    } else if (network.getTrafficType() == TrafficType.Control) {                        vmResponse.setPublicIp(singleNicProfile.getIPv4Address());
+                    vmResponse.setPublicMacAddress(singleNicProfile.getMacAddress());
+                    vmResponse.setPublicNetmask(singleNicProfile.getIPv4Netmask());
+                    vmResponse.setGateway(singleNicProfile.getIPv4Gateway());
+
                         vmResponse.setLinkLocalIp(singleNicProfile.getIPv4Address());
                         vmResponse.setLinkLocalMacAddress(singleNicProfile.getMacAddress());
                         vmResponse.setLinkLocalNetmask(singleNicProfile.getIPv4Netmask());

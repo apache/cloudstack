@@ -67,6 +67,7 @@ import com.cloud.api.commands.ListNetscalerLoadBalancersCmd;
 import com.cloud.api.commands.ListRegisteredServicePackageCmd;
 import com.cloud.api.commands.RegisterNetscalerControlCenterCmd;
 import com.cloud.api.commands.RegisterServicePackageCmd;
+import com.cloud.api.commands.StopNetScalerVMCmd;
 import com.cloud.api.response.NetScalerServicePackageResponse;
 import com.cloud.api.response.NetscalerControlCenterResponse;
 import com.cloud.api.response.NetscalerLoadBalancerResponse;
@@ -129,6 +130,7 @@ import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.resource.NetScalerControlCenterResource;
 import com.cloud.network.resource.NetscalerResource;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LbStickinessMethod;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
@@ -139,6 +141,7 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
+import com.cloud.user.Account;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
@@ -834,6 +837,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
         cmdList.add(DeleteServicePackageOfferingCmd.class);
         cmdList.add(DeleteNetscalerControlCenterCmd.class);
         cmdList.add(DeployNetscalerVpxCmd.class);
+        cmdList.add(StopNetScalerVMCmd.class);
         return cmdList;
     }
 
@@ -1602,7 +1606,11 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
 
     @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
-        // TODO Auto-generated method stub
+        for (final NicProfile nic : profile.getNics()) {
+            if(nic.getTrafficType() == TrafficType.Control) {
+                nic.setTrafficType(TrafficType.Guest);
+            }
+        }
         return true;
     }
 
@@ -1637,5 +1645,11 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
     @Override
     public void prepareStop(VirtualMachineProfile profile) {
         // TODO Auto-generated method stub
+    }
+
+    @Override
+    public VirtualRouter stopNetscalerServiceVm(Long id, boolean forced, Account callingAccount, long callingUserId) throws ConcurrentOperationException,
+            ResourceUnavailableException {
+        return stopNetScalerVm(id, forced, callingAccount, callingUserId);
     }
 }

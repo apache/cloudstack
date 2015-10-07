@@ -110,6 +110,7 @@ import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.resource.CreateLoadBalancerApplianceAnswer;
 import com.cloud.network.resource.DestroyLoadBalancerApplianceAnswer;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
@@ -1382,7 +1383,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     protected void startNsVpx(VMInstanceVO nsVpx, Map<Param, Object> params) throws StorageUnavailableException,
     InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting NS Vpx " + nsVpx);
-        //_itMgr.start(nsVpx.getUuid(), params, null, null);
+        _itMgr.start(nsVpx.getUuid(), params, null, null);
     }
 
     public Map<String, Object> deployNsVpx(Account owner, DeployDestination dest, DeploymentPlan plan, long svcOffId, long templateId) throws InsufficientCapacityException {
@@ -1456,6 +1457,9 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
          networks.put(_networkMgr.setupNetwork(owner, _networkOfferingDao.findByUniqueName(NetworkOffering.SystemPublicNetwork), plan, null, null, false).get(0),
                  new ArrayList<NicProfile>());
 
+         networks.put(_networkMgr.setupNetwork(owner, _networkOfferingDao.findByUniqueName(NetworkOffering.SystemControlNetwork), plan, null, null, false).get(0),
+                 new ArrayList<NicProfile>());
+
          long physicalNetworkId = _networkModel.findPhysicalNetworkId(dataCenterId, _networkOfferingDao.findById(defaultPublicNetwork.getNetworkOfferingId()).getTags(), TrafficType.Public);
          // Validate physical network
          PhysicalNetwork physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
@@ -1478,7 +1482,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
              nsVpx.setRole(Role.NETSCALER_VM);
 
-          _routerDao.persist(nsVpx);
+             nsVpx = _routerDao.persist(nsVpx);
 
          VMInstanceVO vmVO= _vmDao.findVMByHostName(nxVpxName);
         _itMgr.allocate(nxVpxName, template, vpxOffering, networks, plan, HypervisorType.XenServer);
@@ -1496,7 +1500,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         } catch (ResourceUnavailableException e) {
             e.printStackTrace();
         }
-
+        vmVO= _vmDao.findByUuid(nsVpx.getUuid());
         Map<String, Object> deployResponse = new HashMap<String, Object>();
         deployResponse.put("vm", vmVO);
         deployResponse.put("guestvlan", guestvnet);
@@ -1504,27 +1508,34 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         return deployResponse;
     }
 
-/*    @Override
-    public VirtualRouter stopInternalLbVm(final long vmId, final boolean forced, final Account caller, final long callerUserId) throws ConcurrentOperationException, ResourceUnavailableException {
-        final DomainRouterVO internalLbVm = _internalLbVmDao.findById(vmId);
-        if (internalLbVm == null || internalLbVm.getRole() != Role.INTERNAL_LB_VM) {
-            throw new InvalidParameterValueException("Can't find internal lb vm by id specified");
+
+/*    public VMInstanceVO stopNetscalerVm(final long vmId, final boolean forced, final Account caller, final long callerUserId) throws ConcurrentOperationException, ResourceUnavailableException {
+        final DomainRouterVO netscalerVm = _routerDao.findById(vmId);
+        if (netscalerVm == null || netscalerVm.getRole() != Role.NETSCALER_VM) {
+            throw new InvalidParameterValueException("Can't find NetScaler vm by id specified");
         }
 
         //check permissions
-        _accountMgr.checkAccess(caller, null, true, internalLbVm);
+        _accountMgr.checkAccess(caller, null, true, netscalerVm);
 
-        return stopInternalLbVm(internalLbVm, forced, caller, callerUserId);
+        return stopNetScalerVm(netscalerVm, forced, caller, callerUserId);
     }
-
-    protected VirtualRouter stopNetScalerVm(final DomainRouterVO internalLbVm, final boolean forced, final Account caller, final long callerUserId) throws ResourceUnavailableException,
+*/
+    protected VirtualRouter stopNetScalerVm(final long vmId, final boolean forced, final Account caller, final long callerUserId) throws ResourceUnavailableException,
     ConcurrentOperationException {
-        s_logger.debug("Stopping internal lb vm " + internalLbVm);
-        try {
-            _itMgr.advanceStop(internalLbVm.getUuid(), forced);
-            return _internalLbVmDao.findById(internalLbVm.getId());
-        } catch (final OperationTimedoutException e) {
-            throw new CloudRuntimeException("Unable to stop " + internalLbVm, e);
+        final DomainRouterVO netscalerVm = _routerDao.findById(vmId);
+        s_logger.debug("Stopping NetScaler vm " + netscalerVm);
+
+        if (netscalerVm == null || netscalerVm.getRole() != Role.NETSCALER_VM) {
+            throw new InvalidParameterValueException("Can't find NetScaler vm by id specified");
         }
-    }*/
+        _accountMgr.checkAccess(caller, null, true, netscalerVm);
+        try {
+            //_itMgr.advanceStop(netscalerVm.getUuid(), forced);
+            _itMgr.expunge(netscalerVm.getUuid());
+            return _routerDao.findById(netscalerVm.getId());
+        } catch (final Exception e) {
+            throw new CloudRuntimeException("Unable to stop " + netscalerVm, e);
+        }
+    }
 }

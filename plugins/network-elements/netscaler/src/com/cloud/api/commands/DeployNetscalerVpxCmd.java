@@ -124,7 +124,7 @@ public class DeployNetscalerVpxCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_EXTERNAL_LB_DEVICE_ADD;
+        return EventTypes.EVENT_NETSCALER_VM_START;
     }
 
     @Override

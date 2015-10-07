@@ -61,16 +61,21 @@ import com.cloud.network.dao.NetworkExternalLoadBalancerVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
+import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.utils.net.Ip;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ExternalLoadBalancerDeviceManagerImplTest {
@@ -135,9 +140,20 @@ public class ExternalLoadBalancerDeviceManagerImplTest {
     protected HostPodDao _podDao = null;
     @Mock
     IpAddressManager _ipAddrMgr;
-
+    @Mock
+    protected VirtualMachineManager _itMgr;
     @Mock
     Network network;
+    @Mock
+    VMInstanceDao _vmDao;
+    @Mock
+    VMTemplateDao _templateDao;
+    @Mock
+    ServiceOfferingDao _serviceOfferingDao;
+    @Mock
+    PhysicalNetworkServiceProviderDao _physicalProviderDao;
+    @Mock
+    VirtualRouterProviderDao _vrProviderDao;
 
     @Mock
     LoadBalancingRule rule;

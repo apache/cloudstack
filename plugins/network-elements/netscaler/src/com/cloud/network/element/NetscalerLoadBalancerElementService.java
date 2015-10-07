@@ -34,10 +34,14 @@ import com.cloud.api.commands.RegisterServicePackageCmd;
 import com.cloud.api.response.NetScalerServicePackageResponse;
 import com.cloud.api.response.NetscalerControlCenterResponse;
 import com.cloud.api.response.NetscalerLoadBalancerResponse;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetScalerControlCenterVO;
 import com.cloud.network.NetScalerServicePackageVO;
 import com.cloud.network.Network;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
+import com.cloud.network.router.VirtualRouter;
+import com.cloud.user.Account;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -140,4 +144,6 @@ public interface NetscalerLoadBalancerElementService extends PluggableService {
     //public VirtualMachine deployNetscalerServiceVm(DeployNetscalerVpxCmd deployNetscalerVpxCmd);
 
     public Map<String, Object> deployNetscalerServiceVm(DeployNetscalerVpxCmd cmd);
+
+    public VirtualRouter stopNetscalerServiceVm(Long id, boolean forced, Account callingAccount, long callingUserId) throws ConcurrentOperationException, ResourceUnavailableException;
 }
