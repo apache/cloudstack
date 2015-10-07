@@ -1932,9 +1932,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
                         }
 
-                        // nic ip address isn ot set here. Because the DHCP is external to cloudstack
+                        // nic ip address is not set here. Because the DHCP is external to cloudstack
                         nic.setIPv4Gateway(network.getGateway());
-                        nic.setIPv4Netmask(network.getCidr());
+                        nic.setIPv4Netmask(NetUtils.getCidrNetmask(network.getCidr()));
 
                         List<VlanVO> vlan = _vlanDao.listVlansByNetworkId(network.getId());
 
