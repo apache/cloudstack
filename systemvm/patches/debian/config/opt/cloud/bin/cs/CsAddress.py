@@ -155,7 +155,7 @@ class CsInterface:
         return self.get_attr("netmask")
 
     def get_gateway(self):
-        if self.config.is_vpc():
+        if self.config.is_vpc() or self.config.cmdline().is_redundant():
             return self.get_attr("gateway")
         else:
             return self.config.cmdline().get_guest_gw()
@@ -308,7 +308,7 @@ class CsIP:
         if not self.config.is_vpc():
             self.setup_router_control()
         
-        if self.config.is_vpc():
+        if self.config.is_vpc() or self.cl.is_redundant():
             # The code looks redundant here, but we actually have to cater for routers and
             # VPC routers in a different manner. Please do not remove this block otherwise
             # The VPC default route will be broken.
@@ -329,10 +329,10 @@ class CsIP:
                 cmd2 = "ip link set %s up" % self.getDevice()
                 # If redundant do not bring up public interfaces
                 # master.py and keepalived deal with tham
-                if self.config.cmdline().is_redundant() and not self.is_public():
+                if self.cl.is_redundant() and not self.is_public():
                     CsHelper.execute(cmd2)
                 # if not redundant bring everything up
-                if not self.config.cmdline().is_redundant():
+                if not self.cl.is_redundant():
                     CsHelper.execute(cmd2)
 
     def set_mark(self):

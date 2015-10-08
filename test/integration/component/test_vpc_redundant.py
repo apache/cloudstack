@@ -462,7 +462,8 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.check_master_status(2)
         self.add_nat_rules()
         self.do_vpc_test(False)
-
+        time.sleep(30)
+        
         self.stop_router_by_type("MASTER")
         # wait for the backup router to transit to master state
         time.sleep(30)
@@ -476,7 +477,7 @@ class TestVPCRedundancy(cloudstackTestCase):
 
         self.start_routers()
         self.add_nat_rules()
-        time.sleep(45)
+        time.sleep(30)
         self.check_master_status(2)
         self.do_vpc_test(False)
 

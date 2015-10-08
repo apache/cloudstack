@@ -37,6 +37,7 @@ from CsFile import CsFile
 from CsProcess import CsProcess
 from CsApp import CsPasswdSvc
 from CsAddress import CsDevice
+from CsRoute import CsRoute
 import socket
 from time import sleep
 
@@ -267,16 +268,26 @@ class CsRedundant(object):
 
         ads = [o for o in self.address.get_ips() if o.is_public()]
         dev = ''
+        route = CsRoute()
         for o in ads:
             if dev == o.get_device():
                 continue
-            cmd2 = "ip link set %s up" % o.get_device()
-            if CsDevice(o.get_device(), self.config).waitfordevice():
+            dev = o.get_device()
+            logging.info("Will proceed configuring device ==> %s" % dev)
+            cmd2 = "ip link set %s up" % dev
+            if CsDevice(dev, self.config).waitfordevice():
                 CsHelper.execute(cmd2)
-                dev = o.get_device()
-                logging.info("Bringing public interface %s up" % o.get_device())
+                logging.info("Bringing public interface %s up" % dev)
+
+                try:
+                    gateway = o.get_gateway()
+                    logging.info("Adding gateway ==> %s to device ==> %s" % (gateway, dev))
+                    route.add_defaultroute(gateway)
+                except:
+                    logging.error("ERROR getting gateway from device %s" % dev)
+                    
             else:
-                logging.error("Device %s was not ready could not bring it up" % o.get_device())
+                logging.error("Device %s was not ready could not bring it up" % dev)
 
         # ip route add default via $gw table Table_$dev proto static
         cmd = "%s -C %s" % (self.CONNTRACKD_BIN, self.CONNTRACKD_CONF)
