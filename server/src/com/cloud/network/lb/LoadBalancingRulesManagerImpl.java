@@ -877,11 +877,12 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                         List<LbHealthCheckPolicy> hcPolicyList = getHealthCheckPolicies(lb.getId());
                         // adding to lbrules list only if the LB rule
                         // hashealtChecks
-                        if (hcPolicyList != null && hcPolicyList.size() > 0) {
+                        // Now retrive the status of services from NS even there are no policies. because there is default monitor
+                        ///if (hcPolicyList != null && hcPolicyList.size() > 0)
                             Ip sourceIp = getSourceIp(lb);
                             LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, null, hcPolicyList, sourceIp, null, lb.getLbProtocol());
                             lbrules.add(loadBalancing);
-                        }
+                        //}
                     }
                     if (lbrules.size() > 0) {
                         isHandled = false;
