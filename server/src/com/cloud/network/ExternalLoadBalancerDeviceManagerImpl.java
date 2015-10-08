@@ -1390,6 +1390,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
         VMTemplateVO template = _templateDao.findById(templateId) ;
         long id = _vmDao.getNextInSequence(Long.class, "id");
+        Account systemAcct = _accountMgr.getSystemAccount();
 
         if (template == null) {
             s_logger.error(" Unable to find the NS VPX template");
@@ -1443,7 +1444,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
          defaultNic.setDefaultNic(true);
          defaultNic.setDeviceId(0);
 
-         networks.put(_networkMgr.setupNetwork(owner, _networkOfferingDao.findById(defaultNetwork.getNetworkOfferingId()), plan, null, null, false).get(0),
+         networks.put(_networkMgr.setupNetwork(_accountMgr.getSystemAccount() , _networkOfferingDao.findById(defaultNetwork.getNetworkOfferingId()), plan, null, null, false).get(0),
                  new ArrayList<NicProfile>());
 
          NicProfile defaultNic1 = new NicProfile();
@@ -1454,10 +1455,10 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
          defaultNic2.setDefaultNic(false);
          defaultNic2.setDeviceId(2);
 
-         networks.put(_networkMgr.setupNetwork(owner, _networkOfferingDao.findByUniqueName(NetworkOffering.SystemPublicNetwork), plan, null, null, false).get(0),
+         networks.put(_networkMgr.setupNetwork(_accountMgr.getSystemAccount(), _networkOfferingDao.findByUniqueName(NetworkOffering.SystemPublicNetwork), plan, null, null, false).get(0),
                  new ArrayList<NicProfile>());
 
-         networks.put(_networkMgr.setupNetwork(owner, _networkOfferingDao.findByUniqueName(NetworkOffering.SystemControlNetwork), plan, null, null, false).get(0),
+         networks.put(_networkMgr.setupNetwork(_accountMgr.getSystemAccount(), _networkOfferingDao.findByUniqueName(NetworkOffering.SystemControlNetwork), plan, null, null, false).get(0),
                  new ArrayList<NicProfile>());
 
          long physicalNetworkId = _networkModel.findPhysicalNetworkId(dataCenterId, _networkOfferingDao.findById(defaultPublicNetwork.getNetworkOfferingId()).getTags(), TrafficType.Public);
