@@ -22,6 +22,7 @@ from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (stopRouter,
                              startRouter,
+                             destroyRouter,
                              Account,
                              VpcOffering,
                              VPC,
@@ -41,7 +42,7 @@ from marvin.lib.utils import cleanup_resources
 import socket
 import time
 import inspect
-
+import logging
 
 class Services:
     """Test VPC network services - Port Forwarding Rules Test Data Class.
@@ -215,6 +216,12 @@ class TestVPCRedundancy(cloudstackTestCase):
             cls.api_client,
             cls.services["service_offering"])
         cls._cleanup = [cls.service_offering]
+
+        cls.logger = logging.getLogger('TestVPCRedundancy')
+        cls.stream_handler = logging.StreamHandler()
+        cls.logger.setLevel(logging.DEBUG)
+        cls.logger.addHandler(cls.stream_handler)
+
         return
 
     @classmethod
@@ -236,16 +243,15 @@ class TestVPCRedundancy(cloudstackTestCase):
             admin=True,
             domainid=self.domain.id)
 
-        self.cleanup = [self.account]
-        self.debug("Creating a VPC offering..")
+        self.logger.debug("Creating a VPC offering..")
         self.vpc_off = VpcOffering.create(
             self.apiclient,
             self.services["vpc_offering"])
 
-        self.debug("Enabling the VPC offering created")
+        self.logger.debug("Enabling the VPC offering created")
         self.vpc_off.update(self.apiclient, state='Enabled')
 
-        self.debug("Creating a VPC network in the account: %s" % self.account.name)
+        self.logger.debug("Creating a VPC network in the account: %s" % self.account.name)
         self.services["vpc"]["cidr"] = '10.1.1.1/16'
         self.vpc = VPC.create(
             self.apiclient,
@@ -254,13 +260,17 @@ class TestVPCRedundancy(cloudstackTestCase):
             zoneid=self.zone.id,
             account=self.account.name,
             domainid=self.account.domainid)
+        
+        self.cleanup = [self.vpc, self.vpc_off, self.account]
         return
 
     def tearDown(self):
         try:
-            cleanup_resources(self.apiclient, self.cleanup)
+            #Stop/Destroy the routers so we are able to remove the networks. Issue CLOUDSTACK-8935
+            self.destroy_routers()
+            cleanup_resources(self.api_client, self.cleanup)
         except Exception as e:
-            self.debug("Warning: Exception during cleanup : %s" % e)
+            raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def query_routers(self, count=2, showall=False):
@@ -287,32 +297,43 @@ class TestVPCRedundancy(cloudstackTestCase):
                 cnts[vals.index(router.redundantstate)] += 1
         if cnts[vals.index('MASTER')] != 1:
             self.fail("No Master or too many master routers found %s" % cnts[vals.index('MASTER')])
-        # if cnts[vals.index('UNKNOWN')] > 0:
-            # self.fail("Router has unknown status")
 
-    def stop_router(self, type):
+    def stop_router(self, router):
+        self.logger.debug('Stopping router %s' % router.id)
+        cmd = stopRouter.stopRouterCmd()
+        cmd.id = router.id
+        self.apiclient.stopRouter(cmd)
+
+    def stop_router_by_type(self, type):
         self.check_master_status(2)
-        self.debug('Stopping %s router' % type)
+        self.logger.debug('Stopping %s router' % type)
         for router in self.routers:
             if router.redundantstate == type:
-                cmd = stopRouter.stopRouterCmd()
-                cmd.id = router.id
-                self.apiclient.stopRouter(cmd)
+                self.stop_router(router)
 
-    def start_router(self):
-        self.check_master_status(2, showall=True)
-        self.debug('Starting stopped routers')
+    def destroy_routers(self):
+        self.logger.debug('Destroying routers')
         for router in self.routers:
-            self.debug('Router %s has state %s' % (router.id, router.state))
+            self.stop_router(router)
+            cmd = destroyRouter.destroyRouterCmd()
+            cmd.id = router.id
+            self.apiclient.destroyRouter(cmd)
+        self.routers = []
+
+    def start_routers(self):
+        self.check_master_status(2, showall=True)
+        self.logger.debug('Starting stopped routers')
+        for router in self.routers:
+            self.logger.debug('Router %s has state %s' % (router.id, router.state))
             if router.state == "Stopped":
-                self.debug('Starting stopped router %s' % router.id)
+                self.logger.debug('Starting stopped router %s' % router.id)
                 cmd = startRouter.startRouterCmd()
                 cmd.id = router.id
                 self.apiclient.startRouter(cmd)
 
     def create_network(self, net_offerring, gateway='10.1.1.1', vpc=None):
         try:
-            self.debug('Create NetworkOffering')
+            self.logger.debug('Create NetworkOffering')
             net_offerring["name"] = "NET_OFF-" + str(gateway)
             nw_off = NetworkOffering.create(
                 self.apiclient,
@@ -320,11 +341,11 @@ class TestVPCRedundancy(cloudstackTestCase):
                 conservemode=False)
 
             nw_off.update(self.apiclient, state='Enabled')
-            self._cleanup.append(nw_off)
-            self.debug('Created and Enabled NetworkOffering')
+
+            self.logger.debug('Created and Enabled NetworkOffering')
 
             self.services["network"]["name"] = "NETWORK-" + str(gateway)
-            self.debug('Adding Network=%s' % self.services["network"])
+            self.logger.debug('Adding Network=%s' % self.services["network"])
             obj_network = Network.create(
                 self.apiclient,
                 self.services["network"],
@@ -335,17 +356,24 @@ class TestVPCRedundancy(cloudstackTestCase):
                 gateway=gateway,
                 vpcid=vpc.id if vpc else self.vpc.id
             )
-            self.debug("Created network with ID: %s" % obj_network.id)
+
+            self.logger.debug("Created network with ID: %s" % obj_network.id)
         except Exception, e:
             self.fail('Unable to create a Network with offering=%s because of %s ' % (net_offerring, e))
         o = networkO(obj_network)
-        o.add_vm(self.deployvm_in_network(obj_network))
-        o.add_vm(self.deployvm_in_network(obj_network))
+        
+        vm1 = self.deployvm_in_network(obj_network)
+        vm2 = self.deployvm_in_network(obj_network)
+        self.cleanup.insert(2, obj_network)
+        self.cleanup.insert(3, nw_off)
+        
+        o.add_vm(vm1)
+        o.add_vm(vm2)
         return o
 
     def deployvm_in_network(self, network, host_id=None):
         try:
-            self.debug('Creating VM in network=%s' % network.name)
+            self.logger.debug('Creating VM in network=%s' % network.name)
             vm = VirtualMachine.create(
                 self.apiclient,
                 self.services["virtual_machine"],
@@ -355,13 +383,15 @@ class TestVPCRedundancy(cloudstackTestCase):
                 networkids=[str(network.id)],
                 hostid=host_id
             )
-            self.debug('Created VM=%s in network=%s' % (vm.id, network.name))
+
+            self.logger.debug('Created VM=%s in network=%s' % (vm.id, network.name))
+            self.cleanup.insert(0, vm)
             return vm
         except:
             self.fail('Unable to create VM in a Network=%s' % network.name)
 
     def acquire_publicip(self, network):
-        self.debug("Associating public IP for network: %s" % network.name)
+        self.logger.debug("Associating public IP for network: %s" % network.name)
         public_ip = PublicIPAddress.create(
             self.apiclient,
             accountid=self.account.name,
@@ -370,14 +400,14 @@ class TestVPCRedundancy(cloudstackTestCase):
             networkid=network.id,
             vpcid=self.vpc.id
         )
-        self.debug("Associated %s with network %s" % (
+        self.logger.debug("Associated %s with network %s" % (
             public_ip.ipaddress.ipaddress,
             network.id
         ))
         return public_ip
 
     def create_natrule(self, vm, public_ip, network, services=None):
-        self.debug("Creating NAT rule in network for vm with public IP")
+        self.logger.debug("Creating NAT rule in network for vm with public IP")
         if not services:
             services = self.services["natrule"]
         nat_rule = NATRule.create(
@@ -389,18 +419,19 @@ class TestVPCRedundancy(cloudstackTestCase):
             networkid=network.id,
             vpcid=self.vpc.id)
 
-        self.debug("Adding NetworkACL rules to make NAT rule accessible")
+        self.logger.debug("Adding NetworkACL rules to make NAT rule accessible")
         nwacl_nat = NetworkACL.create(
             self.apiclient,
             networkid=network.id,
             services=services,
             traffictype='Ingress'
         )
-        self.debug('nwacl_nat=%s' % nwacl_nat.__dict__)
+        self.logger.debug('nwacl_nat=%s' % nwacl_nat.__dict__)
+        
         return nat_rule
 
-    def check_ssh_into_vm(self, vm, public_ip, expectFail=False, retries=20):
-        self.debug("Checking if we can SSH into VM=%s on public_ip=%s (%r)" %
+    def check_ssh_into_vm(self, vm, public_ip, expectFail=False, retries=5):
+        self.logger.debug("Checking if we can SSH into VM=%s on public_ip=%s (%r)" %
                    (vm.name, public_ip.ipaddress.ipaddress, expectFail))
         vm.ssh_client = None
         try:
@@ -412,39 +443,54 @@ class TestVPCRedundancy(cloudstackTestCase):
                 self.fail("SSH into VM=%s on public_ip=%s is successful (Not Expected)" %
                           (vm.name, public_ip.ipaddress.ipaddress))
             else:
-                self.debug("SSH into VM=%s on public_ip=%s is successful" %
+                self.logger.debug("SSH into VM=%s on public_ip=%s is successful" %
                            (vm.name, public_ip.ipaddress.ipaddress))
         except:
             if expectFail:
-                self.debug("Failed to SSH into VM - %s (Expected)" % (public_ip.ipaddress.ipaddress))
+                self.logger.debug("Failed to SSH into VM - %s (Expected)" % (public_ip.ipaddress.ipaddress))
             else:
                 self.fail("Failed to SSH into VM - %s" % (public_ip.ipaddress.ipaddress))
 
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
-    def test_01a_create_redundant_VPC(self):
-        """ Create a redundant vpc with two networks with two vms in each network """
-        self.debug("Starting est 1a")
+    def test_01_create_redundant_VPC_2tiers_4VMs_4IPs_4PF_ACL(self):
+        """ Create a redundant VPC with two networks with two VMs in each network """
+        self.logger.debug("Starting test_01_create_redundant_VPC_2tiers_4VMs_4IPs_4PF_ACL")
         self.query_routers()
         self.networks.append(self.create_network(self.services["network_offering"], "10.1.1.1"))
         self.networks.append(self.create_network(self.services["network_offering_no_lb"], "10.1.2.1"))
+        time.sleep(30)
         self.check_master_status(2)
         self.add_nat_rules()
         self.do_vpc_test(False)
 
-        self.stop_router("MASTER")
+        self.stop_router_by_type("MASTER")
         # wait for the backup router to transit to master state
         time.sleep(30)
         self.check_master_status(1)
         self.do_vpc_test(False)
 
         self.delete_nat_rules()
+        time.sleep(45)
         self.check_master_status(1)
         self.do_vpc_test(True)
 
-        self.start_router()
+        self.start_routers()
         self.add_nat_rules()
+        time.sleep(45)
         self.check_master_status(2)
         self.do_vpc_test(False)
+
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
+    def test_02_redundant_VPC_default_routes(self):
+        """ Create a redundant VPC with two networks with two VMs in each network and check default routes"""
+        self.logger.debug("Starting test_02_redundant_VPC_default_routes")
+        self.query_routers()
+        self.networks.append(self.create_network(self.services["network_offering"], "10.1.1.1"))
+        self.networks.append(self.create_network(self.services["network_offering_no_lb"], "10.1.2.1"))
+        time.sleep(30)
+        self.check_master_status(2)
+        self.add_nat_rules()
+        self.do_default_routes_test()
 
     def delete_nat_rules(self):
         for o in self.networks:
@@ -469,6 +515,35 @@ class TestVPCRedundancy(cloudstackTestCase):
         for o in self.networks:
             for vm in o.get_vms():
                 self.check_ssh_into_vm(vm.get_vm(), vm.get_ip(), expectFail=expectFail, retries=retries)
+
+    def do_default_routes_test(self):
+        for o in self.networks:
+            for vmObj in o.get_vms():
+                ssh_command = "ping -c 3 8.8.8.8"
+
+                # Should be able to SSH VM
+                result = 'failed'
+                try:
+                    vm = vmObj.get_vm()
+                    public_ip = vmObj.get_ip()
+                    self.logger.debug("SSH into VM: %s" % public_ip.ipaddress.ipaddress)
+                    
+                    ssh = vm.get_ssh_client(ipaddress=public_ip.ipaddress.ipaddress)
+        
+                    self.logger.debug("Ping to google.com from VM")
+                    result = str(ssh.execute(ssh_command))
+
+                    self.logger.debug("SSH result: %s; COUNT is ==> %s" % (result, result.count("3 packets received")))
+                except Exception as e:
+                    self.fail("SSH Access failed for %s: %s" % \
+                              (vmObj.get_ip(), e)
+                              )
+        
+                self.assertEqual(
+                                 result.count("3 packets received"),
+                                 1,
+                                 "Ping to outside world from VM should be successful"
+                                 )
 
 
 class networkO(object):

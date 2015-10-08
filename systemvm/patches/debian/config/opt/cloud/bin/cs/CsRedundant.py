@@ -96,12 +96,15 @@ class CsRedundant(object):
                 d = s.replace(".templ", "")
             CsHelper.copy_if_needed(
                 "%s/%s" % (self.CS_TEMPLATES_DIR, s), "%s/%s" % (self.CS_ROUTER_DIR, d))
-        CsHelper.copy(
+
+        CsHelper.copy_if_needed(
             "%s/%s" % (self.CS_TEMPLATES_DIR, "keepalived.conf.templ"), self.KEEPALIVED_CONF)
         CsHelper.copy_if_needed(
-            "%s/%s" % (self.CS_TEMPLATES_DIR, "conntrackd.conf.templ"), self.CONNTRACKD_CONF)
-        CsHelper.copy_if_needed(
             "%s/%s" % (self.CS_TEMPLATES_DIR, "checkrouter.sh.templ"), "/opt/cloud/bin/checkrouter.sh")
+        #The file is always copied so the RVR doesn't't get the wrong config.
+        #Concerning the r-VPC, the configuration will be applied in a different manner
+        CsHelper.copy(
+            "%s/%s" % (self.CS_TEMPLATES_DIR, "conntrackd.conf.templ"), self.CONNTRACKD_CONF)
 
         CsHelper.execute(
             'sed -i "s/--exec\ \$DAEMON;/--exec\ \$DAEMON\ --\ --vrrp;/g" /etc/init.d/keepalived')
@@ -261,8 +264,19 @@ class CsRedundant(object):
 
         self.set_lock()
         logging.debug("Setting router to master")
-        self.address.process()
-        logging.info("added default routes")
+
+        ads = [o for o in self.address.get_ips() if o.is_public()]
+        dev = ''
+        for o in ads:
+            if dev == o.get_device():
+                continue
+            cmd2 = "ip link set %s up" % o.get_device()
+            if CsDevice(o.get_device(), self.config).waitfordevice():
+                CsHelper.execute(cmd2)
+                dev = o.get_device()
+                logging.info("Bringing public interface %s up" % o.get_device())
+            else:
+                logging.error("Device %s was not ready could not bring it up" % o.get_device())
 
         # ip route add default via $gw table Table_$dev proto static
         cmd = "%s -C %s" % (self.CONNTRACKD_BIN, self.CONNTRACKD_CONF)
@@ -310,7 +324,7 @@ class CsRedundant(object):
                 if(cmdline.get_type()=='router'):
                     str = "        %s brd %s dev %s\n" % (cmdline.get_guest_gw(), o.get_broadcast(), o.get_device())
                 else:
-                    str = "        %s brd %s dev %s\n" % (o.get_ip(), o.get_broadcast(), o.get_device())
+                    str = "        %s brd %s dev %s\n" % (o.get_gateway_cidr(), o.get_broadcast(), o.get_device())
                 lines.append(str)
                 self.check_is_up(o.get_device())
         return lines

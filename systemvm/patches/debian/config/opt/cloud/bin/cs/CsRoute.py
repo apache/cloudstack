@@ -71,13 +71,16 @@ class CsRoute:
         :param str gateway
         :return: bool
         """
-        if gateway is not None:
+        if not gateway:
+            raise Exception("Gateway cannot be None.")
+        
+        if self.defaultroute_exists():
+            return False
+        else:
             cmd = "default via " + gateway
             logging.info("Adding default route")
             self.set_route(cmd)
             return True
-        else:
-            return False
 
     def defaultroute_exists(self):
         """ Return True if a default route is present
