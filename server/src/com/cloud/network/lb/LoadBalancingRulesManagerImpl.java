@@ -2122,10 +2122,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             throw new InvalidParameterValueException("Modifications in lb rule " + lbRuleId + " are not supported.");
         }
 
+        LoadBalancerVO tmplbVo = _lbDao.findById(lbRuleId);
         boolean success = _lbDao.update(lbRuleId, lb);
 
         // If algorithm is changed, have to reapply the lb config
-        if (algorithm != null) {
+        if ((algorithm!= null) && (tmplbVo.getAlgorithm().compareTo(algorithm)!=0)){
             try {
                 lb.setState(FirewallRule.State.Add);
                 _lbDao.persist(lb);
