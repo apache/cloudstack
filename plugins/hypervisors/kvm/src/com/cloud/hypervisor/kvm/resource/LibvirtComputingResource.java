@@ -57,6 +57,7 @@ import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainBlockStats;
 import org.libvirt.DomainInfo;
+import org.libvirt.MemoryStatistic;
 import org.libvirt.DomainInfo.DomainState;
 import org.libvirt.DomainInterfaceStats;
 import org.libvirt.LibvirtException;
@@ -190,6 +191,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private long _hvVersion;
     private long _kernelVersion;
     private int _timeout;
+    private static final int NUMMEMSTATS =2;
 
     private KVMHAMonitor _monitor;
     public static final String SSHKEYSPATH = "/root/.ssh";
@@ -3018,6 +3020,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         long _ioWrote;
         long _bytesRead;
         long _bytesWrote;
+        long _intmemfree;
+        long _memory;
+        long _maxmemory;
         Calendar _timestamp;
     }
 
@@ -3026,11 +3031,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
             dm = getDomain(conn, vmName);
             final DomainInfo info = dm.getInfo();
+            final MemoryStatistic[] mems = dm.memoryStats(NUMMEMSTATS);      //number of memory statistics required.
 
             final VmStatsEntry stats = new VmStatsEntry();
+
             stats.setNumCPUs(info.nrVirtCpu);
             stats.setEntityType("vm");
 
+            stats.setMemoryKBs(info.maxMem);
+            stats.setTargetMemoryKBs(info.memory);
+            stats.setIntFreeMemoryKBs((double) mems[0].getValue());
             /* get cpu utilization */
             VmStats oldStats = null;
 
@@ -3115,6 +3125,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             newStat._bytesRead = bytes_rd;
             newStat._bytesWrote = bytes_wr;
             newStat._timestamp = now;
+            newStat._intmemfree = mems[0].getValue();
+            newStat._memory = info.memory;
+            newStat._maxmemory = info.maxMem;
             _vmStats.put(vmName, newStat);
             return stats;
         } finally {
