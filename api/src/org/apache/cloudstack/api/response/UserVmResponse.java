@@ -196,6 +196,18 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the write (bytes) of disk on the vm")
     private Long diskKbsWrite;
 
+    @SerializedName("memorykbs")
+    @Param(description = "the memory used by the vm")
+    private Long memoryKBs;
+
+    @SerializedName("memoryintfreekbs")
+    @Param(description = "the internal memory thats free in vm")
+    private Long memoryIntFreeKBs;
+
+    @SerializedName("memorytargetkbs")
+    @Param(description = "the target memory in vm")
+    private Long memoryTargetKBs;
+
     @SerializedName("diskioread")
     @Param(description = "the read (io) of disk on the vm")
     private Long diskIORead;
@@ -462,6 +474,18 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         return diskKbsWrite;
     }
 
+    public Long getMemoryKBs() {
+        return memoryKBs;
+    }
+
+    public Long getMemoryIntFreeKBs() {
+        return memoryIntFreeKBs;
+    }
+
+    public Long getMemoryTargetKBs() {
+        return memoryTargetKBs;
+    }
+
     public Long getDiskIORead() {
         return diskIORead;
     }
@@ -635,6 +659,18 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public void setDiskIORead(Long diskIORead) {
         this.diskIORead = diskIORead;
+    }
+
+    public void setMemoryKBs(Long memoryKBs) {
+        this.memoryKBs = memoryKBs;
+    }
+
+    public void setMemoryIntFreeKBs(Long memoryIntFreeKBs) {
+        this.memoryIntFreeKBs = memoryIntFreeKBs;
+    }
+
+    public void setMemoryTargetKBs(Long memoryTargetKBs) {
+        this.memoryTargetKBs = memoryTargetKBs;
     }
 
     public void setDiskIOWrite(Long diskIOWrite) {
