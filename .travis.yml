@@ -35,6 +35,10 @@ env:
     - TESTS="smoke/test_secondary_storage smoke/test_service_offerings smoke/test_ssvm smoke/test_templates smoke/test_over_provisioning"
 
     - TESTS="smoke/test_volumes smoke/test_vpc_vpn smoke/misc/test_deploy_vm smoke/test_vm_life_cycle component/test_mm_max_limits"
+    - TESTS="smoke/test_deploy_vgpu_enabled_vm smoke/test_deploy_vm_iso smoke/test_deploy_vm_root_resize"
+    - TESTS="smoke/test_deploy_vm_with_userdata smoke/test_hosts smoke/test_internal_lb smoke/test_loadbalance"
+    - TESTS="smoke/test_network_acl smoke/test_nic smoke/test_nic_adapter_type smoke/test_scale_vm"
+    - TESTS="smoke/test_snapshots smoke/test_usage_events smoke/test_vm_snapshots"
     - TESTS="component/test_acl_isolatednetwork_delete component/test_mm_domain_limits component/test_acl_listsnapshot"
     - TESTS="component/test_acl_listvm component/test_acl_sharednetwork_deployVM-impersonation component/test_acl_sharednetwork"
     - TESTS="component/test_snapshots component/test_acl_listvolume"
