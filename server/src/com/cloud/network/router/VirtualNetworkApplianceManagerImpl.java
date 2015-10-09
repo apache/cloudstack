@@ -629,7 +629,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
         _agentMgr.registerForHostEvents(new SshKeysDistriMonitor(_agentMgr, _hostDao, _configDao), true, false, false);
 
-        List<ServiceOfferingVO> offerings = _serviceOfferingDao.createSystemServiceOfferings("System Offering For Software Router",
+        final List<ServiceOfferingVO> offerings = _serviceOfferingDao.createSystemServiceOfferings("System Offering For Software Router",
                 ServiceOffering.routerDefaultOffUniqueName, 1, _routerRamSize, _routerCpuMHz, null,
                 null, true, null, ProvisioningType.THIN, true, null, true, VirtualMachine.Type.DomainRouter, true);
         // this can sometimes happen, if DB is manually or programmatically manipulated
@@ -1971,18 +1971,12 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     }
 
     private void createDefaultEgressFirewallRule(final List<FirewallRule> rules, final long networkId) {
-        String systemRule = null;
-
-        Boolean defaultEgressPolicy = false;
         final NetworkVO network = _networkDao.findById(networkId);
         final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        defaultEgressPolicy = offering.getEgressDefaultPolicy();
+        final Boolean defaultEgressPolicy = offering.getEgressDefaultPolicy();
 
-
-        // construct rule when egress policy is true. In true case for VR we default allow rule need to be added
-        if (!defaultEgressPolicy) {
-            systemRule = String.valueOf(FirewallRule.FirewallRuleType.System);
-
+        // The default on the router is set to Deny all. So, if the default configuration in the offering is set to treu (Allow), we change the Egress here
+        if (defaultEgressPolicy) {
             final List<String> sourceCidr = new ArrayList<String>();
 
             sourceCidr.add(NetUtils.ALL_CIDRS);
@@ -1991,11 +1985,9 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
             rules.add(rule);
         } else {
-            s_logger.debug(" Egress policy for the Network "+ networkId +" is "+defaultEgressPolicy + " So no need"+
-                    " of default rule is needed. ");
+            s_logger.debug("Egress policy for the Network " + networkId + " is already defined as Deny. So, no need to default the rule to Allow. ");
         }
     }
-
 
     private void removeRevokedIpAliasFromDb(final List<NicIpAliasVO> revokedIpAliasVOs) {
         for (final NicIpAliasVO ipalias : revokedIpAliasVOs) {
@@ -2616,10 +2608,10 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         final State newState = transition.getToState();
         final VirtualMachine.Event event = transition.getEvent();
         if (vo.getType() == VirtualMachine.Type.DomainRouter &&
-            event == VirtualMachine.Event.FollowAgentPowerOnReport &&
-            newState == State.Running &&
-            isOutOfBandMigrated(opaque)) {
-                s_logger.debug("Virtual router " + vo.getInstanceName() + " is powered-on out-of-band");
+                event == VirtualMachine.Event.FollowAgentPowerOnReport &&
+                newState == State.Running &&
+                isOutOfBandMigrated(opaque)) {
+            s_logger.debug("Virtual router " + vo.getInstanceName() + " is powered-on out-of-band");
         }
 
         return true;
