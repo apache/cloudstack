@@ -86,8 +86,14 @@ class CsAcl(CsDataBag):
                 self.rule['first_port'] = obj['src_port_range'][0]
                 self.rule['last_port'] = obj['src_port_range'][1]
             self.rule['allowed'] = True
-            self.rule['cidr'] = obj['source_cidr_list']
+
+            if self.rule['type'] == 'all' and not obj['source_cidr_list']:
+                self.rule['cidr'] = ['0.0.0.0/0']
+            else:
+                self.rule['cidr'] = obj['source_cidr_list']
+
             self.rule['action'] = "ACCEPT"
+            logging.debug("AclIP created for rule ==> %s", self.rule)
 
         def create(self):
             for cidr in self.rule['cidr']:

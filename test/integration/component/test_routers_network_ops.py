@@ -32,7 +32,8 @@ from marvin.lib.base import (ServiceOffering,
                              FireWallRule,
                              PublicIPAddress,
                              NetworkOffering,
-                             Network)
+                             Network,
+                             Router)
 from marvin.lib.common import (get_zone,
                                get_template,
                                get_domain,
@@ -62,7 +63,7 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
-        template = get_template(
+        cls.template = get_template(
             cls.api_client,
             cls.zone.id,
             cls.services["ostype"]
@@ -157,34 +158,17 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
              )
         nw_response = networks[0]
 
-        self.logger.debug("Network state: %s" % nw_response.state)
-        self.assertEqual(
-                    nw_response.state,
-                    "Allocated",
-                    "The network should be in allocated state after creation"
-                    )
-
-        self.logger.debug("Listing routers for network: %s" % network.name)
-        routers = Router.list(
-                              self.apiclient,
-                              networkid=network.id,
-                              listall=True
-                              )
-        self.assertEqual(
-            routers,
-            None,
-            "Routers should not be spawned when network is in allocated state"
-            )
-
         self.logger.debug("Deploying VM in account: %s" % self.account.name)
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
+                                  templateid=self.template.id,
                                   accountid=self.account.name,
                                   domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
+        
         self.logger.debug("Deployed VM in network: %s" % network.id)
 
         vms = VirtualMachine.list(
@@ -234,10 +218,25 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
                                         network.id
                                         ))
 
+        public_ips = list_publicIP(
+            self.apiclient,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            zoneid=self.zone.id
+        )
+
+        self.assertEqual(
+            isinstance(public_ips, list),
+            True,
+            "Check for list public IPs response return valid data"
+        )
+
+        public_ip_1 = public_ips[0]
+
         self.logger.debug("Creating Firewall rule for VM ID: %s" % virtual_machine.id)
         FireWallRule.create(
             self.apiclient,
-            ipaddressid=public_ip.id,
+            ipaddressid=public_ip_1.id,
             protocol=self.services["natrule"]["protocol"],
             cidrlist=['0.0.0.0/0'],
             startport=self.services["natrule"]["publicport"],
@@ -249,7 +248,7 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
             self.apiclient,
             virtual_machine,
             self.services["natrule"],
-            public_ip.id
+            public_ip_1.id
         )
 
         self.cleanup.insert(0, network)

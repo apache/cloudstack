@@ -1975,7 +1975,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         final Boolean defaultEgressPolicy = offering.getEgressDefaultPolicy();
 
-        // The default on the router is set to Deny all. So, if the default configuration in the offering is set to treu (Allow), we change the Egress here
+        // The default on the router is set to Deny all. So, if the default configuration in the offering is set to true (Allow), we change the Egress here
         if (defaultEgressPolicy) {
             final List<String> sourceCidr = new ArrayList<String>();
 
