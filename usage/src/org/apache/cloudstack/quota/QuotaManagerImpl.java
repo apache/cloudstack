@@ -80,7 +80,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     final static BigDecimal s_minutesInMonth = new BigDecimal(30 * 24 * 60);
     final static BigDecimal s_gb = new BigDecimal(1024 * 1024 * 1024);
 
-    int _pid = 0;
+    int _pid = -1;
 
     public QuotaManagerImpl() {
         super();
@@ -183,7 +183,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     }
 
     public void processQuotaBalanceForAccount(final AccountVO account, final List<QuotaUsageVO> quotaListForAccount) {
-        if (quotaListForAccount == null || quotaListForAccount.size() < 1) {
+        if (quotaListForAccount == null || quotaListForAccount.isEmpty()) {
             return;
         }
         quotaListForAccount.add(new QuotaUsageVO());
@@ -253,6 +253,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             jobResult = true;
         } catch (Exception e) {
             s_logger.error("Quota Manager error", e);
+            throw e;
         } finally {
             TransactionLegacy.open(opendb).close();
         }

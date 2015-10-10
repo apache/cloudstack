@@ -29,6 +29,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.google.common.base.Strings;
 import com.sun.mail.smtp.SMTPMessage;
 import com.sun.mail.smtp.SMTPSSLTransport;
 import com.sun.mail.smtp.SMTPTransport;
@@ -88,13 +89,9 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
     private EmailQuotaAlert _emailQuotaAlert;
     private boolean _lockAccountEnforcement = false;
 
-    final static BigDecimal s_hoursInMonth = new BigDecimal(30 * 24);
-    final static BigDecimal s_minutesInMonth = new BigDecimal(30 * 24 * 60);
-    final static BigDecimal s_gb = new BigDecimal(1024 * 1024 * 1024);
-
     boolean _smtpDebug = false;
 
-    int _pid = 0;
+    int _pid = -1;
 
     public QuotaAlertManagerImpl() {
         super();
@@ -146,7 +143,6 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         return true;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void sendMonthlyStatement(Date now) {
         Calendar aCalendar = Calendar.getInstance();
@@ -173,7 +169,10 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
                     // send statement
                     deferredQuotaEmailList.add(new DeferredQuotaEmail(account, quotaAccount, quotaUsage, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_STATEMENT));
                 } else {
-                    s_logger.debug("For " + quotaAccount.getId() + " the statement has been sent recently");
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("For " + quotaAccount.getId() + " the statement has been sent recently");
+
+                    }
                 }
             } else {
                 s_logger.info("For " + quotaAccount.getId() + " it is already more than " + getDifferenceDays(lastStatementDate, new Date()) + " days, will send statement in next cycle");
@@ -181,7 +180,9 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         }
 
         for (DeferredQuotaEmail emailToBeSent : deferredQuotaEmailList) {
-            s_logger.debug("Attempting to send quota STATEMENT email to users of account: " + emailToBeSent.getAccount().getAccountName());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Attempting to send quota STATEMENT email to users of account: " + emailToBeSent.getAccount().getAccountName());
+            }
             sendQuotaAlert(emailToBeSent);
         }
     }
@@ -192,7 +193,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         List<DeferredQuotaEmail> deferredQuotaEmailList = new ArrayList<DeferredQuotaEmail>();
         final BigDecimal zeroBalance = new BigDecimal(0);
         for (final QuotaAccountVO quotaAccount : _quotaAcc.listAll()) {
-            s_logger.info("checkAndSendQuotaAlertEmails accId=" + quotaAccount.getId());
+            s_logger.debug("checkAndSendQuotaAlertEmails accId=" + quotaAccount.getId());
             BigDecimal accountBalance = quotaAccount.getQuotaBalance();
             Date balanceDate = quotaAccount.getQuotaBalanceDate();
             Date alertDate = quotaAccount.getQuotaAlertDate();
@@ -221,7 +222,9 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         }
 
         for (DeferredQuotaEmail emailToBeSent : deferredQuotaEmailList) {
-            s_logger.debug("Attempting to send quota alert email to users of account: " + emailToBeSent.getAccount().getAccountName());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Attempting to send quota alert email to users of account: " + emailToBeSent.getAccount().getAccountName());
+            }
             sendQuotaAlert(emailToBeSent);
         }
     }
@@ -287,25 +290,30 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
 
     protected boolean lockAccount(long accountId) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
         boolean success = false;
-        Account account = _accountDao.findById(accountId);
-        if (account != null) {
-            if (account.getState().equals(State.locked)) {
-                return true; // already locked, no-op
-            } else if (account.getState().equals(State.enabled)) {
-                AccountVO acctForUpdate = _accountDao.createForUpdate();
-                acctForUpdate.setState(State.locked);
-                success = _accountDao.update(Long.valueOf(accountId), acctForUpdate);
-            } else {
-                if (s_logger.isInfoEnabled()) {
-                    s_logger.info("Attempting to lock a non-enabled account, current state is " + account.getState() + " (accountId: " + accountId + "), locking failed.");
+        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB)) {
+            Account account = _accountDao.findById(accountId);
+            if (account != null) {
+                if (account.getState() == State.locked) {
+                    return true; // already locked, no-op
+                } else if (account.getState() == State.enabled) {
+                    AccountVO acctForUpdate = _accountDao.createForUpdate();
+                    acctForUpdate.setState(State.locked);
+                    success = _accountDao.update(Long.valueOf(accountId), acctForUpdate);
+                } else {
+                    if (s_logger.isInfoEnabled()) {
+                        s_logger.info("Attempting to lock a non-enabled account, current state is " + account.getState() + " (accountId: " + accountId + "), locking failed.");
+                    }
                 }
+            } else {
+                s_logger.warn("Failed to lock account " + accountId + ", account not found.");
             }
-        } else {
-            s_logger.warn("Failed to lock account " + accountId + ", account not found.");
+        } catch (Exception e) {
+            s_logger.error("Exception occured while locking account by Quota Alert Manager", e);
+            throw e;
+        } finally {
+            TransactionLegacy.open(opendb).close();
         }
-        TransactionLegacy.open(opendb).close();
         return success;
     }
 
@@ -356,8 +364,8 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         }
     };
 
-    class EmailQuotaAlert {
-        private Session _smtpSession;
+    static class EmailQuotaAlert {
+        private final Session _smtpSession;
         private final String _smtpHost;
         private final int _smtpPort;
         private final boolean _smtpUseAuth;
@@ -373,7 +381,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
             _smtpPassword = smtpPassword;
             _emailSender = emailSender;
 
-            if (_smtpHost != null) {
+            if (!Strings.isNullOrEmpty(_smtpHost)) {
                 Properties smtpProps = new Properties();
                 smtpProps.put("mail.smtp.host", smtpHost);
                 smtpProps.put("mail.smtp.port", smtpPort);
@@ -385,11 +393,11 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
                 smtpProps.put("mail.smtps.host", smtpHost);
                 smtpProps.put("mail.smtps.port", smtpPort);
                 smtpProps.put("mail.smtps.auth", "" + smtpUseAuth);
-                if (smtpUsername != null) {
+                if (!Strings.isNullOrEmpty(smtpUsername)) {
                     smtpProps.put("mail.smtps.user", smtpUsername);
                 }
 
-                if ((smtpUsername != null) && (smtpPassword != null)) {
+                if (!Strings.isNullOrEmpty(smtpUsername) && !Strings.isNullOrEmpty(smtpPassword)) {
                     _smtpSession = Session.getInstance(smtpProps, new Authenticator() {
                         @Override
                         protected PasswordAuthentication getPasswordAuthentication() {
@@ -406,39 +414,38 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         }
 
         public void sendQuotaAlert(List<String> emails, String subject, String body) throws MessagingException, UnsupportedEncodingException {
-            if (_smtpSession != null) {
-                SMTPMessage msg = new SMTPMessage(_smtpSession);
-                msg.setSender(new InternetAddress(_emailSender, _emailSender));
-                msg.setFrom(new InternetAddress(_emailSender, _emailSender));
-
-                for (String email : emails) {
-                    if (email != null && !email.isEmpty()) {
-                        try {
-                            InternetAddress address = new InternetAddress(email, email);
-                            msg.addRecipient(Message.RecipientType.TO, address);
-                        } catch (Exception pokemon) {
-                            s_logger.error("Exception in creating address for:" + email, pokemon);
-                        }
-                    }
-                }
-
-                msg.setSubject(subject);
-                msg.setSentDate(new Date(DateUtil.currentGMTTime().getTime() >> 10));
-                msg.setContent(body, "text/html; charset=utf-8");
-                msg.saveChanges();
-
-                SMTPTransport smtpTrans = null;
-                if (_smtpUseAuth) {
-                    smtpTrans = new SMTPSSLTransport(_smtpSession, new URLName("smtp", _smtpHost, _smtpPort, null, _smtpUsername, _smtpPassword));
-                } else {
-                    smtpTrans = new SMTPTransport(_smtpSession, new URLName("smtp", _smtpHost, _smtpPort, null, _smtpUsername, _smtpPassword));
-                }
-                smtpTrans.connect();
-                smtpTrans.sendMessage(msg, msg.getAllRecipients());
-                smtpTrans.close();
-            } else {
+            if (_smtpSession == null) {
                 throw new CloudRuntimeException("Unable to create smtp session.");
             }
+            SMTPMessage msg = new SMTPMessage(_smtpSession);
+            msg.setSender(new InternetAddress(_emailSender, _emailSender));
+            msg.setFrom(new InternetAddress(_emailSender, _emailSender));
+
+            for (String email : emails) {
+                if (email != null && !email.isEmpty()) {
+                    try {
+                        InternetAddress address = new InternetAddress(email, email);
+                        msg.addRecipient(Message.RecipientType.TO, address);
+                    } catch (Exception pokemon) {
+                        s_logger.error("Exception in creating address for:" + email, pokemon);
+                    }
+                }
+            }
+
+            msg.setSubject(subject);
+            msg.setSentDate(new Date(DateUtil.currentGMTTime().getTime() >> 10));
+            msg.setContent(body, "text/html; charset=utf-8");
+            msg.saveChanges();
+
+            SMTPTransport smtpTrans = null;
+            if (_smtpUseAuth) {
+                smtpTrans = new SMTPSSLTransport(_smtpSession, new URLName("smtp", _smtpHost, _smtpPort, null, _smtpUsername, _smtpPassword));
+            } else {
+                smtpTrans = new SMTPTransport(_smtpSession, new URLName("smtp", _smtpHost, _smtpPort, null, _smtpUsername, _smtpPassword));
+            }
+            smtpTrans.connect();
+            smtpTrans.sendMessage(msg, msg.getAllRecipients());
+            smtpTrans.close();
         }
     }
 }
