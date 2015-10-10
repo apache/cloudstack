@@ -478,6 +478,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             usageRecords = searchAndCountAllRecords(sc, usageFilter);
         } catch (Exception e) {
             s_logger.error("getUsageRecordsPendingQuotaAggregation failed due to: " + e.getMessage());
+            throw e;
         } finally {
             TransactionLegacy.open(opendb).close();
         }
