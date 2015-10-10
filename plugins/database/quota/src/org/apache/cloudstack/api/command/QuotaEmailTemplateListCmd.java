@@ -28,7 +28,7 @@ import javax.inject.Inject;
 
 @APICommand(name = "quotaEmailTemplateList", responseObject = QuotaEmailTemplateResponse.class, description = "Lists all quota email templates", since = "4.6.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaEmailTemplateListCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(QuotaEmailTemplateListCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(QuotaEmailTemplateListCmd.class);
     private static final String s_name = "quotaemailtemplatelistresponse";
 
     @Inject

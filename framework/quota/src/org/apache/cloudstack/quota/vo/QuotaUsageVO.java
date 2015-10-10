@@ -121,7 +121,6 @@ public class QuotaUsageVO implements InternalIdentity {
 
     @Override
     public long getId() {
-        // TODO Auto-generated method stub
         return id;
     }
 

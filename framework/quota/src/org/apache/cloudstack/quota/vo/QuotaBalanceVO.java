@@ -55,7 +55,6 @@ public class QuotaBalanceVO implements InternalIdentity {
     private Date updatedOn = null;
 
     public QuotaBalanceVO() {
-        super();
     }
 
     public QuotaBalanceVO(QuotaCreditsVO credit) {

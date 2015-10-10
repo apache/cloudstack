@@ -33,7 +33,7 @@ import java.util.List;
 @Component
 @Local(value = { QuotaUsageDao.class })
 public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implements QuotaUsageDao {
-    private static final Logger s_logger = Logger.getLogger(QuotaUsageDaoImpl.class.getName());
+    private static final Logger s_logger = Logger.getLogger(QuotaUsageDaoImpl.class);
 
     @Override
     public BigDecimal findTotalQuotaUsage(final Long accountId, final Long domainId, final Integer usageType, final Date startDate, final Date endDate) {
@@ -45,7 +45,6 @@ public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implem
         return total;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public List<QuotaUsageVO> findQuotaUsage(final Long accountId, final Long domainId, final Integer usageType, final Date startDate, final Date endDate) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();

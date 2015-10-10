@@ -29,6 +29,7 @@ import org.springframework.stereotype.Component;
 import javax.ejb.Local;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -42,8 +43,7 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
     public QuotaBalanceVO findLastBalanceEntry(final Long accountId, final Long domainId, final Date beforeThis) {
         List<QuotaBalanceVO> quotaBalanceEntries = new ArrayList<>();
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        try {
-            TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
+        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
             Filter filter = new Filter(QuotaBalanceVO.class, "updatedOn", false, 0L, 1L);
             SearchCriteria<QuotaBalanceVO> sc = createSearchCriteria();
             sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
@@ -65,8 +65,7 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
     public QuotaBalanceVO findLaterBalanceEntry(final Long accountId, final Long domainId, final Date afterThis) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         List<QuotaBalanceVO> quotaBalanceEntries = new ArrayList<>();
-        try {
-            TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
+        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
             Filter filter = new Filter(QuotaBalanceVO.class, "updatedOn", true, 0L, 1L);
             SearchCriteria<QuotaBalanceVO> sc = createSearchCriteria();
             sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
@@ -102,8 +101,7 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
     public List<QuotaBalanceVO> findCreditBalance(final Long accountId, final Long domainId, final Date lastbalancedate, final Date beforeThis) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         List<QuotaBalanceVO> quotaBalances = new ArrayList<>();
-        try {
-            TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
+        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
             Filter filter = new Filter(QuotaBalanceVO.class, "updatedOn", true, 0L, Long.MAX_VALUE);
             SearchCriteria<QuotaBalanceVO> sc = createSearchCriteria();
             sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
@@ -141,7 +139,7 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
             if ((startDate != null) && (endDate != null) && startDate.before(endDate)) {
                 sc.addAnd("updatedOn", SearchCriteria.Op.BETWEEN, startDate, endDate);
             } else {
-                return new ArrayList<QuotaBalanceVO>();
+                return Collections.<QuotaBalanceVO>emptyList();
             }
             quotaUsageRecords = listBy(sc);
             if (quotaUsageRecords.size() == 0) {
@@ -181,7 +179,7 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
 
             // get records before startDate to find start balance
             for (QuotaBalanceVO entry : quotaUsageRecords) {
-                s_logger.info("findQuotaBalance Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
+                s_logger.debug("FindQuotaBalance Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
                 if (entry.getCreditsId() > 0) {
                     trimmedRecords.add(entry);
                 } else {

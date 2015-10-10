@@ -70,6 +70,10 @@ public class QuotaTariffVO implements InternalIdentity {
     public QuotaTariffVO() {
     }
 
+    public QuotaTariffVO(final int usagetype) {
+        this.usageType = usagetype;
+    }
+
     public QuotaTariffVO(final int usagetype, final String usagename, final String usageunit, final String usagediscriminator, final BigDecimal currencyvalue,
             final Date effectiveOn, final Date updatedOn, final long updatedBy) {
         this.usageType = usagetype;

@@ -48,8 +48,7 @@ public class QuotaEmailTemplatesDaoImpl extends GenericDaoBase<QuotaEmailTemplat
     public List<QuotaEmailTemplatesVO> listAllQuotaEmailTemplates(String templateName) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         List<QuotaEmailTemplatesVO> result = new ArrayList<>();
-        try {
-            TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
             SearchCriteria<QuotaEmailTemplatesVO> sc = QuotaEmailTemplateSearch.create();
             if (templateName != null) {
                 sc.setParameters("template_name", templateName);
@@ -68,8 +67,7 @@ public class QuotaEmailTemplatesDaoImpl extends GenericDaoBase<QuotaEmailTemplat
     public boolean updateQuotaEmailTemplate(QuotaEmailTemplatesVO template) {
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         boolean result = false;
-        try {
-            TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
             result = this.update(template.getId(), template);
         } catch (Exception e) {
             s_logger.error("QuotaEmailTemplatesDaoImpl::updateQuotaEmailTemplate() failed due to: " + e.getMessage());

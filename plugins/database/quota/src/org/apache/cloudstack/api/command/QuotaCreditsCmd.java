@@ -42,7 +42,7 @@ public class QuotaCreditsCmd extends BaseCmd {
     @Inject
     QuotaService _quotaService;
 
-    public static final Logger s_logger = Logger.getLogger(QuotaStatementCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(QuotaStatementCmd.class);
 
     private static final String s_name = "quotacreditsresponse";
 

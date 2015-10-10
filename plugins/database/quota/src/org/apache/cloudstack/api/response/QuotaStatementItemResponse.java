@@ -64,8 +64,8 @@ public class QuotaStatementItemResponse extends BaseResponse {
     @Param(description = "end date")
     private Date endDate = null;
 
-    public QuotaStatementItemResponse() {
-        super();
+    public QuotaStatementItemResponse(final int usageType) {
+        this.usageType = usageType;
     }
 
     public Long getAccountId() {

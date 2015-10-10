@@ -36,7 +36,7 @@ import java.util.List;
 
 @APICommand(name = "quotaTariffList", responseObject = QuotaTariffResponse.class, description = "Lists all quota tariff plans", since = "4.6.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaTariffListCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(QuotaTariffListCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(QuotaTariffListCmd.class);
     private static final String s_name = "quotatarifflistresponse";
 
     @Inject

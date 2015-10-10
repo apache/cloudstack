@@ -65,7 +65,7 @@ import java.util.TimeZone;
 @Component
 @Local(value = QuotaService.class)
 public class QuotaServiceImpl extends ManagerBase implements QuotaService, Configurable, QuotaConfig {
-    private static final Logger s_logger = Logger.getLogger(QuotaServiceImpl.class.getName());
+    private static final Logger s_logger = Logger.getLogger(QuotaServiceImpl.class);
 
     @Inject
     private AccountDao _accountDao;
@@ -84,10 +84,6 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
 
     private TimeZone _usageTimezone;
     private int _aggregationDuration = 0;
-
-    final static BigDecimal s_hoursInMonth = new BigDecimal(30 * 24);
-    final static BigDecimal s_minutesInMonth = new BigDecimal(30 * 24 * 60);
-    final static BigDecimal s_gb = new BigDecimal(1024 * 1024 * 1024);
 
     public QuotaServiceImpl() {
         super();
@@ -183,7 +179,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
             if (s_logger.isDebugEnabled()){
                 s_logger.debug("Found records size=" + qbrecords.size());
             }
-            if (qbrecords.size() == 0) {
+            if (qbrecords.isEmpty()) {
                 throw new InvalidParameterValueException("Incorrect Date there are no quota records before this date " + adjustedStartDate);
             } else {
                 return qbrecords;
@@ -201,7 +197,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
                 if (s_logger.isDebugEnabled()){
                     s_logger.debug("getQuotaBalance3: Found records size=" + qbrecords.size());
                 }
-                if (qbrecords.size() == 0) {
+                if (qbrecords.isEmpty()) {
                     throw new InvalidParameterValueException("Incorrect Date range there are no quota records between these dates start date " + adjustedStartDate + " and end date:" + endDate);
                 } else {
                     return qbrecords;
@@ -246,7 +242,9 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         }
         Date adjustedEndDate = computeAdjustedTime(endDate);
         Date adjustedStartDate = computeAdjustedTime(startDate);
-        s_logger.debug("Getting quota records for account: " + accountId + ", domainId: " + domainId + ", between " + startDate + " and " + endDate);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Getting quota records for account: " + accountId + ", domainId: " + domainId + ", between " + startDate + " and " + endDate);
+        }
         return _quotaUsageDao.findQuotaUsage(accountId, domainId, usageType, adjustedStartDate, adjustedEndDate);
     }
 

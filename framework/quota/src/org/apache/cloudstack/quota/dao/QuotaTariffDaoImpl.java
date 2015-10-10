@@ -69,14 +69,14 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         } finally {
             TransactionLegacy.open(opendb).close();
         }
-        if (result.size() > 0) {
+        if (result != null && !result.isEmpty()) {
             if (s_logger.isDebugEnabled()){
                 s_logger.debug("QuotaTariffDaoImpl::findTariffPlanByUsageType: " + effectiveDate + "quota type " + quotaType  + " val=" + result.get(0).getCurrencyValue());
             }
             return result.get(0);
         } else {
             if (s_logger.isDebugEnabled()){
-                s_logger.info("QuotaTariffDaoImpl::findTariffPlanByUsageType: Missing quota type " + quotaType);
+                s_logger.debug("QuotaTariffDaoImpl::findTariffPlanByUsageType: Missing quota type " + quotaType);
             }
             return null;
         }
@@ -93,9 +93,9 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
             for (Integer quotaType : QuotaTypes.listQuotaTypes().keySet()) {
                 sc.setParameters("quotatype", quotaType);
                 List<QuotaTariffVO> result = search(sc, filter);
-                if (result.size() > 0) {
+                if (result != null && !result.isEmpty()) {
                     tariffs.add(result.get(0));
-                    s_logger.info("listAllTariffPlans onorbefore" + effectiveDate + "quota type " + result.get(0).getDescription() + " , effective Date=" + result.get(0).getEffectiveOn() + " val=" + result.get(0).getCurrencyValue());
+                    s_logger.debug("ListAllTariffPlans on or before " + effectiveDate + " quota type " + result.get(0).getDescription() + " , effective Date=" + result.get(0).getEffectiveOn() + " val=" + result.get(0).getCurrencyValue());
                 }
             }
         } catch (Exception e) {

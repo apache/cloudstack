@@ -17,6 +17,7 @@
 package org.apache.cloudstack.quota.dao;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -56,7 +57,7 @@ public class QuotaCreditsDaoImpl extends GenericDaoBase<QuotaCreditsVO, Long> im
             if ((startDate != null) && (endDate != null) && startDate.before(endDate)) {
                 sc.addAnd("updatedOn", SearchCriteria.Op.BETWEEN, startDate, endDate);
             } else {
-                return new ArrayList<QuotaCreditsVO>();
+                return Collections.<QuotaCreditsVO>emptyList();
             }
             qc = search(sc, filter);
         } catch (Exception e) {

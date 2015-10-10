@@ -63,7 +63,7 @@ import java.util.List;
 @Component
 @Local(value = QuotaResponseBuilderImpl.class)
 public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
-    private static final Logger s_logger = Logger.getLogger(QuotaResponseBuilderImpl.class.getName());
+    private static final Logger s_logger = Logger.getLogger(QuotaResponseBuilderImpl.class);
 
     @Inject
     private QuotaTariffDao _quotaTariffDao;
@@ -99,7 +99,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Override
     public QuotaBalanceResponse createQuotaBalanceResponse(List<QuotaBalanceVO> quotaBalance, Date startDate, Date endDate) {
-        if (quotaBalance == null || quotaBalance.size() == 0) {
+        if (quotaBalance == null || quotaBalance.isEmpty()) {
             new InvalidParameterValueException("The request period does not contain balance entries.");
         }
         Collections.sort(quotaBalance, new Comparator<QuotaBalanceVO>() {
@@ -153,7 +153,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Override
     public QuotaStatementResponse createQuotaStatementResponse(final List<QuotaUsageVO> quotaUsage) {
-        if (quotaUsage == null || quotaUsage.size() == 0) {
+        if (quotaUsage == null || quotaUsage.isEmpty()) {
             throw new InvalidParameterValueException("There is no usage data found for period mentioned.");
         }
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
@@ -196,8 +196,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             }
             if (type != quotaRecord.getUsageType()) {
                 if (type != -1) {
-                    lineitem = new QuotaStatementItemResponse();
-                    lineitem.setUsageType(type);
+                    lineitem = new QuotaStatementItemResponse(type);
                     lineitem.setQuotaUsed(usage);
                     lineitem.setAccountId(prev.getAccountId());
                     lineitem.setDomainId(prev.getDomainId());
@@ -261,8 +260,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
         QuotaTariffVO result = null;
         try {
-            result = new QuotaTariffVO();
-            result.setUsageType(quotaType);
+            result = new QuotaTariffVO(quotaType);
             result.setUsageName(quotaConstant.getQuotaName());
             result.setUsageUnit(quotaConstant.getQuotaUnit());
             result.setUsageDiscriminator(quotaConstant.getDiscriminator());
@@ -271,7 +269,9 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             result.setUpdatedOn(now);
             result.setUpdatedBy(cmd.getEntityOwnerId());
 
-            s_logger.debug(String.format("Updating Quota Tariff Plan: New value=%s for resource type=%d effective on date=%s", quotaCost, quotaType, effectiveDate));
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("Updating Quota Tariff Plan: New value=%s for resource type=%d effective on date=%s", quotaCost, quotaType, effectiveDate));
+            }
             _quotaTariffDao.addQuotaTariff(result);
         } catch (Exception pokemon) {
             s_logger.error("Error in update quota tariff plan: " + pokemon);
@@ -300,7 +300,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         QuotaCreditsVO result = null;
         try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
             QuotaCreditsVO credits = new QuotaCreditsVO(accountId, domainId, new BigDecimal(amount), updatedBy);
-            s_logger.info("addQuotaCredits: Depositing " + amount + " on adjusted date " + despositedOn);
+            s_logger.debug("AddQuotaCredits: Depositing " + amount + " on adjusted date " + despositedOn);
             credits.setUpdatedOn(despositedOn);
             result = _quotaCreditsDao.saveCredits(credits);
         }
@@ -370,7 +370,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Override
     public QuotaBalanceResponse createQuotaLastBalanceResponse(List<QuotaBalanceVO> quotaBalance, Date startDate) {
-        if (quotaBalance == null || quotaBalance.size() == 0) {
+        if (quotaBalance == null || quotaBalance.isEmpty()) {
             throw new InvalidParameterValueException("There are no balance entries on or before the requested date.");
         }
         if (startDate == null) {
@@ -380,7 +380,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         BigDecimal lastCredits = new BigDecimal(0);
         for (QuotaBalanceVO entry : quotaBalance) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.info("createQuotaLastBalanceResponse Date=" + entry.getUpdatedOn() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
+                s_logger.debug("createQuotaLastBalanceResponse Date=" + entry.getUpdatedOn() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
             }
             lastCredits = lastCredits.add(entry.getCreditBalance());
         }

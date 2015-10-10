@@ -39,7 +39,7 @@ import com.cloud.user.Account;
 @APICommand(name = "quotaBalance", responseObject = QuotaStatementItemResponse.class, description = "Create a quota balance statement", since = "4.6.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaBalanceCmd extends BaseCmd {
 
-    public static final Logger s_logger = Logger.getLogger(QuotaBalanceCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(QuotaBalanceCmd.class);
 
     private static final String s_name = "quotabalanceresponse";
 
@@ -99,10 +99,6 @@ public class QuotaBalanceCmd extends BaseCmd {
 
     public void setStartDate(Date startDate) {
         this.startDate = startDate;
-    }
-
-    public QuotaBalanceCmd() {
-        super();
     }
 
     @Override
