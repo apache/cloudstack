@@ -38,8 +38,8 @@ public class SnapshotObjectTO implements DataTO {
     private String vmName;
     private String name;
     private HypervisorType hypervisorType;
-    private long id;
-    private boolean quiescevm;
+    private Long id;
+    private Boolean quiescevm;
     private String[] parents;
     private Long physicalSize = (long) 0;
 
@@ -135,7 +135,7 @@ public class SnapshotObjectTO implements DataTO {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -156,11 +156,11 @@ public class SnapshotObjectTO implements DataTO {
         this.hypervisorType = hypervisorType;
     }
 
-    public boolean getquiescevm() {
+    public Boolean getquiescevm() {
         return this.quiescevm;
     }
 
-    public void setQuiescevm(boolean quiescevm) {
+    public void setQuiescevm(Boolean quiescevm) {
         this.quiescevm = quiescevm;
     }
 
