@@ -112,4 +112,10 @@ public class HostStatsEntry implements HostStats {
     public void setHostId(long hostId) {
         this.hostId = hostId;
     }
+
+    public long getHostId() {
+        return hostId;
+    }
+
+
 }
