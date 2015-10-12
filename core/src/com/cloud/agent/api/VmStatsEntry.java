@@ -31,12 +31,14 @@ public class VmStatsEntry implements VmStats {
     double diskReadKBs;
     double diskWriteKBs;
     int numCPUs;
+    private int hypervisorCPUs;
     String entityType;
 
     public VmStatsEntry() {
     }
 
-    public VmStatsEntry(double cpuUtilization, double networkReadKBs, double networkWriteKBs, int numCPUs, String entityType) {
+    public VmStatsEntry(double cpuUtilization, double networkReadKBs, double networkWriteKBs, int numCPUs, String entityType)
+    {
         this.cpuUtilization = cpuUtilization;
         this.networkReadKBs = networkReadKBs;
         this.networkWriteKBs = networkWriteKBs;
@@ -44,7 +46,9 @@ public class VmStatsEntry implements VmStats {
         this.entityType = entityType;
     }
 
-    public VmStatsEntry(double cpuUtilization, double networkReadKBs, double networkWriteKBs, double diskReadKBs, double diskWriteKBs, int numCPUs, String entityType) {
+    public VmStatsEntry(double cpuUtilization, double networkReadKBs, double networkWriteKBs,
+            double diskReadKBs, double diskWriteKBs, int numCPUs, String entityType)
+    {
         this.cpuUtilization = cpuUtilization;
         this.networkReadKBs = networkReadKBs;
         this.networkWriteKBs = networkWriteKBs;
@@ -132,5 +136,14 @@ public class VmStatsEntry implements VmStats {
     public void setEntityType(String entityType) {
         this.entityType = entityType;
     }
+
+    public int getHypervisorCPUs() {
+        return hypervisorCPUs;
+    }
+
+    public void setHypervisorCPUs(int hypervisorCPUs) {
+        this.hypervisorCPUs = hypervisorCPUs;
+    }
+
 
 }

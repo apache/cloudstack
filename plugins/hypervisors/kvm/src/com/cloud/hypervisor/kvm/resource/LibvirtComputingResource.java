@@ -3044,6 +3044,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 double utilization = (info.cpuTime - oldStats._usedTime) / ((double)elapsedTime * 1000000);
 
                 final NodeInfo node = conn.nodeInfo();
+                stats.setHypervisorCPUs(node.cpus);
                 utilization = utilization / node.cpus;
                 if (utilization > 0) {
                     stats.setCPUUtilization(utilization * 100);
