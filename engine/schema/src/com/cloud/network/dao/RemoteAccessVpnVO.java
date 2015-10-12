@@ -139,7 +139,7 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

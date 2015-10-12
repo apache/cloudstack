@@ -121,7 +121,7 @@ public class DataCenterJoinVO extends BaseViewVO implements InternalIdentity, Id
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

@@ -40,7 +40,7 @@ public class GuestOSCategoryVO implements GuestOsCategory {
     String uuid = UUID.randomUUID().toString();
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

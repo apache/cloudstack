@@ -33,7 +33,7 @@ public class PreparePxeServerCommand extends Command {
     String hostName;
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 

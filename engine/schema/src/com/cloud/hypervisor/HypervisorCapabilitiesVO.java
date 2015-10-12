@@ -153,7 +153,7 @@ public class HypervisorCapabilitiesVO implements HypervisorCapabilities {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

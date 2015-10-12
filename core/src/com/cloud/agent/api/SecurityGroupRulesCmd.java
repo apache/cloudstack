@@ -36,15 +36,15 @@ public class SecurityGroupRulesCmd extends Command {
 
     public static class IpPortAndProto {
         private String proto;
-        private int startPort;
-        private int endPort;
+        private Integer startPort;
+        private Integer endPort;
         @LogLevel(Log4jLevel.Trace)
         private String[] allowedCidrs;
 
         public IpPortAndProto() {
         }
 
-        public IpPortAndProto(String proto, int startPort, int endPort, String[] allowedCidrs) {
+        public IpPortAndProto(String proto, Integer startPort, Integer endPort, String[] allowedCidrs) {
             super();
             this.proto = proto;
             this.startPort = startPort;
@@ -64,11 +64,11 @@ public class SecurityGroupRulesCmd extends Command {
             return proto;
         }
 
-        public int getStartPort() {
+        public Integer getStartPort() {
             return startPort;
         }
 
-        public int getEndPort() {
+        public Integer getEndPort() {
             return endPort;
         }
 
@@ -125,7 +125,7 @@ public class SecurityGroupRulesCmd extends Command {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 
@@ -181,7 +181,7 @@ public class SecurityGroupRulesCmd extends Command {
     //convert cidrs in the form "a.b.c.d/e" to "hexvalue of 32bit ip/e"
     private String compressCidr(String cidr) {
         String[] toks = cidr.split("/");
-        long ipnum = NetUtils.ip2Long(toks[0]);
+        Long ipnum = NetUtils.ip2Long(toks[0]);
         return Long.toHexString(ipnum) + "/" + toks[1];
     }
 
@@ -274,7 +274,7 @@ public class SecurityGroupRulesCmd extends Command {
         return vmId;
     }
 
-    public int getTotalNumCidrs() {
+    public Integer getTotalNumCidrs() {
         //useful for logging
         int count = 0;
         for (IpPortAndProto i : ingressRuleSet) {
@@ -286,7 +286,7 @@ public class SecurityGroupRulesCmd extends Command {
         return count;
     }
 
-    public void setMsId(long msId) {
+    public void setMsId(Long msId) {
         this.msId = msId;
     }
 

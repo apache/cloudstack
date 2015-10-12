@@ -24,5 +24,5 @@ import java.io.Serializable;
 // For example, all ControlledEntity, OwnedBy would have an internal ID
 
 public interface InternalIdentity extends Serializable {
-    long getId();
+    Long getId();
 }

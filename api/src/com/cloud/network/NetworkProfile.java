@@ -124,7 +124,7 @@ public class NetworkProfile implements Network {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

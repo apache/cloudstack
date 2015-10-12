@@ -24,22 +24,23 @@ package com.cloud.agent.api.proxy;
  */
 public class CheckConsoleProxyLoadCommand extends ProxyCommand {
 
-    private long proxyVmId;
+    private Long proxyVmId;
     private String proxyVmName;
     private String proxyManagementIp;
-    private int proxyCmdPort;
+    private Integer proxyCmdPort;
 
     public CheckConsoleProxyLoadCommand() {
+        this(0l,null,null,0);
     }
 
-    public CheckConsoleProxyLoadCommand(long proxyVmId, String proxyVmName, String proxyManagementIp, int proxyCmdPort) {
+    public CheckConsoleProxyLoadCommand(Long proxyVmId, String proxyVmName, String proxyManagementIp, Integer proxyCmdPort) {
         this.proxyVmId = proxyVmId;
         this.proxyVmName = proxyVmName;
         this.proxyManagementIp = proxyManagementIp;
         this.proxyCmdPort = proxyCmdPort;
     }
 
-    public long getProxyVmId() {
+    public Long getProxyVmId() {
         return proxyVmId;
     }
 
@@ -51,12 +52,12 @@ public class CheckConsoleProxyLoadCommand extends ProxyCommand {
         return proxyManagementIp;
     }
 
-    public int getProxyCmdPort() {
+    public Integer getProxyCmdPort() {
         return proxyCmdPort;
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 }

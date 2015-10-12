@@ -22,7 +22,7 @@ package com.cloud.agent.api.storage;
 import com.cloud.agent.api.Answer;
 
 public class DestroyAnswer extends Answer {
-    public DestroyAnswer(DestroyCommand cmd, boolean result, String details) {
+    public DestroyAnswer(DestroyCommand cmd, Boolean result, String details) {
         super(cmd, result, details);
     }
 

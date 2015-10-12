@@ -66,7 +66,7 @@ public class DataCenterDetailVO implements ResourceDetail {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

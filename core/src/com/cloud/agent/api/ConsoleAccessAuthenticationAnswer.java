@@ -21,11 +21,11 @@ package com.cloud.agent.api;
 
 public class ConsoleAccessAuthenticationAnswer extends AgentControlAnswer {
 
-    private boolean _success;
+    private Boolean _success;
 
-    private boolean _isReauthenticating;
+    private Boolean _isReauthenticating;
     private String _host;
-    private int _port;
+    private Integer _port;
 
     private String _tunnelUrl;
     private String _tunnelSession;
@@ -36,24 +36,24 @@ public class ConsoleAccessAuthenticationAnswer extends AgentControlAnswer {
         _port = 0;
     }
 
-    public ConsoleAccessAuthenticationAnswer(Command cmd, boolean success) {
+    public ConsoleAccessAuthenticationAnswer(Command cmd, Boolean success) {
         super(cmd);
         _success = success;
     }
 
-    public boolean succeeded() {
+    public Boolean succeeded() {
         return _success;
     }
 
-    public void setSuccess(boolean value) {
+    public void setSuccess(Boolean value) {
         _success = value;
     }
 
-    public boolean isReauthenticating() {
+    public Boolean isReauthenticating() {
         return _isReauthenticating;
     }
 
-    public void setReauthenticating(boolean value) {
+    public void setReauthenticating(Boolean value) {
         _isReauthenticating = value;
     }
 
@@ -65,11 +65,11 @@ public class ConsoleAccessAuthenticationAnswer extends AgentControlAnswer {
         _host = host;
     }
 
-    public int getPort() {
+    public Integer getPort() {
         return _port;
     }
 
-    public void setPort(int port) {
+    public void setPort(Integer port) {
         _port = port;
     }
 

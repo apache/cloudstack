@@ -127,7 +127,7 @@ public class PhysicalNetworkVO implements PhysicalNetwork {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

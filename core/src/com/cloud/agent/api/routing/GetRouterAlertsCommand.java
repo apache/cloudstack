@@ -29,7 +29,7 @@ public class GetRouterAlertsCommand  extends NetworkElementCommand {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 
@@ -42,7 +42,7 @@ public class GetRouterAlertsCommand  extends NetworkElementCommand {
     }
 
     @Override
-    public boolean isQuery() {
+    public Boolean isQuery() {
         return true;
     }
 }

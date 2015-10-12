@@ -43,7 +43,7 @@ public class HostTagVO extends BaseViewVO implements InternalIdentity {
     long hostId;
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

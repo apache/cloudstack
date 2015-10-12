@@ -27,8 +27,8 @@ public class CreatePrivateTemplateFromVolumeCommand extends SnapshotCommand {
     private String _volumePath;
     private String _userSpecifiedName;
     private String _uniqueName;
-    private long _templateId;
-    private long _accountId;
+    private Long _templateId;
+    private Long _accountId;
     StorageFilerTO _primaryPool;
     // For XenServer
     private String _secondaryStorageUrl;
@@ -36,8 +36,8 @@ public class CreatePrivateTemplateFromVolumeCommand extends SnapshotCommand {
     public CreatePrivateTemplateFromVolumeCommand() {
     }
 
-    public CreatePrivateTemplateFromVolumeCommand(StoragePool pool, String secondaryStorageUrl, long templateId, long accountId, String userSpecifiedName,
-            String uniqueName, String volumePath, String vmName, int wait) {
+    public CreatePrivateTemplateFromVolumeCommand(StoragePool pool, String secondaryStorageUrl, Long templateId, Long accountId, String userSpecifiedName,
+            String uniqueName, String volumePath, String vmName, Integer wait) {
         _secondaryStorageUrl = secondaryStorageUrl;
         _templateId = templateId;
         _accountId = accountId;
@@ -51,7 +51,7 @@ public class CreatePrivateTemplateFromVolumeCommand extends SnapshotCommand {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 
@@ -73,7 +73,7 @@ public class CreatePrivateTemplateFromVolumeCommand extends SnapshotCommand {
         return _uniqueName;
     }
 
-    public long getTemplateId() {
+    public Long getTemplateId() {
         return _templateId;
     }
 
@@ -96,7 +96,7 @@ public class CreatePrivateTemplateFromVolumeCommand extends SnapshotCommand {
         return _accountId;
     }
 
-    public void setTemplateId(long templateId) {
+    public void setTemplateId(Long templateId) {
         _templateId = templateId;
     }
 }

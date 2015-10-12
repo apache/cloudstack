@@ -139,7 +139,7 @@ public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc, 
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

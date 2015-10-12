@@ -36,13 +36,13 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
         VOLUME, TEMPLATE
     }
 
-    private boolean hvm;
+    private Boolean hvm;
     private String description;
     private String checksum;
     private PasswordAuth auth;
     private Proxy _proxy;
     private Long maxDownloadSizeInBytes = null;
-    private long id;
+    private Long id;
     private ResourceType resourceType = ResourceType.TEMPLATE;
     private String installPath;
     private DataStoreTO _store;
@@ -97,15 +97,15 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setHvm(boolean hvm) {
+    public void setHvm(Boolean hvm) {
         this.hvm = hvm;
     }
 
-    public boolean isHvm() {
+    public Boolean isHvm() {
         return hvm;
     }
 
@@ -126,7 +126,7 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 

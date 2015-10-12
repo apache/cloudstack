@@ -67,7 +67,7 @@ public class ProjectAccountVO implements ProjectAccount, InternalIdentity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

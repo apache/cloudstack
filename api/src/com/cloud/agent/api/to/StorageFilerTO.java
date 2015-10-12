@@ -20,12 +20,12 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 
 public class StorageFilerTO {
-    long id;
+    Long id;
     String uuid;
     String host;
     String path;
     String userInfo;
-    int port;
+    Integer port;
     StoragePoolType type;
 
     public StorageFilerTO(StoragePool pool) {
@@ -38,7 +38,7 @@ public class StorageFilerTO {
         this.userInfo = pool.getUserInfo();
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
@@ -58,7 +58,7 @@ public class StorageFilerTO {
         return userInfo;
     }
 
-    public int getPort() {
+    public Integer getPort() {
         return port;
     }
 

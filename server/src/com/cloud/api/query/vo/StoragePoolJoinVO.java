@@ -151,7 +151,7 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

@@ -71,7 +71,7 @@ public class InstanceGroupVO implements InstanceGroup {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

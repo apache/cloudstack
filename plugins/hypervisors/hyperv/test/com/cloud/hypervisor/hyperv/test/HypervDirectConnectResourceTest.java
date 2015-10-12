@@ -251,7 +251,7 @@ public class HypervDirectConnectResourceTest {
 
     public final void testStartupCommand() {
         StartupRoutingCommand defaultStartRoutCmd =
-            new StartupRoutingCommand(0, 0, 0, 0, null, Hypervisor.HypervisorType.Hyperv, RouterPrivateIpStrategy.HostLocal);
+            new StartupRoutingCommand(0, 0l, 0l, 0l, null, Hypervisor.HypervisorType.Hyperv, RouterPrivateIpStrategy.HostLocal);
 
         // Identity within the data centre is decided by CloudStack kernel,
         // and passed via ServerResource.configure()

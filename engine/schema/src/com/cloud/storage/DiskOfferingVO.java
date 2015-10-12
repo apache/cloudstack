@@ -240,7 +240,7 @@ public class DiskOfferingVO implements DiskOffering {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

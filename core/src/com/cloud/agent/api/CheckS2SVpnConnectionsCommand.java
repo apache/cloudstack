@@ -27,7 +27,7 @@ public class CheckS2SVpnConnectionsCommand extends NetworkElementCommand {
     List<String> vpnIps;
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 
@@ -41,7 +41,7 @@ public class CheckS2SVpnConnectionsCommand extends NetworkElementCommand {
     }
 
     @Override
-    public boolean isQuery() {
+    public Boolean isQuery() {
         return true;
     }
 }

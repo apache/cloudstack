@@ -57,7 +57,7 @@ public final class NiciraNvpConfigurePortForwardingRulesCommandWrapper extends C
                     continue;
                 }
 
-                if (rule.getDstPortRange()[0] != rule.getDstPortRange()[1] || rule.getSrcPortRange()[0] != rule.getSrcPortRange()[1]) {
+                if ( (! rule.getDstPortRange()[0].equals(rule.getDstPortRange()[1])) || (! rule.getSrcPortRange()[0].equals(rule.getSrcPortRange()[1])) ) {
                     return new ConfigurePortForwardingRulesOnLogicalRouterAnswer(command, false, "Nicira NVP doesn't support port ranges for port forwarding");
                 }
 

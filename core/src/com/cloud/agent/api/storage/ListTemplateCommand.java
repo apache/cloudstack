@@ -31,20 +31,14 @@ public class ListTemplateCommand extends StorageCommand {
 
     public ListTemplateCommand(DataStoreTO store) {
         this.store = store;
-//        this.secUrl = url;
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 
     public DataStoreTO getDataStore() {
         return store;
     }
-
-    //   public String getSecUrl() {
-    //       return secUrl;
-    //   }
-
 }

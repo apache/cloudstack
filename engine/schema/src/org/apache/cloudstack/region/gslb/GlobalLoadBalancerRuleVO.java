@@ -157,7 +157,7 @@ public class GlobalLoadBalancerRuleVO implements GlobalLoadBalancerRule {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

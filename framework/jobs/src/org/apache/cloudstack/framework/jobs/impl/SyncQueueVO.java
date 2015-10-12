@@ -63,7 +63,7 @@ public class SyncQueueVO implements InternalIdentity {
     private long queueSizeLimit = 0;
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

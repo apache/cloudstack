@@ -23,20 +23,20 @@ import com.cloud.vm.VmStats;
 
 public class VmStatsEntry implements VmStats {
 
-    double cpuUtilization;
-    double networkReadKBs;
-    double networkWriteKBs;
-    double diskReadIOs;
-    double diskWriteIOs;
-    double diskReadKBs;
-    double diskWriteKBs;
-    int numCPUs;
+    Double cpuUtilization;
+    Double networkReadKBs;
+    Double networkWriteKBs;
+    Double diskReadIOs;
+    Double diskWriteIOs;
+    Double diskReadKBs;
+    Double diskWriteKBs;
+    Integer numCPUs;
     String entityType;
 
     public VmStatsEntry() {
     }
 
-    public VmStatsEntry(double cpuUtilization, double networkReadKBs, double networkWriteKBs, int numCPUs, String entityType) {
+    public VmStatsEntry(Double cpuUtilization, Double networkReadKBs, Double networkWriteKBs, Integer numCPUs, String entityType) {
         this.cpuUtilization = cpuUtilization;
         this.networkReadKBs = networkReadKBs;
         this.networkWriteKBs = networkWriteKBs;
@@ -44,7 +44,7 @@ public class VmStatsEntry implements VmStats {
         this.entityType = entityType;
     }
 
-    public VmStatsEntry(double cpuUtilization, double networkReadKBs, double networkWriteKBs, double diskReadKBs, double diskWriteKBs, int numCPUs, String entityType) {
+    public VmStatsEntry(Double cpuUtilization, Double networkReadKBs, Double networkWriteKBs, Double diskReadKBs, Double diskWriteKBs, Integer numCPUs, String entityType) {
         this.cpuUtilization = cpuUtilization;
         this.networkReadKBs = networkReadKBs;
         this.networkWriteKBs = networkWriteKBs;
@@ -55,73 +55,73 @@ public class VmStatsEntry implements VmStats {
     }
 
     @Override
-    public double getCPUUtilization() {
+    public Double getCPUUtilization() {
         return cpuUtilization;
     }
 
-    public void setCPUUtilization(double cpuUtilization) {
+    public void setCPUUtilization(Double cpuUtilization) {
         this.cpuUtilization = cpuUtilization;
     }
 
     @Override
-    public double getNetworkReadKBs() {
+    public Double getNetworkReadKBs() {
         return networkReadKBs;
     }
 
-    public void setNetworkReadKBs(double networkReadKBs) {
+    public void setNetworkReadKBs(Double networkReadKBs) {
         this.networkReadKBs = networkReadKBs;
     }
 
     @Override
-    public double getNetworkWriteKBs() {
+    public Double getNetworkWriteKBs() {
         return networkWriteKBs;
     }
 
-    public void setNetworkWriteKBs(double networkWriteKBs) {
+    public void setNetworkWriteKBs(Double networkWriteKBs) {
         this.networkWriteKBs = networkWriteKBs;
     }
 
     @Override
-    public double getDiskReadIOs() {
+    public Double getDiskReadIOs() {
         return diskReadIOs;
     }
 
-    public void setDiskReadIOs(double diskReadIOs) {
+    public void setDiskReadIOs(Double diskReadIOs) {
         this.diskReadIOs = diskReadIOs;
     }
 
     @Override
-    public double getDiskWriteIOs() {
+    public Double getDiskWriteIOs() {
         return diskWriteIOs;
     }
 
-    public void setDiskWriteIOs(double diskWriteIOs) {
+    public void setDiskWriteIOs(Double diskWriteIOs) {
         this.diskWriteIOs = diskWriteIOs;
     }
 
     @Override
-    public double getDiskReadKBs() {
+    public Double getDiskReadKBs() {
         return diskReadKBs;
     }
 
-    public void setDiskReadKBs(double diskReadKBs) {
+    public void setDiskReadKBs(Double diskReadKBs) {
         this.diskReadKBs = diskReadKBs;
     }
 
     @Override
-    public double getDiskWriteKBs() {
+    public Double getDiskWriteKBs() {
         return diskWriteKBs;
     }
 
-    public void setDiskWriteKBs(double diskWriteKBs) {
+    public void setDiskWriteKBs(Double diskWriteKBs) {
         this.diskWriteKBs = diskWriteKBs;
     }
 
-    public int getNumCPUs() {
+    public Integer getNumCPUs() {
         return numCPUs;
     }
 
-    public void setNumCPUs(int numCPUs) {
+    public void setNumCPUs(Integer numCPUs) {
         this.numCPUs = numCPUs;
     }
 

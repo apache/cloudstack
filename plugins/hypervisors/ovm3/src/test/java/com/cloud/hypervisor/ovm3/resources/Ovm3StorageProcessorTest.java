@@ -318,11 +318,11 @@ public class Ovm3StorageProcessorTest {
         String src = linux.getVirtualDisksDir() + ovmObject.newUuid() + ".raw";
         String dst = linux.getVirtualDisksDir() + ovmObject.newUuid() + ".raw";
         StoragePoolVO poolio = new StoragePoolVO();
-        CopyVolumeCommand copy = new CopyVolumeCommand(0, src, poolio, dst,
+        CopyVolumeCommand copy = new CopyVolumeCommand(0l, src, poolio, dst,
                 true, 0, false);
         Answer ra = hypervisor.executeRequest(copy);
         results.basicBooleanTest(ra.getResult());
-        copy = new CopyVolumeCommand(0, src, poolio, dst, false, 0, false);
+        copy = new CopyVolumeCommand(0l, src, poolio, dst, false, 0, false);
         ra = hypervisor.executeRequest(copy);
         results.basicBooleanTest(ra.getResult());
     }

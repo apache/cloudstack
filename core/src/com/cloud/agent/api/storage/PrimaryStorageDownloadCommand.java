@@ -29,7 +29,7 @@ import com.cloud.storage.StoragePool;
 public class PrimaryStorageDownloadCommand extends AbstractDownloadCommand {
     String localPath;
     String poolUuid;
-    long poolId;
+    Long poolId;
 
     StorageFilerTO primaryPool;
 
@@ -39,7 +39,7 @@ public class PrimaryStorageDownloadCommand extends AbstractDownloadCommand {
     protected PrimaryStorageDownloadCommand() {
     }
 
-    public PrimaryStorageDownloadCommand(final String name, final String url, final ImageFormat format, final long accountId, final StoragePool pool, final int wait) {
+    public PrimaryStorageDownloadCommand(final String name, final String url, final ImageFormat format, final Long accountId, final StoragePool pool, final Integer wait) {
         super(name, url, format, accountId);
         poolId = pool.getId();
         poolUuid = pool.getUuid();
@@ -51,7 +51,7 @@ public class PrimaryStorageDownloadCommand extends AbstractDownloadCommand {
         return poolUuid;
     }
 
-    public long getPoolId() {
+    public Long getPoolId() {
         return poolId;
     }
 
@@ -84,7 +84,7 @@ public class PrimaryStorageDownloadCommand extends AbstractDownloadCommand {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 }

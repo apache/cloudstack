@@ -131,7 +131,7 @@ public class SnapshotObjectTO implements DataTO {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

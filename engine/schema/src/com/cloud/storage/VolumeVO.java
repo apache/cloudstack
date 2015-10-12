@@ -287,7 +287,7 @@ public class VolumeVO implements Volume {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

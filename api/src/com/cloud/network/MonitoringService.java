@@ -33,7 +33,7 @@ public interface MonitoringService extends ControlledEntity, Identity, InternalI
     }
 
     @Override
-    long getId();
+    Long getId();
 
     String getService();
 

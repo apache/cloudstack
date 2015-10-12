@@ -47,7 +47,7 @@ public class CreatePrivateTemplateFromSnapshotCommand extends SnapshotCommand {
      */
 
     public CreatePrivateTemplateFromSnapshotCommand(StoragePool pool, String secondaryStoragePoolURL, Long dcId, Long accountId, Long volumeId,
-            String backedUpSnapshotUuid, String backedUpSnapshotName, String origTemplateInstallPath, Long newTemplateId, String templateName, int wait) {
+            String backedUpSnapshotUuid, String backedUpSnapshotName, String origTemplateInstallPath, Long newTemplateId, String templateName, Integer wait) {
         super(pool, secondaryStoragePoolURL, backedUpSnapshotUuid, backedUpSnapshotName, dcId, accountId, volumeId);
         this.origTemplateInstallPath = origTemplateInstallPath;
         this.newTemplateId = newTemplateId;

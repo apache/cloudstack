@@ -206,7 +206,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
     }
 
     @Override
-    public void updateExternalLoadBalancerNetworkUsageStats(long loadBalancerRuleId) {
+    public void updateExternalLoadBalancerNetworkUsageStats(Long loadBalancerRuleId) {
 
         LoadBalancerVO lb = _loadBalancerDao.findById(loadBalancerRuleId);
         if (lb == null) {
@@ -262,7 +262,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
         long newCurrentBytesReceived = 0;
 
         if (publicIp != null) {
-            long[] bytesSentAndReceived = null;
+            Long[] bytesSentAndReceived = null;
             statsEntryIdentifier += ", public IP: " + publicIp;
             boolean inline = _networkModel.isNetworkInlineMode(network);
             if (externalLoadBalancer.getType().equals(Host.Type.ExternalLoadBalancer) && inline) {
@@ -275,7 +275,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                     bytesSentAndReceived = lbAnswer.ipBytes.get(loadBalancingIpAddress);
 
                     if (bytesSentAndReceived != null) {
-                        bytesSentAndReceived[0] = 0;
+                        bytesSentAndReceived[0] = 0l;
                     }
                 }
             } else {
@@ -532,7 +532,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
             long newCurrentBytesReceived = 0;
 
             if (publicIp != null) {
-                long[] bytesSentAndReceived = null;
+                Long[] bytesSentAndReceived = null;
                 statsEntryIdentifier += ", public IP: " + publicIp;
 
                 if (host.getType().equals(Host.Type.ExternalLoadBalancer) && inline) {
@@ -545,7 +545,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                         bytesSentAndReceived = answer.ipBytes.get(loadBalancingIpAddress);
 
                         if (bytesSentAndReceived != null) {
-                            bytesSentAndReceived[0] = 0;
+                            bytesSentAndReceived[0] = 0l;
                         }
                     }
                 } else {
@@ -565,7 +565,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                     return true;
                 } else {
                     long vlanTag = Integer.parseInt(BroadcastDomainType.getValue(broadcastURI));
-                    long[] bytesSentAndReceived = answer.guestVlanBytes.get(String.valueOf(vlanTag));
+                    Long[] bytesSentAndReceived = answer.guestVlanBytes.get(String.valueOf(vlanTag));
 
                     if (bytesSentAndReceived == null) {
                         s_logger.warn("Didn't get an external network usage answer for guest VLAN " + vlanTag);

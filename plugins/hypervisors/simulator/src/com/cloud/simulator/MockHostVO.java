@@ -153,7 +153,7 @@ public class MockHostVO implements MockHost, InternalIdentity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

@@ -30,7 +30,7 @@ public class RevertToVMSnapshotAnswer extends Answer {
     private List<VolumeObjectTO> volumeTOs;
     private VirtualMachine.PowerState vmState;
 
-    public RevertToVMSnapshotAnswer(RevertToVMSnapshotCommand cmd, boolean result, String message) {
+    public RevertToVMSnapshotAnswer(RevertToVMSnapshotCommand cmd, Boolean result, String message) {
         super(cmd, result, message);
     }
 

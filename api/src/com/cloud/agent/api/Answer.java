@@ -19,7 +19,7 @@ package com.cloud.agent.api;
 import com.cloud.utils.exception.ExceptionUtil;
 
 public class Answer extends Command {
-    protected boolean result;
+    protected Boolean result;
     protected String details;
 
     protected Answer() {
@@ -39,7 +39,7 @@ public class Answer extends Command {
         this(command, false, ExceptionUtil.toString(e));
     }
 
-    public boolean getResult() {
+    public Boolean getResult() {
         return result;
     }
 
@@ -48,7 +48,7 @@ public class Answer extends Command {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 

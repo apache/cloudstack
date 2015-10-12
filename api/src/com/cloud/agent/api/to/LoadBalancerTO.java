@@ -38,22 +38,22 @@ import com.cloud.utils.Pair;
 public class LoadBalancerTO {
     String uuid;
     String srcIp;
-    int srcPort;
+    Integer srcPort;
     String protocol;
     String lbProtocol;
     String algorithm;
-    boolean revoked;
-    boolean alreadyAdded;
-    boolean inline;
+    Boolean revoked;
+    Boolean alreadyAdded;
+    Boolean inline;
     DestinationTO[] destinations;
     private StickinessPolicyTO[] stickinessPolicies;
     private HealthCheckPolicyTO[] healthCheckPolicies;
     private LbSslCert sslCert; /* XXX: Should this be SslCertTO?  */
     private AutoScaleVmGroupTO autoScaleVmGroupTO;
-    final static int MAX_STICKINESS_POLICIES = 1;
-    final static int MAX_HEALTHCHECK_POLICIES = 1;
+    final static Integer MAX_STICKINESS_POLICIES = 1;
+    final static Integer MAX_HEALTHCHECK_POLICIES = 1;
 
-    public LoadBalancerTO(String uuid, String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, boolean inline,
+    public LoadBalancerTO(String uuid, String srcIp, Integer srcPort, String protocol, String algorithm, Boolean revoked, Boolean alreadyAdded, Boolean inline,
             List<LbDestination> destinations) {
         if (destinations == null) { // for autoscaleconfig destinations will be null;
             destinations = new ArrayList<LbDestination>();
@@ -76,13 +76,13 @@ public class LoadBalancerTO {
         }
     }
 
-    public LoadBalancerTO(String id, String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, boolean inline,
+    public LoadBalancerTO(String id, String srcIp, Integer srcPort, String protocol, String algorithm, Boolean revoked, Boolean alreadyAdded, Boolean inline,
             List<LbDestination> argDestinations, List<LbStickinessPolicy> stickinessPolicies) {
 
         this(id, srcIp, srcPort, protocol, algorithm, revoked, alreadyAdded, inline, argDestinations, stickinessPolicies, null, null, null);
     }
 
-    public LoadBalancerTO(String id, String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, boolean inline,
+    public LoadBalancerTO(String id, String srcIp, Integer srcPort, String protocol, String algorithm, Boolean revoked, Boolean alreadyAdded, Boolean inline,
             List<LbDestination> argDestinations, List<LbStickinessPolicy> stickinessPolicies, List<LbHealthCheckPolicy> healthCheckPolicies, LbSslCert sslCert,
             String lbProtocol) {
         this(id, srcIp, srcPort, protocol, algorithm, revoked, alreadyAdded, inline, argDestinations);
@@ -134,7 +134,7 @@ public class LoadBalancerTO {
         return srcIp;
     }
 
-    public int getSrcPort() {
+    public Integer getSrcPort() {
         return srcPort;
     }
 
@@ -150,15 +150,15 @@ public class LoadBalancerTO {
         return lbProtocol;
     }
 
-    public boolean isRevoked() {
+    public Boolean isRevoked() {
         return revoked;
     }
 
-    public boolean isAlreadyAdded() {
+    public Boolean isAlreadyAdded() {
         return alreadyAdded;
     }
 
-    public boolean isInline() {
+    public Boolean isInline() {
         return inline;
     }
 
@@ -182,7 +182,7 @@ public class LoadBalancerTO {
         this.autoScaleVmGroupTO = autoScaleVmGroupTO;
     }
 
-    public boolean isAutoScaleVmGroupTO() {
+    public Boolean isAutoScaleVmGroupTO() {
         return this.autoScaleVmGroupTO != null;
     }
 
@@ -211,14 +211,14 @@ public class LoadBalancerTO {
     public static class HealthCheckPolicyTO {
         private String pingPath;
         private String description;
-        private int responseTime;
-        private int healthcheckInterval;
-        private int healthcheckThresshold;
-        private int unhealthThresshold;
-        private boolean revoke = false;
+        private Integer responseTime;
+        private Integer healthcheckInterval;
+        private Integer healthcheckThresshold;
+        private Integer unhealthThresshold;
+        private Boolean revoke = false;
 
-        public HealthCheckPolicyTO(String pingPath, String description, int responseTime, int healthcheckInterval, int healthcheckThresshold, int unhealthThresshold,
-                boolean revoke) {
+        public HealthCheckPolicyTO(String pingPath, String description, Integer responseTime, Integer healthcheckInterval, Integer healthcheckThresshold, Integer unhealthThresshold,
+                Boolean revoke) {
 
             this.description = description;
             this.pingPath = pingPath;
@@ -241,27 +241,27 @@ public class LoadBalancerTO {
             return description;
         }
 
-        public int getResponseTime() {
+        public Integer getResponseTime() {
             return responseTime;
         }
 
-        public int getHealthcheckInterval() {
+        public Integer getHealthcheckInterval() {
             return healthcheckInterval;
         }
 
-        public int getHealthcheckThresshold() {
+        public Integer getHealthcheckThresshold() {
             return healthcheckThresshold;
         }
 
-        public int getUnhealthThresshold() {
+        public Integer getUnhealthThresshold() {
             return unhealthThresshold;
         }
 
-        public void setRevoke(boolean revoke) {
+        public void setRevoke(Boolean revoke) {
             this.revoke = revoke;
         }
 
-        public boolean isRevoked() {
+        public Boolean isRevoked() {
             return revoke;
         }
 
@@ -269,12 +269,12 @@ public class LoadBalancerTO {
 
     public static class DestinationTO {
         String destIp;
-        int destPort;
-        boolean revoked;
-        boolean alreadyAdded;
+        Integer destPort;
+        Boolean revoked;
+        Boolean alreadyAdded;
         String monitorState;
 
-        public DestinationTO(String destIp, int destPort, boolean revoked, boolean alreadyAdded) {
+        public DestinationTO(String destIp, Integer destPort, Boolean revoked, Boolean alreadyAdded) {
             this.destIp = destIp;
             this.destPort = destPort;
             this.revoked = revoked;
@@ -288,15 +288,15 @@ public class LoadBalancerTO {
             return destIp;
         }
 
-        public int getDestPort() {
+        public Integer getDestPort() {
             return destPort;
         }
 
-        public boolean isRevoked() {
+        public Boolean isRevoked() {
             return revoked;
         }
 
-        public boolean isAlreadyAdded() {
+        public Boolean isAlreadyAdded() {
             return alreadyAdded;
         }
 
@@ -363,13 +363,13 @@ public class LoadBalancerTO {
     public static class AutoScalePolicyTO implements Serializable {
         private static final long serialVersionUID = 2L;
         private final long id;
-        private final int duration;
-        private final int quietTime;
+        private final Integer duration;
+        private final Integer quietTime;
         private String action;
-        boolean revoked;
+        Boolean revoked;
         private final List<ConditionTO> conditions;
 
-        public AutoScalePolicyTO(long id, int duration, int quietTime, String action, List<ConditionTO> conditions, boolean revoked) {
+        public AutoScalePolicyTO(long id, Integer duration, Integer quietTime, String action, List<ConditionTO> conditions, Boolean revoked) {
             this.id = id;
             this.duration = duration;
             this.quietTime = quietTime;
@@ -382,11 +382,11 @@ public class LoadBalancerTO {
             return id;
         }
 
-        public int getDuration() {
+        public Integer getDuration() {
             return duration;
         }
 
-        public int getQuietTime() {
+        public Integer getQuietTime() {
             return quietTime;
         }
 
@@ -394,7 +394,7 @@ public class LoadBalancerTO {
             return action;
         }
 
-        public boolean isRevoked() {
+        public Boolean isRevoked() {
             return revoked;
         }
 
@@ -487,16 +487,16 @@ public class LoadBalancerTO {
     public static class AutoScaleVmGroupTO implements Serializable {
         private static final long serialVersionUID = 2L;
         private final String uuid;
-        private final int minMembers;
-        private final int maxMembers;
-        private final int memberPort;
-        private final int interval;
+        private final Integer minMembers;
+        private final Integer maxMembers;
+        private final Integer memberPort;
+        private final Integer interval;
         private final List<AutoScalePolicyTO> policies;
         private final AutoScaleVmProfileTO profile;
         private final String state;
         private final String currentState;
 
-        AutoScaleVmGroupTO(String uuid, int minMembers, int maxMembers, int memberPort, int interval, List<AutoScalePolicyTO> policies, AutoScaleVmProfileTO profile,
+        AutoScaleVmGroupTO(String uuid, Integer minMembers, Integer maxMembers, Integer memberPort, Integer interval, List<AutoScalePolicyTO> policies, AutoScaleVmProfileTO profile,
                 String state, String currentState) {
             this.uuid = uuid;
             this.minMembers = minMembers;
@@ -513,19 +513,19 @@ public class LoadBalancerTO {
             return uuid;
         }
 
-        public int getMinMembers() {
+        public Integer getMinMembers() {
             return minMembers;
         }
 
-        public int getMaxMembers() {
+        public Integer getMaxMembers() {
             return maxMembers;
         }
 
-        public int getMemberPort() {
+        public Integer getMemberPort() {
             return memberPort;
         }
 
-        public int getInterval() {
+        public Integer getInterval() {
             return interval;
         }
 

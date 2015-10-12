@@ -313,7 +313,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
         return _name;
     }
 
-    private void launchConsoleProxy(final byte[] ksBits, final String ksPassword, final String encryptorPassword) {
+    private void launchConsoleProxy(final Byte[] ksBits, final String ksPassword, final String encryptorPassword) {
         final Object resource = this;
         if (_consoleProxyMain == null) {
             _consoleProxyMain = new Thread(new ManagedContextRunnable() {

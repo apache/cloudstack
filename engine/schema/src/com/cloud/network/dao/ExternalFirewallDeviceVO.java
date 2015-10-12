@@ -98,7 +98,7 @@ public class ExternalFirewallDeviceVO implements InternalIdentity, Identity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

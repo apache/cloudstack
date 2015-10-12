@@ -63,7 +63,7 @@ public class CiscoVnmcControllerVO implements CiscoVnmcController {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

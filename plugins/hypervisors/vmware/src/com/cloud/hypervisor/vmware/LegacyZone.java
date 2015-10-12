@@ -22,7 +22,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 public interface LegacyZone extends InternalIdentity {
 
     @Override
-    long getId();
+    Long getId();
 
     long getZoneId();
 

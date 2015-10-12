@@ -36,7 +36,7 @@ public class GetHostStatsAnswer extends Answer implements HostStats {
         this.hostStats = hostStatistics;
     }
 
-    public GetHostStatsAnswer(GetHostStatsCommand cmd, double cpuUtilization, double freeMemoryKBs, double totalMemoryKBs, double networkReadKBs, double networkWriteKBs,
+    public GetHostStatsAnswer(GetHostStatsCommand cmd, Double cpuUtilization, Double freeMemoryKBs, Double totalMemoryKBs, Double networkReadKBs, Double networkWriteKBs,
             String entityType) {
         super(cmd);
         hostStats = new HostStatsEntry();
@@ -50,32 +50,32 @@ public class GetHostStatsAnswer extends Answer implements HostStats {
     }
 
     @Override
-    public double getUsedMemory() {
+    public Double getUsedMemory() {
         return hostStats.getUsedMemory();
     }
 
     @Override
-    public double getFreeMemoryKBs() {
+    public Double getFreeMemoryKBs() {
         return hostStats.getFreeMemoryKBs();
     }
 
     @Override
-    public double getTotalMemoryKBs() {
+    public Double getTotalMemoryKBs() {
         return hostStats.getTotalMemoryKBs();
     }
 
     @Override
-    public double getCpuUtilization() {
+    public Double getCpuUtilization() {
         return hostStats.getCpuUtilization();
     }
 
     @Override
-    public double getNetworkReadKBs() {
+    public Double getNetworkReadKBs() {
         return hostStats.getNetworkReadKBs();
     }
 
     @Override
-    public double getNetworkWriteKBs() {
+    public Double getNetworkWriteKBs() {
         return hostStats.getNetworkWriteKBs();
     }
 

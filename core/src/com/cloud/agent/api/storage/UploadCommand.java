@@ -30,15 +30,15 @@ public class UploadCommand extends AbstractUploadCommand implements InternalIden
     private TemplateTO template;
     private String url;
     private String installPath;
-    private boolean hvm;
+    private Boolean hvm;
     private String description;
     private String checksum;
     private PasswordAuth auth;
-    private long templateSizeInBytes;
-    private long id;
+    private Long templateSizeInBytes;
+    private Long id;
     private Type type;
 
-    public UploadCommand(VirtualMachineTemplate template, String url, String installPath, long sizeInBytes) {
+    public UploadCommand(VirtualMachineTemplate template, String url, String installPath, Long sizeInBytes) {
 
         this.template = new TemplateTO(template);
         this.url = url;
@@ -49,7 +49,7 @@ public class UploadCommand extends AbstractUploadCommand implements InternalIden
 
     }
 
-    public UploadCommand(String url, long id, long sizeInBytes, String installPath, Type type) {
+    public UploadCommand(String url, Long id, Long sizeInBytes, String installPath, Type type) {
         template = null;
         this.url = url;
         this.installPath = installPath;
@@ -91,11 +91,11 @@ public class UploadCommand extends AbstractUploadCommand implements InternalIden
         this.url = url;
     }
 
-    public boolean isHvm() {
+    public Boolean isHvm() {
         return hvm;
     }
 
-    public void setHvm(boolean hvm) {
+    public void setHvm(Boolean hvm) {
         this.hvm = hvm;
     }
 
@@ -116,11 +116,11 @@ public class UploadCommand extends AbstractUploadCommand implements InternalIden
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

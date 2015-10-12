@@ -20,7 +20,7 @@ import java.util.Date;
 
 public interface Usage {
 
-    public long getId();
+    public Long getId();
 
     public Long getZoneId();
 

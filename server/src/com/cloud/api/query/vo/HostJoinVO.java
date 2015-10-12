@@ -175,7 +175,7 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
     private int jobStatus;
 
     @Override
-    public long getId() {
+    public Long getId() {
         return this.id;
     }
 

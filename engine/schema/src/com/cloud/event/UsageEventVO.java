@@ -144,7 +144,7 @@ public class UsageEventVO implements UsageEvent {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

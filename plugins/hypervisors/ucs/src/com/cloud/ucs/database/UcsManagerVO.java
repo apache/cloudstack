@@ -57,7 +57,7 @@ public class UcsManagerVO implements InternalIdentity, Identity {
     private String password;
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

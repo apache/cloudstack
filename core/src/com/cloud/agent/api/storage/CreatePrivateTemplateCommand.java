@@ -25,8 +25,8 @@ public class CreatePrivateTemplateCommand extends StorageCommand {
     private String _userFolder;
     private String _userSpecifiedName;
     private String _uniqueName;
-    private long _templateId;
-    private long _accountId;
+    private Long _templateId;
+    private Long _accountId;
 
     // For XenServer
     private String _secondaryStorageURL;
@@ -35,8 +35,8 @@ public class CreatePrivateTemplateCommand extends StorageCommand {
     public CreatePrivateTemplateCommand() {
     }
 
-    public CreatePrivateTemplateCommand(String secondaryStorageURL, long templateId, long accountId, String userSpecifiedName, String uniqueName, String snapshotFolder,
-            String snapshotPath, String snapshotName, String userFolder) {
+    public CreatePrivateTemplateCommand(String secondaryStorageURL, Long templateId, Long accountId, String userSpecifiedName,
+            String uniqueName, String snapshotFolder, String snapshotPath, String snapshotName, String userFolder) {
         _secondaryStorageURL = secondaryStorageURL;
         _templateId = templateId;
         _accountId = accountId;
@@ -49,7 +49,7 @@ public class CreatePrivateTemplateCommand extends StorageCommand {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 
@@ -81,15 +81,15 @@ public class CreatePrivateTemplateCommand extends StorageCommand {
         return _userFolder;
     }
 
-    public long getTemplateId() {
+    public Long getTemplateId() {
         return _templateId;
     }
 
-    public long getAccountId() {
+    public Long getAccountId() {
         return _accountId;
     }
 
-    public void setTemplateId(long templateId) {
+    public void setTemplateId(Long templateId) {
         _templateId = templateId;
     }
 }

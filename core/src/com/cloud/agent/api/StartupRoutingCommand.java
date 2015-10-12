@@ -30,11 +30,11 @@ import com.cloud.network.Networks.RouterPrivateIpStrategy;
 
 public class StartupRoutingCommand extends StartupCommand {
     Integer cpuSockets;
-    int cpus;
-    long speed;
-    long memory;
-    long dom0MinMemory;
-    boolean poolSync;
+    Integer cpus;
+    Long speed;
+    Long memory;
+    Long dom0MinMemory;
+    Boolean poolSync;
 
 
     String caps;
@@ -52,7 +52,7 @@ public class StartupRoutingCommand extends StartupCommand {
 
     }
 
-    public StartupRoutingCommand(int cpus, long speed, long memory, long dom0MinMemory, final String caps, final HypervisorType hypervisorType,
+    public StartupRoutingCommand(Integer cpus, Long speed, Long memory, Long dom0MinMemory, final String caps, final HypervisorType hypervisorType,
             final Map<String, String> hostDetails) {
         super(Host.Type.Routing);
         this.cpus = cpus;
@@ -65,14 +65,14 @@ public class StartupRoutingCommand extends StartupCommand {
         this.poolSync = false;
     }
 
-    public StartupRoutingCommand(int cpus, long speed, long memory, long dom0MinMemory, String caps, HypervisorType hypervisorType,
+    public StartupRoutingCommand(Integer cpus, Long speed, Long memory, Long dom0MinMemory, String caps, HypervisorType hypervisorType,
             RouterPrivateIpStrategy privIpStrategy) {
         this(cpus, speed, memory, dom0MinMemory, caps, hypervisorType);
         getHostDetails().put(RouterPrivateIpStrategy.class.getCanonicalName(), privIpStrategy.toString());
     }
 
 
-    public StartupRoutingCommand(int cpus2, long speed2, long memory2, long dom0MinMemory2, String caps2, HypervisorType hypervisorType2) {
+    public StartupRoutingCommand(Integer cpus2, Long speed2, Long memory2, Long dom0MinMemory2, String caps2, HypervisorType hypervisorType2) {
         this(cpus2, speed2, memory2, dom0MinMemory2, caps2, hypervisorType2, new HashMap<String, String>());
     }
 
@@ -81,7 +81,7 @@ public class StartupRoutingCommand extends StartupCommand {
         return cpuSockets;
     }
 
-    public int getCpus() {
+    public Integer getCpus() {
         return cpus;
     }
 
@@ -89,19 +89,19 @@ public class StartupRoutingCommand extends StartupCommand {
         return caps;
     }
 
-    public long getSpeed() {
+    public Long getSpeed() {
         return speed;
     }
 
-    public long getMemory() {
+    public Long getMemory() {
         return memory;
     }
 
-    public long getDom0MinMemory() {
+    public Long getDom0MinMemory() {
         return dom0MinMemory;
     }
 
-    public void setSpeed(long speed) {
+    public void setSpeed(Long speed) {
         this.speed = speed;
     }
 
@@ -109,15 +109,15 @@ public class StartupRoutingCommand extends StartupCommand {
         this.cpuSockets = cpuSockets;
     }
 
-    public void setCpus(int cpus) {
+    public void setCpus(Integer cpus) {
         this.cpus = cpus;
     }
 
-    public void setMemory(long memory) {
+    public void setMemory(Long memory) {
         this.memory = memory;
     }
 
-    public void setDom0MinMemory(long dom0MinMemory) {
+    public void setDom0MinMemory(Long dom0MinMemory) {
         this.dom0MinMemory = dom0MinMemory;
     }
 
@@ -133,11 +133,11 @@ public class StartupRoutingCommand extends StartupCommand {
         this.pool = pool;
     }
 
-    public boolean isPoolSync() {
+    public Boolean isPoolSync() {
         return poolSync;
     }
 
-    public void setPoolSync(boolean poolSync) {
+    public void setPoolSync(Boolean poolSync) {
         this.poolSync = poolSync;
     }
 

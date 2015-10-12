@@ -22,26 +22,26 @@ package com.cloud.agent.api;
 import com.cloud.host.Status.Event;
 
 public class TransferAgentCommand extends Command {
-    protected long agentId;
-    protected long futureOwner;
-    protected long currentOwner;
+    protected Long agentId;
+    protected Long futureOwner;
+    protected Long currentOwner;
     Event event;
 
     protected TransferAgentCommand() {
     }
 
-    public TransferAgentCommand(long agentId, long currentOwner, long futureOwner, Event event) {
+    public TransferAgentCommand(Long agentId, Long currentOwner, Long futureOwner, Event event) {
         this.agentId = agentId;
         this.currentOwner = currentOwner;
         this.futureOwner = futureOwner;
         this.event = event;
     }
 
-    public long getAgentId() {
+    public Long getAgentId() {
         return agentId;
     }
 
-    public long getFutureOwner() {
+    public Long getFutureOwner() {
         return futureOwner;
     }
 
@@ -49,12 +49,12 @@ public class TransferAgentCommand extends Command {
         return event;
     }
 
-    public long getCurrentOwner() {
+    public Long getCurrentOwner() {
         return currentOwner;
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 }

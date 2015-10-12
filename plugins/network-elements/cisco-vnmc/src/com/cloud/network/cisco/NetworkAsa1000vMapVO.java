@@ -48,7 +48,7 @@ public class NetworkAsa1000vMapVO implements NetworkAsa1000vMap {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

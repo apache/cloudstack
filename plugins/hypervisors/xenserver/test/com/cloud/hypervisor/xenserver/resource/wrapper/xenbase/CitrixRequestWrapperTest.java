@@ -214,7 +214,7 @@ public class CitrixRequestWrapperTest {
 
     @Test
     public void testWatchConsoleProxyLoadCommand() {
-        final WatchConsoleProxyLoadCommand watchConsoleProxyCommand = new WatchConsoleProxyLoadCommand(0, 0, "", "", 0);
+        final WatchConsoleProxyLoadCommand watchConsoleProxyCommand = new WatchConsoleProxyLoadCommand(0, 0l, "", "", 0);
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -238,7 +238,7 @@ public class CitrixRequestWrapperTest {
 
     @Test
     public void testGetHostStatsCommand() {
-        final GetHostStatsCommand statsCommand = new GetHostStatsCommand(null, null, 0);
+        final GetHostStatsCommand statsCommand = new GetHostStatsCommand(null, null, 0l);
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -1986,7 +1986,7 @@ public class CitrixRequestWrapperTest {
 class NotAValidCommand extends Command {
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 

@@ -72,7 +72,7 @@ public class StoragePoolHostVO implements StoragePoolHostAssoc {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

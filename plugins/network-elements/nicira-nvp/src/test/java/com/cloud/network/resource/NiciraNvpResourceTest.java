@@ -443,7 +443,7 @@ public class NiciraNvpResourceTest {
 
         // Mock the command
         final ConfigureStaticNatRulesOnLogicalRouterCommand cmd = mock(ConfigureStaticNatRulesOnLogicalRouterCommand.class);
-        final StaticNatRuleTO rule = new StaticNatRuleTO(1, "11.11.11.11", null, null, "10.10.10.10", null, null, null, false, false);
+        final StaticNatRuleTO rule = new StaticNatRuleTO(1l, "11.11.11.11", null, null, "10.10.10.10", null, null, null, false, false);
         final List<StaticNatRuleTO> rules = new ArrayList<StaticNatRuleTO>();
         rules.add(rule);
         when(cmd.getRules()).thenReturn(rules);
@@ -487,7 +487,7 @@ public class NiciraNvpResourceTest {
 
         // Mock the command
         final ConfigureStaticNatRulesOnLogicalRouterCommand cmd = mock(ConfigureStaticNatRulesOnLogicalRouterCommand.class);
-        final StaticNatRuleTO rule = new StaticNatRuleTO(1, "11.11.11.11", null, null, "10.10.10.10", null, null, null, false, false);
+        final StaticNatRuleTO rule = new StaticNatRuleTO(1l, "11.11.11.11", null, null, "10.10.10.10", null, null, null, false, false);
         final List<StaticNatRuleTO> rules = new ArrayList<StaticNatRuleTO>();
         rules.add(rule);
         when(cmd.getRules()).thenReturn(rules);
@@ -530,7 +530,7 @@ public class NiciraNvpResourceTest {
 
         // Mock the command
         final ConfigureStaticNatRulesOnLogicalRouterCommand cmd = mock(ConfigureStaticNatRulesOnLogicalRouterCommand.class);
-        final StaticNatRuleTO rule = new StaticNatRuleTO(1, "11.11.11.11", null, null, "10.10.10.10", null, null, null, true, false);
+        final StaticNatRuleTO rule = new StaticNatRuleTO(1l, "11.11.11.11", null, null, "10.10.10.10", null, null, null, true, false);
         final List<StaticNatRuleTO> rules = new ArrayList<StaticNatRuleTO>();
         rules.add(rule);
         when(cmd.getRules()).thenReturn(rules);
@@ -572,7 +572,7 @@ public class NiciraNvpResourceTest {
 
         // Mock the command
         final ConfigureStaticNatRulesOnLogicalRouterCommand cmd = mock(ConfigureStaticNatRulesOnLogicalRouterCommand.class);
-        final StaticNatRuleTO rule = new StaticNatRuleTO(1, "11.11.11.11", null, null, "10.10.10.10", null, null, null, false, false);
+        final StaticNatRuleTO rule = new StaticNatRuleTO(1l, "11.11.11.11", null, null, "10.10.10.10", null, null, null, false, false);
         final List<StaticNatRuleTO> rules = new ArrayList<StaticNatRuleTO>();
         rules.add(rule);
         when(cmd.getRules()).thenReturn(rules);
@@ -616,7 +616,7 @@ public class NiciraNvpResourceTest {
         when(nvpApi.findNatRulesByLogicalRouterUuid("aaaaa")).thenReturn(storedRules);
 
         // Mock the api create calls
-        final NatRule[] rulepair = resource.generatePortForwardingRulePair("10.10.10.10", new int[] { 8080, 8080 }, "11.11.11.11", new int[] { 80, 80 }, "tcp");
+        final NatRule[] rulepair = resource.generatePortForwardingRulePair("10.10.10.10", new Integer[] { 8080, 8080 }, "11.11.11.11", new Integer[] { 80, 80 }, "tcp");
         rulepair[0].setUuid(UUID.randomUUID());
         rulepair[1].setUuid(UUID.randomUUID());
         when(nvpApi.createLogicalRouterNatRule(eq("aaaaa"), (NatRule) any())).thenReturn(rulepair[0]).thenReturn(rulepair[1]);
@@ -655,7 +655,7 @@ public class NiciraNvpResourceTest {
         when(cmd.getLogicalRouterUuid()).thenReturn("aaaaa");
 
         // Mock the api create calls
-        final NatRule[] rulepair = resource.generatePortForwardingRulePair("10.10.10.10", new int[] { 8080, 8080 }, "11.11.11.11", new int[] { 80, 80 }, "tcp");
+        final NatRule[] rulepair = resource.generatePortForwardingRulePair("10.10.10.10", new Integer[] { 8080, 8080 }, "11.11.11.11", new Integer[] { 80, 80 }, "tcp");
         rulepair[0].setUuid(UUID.randomUUID());
         rulepair[1].setUuid(UUID.randomUUID());
         when(nvpApi.createLogicalRouterNatRule(eq("aaaaa"), (NatRule) any())).thenReturn(rulepair[0]).thenReturn(rulepair[1]);
@@ -698,7 +698,7 @@ public class NiciraNvpResourceTest {
         when(cmd.getLogicalRouterUuid()).thenReturn("aaaaa");
 
         // Mock the api create calls
-        final NatRule[] rulepair = resource.generatePortForwardingRulePair("10.10.10.10", new int[] { 8080, 8080 }, "11.11.11.11", new int[] { 80, 80 }, "tcp");
+        final NatRule[] rulepair = resource.generatePortForwardingRulePair("10.10.10.10", new Integer[] { 8080, 8080 }, "11.11.11.11", new Integer[] { 80, 80 }, "tcp");
         final UUID rule0Uuid = UUID.randomUUID();
         final UUID rule1Uuid = UUID.randomUUID();
         rulepair[0].setUuid(rule0Uuid);
@@ -740,7 +740,7 @@ public class NiciraNvpResourceTest {
         when(cmd.getLogicalRouterUuid()).thenReturn("aaaaa");
 
         // Mock the api create calls
-        final NatRule[] rulepair = resource.generatePortForwardingRulePair("10.10.10.10", new int[] { 8080, 8080 }, "11.11.11.11", new int[] { 80, 80 }, "tcp");
+        final NatRule[] rulepair = resource.generatePortForwardingRulePair("10.10.10.10", new Integer[] { 8080, 8080 }, "11.11.11.11", new Integer[] { 80, 80 }, "tcp");
         rulepair[0].setUuid(UUID.randomUUID());
         rulepair[1].setUuid(UUID.randomUUID());
         when(nvpApi.createLogicalRouterNatRule(eq("aaaaa"), (NatRule) any())).thenReturn(rulepair[0]).thenThrow(new NiciraNvpApiException());
@@ -777,7 +777,7 @@ public class NiciraNvpResourceTest {
         when(nvpApi.findNatRulesByLogicalRouterUuid("aaaaa")).thenReturn(storedRules);
 
         // Mock the api create calls
-        final NatRule[] rulepair = resource.generatePortForwardingRulePair("10.10.10.10", new int[] { 80, 85 }, "11.11.11.11", new int[] { 80, 85 }, "tcp");
+        final NatRule[] rulepair = resource.generatePortForwardingRulePair("10.10.10.10", new Integer[] { 80, 85 }, "11.11.11.11", new Integer[] { 80, 85 }, "tcp");
         rulepair[0].setUuid(UUID.randomUUID());
         rulepair[1].setUuid(UUID.randomUUID());
         when(nvpApi.createLogicalRouterNatRule(eq("aaaaa"), (NatRule) any())).thenReturn(rulepair[0]).thenReturn(rulepair[1]);
@@ -808,7 +808,7 @@ public class NiciraNvpResourceTest {
 
     @Test
     public void testGeneratePortForwardingRulePair() {
-        final NatRule[] rules = resource.generatePortForwardingRulePair("10.10.10.10", new int[] { 8080, 8080 }, "11.11.11.11", new int[] { 80, 80 }, "tcp");
+        final NatRule[] rules = resource.generatePortForwardingRulePair("10.10.10.10", new Integer[] { 8080, 8080 }, "11.11.11.11", new Integer[] { 80, 80 }, "tcp");
         assertTrue("DestinationNatRule".equals(rules[0].getType()));
         assertTrue("SourceNatRule".equals(rules[1].getType()));
 

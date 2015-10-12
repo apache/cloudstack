@@ -87,7 +87,7 @@ public class ProjectInvitationJoinVO extends BaseViewVO implements ControlledVie
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

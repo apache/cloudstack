@@ -89,7 +89,7 @@ public class PortProfileVO implements InternalIdentity {
 
     // Accessor methods
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

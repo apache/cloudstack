@@ -127,7 +127,7 @@ public class NetworkACLItemVO implements NetworkACLItem {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

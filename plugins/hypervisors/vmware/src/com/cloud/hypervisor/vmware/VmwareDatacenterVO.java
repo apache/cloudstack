@@ -69,7 +69,7 @@ public class VmwareDatacenterVO implements VmwareDatacenter {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

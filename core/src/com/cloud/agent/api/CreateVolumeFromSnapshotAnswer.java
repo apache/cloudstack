@@ -26,7 +26,7 @@ public class CreateVolumeFromSnapshotAnswer extends Answer {
 
     }
 
-    public CreateVolumeFromSnapshotAnswer(CreateVolumeFromSnapshotCommand cmd, boolean success, String result, String vdiUUID) {
+    public CreateVolumeFromSnapshotAnswer(CreateVolumeFromSnapshotCommand cmd, Boolean success, String result, String vdiUUID) {
         super(cmd, success, result);
         this.vdiUUID = vdiUUID;
     }

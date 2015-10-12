@@ -44,7 +44,7 @@ public interface CloudStackEntity {
     /**
      * @return the id which is often the database id.
      */
-    long getId();
+    Long getId();
 
     /**
      * @return current state for the entity

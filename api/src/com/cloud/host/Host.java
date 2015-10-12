@@ -34,13 +34,13 @@ public interface Host extends StateObject<Status>, Identity, InternalIdentity {
                 false), ExternalVirtualSwitchSupervisor(false), PxeServer(false), BaremetalPxe(false), BaremetalDhcp(false), TrafficMonitor(false),
 
         ExternalDhcp(false), SecondaryStorageVM(true), LocalSecondaryStorage(false), L2Networking(false);
-        boolean _virtual;
+        Boolean _virtual;
 
-        private Type(boolean virtual) {
+        private Type(Boolean virtual) {
             _virtual = virtual;
         }
 
-        public boolean isVirtual() {
+        public Boolean isVirtual() {
             return _virtual;
         }
 
@@ -126,7 +126,7 @@ public interface Host extends StateObject<Status>, Identity, InternalIdentity {
     /**
      * @return availability zone.
      */
-    long getDataCenterId();
+    Long getDataCenterId();
 
     /**
      * @return parent path.  only used for storage server.
@@ -156,7 +156,7 @@ public interface Host extends StateObject<Status>, Identity, InternalIdentity {
     /*
      * @return total size
      */
-    long getTotalSize();
+    Long getTotalSize();
 
     /*
      * @return capabilities
@@ -166,7 +166,7 @@ public interface Host extends StateObject<Status>, Identity, InternalIdentity {
     /*
      * @return last pinged time
      */
-    long getLastPinged();
+    Long getLastPinged();
 
     /*
      * @return management server id
@@ -200,7 +200,7 @@ public interface Host extends StateObject<Status>, Identity, InternalIdentity {
 
     String getHypervisorVersion();
 
-    boolean isInMaintenanceStates();
+    Boolean isInMaintenanceStates();
 
     ResourceState getResourceState();
 }

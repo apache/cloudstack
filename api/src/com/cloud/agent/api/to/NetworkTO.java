@@ -36,7 +36,7 @@ public class NetworkTO {
     protected TrafficType type;
     protected URI broadcastUri;
     protected URI isolationUri;
-    protected boolean isSecurityGroupEnabled;
+    protected Boolean isSecurityGroupEnabled;
     protected String name;
 
     public NetworkTO() {
@@ -94,7 +94,7 @@ public class NetworkTO {
         return name;
     }
 
-    public void setSecurityGroupEnabled(boolean enabled) {
+    public void setSecurityGroupEnabled(Boolean enabled) {
         this.isSecurityGroupEnabled = enabled;
     }
 
@@ -178,7 +178,7 @@ public class NetworkTO {
         this.isolationUri = isolationUri;
     }
 
-    public boolean isSecurityGroupEnabled() {
+    public Boolean isSecurityGroupEnabled() {
         return this.isSecurityGroupEnabled;
     }
 }

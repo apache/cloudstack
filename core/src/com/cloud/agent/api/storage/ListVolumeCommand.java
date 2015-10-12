@@ -35,7 +35,7 @@ public class ListVolumeCommand extends StorageCommand {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 

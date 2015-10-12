@@ -49,7 +49,7 @@ public class PodVlanMapVO implements InternalIdentity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

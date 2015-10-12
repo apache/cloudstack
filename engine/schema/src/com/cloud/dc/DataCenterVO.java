@@ -295,7 +295,7 @@ public class DataCenterVO implements DataCenter {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

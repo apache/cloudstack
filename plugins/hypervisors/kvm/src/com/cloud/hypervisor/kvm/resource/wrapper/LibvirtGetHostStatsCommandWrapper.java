@@ -48,7 +48,7 @@ public final class LibvirtGetHostStatsCommandWrapper extends CommandWrapper<GetH
 
         final Pair<Double, Double> nicStats = libvirtComputingResource.getNicStats(libvirtComputingResource.getPublicBridgeName());
 
-        final HostStatsEntry hostStats = new HostStatsEntry(command.getHostId(), cpuUtil, nicStats.first() / 1024, nicStats.second() / 1024, "host", totMem, freeMem, 0, 0);
+        final HostStatsEntry hostStats = new HostStatsEntry(command.getHostId(), cpuUtil, nicStats.first() / 1024, nicStats.second() / 1024, "host", totMem, freeMem, 0.0, 0.0);
         return new GetHostStatsAnswer(command, hostStats);
     }
 }

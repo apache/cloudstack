@@ -25,7 +25,7 @@ public class OvsSetTagAndFlowCommand extends Command {
     Long vmId;
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 

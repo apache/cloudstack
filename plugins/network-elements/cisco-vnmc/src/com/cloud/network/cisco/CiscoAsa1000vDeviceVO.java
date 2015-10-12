@@ -63,7 +63,7 @@ public class CiscoAsa1000vDeviceVO implements CiscoAsa1000vDevice {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

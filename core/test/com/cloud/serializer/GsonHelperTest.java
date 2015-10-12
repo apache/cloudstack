@@ -21,7 +21,7 @@ public class GsonHelperTest extends TestCase {
         String json;
         String hostguid = "hostguid";
         String hostname = "hostname";
-        long hostId = 101l;
+        Long hostId = 101l;
 
         cmd_in = new GetHostStatsCommand(hostguid, hostname, hostId);
         json = gson.toJson(cmd_in, GetHostStatsCommand.class);

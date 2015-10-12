@@ -176,7 +176,7 @@ public class VolumeObjectTO implements DataTO {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

@@ -28,7 +28,7 @@ import com.cloud.host.Host;
 
 public class StartupVMMAgentCommand extends Command {
     Host.Type type;
-    long dataCenter;
+    Long dataCenter;
     Long pod;
     String clusterName;
     String guid;
@@ -40,7 +40,7 @@ public class StartupVMMAgentCommand extends Command {
 
     }
 
-    public StartupVMMAgentCommand(long dataCenter, Long pod, String clusterName, String guid, String managementServerIP, String port, String version) {
+    public StartupVMMAgentCommand(Long dataCenter, Long pod, String clusterName, String guid, String managementServerIP, String port, String version) {
         super();
         this.dataCenter = dataCenter;
         this.pod = pod;
@@ -51,7 +51,7 @@ public class StartupVMMAgentCommand extends Command {
         this.port = port;
     }
 
-    public long getDataCenter() {
+    public Long getDataCenter() {
         return dataCenter;
     }
 
@@ -80,7 +80,7 @@ public class StartupVMMAgentCommand extends Command {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 }

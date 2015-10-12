@@ -89,7 +89,7 @@ public class TemplateObjectTO implements DataTO {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

@@ -236,7 +236,7 @@ public class Ovm3HypervisorSupportTest {
     @Test
     public void GetVncPortCommandTest() throws ConfigurationException {
         con = prepare();
-        GetVncPortCommand cmd = new GetVncPortCommand(0, xen.getVmName());
+        GetVncPortCommand cmd = new GetVncPortCommand(0l, xen.getVmName());
         Answer ra = hypervisor.executeRequest(cmd);
         results.basicBooleanTest(ra.getResult());
     }

@@ -98,7 +98,7 @@ public class SecurityGroupRulesVO implements SecurityGroupRules {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

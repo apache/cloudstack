@@ -24,7 +24,7 @@ public class OvsSetupBridgeCommand extends Command {
     Long networkId;
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 

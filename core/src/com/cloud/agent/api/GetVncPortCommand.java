@@ -20,19 +20,19 @@
 package com.cloud.agent.api;
 
 public class GetVncPortCommand extends Command {
-    long id;
+    Long id;
     String name;
 
     public GetVncPortCommand() {
     }
 
-    public GetVncPortCommand(long id, String name) {
+    public GetVncPortCommand(Long id, String name) {
         this.id = id;
         this.name = name;
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 
@@ -40,7 +40,7 @@ public class GetVncPortCommand extends Command {
         return name;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 }
