@@ -41,6 +41,7 @@ import com.xensource.xenapi.VM;
 
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
+import com.cloud.utils.Pair;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.MigrateWithStorageAnswer;
@@ -126,7 +127,7 @@ public class XenServer610Resource extends XenServer600Resource {
     protected MigrateWithStorageAnswer execute(MigrateWithStorageCommand cmd) {
         Connection connection = getConnection();
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
-        Map<VolumeTO, StorageFilerTO> volumeToFiler = cmd.getVolumeToFiler();
+        List<Pair<VolumeTO, StorageFilerTO>> volToFiler = cmd.getVolumeToFilerAsList();
         final String vmName = vmSpec.getName();
         Task task = null;
 
@@ -151,8 +152,8 @@ public class XenServer610Resource extends XenServer600Resource {
             // Create the vif map. The vm stays in the same cluster so we have to pass an empty vif map.
             Map<VIF, Network> vifMap = new HashMap<VIF, Network>();
             Map<VDI, SR> vdiMap = new HashMap<VDI, SR>();
-            for (Map.Entry<VolumeTO, StorageFilerTO> entry : volumeToFiler.entrySet()) {
-                vdiMap.put(getVDIbyUuid(connection, entry.getKey().getPath()), getStorageRepository(connection, entry.getValue().getUuid()));
+            for (Pair<VolumeTO, StorageFilerTO> entry : volToFiler) {
+                vdiMap.put(getVDIbyUuid(connection, entry.first().getPath()), getStorageRepository(connection, entry.second().getUuid()));
             }
 
             // Check migration with storage is possible.
