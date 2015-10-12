@@ -99,6 +99,8 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetVmDiskStatsAnswer;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmIpAddressCommand;
+import com.cloud.agent.api.GetVmNetworkStatsAnswer;
+import com.cloud.agent.api.GetVmNetworkStatsCommand;
 import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
@@ -106,6 +108,7 @@ import com.cloud.agent.api.RestoreVMSnapshotAnswer;
 import com.cloud.agent.api.RestoreVMSnapshotCommand;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.VmDiskStatsEntry;
+import com.cloud.agent.api.VmNetworkStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
@@ -128,6 +131,9 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.dc.dao.VlanDao;
+import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlanner;
@@ -248,11 +254,13 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
+import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.user.dao.VmDiskStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
@@ -453,6 +461,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     PlannerHostReservationDao _plannerHostReservationDao;
     @Inject
     private ServiceOfferingDetailsDao serviceOfferingDetailsDao;
+    @Inject
+    private UserStatisticsDao _userStatsDao;
+    @Inject
+    private VlanDao _vlanDao;
     @Inject
     VolumeService _volService;
     @Inject
@@ -902,6 +914,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (vm.getState() == State.Running && vm.getHostId() != null) {
             collectVmDiskStatistics(vm);
+            collectVmNetworkStatistics(vm);
             DataCenterVO dc = _dcDao.findById(vm.getDataCenterId());
             try {
                 if (dc.getNetworkType() == DataCenter.NetworkType.Advanced) {
@@ -3689,6 +3702,144 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
+    @Override
+    public HashMap<Long, List<VmNetworkStatsEntry>> getVmNetworkStatistics(long hostId, String hostName, List<Long> vmIds) {
+        HashMap<Long, List<VmNetworkStatsEntry>> vmNetworkStatsById = new HashMap<Long, List<VmNetworkStatsEntry>>();
+
+        if (vmIds.isEmpty()) {
+            return vmNetworkStatsById;
+        }
+
+        List<String> vmNames = new ArrayList<String>();
+
+        for (Long vmId : vmIds) {
+            UserVmVO vm = _vmDao.findById(vmId);
+            vmNames.add(vm.getInstanceName());
+        }
+
+        Answer answer = _agentMgr.easySend(hostId, new GetVmNetworkStatsCommand(vmNames, _hostDao.findById(hostId).getGuid(), hostName));
+        if (answer == null || !answer.getResult()) {
+            s_logger.warn("Unable to obtain VM network statistics.");
+            return null;
+        } else {
+            HashMap<String, List<VmNetworkStatsEntry>> vmNetworkStatsByName = ((GetVmNetworkStatsAnswer)answer).getVmNetworkStatsMap();
+
+            if (vmNetworkStatsByName == null) {
+                s_logger.warn("Unable to obtain VM network statistics.");
+                return null;
+            }
+
+            for (String vmName : vmNetworkStatsByName.keySet()) {
+                vmNetworkStatsById.put(vmIds.get(vmNames.indexOf(vmName)), vmNetworkStatsByName.get(vmName));
+            }
+        }
+
+        return vmNetworkStatsById;
+    }
+
+    @Override
+    public void collectVmNetworkStatistics (final UserVm userVm) {
+       if (!userVm.getHypervisorType().equals(HypervisorType.KVM))
+            return;
+       s_logger.debug("Collect vm network statistics from host before stopping Vm");
+       long hostId = userVm.getHostId();
+       List<String> vmNames = new ArrayList<String>();
+       vmNames.add(userVm.getInstanceName());
+       final HostVO host = _hostDao.findById(hostId);
+
+       GetVmNetworkStatsAnswer networkStatsAnswer = null;
+       try {
+            networkStatsAnswer = (GetVmNetworkStatsAnswer) _agentMgr.easySend(hostId, new GetVmNetworkStatsCommand(vmNames, host.getGuid(), host.getName()));
+       } catch (Exception e) {
+            s_logger.warn("Error while collecting network stats for vm: " + userVm.getHostName() + " from host: " + host.getName(), e);
+            return;
+        }
+        if (networkStatsAnswer != null) {
+            if (!networkStatsAnswer.getResult()) {
+                s_logger.warn("Error while collecting network stats vm: " + userVm.getHostName() + " from host: " + host.getName() + "; details: " + networkStatsAnswer.getDetails());
+                return;
+            }
+            try {
+                final GetVmNetworkStatsAnswer networkStatsAnswerFinal = networkStatsAnswer;
+                Transaction.execute(new TransactionCallbackNoReturn() {
+                    @Override
+                    public void doInTransactionWithoutResult(TransactionStatus status) {
+                        HashMap<String, List<VmNetworkStatsEntry>> vmNetworkStatsByName = networkStatsAnswerFinal.getVmNetworkStatsMap();
+                        if (vmNetworkStatsByName == null)
+                           return;
+                        List<VmNetworkStatsEntry> vmNetworkStats = vmNetworkStatsByName.get(userVm.getInstanceName());
+                        if (vmNetworkStats == null)
+                           return;
+
+                        for (VmNetworkStatsEntry vmNetworkStat:vmNetworkStats) {
+                            SearchCriteria<NicVO> sc_nic = _nicDao.createSearchCriteria();
+                            sc_nic.addAnd("macAddress", SearchCriteria.Op.EQ, vmNetworkStat.getMacAddress());
+                            NicVO nic = _nicDao.search(sc_nic, null).get(0);
+                            List<VlanVO> vlan = _vlanDao.listVlansByNetworkId(nic.getNetworkId());
+                            if (vlan == null || vlan.size() == 0 || vlan.get(0).getVlanType() != VlanType.DirectAttached)
+                                break; // only get network statistics for DirectAttached network (shared networks in Basic zone and Advanced zone with/without SG)
+                            UserStatisticsVO previousvmNetworkStats = _userStatsDao.findBy(userVm.getAccountId(), userVm.getDataCenterId(), nic.getNetworkId(), nic.getIPv4Address(), userVm.getId(), "UserVm");
+                            if (previousvmNetworkStats == null) {
+                                previousvmNetworkStats = new UserStatisticsVO(userVm.getAccountId(), userVm.getDataCenterId(),nic.getIPv4Address(), userVm.getId(), "UserVm", nic.getNetworkId());
+                                _userStatsDao.persist(previousvmNetworkStats);
+                            }
+                            UserStatisticsVO vmNetworkStat_lock = _userStatsDao.lock(userVm.getAccountId(), userVm.getDataCenterId(), nic.getNetworkId(), nic.getIPv4Address(), userVm.getId(), "UserVm");
+
+                            if ((vmNetworkStat.getBytesSent() == 0) && (vmNetworkStat.getBytesReceived() == 0)) {
+                                s_logger.debug("bytes sent and received are all 0. Not updating user_statistics");
+                                continue;
+                            }
+
+                            if (vmNetworkStat_lock == null) {
+                                s_logger.warn("unable to find vm network stats from host for account: " + userVm.getAccountId() + " with vmId: " + userVm.getId()+ " and nicId:" + nic.getId());
+                                continue;
+                            }
+
+                            if (previousvmNetworkStats != null
+                                    && ((previousvmNetworkStats.getCurrentBytesSent() != vmNetworkStat_lock.getCurrentBytesSent())
+                                    || (previousvmNetworkStats.getCurrentBytesReceived() != vmNetworkStat_lock.getCurrentBytesReceived()))) {
+                                s_logger.debug("vm network stats changed from the time GetNmNetworkStatsCommand was sent. " +
+                                        "Ignoring current answer. Host: " + host.getName()  + " . VM: " + vmNetworkStat.getVmName() +
+                                        " Sent(Bytes): " + vmNetworkStat.getBytesSent() + " Received(Bytes): " + vmNetworkStat.getBytesReceived());
+                                continue;
+                            }
+
+                            if (vmNetworkStat_lock.getCurrentBytesSent() > vmNetworkStat.getBytesSent()) {
+                                if (s_logger.isDebugEnabled()) {
+                                    s_logger.debug("Sent # of bytes that's less than the last one.  " +
+                                            "Assuming something went wrong and persisting it. Host: " + host.getName() + " . VM: " + vmNetworkStat.getVmName() +
+                                            " Reported: " + vmNetworkStat.getBytesSent() + " Stored: " + vmNetworkStat_lock.getCurrentBytesSent());
+                                }
+                                vmNetworkStat_lock.setNetBytesSent(vmNetworkStat_lock.getNetBytesSent() + vmNetworkStat_lock.getCurrentBytesSent());
+                            }
+                            vmNetworkStat_lock.setCurrentBytesSent(vmNetworkStat.getBytesSent());
+
+                            if (vmNetworkStat_lock.getCurrentBytesReceived() > vmNetworkStat.getBytesReceived()) {
+                                if (s_logger.isDebugEnabled()) {
+                                    s_logger.debug("Received # of bytes that's less than the last one.  " +
+                                            "Assuming something went wrong and persisting it. Host: " + host.getName() + " . VM: " + vmNetworkStat.getVmName() +
+                                            " Reported: " + vmNetworkStat.getBytesReceived() + " Stored: " + vmNetworkStat_lock.getCurrentBytesReceived());
+                                }
+                                vmNetworkStat_lock.setNetBytesReceived(vmNetworkStat_lock.getNetBytesReceived() + vmNetworkStat_lock.getCurrentBytesReceived());
+                            }
+                            vmNetworkStat_lock.setCurrentBytesReceived(vmNetworkStat.getBytesReceived());
+
+                            if (! _dailyOrHourly) {
+                                //update agg bytes
+                                vmNetworkStat_lock.setAggBytesReceived(vmNetworkStat_lock.getNetBytesReceived() + vmNetworkStat_lock.getCurrentBytesReceived());
+                                vmNetworkStat_lock.setAggBytesSent(vmNetworkStat_lock.getNetBytesSent() + vmNetworkStat_lock.getCurrentBytesSent());
+                            }
+
+                            _userStatsDao.update(vmNetworkStat_lock.getId(), vmNetworkStat_lock);
+                        }
+                    }
+                });
+            } catch (Exception e) {
+                s_logger.warn("Unable to update vm network statistics for vm: " + userVm.getId() + " from host: " + hostId, e);
+            }
+        }
+    }
+
     private void validateUserData(String userData, HTTPMethod httpmethod) {
         byte[] decodedUserData = null;
         if (userData != null) {
@@ -4232,7 +4383,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public void collectVmDiskStatistics(final UserVmVO userVm) {
+    public void collectVmDiskStatistics(final UserVm userVm) {
         // support KVM only util 2013.06.25
         if (!userVm.getHypervisorType().equals(HypervisorType.KVM))
             return;
@@ -4748,6 +4899,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         UserVmVO uservm = _vmDao.findById(vmId);
         if (uservm != null) {
             collectVmDiskStatistics(uservm);
+            collectVmNetworkStatistics(uservm);
         }
         _itMgr.migrate(vm.getUuid(), srcHostId, dest);
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
@@ -5871,8 +6023,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public void prepareStop(VirtualMachineProfile profile) {
         UserVmVO vm = _vmDao.findById(profile.getId());
-        if (vm != null && vm.getState() == State.Stopping)
+        if (vm != null && vm.getState() == State.Stopping) {
             collectVmDiskStatistics(vm);
+            collectVmNetworkStatistics(vm);
+        }
     }
 
     private void encryptAndStorePassword(UserVmVO vm, String password) {

@@ -3266,7 +3266,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else if (usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_SENT || usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_RECEIVED) {
             //Device Type
             usageRecResponse.setType(usageRecord.getType());
-            if (usageRecord.getType().equals("DomainRouter")) {
+            if (usageRecord.getType().equals("DomainRouter") || usageRecord.getType().equals("UserVm")) {
                 //Domain Router Id
                 VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId().toString());
                 if (vm != null) {

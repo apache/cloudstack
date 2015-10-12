@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.VmDiskStatsEntry;
+import com.cloud.agent.api.VmNetworkStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -100,8 +101,6 @@ public interface UserVmManager extends UserVmService {
 
     boolean setupVmForPvlan(boolean add, Long hostId, NicProfile nic);
 
-    void collectVmDiskStatistics(UserVmVO userVm);
-
     UserVm updateVirtualMachine(long id, String displayName, String group, Boolean ha, Boolean isDisplayVmEnabled, Long osTypeId, String userData,
                                 Boolean isDynamicallyScalable, HTTPMethod httpMethod, String customId, String hostName, String instanceName, List<Long> securityGroupIdList) throws ResourceUnavailableException, InsufficientCapacityException;
 
@@ -116,4 +115,6 @@ public interface UserVmManager extends UserVmService {
     void generateUsageEvent(VirtualMachine vm, boolean isDisplay, String eventType);
 
     void persistDeviceBusInfo(UserVmVO paramUserVmVO, String paramString);
+
+    HashMap<Long, List<VmNetworkStatsEntry>> getVmNetworkStatistics(long hostId, String hostName, List<Long> vmIds);
 }

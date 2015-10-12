@@ -84,6 +84,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.UserVmManager;
+import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -204,6 +205,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     StoragePoolDetailsDao storagePoolDetailsDao;
     @Inject
     UserVmDao _userVmDao;
+    @Inject
+    UserVmService _userVmService;
     @Inject
     VolumeDataStoreDao _volumeStoreDao;
     @Inject
@@ -1799,6 +1802,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Answer answer = null;
 
         if (sendCommand) {
+            // collect vm disk statistics before detach a volume
+            UserVmVO userVm = _userVmDao.findById(vmId);
+            if (userVm != null && userVm.getType() == VirtualMachine.Type.User) {
+                _userVmService.collectVmDiskStatistics(userVm);
+            }
+
             DataTO volTO = volFactory.getVolume(volume.getId()).getTO();
             DiskTO disk = new DiskTO(volTO, volume.getDeviceId(), volume.getPath(), volume.getVolumeType());
 

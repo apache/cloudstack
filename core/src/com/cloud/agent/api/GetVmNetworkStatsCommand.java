@@ -19,32 +19,39 @@
 
 package com.cloud.agent.api;
 
-import java.util.HashMap;
 import java.util.List;
 
 import com.cloud.agent.api.LogLevel.Log4jLevel;
 
-@LogLevel(Log4jLevel.Debug)
-public class GetVmDiskStatsAnswer extends Answer {
-
+@LogLevel(Log4jLevel.Trace)
+public class GetVmNetworkStatsCommand extends Command {
+    List<String> vmNames;
+    String hostGuid;
     String hostName;
-    HashMap<String, List<VmDiskStatsEntry>> vmDiskStatsMap;
 
-    public GetVmDiskStatsAnswer(GetVmDiskStatsCommand cmd, String details, String hostName, HashMap<String, List<VmDiskStatsEntry>> vmDiskStatsMap) {
-        super(cmd, true, details);
+    protected GetVmNetworkStatsCommand() {
+    }
+
+    public GetVmNetworkStatsCommand(List<String> vmNames, String hostGuid, String hostName) {
+        this.vmNames = vmNames;
+        this.hostGuid = hostGuid;
         this.hostName = hostName;
-        this.vmDiskStatsMap = vmDiskStatsMap;
+    }
+
+    public List<String> getVmNames() {
+        return vmNames;
+    }
+
+    public String getHostGuid() {
+        return this.hostGuid;
     }
 
     public String getHostName() {
-        return hostName;
+        return this.hostName;
     }
 
-    public HashMap<String, List<VmDiskStatsEntry>> getVmDiskStatsMap() {
-        return vmDiskStatsMap;
-    }
-
-    protected GetVmDiskStatsAnswer() {
-        //no-args constructor for json serialization-deserialization
+    @Override
+    public boolean executeInSequence() {
+        return false;
     }
 }
