@@ -83,6 +83,7 @@ import com.cloud.event.ActionEvent;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.ActionEvents;
 import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -159,6 +160,7 @@ import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -677,6 +679,17 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return cleanupAccount(account, callerUserId, caller);
     }
 
+    protected List<VolumeVO> getExpungedInstanceRootVolume(long instanceId) {
+        SearchBuilder<VolumeVO> sb = _volumeDao.createSearchBuilder();
+        sb.and("instanceId", sb.entity().getInstanceId(), SearchCriteria.Op.EQ);
+        sb.and("vType", sb.entity().getVolumeType(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<VolumeVO> c = sb.create();
+        c.setParameters("instanceId", instanceId);
+        c.setParameters("vType", Volume.Type.ROOT);
+        return _volumeDao.customSearchIncludingRemoved(c, null);
+    }
+
     protected boolean cleanupAccount(AccountVO account, long callerUserId, Account caller) {
         long accountId = account.getId();
         boolean accountCleanupNeeded = false;
@@ -760,6 +773,17 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 if (!_vmMgr.expunge(vm, callerUserId, caller)) {
                     s_logger.error("Unable to expunge vm: " + vm.getId());
                     accountCleanupNeeded = true;
+                }
+                else if (!vm.getState().equals(VirtualMachine.State.Destroyed)) {
+                    // We have to emit the event here because the state listener is ignoring root volume deletions,
+                    // assuming that the UserVMManager is responsible for emitting the usage event for them when
+                    // the vm delete command is processed
+                    List<VolumeVO> volumes = getExpungedInstanceRootVolume(vm.getId());
+                    for (VolumeVO volume : volumes) {
+                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                                Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
+                    }
+
                 }
             }
 

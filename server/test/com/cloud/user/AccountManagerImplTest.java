@@ -17,15 +17,21 @@
 package com.cloud.user;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.utils.Pair;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -34,6 +40,10 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -58,6 +68,9 @@ import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.UsageEventUtils;
+import com.cloud.event.UsageEventVO;
+import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.as.AutoScaleManager;
@@ -78,6 +91,7 @@ import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account.State;
@@ -87,6 +101,7 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
@@ -192,6 +207,8 @@ public class AccountManagerImplTest {
     @Mock
     VMSnapshotDao _vmSnapshotDao;
 
+    UsageEventDao _usageEventDao = new MockUsageEventDao();
+
     @Mock
     User callingUser;
     @Mock
@@ -204,6 +221,11 @@ public class AccountManagerImplTest {
 
     @Mock
     private UserAuthenticator userAuthenticator;
+
+    //Maintain a list of old fields in the usage utils class... This
+    //is because of weirdness of how it uses static fields and an init
+    //method.
+    private Map<String, Object> oldFields = new HashMap<>();
 
     @Before
     public void setup() throws NoSuchFieldException, SecurityException,
@@ -229,6 +251,73 @@ public class AccountManagerImplTest {
     @After
     public void cleanup() {
         CallContext.unregister();
+    }
+
+    public UsageEventUtils setupUsageUtils() {
+        _usageEventDao = new MockUsageEventDao();
+        UsageEventUtils utils = new UsageEventUtils();
+
+        Map<String, String> usageUtilsFields = new HashMap<String, String>();
+        usageUtilsFields.put("usageEventDao", "_usageEventDao");
+        usageUtilsFields.put("accountDao", "_accountDao");
+        usageUtilsFields.put("dcDao", "_dcDao");
+        usageUtilsFields.put("configDao", "_configDao");
+
+        for (String fieldName : usageUtilsFields.keySet()) {
+            try {
+                Field f = UsageEventUtils.class.getDeclaredField(fieldName);
+                f.setAccessible(true);
+                //Remember the old fields for cleanup later (see cleanupUsageUtils)
+                Field staticField = UsageEventUtils.class.getDeclaredField("s_" + fieldName);
+                staticField.setAccessible(true);
+                oldFields.put(f.getName(), staticField.get(null));
+                f.set(utils, this.getClass().getDeclaredField(usageUtilsFields.get(fieldName)).get(this));
+            } catch (IllegalArgumentException | IllegalAccessException
+                    | NoSuchFieldException | SecurityException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+
+        Method method;
+        try {
+            method = UsageEventUtils.class.getDeclaredMethod("init");
+            method.setAccessible(true);
+            method.invoke(utils);
+        } catch (NoSuchMethodException | SecurityException | IllegalAccessException |
+                    IllegalArgumentException | InvocationTargetException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        return utils;
+    }
+
+    public void cleanupUsageUtils() {
+        UsageEventUtils utils = new UsageEventUtils();
+
+        for (String fieldName : oldFields.keySet()) {
+            try {
+                Field f = UsageEventUtils.class.getDeclaredField(fieldName);
+                f.setAccessible(true);
+                f.set(utils, oldFields.get(fieldName));
+            } catch (IllegalArgumentException | IllegalAccessException
+                    | NoSuchFieldException | SecurityException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+
+        }
+        try {
+            Method method = UsageEventUtils.class.getDeclaredMethod("init");
+            method.setAccessible(true);
+            method.invoke(utils);
+        } catch (SecurityException | NoSuchMethodException
+                | IllegalAccessException | IllegalArgumentException
+                | InvocationTargetException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     @Test
@@ -353,6 +442,69 @@ public class AccountManagerImplTest {
         Mockito.verify(userAuthenticator, Mockito.times(1)).authenticate("test", "fail", 1L, null);
         Mockito.verify(userAuthenticator, Mockito.never()).authenticate("test", null, 1L, null);
         Mockito.verify(userAuthenticator, Mockito.never()).authenticate("test", "", 1L, null);
+    }
 
+    @SuppressWarnings("unchecked")
+    public List<UsageEventVO> deleteUserAccountRootVolumeUsageEvents(boolean vmDestroyedPrior) {
+        AccountVO account = new AccountVO();
+        account.setId(42l);
+        DomainVO domain = new DomainVO();
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        VolumeVO vol = Mockito.mock(VolumeVO.class);
+        Mockito.when(_accountDao.findById(42l)).thenReturn(account);
+        Mockito.when(
+                securityChecker.checkAccess(Mockito.any(Account.class),
+                        Mockito.any(ControlledEntity.class), Mockito.any(AccessType.class),
+                        Mockito.anyString()))
+                .thenReturn(true);
+        Mockito.when(_accountDao.remove(42l)).thenReturn(true);
+        Mockito.when(_userVmDao.listByAccountId(42l)).thenReturn(
+                Arrays.asList(vm));
+        Mockito.when(_userVmDao.findByUuid(Mockito.any(String.class))).thenReturn(vm);
+        Mockito.when(
+                _vmMgr.expunge(Mockito.any(UserVmVO.class), Mockito.anyLong(),
+                        Mockito.any(Account.class))).thenReturn(true);
+        Mockito.when(vm.getState()).thenReturn(
+                vmDestroyedPrior
+                        ? VirtualMachine.State.Destroyed
+                        : VirtualMachine.State.Running);
+
+        SearchBuilder<VolumeVO> sb = (SearchBuilder<VolumeVO>)Mockito.mock(SearchBuilder.class);
+
+        Mockito.when(_volumeDao.createSearchBuilder()).thenReturn(sb);
+        Mockito.when(sb.create()).thenReturn((SearchCriteria<VolumeVO>) Mockito.mock(SearchCriteria.class));
+        Mockito.when(sb.entity()).thenReturn(Mockito.mock(VolumeVO.class));
+
+        Mockito.when(
+                _volumeDao.customSearchIncludingRemoved(Mockito.any(SearchCriteria.class), Mockito.isNull(Filter.class))).thenReturn(
+                Arrays.asList(vol));
+        Mockito.when(vol.getAccountId()).thenReturn((long) 1);
+        Mockito.when(vol.getDataCenterId()).thenReturn((long) 1);
+        Mockito.when(vol.getId()).thenReturn((long) 1);
+        Mockito.when(vol.getName()).thenReturn("root volume");
+        Mockito.when(vol.getUuid()).thenReturn("vol-111111");
+        Mockito.when(vol.isDisplayVolume()).thenReturn(true);
+
+        Mockito.when(_domainMgr.getDomain(Mockito.anyLong()))
+                .thenReturn(domain);
+
+        accountManager.deleteUserAccount(42);
+        return _usageEventDao.listAll();
+    }
+
+    @Test
+    public void destroyedVMRootVolumeUsageEvent() {
+        setupUsageUtils();
+        List<UsageEventVO> emittedEvents = deleteUserAccountRootVolumeUsageEvents(true);
+        Assert.assertEquals(0, emittedEvents.size());
+        cleanupUsageUtils();
+    }
+
+    @Test
+    public void runningVMRootVolumeUsageEvent() {
+        setupUsageUtils();
+        List<UsageEventVO> emittedEvents = deleteUserAccountRootVolumeUsageEvents(false);
+        Assert.assertEquals(1, emittedEvents.size());
+        cleanupUsageUtils();
     }
 }
