@@ -120,7 +120,7 @@ public class StoragePoolVO implements StoragePool {
     private HypervisorType hypervisor;
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

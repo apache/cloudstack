@@ -56,7 +56,7 @@ public class Site2SiteVpnConnectionDetailVO implements ResourceDetail {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

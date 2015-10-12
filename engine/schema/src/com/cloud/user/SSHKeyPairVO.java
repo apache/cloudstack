@@ -52,7 +52,7 @@ public class SSHKeyPairVO implements SSHKeyPair {
     private String privateKey;
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

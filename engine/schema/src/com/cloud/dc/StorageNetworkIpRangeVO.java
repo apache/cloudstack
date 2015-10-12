@@ -92,7 +92,7 @@ public class StorageNetworkIpRangeVO implements StorageNetworkIpRange {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

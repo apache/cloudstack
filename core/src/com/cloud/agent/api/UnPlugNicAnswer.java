@@ -23,7 +23,7 @@ public class UnPlugNicAnswer extends Answer {
     public UnPlugNicAnswer() {
     }
 
-    public UnPlugNicAnswer(UnPlugNicCommand cmd, boolean success, String result) {
+    public UnPlugNicAnswer(UnPlugNicCommand cmd, Boolean success, String result) {
         super(cmd, success, result);
     }
 }

@@ -115,7 +115,7 @@ public class ProjectJoinVO extends BaseViewVO implements InternalIdentity, Ident
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

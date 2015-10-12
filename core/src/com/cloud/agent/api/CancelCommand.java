@@ -20,18 +20,18 @@
 package com.cloud.agent.api;
 
 public class CancelCommand extends Command {
-    protected long sequence;
+    protected Long sequence;
     protected String reason;
 
     protected CancelCommand() {
     }
 
-    public CancelCommand(long sequence, String reason) {
+    public CancelCommand(Long sequence, String reason) {
         this.sequence = sequence;
         this.reason = reason;
     }
 
-    public long getSequence() {
+    public Long getSequence() {
         return sequence;
     }
 
@@ -40,7 +40,7 @@ public class CancelCommand extends Command {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 }

@@ -31,7 +31,7 @@ public class ModifyStoragePoolAnswer extends Answer {
     protected ModifyStoragePoolAnswer() {
     }
 
-    public ModifyStoragePoolAnswer(ModifyStoragePoolCommand cmd, long capacityBytes, long availableBytes, Map<String, TemplateProp> tInfo) {
+    public ModifyStoragePoolAnswer(ModifyStoragePoolCommand cmd, Long capacityBytes, Long availableBytes, Map<String, TemplateProp> tInfo) {
         super(cmd);
         this.result = true;
         this.poolInfo =

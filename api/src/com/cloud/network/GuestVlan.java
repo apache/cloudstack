@@ -22,7 +22,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 public interface GuestVlan extends InternalIdentity, Identity {
 
     @Override
-    public long getId();
+    public Long getId();
 
     public long getAccountId();
 

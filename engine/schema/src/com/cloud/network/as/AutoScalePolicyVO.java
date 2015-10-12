@@ -92,7 +92,7 @@ public class AutoScalePolicyVO implements AutoScalePolicy, InternalIdentity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

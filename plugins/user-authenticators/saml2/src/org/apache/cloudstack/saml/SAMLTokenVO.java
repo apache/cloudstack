@@ -58,7 +58,7 @@ public class SAMLTokenVO implements Identity, InternalIdentity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

@@ -242,7 +242,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         throw new UnsupportedOperationException("database id can only provided by VO objects");
     }
 

@@ -31,9 +31,9 @@ import com.cloud.vm.Nic.ReservationStrategy;
 public class NicProfile implements InternalIdentity, Serializable {
     private static final long serialVersionUID = 4997005771736090304L;
 
-    long id;
-    long networkId;
-    long vmId;
+    Long id;
+    Long networkId;
+    Long vmId;
     String reservationId;
     Integer deviceId;
 
@@ -48,9 +48,9 @@ public class NicProfile implements InternalIdentity, Serializable {
     URI isolationUri;
     URI broadcastUri;
     ReservationStrategy strategy;
-    boolean defaultNic;
+    Boolean defaultNic;
     Integer networkRate;
-    boolean isSecurityGroupEnabled;
+    Boolean isSecurityGroupEnabled;
 
     // IPv4
     String iPv4Address;
@@ -73,9 +73,10 @@ public class NicProfile implements InternalIdentity, Serializable {
     //
 
     public NicProfile() {
+
     }
 
-    public NicProfile(Nic nic, Network network, URI broadcastUri, URI isolationUri, Integer networkRate, boolean isSecurityGroupEnabled, String name) {
+    public NicProfile(Nic nic, Network network, URI broadcastUri, URI isolationUri, Integer networkRate, Boolean isSecurityGroupEnabled, String name) {
         id = nic.getId();
         networkId = network.getId();
         mode = network.getMode();
@@ -128,27 +129,27 @@ public class NicProfile implements InternalIdentity, Serializable {
     //
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
-    public long getNetworkId() {
+    public Long getNetworkId() {
         return networkId;
     }
 
-    public void setNetworId(long networkId){
+    public void setNetworId(Long networkId){
         this.networkId = networkId;
     }
 
-    public long getVirtualMachineId() {
+    public Long getVirtualMachineId() {
         return vmId;
     }
 
-    public void setVirtualMachineId(long virtualMachineId) {
+    public void setVirtualMachineId(Long virtualMachineId) {
         this.vmId = virtualMachineId;
     }
 
@@ -164,7 +165,7 @@ public class NicProfile implements InternalIdentity, Serializable {
         return deviceId;
     }
 
-    public void setDeviceId(int deviceId) {
+    public void setDeviceId(Integer deviceId) {
         this.deviceId = deviceId;
     }
 
@@ -248,11 +249,11 @@ public class NicProfile implements InternalIdentity, Serializable {
         this.strategy = strategy;
     }
 
-    public boolean isDefaultNic() {
+    public Boolean isDefaultNic() {
         return defaultNic;
     }
 
-    public void setDefaultNic(boolean defaultNic) {
+    public void setDefaultNic(Boolean defaultNic) {
         this.defaultNic = defaultNic;
     }
 
@@ -264,11 +265,11 @@ public class NicProfile implements InternalIdentity, Serializable {
         this.networkRate = networkRate;
     }
 
-    public boolean isSecurityGroupEnabled() {
+    public Boolean isSecurityGroupEnabled() {
         return isSecurityGroupEnabled;
     }
 
-    public void setSecurityGroupEnabled(boolean enabled) {
+    public void setSecurityGroupEnabled(Boolean enabled) {
         isSecurityGroupEnabled = enabled;
     }
 

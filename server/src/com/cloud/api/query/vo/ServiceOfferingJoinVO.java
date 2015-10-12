@@ -144,7 +144,7 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

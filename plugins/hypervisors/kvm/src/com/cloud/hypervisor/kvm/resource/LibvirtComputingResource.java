@@ -3071,11 +3071,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (oldStats != null) {
                 final long deltaiord = io_rd - oldStats._ioRead;
                 if (deltaiord > 0) {
-                    stats.setDiskReadIOs(deltaiord);
+                    stats.setDiskReadIOs((new Long(deltaiord)).doubleValue());
                 }
                 final long deltaiowr = io_wr - oldStats._ioWrote;
                 if (deltaiowr > 0) {
-                    stats.setDiskWriteIOs(deltaiowr);
+                    stats.setDiskWriteIOs((new Long(deltaiowr)).doubleValue());
                 }
                 final double deltabytesrd = bytes_rd - oldStats._bytesRead;
                 if (deltabytesrd > 0) {

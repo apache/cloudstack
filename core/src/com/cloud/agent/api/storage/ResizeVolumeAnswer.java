@@ -22,22 +22,22 @@ package com.cloud.agent.api.storage;
 import com.cloud.agent.api.Answer;
 
 public class ResizeVolumeAnswer extends Answer {
-    private long newSize;
+    private Long newSize;
 
     protected ResizeVolumeAnswer() {
         super();
     }
 
-    public ResizeVolumeAnswer(ResizeVolumeCommand cmd, boolean result, String details, long newSize) {
+    public ResizeVolumeAnswer(ResizeVolumeCommand cmd, Boolean result, String details, Long newSize) {
         super(cmd, result, details);
         this.newSize = newSize;
     }
 
-    public ResizeVolumeAnswer(ResizeVolumeCommand cmd, boolean result, String details) {
+    public ResizeVolumeAnswer(ResizeVolumeCommand cmd, Boolean result, String details) {
         super(cmd, result, details);
     }
 
-    public long getNewSize() {
+    public Long getNewSize() {
         return newSize;
     }
 }

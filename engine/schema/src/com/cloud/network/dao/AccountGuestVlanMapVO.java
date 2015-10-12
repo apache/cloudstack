@@ -60,7 +60,7 @@ public class AccountGuestVlanMapVO implements GuestVlan {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

@@ -29,7 +29,7 @@ public interface VmwareDatacenter extends Identity, InternalIdentity {
     String getVcenterHost();
 
     @Override
-    long getId();
+    Long getId();
 
     String getPassword();
 

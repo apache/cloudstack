@@ -28,7 +28,7 @@ public class PrepareOCFS2NodesCommand extends Command {
     String clusterName;
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 

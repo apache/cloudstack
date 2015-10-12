@@ -18,7 +18,7 @@ package com.cloud.api.query.vo;
 
 public abstract class BaseViewVO {
 
-    public abstract long getId();
+    public abstract Long getId();
 
     @Override
     public int hashCode() {

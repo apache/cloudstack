@@ -1146,7 +1146,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             cmd = cmds[i];
             if (cmd instanceof StartupRoutingCommand || cmd instanceof StartupProxyCommand || cmd instanceof StartupSecondaryStorageCommand ||
                     cmd instanceof StartupStorageCommand) {
-                answers[i] = new StartupAnswer((StartupCommand)cmds[i], 0, getPingInterval());
+                answers[i] = new StartupAnswer((StartupCommand)cmds[i], 0l, getPingInterval());
                 break;
             }
         }

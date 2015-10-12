@@ -24,18 +24,18 @@ import com.cloud.storage.VolumeStats;
 
 @LogLevel(Log4jLevel.Trace)
 public class GetFileStatsAnswer extends Answer implements VolumeStats {
-    long size;
+    Long size;
 
     protected GetFileStatsAnswer() {
     }
 
-    public GetFileStatsAnswer(GetFileStatsCommand cmd, long value) {
+    public GetFileStatsAnswer(GetFileStatsCommand cmd, Long value) {
         super(cmd);
         size = value;
     }
 
     @Override
-    public long getBytesUsed() {
+    public Long getBytesUsed() {
         return size;
     }
 }

@@ -23,7 +23,7 @@ public class ChangeAgentAnswer extends Answer {
     protected ChangeAgentAnswer() {
     }
 
-    public ChangeAgentAnswer(ChangeAgentCommand cmd, boolean result) {
+    public ChangeAgentAnswer(ChangeAgentCommand cmd, Boolean result) {
         super(cmd, result, null);
     }
 }

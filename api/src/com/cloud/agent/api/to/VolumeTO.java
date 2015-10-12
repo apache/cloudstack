@@ -26,15 +26,15 @@ public class VolumeTO implements InternalIdentity {
     protected VolumeTO() {
     }
 
-    private long id;
+    private Long id;
     private String name;
     private String mountPoint;
     private String path;
-    private long size;
+    private Long size;
     private Volume.Type type;
     private StoragePoolType storagePoolType;
     private String storagePoolUuid;
-    private long deviceId;
+    private Long deviceId;
     private String chainInfo;
     private String guestOsType;
     private Long bytesReadRate;
@@ -44,7 +44,7 @@ public class VolumeTO implements InternalIdentity {
     private String cacheMode;
     private Long chainSize;
 
-    public VolumeTO(long id, Volume.Type type, StoragePoolType poolType, String poolUuid, String name, String mountPoint, String path, long size, String chainInfo) {
+    public VolumeTO(Long id, Volume.Type type, StoragePoolType poolType, String poolUuid, String name, String mountPoint, String path, Long size, String chainInfo) {
         this.id = id;
         this.name = name;
         this.path = path;
@@ -56,7 +56,7 @@ public class VolumeTO implements InternalIdentity {
         this.chainInfo = chainInfo;
     }
 
-    public VolumeTO(long id, Volume.Type type, StoragePoolType poolType, String poolUuid, String name, String mountPoint, String path, long size, String chainInfo,
+    public VolumeTO(Long id, Volume.Type type, StoragePoolType poolType, String poolUuid, String name, String mountPoint, String path, Long size, String chainInfo,
             String guestOsType) {
         this.id = id;
         this.name = name;
@@ -85,16 +85,16 @@ public class VolumeTO implements InternalIdentity {
             this.deviceId = volume.getDeviceId();
     }
 
-    public long getDeviceId() {
+    public Long getDeviceId() {
         return deviceId;
     }
 
-    public void setDeviceId(long id) {
+    public void setDeviceId(Long id) {
         this.deviceId = id;
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
@@ -102,7 +102,7 @@ public class VolumeTO implements InternalIdentity {
         return path;
     }
 
-    public long getSize() {
+    public Long getSize() {
         return size;
     }
 

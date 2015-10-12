@@ -132,7 +132,7 @@ public class NetworkACLServiceTest extends TestCase {
             }
 
             @Override
-            public long getId() {
+            public Long getId() {
                 return 1L;
             }
 

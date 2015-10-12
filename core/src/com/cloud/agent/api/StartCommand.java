@@ -27,7 +27,7 @@ import com.cloud.host.Host;
 public class StartCommand extends Command {
     VirtualMachineTO vm;
     String hostIp;
-    boolean executeInSequence = false;
+    Boolean executeInSequence = false;
     String secondaryStorage;
 
     public VirtualMachineTO getVirtualMachine() {
@@ -35,7 +35,7 @@ public class StartCommand extends Command {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         //VR start doesn't go through queue
         if (vm.getName() != null && vm.getName().startsWith("r-")) {
             return false;
@@ -46,7 +46,7 @@ public class StartCommand extends Command {
     protected StartCommand() {
     }
 
-    public StartCommand(VirtualMachineTO vm, Host host, boolean executeInSequence) {
+    public StartCommand(VirtualMachineTO vm, Host host, Boolean executeInSequence) {
         this.vm = vm;
         this.hostIp = host.getPrivateIpAddress();
         this.executeInSequence = executeInSequence;

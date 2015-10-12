@@ -47,7 +47,7 @@ public class CreateVolumeFromVMSnapshotAnswer extends Answer {
         this.path = path;
     }
 
-    public CreateVolumeFromVMSnapshotAnswer(CreateVolumeFromVMSnapshotCommand cmd, boolean result, String string) {
+    public CreateVolumeFromVMSnapshotAnswer(CreateVolumeFromVMSnapshotCommand cmd, Boolean result, String string) {
         super(cmd, result, string);
     }
 }

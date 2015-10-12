@@ -191,13 +191,13 @@ public class LibvirtComputingResourceTest {
      */
     @Test
     public void testCreateVMFromSpecLegacy() {
-        final int id = _random.nextInt(65534);
+        final long id = _random.nextInt(65534);
         final String name = "test-instance-1";
 
         final int cpus = _random.nextInt(2) + 1;
         final int speed = 1024;
-        final int minRam = 256 * 1024;
-        final int maxRam = 512 * 1024;
+        final long minRam = 256 * 1024;
+        final long maxRam = 512 * 1024;
 
         final String os = "Ubuntu";
 
@@ -220,14 +220,14 @@ public class LibvirtComputingResourceTest {
      */
     @Test
     public void testCreateVMFromSpecWithTopology6() {
-        final int id = _random.nextInt(65534);
+        final long id = _random.nextInt(65534);
         final String name = "test-instance-1";
 
         final int cpus = 12;
         final int minSpeed = 1024;
         final int maxSpeed = 2048;
-        final int minRam = 256 * 1024;
-        final int maxRam = 512 * 1024;
+        final long minRam = 256 * 1024;
+        final long maxRam = 512 * 1024;
 
         final String os = "Ubuntu";
 
@@ -250,14 +250,14 @@ public class LibvirtComputingResourceTest {
      */
     @Test
     public void testCreateVMFromSpecWithTopology4() {
-        final int id = _random.nextInt(65534);
+        final long id = _random.nextInt(65534);
         final String name = "test-instance-1";
 
         final int cpus = 8;
         final int minSpeed = 1024;
         final int maxSpeed = 2048;
-        final int minRam = 256 * 1024;
-        final int maxRam = 512 * 1024;
+        final long minRam = 256 * 1024;
+        final long maxRam = 512 * 1024;
 
         final String os = "Ubuntu";
 
@@ -284,14 +284,14 @@ public class LibvirtComputingResourceTest {
      */
     @Test
     public void testCreateVMFromSpec() {
-        final int id = _random.nextInt(65534);
+        final long id = _random.nextInt(65534);
         final String name = "test-instance-1";
 
         final int cpus = _random.nextInt(2) + 1;
         final int minSpeed = 1024;
         final int maxSpeed = 2048;
-        final int minRam = 256 * 1024;
-        final int maxRam = 512 * 1024;
+        final long minRam = 256 * 1024;
+        final long maxRam = 512 * 1024;
 
         final String os = "Ubuntu";
 

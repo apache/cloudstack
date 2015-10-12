@@ -23,7 +23,7 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 
 public class CheckRouterCommand extends NetworkElementCommand {
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 
@@ -32,7 +32,7 @@ public class CheckRouterCommand extends NetworkElementCommand {
     }
 
     @Override
-    public boolean isQuery() {
+    public Boolean isQuery() {
         return true;
     }
 }

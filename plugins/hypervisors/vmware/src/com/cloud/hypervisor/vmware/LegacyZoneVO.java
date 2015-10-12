@@ -45,7 +45,7 @@ public class LegacyZoneVO implements LegacyZone {
     private long zoneId;
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

@@ -24,7 +24,7 @@ import com.cloud.agent.api.Command;
 public class IpmiBootorResetCommand extends Command {
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 

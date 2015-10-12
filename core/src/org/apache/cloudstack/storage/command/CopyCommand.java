@@ -28,11 +28,11 @@ public final class CopyCommand extends StorageSubSystemCommand {
     private DataTO srcTO;
     private DataTO destTO;
     private DataTO cacheTO;
-    private boolean executeInSequence = false;
+    private Boolean executeInSequence = false;
     private Map<String, String> options = new HashMap<String, String>();
     private Map<String, String> options2 = new HashMap<String, String>();
 
-    public CopyCommand(final DataTO srcData, final DataTO destData, final int timeout, final boolean executeInSequence) {
+    public CopyCommand(final DataTO srcData, final DataTO destData, final Integer timeout, final Boolean executeInSequence) {
         super();
         srcTO = srcData;
         destTO = destData;
@@ -57,7 +57,7 @@ public final class CopyCommand extends StorageSubSystemCommand {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return executeInSequence;
     }
 
@@ -69,7 +69,7 @@ public final class CopyCommand extends StorageSubSystemCommand {
         this.cacheTO = cacheTO;
     }
 
-    public int getWaitInMillSeconds() {
+    public Integer getWaitInMillSeconds() {
         return getWait() * 1000;
     }
 
@@ -90,7 +90,7 @@ public final class CopyCommand extends StorageSubSystemCommand {
     }
 
     @Override
-    public void setExecuteInSequence(final boolean inSeq) {
+    public void setExecuteInSequence(final Boolean inSeq) {
         executeInSequence = inSeq;
     }
 }

@@ -808,7 +808,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
                     for (StaticNat rule : rules) {
                         IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
                         StaticNatRuleTO ruleTO =
-                            new StaticNatRuleTO(0, sourceIp.getAddress().addr(), null, null, rule.getDestIpAddress(), null, null, null, rule.isForRevoke(), false);
+                            new StaticNatRuleTO(0l, sourceIp.getAddress().addr(), null, null, rule.getDestIpAddress(), null, null, null, rule.isForRevoke(), false);
                         rulesTO.add(ruleTO);
                     }
                 }
@@ -834,7 +834,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
                         List<StaticNatRuleTO> rulesTO = new ArrayList<StaticNatRuleTO>();
                         IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
                         StaticNatRuleTO ruleTO =
-                            new StaticNatRuleTO(0, sourceIp.getAddress().addr(), null, null, rule.getDestIpAddress(), null, null, null, rule.isForRevoke(), false);
+                            new StaticNatRuleTO(0l, sourceIp.getAddress().addr(), null, null, rule.getDestIpAddress(), null, null, null, rule.isForRevoke(), false);
                         rulesTO.add(ruleTO);
                         SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO, null);
 

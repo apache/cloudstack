@@ -24,10 +24,10 @@ import com.cloud.agent.api.to.DiskTO;
 public class DettachCommand extends StorageSubSystemCommand {
     private DiskTO disk;
     private String vmName;
-    private boolean _managed;
+    private Boolean _managed;
     private String _iScsiName;
     private String _storageHost;
-    private int _storagePort;
+    private Integer _storagePort;
 
     public DettachCommand(final DiskTO disk, final String vmName) {
         super();
@@ -36,7 +36,7 @@ public class DettachCommand extends StorageSubSystemCommand {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 
@@ -56,11 +56,11 @@ public class DettachCommand extends StorageSubSystemCommand {
         this.vmName = vmName;
     }
 
-    public void setManaged(final boolean managed) {
+    public void setManaged(final Boolean managed) {
         _managed = managed;
     }
 
-    public boolean isManaged() {
+    public Boolean isManaged() {
         return _managed;
     }
 
@@ -84,12 +84,12 @@ public class DettachCommand extends StorageSubSystemCommand {
         _storagePort = storagePort;
     }
 
-    public int getStoragePort() {
+    public Integer getStoragePort() {
         return _storagePort;
     }
 
     @Override
-    public void setExecuteInSequence(final boolean inSeq) {
+    public void setExecuteInSequence(final Boolean inSeq) {
 
     }
 }

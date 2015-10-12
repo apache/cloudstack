@@ -28,14 +28,14 @@ import com.cloud.storage.Upload;
 public class UploadAnswer extends Answer {
 
     private String jobId;
-    private int uploadPct;
+    private Integer uploadPct;
     private String errorString;
     private Upload.Status uploadStatus;
     private String uploadPath;
     private String installPath;
     public Long templateSize = 0L;
 
-    public int getUploadPct() {
+    public Integer getUploadPct() {
         return uploadPct;
     }
 
@@ -71,7 +71,7 @@ public class UploadAnswer extends Answer {
         this.jobId = jobId;
     }
 
-    public UploadAnswer(String jobId, int uploadPct, String errorString, Upload.Status uploadStatus, String fileSystemPath, String installPath, long templateSize) {
+    public UploadAnswer(String jobId, Integer uploadPct, String errorString, Upload.Status uploadStatus, String fileSystemPath, String installPath, Long templateSize) {
         super();
         this.jobId = jobId;
         this.uploadPct = uploadPct;
@@ -83,7 +83,7 @@ public class UploadAnswer extends Answer {
         this.templateSize = templateSize;
     }
 
-    public UploadAnswer(String jobId, int uploadPct, Command command, Upload.Status uploadStatus, String fileSystemPath, String installPath) {
+    public UploadAnswer(String jobId, Integer uploadPct, Command command, Upload.Status uploadStatus, String fileSystemPath, String installPath) {
         super(command);
         this.jobId = jobId;
         this.uploadPct = uploadPct;
@@ -117,7 +117,7 @@ public class UploadAnswer extends Answer {
         this.installPath = fixPath(installPath);
     }
 
-    public void setTemplateSize(long templateSize) {
+    public void setTemplateSize(Long templateSize) {
         this.templateSize = templateSize;
     }
 

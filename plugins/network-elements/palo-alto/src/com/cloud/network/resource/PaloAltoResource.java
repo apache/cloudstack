@@ -984,7 +984,7 @@ public class PaloAltoResource implements ServerResource {
                 // build source service xml
                 String srcService;
                 String protocol = rule.getProtocol();
-                int[] srcPortRange = rule.getSrcPortRange();
+                Integer[] srcPortRange = rule.getSrcPortRange();
                 if (srcPortRange != null) {
                     String portRange;
                     if (srcPortRange.length == 1 || srcPortRange[0] == srcPortRange[1]) {
@@ -1001,7 +1001,7 @@ public class PaloAltoResource implements ServerResource {
 
                 // build destination port xml (single port limit in PA)
                 String dstPortXML = "";
-                int[] dstPortRange = rule.getDstPortRange();
+                Integer[] dstPortRange = rule.getDstPortRange();
                 if (dstPortRange != null) {
                     dstPortXML = "<translated-port>" + dstPortRange[0] + "</translated-port>";
                 }

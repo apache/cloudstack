@@ -23,13 +23,13 @@ import com.cloud.agent.api.CronCommand;
 
 public class WatchConsoleProxyLoadCommand extends ProxyCommand implements CronCommand {
 
-    private long proxyVmId;
+    private Long proxyVmId;
     private String proxyVmName;
     private String proxyManagementIp;
-    private int proxyCmdPort;
-    int interval;
+    private Integer proxyCmdPort;
+    Integer interval;
 
-    public WatchConsoleProxyLoadCommand(int interval, long proxyVmId, String proxyVmName, String proxyManagementIp, int proxyCmdPort) {
+    public WatchConsoleProxyLoadCommand(Integer interval, Long proxyVmId, String proxyVmName, String proxyManagementIp, Integer proxyCmdPort) {
         this.interval = interval;
         this.proxyVmId = proxyVmId;
         this.proxyVmName = proxyVmName;
@@ -40,7 +40,7 @@ public class WatchConsoleProxyLoadCommand extends ProxyCommand implements CronCo
     protected WatchConsoleProxyLoadCommand() {
     }
 
-    public long getProxyVmId() {
+    public Long getProxyVmId() {
         return proxyVmId;
     }
 
@@ -52,17 +52,17 @@ public class WatchConsoleProxyLoadCommand extends ProxyCommand implements CronCo
         return proxyManagementIp;
     }
 
-    public int getProxyCmdPort() {
+    public Integer getProxyCmdPort() {
         return proxyCmdPort;
     }
 
     @Override
-    public int getInterval() {
+    public Integer getInterval() {
         return interval;
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 }

@@ -61,7 +61,7 @@ public class SecurityGroupVO implements SecurityGroup {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

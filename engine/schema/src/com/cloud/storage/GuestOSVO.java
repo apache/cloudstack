@@ -58,7 +58,7 @@ public class GuestOSVO implements GuestOS {
     private boolean isUserDefined;
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

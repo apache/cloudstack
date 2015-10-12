@@ -32,7 +32,7 @@ public class FenceAnswer extends Answer {
         super(cmd, true, details);
     }
 
-    public FenceAnswer(FenceCommand cmd, boolean result, String details) {
+    public FenceAnswer(FenceCommand cmd, Boolean result, String details) {
         super(cmd, result, details);
     }
 

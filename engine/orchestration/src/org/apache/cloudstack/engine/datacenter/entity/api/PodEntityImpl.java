@@ -92,7 +92,7 @@ public class PodEntityImpl implements PodEntity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return podVO.getId();
     }
 

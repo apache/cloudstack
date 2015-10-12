@@ -120,7 +120,7 @@ public class SnapshotCommand extends Command {
      * {@inheritDoc}
      */
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 

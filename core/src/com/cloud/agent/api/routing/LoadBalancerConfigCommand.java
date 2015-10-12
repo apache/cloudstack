@@ -37,7 +37,7 @@ public class LoadBalancerConfigCommand extends NetworkElementCommand {
     public String lbStatsUri = "/admin?stats";
     public String maxconn = "";
     public String lbProtocol;
-    public boolean keepAliveEnabled = false;
+    public Boolean keepAliveEnabled = false;
     NicTO nic;
     Long vpcId;
 
@@ -50,7 +50,7 @@ public class LoadBalancerConfigCommand extends NetworkElementCommand {
     }
 
     public LoadBalancerConfigCommand(LoadBalancerTO[] loadBalancers, String publicIp, String guestIp, String privateIp, NicTO nic, Long vpcId, String maxconn,
-            boolean keepAliveEnabled) {
+            Boolean keepAliveEnabled) {
         this.loadBalancers = loadBalancers;
         this.lbStatsPublicIP = publicIp;
         this.lbStatsPrivateIP = privateIp;

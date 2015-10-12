@@ -30,7 +30,7 @@ public class PrepareCreateTemplateCommand extends Command {
     String template;
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 

@@ -81,7 +81,7 @@ public class AlertVO implements Alert {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

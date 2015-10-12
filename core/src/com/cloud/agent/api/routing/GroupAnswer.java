@@ -29,7 +29,7 @@ public class GroupAnswer extends Answer {
         super();
     }
 
-    public GroupAnswer(Command cmd, boolean success, int rulesCount, String[] results) {
+    public GroupAnswer(Command cmd, Boolean success, int rulesCount, String[] results) {
         super(cmd, success, null);
 
         assert (rulesCount == results.length) : "Results' count should match requests' count!";

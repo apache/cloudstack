@@ -22,19 +22,19 @@ package com.cloud.agent.api;
 import com.cloud.resource.ResourceState;
 
 public class PropagateResourceEventCommand extends Command {
-    long hostId;
+    Long hostId;
     ResourceState.Event event;
 
     protected PropagateResourceEventCommand() {
 
     }
 
-    public PropagateResourceEventCommand(long hostId, ResourceState.Event event) {
+    public PropagateResourceEventCommand(Long hostId, ResourceState.Event event) {
         this.hostId = hostId;
         this.event = event;
     }
 
-    public long getHostId() {
+    public Long getHostId() {
         return hostId;
     }
 
@@ -43,7 +43,7 @@ public class PropagateResourceEventCommand extends Command {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         // TODO Auto-generated method stub
         return false;
     }

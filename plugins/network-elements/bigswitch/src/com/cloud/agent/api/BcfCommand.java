@@ -26,7 +26,7 @@ public class BcfCommand extends Command {
     private boolean topologySyncRequested;
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 

@@ -26,7 +26,7 @@ public class MigrateVolumeAnswer extends Answer {
     private String volumePath;
     private String volumeChain;
 
-    public MigrateVolumeAnswer(Command command, boolean success, String details, String volumePath) {
+    public MigrateVolumeAnswer(Command command, Boolean success, String details, String volumePath) {
         super(command, success, details);
         this.volumePath = volumePath;
     }

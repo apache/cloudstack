@@ -136,7 +136,7 @@ public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity 
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

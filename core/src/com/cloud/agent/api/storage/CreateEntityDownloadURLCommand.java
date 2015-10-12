@@ -55,7 +55,7 @@ public class CreateEntityDownloadURLCommand extends AbstractDownloadCommand {
     private DataTO data;
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 

@@ -34,7 +34,7 @@ public class VMSnapshotTO {
     private String description;
     private VMSnapshotTO parent;
     private List<VolumeObjectTO> volumes;
-    private boolean quiescevm;
+    private Boolean quiescevm;
 
     public Long getId() {
         return id;
@@ -44,7 +44,7 @@ public class VMSnapshotTO {
         this.id = id;
     }
 
-    public VMSnapshotTO(Long id, String snapshotName, VMSnapshot.Type type, Long createTime, String description, Boolean current, VMSnapshotTO parent, boolean quiescevm) {
+    public VMSnapshotTO(Long id, String snapshotName, VMSnapshot.Type type, Long createTime, String description, Boolean current, VMSnapshotTO parent, Boolean quiescevm) {
         super();
         this.id = id;
         this.snapshotName = snapshotName;
@@ -116,11 +116,11 @@ public class VMSnapshotTO {
         this.volumes = volumes;
     }
 
-    public boolean getQuiescevm() {
+    public Boolean getQuiescevm() {
         return this.quiescevm;
     }
 
-    public void setQuiescevm(boolean quiescevm) {
+    public void setQuiescevm(Boolean quiescevm) {
         this.quiescevm = quiescevm;
     }
 }

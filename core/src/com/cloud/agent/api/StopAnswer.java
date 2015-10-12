@@ -26,12 +26,12 @@ public class StopAnswer extends RebootAnswer {
     protected StopAnswer() {
     }
 
-    public StopAnswer(StopCommand cmd, String details, String platform, boolean success) {
+    public StopAnswer(StopCommand cmd, String details, String platform, Boolean success) {
         super(cmd, details, success);
         this.platform = platform;
     }
 
-    public StopAnswer(StopCommand cmd, String details, boolean success) {
+    public StopAnswer(StopCommand cmd, String details, Boolean success) {
         super(cmd, details, success);
         this.platform = null;
     }

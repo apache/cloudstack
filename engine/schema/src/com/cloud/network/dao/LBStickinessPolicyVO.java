@@ -112,7 +112,7 @@ public class LBStickinessPolicyVO implements StickinessPolicy {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

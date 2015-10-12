@@ -32,11 +32,11 @@ public class TemplateObjectTO implements DataTO {
     private String path;
     private String origUrl;
     private String uuid;
-    private long id;
+    private Long id;
     private ImageFormat format;
-    private long accountId;
+    private Long accountId;
     private String checksum;
-    private boolean hvm;
+    private Boolean hvm;
     private String displayText;
     private DataStoreTO imageDataStore;
     private String name;
@@ -89,11 +89,11 @@ public class TemplateObjectTO implements DataTO {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -101,7 +101,7 @@ public class TemplateObjectTO implements DataTO {
         return format;
     }
 
-    public long getAccountId() {
+    public Long getAccountId() {
         return accountId;
     }
 
@@ -109,11 +109,11 @@ public class TemplateObjectTO implements DataTO {
         return checksum;
     }
 
-    public boolean isRequiresHvm() {
+    public Boolean isRequiresHvm() {
         return hvm;
     }
 
-    public void setRequiresHvm(boolean hvm) {
+    public void setRequiresHvm(Boolean hvm) {
         this.hvm = hvm;
     }
 
@@ -179,7 +179,7 @@ public class TemplateObjectTO implements DataTO {
         this.format = format;
     }
 
-    public void setAccountId(long accountId) {
+    public void setAccountId(Long accountId) {
         this.accountId = accountId;
     }
 

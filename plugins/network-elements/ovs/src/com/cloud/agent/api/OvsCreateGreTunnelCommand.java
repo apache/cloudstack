@@ -24,7 +24,7 @@ public class OvsCreateGreTunnelCommand extends Command {
     long to;
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 

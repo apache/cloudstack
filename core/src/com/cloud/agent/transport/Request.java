@@ -225,7 +225,7 @@ public class Request {
         _via = viaId;
     }
 
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return (_flags & FLAG_IN_SEQUENCE) > 0;
     }
 

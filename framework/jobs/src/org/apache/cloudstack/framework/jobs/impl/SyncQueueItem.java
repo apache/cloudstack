@@ -22,7 +22,7 @@ public interface SyncQueueItem {
     /**
      * @return queue item id
      */
-    long getId();
+    Long getId();
 
     /**
      * @return queue id

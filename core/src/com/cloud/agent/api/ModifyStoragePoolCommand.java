@@ -27,7 +27,7 @@ import com.cloud.storage.StoragePool;
 
 public class ModifyStoragePoolCommand extends Command {
 
-    boolean add;
+    Boolean add;
     StorageFilerTO pool;
     String localPath;
     String[] options;
@@ -37,14 +37,14 @@ public class ModifyStoragePoolCommand extends Command {
 
     }
 
-    public ModifyStoragePoolCommand(boolean add, StoragePool pool, String localPath) {
+    public ModifyStoragePoolCommand(Boolean add, StoragePool pool, String localPath) {
         this.add = add;
         this.pool = new StorageFilerTO(pool);
         this.localPath = localPath;
 
     }
 
-    public ModifyStoragePoolCommand(boolean add, StoragePool pool) {
+    public ModifyStoragePoolCommand(Boolean add, StoragePool pool) {
         this(add, pool, LOCAL_PATH_PREFIX + File.separator + UUID.nameUUIDFromBytes((pool.getHostAddress() + pool.getPath()).getBytes()));
     }
 
@@ -56,12 +56,12 @@ public class ModifyStoragePoolCommand extends Command {
         this.pool = new StorageFilerTO(pool);
     }
 
-    public boolean getAdd() {
+    public Boolean getAdd() {
         return add;
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 

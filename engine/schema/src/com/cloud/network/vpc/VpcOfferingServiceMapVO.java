@@ -52,7 +52,7 @@ public class VpcOfferingServiceMapVO implements InternalIdentity {
     Date created;
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

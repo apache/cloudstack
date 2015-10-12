@@ -28,7 +28,7 @@ public class SetPortForwardingRulesAnswer extends Answer {
         super();
     }
 
-    public SetPortForwardingRulesAnswer(SetPortForwardingRulesCommand cmd, String[] results, boolean success) {
+    public SetPortForwardingRulesAnswer(SetPortForwardingRulesCommand cmd, String[] results, Boolean success) {
         super(cmd, success, null);
 
         assert (cmd.getRules().length == results.length) : "Shouldn't the results match the commands?";

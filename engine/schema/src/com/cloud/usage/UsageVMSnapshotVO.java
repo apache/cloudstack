@@ -116,7 +116,7 @@ public class UsageVMSnapshotVO implements InternalIdentity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return this.id;
     }
 

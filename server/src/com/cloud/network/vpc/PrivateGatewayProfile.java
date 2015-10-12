@@ -32,7 +32,7 @@ public class PrivateGatewayProfile implements PrivateGateway {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return vpcGateway.getId();
     }
 

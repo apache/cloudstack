@@ -31,7 +31,7 @@ public class StartupStorageCommand extends StartupCommand {
 
     String parent;
     Map<String, TemplateProp> templateInfo;
-    long totalSize;
+    Long totalSize;
     StoragePoolInfo poolInfo;
     Storage.StorageResourceType resourceType;
     StoragePoolType fsType;
@@ -42,7 +42,7 @@ public class StartupStorageCommand extends StartupCommand {
         super(Host.Type.Storage);
     }
 
-    public StartupStorageCommand(String parent, StoragePoolType fsType, long totalSize, Map<String, TemplateProp> info) {
+    public StartupStorageCommand(String parent, StoragePoolType fsType, Long totalSize, Map<String, TemplateProp> info) {
         super(Host.Type.Storage);
         this.parent = parent;
         this.totalSize = totalSize;
@@ -76,7 +76,7 @@ public class StartupStorageCommand extends StartupCommand {
         return nfsShare;
     }
 
-    public long getTotalSize() {
+    public Long getTotalSize() {
         return totalSize;
     }
 

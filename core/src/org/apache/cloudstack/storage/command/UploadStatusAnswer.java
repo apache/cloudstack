@@ -27,10 +27,10 @@ public class UploadStatusAnswer extends Answer {
     }
 
     private UploadStatus status;
-    private long virtualSize = 0;
-    private long physicalSize = 0;
+    private Long virtualSize = 0L;
+    private Long physicalSize = 0L;
     private String installPath = null;
-    private int downloadPercent = 0;
+    private Integer downloadPercent = 0;
 
     protected UploadStatusAnswer() {
     }
@@ -62,11 +62,11 @@ public class UploadStatusAnswer extends Answer {
         this.virtualSize = virtualSize;
     }
 
-    public long getPhysicalSize() {
+    public Long getPhysicalSize() {
         return physicalSize;
     }
 
-    public void setPhysicalSize(long physicalSize) {
+    public void setPhysicalSize(Long physicalSize) {
         this.physicalSize = physicalSize;
     }
 
@@ -78,11 +78,11 @@ public class UploadStatusAnswer extends Answer {
         this.installPath = installPath;
     }
 
-    public int getDownloadPercent() {
+    public Integer getDownloadPercent() {
         return downloadPercent;
     }
 
-    public void setDownloadPercent(int downloadPercent) {
+    public void setDownloadPercent(Integer downloadPercent) {
         this.downloadPercent = downloadPercent;
     }
 }

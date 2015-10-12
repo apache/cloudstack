@@ -63,7 +63,7 @@ public interface KeystoreManager extends Manager {
 
     void saveCertificate(String name, String certificate, String key, String domainSuffix);
 
-    byte[] getKeystoreBits(String name, String aliasForCertificateInStore, String storePassword);
+    Byte[] getKeystoreBits(String name, String aliasForCertificateInStore, String storePassword);
 
     void saveCertificate(String name, String certificate, Integer index, String domainSuffix);
 

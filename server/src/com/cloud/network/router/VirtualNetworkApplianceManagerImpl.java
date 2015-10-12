@@ -2365,8 +2365,8 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         for (DomainRouterVO router : routers) {
             if (router.isStopPending()) {
                 s_logger.info("Stopping router " + router.getInstanceName() + " due to stop pending flag found!");
-                final State state = router.getState();
-                if (state != State.Stopped && state != State.Destroyed) {
+                final VirtualMachine.State state = router.getState();
+                if (state != VirtualMachine.State.Stopped && state != VirtualMachine.State.Destroyed) {
                     try {
                         stopRouter(router.getId(), false);
                     } catch (final ResourceUnavailableException e) {

@@ -87,7 +87,7 @@ public class KeystoreManagerImpl extends ManagerBase implements KeystoreManager 
     }
 
     @Override
-    public byte[] getKeystoreBits(String name, String aliasForCertificateInStore, String storePassword) {
+    public Byte[] getKeystoreBits(String name, String aliasForCertificateInStore, String storePassword) {
         assert (name != null);
         assert (aliasForCertificateInStore != null);
         assert (storePassword != null);

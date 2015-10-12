@@ -105,7 +105,7 @@ public class NicIpAliasVO implements NicIpAlias  {
     String startIpOfSubnet;
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

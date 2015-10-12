@@ -51,7 +51,7 @@ public class UcsBladeVO implements InternalIdentity, Identity {
     private String profileDn;
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

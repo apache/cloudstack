@@ -62,7 +62,7 @@ public class ResourceLimitVO implements ResourceLimit {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

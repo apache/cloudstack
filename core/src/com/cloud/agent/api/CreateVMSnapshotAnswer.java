@@ -48,7 +48,7 @@ public class CreateVMSnapshotAnswer extends Answer {
 
     }
 
-    public CreateVMSnapshotAnswer(CreateVMSnapshotCommand cmd, boolean success, String result) {
+    public CreateVMSnapshotAnswer(CreateVMSnapshotCommand cmd, Boolean success, String result) {
         super(cmd, success, result);
     }
 

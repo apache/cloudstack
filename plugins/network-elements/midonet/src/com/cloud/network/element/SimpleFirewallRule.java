@@ -61,7 +61,7 @@ public class SimpleFirewallRule {
             icmpType = rule.getIcmpType();
             icmpCode = rule.getIcmpCode();
         } else {
-            int[] portNumbers = rule.getSrcPortRange();
+            Integer[] portNumbers = rule.getSrcPortRange();
 
             // if port start and end are not set, they
             // should be 0,0, and that's already the case
@@ -88,7 +88,7 @@ public class SimpleFirewallRule {
             icmpType = rule.getIcmpType();
             icmpCode = rule.getIcmpCode();
         } else {
-            int[] portNumbers = rule.getSrcPortRange();
+            Integer[] portNumbers = rule.getSrcPortRange();
 
             // if port start and end are not set, they
             // should be 0,0, and that's already the case
@@ -111,8 +111,8 @@ public class SimpleFirewallRule {
         dstIp = rule.getSrcIp();
         protocol = rule.getProtocol();
 
-        int[] srcPortNumbers = rule.getSrcPortRange();
-        int[] dstPortNumbers = rule.getDstPortRange();
+        Integer[] srcPortNumbers = rule.getSrcPortRange();
+        Integer[] dstPortNumbers = rule.getDstPortRange();
 
         // if port start and end are not set, they
         // should be 0,0, and that's already the case

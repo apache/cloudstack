@@ -94,7 +94,7 @@ public class ImageStoreImpl implements ImageStoreEntity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return this.imageDataStoreVO.getId();
     }
 

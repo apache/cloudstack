@@ -105,7 +105,7 @@ public class AsyncJobJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

@@ -62,7 +62,7 @@ public class TemplateEntityImpl implements TemplateEntity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return templateInfo.getId();
     }
 

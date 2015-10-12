@@ -30,13 +30,13 @@ public class VpnUsersCfgCommand extends NetworkElementCommand {
         private String username;
         @LogLevel(Log4jLevel.Off)
         private String password;
-        boolean add = true;
+        Boolean add = true;
 
-        public boolean isAdd() {
+        public Boolean isAdd() {
             return add;
         }
 
-        public void setAdd(boolean add) {
+        public void setAdd(Boolean add) {
             this.add = add;
         }
 
@@ -62,7 +62,7 @@ public class VpnUsersCfgCommand extends NetworkElementCommand {
             this.password = password;
         }
 
-        public UsernamePassword(String username, String password, boolean add) {
+        public UsernamePassword(String username, String password, Boolean add) {
             super();
             this.username = username;
             this.password = password;
@@ -96,7 +96,7 @@ public class VpnUsersCfgCommand extends NetworkElementCommand {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 

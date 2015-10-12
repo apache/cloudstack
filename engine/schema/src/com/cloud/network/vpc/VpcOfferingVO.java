@@ -100,7 +100,7 @@ public class VpcOfferingVO implements VpcOffering {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

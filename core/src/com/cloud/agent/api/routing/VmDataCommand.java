@@ -31,17 +31,17 @@ public class VmDataCommand extends NetworkElementCommand {
     String vmName;
     @LogLevel(Log4jLevel.Trace)
     List<String[]> vmData;
-    boolean executeInSequence = false;
+    Boolean executeInSequence = false;
 
     protected VmDataCommand() {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return executeInSequence;
     }
 
-    public VmDataCommand(String vmIpAddress, boolean executeInSequence) {
+    public VmDataCommand(String vmIpAddress, Boolean executeInSequence) {
         this(vmIpAddress, null, executeInSequence);
     }
 
@@ -49,7 +49,7 @@ public class VmDataCommand extends NetworkElementCommand {
         return vmName;
     }
 
-    public VmDataCommand(String vmIpAddress, String vmName, boolean executeInSequence) {
+    public VmDataCommand(String vmIpAddress, String vmName, Boolean executeInSequence) {
         this.vmName = vmName;
         this.vmIpAddress = vmIpAddress;
         this.vmData = new ArrayList<String[]>();

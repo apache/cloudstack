@@ -76,7 +76,7 @@ public class ProjectAccountJoinVO extends BaseViewVO implements InternalIdentity
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

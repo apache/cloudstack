@@ -52,7 +52,7 @@ public class ZoneEntityImpl implements ZoneEntity, FiniteStateObject<DataCenterR
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return dataCenterVO.getId();
     }
 

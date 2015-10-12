@@ -331,9 +331,9 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
 
     protected IpAssocCommand generateIpAssocCommand() {
         final List<IpAddressTO> ips = new ArrayList<>();
-        ips.add(new IpAddressTO(1, "64.1.1.10", true, true, true, "vlan://64", "64.1.1.1", "255.255.255.0", "01:23:45:67:89:AB", 1000, false));
-        ips.add(new IpAddressTO(2, "64.1.1.11", false, false, false, "vlan://64", "64.1.1.1", "255.255.255.0", "01:23:45:67:89:AB", 1000, false));
-        ips.add(new IpAddressTO(3, "65.1.1.11", true, false, false, "vlan://65", "65.1.1.1", "255.255.255.0", "11:23:45:67:89:AB", 1000, false));
+        ips.add(new IpAddressTO(1l, "64.1.1.10", true, true, true, "vlan://64", "64.1.1.1", "255.255.255.0", "01:23:45:67:89:AB", 1000, false));
+        ips.add(new IpAddressTO(2l, "64.1.1.11", false, false, false, "vlan://64", "64.1.1.1", "255.255.255.0", "01:23:45:67:89:AB", 1000, false));
+        ips.add(new IpAddressTO(3l, "65.1.1.11", true, false, false, "vlan://65", "65.1.1.1", "255.255.255.0", "11:23:45:67:89:AB", 1000, false));
         final IpAddressTO[] ipArray = ips.toArray(new IpAddressTO[ips.size()]);
         final IpAssocCommand cmd = new IpAssocCommand(ipArray);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTERNAME);
@@ -364,9 +364,9 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
 
     protected IpAssocVpcCommand generateIpAssocVpcCommand() {
         final List<IpAddressTO> ips = new ArrayList<IpAddressTO>();
-        ips.add(new IpAddressTO(1, "64.1.1.10", true, true, true, "vlan://64", "64.1.1.1", "255.255.255.0", "01:23:45:67:89:AB", 1000, false));
-        ips.add(new IpAddressTO(2, "64.1.1.11", false, false, true, "vlan://64", "64.1.1.1", "255.255.255.0", "01:23:45:67:89:AB", 1000, false));
-        ips.add(new IpAddressTO(3, "65.1.1.11", true, false, false, "vlan://65", "65.1.1.1", "255.255.255.0", "11:23:45:67:89:AB", 1000, false));
+        ips.add(new IpAddressTO(1l, "64.1.1.10", true, true, true, "vlan://64", "64.1.1.1", "255.255.255.0", "01:23:45:67:89:AB", 1000, false));
+        ips.add(new IpAddressTO(2l, "64.1.1.11", false, false, true, "vlan://64", "64.1.1.1", "255.255.255.0", "01:23:45:67:89:AB", 1000, false));
+        ips.add(new IpAddressTO(3l, "65.1.1.11", true, false, false, "vlan://65", "65.1.1.1", "255.255.255.0", "11:23:45:67:89:AB", 1000, false));
         final IpAddressTO[] ipArray = ips.toArray(new IpAddressTO[ips.size()]);
         final IpAssocVpcCommand cmd = new IpAssocVpcCommand(ipArray);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTERNAME);
@@ -435,7 +435,7 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
     }
 
     protected SetSourceNatCommand generateSetSourceNatCommand() {
-        final IpAddressTO ip = new IpAddressTO(1, "64.1.1.10", true, true, true, "vlan://64", "64.1.1.1", "255.255.255.0", "01:23:45:67:89:AB", 1000, false);
+        final IpAddressTO ip = new IpAddressTO(1l, "64.1.1.10", true, true, true, "vlan://64", "64.1.1.1", "255.255.255.0", "01:23:45:67:89:AB", 1000, false);
         final SetSourceNatCommand cmd = new SetSourceNatCommand(ip, true);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTERNAME);
         return cmd;
@@ -464,9 +464,9 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         final List<String> cidrs = new ArrayList<>();
         cidrs.add("192.168.0.1/24");
         cidrs.add("192.168.0.2/24");
-        acls.add(new NetworkACLTO(1, "64", "TCP", 20, 80, false, false, cidrs, 0, 0, TrafficType.Ingress, true, 1));
-        acls.add(new NetworkACLTO(2, "64", "ICMP", 0, 0, false, false, cidrs, -1, -1, TrafficType.Ingress, false, 2));
-        acls.add(new NetworkACLTO(3, "65", "ALL", 0, 0, false, false, cidrs, -1, -1, TrafficType.Egress, true, 3));
+        acls.add(new NetworkACLTO(1l, "64", "TCP", 20, 80, false, false, cidrs, 0, 0, TrafficType.Ingress, true, 1));
+        acls.add(new NetworkACLTO(2l, "64", "ICMP", 0, 0, false, false, cidrs, -1, -1, TrafficType.Ingress, false, 2));
+        acls.add(new NetworkACLTO(3l, "65", "ALL", 0, 0, false, false, cidrs, -1, -1, TrafficType.Egress, true, 3));
         final NicTO nic = new NicTO();
         nic.setMac("01:23:45:67:89:AB");
         nic.setIp("192.168.1.1");
@@ -667,9 +667,9 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         final List<String> sourceCidrs = new ArrayList<>();
         sourceCidrs.add("10.10.1.1/24");
         sourceCidrs.add("10.10.1.2/24");
-        rules.add(new FirewallRuleTO(1, "64.10.10.10", "TCP", 22, 80, false, false, Purpose.Firewall, sourceCidrs, 0, 0));
-        rules.add(new FirewallRuleTO(2, "64.10.10.10", "ICMP", 0, 0, false, false, Purpose.Firewall, sourceCidrs, -1, -1));
-        rules.add(new FirewallRuleTO(3, "64.10.10.10", "ICMP", 0, 0, true, true, Purpose.Firewall, sourceCidrs, -1, -1));
+        rules.add(new FirewallRuleTO(1l, "64.10.10.10", "TCP", 22, 80, false, false, Purpose.Firewall, sourceCidrs, 0, 0));
+        rules.add(new FirewallRuleTO(2l, "64.10.10.10", "ICMP", 0, 0, false, false, Purpose.Firewall, sourceCidrs, -1, -1));
+        rules.add(new FirewallRuleTO(3l, "64.10.10.10", "ICMP", 0, 0, true, true, Purpose.Firewall, sourceCidrs, -1, -1));
         final SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(rules);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTERNAME);
 

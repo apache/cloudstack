@@ -85,7 +85,7 @@ public class StaticNatRuleImpl implements StaticNatRule {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

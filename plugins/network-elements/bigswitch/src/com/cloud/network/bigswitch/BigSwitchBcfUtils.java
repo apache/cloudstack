@@ -374,7 +374,7 @@ public class BigSwitchBcfUtils {
         for(FirewallRuleVO rule: fwRules){
             AclData acl = new AclData();
             acl.setId(rule.getUuid());
-            acl.setPriority((int)rule.getId()); // CloudStack Firewall interface does not have priority
+            acl.setPriority(rule.getId().intValue()); // CloudStack Firewall interface does not have priority
             acl.setIpProto(rule.getProtocol());
             String cidr = null;
             Integer port = rule.getSourcePortStart();

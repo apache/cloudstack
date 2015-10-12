@@ -20,7 +20,7 @@
 package com.cloud.agent.api;
 
 public class MaintainAnswer extends Answer {
-    boolean willMigrate;
+    Boolean willMigrate;
 
     public MaintainAnswer() {
     }
@@ -29,7 +29,7 @@ public class MaintainAnswer extends Answer {
         this(cmd, true, null);
     }
 
-    public MaintainAnswer(MaintainCommand cmd, boolean willMigrate) {
+    public MaintainAnswer(MaintainCommand cmd, Boolean willMigrate) {
         this(cmd, true, null);
         this.willMigrate = willMigrate;
     }
@@ -38,12 +38,12 @@ public class MaintainAnswer extends Answer {
         this(cmd, true, details);
     }
 
-    public MaintainAnswer(MaintainCommand cmd, boolean result, String details) {
+    public MaintainAnswer(MaintainCommand cmd, Boolean result, String details) {
         super(cmd, result, details);
         this.willMigrate = true;
     }
 
-    public boolean getMigrate() {
+    public Boolean getMigrate() {
         return this.willMigrate;
     }
 }

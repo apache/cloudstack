@@ -30,7 +30,7 @@ public interface User extends OwnedBy, InternalIdentity {
     public static final long UID_ADMIN = 2;
 
     @Override
-    public long getId();
+    public Long getId();
 
     public String getUuid();
 

@@ -43,7 +43,7 @@ public class StorageTagVO extends BaseViewVO implements InternalIdentity {
     long poolId;
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
