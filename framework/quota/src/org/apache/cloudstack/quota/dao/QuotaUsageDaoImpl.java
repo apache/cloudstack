@@ -69,7 +69,7 @@ public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implem
             }
             quotaUsageRecords = listBy(sc);
         } catch (Exception e) {
-            s_logger.error("QuotaUsageDaoImpl::findQuotaUsage() failed due to: " + e.getMessage());
+            s_logger.error("QuotaUsageDaoImpl::findQuotaUsage() failed due to: " + e.getMessage(), e);
             throw new CloudRuntimeException("Unable to find quota usage");
         } finally {
             TransactionLegacy.open(opendb).close();

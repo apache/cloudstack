@@ -47,7 +47,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB)) {
             result = findById(vmId, serviceOfferingId);
         } catch (Exception e) {
-            s_logger.error("Quota ServiceOfferingDaoImpl::findServiceOffering() failed due to: " + e.getMessage());
+            s_logger.error("Quota ServiceOfferingDaoImpl::findServiceOffering() failed due to: " + e.getMessage(), e);
             throw new CloudRuntimeException("Unable to find service offering for quota calculations");
         } finally {
             TransactionLegacy.open(opendb).close();

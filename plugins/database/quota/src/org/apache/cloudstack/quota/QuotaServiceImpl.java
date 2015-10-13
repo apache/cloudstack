@@ -146,7 +146,6 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
 
-        // if accountId is not specified, use accountName and domainId
         if ((accountId == null) && (accountName != null) && (domainId != null)) {
             Account userAccount = null;
             Account caller = CallContext.current().getCallingAccount();

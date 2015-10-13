@@ -71,6 +71,8 @@ import java.util.concurrent.TimeUnit;
 public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertManager {
     private static final Logger s_logger = Logger.getLogger(QuotaAlertManagerImpl.class.getName());
 
+    final private static int s_LAST_STATEMENT_SENT_DAYS = 6;
+
     @Inject
     private AccountDao _accountDao;
     @Inject
@@ -161,9 +163,9 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
                 continue; // no quota usage for this account ever, ignore
             }
             Date lastStatementDate = quotaAccount.getLastStatementDate();
-            if (now.getDate() < 6) {
+            if (now.getDate() < s_LAST_STATEMENT_SENT_DAYS) {
                 AccountVO account = _accountDao.findById(quotaAccount.getId());
-                if (lastStatementDate == null || getDifferenceDays(lastStatementDate, new Date()) >= 7) {
+                if (lastStatementDate == null || getDifferenceDays(lastStatementDate, new Date()) >= s_LAST_STATEMENT_SENT_DAYS + 1) {
                     BigDecimal quotaUsage = _quotaUsage.findTotalQuotaUsage(account.getAccountId(), account.getDomainId(), null, firstDateOfPreviousMonth, lastDateOfPreviousMonth);
                     s_logger.info("For account=" + quotaAccount.getId() + ", quota used = " + quotaUsage);
                     // send statement

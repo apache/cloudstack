@@ -18,7 +18,9 @@ package org.apache.cloudstack.api.command;
 
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
+
 import junit.framework.TestCase;
+
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
@@ -46,6 +48,7 @@ public class QuotaCreditsCmdTest extends TestCase {
     public void testQuotaCreditsCmd() throws NoSuchFieldException, IllegalAccessException {
         QuotaCreditsCmd cmd = new QuotaCreditsCmd();
         cmd.setAccountName("admin");
+        cmd.setMinBalance(200.0);
 
         Field rbField = QuotaCreditsCmd.class.getDeclaredField("_responseBuilder");
         rbField.setAccessible(true);

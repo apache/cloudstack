@@ -53,6 +53,7 @@ import javax.inject.Inject;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -114,7 +115,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         boolean consecutive = true;
         for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
             QuotaBalanceVO entry = it.next();
-            if (s_logger.isDebugEnabled()){
+            if (s_logger.isDebugEnabled()) {
                 s_logger.debug("createQuotaBalanceResponse: Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
             }
             if (entry.getCreditsId() > 0) {
@@ -156,18 +157,17 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         if (quotaUsage == null || quotaUsage.isEmpty()) {
             throw new InvalidParameterValueException("There is no usage data found for period mentioned.");
         }
-        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
+
         QuotaStatementResponse statement = new QuotaStatementResponse();
 
-        HashMap<Integer, QuotaTariffVO> quotaTariffMap = new HashMap<Integer, QuotaTariffVO>();
-        List<QuotaTariffVO> result = _quotaTariffDao.listAll();
+        HashMap<Integer, QuotaTypes> quotaTariffMap = new HashMap<Integer, QuotaTypes>();
+        Collection<QuotaTypes> result = QuotaTypes.listQuotaTypes().values();
 
-        for (QuotaTariffVO quotaTariff : result) {
-            quotaTariffMap.put(quotaTariff.getUsageType(), quotaTariff);
+        for (QuotaTypes quotaTariff : result) {
+            quotaTariffMap.put(quotaTariff.getQuotaType(), quotaTariff);
             // add dummy record for each usage type
             QuotaUsageVO dummy = new QuotaUsageVO(quotaUsage.get(0));
-            dummy.setUsageType(quotaTariff.getUsageType());
+            dummy.setUsageType(quotaTariff.getQuotaType());
             dummy.setQuotaUsed(new BigDecimal(0));
             quotaUsage.add(dummy);
         }
@@ -187,11 +187,11 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         BigDecimal totalUsage = new BigDecimal(0);
         quotaUsage.add(new QuotaUsageVO());// boundary
         QuotaUsageVO prev = quotaUsage.get(0);
-        if (s_logger.isDebugEnabled()){
+        if (s_logger.isDebugEnabled()) {
             s_logger.debug("createQuotaStatementResponse record count=" + quotaUsage.size());
         }
         for (final QuotaUsageVO quotaRecord : quotaUsage) {
-            if (s_logger.isDebugEnabled()){
+            if (s_logger.isDebugEnabled()) {
                 s_logger.debug("createQuotaStatementResponse Type=" + quotaRecord.getUsageType() + " usage=" + usage + " name" + quotaRecord.getUsageItemId());
             }
             if (type != quotaRecord.getUsageType()) {
@@ -202,8 +202,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
                     lineitem.setDomainId(prev.getDomainId());
                     lineitem.setStartDate(prev.getStartDate());
                     lineitem.setEndDate(prev.getEndDate());
-                    lineitem.setUsageUnit(quotaTariffMap.get(type).getUsageUnit());
-                    lineitem.setUsageName(quotaTariffMap.get(type).getUsageName());
+                    lineitem.setUsageUnit(quotaTariffMap.get(type).getQuotaUnit());
+                    lineitem.setUsageName(quotaTariffMap.get(type).getQuotaName());
                     lineitem.setObjectName("quotausage");
                     items.add(lineitem);
                     totalUsage = totalUsage.add(usage);
@@ -214,7 +214,6 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             prev = quotaRecord;
             usage = usage.add(quotaRecord.getQuotaUsed());
         }
-        TransactionLegacy.open(opendb).close();
 
         statement.setLineItem(items);
         statement.setTotalQuota(totalUsage);
@@ -228,7 +227,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         List<QuotaTariffVO> result = new ArrayList<QuotaTariffVO>();
         Date effectiveDate = cmd.getEffectiveDate() == null ? new Date() : cmd.getEffectiveDate();
         Date adjustedEffectiveDate = _quotaService.computeAdjustedTime(effectiveDate);
-        if (s_logger.isDebugEnabled()){
+        if (s_logger.isDebugEnabled()) {
             s_logger.debug("Effective datec=" + effectiveDate + " quotatype=" + cmd.getUsageType() + " Adjusted date=" + adjustedEffectiveDate);
         }
         if (cmd.getUsageType() != null) {
@@ -256,28 +255,22 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         if (quotaConstant == null) {
             throw new InvalidParameterValueException("Quota type does not exists " + quotaType);
         }
-        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
-        QuotaTariffVO result = null;
-        try {
-            result = new QuotaTariffVO(quotaType);
-            result.setUsageName(quotaConstant.getQuotaName());
-            result.setUsageUnit(quotaConstant.getQuotaUnit());
-            result.setUsageDiscriminator(quotaConstant.getDiscriminator());
-            result.setCurrencyValue(quotaCost);
-            result.setEffectiveOn(effectiveDate);
-            result.setUpdatedOn(now);
-            result.setUpdatedBy(cmd.getEntityOwnerId());
 
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("Updating Quota Tariff Plan: New value=%s for resource type=%d effective on date=%s", quotaCost, quotaType, effectiveDate));
-            }
-            _quotaTariffDao.addQuotaTariff(result);
-        } catch (Exception pokemon) {
-            s_logger.error("Error in update quota tariff plan: " + pokemon);
-        } finally {
-            TransactionLegacy.open(opendb).close();
+        QuotaTariffVO result = null;
+        result = new QuotaTariffVO(quotaType);
+        result.setUsageName(quotaConstant.getQuotaName());
+        result.setUsageUnit(quotaConstant.getQuotaUnit());
+        result.setUsageDiscriminator(quotaConstant.getDiscriminator());
+        result.setCurrencyValue(quotaCost);
+        result.setEffectiveOn(effectiveDate);
+        result.setUpdatedOn(now);
+        result.setUpdatedBy(cmd.getEntityOwnerId());
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("Updating Quota Tariff Plan: New value=%s for resource type=%d effective on date=%s", quotaCost, quotaType, effectiveDate));
         }
+        _quotaTariffDao.addQuotaTariff(result);
+
         return result;
     }
 

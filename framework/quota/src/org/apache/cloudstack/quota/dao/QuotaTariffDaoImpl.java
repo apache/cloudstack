@@ -21,8 +21,8 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
-
 import com.cloud.utils.exception.CloudRuntimeException;
+
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.log4j.Logger;
@@ -70,16 +70,32 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
             TransactionLegacy.open(opendb).close();
         }
         if (result != null && !result.isEmpty()) {
-            if (s_logger.isDebugEnabled()){
-                s_logger.debug("QuotaTariffDaoImpl::findTariffPlanByUsageType: " + effectiveDate + "quota type " + quotaType  + " val=" + result.get(0).getCurrencyValue());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("QuotaTariffDaoImpl::findTariffPlanByUsageType: " + effectiveDate + "quota type " + quotaType + " val=" + result.get(0).getCurrencyValue());
             }
             return result.get(0);
         } else {
-            if (s_logger.isDebugEnabled()){
+            if (s_logger.isDebugEnabled()) {
                 s_logger.debug("QuotaTariffDaoImpl::findTariffPlanByUsageType: Missing quota type " + quotaType);
             }
             return null;
         }
+    }
+
+    @Override
+    public List<QuotaTariffVO> listAll() {
+        List<QuotaTariffVO> result = null;
+        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
+        try {
+            TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
+            result = super.listAll();
+        } catch (Exception e) {
+            s_logger.error("QuotaAccountDaoImpl::listAll() failed due to: " + e.getMessage());
+            throw new CloudRuntimeException("Unable to list Quota Accounts");
+        } finally {
+            TransactionLegacy.open(opendb).close();
+        }
+        return result;
     }
 
     @Override
@@ -95,7 +111,8 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
                 List<QuotaTariffVO> result = search(sc, filter);
                 if (result != null && !result.isEmpty()) {
                     tariffs.add(result.get(0));
-                    s_logger.debug("ListAllTariffPlans on or before " + effectiveDate + " quota type " + result.get(0).getDescription() + " , effective Date=" + result.get(0).getEffectiveOn() + " val=" + result.get(0).getCurrencyValue());
+                    s_logger.debug("ListAllTariffPlans on or before " + effectiveDate + " quota type " + result.get(0).getDescription() + " , effective Date=" + result.get(0).getEffectiveOn()
+                            + " val=" + result.get(0).getCurrencyValue());
                 }
             }
         } catch (Exception e) {
@@ -122,6 +139,9 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
 
     @Override
     public QuotaTariffVO addQuotaTariff(QuotaTariffVO plan) {
+        if (plan.getIdObj() != null) {
+            throw new IllegalStateException("The QuotaTariffVO being added should not have an Id set ");
+        }
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         QuotaTariffVO result = null;
         try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {

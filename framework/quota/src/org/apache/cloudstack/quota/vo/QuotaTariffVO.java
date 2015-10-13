@@ -159,6 +159,10 @@ public class QuotaTariffVO implements InternalIdentity {
         return QuotaTypes.getDescription(usageType);
     }
 
+    public Long getIdObj(){
+        return id;
+    }
+
     @Override
     public long getId() {
         return this.id;

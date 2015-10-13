@@ -39,10 +39,7 @@ public class UserVmDetailsDaoImpl extends GenericDaoBase<UserVmDetailVO, Long> i
         AllFieldsSearch.and("resourceId", AllFieldsSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("value", AllFieldsSearch.entity().getValue(), SearchCriteria.Op.EQ);
-        // FIXME SnapshotDetailsVO doesn't have a display field
-        if (_allAttributes.containsKey("display")) {
-            AllFieldsSearch.and("display", AllFieldsSearch.entity().isDisplay(), SearchCriteria.Op.EQ);
-        }
+        AllFieldsSearch.and("display", AllFieldsSearch.entity().isDisplay(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
     }
 
