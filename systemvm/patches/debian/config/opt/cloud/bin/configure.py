@@ -148,7 +148,7 @@ class CsAcl(CsDataBag):
                                " -m %s " % rule['protocol'] + \
                                " --dport %s" % rnge
                     
-                    self.fw.append(["filter", "front", "%s -j %s" % (fwr, rule['action'])])
+                    self.fw.append(["filter", "", "%s -j %s" % (fwr, rule['action'])])
 
                 logging.debug("EGRESS rule configured for protocol ==> %s, action ==> %s", rule['protocol'], rule['action'])
 
