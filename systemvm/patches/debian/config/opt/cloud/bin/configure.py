@@ -86,8 +86,14 @@ class CsAcl(CsDataBag):
                 self.rule['first_port'] = obj['src_port_range'][0]
                 self.rule['last_port'] = obj['src_port_range'][1]
             self.rule['allowed'] = True
-            self.rule['cidr'] = obj['source_cidr_list']
+
+            if self.rule['type'] == 'all' and not obj['source_cidr_list']:
+                self.rule['cidr'] = ['0.0.0.0/0']
+            else:
+                self.rule['cidr'] = obj['source_cidr_list']
+
             self.rule['action'] = "ACCEPT"
+            logging.debug("AclIP created for rule ==> %s", self.rule)
 
         def create(self):
             for cidr in self.rule['cidr']:
@@ -123,23 +129,28 @@ class CsAcl(CsDataBag):
                                     " -p %s " % rule['protocol'] +
                                     " -m %s " % rule['protocol'] +
                                     " --dport %s -j RETURN" % rnge])
+
+            logging.debug("Current ACL IP direction is ==> %s", self.direction)
             if self.direction == 'egress':
-                self.fw.append(["filter", "", " -A FW_OUTBOUND -j FIREWALL_EGRESS_RULES"])
+                self.fw.append(["filter", "", " -A FW_OUTBOUND -j FW_EGRESS_RULES"])
                 if rule['protocol'] == "icmp":
                     self.fw.append(["filter", "front",
-                                    " -A FIREWALL_EGRESS_RULES" +
+                                    " -A FW_EGRESS_RULES" +
                                     " -s %s " % cidr +
                                     " -p %s " % rule['protocol'] +
                                     " -m %s " % rule['protocol'] +
                                     " --icmp-type %s -j %s" % (icmp_type, self.rule['action'])])
                 else:
-                    fwr = " -A FIREWALL_EGRESS_RULES" + \
+                    fwr = " -A FW_EGRESS_RULES" + \
                           " -s %s " % cidr
                     if rule['protocol'] != "all":
                         fwr += "-p %s " % rule['protocol'] + \
                                " -m %s " % rule['protocol'] + \
                                " --dport %s" % rnge
+                    
                     self.fw.append(["filter", "front", "%s -j %s" % (fwr, rule['action'])])
+
+                logging.debug("EGRESS rule configured for protocol ==> %s, action ==> %s", rule['protocol'], rule['action'])
 
     class AclDevice():
         """ A little class for each list of acls per device """
