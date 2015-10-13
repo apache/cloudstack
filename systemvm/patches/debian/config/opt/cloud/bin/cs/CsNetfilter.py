@@ -150,6 +150,8 @@ class CsNetfilters(object):
             new_rule.set_table(fw[0])
             if isinstance(fw[1], int):
                 new_rule.set_count(fw[1])
+
+            logging.debug("Checking if the rule already exists: rule=%s table=%s chain=%s", new_rule.get_rule(), new_rule.get_table(), new_rule.get_chain())
             if self.has_rule(new_rule):
                 logging.debug("Exists: rule=%s table=%s", fw[2], new_rule.get_table())
             else:
