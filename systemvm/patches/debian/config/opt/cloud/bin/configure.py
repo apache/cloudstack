@@ -141,13 +141,13 @@ class CsAcl(CsDataBag):
                                     " -m %s " % rule['protocol'] +
                                     " --icmp-type %s -j %s" % (icmp_type, self.rule['action'])])
                 else:
-                    fwr = " -A FW_EGRESS_RULES" + \
-                          " -s %s " % cidr
+                    fwr = " -A FW_EGRESS_RULES"
                     if rule['protocol'] != "all":
-                        fwr += "-p %s " % rule['protocol'] + \
+                        fwr += " -s %s " % cidr + \
+                               " -p %s " % cidr, rule['protocol'] + \
                                " -m %s " % rule['protocol'] + \
                                " --dport %s" % rnge
-                    
+
                     self.fw.append(["filter", "", "%s -j %s" % (fwr, rule['action'])])
 
                 logging.debug("EGRESS rule configured for protocol ==> %s, action ==> %s", rule['protocol'], rule['action'])
