@@ -133,7 +133,8 @@ class TestLoadBalance(cloudstackTestCase):
                 ip_addr,
                 self.services['lbrule']["publicport"],
                 self.vm_1.username,
-                self.vm_1.password
+                self.vm_1.password,
+                retries=5
             )
             hostnames.append(ssh_1.execute("hostname")[0])
             self.debug(hostnames)
