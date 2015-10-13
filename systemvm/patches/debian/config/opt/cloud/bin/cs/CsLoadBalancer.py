@@ -27,7 +27,7 @@ HAPROXY_CONF_P = "/etc/haproxy/haproxy.cfg"
 
 
 class CsLoadBalancer(CsDataBag):
-    """ Manage dhcp entries """
+    """ Manage Load Balance entries """
 
     def process(self):
         if "config" not in self.dbag.keys():
@@ -44,3 +44,22 @@ class CsLoadBalancer(CsDataBag):
             file1.commit()
             shutil.copy2(HAPROXY_CONF_T, HAPROXY_CONF_P)
             CsHelper.service("haproxy", "restart")
+        
+        add_rules = self.dbag['config'][0]['add_rules']
+        remove_rules = self.dbag['config'][0]['remove_rules']
+        self._configure_firewall(add_rules, remove_rules)
+
+    def _configure_firewall(self, add_rules, remove_rules):
+        firewall = self.fw
+        
+        for rules in add_rules:
+            path = rules.split(':')
+            ip = path[0]
+            port = path[1]
+            fw.append(["filter", "", "-A INPUT -p tcp -m tcp -d %s --dport %s -m state --state NEW -j ACCEPT" % (ip, port)])
+
+        for rules in remove_rules:
+            path = rules.split(':')
+            ip = path[0]
+            port = path[1]
+            fw.append(["filter", "", "-D INPUT -p tcp -m tcp -d %s --dport %s -m state --state NEW -j ACCEPT" % (ip, port)])
