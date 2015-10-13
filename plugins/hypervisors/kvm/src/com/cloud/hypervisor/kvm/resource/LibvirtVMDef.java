@@ -615,7 +615,7 @@ public class LibvirtVMDef {
             _sourcePath = volPath;
             _diskLabel = "hdc";
             _diskFmtType = DiskFmtType.RAW;
-            _diskCacheMode = DiskCacheMode.NONE;
+            _diskCacheMode = DiskCacheMode.WRITETHROUGH;;
             _bus = DiskBus.IDE;
         }
 
