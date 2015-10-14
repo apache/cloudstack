@@ -778,7 +778,7 @@ public class ApiDBUtils {
     // ///////////////////////////////////////////////////////////
 
     public static VMInstanceVO findVMInstanceById(long vmId) {
-        return s_vmDao.findById(vmId);
+        return s_vmDao.findByIdIncludingRemoved(vmId);
     }
 
     public static long getStorageCapacitybyPool(Long poolId, short capacityType) {
