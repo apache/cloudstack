@@ -79,7 +79,7 @@ public class RequestTest extends TestCase {
         String log = sreq.log("Debug", true, Level.DEBUG);
         assert (log.contains(UpdateHostPasswordCommand.class.getSimpleName()));
         assert (log.contains(SecStorageFirewallCfgCommand.class.getSimpleName()));
-        assert (!log.contains(GetHostStatsCommand.class.getSimpleName()));
+        assertFalse("Did not expect GetHostStatsCommand in message", log.contains(GetHostStatsCommand.class.getSimpleName()));
         assert (!log.contains("username"));
         assert (!log.contains("password"));
 
@@ -220,7 +220,7 @@ public class RequestTest extends TestCase {
 
         logger.setLevel(Level.DEBUG);
         String log = sreq.log("Debug", true, Level.DEBUG);
-        assert (log == null);
+        assertNull("did not expect a string for this level.", log);
 
         log = sreq.log("Debug", false, Level.DEBUG);
         assert (log != null);

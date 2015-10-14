@@ -21,6 +21,8 @@ package com.cloud.serializer;
 
 import java.util.List;
 
+import org.apache.cloudstack.agent.transport.AnswerArrayTypeAdaptor;
+import org.apache.cloudstack.agent.transport.CommandArrayTypeAdaptor;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
@@ -32,7 +34,6 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
-import com.cloud.agent.transport.ArrayTypeAdaptor;
 import com.cloud.agent.transport.InterfaceTypeAdaptor;
 import com.cloud.agent.transport.LoggingExclusionStrategy;
 import com.cloud.agent.transport.Request.NwGroupsCommandTypeAdaptor;
@@ -61,9 +62,9 @@ public class GsonHelper {
         builder.registerTypeAdapter(DataStoreTO.class, dsAdaptor);
         InterfaceTypeAdaptor<DataTO> dtAdaptor = new InterfaceTypeAdaptor<DataTO>();
         builder.registerTypeAdapter(DataTO.class, dtAdaptor);
-        ArrayTypeAdaptor<Command> cmdAdaptor = new ArrayTypeAdaptor<Command>();
+        CommandArrayTypeAdaptor cmdAdaptor = new CommandArrayTypeAdaptor();
         builder.registerTypeAdapter(Command[].class, cmdAdaptor);
-        ArrayTypeAdaptor<Answer> ansAdaptor = new ArrayTypeAdaptor<Answer>();
+        AnswerArrayTypeAdaptor ansAdaptor = new AnswerArrayTypeAdaptor();
         builder.registerTypeAdapter(Answer[].class, ansAdaptor);
         builder.registerTypeAdapter(new TypeToken<List<PortConfig>>() {
         }.getType(), new PortConfigListTypeAdaptor());
