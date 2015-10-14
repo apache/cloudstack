@@ -767,12 +767,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     // We have to emit the event here because the state listener is ignoring root volume deletions,
                     // assuming that the UserVMManager is responsible for emitting the usage event for them when
                     // the vm delete command is processed
-                    List<VolumeVO> volumes = _volumeDao.findByInstance(vm.getId());
+                    List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT);
                     for (VolumeVO volume : volumes) {
-                        if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
                             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                                     Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
-                        }
                     }
 
                 }
