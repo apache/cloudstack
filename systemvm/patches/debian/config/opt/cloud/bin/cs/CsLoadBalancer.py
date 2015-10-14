@@ -17,7 +17,6 @@
 import logging
 import os.path
 import re
-import shutil
 from cs.CsDatabag import CsDataBag
 from CsProcess import CsProcess
 from CsFile import CsFile
@@ -37,13 +36,14 @@ class CsLoadBalancer(CsDataBag):
             return
         config = self.dbag['config'][0]['configuration']
         file1 = CsFile(HAPROXY_CONF_T)
-        file2 = CsFile(HAPROXY_CONF_P)
         file1.empty()
         for x in config:
             [file1.append(w, -1) for w in x.split('\n')]
+
+        file1.commit()
+        file2 = CsFile(HAPROXY_CONF_P)
         if not file2.compare(file1):
-            file1.commit()
-            shutil.copy2(HAPROXY_CONF_T, HAPROXY_CONF_P)
+            CsHelper.copy(HAPROXY_CONF_T, HAPROXY_CONF_P)
 
             proc = CsProcess(['/var/run/haproxy.pid'])
             if not proc.find():

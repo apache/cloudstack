@@ -131,9 +131,9 @@ class CsRedundant(object):
         
         CsHelper.copy(conntrackd_template_conf, conntrackd_temp_bkp)
         
-        connt = CsFile(conntrackd_template_conf)
+        conntrackd_tmpl = CsFile(conntrackd_template_conf)
         if guest is not None:
-            connt.section("Multicast {", "}", [
+            conntrackd_tmpl.section("Multicast {", "}", [
                           "IPv4_address 225.0.0.50\n",
                           "Group 3780\n",
                           "IPv4_interface %s\n" % guest.get_ip(),
@@ -141,14 +141,15 @@ class CsRedundant(object):
                           "SndSocketBuffer 1249280\n",
                           "RcvSocketBuffer 1249280\n",
                           "Checksum on\n"])
-            connt.section("Address Ignore {", "}", self._collect_ignore_ips())
-            connt.commit()
+            conntrackd_tmpl.section("Address Ignore {", "}", self._collect_ignore_ips())
+            conntrackd_tmpl.commit()
 
         conntrackd_conf = CsFile(self.CONNTRACKD_CONF)
 
-        if not connt.compare(conntrackd_conf):
+        is_equals = conntrackd_tmpl.compare(conntrackd_conf)
+        proc = CsProcess(['/etc/conntrackd/conntrackd.conf'])
+        if not proc.find() or not is_equals:
             CsHelper.copy(conntrackd_template_conf, self.CONNTRACKD_CONF)
-            proc = CsProcess(['/etc/conntrackd/conntrackd.conf'])
             CsHelper.service("conntrackd", "restart")
 
         # Restore the template file and remove the backup.

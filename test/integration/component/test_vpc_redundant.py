@@ -458,26 +458,22 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.query_routers()
         self.networks.append(self.create_network(self.services["network_offering"], "10.1.1.1"))
         self.networks.append(self.create_network(self.services["network_offering_no_lb"], "10.1.2.1"))
-        time.sleep(30)
         self.check_master_status(2)
         self.add_nat_rules()
         self.do_vpc_test(False)
-        time.sleep(30)
         
         self.stop_router_by_type("MASTER")
         # wait for the backup router to transit to master state
-        time.sleep(30)
+        time.sleep(10)
         self.check_master_status(1)
         self.do_vpc_test(False)
 
         self.delete_nat_rules()
-        time.sleep(45)
         self.check_master_status(1)
         self.do_vpc_test(True)
 
         self.start_routers()
         self.add_nat_rules()
-        time.sleep(30)
         self.check_master_status(2)
         self.do_vpc_test(False)
 
@@ -488,7 +484,6 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.query_routers()
         self.networks.append(self.create_network(self.services["network_offering"], "10.1.1.1"))
         self.networks.append(self.create_network(self.services["network_offering_no_lb"], "10.1.2.1"))
-        time.sleep(30)
         self.check_master_status(2)
         self.add_nat_rules()
         self.do_default_routes_test()
