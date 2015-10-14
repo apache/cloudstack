@@ -173,7 +173,7 @@ class CsRedundant(object):
         conntrackd_cron.add("@reboot root service conntrackd start", -1)
         conntrackd_cron.commit()
 
-        proc = CsProcess(['/usr/sbin/keepalived', '--vrrp'])
+        proc = CsProcess(['/usr/sbin/keepalived'])
         if not proc.find() or keepalived_conf.is_changed():
             CsHelper.service("keepalived", "restart")
 
