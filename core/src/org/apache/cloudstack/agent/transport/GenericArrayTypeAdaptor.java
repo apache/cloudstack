@@ -3,7 +3,6 @@ package org.apache.cloudstack.agent.transport;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
 import com.google.gson.TypeAdapter;
@@ -53,7 +52,7 @@ public abstract class GenericArrayTypeAdaptor<T> extends TypeAdapter<T[]> {
                 T t = _gson.fromJson(in, clz);
                 arry.add(t);
             } catch (ClassNotFoundException e) {
-                throw new CloudRuntimeException("desiralizing json failed, couldn't load " + tiep, e);
+                throw new CloudRuntimeException("deserializing json failed, couldn't load " + tiep, e);
             }
             in.endObject();
         }

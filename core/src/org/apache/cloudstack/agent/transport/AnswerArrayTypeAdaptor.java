@@ -1,8 +1,10 @@
 package org.apache.cloudstack.agent.transport;
 
+import java.io.IOException;
 import java.lang.reflect.Array;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.stream.JsonWriter;
 
 public class AnswerArrayTypeAdaptor extends GenericArrayTypeAdaptor<Answer> {
@@ -15,7 +17,15 @@ public class AnswerArrayTypeAdaptor extends GenericArrayTypeAdaptor<Answer> {
 
     @Override
     protected void writeElement(JsonWriter out, Answer elem) {
-        _gson.toJson(elem,elem.getClass(),out);
+        try {
+            String data = _gson.toJson(elem);
+            if(data != null && !data.equals("null")) {
+                out.name(elem.getClass().getCanonicalName());
+                out.jsonValue(data);
+            }
+        } catch (IOException e) {
+            throw new CloudRuntimeException("serializing json failed for " + elem.getClass(), e);
+        }
     }
 
 }
