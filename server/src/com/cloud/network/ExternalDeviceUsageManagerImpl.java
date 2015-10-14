@@ -43,6 +43,7 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.host.Host.Type;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -68,6 +69,7 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.user.AccountManager;
@@ -332,6 +334,21 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
         });
     }
 
+    public boolean isNccServiceProvider(Network network) {
+        NetworkOffering networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        if(null!= networkOffering && networkOffering.getServicePackage() != null ) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    public HostVO getNetScalerControlCenterForNetwork(Network guestConfig) {
+        long zoneId = guestConfig.getDataCenterId();
+        return _hostDao.findByTypeNameAndZoneId(zoneId, "NetscalerControlCenter", Type.NetScalerControlCenter);
+    }
+
     protected class ExternalDeviceNetworkUsageTask extends ManagedContextRunnable {
 
         public ExternalDeviceNetworkUsageTask() {
@@ -399,11 +416,20 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                             s_logger.debug("Network " + network.getId() + " is not configured for external networking, so skipping usage check.");
                             continue;
                         }
-
-                        ExternalFirewallDeviceVO fwDeviceVO = getExternalFirewallForNetwork(network);
+                        //if(network.getNet)
                         ExternalLoadBalancerDeviceVO lbDeviceVO = getExternalLoadBalancerForNetwork(network);
-                        if (lbDeviceVO == null && fwDeviceVO == null) {
+                        HostVO externalNcc = null;
+                        boolean isNccNetwork = isNccServiceProvider(network);
+                        if(isNccNetwork) {
+                            externalNcc = getNetScalerControlCenterForNetwork(network);
+                        }
+                        ExternalFirewallDeviceVO fwDeviceVO = getExternalFirewallForNetwork(network);
+
+                        if (fwDeviceVO == null) {
                             continue;
+                        }
+                        if(externalNcc == null && lbDeviceVO == null) {
+                            return;
                         }
 
                         // Get network stats from the external firewall
@@ -440,13 +466,18 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                         // Get network stats from the external load balancer
                         ExternalNetworkResourceUsageAnswer lbAnswer = null;
                         HostVO externalLoadBalancer = null;
-                        if (lbDeviceVO != null) {
-                            externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
+                        if (lbDeviceVO != null || externalNcc != null) {
+                            if(isNccNetwork) {
+                                externalLoadBalancer = externalNcc;
+                            } else {
+                                externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
+                            }
                             if (externalLoadBalancer != null) {
                                 Long lbDeviceId = new Long(externalLoadBalancer.getId());
                                 if (!lbDeviceUsageAnswerMap.containsKey(lbDeviceId)) {
                                     try {
-                                        ExternalNetworkResourceUsageCommand cmd = new ExternalNetworkResourceUsageCommand();
+                                        ExternalNetworkResourceUsageCommand cmd = new ExternalNetworkResourceUsageCommand(network.getId());
+                                        //TODO Once the command reached NCC, pass the networkid in the cmd for fetching the
                                         lbAnswer = (ExternalNetworkResourceUsageAnswer)_agentMgr.easySend(externalLoadBalancer.getId(), cmd);
                                         if (lbAnswer == null || !lbAnswer.getResult()) {
                                             String details = (lbAnswer != null) ? lbAnswer.getDetails() : "details unavailable";
