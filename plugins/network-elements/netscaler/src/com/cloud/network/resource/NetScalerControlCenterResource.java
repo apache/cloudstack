@@ -3272,10 +3272,15 @@ public class NetScalerControlCenterResource implements ServerResource {
                 if(statsIPList != null) {
                     for(int i=0; i<statsIPList.length(); i++) {
                         JSONObject ipstat = statsIPList.getJSONObject(i);
-                        /*ipstat.
                         if(ipstat != null) {
-                            answer.ipBytes.put(, bytesSentAndReceived);
-                       }*/
+                            long[] bytesSentAndReceived = new long[] {0, 0};
+                            bytesSentAndReceived[0] = 0;// ipstat.getJSONArray("ipstats"). stat_entry.get_totalrequestbytes();
+                            bytesSentAndReceived[1] =0;// stat_entry.get_totalresponsebytes();
+
+                            if (bytesSentAndReceived[0] >= 0 && bytesSentAndReceived[1] >= 0) {
+                                answer.ipBytes.put(ipstat.getString("ip"), bytesSentAndReceived);
+                            }
+                       }
                     }
                 }
                 s_logger.debug("IPStats Response :" + response);
@@ -3288,30 +3293,6 @@ public class NetScalerControlCenterResource implements ServerResource {
                 e.printStackTrace();
             }
 
-            lbvserver_stats[] stats = lbvserver_stats.get(_netscalerService);
-
-            if (stats == null || stats.length == 0) {
-                return answer;
-            }
-
-            for (lbvserver_stats stat_entry : stats) {
-                String lbvserverName = stat_entry.get_name();
-                lbvserver vserver = lbvserver.get(_netscalerService, lbvserverName);
-                if (vserver != null) {
-                    String lbVirtualServerIp = vserver.get_ipv46();
-
-                    long[] bytesSentAndReceived = answer.ipBytes.get(lbVirtualServerIp);
-                    if (bytesSentAndReceived == null) {
-                        bytesSentAndReceived = new long[] {0, 0};
-                    }
-                    bytesSentAndReceived[0] += stat_entry.get_totalrequestbytes();
-                    bytesSentAndReceived[1] += stat_entry.get_totalresponsebytes();
-
-                    if (bytesSentAndReceived[0] >= 0 && bytesSentAndReceived[1] >= 0) {
-                        answer.ipBytes.put(lbVirtualServerIp, bytesSentAndReceived);
-                    }
-                }
-            }
         } catch (Exception e) {
             s_logger.error("Failed to get bytes sent and recived statistics due to " + e);
             throw new ExecutionException(e.getMessage());
