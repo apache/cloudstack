@@ -1033,12 +1033,7 @@ public class ApiDBUtils {
     }
 
     public static Snapshot findSnapshotById(long snapshotId) {
-        SnapshotVO snapshot = s_snapshotDao.findById(snapshotId);
-        if (snapshot != null && snapshot.getRemoved() == null && snapshot.getState() == Snapshot.State.BackedUp) {
-            return snapshot;
-        } else {
-            return null;
-        }
+        return s_snapshotDao.findByIdIncludingRemoved(snapshotId);
     }
 
     public static StoragePoolVO findStoragePoolById(Long storagePoolId) {
