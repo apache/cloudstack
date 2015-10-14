@@ -53,5 +53,6 @@ public enum ApiCommandJobType {
     IAMPolicy,
     IAMGroup,
     GuestOs,
-    GuestOsMapping
+    GuestOsMapping,
+    Network
 }

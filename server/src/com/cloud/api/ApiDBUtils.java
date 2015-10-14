@@ -1217,7 +1217,7 @@ public class ApiDBUtils {
     }
 
     public static NetworkVO findNetworkById(long id) {
-        return s_networkDao.findById(id);
+        return s_networkDao.findByIdIncludingRemoved(id);
     }
 
     public static Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId, long zoneId) {
@@ -1598,6 +1598,11 @@ public class ApiDBUtils {
             AutoScaleVmGroupVO group = ApiDBUtils.findAutoScaleVmGroupById(job.getInstanceId());
             if (group != null) {
                 jobInstanceId = group.getUuid();
+            }
+        } else if (jobInstanceType == ApiCommandJobType.Network) {
+            NetworkVO networkVO = ApiDBUtils.findNetworkById(job.getInstanceId());
+            if(networkVO != null) {
+                jobInstanceId = networkVO.getUuid();
             }
         } else if (jobInstanceType != ApiCommandJobType.None) {
             // TODO : when we hit here, we need to add instanceType -> UUID
