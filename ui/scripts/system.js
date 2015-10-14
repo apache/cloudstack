@@ -1007,7 +1007,6 @@
                                             label: 'label.add',
                                             action: function (args) {
                                                 var array1 =[];
-                                                array1.push("&zoneId=" + args.context.zones[0].id);
                                                 array1.push("&podid=" + args.data.podid);
 
                                                 array1.push("&gateway=" + args.data.gateway);

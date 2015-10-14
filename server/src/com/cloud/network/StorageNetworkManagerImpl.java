@@ -112,11 +112,13 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
                     stmt_insert.setLong(3, zoneId);
                     stmt_insert.setNull(4, java.sql.Types.DATE);
                     stmt_insert.executeUpdate();
+                    stmt_insert.close();
                 }
 
                 try (PreparedStatement stmt_update = txn.prepareStatement(updateSql);) {
                     stmt_update.setLong(1, zoneId);
                     stmt_update.executeUpdate();
+                    stmt_update.close();
                 }
             }
         }
@@ -223,7 +225,7 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
         checkOverlapPrivateIpRange(podId, startIp, endIp);
         checkOverlapStorageIpRange(podId, startIp, endIp);
 
-        StorageNetworkIpRangeVO range = null;
+        //StorageNetworkIpRangeVO range = null;
 
         final String endIpFinal = endIp;
         return Transaction.execute(new TransactionCallbackWithException<StorageNetworkIpRangeVO, SQLException>() {
