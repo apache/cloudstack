@@ -83,7 +83,10 @@
                       // Make metrics tables horizontally scrollable
                       $newPanel.find('.list-view').css({'overflow-x': 'visible'});
                       // Refresh metrics when refresh button is clicked
-                      $newPanel.find('.refreshMetrics').click(metricsListView.refreshMetrics);
+                      $newPanel.find('.refreshMetrics').click(function() {
+                          $browser.cloudBrowser('removeLastPanel', {});
+                          cloudStack.uiCustom.metricsView(args)();
+                      });
 
                       var filterMetricView = metricsListView.browseBy;
                       if (filterMetricView) {
