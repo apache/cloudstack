@@ -830,10 +830,17 @@
                     var colspan = Object.keys(field.columns).length;
                     addColumnToTr($tr, key, colspan, field.label);
                 } else {
-                    addColumnToTr($tr, key, 1, '');
+                    var label = '';
+                    if (key == 'name') {
+                        label = 'label.resources';
+                    }
+                    addColumnToTr($tr, key, 1, label);
                 }
                 return true;
             });
+            if (detailView && !$.isFunction(detailView) && !detailView.noCompact && !uiCustom) {
+                addColumnToTr($tr, 'quick-view', 1, '');
+            }
             $tr = $('<tr>').appendTo($thead);
             $tr.addClass('groupable-header');
         }
