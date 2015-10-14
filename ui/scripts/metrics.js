@@ -24,9 +24,6 @@
                     label: 'metrics'
                 }
             },
-            refreshMetrics: function() {
-                console.log("Refreshing metrics");
-            }
         }
     };
 
@@ -232,9 +229,6 @@
                         });
                     }
                 });
-            },
-            refreshMetrics: function() {
-                console.log("Refreshing Cluster metrics");
             },
             browseBy: {
                 filterBy: 'zoneid',
@@ -475,9 +469,6 @@
                     }
                 });
             },
-            refreshMetrics: function() {
-                console.log("Refreshing Cluster metrics");
-            },
             browseBy: {
                 filterBy: 'clusterid',
                 resource: 'hosts'
@@ -584,9 +575,6 @@
                         });
                     }
                 });
-            },
-            refreshMetrics: function() {
-                console.log("Refreshing Hosts metrics");
             },
             browseBy: {
                 filterBy: 'hostid',
@@ -701,9 +689,6 @@
                         });
                     }
                 });
-            },
-            refreshMetrics: function() {
-                console.log("Refreshing Instances metrics");
             },
             browseBy: {
                 filterBy: 'virtualmachineid',
