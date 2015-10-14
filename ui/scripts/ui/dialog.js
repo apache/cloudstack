@@ -304,12 +304,6 @@
                                             .val(_s(id))
                                             .data('json-obj', this)
                                             .html(_s(desc));
-
-                                    if(this.title) {
-                                        $option.attr({
-                                            title: this.title
-                                        });
-                                    }
                                 });
                                 }
 

@@ -2649,8 +2649,14 @@
                                         //show Netscaler service packages only when (1)LB Service is checked (2)Service Provider is Netscaler
                                         if ((args.$form.find('.form-item[rel=\"service.Lb.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true) && (args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'Netscaler')) {
                                             args.$form.find('.form-item[rel=\"service.Lb.Netscaler.servicePackages\"]').css('display', 'inline-block');
+                                            args.$form.find('.form-item[rel=\"service.Lb.Netscaler.servicePackages.description\"]').css('display', 'inline-block');
+                                            args.$form.find('.form-item[rel=\"service.Lb.Netscaler.servicePackages.description\"]').find("#label_netscaler_service_packages_description").attr("disabled", "disabled");
+                                            args.$form.find('.form-item[rel=\"service.Lb.Netscaler.servicePackages.description\"]').find("#label_netscaler_service_packages_description").text(args.$form.find('.form-item[rel=\"service.Lb.Netscaler.servicePackages\"]').find('#label_netscaler_service_packages option:selected').data("json-obj").desc);
                                         } else {
                                             args.$form.find('.form-item[rel=\"service.Lb.Netscaler.servicePackages\"]').hide();
+                                            args.$form.find('.form-item[rel=\"service.Lb.Netscaler.servicePackages.description\"]').hide();
+                                            args.$form.find('.form-item[rel=\"service.Lb.Netscaler.servicePackages.description\"]').find("#label_netscaler_service_packages_description").attr("disabled", "disabled");
+                                            args.$form.find('.form-item[rel=\"service.Lb.Netscaler.servicePackages.description\"]').find("#label_netscaler_service_packages_description").text("");
                                         }
 
                                         //show Netscaler service package is none then hide LbIsolationDropdown
@@ -3077,6 +3083,12 @@
                                                 }
                                             });
                                         }
+                                    },
+
+                                    "service.Lb.Netscaler.servicePackages.description": {
+                                        label: 'label.netscaler.service.packages.description',
+                                        isHidden: true,
+                                        isTextarea: true
                                     },
 
                                     "service.Lb.lbIsolationDropdown": {
