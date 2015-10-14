@@ -143,10 +143,10 @@
                                 items[idx].maxMemUsed = 0;
 
                                 // Threshold color coding
-                                items[idx].cpunotificationthreshold = 0.0;
-                                items[idx].cpudisablethreshold = 0.0;
-                                items[idx].memnotificationthreshold = 0.0;
-                                items[idx].memdisablethreshold = 0.0;
+                                items[idx].cpunotificationthreshold = 75.0;
+                                items[idx].cpudisablethreshold = 90.0;
+                                items[idx].memnotificationthreshold = 75.0;
+                                items[idx].memdisablethreshold = 90.0;
 
                                 $.ajax({
                                     url: createURL('listClusters'),
@@ -395,6 +395,8 @@
                                         var maxCpuUsed = 0.0;
                                         var maxMemUsed = 0;
                                         $.each(json.listhostsresponse.host, function(i, host) {
+                                            // dummy data
+                                            host.cpuused = parseFloat(host.cpuallocated) * Math.random() / parseFloat(host.cpuallocated);
                                             if (host.hasOwnProperty('cpuused')) {
                                                 items[idx].cpuusedavg += host.cpuused;
                                                 if (host.cpuused > items[idx].maxCpuUsed) {
@@ -406,10 +408,12 @@
                                                 items[idx].cpuallocated += parseFloat(host.cpuallocated.replace('%', ''));
                                             }
 
-                                            if (host.hasOwnProperty('memused')) {
-                                                items[idx].memusedavg += parseFloat(host.memused);
-                                                if (host.memused > items[idx].maxMemUsed) {
-                                                    items[idx].maxMemUsed = host.memused;
+                                            // dummy data
+                                            host.memoryused = parseFloat(host.memorytotal) * Math.random() / parseFloat(host.memorytotal);
+                                            if (host.hasOwnProperty('memoryused')) {
+                                                items[idx].memusedavg += parseFloat(host.memoryused);
+                                                if (host.memoryused > items[idx].maxMemUsed) {
+                                                    items[idx].maxMemUsed = host.memoryused;
                                                 }
                                             }
 
@@ -442,12 +446,21 @@
                                 });
 
                                 items[idx].cpuusedavg = (100.0 * items[idx].cpuusedavg / items[idx].hosts);
-                                items[idx].cpumaxdev = (items[idx].maxCpuUsed - items[idx].cpuusedavg);
-                                items[idx].cpuallocated = (items[idx].cpuallocated / items[idx].hosts).toFixed(2) + "%";
+                                items[idx].cpumaxdev = (100.0 * items[idx].maxCpuUsed - items[idx].cpuusedavg);
+                                items[idx].cpuallocated = (items[idx].cpuallocated / items[idx].hosts);
 
                                 items[idx].memusedavg = (100.0 * items[idx].memusedavg / items[idx].hosts);
-                                items[idx].memmaxdev = (items[idx].maxMemUsed - items[idx].memusedavg);
-                                items[idx].memallocated = (items[idx].memallocated / items[idx].hosts).toFixed(2) + "%";
+                                items[idx].memmaxdev = (100.0 * items[idx].maxMemUsed - items[idx].memusedavg);
+                                items[idx].memallocated = (items[idx].memallocated / items[idx].hosts);
+
+                                // Format data
+                                items[idx].cpuusedavg = (items[idx].cpuusedavg).toFixed(2) + "%";
+                                items[idx].cpumaxdev = (items[idx].cpumaxdev).toFixed(2) + "%";
+                                items[idx].cpuallocated = (items[idx].cpuallocated).toFixed(2) + "%";
+
+                                items[idx].memusedavg = (items[idx].memusedavg).toFixed(2) + "%";
+                                items[idx].memmaxdev = (items[idx].memmaxdev).toFixed(2) + "%";
+                                items[idx].memallocated = (items[idx].memallocated).toFixed(2) + "%";
 
                                 items[idx].state = items[idx].allocationstate;
                                 if (items[idx].managedstate == 'Unmanaged') {
