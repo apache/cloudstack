@@ -102,10 +102,6 @@ class CsRedundant(object):
             "%s/%s" % (self.CS_TEMPLATES_DIR, "keepalived.conf.templ"), self.KEEPALIVED_CONF)
         CsHelper.copy_if_needed(
             "%s/%s" % (self.CS_TEMPLATES_DIR, "checkrouter.sh.templ"), "/opt/cloud/bin/checkrouter.sh")
-        #The file is always copied so the RVR doesn't't get the wrong config.
-        #Concerning the r-VPC, the configuration will be applied in a different manner
-        CsHelper.copy(
-            "%s/%s" % (self.CS_TEMPLATES_DIR, "conntrackd.conf.templ"), self.CONNTRACKD_CONF)
 
         CsHelper.execute(
             'sed -i "s/--exec\ \$DAEMON;/--exec\ \$DAEMON\ --\ --vrrp;/g" /etc/init.d/keepalived')
@@ -130,7 +126,12 @@ class CsRedundant(object):
         keepalived_conf.commit()
 
         # conntrackd configuration
-        connt = CsFile(self.CONNTRACKD_CONF)
+        conntrackd_template_conf = "%s/%s" % (self.CS_TEMPLATES_DIR, "conntrackd.conf.templ")
+        conntrackd_temp_bkp = "%s/%s" % (self.CS_TEMPLATES_DIR, "conntrackd.conf.templ.bkp")
+        
+        CsHelper.copy(conntrackd_template_conf, conntrackd_temp_bkp)
+        
+        connt = CsFile(conntrackd_template_conf)
         if guest is not None:
             connt.section("Multicast {", "}", [
                           "IPv4_address 225.0.0.50\n",
@@ -143,8 +144,16 @@ class CsRedundant(object):
             connt.section("Address Ignore {", "}", self._collect_ignore_ips())
             connt.commit()
 
-        if connt.is_changed():
+        conntrackd_conf = CsFile(self.CONNTRACKD_CONF)
+
+        if not connt.compare(conntrackd_conf):
+            CsHelper.copy(conntrackd_template_conf, self.CONNTRACKD_CONF)
+            proc = CsProcess(['/etc/conntrackd/conntrackd.conf'])
             CsHelper.service("conntrackd", "restart")
+
+        # Restore the template file and remove the backup.
+        CsHelper.copy(conntrackd_temp_bkp, conntrackd_template_conf)
+        CsHelper.execute("rm -rf %s" % conntrackd_temp_bkp)
 
         # Configure heartbeat cron job - runs every 30 seconds
         heartbeat_cron = CsFile("/etc/cron.d/heartbeat")
