@@ -53,7 +53,6 @@ import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
-import com.cloud.agent.manager.Commands;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.AddNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.ConfigureNetscalerLoadBalancerCmd;
@@ -136,6 +135,7 @@ import com.cloud.network.rules.LbStickinessMethod;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.network.rules.LoadBalancerContainer;
 import com.cloud.network.rules.StaticNat;
+import com.cloud.network.vm.NetScalerVMManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
@@ -153,15 +153,12 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.UrlUtil;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineProfile;
 //import com.cloud.network.dao.RegisteredServicePackageVO;
 
 public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
         implements LoadBalancingServiceProvider, NetscalerLoadBalancerElementService, ExternalLoadBalancerDeviceManager,
-        IpDeployer, StaticNatServiceProvider, GslbServiceProvider, VirtualMachineGuru {
+        IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
 
     private static final Logger s_logger = Logger.getLogger(NetscalerElement.class);
     public static final AutoScaleCounterType AutoScaleCounterSnmp = new AutoScaleCounterType("snmp");
@@ -183,10 +180,6 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
     DataCenterDao _dcDao;
     @Inject
     ExternalLoadBalancerDeviceDao _lbDeviceDao;
-
-    // @Inject
-    // NetScalerServicePackageDao _lrsPackagesDao;
-
     @Inject
     NetScalerControlCenterDao _netscalerControlCenterDao;
     @Inject
@@ -217,6 +210,8 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
     NetworkOrchestrationService _networkService;
     @Inject
     NetworkOfferingDao _networkOfferingDao = null;
+    @Inject
+    NetScalerVMManager _netScalerVMManager;
 
     private boolean canHandle(Network config, Service service) {
         DataCenter zone = _dcDao.findById(config.getDataCenterId());
@@ -239,10 +234,10 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
                 .canProviderSupportServiceInNetwork(config.getId(), service, Network.Provider.Netscaler));
     }
 
-    @Override
+/*    @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-/*        _instance = configs.get("instance.name");
+        _instance = configs.get("instance.name");
         if (_instance == null) {
             _instance = "DEFAULT";
         }
@@ -259,9 +254,9 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
             } else {
                 s_logger.warn("Invalid offering UUID is passed in " + Config.InternalLbVmServiceOfferingId.key() + "; the default offering will be used instead");
             }
-        }*/
+        }
 
-/*        //if offering wasn't set, try to get the default one
+        //if offering wasn't set, try to get the default one
         if (_internalLbVmOfferingId == 0L) {
             List<ServiceOfferingVO> offerings = _serviceOfferingDao.createSystemServiceOfferings("System Offering For Internal LB VM",
                     ServiceOffering.internalLbVmDefaultOffUniqueName, 1, InternalLoadBalancerVMManager.DEFAULT_INTERNALLB_VM_RAMSIZE,
@@ -273,7 +268,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
                 throw new ConfigurationException(msg);
             }
         }
-*/
+
         _itMgr.registerGuru(VirtualMachine.Type.NetScalerVm, this);
 
         if (s_logger.isInfoEnabled()) {
@@ -282,7 +277,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
 
         return true;
     }
-
+*/
     private boolean isBasicZoneNetwok(Network config) {
         DataCenter zone = _dcDao.findById(config.getDataCenterId());
         return (zone.getNetworkType() == NetworkType.Basic && config.getGuestType() == Network.GuestType.Shared
@@ -1566,30 +1561,20 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
         }
     }
 
-/*   @Override
-    public VirtualMachine deployNetscalerServiceVm(DeployNetscalerVpxCmd deployNetscalerVpxCmd) {
-        // TODO Auto-generated method stub
-        return null;
-    }*/
-
     @Override
     public Map<String,Object> deployNetscalerServiceVm(DeployNetscalerVpxCmd cmd) {
         DataCenter zone = _dcDao.findById(cmd.getZoneId());
-        DeployDestination dest = new DeployDestination(zone, null, null, null);//DeployDestination dest = new DeployDestination(zone, null, null, null);
-        //USERVO CALLERUSER = _USERDAO.FINDBYID(CALLCONTEXT.CURRENT().GETCALLINGUSERID());
-        //JOURNAL JOURNAL = NEW JOURNAL.LOGJOURNAL("IMPLEMENTING "  NETWORK, S_LOGGER);
-        VMInstanceVO vmvo = null;
+        DeployDestination dest = new DeployDestination(zone, null, null, null);
         Map<String,Object> resp = new HashMap<String, Object>();
         Long templateId = cmd.getTemplateId();
         Long serviceOfferingId = cmd.getServiceOfferingId();
         DeploymentPlan plan = new DataCenterDeployment(dest.getDataCenter().getId());
         try {
-             resp = deployNsVpx(cmd.getAccount(), dest, plan, serviceOfferingId, templateId);
+             resp =  _netScalerVMManager.deployNsVpx(cmd.getAccount(), dest, plan, serviceOfferingId, templateId);
         } catch (InsufficientCapacityException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        //vmvo = (VMInstanceVO)implementNsVpxDeployment(null, null, dest, null);
         return resp;
     }
 
@@ -1604,7 +1589,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
         }
     }*/
 
-    @Override
+/*    @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
         for (final NicProfile nic : profile.getNics()) {
             if(nic.getTrafficType() == TrafficType.Control) {
@@ -1645,11 +1630,11 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
     @Override
     public void prepareStop(VirtualMachineProfile profile) {
         // TODO Auto-generated method stub
-    }
+    }*/
 
     @Override
     public VirtualRouter stopNetscalerServiceVm(Long id, boolean forced, Account callingAccount, long callingUserId) throws ConcurrentOperationException,
             ResourceUnavailableException {
-        return stopNetScalerVm(id, forced, callingAccount, callingUserId);
+        return _netScalerVMManager.stopNetScalerVm(id, forced, callingAccount, callingUserId);
     }
 }

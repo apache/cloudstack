@@ -1869,11 +1869,9 @@ public class NetScalerControlCenterResource implements ServerResource {
 
     private synchronized Answer execute(ExternalNetworkResourceUsageCommand cmd, int numRetries) {
         try {
-            if (!_isSdx) {
-                return getPublicIpBytesSentAndReceived(cmd);
-            } else {
-                return Answer.createUnsupportedCommandAnswer(cmd);
-            }
+
+            return getPublicIpBytesSentAndReceived(cmd);
+
         } catch (ExecutionException e) {
             if (shouldRetry(numRetries)) {
                 return retry(cmd, numRetries);
@@ -3255,8 +3253,41 @@ public class NetScalerControlCenterResource implements ServerResource {
 
     private ExternalNetworkResourceUsageAnswer getPublicIpBytesSentAndReceived(ExternalNetworkResourceUsageCommand cmd) throws ExecutionException {
         ExternalNetworkResourceUsageAnswer answer = new ExternalNetworkResourceUsageAnswer(cmd);
-
+        long networkid = cmd.getNetworkid();
         try {
+            //TODO send GET cmd to get the network stats
+
+            URI agentUri = null;
+            String response = null;
+            try {
+                agentUri =
+                        new URI("https", null, _ip, DEFAULT_PORT,
+                                "/cs/adcaas/v1/networks/"+ networkid +"/ipStats", null, null);
+                org.json.JSONObject jsonBody = new JSONObject();
+                response = getHttpRequest(jsonBody.toString(), agentUri, _sessionid);
+                JSONArray statsIPList = null;
+                if(response !=null ) {
+                    statsIPList = new JSONObject(response).getJSONObject("stats") .getJSONArray("ipBytes");
+                }
+                if(statsIPList != null) {
+                    for(int i=0; i<statsIPList.length(); i++) {
+                        JSONObject ipstat = statsIPList.getJSONObject(i);
+                        /*ipstat.
+                        if(ipstat != null) {
+                            answer.ipBytes.put(, bytesSentAndReceived);
+                       }*/
+                    }
+                }
+                s_logger.debug("IPStats Response :" + response);
+            } catch (URISyntaxException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                // TODO Auto-generated catch block
+                s_logger.debug("Seesion Alive" + e.getMessage());
+                e.printStackTrace();
+            }
+
             lbvserver_stats[] stats = lbvserver_stats.get(_netscalerService);
 
             if (stats == null || stats.length == 0) {

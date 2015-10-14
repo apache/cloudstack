@@ -1295,7 +1295,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         vmr.VCPUsAtStartup = (long) vmSpec.getCpus();
         vmr.consoles.clear();
-
+        vmr.xenstoreData.clear();
         //Add xenstore data for the NetscalerVM
         if(vmSpec.getType()== VirtualMachine.Type.NetScalerVm) {
             NicTO mgmtNic = vmSpec.getNics()[0];
@@ -1304,9 +1304,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 xenstoreData.put("vm-data/ip", mgmtNic.getIp().toString().trim());
                 xenstoreData.put("vm-data/gateway", mgmtNic.getGateway().toString().trim());
                 xenstoreData.put("vm-data/netmask", mgmtNic.getNetmask().toString().trim());
-/*                vm.addToXenstoreData(conn, "vm-data/ip", );
-                vm.addToXenstoreData(conn, "vm-data/gateway", mgmtNic.getIp().toString().trim());
-                vm.addToXenstoreData(conn, "vm-data/netmask", mgmtNic.getIp().toString().trim());*/
                 vmr.xenstoreData = xenstoreData;
             }
         }

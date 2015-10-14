@@ -20,7 +20,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -32,7 +31,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
-import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
@@ -52,7 +50,6 @@ import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Pod;
@@ -61,21 +58,16 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
-import com.cloud.deploy.DeployDestination;
-import com.cloud.deploy.DeploymentPlan;
-import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -96,7 +88,6 @@ import com.cloud.network.dao.NetworkExternalFirewallDao;
 import com.cloud.network.dao.NetworkExternalLoadBalancerDao;
 import com.cloud.network.dao.NetworkExternalLoadBalancerVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
-import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
@@ -105,14 +96,10 @@ import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.StaticNatServiceProvider;
-import com.cloud.network.element.VirtualRouterProviderVO;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.resource.CreateLoadBalancerApplianceAnswer;
 import com.cloud.network.resource.DestroyLoadBalancerApplianceAnswer;
-import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.router.VirtualRouter.RedundantState;
-import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.StaticNat;
@@ -126,9 +113,7 @@ import com.cloud.resource.ResourceState;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -145,17 +130,10 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.net.UrlUtil;
-import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.Nic.ReservationStrategy;
-import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineName;
-import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -1341,7 +1319,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         }
         return null;
     }
-
+/*
     public VirtualRouterProvider addNetScalerLoadBalancerElement(long ntwkSvcProviderId) {
         VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(ntwkSvcProviderId, com.cloud.network.VirtualRouterProvider.Type.NetScalerVm);
         if (element != null) {
@@ -1510,7 +1488,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     }
 
 
-/*    public VMInstanceVO stopNetscalerVm(final long vmId, final boolean forced, final Account caller, final long callerUserId) throws ConcurrentOperationException, ResourceUnavailableException {
+    public VMInstanceVO stopNetscalerVm(final long vmId, final boolean forced, final Account caller, final long callerUserId) throws ConcurrentOperationException, ResourceUnavailableException {
         final DomainRouterVO netscalerVm = _routerDao.findById(vmId);
         if (netscalerVm == null || netscalerVm.getRole() != Role.NETSCALER_VM) {
             throw new InvalidParameterValueException("Can't find NetScaler vm by id specified");
@@ -1521,8 +1499,8 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
         return stopNetScalerVm(netscalerVm, forced, caller, callerUserId);
     }
-*/
-    protected VirtualRouter stopNetScalerVm(final long vmId, final boolean forced, final Account caller, final long callerUserId) throws ResourceUnavailableException,
+
+   protected VirtualRouter stopNetScalerVm(final long vmId, final boolean forced, final Account caller, final long callerUserId) throws ResourceUnavailableException,
     ConcurrentOperationException {
         final DomainRouterVO netscalerVm = _routerDao.findById(vmId);
         s_logger.debug("Stopping NetScaler vm " + netscalerVm);
@@ -1538,5 +1516,5 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         } catch (final Exception e) {
             throw new CloudRuntimeException("Unable to stop " + netscalerVm, e);
         }
-    }
+    }*/
 }
