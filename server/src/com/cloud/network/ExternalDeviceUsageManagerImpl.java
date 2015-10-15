@@ -477,7 +477,6 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                                 if (!lbDeviceUsageAnswerMap.containsKey(lbDeviceId)) {
                                     try {
                                         ExternalNetworkResourceUsageCommand cmd = new ExternalNetworkResourceUsageCommand(network.getId());
-                                        //TODO Once the command reached NCC, pass the networkid in the cmd for fetching the
                                         lbAnswer = (ExternalNetworkResourceUsageAnswer)_agentMgr.easySend(externalLoadBalancer.getId(), cmd);
                                         if (lbAnswer == null || !lbAnswer.getResult()) {
                                             String details = (lbAnswer != null) ? lbAnswer.getDetails() : "details unavailable";

@@ -652,10 +652,11 @@ public class NetScalerControlCenterResource implements ServerResource {
                 if(statsIPList != null) {
                     for(int i=0; i<statsIPList.length(); i++) {
                         JSONObject ipstat = statsIPList.getJSONObject(i);
+                        JSONObject ipvalues =  ipstat.getJSONObject("ipstats");
                         if(ipstat != null) {
                             long[] bytesSentAndReceived = new long[] {0, 0};
-                            bytesSentAndReceived[0] = 0;// ipstat.getJSONArray("ipstats"). stat_entry.get_totalrequestbytes();
-                            bytesSentAndReceived[1] =0;// stat_entry.get_totalresponsebytes();
+                            bytesSentAndReceived[0] = ipvalues.getLong("received");
+                            bytesSentAndReceived[1] = ipvalues.getLong("sent");
 
                             if (bytesSentAndReceived[0] >= 0 && bytesSentAndReceived[1] >= 0) {
                                 answer.ipBytes.put(ipstat.getString("ip"), bytesSentAndReceived);
