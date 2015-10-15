@@ -82,12 +82,14 @@ class CsRedundant(object):
     def _redundant_on(self):
         guest = self.address.get_guest_if()
         # No redundancy if there is no guest network
-        if self.cl.is_master() or guest is None:
-            for obj in [o for o in self.address.get_ips() if o.is_public()]:
-                self.check_is_up(obj.get_device())
         if guest is None:
             self._redundant_off()
             return
+
+        if self.cl.is_master():
+            for obj in [o for o in self.address.get_ips() if o.is_public()]:
+                self.check_is_up(obj.get_device())
+
         CsHelper.mkdir(self.CS_RAMDISK_DIR, 0755, False)
         CsHelper.mount_tmpfs(self.CS_RAMDISK_DIR)
         CsHelper.mkdir(self.CS_ROUTER_DIR, 0755, False)
@@ -336,7 +338,7 @@ class CsRedundant(object):
 
         In a DomR there will only ever be one address in a VPC there can be many
         The new code also gives the possibility to cloudstack to have a hybrid device
-        thet could function as a router and VPC router at the same time
+        that could function as a router and VPC router at the same time
         """
         lines = []
         for o in self.address.get_ips():
@@ -347,12 +349,12 @@ class CsRedundant(object):
                 else:
                     str = "        %s brd %s dev %s\n" % (o.get_gateway_cidr(), o.get_broadcast(), o.get_device())
                 lines.append(str)
-                self.check_is_up(o.get_device())
         return lines
 
     def check_is_up(self, device):
         """ Ensure device is up """
         cmd = "ip link show %s | grep 'state DOWN'" % device
+
         for i in CsHelper.execute(cmd):
             if " DOWN " in i:
                 cmd2 = "ip link set %s up" % device

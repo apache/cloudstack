@@ -118,11 +118,6 @@ class CsAddress(CsDataBag):
             ip = CsIP(dev, self.config)
 
             for address in self.dbag[dev]:
-                #check if link is up
-                if not self.check_if_link_up(dev):
-                   cmd="ip link set %s up" % dev
-                   CsHelper.execute(cmd)
-
                 ip.setAddress(address)
 
                 if ip.configured():
@@ -328,7 +323,7 @@ class CsIP:
             if " DOWN " in i:
                 cmd2 = "ip link set %s up" % self.getDevice()
                 # If redundant do not bring up public interfaces
-                # master.py and keepalived deal with tham
+                # master.py and keepalived will deal with them
                 if self.cl.is_redundant() and not self.is_public():
                     CsHelper.execute(cmd2)
                 # if not redundant bring everything up
