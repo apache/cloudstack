@@ -20,7 +20,6 @@ public abstract class GenericArrayTypeAdaptor<T> extends TypeAdapter<T[]> {
         _gson = gson;
     }
 
-
     @Override
     public void write(JsonWriter out, T[] value) throws IOException {
         if (value == null) {
@@ -62,5 +61,5 @@ public abstract class GenericArrayTypeAdaptor<T> extends TypeAdapter<T[]> {
         return result;
     }
     abstract protected T[] newArray(int size);
-    abstract protected void writeElement(JsonWriter out, T elem);
+    abstract protected void writeElement(JsonWriter out, T elem) throws IOException;
 }

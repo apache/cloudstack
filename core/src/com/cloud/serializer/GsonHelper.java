@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.cloudstack.agent.transport.AnswerArrayTypeAdaptor;
 import org.apache.cloudstack.agent.transport.CommandArrayTypeAdaptor;
+import org.apache.cloudstack.agent.transport.CommandTypeAdaptor;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
@@ -62,8 +63,10 @@ public class GsonHelper {
         builder.registerTypeAdapter(DataStoreTO.class, dsAdaptor);
         InterfaceTypeAdaptor<DataTO> dtAdaptor = new InterfaceTypeAdaptor<DataTO>();
         builder.registerTypeAdapter(DataTO.class, dtAdaptor);
-        CommandArrayTypeAdaptor cmdAdaptor = new CommandArrayTypeAdaptor();
-        builder.registerTypeAdapter(Command[].class, cmdAdaptor);
+        CommandArrayTypeAdaptor cmdsAdaptor = new CommandArrayTypeAdaptor();
+        builder.registerTypeAdapter(Command[].class, cmdsAdaptor);
+        CommandTypeAdaptor cmdAdaptor = new CommandTypeAdaptor();
+        builder.registerTypeAdapter(Command.class, cmdAdaptor);
         AnswerArrayTypeAdaptor ansAdaptor = new AnswerArrayTypeAdaptor();
         builder.registerTypeAdapter(Answer[].class, ansAdaptor);
         builder.registerTypeAdapter(new TypeToken<List<PortConfig>>() {
@@ -73,6 +76,7 @@ public class GsonHelper {
         Gson gson = builder.create();
         dsAdaptor.initGson(gson);
         dtAdaptor.initGson(gson);
+        cmdsAdaptor.initGson(gson);
         cmdAdaptor.initGson(gson);
         ansAdaptor.initGson(gson);
         return gson;
