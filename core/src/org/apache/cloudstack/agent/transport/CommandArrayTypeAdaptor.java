@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.lang.reflect.Array;
 
 import com.cloud.agent.api.Command;
+import com.cloud.serializer.GsonHelper;
+import com.google.gson.ExclusionStrategy;
 import com.google.gson.Gson;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonWriter;
@@ -21,7 +23,13 @@ public class CommandArrayTypeAdaptor extends GenericArrayTypeAdaptor<Command> {
 
     @Override
     protected void writeElement(JsonWriter out, Command elem) throws IOException {
-        _adaptor.write(out,elem);
+        // get the gsonHelper.
+        ExclusionStrategy excluder = GsonHelper.getExcluder();
+        if (!excluder.shouldSkipClass(elem.getClass())) {
+            out.beginObject();
+            _adaptor.write(out,elem);
+            out.endObject();
+        }
     }
 
 }

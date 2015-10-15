@@ -219,8 +219,10 @@ public class RequestTest extends TestCase {
         Logger logger = Logger.getLogger(GsonHelper.class);
         Level level = logger.getLevel();
 
+        String log;
+
         logger.setLevel(Level.DEBUG);
-        String log = sreq.log("Debug", true, Level.DEBUG);
+        log = sreq.log("Debug", true, Level.DEBUG);
         assertNull("did not expect a string for this level." + log , log);
 
         log = sreq.log("Debug", false, Level.DEBUG);

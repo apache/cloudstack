@@ -26,6 +26,7 @@ import org.apache.cloudstack.agent.transport.CommandArrayTypeAdaptor;
 import org.apache.cloudstack.agent.transport.CommandTypeAdaptor;
 import org.apache.log4j.Logger;
 
+import com.google.gson.ExclusionStrategy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -46,13 +47,15 @@ public class GsonHelper {
 
     protected static final Gson s_gson;
     protected static final Gson s_gogger;
+    private static final ExclusionStrategy excluder;
 
     static {
         GsonBuilder gsonBuilder = new GsonBuilder();
         s_gson = setDefaultGsonConfig(gsonBuilder);
         GsonBuilder loggerBuilder = new GsonBuilder();
         loggerBuilder.disableHtmlEscaping();
-        loggerBuilder.setExclusionStrategies(new LoggingExclusionStrategy(s_logger));
+        excluder = new LoggingExclusionStrategy(s_logger);
+        loggerBuilder.setExclusionStrategies(getExcluder());
         s_gogger = setDefaultGsonConfig(loggerBuilder);
         s_logger.info("Default Builder inited.");
     }
@@ -92,5 +95,9 @@ public class GsonHelper {
 
     public final static Logger getLogger() {
         return s_logger;
+    }
+
+    public static ExclusionStrategy getExcluder() {
+        return excluder;
     }
 }

@@ -20,8 +20,10 @@ public class AnswerArrayTypeAdaptor extends GenericArrayTypeAdaptor<Answer> {
         try {
             String data = _gson.toJson(elem);
             if(data != null && !data.equals("null")) {
+                out.beginObject();
                 out.name(elem.getClass().getCanonicalName());
                 out.jsonValue(data);
+                out.endObject();
             }
         } catch (IOException e) {
             throw new CloudRuntimeException("serializing json failed for " + elem.getClass(), e);

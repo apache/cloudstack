@@ -28,9 +28,7 @@ public abstract class GenericArrayTypeAdaptor<T> extends TypeAdapter<T[]> {
         }
         out.beginArray();
         for (T elem : (T[])value) {
-            out.beginObject();
             writeElement(out, elem);
-            out.endObject();
         }
         out.endArray();
     }
