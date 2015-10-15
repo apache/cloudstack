@@ -1578,60 +1578,6 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
         return resp;
     }
 
-/*    protected void stopInternalLbVm() throws ResourceUnavailableException,
-    ConcurrentOperationException {
-        s_logger.debug("Stopping internal lb vm " + internalLbVm);
-        try {
-            _itMgr.advanceStop(internalLbVm.getUuid(), true);
-            //return _internalLbVmDao.findById(internalLbVm.getId());
-        } catch (final OperationTimedoutException e) {
-            throw new CloudRuntimeException("Unable to stop " + internalLbVm, e);
-        }
-    }*/
-
-/*    @Override
-    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
-        for (final NicProfile nic : profile.getNics()) {
-            if(nic.getTrafficType() == TrafficType.Control) {
-                nic.setTrafficType(TrafficType.Guest);
-            }
-        }
-        return true;
-    }
-
-    @Override
-    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return true;
-    }
-
-    @Override
-    public boolean finalizeStart(VirtualMachineProfile profile, long hostId, Commands cmds, ReservationContext context) {
-        // TODO Auto-generated method stub
-        return true;
-    }
-
-    @Override
-    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile profile) {
-        // TODO Auto-generated method stub
-        return true;
-    }
-
-    @Override
-    public void finalizeStop(VirtualMachineProfile profile, Answer answer) {
-        // TODO Auto-generated method stub
-    }
-
-    @Override
-    public void finalizeExpunge(VirtualMachine vm) {
-        // TODO Auto-generated method stub
-    }
-
-    @Override
-    public void prepareStop(VirtualMachineProfile profile) {
-        // TODO Auto-generated method stub
-    }*/
-
     @Override
     public VirtualRouter stopNetscalerServiceVm(Long id, boolean forced, Account callingAccount, long callingUserId) throws ConcurrentOperationException,
             ResourceUnavailableException {
