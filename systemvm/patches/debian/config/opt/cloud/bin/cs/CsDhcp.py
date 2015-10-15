@@ -48,10 +48,8 @@ class CsDhcp(CsDataBag):
 
         self.configure_server()
 
-        if self.conf.is_changed() or self.cloud.is_changed():
-            CsHelper.service("dnsmasq", "restart")
-        elif self.cloud.is_changed():
-            CsHelper.hup_dnsmasq("dnsmasq", "dnsmasq")
+        # We restart DNSMASQ every time the configure.py is called in order to avoid lease problems.
+        CsHelper.service("dnsmasq", "restart")
 
         self.conf.commit()
         self.cloud.commit()
