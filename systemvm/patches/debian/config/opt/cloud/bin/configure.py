@@ -481,11 +481,11 @@ class CsSite2SiteVpn(CsDataBag):
             file.addeq("  dpddelay=30")
             file.addeq("  dpdtimeout=120")
             file.addeq("  dpdaction=restart")
-        file.commit()
         secret = CsFile(vpnsecretsfile)
         secret.search("%s " % leftpeer, "%s %s: PSK \"%s\"" % (leftpeer, rightpeer, obj['ipsec_psk']))
-        secret.commit()
         if secret.is_changed() or file.is_changed():
+            secret.commit()
+            file.commit()
             logging.info("Configured vpn %s %s", leftpeer, rightpeer)
             CsHelper.execute("ipsec auto --rereadall")
             CsHelper.execute("ipsec --add vpn-%s" % rightpeer)

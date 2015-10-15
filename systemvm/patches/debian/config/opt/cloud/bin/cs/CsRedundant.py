@@ -125,7 +125,6 @@ class CsRedundant(object):
                                 "        auth_type AH \n", "        auth_pass %s\n" % self.cl.get_router_password()])
         keepalived_conf.section(
             "virtual_ipaddress {", "}", self._collect_ips())
-        keepalived_conf.commit()
 
         # conntrackd configuration
         conntrackd_template_conf = "%s/%s" % (self.CS_TEMPLATES_DIR, "conntrackd.conf.templ")
@@ -187,6 +186,7 @@ class CsRedundant(object):
 
         proc = CsProcess(['/usr/sbin/keepalived'])
         if not proc.find() or keepalived_conf.is_changed():
+            keepalived_conf.commit()
             CsHelper.service("keepalived", "restart")
 
     def release_lock(self):
@@ -297,7 +297,6 @@ class CsRedundant(object):
                     route.add_defaultroute(gateway)
                 except:
                     logging.error("ERROR getting gateway from device %s" % dev)
-                    
             else:
                 logging.error("Device %s was not ready could not bring it up" % dev)
 
