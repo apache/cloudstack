@@ -177,6 +177,7 @@ public class Request {
         _mgmtId = that._mgmtId;
         _via = that._via;
         _agentId = that._agentId;
+        _agentName = that._agentName;
         setFromServer(!that.isFromServer());
     }
 
