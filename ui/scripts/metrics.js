@@ -84,7 +84,7 @@
                             }
                         },
                         cputotal: {
-                            label: 'label.metrics.cpu.total.ghz'
+                            label: 'label.metrics.cpu.total'
                         }
                     }
                 },
@@ -118,7 +118,7 @@
                             }
                         },
                         memtotal: {
-                            label: 'label.metrics.memory.total.gb'
+                            label: 'label.metrics.memory.total'
                         }
                     }
                 }
@@ -317,7 +317,7 @@
                             }
                         },
                         cputotal: {
-                            label: 'label.metrics.cpu.total.ghz'
+                            label: 'label.metrics.cpu.total'
                         }
                     }
                 },
@@ -351,7 +351,7 @@
                             }
                         },
                         memtotal: {
-                            label: 'label.metrics.memory.total.gb'
+                            label: 'label.metrics.memory.total'
                         }
                     }
                 }
@@ -531,12 +531,8 @@
                         return str;
                     },
                     indicator: {
-                        'Enabled': 'on',
                         'Up': 'on',
                         'Down': 'off',
-                        'Unmanaged': 'off',
-                        'Destroyed': 'off',
-                        'Disabled': 'off'
                     },
                     compact: true
                 },
@@ -548,7 +544,7 @@
                             label: 'label.metrics.num.cpu.cores',
                         },
                         cputotal: {
-                            label: 'label.metrics.cpu.total.ghz'
+                            label: 'label.metrics.cpu.total'
                         },
                         cpuusedavg: {
                             label: 'label.metrics.cpu.used.avg',
@@ -573,7 +569,7 @@
                     collapsible: true,
                     columns: {
                         memtotal: {
-                            label: 'label.metrics.memory.total.gb'
+                            label: 'label.metrics.memory.total'
                         },
                         memallocated: {
                             label: 'label.metrics.allocated',
@@ -644,10 +640,10 @@
                                             $.each(json.listconfigurationsresponse.configuration, function(i, config) {
                                                 switch (config.name) {
                                                     case 'cluster.cpu.allocated.capacity.disablethreshold':
-                                                        items[idx].cpudisablethreshold = parseFloat(config.value) * items[idx].cputotal;
+                                                        items[idx].cpudisablethreshold = parseFloat(config.value) * parseFloat(items[idx].cputotal);
                                                         break;
                                                     case 'cluster.cpu.allocated.capacity.notificationthreshold':
-                                                        items[idx].cpunotificationthreshold = parseFloat(config.value) * items[idx].cputotal;
+                                                        items[idx].cpunotificationthreshold = parseFloat(config.value) * parseFloat(items[idx].cputotal);
                                                         break;
                                                     case 'cluster.memory.allocated.capacity.disablethreshold':
                                                         items[idx].memdisablethreshold = parseFloat(config.value) * parseFloat(items[idx].memtotal);
@@ -677,7 +673,7 @@
                                     async: false
                                 });
 
-                                items[idx].cputotal = items[idx].cputotal + ' (x' + cpuOverCommit + ')';
+                                items[idx].cputotal = items[idx].cputotal + 'Ghz (x' + cpuOverCommit + ')';
                                 items[idx].memtotal = items[idx].memtotal + ' (x' + memOverCommit + ')';
                             });
                         }
@@ -712,10 +708,8 @@
                         return str;
                     },
                     indicator: {
-                        'Enabled': 'on',
-                        'Unmanaged': 'off',
-                        'Destroyed': 'off',
-                        'Disabled': 'off'
+                        'Running': 'on',
+                        'Stopped': 'off'
                     },
                     compact: true
                 },
@@ -727,7 +721,7 @@
                             label: 'label.metrics.num.cpu.cores',
                         },
                         cputotal: {
-                            label: 'label.metrics.cpu.total.ghz'
+                            label: 'label.metrics.cpu.total'
                         },
                         cpuused: {
                             label: 'label.metrics.cpu.used.avg',
@@ -763,12 +757,12 @@
                     collapsible: true,
                     columns: {
                         diskread: {
-                            label: 'label.metrics.disk.read.bytes'
+                            label: 'label.metrics.disk.read'
                         },
                         diskwrite: {
-                            label: 'label.metrics.disk.write.bytes'
+                            label: 'label.metrics.disk.write'
                         },
-                        diskiops: {
+                        diskiopstotal: {
                             label: 'label.metrics.disk.iops.total'
                         }
                     }
@@ -786,14 +780,65 @@
                     success: function(json) {
                         var items = json.listvirtualmachinesresponse.virtualmachine;
                         if (items) {
-                            $.each(items, function(idx, host) {
-                                items[idx].cores = 0;
-                                items[idx].cputotal = 0;
-                                items[idx].cpuused = 0.0;
-                                items[idx].memallocated = 0.0;
-                                items[idx].memused = 0.0;
-                                items[idx].networkread = 0.0;
-                                items[idx].networkwrite = 0.0;
+                            $.each(items, function(idx, vm) {
+                                items[idx].cores = vm.cpunumber;
+                                items[idx].cputotal = (parseFloat(vm.cpunumber) * parseFloat(vm.cpuspeed)).toFixed(2) + 'Mhz';
+                                items[idx].cpuusedavg = vm.cpuused;
+                                items[idx].cpuallocated = vm.cpuallocated;
+                                items[idx].memallocated = (parseFloat(vm.memory)/1024.0).toFixed(2) + 'GB';
+                                items[idx].memused = (parseFloat(vm.memoryused)/(1024.0*1024.0*1024.0)).toFixed(2) + 'GB';
+                                items[idx].networkread = (parseFloat(vm.networkkbsread)/(1024.0*1024.0)).toFixed(2) + 'GB';
+                                items[idx].networkwrite = (parseFloat(vm.networkkbswrite)/(1024.0*1024.0)).toFixed(2) + 'GB';
+                                items[idx].diskread = (parseFloat(vm.diskkbsread)/(1024.0)).toFixed(2) + 'MB';
+                                items[idx].diskwrite = (parseFloat(vm.diskkbswrite)/(1024.0)).toFixed(2) + 'MB';
+                                items[idx].diskiopstotal = parseFloat(vm.diskioread) + parseFloat(vm.diskiowrite);
+
+                                var keys = [{'memoryused': 'memused'},
+                                            {'networkkbsread': 'networkread'},
+                                            {'networkkbswrite': 'networkwrite'},
+                                            {'diskkbsread': 'diskread'},
+                                            {'diskkbswrite': 'diskwrite'},
+                                            {'diskioread': 'diskiopstotal'}];
+                                for (keyIdx in keys) {
+                                    var map = keys[keyIdx];
+                                    var key = Object.keys(map)[0];
+                                    var uiKey = map[key];
+                                    if (!vm.hasOwnProperty(key)) {
+                                        items[idx][uiKey] = 'N/A';
+                                    }
+                                }
+
+                                // Threshold color coding
+                                items[idx].cpunotificationthreshold = 75.0;
+                                items[idx].cpudisablethreshold = 95.0;
+                                items[idx].memnotificationthreshold = 75.0;
+                                items[idx].memdisablethreshold = 95.0;
+
+                                $.ajax({
+                                    url: createURL('listConfigurations'),
+                                    data: {zoneid: vm.zoneid, listAll: true},
+                                    success: function(json) {
+                                        if (json.listconfigurationsresponse && json.listconfigurationsresponse.configuration) {
+                                            $.each(json.listconfigurationsresponse.configuration, function(i, config) {
+                                                switch (config.name) {
+                                                    case 'cluster.cpu.allocated.capacity.disablethreshold':
+                                                        items[idx].cpudisablethreshold = parseFloat(config.value) * items[idx].cputotal;
+                                                        break;
+                                                    case 'cluster.cpu.allocated.capacity.notificationthreshold':
+                                                        items[idx].cpunotificationthreshold = parseFloat(config.value) * items[idx].cputotal;
+                                                        break;
+                                                    case 'cluster.memory.allocated.capacity.disablethreshold':
+                                                        items[idx].memdisablethreshold = parseFloat(config.value) * parseFloat(items[idx].memtotal);
+                                                        break;
+                                                    case 'cluster.memory.allocated.capacity.notificationthreshold':
+                                                        items[idx].memnotificationthreshold = parseFloat(config.value) * parseFloat(items[idx].memtotal);
+                                                        break;
+                                                }
+                                            });
+                                        }
+                                    },
+                                    async: false
+                                });
                             });
                         }
                         args.response.success({
