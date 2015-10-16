@@ -35,10 +35,10 @@
             id: 'zones',
             fields: {
                 name: {
-                    label: 'label.name'
+                    label: 'label.metrics.name'
                 },
                 state: {
-                    label: 'label.state',
+                    label: 'label.metrics.state',
                     converter: function (str) {
                         // For localization
                         return str;
@@ -51,14 +51,14 @@
                     }
                 },
                 clusters : {
-                    label: 'label.clusters'
+                    label: 'label.metrics.clusters'
                 },
                 cpuused: {
-                    label: 'label.cpu.usage',
+                    label: 'label.metrics.cpu.usage',
                     collapsible: true,
                     columns: {
                         cpuusedavg: {
-                            label: 'label.cpu.used.avg',
+                            label: 'label.metrics.cpu.used.avg',
                             thresholdcolor: true,
                             thresholds: {
                                 notification: 'cpunotificationthreshold',
@@ -66,16 +66,16 @@
                             }
                         },
                         cpumaxdev: {
-                            label: 'label.cpu.max.dev'
+                            label: 'label.metrics.cpu.max.dev'
                         }
                     }
                 },
                 cpuallocated: {
-                    label: 'label.cpu.allocated',
+                    label: 'label.metrics.cpu.allocated',
                     collapsible: true,
                     columns: {
                         cpuallocated: {
-                            label: 'label.allocated',
+                            label: 'label.metrics.allocated',
                             thresholdcolor: true,
                             thresholds: {
                                 notification: 'cpunotificationthreshold',
@@ -83,16 +83,16 @@
                             }
                         },
                         cputotal: {
-                            label: 'label.cpu.total.ghz'
+                            label: 'label.metrics.cpu.total.ghz'
                         }
                     }
                 },
                 memused: {
-                    label: 'label.memory.usage',
+                    label: 'label.metrics.memory.usage',
                     collapsible: true,
                     columns: {
                         memusedavg: {
-                            label: 'label.memory.used.avg',
+                            label: 'label.metrics.memory.used.avg',
                             thresholdcolor: true,
                             thresholds: {
                                 notification: 'memnotificationthreshold',
@@ -100,16 +100,16 @@
                             }
                         },
                         memmaxdev: {
-                            label: 'label.memory.max.dev'
+                            label: 'label.metrics.memory.max.dev'
                         }
                     }
                 },
                 memallocated: {
-                    label: 'label.memory.allocated',
+                    label: 'label.metrics.memory.allocated',
                     collapsible: true,
                     columns: {
                         memallocated: {
-                            label: 'label.allocated',
+                            label: 'label.metrics.allocated',
                             thresholdcolor: true,
                             thresholds: {
                                 notification: 'memnotificationthreshold',
@@ -117,7 +117,7 @@
                             }
                         },
                         memtotal: {
-                            label: 'label.memory.total.gb'
+                            label: 'label.metrics.memory.total.gb'
                         }
                     }
                 }
@@ -267,10 +267,10 @@
             id: 'clusters',
             fields: {
                 name: {
-                    label: 'label.name'
+                    label: 'label.metrics.name'
                 },
                 state: {
-                    label: 'label.state',
+                    label: 'label.metrics.state',
                     converter: function (str) {
                         // For localization
                         return str;
@@ -283,14 +283,14 @@
                     }
                 },
                 hosts: {
-                    label: 'label.hosts'
+                    label: 'label.metrics.hosts'
                 },
                 cpuused: {
-                    label: 'label.cpu.usage',
+                    label: 'label.metrics.cpu.usage',
                     collapsible: true,
                     columns: {
                         cpuusedavg: {
-                            label: 'label.cpu.used.avg',
+                            label: 'label.metrics.cpu.used.avg',
                             thresholdcolor: true,
                             thresholds: {
                                 notification: 'cpunotificationthreshold',
@@ -298,16 +298,16 @@
                             }
                         },
                         cpumaxdev: {
-                            label: 'label.cpu.max.dev'
+                            label: 'label.metrics.cpu.max.dev'
                         }
                     }
                 },
                 cpuallocated: {
-                    label: 'label.cpu.allocated',
+                    label: 'label.metrics.cpu.allocated',
                     collapsible: true,
                     columns: {
                         cpuallocated: {
-                            label: 'label.allocated',
+                            label: 'label.metrics.allocated',
                             thresholdcolor: true,
                             thresholds: {
                                 notification: 'cpunotificationthreshold',
@@ -315,16 +315,16 @@
                             }
                         },
                         cputotal: {
-                            label: 'label.cpu.total.ghz'
+                            label: 'label.metrics.cpu.total.ghz'
                         }
                     }
                 },
                 memused: {
-                    label: 'label.memory.usage',
+                    label: 'label.metrics.memory.usage',
                     collapsible: true,
                     columns: {
                         memusedavg: {
-                            label: 'label.memory.used.avg',
+                            label: 'label.metrics.memory.used.avg',
                             thresholdcolor: true,
                             thresholds: {
                                 notification: 'memnotificationthreshold',
@@ -332,16 +332,16 @@
                             }
                         },
                         memmaxdev: {
-                            label: 'label.memory.max.dev'
+                            label: 'label.metrics.memory.max.dev'
                         }
                     }
                 },
                 memallocated: {
-                    label: 'label.memory.allocated',
+                    label: 'label.metrics.memory.allocated',
                     collapsible: true,
                     columns: {
                         memallocated: {
-                            label: 'label.allocated',
+                            label: 'label.metrics.allocated',
                             thresholdcolor: true,
                             thresholds: {
                                 notification: 'memnotificationthreshold',
@@ -349,7 +349,7 @@
                             }
                         },
                         memtotal: {
-                            label: 'label.memory.total.gb'
+                            label: 'label.metrics.memory.total.gb'
                         }
                     }
                 }
@@ -516,10 +516,10 @@
             id: 'hosts',
             fields: {
                 name: {
-                    label: 'label.name'
+                    label: 'label.metrics.name'
                 },
                 state: {
-                    label: 'label.state',
+                    label: 'label.metrics.state',
                     converter: function (str) {
                         // For localization
                         return str;
@@ -534,17 +534,17 @@
                     }
                 },
                 cpuused: {
-                    label: 'label.cpu.usage',
+                    label: 'label.metrics.cpu.usage',
                     collapsible: true,
                     columns: {
                         cores: {
-                            label: 'label.num.cpu.cores',
+                            label: 'label.metrics.num.cpu.cores',
                         },
                         cputotal: {
-                            label: 'label.cpu.total.ghz'
+                            label: 'label.metrics.cpu.total.ghz'
                         },
                         cpuusedavg: {
-                            label: 'label.cpu.used.avg',
+                            label: 'label.metrics.cpu.used.avg',
                             thresholdcolor: true,
                             thresholds: {
                                 notification: 'cpunotificationthreshold',
@@ -552,7 +552,7 @@
                             }
                         },
                         cpuallocated: {
-                            label: 'label.allocated',
+                            label: 'label.metrics.allocated',
                             thresholdcolor: true,
                             thresholds: {
                                 notification: 'cpunotificationthreshold',
@@ -562,14 +562,14 @@
                     }
                 },
                 memused: {
-                    label: 'label.memory.usage',
+                    label: 'label.metrics.memory.usage',
                     collapsible: true,
                     columns: {
                         memtotal: {
-                            label: 'label.memory.total.gb'
+                            label: 'label.metrics.memory.total.gb'
                         },
                         memallocated: {
-                            label: 'label.allocated',
+                            label: 'label.metrics.allocated',
                             thresholdcolor: true,
                             thresholds: {
                                 notification: 'memnotificationthreshold',
@@ -577,7 +577,7 @@
                             }
                         },
                         memusedavg: {
-                            label: 'label.memory.used.avg',
+                            label: 'label.metrics.memory.used.avg',
                             thresholdcolor: true,
                             thresholds: {
                                 notification: 'memnotificationthreshold',
@@ -587,14 +587,14 @@
                     }
                 },
                 network: {
-                    label: 'label.network',
+                    label: 'label.metrics.network.usage',
                     collapsible: true,
                     columns: {
                         networkread: {
-                            label: 'label.network.read'
+                            label: 'label.metrics.network.read'
                         },
                         networkwrite: {
-                            label: 'label.network.write'
+                            label: 'label.metrics.network.write'
                         }
                     }
                 }
@@ -696,10 +696,10 @@
             id: 'instances',
             fields: {
                 name: {
-                    label: 'label.name'
+                    label: 'label.metrics.name'
                 },
                 state: {
-                    label: 'label.state',
+                    label: 'label.metrics.state',
                     converter: function (str) {
                         // For localization
                         return str;
@@ -712,56 +712,56 @@
                     }
                 },
                 cpuused: {
-                    label: 'label.cpu.usage',
+                    label: 'label.metrics.cpu.usage',
                     collapsible: true,
                     columns: {
                         cores: {
-                            label: 'label.num.cpu.cores',
+                            label: 'label.metrics.num.cpu.cores',
                         },
                         cputotal: {
-                            label: 'label.cpu.total.ghz'
+                            label: 'label.metrics.cpu.total.ghz'
                         },
                         cpuused: {
-                            label: 'label.cpu.used.avg',
+                            label: 'label.metrics.cpu.used.avg',
                         }
                     }
                 },
                 memused: {
-                    label: 'label.memory.usage',
+                    label: 'label.metrics.memory.usage',
                     collapsible: true,
                     columns: {
                         memallocated: {
-                            label: 'label.allocated'
+                            label: 'label.metrics.allocated'
                         },
                         memused: {
-                            label: 'label.memory.used.avg'
+                            label: 'label.metrics.memory.used.avg'
                         }
                     }
                 },
                 network: {
-                    label: 'label.network',
+                    label: 'label.metrics.network.usage',
                     collapsible: true,
                     columns: {
                         networkread: {
-                            label: 'label.network.read'
+                            label: 'label.metrics.network.read'
                         },
                         networkwrite: {
-                            label: 'label.network.write'
+                            label: 'label.metrics.network.write'
                         }
                     }
                 },
                 disk: {
-                    label: 'label.disk.volume',
+                    label: 'label.metrics.disk.usage',
                     collapsible: true,
                     columns: {
                         diskread: {
-                            label: 'label.disk.read.bytes'
+                            label: 'label.metrics.disk.read.bytes'
                         },
                         diskwrite: {
-                            label: 'label.disk.write.bytes'
+                            label: 'label.metrics.disk.write.bytes'
                         },
                         diskiops: {
-                            label: 'label.disk.iops.total'
+                            label: 'label.metrics.disk.iops.total'
                         }
                     }
                 }
