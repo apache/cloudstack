@@ -59,7 +59,7 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         List<QuotaTariffVO> result = new ArrayList<>();
         try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
-            final Filter filter = new Filter(QuotaTariffVO.class, "effectiveOn", false, 0L, 1L);
+            final Filter filter = new Filter(QuotaTariffVO.class, "updatedOn", false, 0L, 1L);
             final SearchCriteria<QuotaTariffVO> sc = listAllIncludedUsageType.create();
             sc.setParameters("onorbefore", effectiveDate);
             sc.setParameters("quotatype", quotaType);
@@ -103,7 +103,7 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
         List<QuotaTariffVO> tariffs = new ArrayList<QuotaTariffVO>();
         try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
-            final Filter filter = new Filter(QuotaTariffVO.class, "effectiveOn", false, 0L, 1L);
+            final Filter filter = new Filter(QuotaTariffVO.class, "updatedOn", false, 0L, 1L);
             final SearchCriteria<QuotaTariffVO> sc = listAllIncludedUsageType.create();
             sc.setParameters("onorbefore", effectiveDate);
             for (Integer quotaType : QuotaTypes.listQuotaTypes().keySet()) {

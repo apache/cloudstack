@@ -219,7 +219,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
             if (_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
                 Filter filter = new Filter(AccountVO.class, "id", Boolean.FALSE, null, null);
                 List<AccountVO> accounts = _accountDao.listAccounts(accountName, domainId, filter);
-                if (accounts.size() > 0) {
+                if (!accounts.isEmpty()) {
                     userAccount = accounts.get(0);
                 }
                 if (userAccount != null) {
