@@ -42,6 +42,7 @@ logging.basicConfig(filename=config.get_logger(),
                     format=config.get_format())
 config.cmdline()
 cl = CsCmdLine("cmdline", config)
+cl.set_master_state(False)
 
 config.set_address()
 red = CsRedundant(config)

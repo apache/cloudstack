@@ -86,10 +86,6 @@ class CsRedundant(object):
             self._redundant_off()
             return
 
-        if self.cl.is_master():
-            for obj in [o for o in self.address.get_ips() if o.is_public()]:
-                self.check_is_up(obj.get_device())
-
         CsHelper.mkdir(self.CS_RAMDISK_DIR, 0755, False)
         CsHelper.mount_tmpfs(self.CS_RAMDISK_DIR)
         CsHelper.mkdir(self.CS_ROUTER_DIR, 0755, False)
@@ -311,6 +307,7 @@ class CsRedundant(object):
         ads = [o for o in self.address.get_ips() if o.needs_vrrp()]
         for o in ads:
             CsPasswdSvc(o.get_gateway()).restart()
+
         CsHelper.service("dnsmasq", "restart")
         self.cl.set_master_state(True)
         self.cl.save()

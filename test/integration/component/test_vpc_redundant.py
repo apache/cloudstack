@@ -37,8 +37,11 @@ from marvin.lib.base import (stopRouter,
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template,
-                               list_routers)
-from marvin.lib.utils import cleanup_resources
+                               list_routers,
+                               list_hosts)
+from marvin.lib.utils import (cleanup_resources,
+                              get_process_status,
+                              get_host_credentials)
 import socket
 import time
 import inspect
@@ -236,7 +239,10 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.routers = []
         self.networks = []
         self.ips = []
+
         self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
+
         self.account = Account.create(
             self.apiclient,
             self.services["account"],
@@ -288,13 +294,59 @@ class TestVPCRedundancy(cloudstackTestCase):
             len(self.routers), count,
             "Check that %s routers were indeed created" % count)
 
-    def check_master_status(self, count=2, showall=False):
+    def check_master_status(self,count=2, showall=False):
         vals = ["MASTER", "BACKUP", "UNKNOWN"]
         cnts = [0, 0, 0]
+
+        result = "UNKNOWN"
         self.query_routers(count, showall)
         for router in self.routers:
             if router.state == "Running":
-                cnts[vals.index(router.redundantstate)] += 1
+                hosts = list_hosts(
+                    self.apiclient,
+                    zoneid=router.zoneid,
+                    type='Routing',
+                    state='Up',
+                    id=router.hostid
+                )
+                self.assertEqual(
+                    isinstance(hosts, list),
+                    True,
+                    "Check list host returns a valid list"
+                )
+                host = hosts[0]
+
+                if self.hypervisor.lower() in ('vmware', 'hyperv'):
+                        result = str(get_process_status(
+                            self.apiclient.connection.mgtSvr,
+                            22,
+                            self.apiclient.connection.user,
+                            self.apiclient.connection.passwd,
+                            router.linklocalip,
+                            "grep MASTER /etc/cloudstack/cmdline.json",
+                            hypervisor=self.hypervisor
+                        ))
+                else:
+                    try:
+                        host.user, host.passwd = get_host_credentials(
+                            self.config, host.ipaddress)
+                        result = str(get_process_status(
+                            host.ipaddress,
+                            22,
+                            host.user,
+                            host.passwd,
+                            router.linklocalip,
+                            "grep MASTER /etc/cloudstack/cmdline.json"
+                        ))
+
+                    except KeyError:
+                        self.skipTest(
+                            "Marvin configuration has no host credentials to\
+                                    check router services")
+            
+                if result.count(vals[0]) == 1:
+                    cnts[vals.index(vals[0])] += 1
+
         if cnts[vals.index('MASTER')] != 1:
             self.fail("No Master or too many master routers found %s" % cnts[vals.index('MASTER')])
 
@@ -458,14 +510,11 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.query_routers()
         self.networks.append(self.create_network(self.services["network_offering"], "10.1.1.1"))
         self.networks.append(self.create_network(self.services["network_offering_no_lb"], "10.1.2.1"))
-        time.sleep(10)
         self.check_master_status(2)
         self.add_nat_rules()
         self.do_vpc_test(False)
         
         self.stop_router_by_type("MASTER")
-        # wait for the backup router to transit to master state
-        time.sleep(10)
         self.check_master_status(1)
         self.do_vpc_test(False)
 
@@ -485,7 +534,6 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.query_routers()
         self.networks.append(self.create_network(self.services["network_offering"], "10.1.1.1"))
         self.networks.append(self.create_network(self.services["network_offering_no_lb"], "10.1.2.1"))
-        time.sleep(10)
         self.check_master_status(2)
         self.add_nat_rules()
         self.do_default_routes_test()
