@@ -1245,9 +1245,12 @@
 
                         $ul.appendTo($td);
                     } else {
-                        $td.append(
-                            $('<span>').html(_s(content))
-                        );
+                        var span = $('<span>').html(_s(content));
+                        if (field.compact) {
+                            span.addClass('compact');
+                            span.html('');
+                        }
+                        $td.append(span);
                     }
                 }
 

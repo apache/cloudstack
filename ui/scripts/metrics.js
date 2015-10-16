@@ -48,7 +48,8 @@
                         'Unmanaged': 'off',
                         'Destroyed': 'off',
                         'Disabled': 'off'
-                    }
+                    },
+                    compact: true
                 },
                 clusters : {
                     label: 'label.metrics.clusters'
@@ -280,7 +281,8 @@
                         'Unmanaged': 'off',
                         'Destroyed': 'off',
                         'Disabled': 'off'
-                    }
+                    },
+                    compact: true
                 },
                 hosts: {
                     label: 'label.metrics.hosts'
@@ -368,6 +370,7 @@
                         if (items) {
                             $.each(items, function(idx, cluster) {
                                 items[idx].hosts = 0;
+                                items[idx].hostsUp = 0;
                                 items[idx].cpuusedavg = 0.0;
                                 items[idx].cpumaxdev = 0.0;
                                 items[idx].cpuallocated = 0.0;
@@ -415,6 +418,9 @@
                                     success: function(json) {
                                         items[idx].hosts += parseInt(json.listhostsresponse.count);
                                         $.each(json.listhostsresponse.host, function(i, host) {
+                                            if (host.state == 'Up') {
+                                                items[idx].hostsUp += 1;
+                                            }
                                             if (host.hasOwnProperty('cpuused')) {
                                                 var hostCpuUsage = parseFloat(host.cpuused);
                                                 items[idx].cpuusedavg += hostCpuUsage;
@@ -475,10 +481,10 @@
                                 items[idx].cpuusedavg = (items[idx].cpuusedavg).toFixed(2) + "%";
                                 items[idx].cpumaxdev = (items[idx].cpumaxdev).toFixed(2) + "%";
                                 items[idx].cpuallocated = (items[idx].cpuallocated).toFixed(2) + "%";
-
                                 items[idx].memusedavg = (items[idx].memusedavg).toFixed(2) + "%";
                                 items[idx].memmaxdev = (items[idx].memmaxdev).toFixed(2) + "%";
                                 items[idx].memallocated = (items[idx].memallocated).toFixed(2) + "%";
+                                items[idx].hosts = items[idx].hostsUp + ' / ' + items[idx].hosts;
 
                                 items[idx].state = items[idx].allocationstate;
                                 if (items[idx].managedstate == 'Unmanaged') {
@@ -531,7 +537,8 @@
                         'Unmanaged': 'off',
                         'Destroyed': 'off',
                         'Disabled': 'off'
-                    }
+                    },
+                    compact: true
                 },
                 cpuused: {
                     label: 'label.metrics.cpu.usage',
@@ -709,7 +716,8 @@
                         'Unmanaged': 'off',
                         'Destroyed': 'off',
                         'Disabled': 'off'
-                    }
+                    },
+                    compact: true
                 },
                 cpuused: {
                     label: 'label.metrics.cpu.usage',
