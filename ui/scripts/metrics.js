@@ -807,43 +807,6 @@
                                         items[idx][uiKey] = 'N/A';
                                     }
                                 }
-
-                                // Threshold color coding
-                                items[idx].cpunotificationthreshold = 75.0;
-                                items[idx].cpudisablethreshold = 95.0;
-                                items[idx].memnotificationthreshold = 75.0;
-                                items[idx].memdisablethreshold = 95.0;
-
-                                $.ajax({
-                                    url: createURL('listConfigurations'),
-                                    data: {zoneid: vm.zoneid, listAll: true},
-                                    success: function(json) {
-                                        if (json.listconfigurationsresponse && json.listconfigurationsresponse.configuration) {
-                                            $.each(json.listconfigurationsresponse.configuration, function(i, config) {
-                                                switch (config.name) {
-                                                    case 'cluster.cpu.allocated.capacity.disablethreshold':
-                                                        items[idx].cpudisablethreshold = parseFloat(config.value) * items[idx].cputotal;
-                                                        break;
-                                                    case 'cluster.cpu.allocated.capacity.notificationthreshold':
-                                                        items[idx].cpunotificationthreshold = parseFloat(config.value) * items[idx].cputotal;
-                                                        break;
-                                                    case 'cluster.memory.allocated.capacity.disablethreshold':
-                                                        items[idx].memdisablethreshold = parseFloat(config.value) * parseFloat(items[idx].memtotal);
-                                                        break;
-                                                    case 'cluster.memory.allocated.capacity.notificationthreshold':
-                                                        items[idx].memnotificationthreshold = parseFloat(config.value) * parseFloat(items[idx].memtotal);
-                                                        break;
-                                                }
-                                            });
-                                        }
-                                    },
-                                    async: false
-                                });
-                            });
-                        }
-                        args.response.success({
-                            data: items
-                        });
                     }
                 });
             },
