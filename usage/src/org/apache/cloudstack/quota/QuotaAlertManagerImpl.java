@@ -24,7 +24,6 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.TransactionLegacy;
@@ -435,7 +434,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
             }
 
             msg.setSubject(subject);
-            msg.setSentDate(new Date(DateUtil.currentGMTTime().getTime() >> 10));
+            msg.setSentDate(new Date());
             msg.setContent(body, "text/html; charset=utf-8");
             msg.saveChanges();
 
