@@ -323,7 +323,7 @@ class TestVPCRedundancy(cloudstackTestCase):
                             self.apiclient.connection.user,
                             self.apiclient.connection.passwd,
                             router.linklocalip,
-                            "grep MASTER /etc/cloudstack/cmdline.json",
+                            "sh /opt/cloud/bin/checkrouter.sh ",
                             hypervisor=self.hypervisor
                         ))
                 else:
@@ -336,7 +336,7 @@ class TestVPCRedundancy(cloudstackTestCase):
                             host.user,
                             host.passwd,
                             router.linklocalip,
-                            "grep MASTER /etc/cloudstack/cmdline.json"
+                            "sh /opt/cloud/bin/checkrouter.sh "
                         ))
 
                     except KeyError:
