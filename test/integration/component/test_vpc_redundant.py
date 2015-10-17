@@ -555,7 +555,7 @@ class TestVPCRedundancy(cloudstackTestCase):
                     time.sleep(5)
 
     def do_vpc_test(self, expectFail):
-        retries = 20
+        retries = 5
         if expectFail:
             retries = 2
         for o in self.networks:

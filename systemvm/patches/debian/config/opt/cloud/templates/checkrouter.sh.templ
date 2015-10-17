@@ -20,6 +20,6 @@ STATUS=BACKUP
 ETH1_STATE=$(ip addr | grep eth1 | grep state | awk '{print $9;}')
 if [ $ETH1_STATE = "UP" ]
 then
-           STATUS=MASTER
+    STATUS=MASTER
 fi
 echo "Status: ${STATUS}"
