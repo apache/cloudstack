@@ -16,9 +16,10 @@
 # specific language governing permissions and limitations
 # under the License.
 
-STATUS=$(cat /etc/cloudstack/cmdline.json | grep redundant_state | awk '{print $2;}' | sed -e 's/[,\"]//g')
-if [ "$?" -ne "0" ]
+STATUS=BACKUP
+ETH1_STATE=$(ip addr | grep eth1 | grep state | awk '{print $9;}')
+if [ $ETH1_STATE = "UP" ]
 then
-	   STATUS=MASTER
+           STATUS=MASTER
 fi
 echo "Status: ${STATUS}"
