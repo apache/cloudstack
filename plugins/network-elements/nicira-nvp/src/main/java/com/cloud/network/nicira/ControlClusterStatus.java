@@ -29,6 +29,11 @@ public class ControlClusterStatus {
     private Stats zoneStats;
     private Stats routerStats;
     private Stats securityProfileStats;
+    private ClusterRoleConfig[] configuredRoles;
+
+    public ClusterRoleConfig[] getConfiguredRoles() {
+        return configuredRoles;
+    }
 
     public String getClusterStatus() {
         return clusterStatus;
@@ -83,5 +88,18 @@ public class ControlClusterStatus {
             return activeCount;
         }
 
+    }
+
+    public class ClusterRoleConfig {
+        public String majorityVersion;
+        public String role;
+
+        public String getMajorityVersion(){
+            return majorityVersion;
+        }
+
+        public String getRole(){
+            return role;
+        }
     }
 }
