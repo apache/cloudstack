@@ -20,9 +20,10 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.exception.CloudRuntimeException;
-
+import com.cloud.utils.db.TransactionStatus;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.log4j.Logger;
@@ -56,102 +57,83 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
 
     @Override
     public QuotaTariffVO findTariffPlanByUsageType(final int quotaType, final Date effectiveDate) {
-        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        List<QuotaTariffVO> result = new ArrayList<>();
-        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
-            final Filter filter = new Filter(QuotaTariffVO.class, "updatedOn", false, 0L, 1L);
-            final SearchCriteria<QuotaTariffVO> sc = listAllIncludedUsageType.create();
-            sc.setParameters("onorbefore", effectiveDate);
-            sc.setParameters("quotatype", quotaType);
-            result = search(sc, filter);
-        } catch (Exception e) {
-            throw new CloudRuntimeException("Unable to find tariff plan by usage type");
-        } finally {
-            TransactionLegacy.open(opendb).close();
-        }
-        if (result != null && !result.isEmpty()) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("QuotaTariffDaoImpl::findTariffPlanByUsageType: " + effectiveDate + "quota type " + quotaType + " val=" + result.get(0).getCurrencyValue());
+        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<QuotaTariffVO>() {
+            @Override
+            public QuotaTariffVO doInTransaction(final TransactionStatus status) {
+                List<QuotaTariffVO> result = new ArrayList<>();
+                final Filter filter = new Filter(QuotaTariffVO.class, "updatedOn", false, 0L, 1L);
+                final SearchCriteria<QuotaTariffVO> sc = listAllIncludedUsageType.create();
+                sc.setParameters("onorbefore", effectiveDate);
+                sc.setParameters("quotatype", quotaType);
+                result = search(sc, filter);
+                if (result != null && !result.isEmpty()) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("QuotaTariffDaoImpl::findTariffPlanByUsageType: " + effectiveDate + "quota type " + quotaType + " val=" + result.get(0).getCurrencyValue());
+                    }
+                    return result.get(0);
+                } else {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("QuotaTariffDaoImpl::findTariffPlanByUsageType: Missing quota type " + quotaType);
+                    }
+                    return null;
+                }
             }
-            return result.get(0);
-        } else {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("QuotaTariffDaoImpl::findTariffPlanByUsageType: Missing quota type " + quotaType);
-            }
-            return null;
-        }
+        });
     }
 
     @Override
     public List<QuotaTariffVO> listAll() {
-        List<QuotaTariffVO> result = null;
-        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        try {
-            TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
-            result = super.listAll();
-        } catch (Exception e) {
-            s_logger.error("QuotaAccountDaoImpl::listAll() failed due to: " + e.getMessage());
-            throw new CloudRuntimeException("Unable to list Quota Accounts");
-        } finally {
-            TransactionLegacy.open(opendb).close();
-        }
-        return result;
+        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaTariffVO>>() {
+            @Override
+            public List<QuotaTariffVO> doInTransaction(final TransactionStatus status) {
+                return listAll();
+            }
+        });
     }
 
     @Override
     public List<QuotaTariffVO> listAllTariffPlans(final Date effectiveDate) {
-        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        List<QuotaTariffVO> tariffs = new ArrayList<QuotaTariffVO>();
-        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
-            final Filter filter = new Filter(QuotaTariffVO.class, "updatedOn", false, 0L, 1L);
-            final SearchCriteria<QuotaTariffVO> sc = listAllIncludedUsageType.create();
-            sc.setParameters("onorbefore", effectiveDate);
-            for (Integer quotaType : QuotaTypes.listQuotaTypes().keySet()) {
-                sc.setParameters("quotatype", quotaType);
-                List<QuotaTariffVO> result = search(sc, filter);
-                if (result != null && !result.isEmpty()) {
-                    tariffs.add(result.get(0));
-                    s_logger.debug("ListAllTariffPlans on or before " + effectiveDate + " quota type " + result.get(0).getDescription() + " , effective Date=" + result.get(0).getEffectiveOn()
-                            + " val=" + result.get(0).getCurrencyValue());
+        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaTariffVO>>() {
+            @Override
+            public List<QuotaTariffVO> doInTransaction(final TransactionStatus status) {
+                List<QuotaTariffVO> tariffs = new ArrayList<QuotaTariffVO>();
+                final Filter filter = new Filter(QuotaTariffVO.class, "updatedOn", false, 0L, 1L);
+                final SearchCriteria<QuotaTariffVO> sc = listAllIncludedUsageType.create();
+                sc.setParameters("onorbefore", effectiveDate);
+                for (Integer quotaType : QuotaTypes.listQuotaTypes().keySet()) {
+                    sc.setParameters("quotatype", quotaType);
+                    List<QuotaTariffVO> result = search(sc, filter);
+                    if (result != null && !result.isEmpty()) {
+                        tariffs.add(result.get(0));
+                        s_logger.debug("ListAllTariffPlans on or before " + effectiveDate + " quota type " + result.get(0).getDescription() + " , effective Date=" + result.get(0).getEffectiveOn()
+                                + " val=" + result.get(0).getCurrencyValue());
+                    }
                 }
+                return tariffs;
             }
-        } catch (Exception e) {
-            throw new CloudRuntimeException("Unable to list all tariff plans");
-        } finally {
-            TransactionLegacy.open(opendb).close();
-        }
-        return tariffs;
+        });
     }
 
     @Override
-    public boolean updateQuotaTariff(QuotaTariffVO plan) {
-        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        boolean result = false;
-        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
-            result = this.update(plan.getId(), plan);
-        } catch (Exception e) {
-            throw new CloudRuntimeException("Unable to update quota tariff");
-        } finally {
-            TransactionLegacy.open(opendb).close();
-        }
-        return result;
+    public Boolean updateQuotaTariff(final QuotaTariffVO plan) {
+        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<Boolean>() {
+            @Override
+            public Boolean doInTransaction(final TransactionStatus status) {
+                return update(plan.getId(), plan);
+            }
+        });
     }
 
     @Override
-    public QuotaTariffVO addQuotaTariff(QuotaTariffVO plan) {
+    public QuotaTariffVO addQuotaTariff(final QuotaTariffVO plan) {
         if (plan.getIdObj() != null) {
             throw new IllegalStateException("The QuotaTariffVO being added should not have an Id set ");
         }
-        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        QuotaTariffVO result = null;
-        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
-            plan.setId(null);
-            result = this.persist(plan);
-        } catch (Exception e) {
-            throw new CloudRuntimeException("Unable to save quota tariff");
-        } finally {
-            TransactionLegacy.open(opendb).close();
-        }
-        return result;
+        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<QuotaTariffVO>() {
+            @Override
+            public QuotaTariffVO doInTransaction(final TransactionStatus status) {
+                return persist(plan);
+            }
+        });
     }
 }

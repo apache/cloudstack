@@ -175,7 +175,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
 
                     }
                 }
-            } else {
+            } else if (lastStatementDate != null) {
                 s_logger.info("For " + quotaAccount.getId() + " it is already more than " + getDifferenceDays(lastStatementDate, new Date()) + " days, will send statement in next cycle");
             }
         }
@@ -208,6 +208,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
                 if (accountBalance.compareTo(zeroBalance) <= 0) {
                     if (_lockAccountEnforcement && (lockable == 1)) {
                         if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                            s_logger.info("Locking account " + account.getAccountName() + " due to quota exhasuted.");
                             lockAccount(account.getId());
                         }
                     }
