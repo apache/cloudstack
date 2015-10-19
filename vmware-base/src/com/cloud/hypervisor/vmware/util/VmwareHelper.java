@@ -56,12 +56,12 @@ import com.vmware.vim25.VirtualE1000;
 import com.vmware.vim25.VirtualEthernetCard;
 import com.vmware.vim25.VirtualEthernetCardDistributedVirtualPortBackingInfo;
 import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
+import com.vmware.vim25.VirtualEthernetCardOpaqueNetworkBackingInfo;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineSnapshotTree;
 import com.vmware.vim25.VirtualPCNet32;
 import com.vmware.vim25.VirtualVmxnet2;
 import com.vmware.vim25.VirtualVmxnet3;
-
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.LicenseAssignmentManagerMO;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
@@ -77,6 +77,52 @@ public class VmwareHelper {
 
     public static boolean isReservedScsiDeviceNumber(int deviceNumber) {
         return deviceNumber == 7;
+    }
+
+    public static VirtualDevice prepareNicOpaque(VirtualMachineMO vmMo, VirtualEthernetCardType deviceType, String portGroupName,
+            String macAddress, int deviceNumber, int contextNumber, boolean conntected, boolean connectOnStart) throws Exception {
+
+        assert(vmMo.getRunningHost().hasOpaqueNSXNetwork());
+
+        VirtualEthernetCard nic;
+        switch (deviceType) {
+        case E1000:
+            nic = new VirtualE1000();
+            break;
+
+        case PCNet32:
+            nic = new VirtualPCNet32();
+            break;
+
+        case Vmxnet2:
+            nic = new VirtualVmxnet2();
+            break;
+
+        case Vmxnet3:
+            nic = new VirtualVmxnet3();
+            break;
+
+        default:
+            assert (false);
+            nic = new VirtualE1000();
+        }
+
+        VirtualEthernetCardOpaqueNetworkBackingInfo nicBacking = new VirtualEthernetCardOpaqueNetworkBackingInfo();
+        nicBacking.setOpaqueNetworkId("br-int");
+        nicBacking.setOpaqueNetworkType("nsx.network");
+
+        nic.setBacking(nicBacking);
+
+        VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
+        connectInfo.setAllowGuestControl(true);
+        connectInfo.setConnected(conntected);
+        connectInfo.setStartConnected(connectOnStart);
+        nic.setAddressType("Manual");
+        nic.setConnectable(connectInfo);
+        nic.setMacAddress(macAddress);
+        nic.setUnitNumber(deviceNumber);
+        nic.setKey(-contextNumber);
+        return nic;
     }
 
     public static VirtualDevice prepareNicDevice(VirtualMachineMO vmMo, ManagedObjectReference morNetwork, VirtualEthernetCardType deviceType, String portGroupName,

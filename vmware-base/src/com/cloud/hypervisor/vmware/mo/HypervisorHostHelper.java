@@ -43,6 +43,7 @@ import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.SwitchPortMode;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.nicira.nvp.plugin.NiciraNvpApiVersion;
 import com.vmware.vim25.AlreadyExistsFaultMsg;
 import com.vmware.vim25.BoolPolicy;
 import com.vmware.vim25.CustomFieldStringValue;
@@ -1061,12 +1062,16 @@ public class HypervisorHostHelper {
 
         boolean bWaitPortGroupReady = false;
         if (broadcastDomainType == BroadcastDomainType.Lswitch) {
-            if (!hostMo.hasPortGroup(vSwitch, networkName)) {
-                createNvpPortGroup(hostMo, vSwitch, networkName, shapingPolicy);
+            //if NSX API VERSION >= 4.2, connect to br-int (nsx.network), do not create portgroup else previous behaviour
+            if (NiciraNvpApiVersion.isApiVersionLowerThan("4.2")){
+              //Previous behaviour
+                if (!hostMo.hasPortGroup(vSwitch, networkName)) {
+                    createNvpPortGroup(hostMo, vSwitch, networkName, shapingPolicy);
 
-                bWaitPortGroupReady = true;
-            } else {
-                bWaitPortGroupReady = false;
+                    bWaitPortGroupReady = true;
+                } else {
+                    bWaitPortGroupReady = false;
+                }
             }
         } else {
             if (!hostMo.hasPortGroup(vSwitch, networkName)) {
@@ -1081,20 +1086,24 @@ public class HypervisorHostHelper {
             }
         }
 
-        ManagedObjectReference morNetwork;
-        if (bWaitPortGroupReady)
-            morNetwork = waitForNetworkReady(hostMo, networkName, timeOutMs);
-        else
-            morNetwork = hostMo.getNetworkMor(networkName);
-        if (morNetwork == null) {
-            String msg = "Failed to create guest network " + networkName;
-            s_logger.error(msg);
-            throw new Exception(msg);
-        }
+        ManagedObjectReference morNetwork = null;
 
-        if (createGCTag) {
-            NetworkMO networkMo = new NetworkMO(hostMo.getContext(), morNetwork);
-            networkMo.setCustomFieldValue(CustomFieldConstants.CLOUD_GC, "true");
+        if (broadcastDomainType != BroadcastDomainType.Lswitch ||
+                (broadcastDomainType == BroadcastDomainType.Lswitch && NiciraNvpApiVersion.isApiVersionLowerThan("4.2"))) {
+            if (bWaitPortGroupReady)
+                morNetwork = waitForNetworkReady(hostMo, networkName, timeOutMs);
+            else
+                morNetwork = hostMo.getNetworkMor(networkName);
+            if (morNetwork == null) {
+                String msg = "Failed to create guest network " + networkName;
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+
+            if (createGCTag) {
+                NetworkMO networkMo = new NetworkMO(hostMo.getContext(), morNetwork);
+                networkMo.setCustomFieldValue(CustomFieldConstants.CLOUD_GC, "true");
+            }
         }
 
         if (syncPeerHosts) {

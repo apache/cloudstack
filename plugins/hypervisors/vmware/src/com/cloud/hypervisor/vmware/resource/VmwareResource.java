@@ -83,6 +83,7 @@ import com.vmware.vim25.VirtualDisk;
 import com.vmware.vim25.VirtualEthernetCard;
 import com.vmware.vim25.VirtualEthernetCardDistributedVirtualPortBackingInfo;
 import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
+import com.vmware.vim25.VirtualEthernetCardOpaqueNetworkBackingInfo;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineFileInfo;
 import com.vmware.vim25.VirtualMachineFileLayoutEx;
@@ -270,6 +271,7 @@ import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.mgmt.PropertyMapDynamicBean;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.nicira.nvp.plugin.NiciraNvpApiVersion;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
@@ -1677,26 +1679,35 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (s_logger.isDebugEnabled())
                 s_logger.debug("VM " + vmInternalCSName + " will be started with NIC device type: " + nicDeviceType);
 
+            NiciraNvpApiVersion.logNiciraApiVersion();
+
             for (NicTO nicTo : sortNicsByDeviceId(nics)) {
                 s_logger.info("Prepare NIC device based on NicTO: " + _gson.toJson(nicTo));
 
                 boolean configureVServiceInNexus = (nicTo.getType() == TrafficType.Guest) && (vmSpec.getDetails().containsKey("ConfigureVServiceInNexus"));
                 VirtualMachine.Type vmType = cmd.getVirtualMachine().getType();
                 Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo, configureVServiceInNexus, vmType);
-                if (VmwareHelper.isDvPortGroup(networkInfo.first())) {
-                    String dvSwitchUuid;
-                    ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
-                    DatacenterMO dataCenterMo = new DatacenterMO(context, dcMor);
-                    ManagedObjectReference dvsMor = dataCenterMo.getDvSwitchMor(networkInfo.first());
-                    dvSwitchUuid = dataCenterMo.getDvSwitchUuid(dvsMor);
-                    s_logger.info("Preparing NIC device on dvSwitch : " + dvSwitchUuid);
-                    nic =
-                            VmwareHelper.prepareDvNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(), dvSwitchUuid, nicTo.getMac(), nicUnitNumber++,
-                                    i + 1, true, true);
-                } else {
-                    s_logger.info("Preparing NIC device on network " + networkInfo.second());
-                    nic =
-                            VmwareHelper.prepareNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(), nicTo.getMac(), nicUnitNumber++, i + 1, true, true);
+                if ((nicTo.getBroadcastType() != BroadcastDomainType.Lswitch) ||
+                        (nicTo.getBroadcastType() == BroadcastDomainType.Lswitch && NiciraNvpApiVersion.isApiVersionLowerThan("4.2"))){
+                    if (VmwareHelper.isDvPortGroup(networkInfo.first())) {
+                        String dvSwitchUuid;
+                        ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
+                        DatacenterMO dataCenterMo = new DatacenterMO(context, dcMor);
+                        ManagedObjectReference dvsMor = dataCenterMo.getDvSwitchMor(networkInfo.first());
+                        dvSwitchUuid = dataCenterMo.getDvSwitchUuid(dvsMor);
+                        s_logger.info("Preparing NIC device on dvSwitch : " + dvSwitchUuid);
+                        nic =
+                                VmwareHelper.prepareDvNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(), dvSwitchUuid, nicTo.getMac(), nicUnitNumber++,
+                                        i + 1, true, true);
+                    } else {
+                        s_logger.info("Preparing NIC device on network " + networkInfo.second());
+                        nic =
+                                VmwareHelper.prepareNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(), nicTo.getMac(), nicUnitNumber++, i + 1, true, true);
+                    }
+                }
+                else{
+                    //if NSX API VERSION >= 4.2, connect to br-int (nsx.network), do not create portgroup else previous behaviour
+                    nic = VmwareHelper.prepareNicOpaque(vmMo, nicDeviceType, networkInfo.second(), nicTo.getMac(), nicUnitNumber++, i + 1, true, true);
                 }
 
                 deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
@@ -2076,6 +2087,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 } else if (backing instanceof VirtualEthernetCardNetworkBackingInfo) {
                     // This NIC is connected to a Virtual Switch
                     // Nothing to do
+                } else if (backing instanceof VirtualEthernetCardOpaqueNetworkBackingInfo) {
+                    //if NSX API VERSION >= 4.2, connect to br-int (nsx.network), do not create portgroup else previous behaviour
+                    //OK, connected to OpaqueNetwork
                 } else {
                     s_logger.error("nic device backing is of type " + backing.getClass().getName());
                     throw new Exception("Incompatible backing for a VirtualDevice for nic " + nicIndex); //FIXME Generic exceptions are bad
