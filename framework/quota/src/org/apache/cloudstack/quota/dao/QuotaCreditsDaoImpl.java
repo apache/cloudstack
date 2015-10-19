@@ -16,7 +16,6 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -24,7 +23,6 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
@@ -33,7 +31,10 @@ import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.TransactionStatus;
 
 @Component
 @Local(value = { QuotaCreditsDao.class })
@@ -46,44 +47,35 @@ public class QuotaCreditsDaoImpl extends GenericDaoBase<QuotaCreditsVO, Long> im
     @SuppressWarnings("deprecation")
     @Override
     public List<QuotaCreditsVO> findCredits(final long accountId, final long domainId, final Date startDate, final Date endDate) {
-        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        List<QuotaCreditsVO> qc = new ArrayList<>();
-        try {
-            TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-            Filter filter = new Filter(QuotaCreditsVO.class, "updatedOn", true, 0L, Long.MAX_VALUE);
-            SearchCriteria<QuotaCreditsVO> sc = createSearchCriteria();
-            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-            if ((startDate != null) && (endDate != null) && startDate.before(endDate)) {
-                sc.addAnd("updatedOn", SearchCriteria.Op.BETWEEN, startDate, endDate);
-            } else {
-                return Collections.<QuotaCreditsVO>emptyList();
+        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaCreditsVO>>() {
+            @Override
+            public List<QuotaCreditsVO> doInTransaction(final TransactionStatus status) {
+                TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+                Filter filter = new Filter(QuotaCreditsVO.class, "updatedOn", true, 0L, Long.MAX_VALUE);
+                SearchCriteria<QuotaCreditsVO> sc = createSearchCriteria();
+                sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+                sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+                if ((startDate != null) && (endDate != null) && startDate.before(endDate)) {
+                    sc.addAnd("updatedOn", SearchCriteria.Op.BETWEEN, startDate, endDate);
+                } else {
+                    return Collections.<QuotaCreditsVO>emptyList();
+                }
+                return search(sc, filter);
             }
-            qc = search(sc, filter);
-        } catch (Exception e) {
-            s_logger.error("QuotaCreditsDaoImpl::findCredits() failed due to: " + e.getMessage());
-            throw new CloudRuntimeException("Unable to find quota credits");
-        } finally {
-            TransactionLegacy.open(opendb).close();
-        }
-        return qc;
+        });
     }
 
     @Override
     public QuotaCreditsVO saveCredits(final QuotaCreditsVO credits) {
-        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        try {
-            TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-            super.persist(credits);
-            // make an entry in the balance table
-            QuotaBalanceVO bal = new QuotaBalanceVO(credits);
-            _quotaBalanceDao.persist(bal);
-        } catch (Exception e) {
-            s_logger.error("QuotaCreditsDaoImpl::saveCredits() failed due to: " + e.getMessage());
-            throw new CloudRuntimeException("Unable to save quota credits");
-        } finally {
-            TransactionLegacy.open(opendb).close();
-        }
-        return credits;
+        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<QuotaCreditsVO>() {
+            @Override
+            public QuotaCreditsVO doInTransaction(final TransactionStatus status) {
+                persist(credits);
+                // make an entry in the balance table
+                QuotaBalanceVO bal = new QuotaBalanceVO(credits);
+                _quotaBalanceDao.persist(bal);
+                return credits;
+            }
+        });
     }
 }

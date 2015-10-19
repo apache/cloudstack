@@ -22,7 +22,6 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.utils.db.TransactionLegacy;
 
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
@@ -289,16 +288,11 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Override
     public QuotaCreditsResponse addQuotaCredits(final Long accountId, final Long domainId, final Double amount, final Long updatedBy, final Date despositedOn) {
-        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        QuotaCreditsVO result = null;
-        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
-            QuotaCreditsVO credits = new QuotaCreditsVO(accountId, domainId, new BigDecimal(amount), updatedBy);
-            s_logger.debug("AddQuotaCredits: Depositing " + amount + " on adjusted date " + despositedOn);
-            credits.setUpdatedOn(despositedOn);
-            result = _quotaCreditsDao.saveCredits(credits);
-        }
 
-        TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
+        QuotaCreditsVO credits = new QuotaCreditsVO(accountId, domainId, new BigDecimal(amount), updatedBy);
+        s_logger.debug("AddQuotaCredits: Depositing " + amount + " on adjusted date " + despositedOn);
+        credits.setUpdatedOn(despositedOn);
+        QuotaCreditsVO result = _quotaCreditsDao.saveCredits(credits);
 
         final AccountVO account = _accountDao.findById(accountId);
         final boolean lockAccountEnforcement = "true".equalsIgnoreCase(QuotaConfig.QuotaEnableEnforcement.value());
@@ -314,7 +308,6 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         if (creditorUser != null) {
             creditor = creditorUser.getUsername();
         }
-        TransactionLegacy.open(opendb).close();
         QuotaCreditsResponse response = new QuotaCreditsResponse(result, creditor);
         response.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
         return response;
