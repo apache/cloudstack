@@ -104,7 +104,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
             s_logger.warn("Usage stats job aggregation range is to small, using the minimum value of " + UsageUtils.USAGE_AGGREGATION_RANGE_MIN);
             _aggregationDuration = UsageUtils.USAGE_AGGREGATION_RANGE_MIN;
         }
-        if (s_logger.isDebugEnabled()){
+        if (s_logger.isDebugEnabled()) {
             s_logger.debug("Usage timezone = " + _usageTimezone + " AggregationDuration=" + _aggregationDuration);
         }
         return true;
@@ -133,8 +133,8 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { QuotaPluginEnabled, QuotaEnableEnforcement, QuotaCurrencySymbol, QuotaSmtpHost, QuotaSmtpPort, QuotaSmtpTimeout, QuotaSmtpUser,
-                QuotaSmtpPassword, QuotaSmtpAuthType, QuotaSmtpSender };
+        return new ConfigKey<?>[] { QuotaPluginEnabled, QuotaEnableEnforcement, QuotaCurrencySymbol, QuotaSmtpHost, QuotaSmtpPort, QuotaSmtpTimeout, QuotaSmtpUser, QuotaSmtpPassword,
+                QuotaSmtpAuthType, QuotaSmtpSender };
     }
 
     public Boolean isQuotaServiceEnabled() {
@@ -143,9 +143,6 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
 
     @Override
     public List<QuotaBalanceVO> findQuotaBalanceVO(Long accountId, String accountName, Long domainId, Date startDate, Date endDate) {
-        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
-
         if ((accountId == null) && (accountName != null) && (domainId != null)) {
             Account userAccount = null;
             Account caller = CallContext.current().getCallingAccount();
@@ -164,18 +161,17 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
                 throw new PermissionDeniedException("Invalid Domain Id or Account");
             }
         }
-        TransactionLegacy.open(opendb).close();
 
         startDate = startDate == null ? new Date() : startDate;
 
         if (endDate == null) {
             // adjust start date to end of day as there is no end date
             Date adjustedStartDate = computeAdjustedTime(_respBldr.startOfNextDay(startDate));
-            if (s_logger.isDebugEnabled()){
+            if (s_logger.isDebugEnabled()) {
                 s_logger.debug("getQuotaBalance1: Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", on or before " + adjustedStartDate);
             }
             List<QuotaBalanceVO> qbrecords = _quotaBalanceDao.lastQuotaBalanceVO(accountId, domainId, adjustedStartDate);
-            if (s_logger.isDebugEnabled()){
+            if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Found records size=" + qbrecords.size());
             }
             if (qbrecords.isEmpty()) {
@@ -189,11 +185,12 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
                 throw new InvalidParameterValueException("Incorrect Date Range. End date:" + endDate + " should not be in future. ");
             } else if (startDate.before(endDate)) {
                 Date adjustedEndDate = computeAdjustedTime(endDate);
-                if (s_logger.isDebugEnabled()){
-                    s_logger.debug("getQuotaBalance2: Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("getQuotaBalance2: Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and "
+                            + adjustedEndDate);
                 }
                 List<QuotaBalanceVO> qbrecords = _quotaBalanceDao.findQuotaBalance(accountId, domainId, adjustedStartDate, adjustedEndDate);
-                if (s_logger.isDebugEnabled()){
+                if (s_logger.isDebugEnabled()) {
                     s_logger.debug("getQuotaBalance3: Found records size=" + qbrecords.size());
                 }
                 if (qbrecords.isEmpty()) {
