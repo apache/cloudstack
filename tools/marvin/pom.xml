@@ -19,6 +19,16 @@
     <version>4.6.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-apidoc</artifactId>
+      <version>${project.version}</version>
+      <type>pom</type>
+    </dependency>
+  </dependencies>
+
   <build>
     <defaultGoal>install</defaultGoal>
     <plugins>
