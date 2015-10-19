@@ -28,7 +28,10 @@ import org.apache.cloudstack.quota.vo.ServiceOfferingVO;
 import com.cloud.event.UsageEventVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -42,45 +45,50 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
 
     @Override
     public ServiceOfferingVO findServiceOffering(final Long vmId, final long serviceOfferingId) {
-        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        ServiceOfferingVO result = null;
-        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB)) {
-            result = findById(vmId, serviceOfferingId);
-        } catch (Exception e) {
-            s_logger.error("Quota ServiceOfferingDaoImpl::findServiceOffering() failed due to: " + e.getMessage(), e);
-            throw new CloudRuntimeException("Unable to find service offering for quota calculations");
-        } finally {
-            TransactionLegacy.open(opendb).close();
-        }
-        return result;
-    }
-
-    private ServiceOfferingVO findById(Long vmId, long serviceOfferingId) {
-        ServiceOfferingVO offering = super.findById(serviceOfferingId);
-        if (offering.isDynamic()) {
-            if (vmId == null) {
-                throw new CloudRuntimeException("missing argument vmId");
+        return Transaction.execute(TransactionLegacy.CLOUD_DB, new TransactionCallback<ServiceOfferingVO>() {
+            @Override
+            public ServiceOfferingVO doInTransaction(final TransactionStatus status) {
+                return findById(vmId, serviceOfferingId);
             }
-            offering.setDynamicFlag(true);
-            Map<String, String> dynamicOffering = userVmDetailsDao.listDetailsKeyPairs(vmId);
-            return getcomputeOffering(offering, dynamicOffering);
-        }
-        return offering;
+        });
     }
 
-    private ServiceOfferingVO getcomputeOffering(ServiceOfferingVO serviceOffering, Map<String, String> customParameters) {
-        ServiceOfferingVO dummyoffering = new ServiceOfferingVO(serviceOffering);
-        dummyoffering.setDynamicFlag(true);
-        if (customParameters.containsKey(UsageEventVO.DynamicParameters.cpuNumber.name())) {
-            dummyoffering.setCpu(Integer.parseInt(customParameters.get(UsageEventVO.DynamicParameters.cpuNumber.name())));
-        }
-        if (customParameters.containsKey(UsageEventVO.DynamicParameters.cpuSpeed.name())) {
-            dummyoffering.setSpeed(Integer.parseInt(customParameters.get(UsageEventVO.DynamicParameters.cpuSpeed.name())));
-        }
-        if (customParameters.containsKey(UsageEventVO.DynamicParameters.memory.name())) {
-            dummyoffering.setRamSize(Integer.parseInt(customParameters.get(UsageEventVO.DynamicParameters.memory.name())));
-        }
-        return dummyoffering;
+    private ServiceOfferingVO findById(final Long vmId, final long serviceOfferingId) {
+        return Transaction.execute(TransactionLegacy.CLOUD_DB, new TransactionCallback<ServiceOfferingVO>() {
+            @Override
+            public ServiceOfferingVO doInTransaction(final TransactionStatus status) {
+                ServiceOfferingVO offering = findById(serviceOfferingId);
+                if (offering.isDynamic()) {
+                    if (vmId == null) {
+                        throw new CloudRuntimeException("missing argument vmId");
+                    }
+                    offering.setDynamicFlag(true);
+                    Map<String, String> dynamicOffering = userVmDetailsDao.listDetailsKeyPairs(vmId);
+                    return getcomputeOffering(offering, dynamicOffering);
+                }
+                return offering;
+            }
+        });
+    }
+
+    private ServiceOfferingVO getcomputeOffering(final ServiceOfferingVO serviceOffering, final Map<String, String> customParameters) {
+        return Transaction.execute(TransactionLegacy.CLOUD_DB, new TransactionCallback<ServiceOfferingVO>() {
+            @Override
+            public ServiceOfferingVO doInTransaction(final TransactionStatus status) {
+                ServiceOfferingVO dummyoffering = new ServiceOfferingVO(serviceOffering);
+                dummyoffering.setDynamicFlag(true);
+                if (customParameters.containsKey(UsageEventVO.DynamicParameters.cpuNumber.name())) {
+                    dummyoffering.setCpu(Integer.parseInt(customParameters.get(UsageEventVO.DynamicParameters.cpuNumber.name())));
+                }
+                if (customParameters.containsKey(UsageEventVO.DynamicParameters.cpuSpeed.name())) {
+                    dummyoffering.setSpeed(Integer.parseInt(customParameters.get(UsageEventVO.DynamicParameters.cpuSpeed.name())));
+                }
+                if (customParameters.containsKey(UsageEventVO.DynamicParameters.memory.name())) {
+                    dummyoffering.setRamSize(Integer.parseInt(customParameters.get(UsageEventVO.DynamicParameters.memory.name())));
+                }
+                return dummyoffering;
+            }
+        });
     }
 
 }

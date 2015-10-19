@@ -17,13 +17,17 @@
 package org.apache.cloudstack.quota.dao;
 
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.db.TransactionStatus;
+
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
+
 import java.util.List;
 
 @Component
@@ -33,66 +37,42 @@ public class QuotaAccountDaoImpl extends GenericDaoBase<QuotaAccountVO, Long> im
 
     @Override
     public List<QuotaAccountVO> listAll() {
-        List<QuotaAccountVO> result = null;
-        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        try {
-            TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
-            result = super.listAll();
-        } catch (Exception e) {
-            s_logger.error("QuotaAccountDaoImpl::listAll() failed due to: " + e.getMessage());
-            throw new CloudRuntimeException("Unable to list Quota Accounts");
-        } finally {
-            TransactionLegacy.open(opendb).close();
-        }
-        return result;
+        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaAccountVO>>() {
+            @Override
+            public List<QuotaAccountVO> doInTransaction(final TransactionStatus status) {
+                return listAll();
+            }
+        });
     }
 
     @Override
-    public QuotaAccountVO findById(Long id) {
-        QuotaAccountVO result = null;
-        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        try {
-            TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
-            result = super.findById(id);
-        } catch (Exception e) {
-            s_logger.error("QuotaAccountDaoImpl::findById() failed due to: " + e.getMessage());
-            throw new CloudRuntimeException("Unable to find Quota Account by ID");
-        } finally {
-            TransactionLegacy.open(opendb).close();
-        }
-        return result;
+    public QuotaAccountVO findById(final Long id) {
+        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<QuotaAccountVO>() {
+            @Override
+            public QuotaAccountVO doInTransaction(final TransactionStatus status) {
+                return findById(id);
+            }
+        });
     }
 
     @Override
-    public QuotaAccountVO persist(QuotaAccountVO entity) {
-        QuotaAccountVO result = null;
-        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        try {
-            TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
-            result = super.persist(entity);
-        } catch (Exception e) {
-            s_logger.error("QuotaAccountDaoImpl::persist() failed due to: " + e.getMessage());
-            throw new CloudRuntimeException("Unable to save Quota Account");
-        } finally {
-            TransactionLegacy.open(opendb).close();
-        }
-        return result;
+    public QuotaAccountVO persist(final QuotaAccountVO entity) {
+        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<QuotaAccountVO>() {
+            @Override
+            public QuotaAccountVO doInTransaction(final TransactionStatus status) {
+                return persist(entity);
+            }
+        });
     }
 
     @Override
-    public boolean update(Long id, QuotaAccountVO entity) {
-        boolean result = false;
-        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        try {
-            TransactionLegacy.open(TransactionLegacy.USAGE_DB).close();
-            result = super.update(id, entity);
-        } catch (Exception e) {
-            s_logger.error("QuotaAccountDaoImpl::update() failed due to: " + e.getMessage());
-            throw new CloudRuntimeException("Unable to update Quota Account");
-        } finally {
-            TransactionLegacy.open(opendb).close();
-        }
-        return result;
+    public boolean update(final Long id, final QuotaAccountVO entity) {
+        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<Boolean>() {
+            @Override
+            public Boolean doInTransaction(final TransactionStatus status) {
+                return update(id, entity);
+            }
+        });
     }
 
 }

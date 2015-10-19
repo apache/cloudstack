@@ -18,13 +18,16 @@ package org.apache.cloudstack.quota.dao;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.db.TransactionStatus;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
@@ -47,34 +50,29 @@ public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implem
 
     @Override
     public List<QuotaUsageVO> findQuotaUsage(final Long accountId, final Long domainId, final Integer usageType, final Date startDate, final Date endDate) {
-        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        List<QuotaUsageVO> quotaUsageRecords = new ArrayList<QuotaUsageVO>();
-        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
-            // TODO instead of max value query with reasonable number and iterate
-            SearchCriteria<QuotaUsageVO> sc = createSearchCriteria();
-            if (accountId != null) {
-                sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaUsageVO>>() {
+            @SuppressWarnings("deprecation")
+            @Override
+            public List<QuotaUsageVO> doInTransaction(final TransactionStatus status) {
+                SearchCriteria<QuotaUsageVO> sc = createSearchCriteria();
+                if (accountId != null) {
+                    sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+                }
+                if (domainId != null) {
+                    sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+                }
+                if (usageType != null) {
+                    sc.addAnd("usageType", SearchCriteria.Op.EQ, usageType);
+                }
+                if ((startDate != null) && (endDate != null) && startDate.before(endDate)) {
+                    sc.addAnd("startDate", SearchCriteria.Op.BETWEEN, startDate, endDate);
+                    sc.addAnd("endDate", SearchCriteria.Op.BETWEEN, startDate, endDate);
+                } else {
+                    return new ArrayList<QuotaUsageVO>();
+                }
+                return listBy(sc);
             }
-            if (domainId != null) {
-                sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-            }
-            if (usageType != null) {
-                sc.addAnd("usageType", SearchCriteria.Op.EQ, usageType);
-            }
-            if ((startDate != null) && (endDate != null) && startDate.before(endDate)) {
-                sc.addAnd("startDate", SearchCriteria.Op.BETWEEN, startDate, endDate);
-                sc.addAnd("endDate", SearchCriteria.Op.BETWEEN, startDate, endDate);
-            } else {
-                return new ArrayList<QuotaUsageVO>();
-            }
-            quotaUsageRecords = listBy(sc);
-        } catch (Exception e) {
-            s_logger.error("QuotaUsageDaoImpl::findQuotaUsage() failed due to: " + e.getMessage(), e);
-            throw new CloudRuntimeException("Unable to find quota usage");
-        } finally {
-            TransactionLegacy.open(opendb).close();
-        }
-        return quotaUsageRecords;
+        });
     }
 
 }

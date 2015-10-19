@@ -19,14 +19,17 @@ package org.apache.cloudstack.quota.dao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.db.TransactionStatus;
+
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
-import java.util.ArrayList;
+
 import java.util.List;
 
 @Component
@@ -45,36 +48,26 @@ public class QuotaEmailTemplatesDaoImpl extends GenericDaoBase<QuotaEmailTemplat
     }
 
     @Override
-    public List<QuotaEmailTemplatesVO> listAllQuotaEmailTemplates(String templateName) {
-        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        List<QuotaEmailTemplatesVO> result = new ArrayList<>();
-        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
-            SearchCriteria<QuotaEmailTemplatesVO> sc = QuotaEmailTemplateSearch.create();
-            if (templateName != null) {
-                sc.setParameters("template_name", templateName);
+    public List<QuotaEmailTemplatesVO> listAllQuotaEmailTemplates(final String templateName) {
+        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaEmailTemplatesVO>>() {
+            @Override
+            public List<QuotaEmailTemplatesVO> doInTransaction(final TransactionStatus status) {
+                SearchCriteria<QuotaEmailTemplatesVO> sc = QuotaEmailTemplateSearch.create();
+                if (templateName != null) {
+                    sc.setParameters("template_name", templateName);
+                }
+                return listBy(sc);
             }
-            result = this.listBy(sc);
-        } catch (Exception e) {
-            s_logger.error("QuotaEmailTemplatesDaoImpl::listAllQuotaEmailTemplates() failed due to: " + e.getMessage());
-            throw new CloudRuntimeException("Unable to list quota email templates");
-        } finally {
-            TransactionLegacy.open(opendb).close();
-        }
-        return result;
+        });
     }
 
     @Override
-    public boolean updateQuotaEmailTemplate(QuotaEmailTemplatesVO template) {
-        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        boolean result = false;
-        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
-            result = this.update(template.getId(), template);
-        } catch (Exception e) {
-            s_logger.error("QuotaEmailTemplatesDaoImpl::updateQuotaEmailTemplate() failed due to: " + e.getMessage());
-            throw new CloudRuntimeException("Unable to update quota email template");
-        } finally {
-            TransactionLegacy.open(opendb).close();
-        }
-        return result;
+    public boolean updateQuotaEmailTemplate(final QuotaEmailTemplatesVO template) {
+        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<Boolean>() {
+            @Override
+            public Boolean doInTransaction(final TransactionStatus status) {
+                return update(template.getId(), template);
+            }
+        });
     }
 }

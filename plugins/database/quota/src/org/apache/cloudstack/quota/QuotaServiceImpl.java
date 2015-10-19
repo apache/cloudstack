@@ -25,7 +25,6 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.TransactionLegacy;
 
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaCreditsCmd;
@@ -206,9 +205,6 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
 
     @Override
     public List<QuotaUsageVO> getQuotaUsage(Long accountId, String accountName, Long domainId, Integer usageType, Date startDate, Date endDate) {
-        final short opendb = TransactionLegacy.currentTxn().getDatabaseId();
-        TransactionLegacy.open(TransactionLegacy.CLOUD_DB).close();
-
         // if accountId is not specified, use accountName and domainId
         if ((accountId == null) && (accountName != null) && (domainId != null)) {
             Account userAccount = null;
@@ -228,7 +224,6 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
                 throw new PermissionDeniedException("Invalid Domain Id or Account");
             }
         }
-        TransactionLegacy.open(opendb).close();
 
         if (startDate.after(endDate)) {
             throw new InvalidParameterValueException("Incorrect Date Range. Start date: " + startDate + " is after end date:" + endDate);
