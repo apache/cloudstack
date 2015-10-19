@@ -944,20 +944,22 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // Check if the IP range overlaps with the public ip
         checkOverlapPublicIpRange(zoneId, startIp, endIp);
 
-        // Check if the gateway is a valid IP address
-        if (!NetUtils.isValidIp(gateway)) {
-            throw new InvalidParameterValueException("The gateway is not a valid IP address.");
-        }
+        if (gateway != null) {
+            // Check if the gateway is a valid IP address
+            if (!NetUtils.isValidIp(gateway)) {
+                throw new InvalidParameterValueException("The gateway is not a valid IP address.");
+            }
 
-        // Check if the gateway is in the CIDR subnet
-        if (!NetUtils.getCidrSubNet(gateway, cidrSize).equalsIgnoreCase(NetUtils.getCidrSubNet(cidrAddress, cidrSize))) {
-            throw new InvalidParameterValueException("The gateway is not in the CIDR subnet.");
-        }
+            // Check if the gateway is in the CIDR subnet
+            if (!NetUtils.getCidrSubNet(gateway, cidrSize).equalsIgnoreCase(NetUtils.getCidrSubNet(cidrAddress, cidrSize))) {
+                throw new InvalidParameterValueException("The gateway is not in the CIDR subnet.");
+            }
 
-        // Don't allow gateway to overlap with start/endIp
-        if (!skipGatewayOverlapCheck) {
-            if (NetUtils.ipRangesOverlap(startIp, endIp, gateway, gateway)) {
-                throw new InvalidParameterValueException("The gateway shouldn't overlap start/end ip addresses");
+            // Don't allow gateway to overlap with start/endIp
+            if (!skipGatewayOverlapCheck) {
+                if (NetUtils.ipRangesOverlap(startIp, endIp, gateway, gateway)) {
+                    throw new InvalidParameterValueException("The gateway shouldn't overlap start/end ip addresses");
+                }
             }
         }
 
@@ -1114,10 +1116,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             name = oldPodName;
         }
 
-        if (gateway == null) {
-            gateway = pod.getGateway();
-        }
-
         if (startIp == null) {
             startIp = existingPodIpRange[0];
         }
@@ -1131,7 +1129,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         // Verify pod's attributes
-        final String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
+        final String cidr = NetUtils.ipAndNetMaskToCidr(startIp, netmask);
         final boolean checkForDuplicates = !oldPodName.equals(name);
         checkPodAttributes(id, name, pod.getDataCenterId(), gateway, cidr, startIp, endIp, allocationStateStr, checkForDuplicates, false);
 
@@ -1206,23 +1204,27 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     public Pod createPod(final long zoneId, final String name, final String startIp, final String endIp, final String gateway, final String netmask, String allocationState) {
-        // Check if the gateway is a valid IP address
-        if (!NetUtils.isValidIp(gateway)) {
-            throw new InvalidParameterValueException("The gateway is invalid");
+        boolean skipGatewayOverlapCheck = true;
+        if (gateway != null) {
+            // Check if the gateway is a valid IP address
+            if (!NetUtils.isValidIp(gateway)) {
+                throw new InvalidParameterValueException("The gateway is invalid");
+            }
+            skipGatewayOverlapCheck = false;
         }
 
         if (!NetUtils.isValidNetmask(netmask)) {
             throw new InvalidParameterValueException("The netmask is invalid");
         }
 
-        final String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
+        final String cidr = NetUtils.ipAndNetMaskToCidr(startIp, netmask);
 
         final Long userId = CallContext.current().getCallingUserId();
 
         if (allocationState == null) {
             allocationState = Grouping.AllocationState.Enabled.toString();
         }
-        return createPod(userId.longValue(), name, zoneId, gateway, cidr, startIp, endIp, allocationState, false);
+        return createPod(userId.longValue(), name, zoneId, gateway, cidr, startIp, endIp, allocationState, skipGatewayOverlapCheck);
     }
 
     @Override

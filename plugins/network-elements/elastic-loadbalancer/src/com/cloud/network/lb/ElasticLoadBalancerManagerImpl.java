@@ -442,7 +442,9 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
                 defaultDns2 = nic.getIPv4Dns2();
             }
             if (nic.getTrafficType() == TrafficType.Management) {
-                buf.append(" localgw=").append(dest.getPod().getGateway());
+                if (dest.getPod().getGateway() != null) {
+                    buf.append(" localgw=").append(dest.getPod().getGateway());
+                }
             } else if (nic.getTrafficType() == TrafficType.Control) {
                 //  control command is sent over management network in VMware
                 if (dest.getHost().getHypervisorType() == HypervisorType.VMware) {

@@ -202,7 +202,9 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
             if (nic.getTrafficType() == TrafficType.Guest) {
                 guestNetwork = _ntwkModel.getNetwork(nic.getNetworkId());
             } else if (nic.getTrafficType() == TrafficType.Management) {
-                buf.append(" localgw=").append(dest.getPod().getGateway());
+                if (dest.getPod().getGateway() != null) {
+                    buf.append(" localgw=").append(dest.getPod().getGateway());
+                }
             } else if (nic.getTrafficType() == TrafficType.Control) {
                 controlNic = nic;
                 // Internal LB control command is sent over management server in VMware

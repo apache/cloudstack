@@ -1399,7 +1399,9 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
             }
 
             if (nic.getTrafficType() == TrafficType.Management) {
-                buf.append(" localgw=").append(dest.getPod().getGateway());
+                if (dest.getPod().getGateway() != null) {
+                    buf.append(" localgw=").append(dest.getPod().getGateway());
+                }
             } else if (nic.getTrafficType() == TrafficType.Control) {
                 controlNic = nic;
                 buf.append(createRedundantRouterArgs(controlNic, router));

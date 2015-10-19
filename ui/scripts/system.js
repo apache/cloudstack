@@ -13195,7 +13195,7 @@
                                         label: 'label.reserved.system.gateway',
                                         docID: 'helpPodGateway',
                                         validation: {
-                                            required: true
+                                            required: false
                                         }
                                     },
                                     reservedSystemNetmask: {

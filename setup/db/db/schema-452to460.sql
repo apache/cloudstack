@@ -415,3 +415,6 @@ CREATE TABLE `cloud`.`ldap_trust_map` (
   UNIQUE KEY `uk_ldap_trust_map__domain_id` (`domain_id`),
   CONSTRAINT `fk_ldap_trust_map__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Gateway can be empty.
+ALTER TABLE `host_pod_ref` CHANGE `gateway` `gateway` VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT 'gateway for the pod';
