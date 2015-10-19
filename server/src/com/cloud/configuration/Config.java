@@ -872,8 +872,6 @@ public enum Config {
             "60000",
             "The interval (in milliseconds) when vm stats are retrieved from agents.",
             null),
-    VmDiskStatsInterval("Advanced", ManagementServer.class, Integer.class, "vm.disk.stats.interval", "0", "Interval (in seconds) to report vm disk statistics.", null),
-    VmNetworkStatsInterval("Advanced", ManagementServer.class, Integer.class, "vm.network.stats.interval", "0", "Interval (in seconds) to report vm network statistics (for Shared networks).", null),
     VmTransitionWaitInterval(
             "Advanced",
             ManagementServer.class,

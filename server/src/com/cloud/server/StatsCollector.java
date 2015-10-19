@@ -47,6 +47,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
@@ -138,7 +140,7 @@ import com.cloud.vm.dao.VMInstanceDao;
  *
  */
 @Component
-public class StatsCollector extends ManagerBase implements ComponentMethodInterceptable {
+public class StatsCollector extends ManagerBase implements ComponentMethodInterceptable, Configurable {
 
     public static enum ExternalStatsProtocol {
         NONE("none"), GRAPHITE("graphite");
@@ -155,6 +157,15 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     }
 
     public static final Logger s_logger = Logger.getLogger(StatsCollector.class.getName());
+
+    static final ConfigKey<Integer> vmDiskStatsInterval = new ConfigKey<Integer>("Advanced", Integer.class, "vm.disk.stats.interval", "0",
+            "Interval (in seconds) to report vm disk statistics. Vm disk statistics will be disabled if this is set to 0 or less than 0.", false);
+    static final ConfigKey<Integer> vmDiskStatsIntervalMin = new ConfigKey<Integer>("Advanced", Integer.class, "vm.disk.stats.interval.min", "300",
+            "Minimal interval (in seconds) to report vm disk statistics. If vm.disk.stats.interval is smaller than this, use this to report vm disk statistics.", false);
+    static final ConfigKey<Integer> vmNetworkStatsInterval = new ConfigKey<Integer>("Advanced", Integer.class, "vm.network.stats.interval", "0",
+            "Interval (in seconds) to report vm network statistics (for Shared networks). Vm network statistics will be disabled if this is set to 0 or less than 0.", false);
+    static final ConfigKey<Integer> vmNetworkStatsIntervalMin = new ConfigKey<Integer>("Advanced", Integer.class, "vm.network.stats.interval.min", "300",
+            "Minimal Interval (in seconds) to report vm network statistics (for Shared networks). If vm.network.stats.interval is smaller than this, use this to report vm network statistics.", false);
 
     private static StatsCollector s_instance = null;
 
@@ -238,8 +249,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     long storageStatsInterval = -1L;
     long volumeStatsInterval = -1L;
     long autoScaleStatsInterval = -1L;
-    int vmDiskStatsInterval = 0;
-    int vmNetworkStatsInterval = 0;
+
     List<Long> hostIds = null;
     private double _imageStoreCapacityThreshold = 0.90;
 
@@ -286,8 +296,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         storageStatsInterval = NumbersUtil.parseLong(configs.get("storage.stats.interval"), 60000L);
         volumeStatsInterval = NumbersUtil.parseLong(configs.get("volume.stats.interval"), -1L);
         autoScaleStatsInterval = NumbersUtil.parseLong(configs.get("autoscale.stats.interval"), 60000L);
-        vmDiskStatsInterval = NumbersUtil.parseInt(configs.get("vm.disk.stats.interval"), 0);
-        vmNetworkStatsInterval = NumbersUtil.parseInt(configs.get("vm.network.stats.interval"), 0);
 
         /* URI to send statistics to. Currently only Graphite is supported */
         String externalStatsUri = configs.get("stats.output.uri");
@@ -345,18 +353,26 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             _executor.scheduleWithFixedDelay(new AutoScaleMonitor(), 15000L, autoScaleStatsInterval, TimeUnit.MILLISECONDS);
         }
 
-        if (vmDiskStatsInterval > 0) {
-            if (vmDiskStatsInterval < 300)
-                vmDiskStatsInterval = 300;
-            _executor.scheduleAtFixedRate(new VmDiskStatsTask(), vmDiskStatsInterval, vmDiskStatsInterval, TimeUnit.SECONDS);
+        if (vmDiskStatsInterval.value() > 0) {
+            if (vmDiskStatsInterval.value() < vmDiskStatsIntervalMin.value()) {
+                s_logger.debug("vm.disk.stats.interval - " + vmDiskStatsInterval.value() + " is smaller than vm.disk.stats.interval.min - " + vmDiskStatsIntervalMin.value() + ", so use vm.disk.stats.interval.min");
+                _executor.scheduleAtFixedRate(new VmDiskStatsTask(), vmDiskStatsIntervalMin.value(), vmDiskStatsIntervalMin.value(), TimeUnit.SECONDS);
+            } else {
+                _executor.scheduleAtFixedRate(new VmDiskStatsTask(), vmDiskStatsInterval.value(), vmDiskStatsInterval.value(), TimeUnit.SECONDS);
+            }
+        } else {
+            s_logger.debug("vm.disk.stats.interval - " + vmDiskStatsInterval.value() + " is 0 or less than 0, so not scheduling the vm disk stats thread");
         }
 
-        if (vmNetworkStatsInterval > 0) {
-            if (vmNetworkStatsInterval < 300)
-                vmNetworkStatsInterval = 300;
-            _executor.scheduleAtFixedRate(new VmNetworkStatsTask(), vmNetworkStatsInterval, vmNetworkStatsInterval, TimeUnit.SECONDS);
+        if (vmNetworkStatsInterval.value() > 0) {
+            if (vmNetworkStatsInterval.value() < vmNetworkStatsIntervalMin.value()) {
+                s_logger.debug("vm.network.stats.interval - " + vmNetworkStatsInterval.value() + " is smaller than vm.network.stats.interval.min - " + vmNetworkStatsIntervalMin.value() + ", so use vm.network.stats.interval.min");
+                _executor.scheduleAtFixedRate(new VmNetworkStatsTask(), vmNetworkStatsIntervalMin.value(), vmNetworkStatsIntervalMin.value(), TimeUnit.SECONDS);
+            } else {
+                _executor.scheduleAtFixedRate(new VmNetworkStatsTask(), vmNetworkStatsInterval.value(), vmNetworkStatsInterval.value(), TimeUnit.SECONDS);
+            }
         } else {
-            s_logger.debug("vm.network.stats.interval - " + vmNetworkStatsInterval + " so not scheduling the vm network stats thread");
+            s_logger.debug("vm.network.stats.interval - " + vmNetworkStatsInterval.value() + " is 0 or less than 0, so not scheduling the vm network stats thread");
         }
 
         //Schedule disk stats update task
@@ -840,6 +856,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                 if (vmNetworkStats == null)
                                     continue;
                                 UserVmVO userVm = _userVmDao.findById(vmId);
+                                if (userVm == null) {
+                                    s_logger.debug("Cannot find uservm with id: " + vmId + " , continue");
+                                    continue;
+                                }
+                                s_logger.debug("Now we are updating the user_statistics table for VM: " + userVm.getInstanceName() + " after collecting vm network statistics from host: " + host.getName());
                                 for (VmNetworkStatsEntry vmNetworkStat:vmNetworkStats) {
                                     SearchCriteria<NicVO> sc_nic = _nicDao.createSearchCriteria();
                                     sc_nic.addAnd("macAddress", SearchCriteria.Op.EQ, vmNetworkStat.getMacAddress());
@@ -1277,5 +1298,15 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
     public StorageStats getStoragePoolStats(long id) {
         return _storagePoolStats.get(id);
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return this.getClass().getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] { vmDiskStatsInterval, vmDiskStatsIntervalMin, vmNetworkStatsInterval, vmNetworkStatsIntervalMin };
     }
 }
