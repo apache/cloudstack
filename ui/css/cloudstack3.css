@@ -1393,7 +1393,7 @@ div.list-view td.state span {
   -webkit-text-shadow: 0px 1px 1px #FFFFFF;
   -o-text-shadow: 0px 1px 1px #FFFFFF;
   text-shadow: 0px 1px 1px #FFFFFF;
-  background: url(../images/sprites.png) 1px -536px;
+  background: url(../images/sprites.png) 1px -526px;
 }
 
 div.list-view td.state.on span {
@@ -1407,7 +1407,21 @@ div.list-view td.state.off span {
   background-image: url(../images/sprites.png);
   background-repeat: no-repeat;
   color: #B90606;
-  background-position: 1px -496px;
+  background-position: 1px -492px;
+}
+
+div.list-view td.state.warning span {
+  background-image: url(../images/sprites.png);
+  background-repeat: no-repeat;
+  color: #B90606;
+  background-position: 1px -558px;
+}
+
+div.list-view td.state.transition span {
+  background-image: url(../images/sprites.png);
+  background-repeat: no-repeat;
+  color: #B90606;
+  background-position: 1px -432px;
 }
 
 .horizontal-overflow tbody td, .horizontal-overflow thead th {
