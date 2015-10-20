@@ -117,7 +117,7 @@ get_boot_params() {
           if [ ! -e /dev/vport0p1 ]; then
             log_it "/dev/vport0p1 not loaded, perhaps guest kernel is too old." && exit 2
           fi
-          while [ -z "$cmd" ]; do
+	  while [ -z "$cmd" ]; do         
             while read line; do
               if [[ $line == cmdline:* ]]; then
                 cmd=${line//cmdline:/}
@@ -128,7 +128,14 @@ get_boot_params() {
                 echo $pubkey > /root/.ssh/authorized_keys
               fi
             done < /dev/vport0p1
-	  done
+            # In case of reboot we do not send the boot args again.
+            # so need not wait for them, as the boot args are already set at startup
+            if [ -s /var/cache/cloud/cmdline  ]
+            then
+                log_it "found a non empty cmdline file continuing"
+                break;
+            fi
+	 done
           chmod go-rwx /root/.ssh/authorized_keys
           ;;
      vmware)
