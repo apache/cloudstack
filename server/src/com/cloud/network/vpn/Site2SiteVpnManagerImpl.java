@@ -179,8 +179,8 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
 
         String name = cmd.getName();
         String gatewayIp = cmd.getGatewayIp();
-        if (!NetUtils.isValidIp(gatewayIp)) {
-            throw new InvalidParameterValueException("The customer gateway ip " + gatewayIp + " is invalid!");
+        if (!NetUtils.isValidIp(gatewayIp) && !NetUtils.verifyDomainName(gatewayIp)) {
+            throw new InvalidParameterValueException("The customer gateway ip/Domain " + gatewayIp + " is invalid!");
         }
         if (name == null) {
             name = "VPN-" + gatewayIp;
@@ -428,8 +428,8 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         }
         String name = cmd.getName();
         String gatewayIp = cmd.getGatewayIp();
-        if (!NetUtils.isValidIp(gatewayIp)) {
-            throw new InvalidParameterValueException("The customer gateway ip " + gatewayIp + " is invalid!");
+        if (!NetUtils.isValidIp(gatewayIp) && !NetUtils.verifyDomainName(gatewayIp)) {
+            throw new InvalidParameterValueException("The customer gateway ip/Domain " + gatewayIp + " is invalid!");
         }
         if (name == null) {
             name = "VPN-" + gatewayIp;
