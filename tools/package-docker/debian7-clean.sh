@@ -16,36 +16,17 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-# Build Debian packages
-#
-# 1) Install docker
-# 2) Call "debian7-prepare.sh" to build container (or pull it from external source)
-# 3) Call this script to build packages
-# 4) Upload or install the binaries stored in debian/out
-# 5) Call "debian7-clean.sh" to clean up after build
+# Clean up after debian7-package.sh
 #
 set -e
 
-PACKAGE_DIR=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)
+PACKAGE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 CONTAINER_TAG="cloudstack/package-debian"
-OUT_DIR="debian/out"
 
 # Must run this from source root since we are using it in the build.
 cd "${PACKAGE_DIR}/../.."
 SOURCE_ROOT=$(pwd)
 
-# Debian package files are by default in the parent directory of the build folder.
-# Files will be copied to this location after build.
-mkdir -p ${OUT_DIR}
-rm -f ${OUT_DIR}/*
-
-DOCKER_VOLUMES="-v ${SOURCE_ROOT}:/build/cloudstack"
-DOCKER_RUN="tools/package-docker/build-packages.sh"
-
-if [ -z "${DEBIAN7_DOCKER_PACKAGE_DEBUG}" ] ; then
-    docker run --rm ${DOCKER_VOLUMES} "${CONTAINER_TAG}" "${DOCKER_RUN}" $*
-else
-    echo "Would run this in container:"
-    echo "${DOCKER_RUN} $*"
-    docker run -it ${DOCKER_VOLUMES} "${CONTAINER_TAG}" bash
-fi
+rm -rf debian/out/*
+rm -rf debian/tmp/*
+rm -rf debian/cloudstack-*/*

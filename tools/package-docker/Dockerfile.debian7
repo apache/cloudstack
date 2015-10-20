@@ -29,5 +29,4 @@ RUN apt-get install -y                      \
 # debian packages are put in parent folder:
 RUN mkdir /build
 
-VOLUME /build/cloudstack
 WORKDIR /build/cloudstack
