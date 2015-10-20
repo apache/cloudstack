@@ -836,19 +836,6 @@
                 name: {
                     label: 'label.metrics.name'
                 },
-                state: {
-                    label: 'label.metrics.state',
-                    converter: function (str) {
-                        // For localization
-                        return str;
-                    },
-                    indicator: {
-                        'Ready': 'on',
-                        'Allocated': 'warning',
-                        'Destroyed': 'off'
-                    },
-                    compact: true
-                },
                 vmname: {
                     label: 'label.metrics.vm.name'
                 },
@@ -863,8 +850,6 @@
                 },
             },
             dataProvider: function(args) {
-                console.log('in vlumes');
-                console.log(args);
                 var data = {listAll: true};
                 listViewDataProvider(args, data);
                 if (args.context.metricsFilterData && args.context.metricsFilterData.key && args.context.metricsFilterData.value) {
@@ -882,21 +867,9 @@
                                 items[idx].vmname = volume.vmname;
                                 items[idx].diskoffering = volume.diskofferingname;
                                 items[idx].disksize = parseFloat(volume.size)/(1024.0*1024.0*1024.0) + "GB";
-                                items[idx].storagetype = volume.storagetype;
-
-                                var keys = [{'memoryused': 'memused'},
-                                            {'networkkbsread': 'networkread'},
-                                            {'networkkbswrite': 'networkwrite'},
-                                            {'diskkbsread': 'diskread'},
-                                            {'diskkbswrite': 'diskwrite'},
-                                            {'diskioread': 'diskiopstotal'}];
-                                for (keyIdx in keys) {
-                                    var map = keys[keyIdx];
-                                    var key = Object.keys(map)[0];
-                                    var uiKey = map[key];
-                                    if (!volume.hasOwnProperty(key)) {
-                                        items[idx][uiKey] = 'N/A';
-                                    }
+                                items[idx].storagetype = volume.storagetype.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+                                if (volume.storage) {
+                                    items[idx].storagetype += " (" + volume.storage + ")";
                                 }
                             });
                         }
@@ -907,14 +880,109 @@
                 });
             },
             browseBy: {
-                filterBy: 'virtualmachineid',
-                resource: 'vms'
+                filterBy: 'storageid',
+                resource: 'storagepool'
             },
             detailView: cloudStack.sections.storage.sections.volumes.listView.detailView
         }
     };
 
 
+    // Storage Pool Metrics
+    cloudStack.sections.metrics.storagepool = {
+        title: 'label.metrics',
+        listView: {
+            id: 'primarystorages',
+            fields: {
+                name: {
+                    label: 'label.metrics.name'
+                },
+                property: {
+                    label: 'label.metrics.property',
+                    collapsible: true,
+                    columns: {
+                        state: {
+                            label: 'label.metrics.state',
+                            converter: function (str) {
+                                // For localization
+                                return str;
+                            },
+                            indicator: {
+                                'Up': 'on',
+                                'Down': 'off'
+                            },
+                            compact: true
+                        },
+                        scope: {
+                            label: 'label.metrics.scope'
+                        },
+                        type: {
+                            label: 'label.metrics.disk.storagetype'
+                        },
+                    }
+                },
+                disk: {
+                    label: 'label.metrics.disk',
+                    collapsible: true,
+                    columns: {
+                        disksizeused: {
+                            label: 'label.metrics.disk.used'
+                        },
+                        disksizetotal: {
+                            label: 'label.metrics.disk.total'
+                        },
+                        disksizeallocated: {
+                            label: 'label.metrics.disk.allocated'
+                        },
+                        disksizeunallocated: {
+                            label: 'label.metrics.disk.unallocated'
+                        }
+                    }
+                }
+            },
+            dataProvider: function(args) {
+                var data = {};
+                listViewDataProvider(args, data);
+                if (args.context.metricsFilterData && args.context.metricsFilterData.key && args.context.metricsFilterData.value) {
+                    data[args.context.metricsFilterData.key] = args.context.metricsFilterData.value;
+                }
+                $.ajax({
+                    url: createURL('listStoragePools'),
+                    data: data,
+                    success: function(json) {
+                        var items = [];
+                        if (json && json.liststoragepoolsresponse && json.liststoragepoolsresponse.storagepool) {
+                            items = json.liststoragepoolsresponse.storagepool;
+                            $.each(items, function(idx, pool) {
+                                items[idx].name = pool.name;
+                                items[idx].state = pool.state;
+                                items[idx].scope = pool.scope;
+                                items[idx].type = pool.type;
+                                items[idx].overprovisionfactor = parseFloat(pool.overprovisionfactor);
+                                items[idx].disksizeused = parseFloat(pool.disksizeused);
+                                items[idx].disksizetotal = parseFloat(pool.disksizetotal);
+                                items[idx].disksizeallocated = parseFloat(pool.disksizeallocated);
+                                items[idx].disksizeunallocated = (items[idx].overprovisionfactor * items[idx].disksizetotal) - items[idx].disksizeallocated;
 
+                                // Format presentation
+                                items[idx].disksizeused = (items[idx].disksizeused/(1024.0*1024.0*1024.0)).toFixed(2) + "GB";
+                                items[idx].disksizetotal = (items[idx].disksizetotal/(1024.0*1024.0*1024.0)).toFixed(2) + "GB (x" + items[idx].overprovisionfactor + ")";
+                                items[idx].disksizeallocated = (items[idx].disksizeallocated/(1024.0*1024.0*1024.0)).toFixed(2) + "GB";
+                                items[idx].disksizeunallocated = (items[idx].disksizeunallocated/(1024.0*1024.0*1024.0)).toFixed(2) + "GB";
+                            });
+                        }
+                        args.response.success({
+                            data: items
+                        });
+                    }
+                });
+            },
+            browseBy: {
+                filterBy: 'storageid',
+                resource: 'volumes'
+            },
+            detailView: cloudStack.sections.system.subsections['primary-storage'].listView.detailView
+        }
+    };
 
 })(cloudStack);

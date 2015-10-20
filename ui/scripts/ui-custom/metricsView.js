@@ -30,7 +30,8 @@
             } else if (args.resource == 'hosts') {
                 metricsListView = cloudStack.sections.metrics.hosts.listView;
                 metricsLabel = _l('label.hosts') + ' ' + metricsLabel;
-            } else if (args.resource == 'primarystorage') {
+            } else if (args.resource == 'storagepool') {
+                metricsListView = cloudStack.sections.metrics.storagepool.listView;
                 metricsLabel = _l('label.primary.storage') + ' ' + metricsLabel;
             } else if (args.resource == 'vms') {
                 metricsListView = cloudStack.sections.metrics.instances.listView;
@@ -59,6 +60,10 @@
             metricsListView.noSplit = true;
             metricsListView.horizontalOverflow = true;
             metricsListView.groupableColumns = true;
+
+            if (args.resource == 'volumes') {
+                metricsListView.groupableColumns = false;
+            }
 
             var metricsContext = cloudStack.context;
             if (metricsContext.metricsFilterData) {

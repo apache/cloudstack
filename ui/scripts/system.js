@@ -17460,7 +17460,7 @@
                             isHeader: true,
                             addRow: false,
                             action: {
-                                custom: cloudStack.uiCustom.metricsView({resource: 'primarystorage'})
+                                custom: cloudStack.uiCustom.metricsView({resource: 'storagepool'})
                             },
                             messages: {
                                 notification: function (args) {
