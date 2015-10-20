@@ -25,7 +25,7 @@
 #
 set -e
 
-PACKAGE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PACKAGE_DIR=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)
 CONTAINER_TAG="cloudstack/package-debian"
 OUT_DIR="debian/out"
 
@@ -35,8 +35,8 @@ SOURCE_ROOT=$(pwd)
 
 # Debian package files are by default in the parent directory of the build folder.
 # Files will be copied to this location after build.
-mkdir -p "${OUT_DIR}"
-rm -f "${OUT_DIR}/*"
+mkdir -p ${OUT_DIR}
+rm -f ${OUT_DIR}/*
 
 DOCKER_VOLUMES="-v ${OUT_DIR}:/build -v ${SOURCE_ROOT}:/build/cloudstack"
 DOCKER_RUN="tools/package-docker/build-packages.sh"
@@ -48,4 +48,3 @@ else
     echo "${DOCKER_RUN} $*"
     docker run -it ${DOCKER_VOLUMES} "${CONTAINER_TAG}" bash
 fi
-
