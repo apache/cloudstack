@@ -36,6 +36,7 @@
                 metricsListView = cloudStack.sections.metrics.instances.listView;
                 metricsLabel = _l('label.instances') + ' ' + metricsLabel;
             } else if (args.resource == 'volumes') {
+                metricsListView = cloudStack.sections.metrics.volumes.listView;
                 metricsLabel = _l('label.volumes') + ' ' + metricsLabel;
             }
 

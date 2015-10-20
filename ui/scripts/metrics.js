@@ -780,8 +780,9 @@
                     url: createURL('listVirtualMachines'),
                     data: data,
                     success: function(json) {
-                        var items = json.listvirtualmachinesresponse.virtualmachine;
-                        if (items) {
+                        var items = [];
+                        if (json && json.listvirtualmachinesresponse && json.listvirtualmachinesresponse.virtualmachine) {
+                            items = json.listvirtualmachinesresponse.virtualmachine;
                             $.each(items, function(idx, vm) {
                                 items[idx].cores = vm.cpunumber;
                                 items[idx].cputotal = (parseFloat(vm.cpunumber) * parseFloat(vm.cpuspeed)).toFixed(2) + 'Mhz';
@@ -824,6 +825,96 @@
             detailView: cloudStack.sections.instances.listView.detailView
         }
     };
+
+
+    // Volumes Metrics
+    cloudStack.sections.metrics.volumes = {
+        title: 'label.metrics',
+        listView: {
+            id: 'volumes',
+            fields: {
+                name: {
+                    label: 'label.metrics.name'
+                },
+                state: {
+                    label: 'label.metrics.state',
+                    converter: function (str) {
+                        // For localization
+                        return str;
+                    },
+                    indicator: {
+                        'Ready': 'on',
+                        'Allocated': 'warning',
+                        'Destroyed': 'off'
+                    },
+                    compact: true
+                },
+                vmname: {
+                    label: 'label.metrics.vm.name'
+                },
+                diskoffering: {
+                    label: 'label.metrics.disk.offering'
+                },
+                disksize: {
+                    label: 'label.metrics.disk.size'
+                },
+                storagetype: {
+                    label: 'label.metrics.disk.storagetype'
+                },
+            },
+            dataProvider: function(args) {
+                console.log('in vlumes');
+                console.log(args);
+                var data = {listAll: true};
+                listViewDataProvider(args, data);
+                if (args.context.metricsFilterData && args.context.metricsFilterData.key && args.context.metricsFilterData.value) {
+                    data[args.context.metricsFilterData.key] = args.context.metricsFilterData.value;
+                }
+                $.ajax({
+                    url: createURL('listVolumes'),
+                    data: data,
+                    success: function(json) {
+                        var items = [];
+                        if (json && json.listvolumesresponse && json.listvolumesresponse.volume) {
+                            items = json.listvolumesresponse.volume;
+                            $.each(items, function(idx, volume) {
+                                items[idx].name = volume.name;
+                                items[idx].vmname = volume.vmname;
+                                items[idx].diskoffering = volume.diskofferingname;
+                                items[idx].disksize = parseFloat(volume.size)/(1024.0*1024.0*1024.0) + "GB";
+                                items[idx].storagetype = volume.storagetype;
+
+                                var keys = [{'memoryused': 'memused'},
+                                            {'networkkbsread': 'networkread'},
+                                            {'networkkbswrite': 'networkwrite'},
+                                            {'diskkbsread': 'diskread'},
+                                            {'diskkbswrite': 'diskwrite'},
+                                            {'diskioread': 'diskiopstotal'}];
+                                for (keyIdx in keys) {
+                                    var map = keys[keyIdx];
+                                    var key = Object.keys(map)[0];
+                                    var uiKey = map[key];
+                                    if (!volume.hasOwnProperty(key)) {
+                                        items[idx][uiKey] = 'N/A';
+                                    }
+                                }
+                            });
+                        }
+                        args.response.success({
+                            data: items
+                        });
+                    }
+                });
+            },
+            browseBy: {
+                filterBy: 'virtualmachineid',
+                resource: 'vms'
+            },
+            detailView: cloudStack.sections.storage.sections.volumes.listView.detailView
+        }
+    };
+
+
 
 
 })(cloudStack);
