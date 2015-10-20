@@ -42,6 +42,9 @@ logging.basicConfig(filename=config.get_logger(),
                     format=config.get_format())
 config.cmdline()
 cl = CsCmdLine("cmdline", config)
+#Update the configuration to set state as backup and let keepalived decide who is the real Master
+cl.set_master_state(False)
+cl.save()
 
 config.set_address()
 red = CsRedundant(config)

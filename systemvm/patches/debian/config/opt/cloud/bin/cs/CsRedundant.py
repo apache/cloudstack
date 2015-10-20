@@ -82,12 +82,10 @@ class CsRedundant(object):
     def _redundant_on(self):
         guest = self.address.get_guest_if()
         # No redundancy if there is no guest network
-        if self.cl.is_master() or guest is None:
-            for obj in [o for o in self.address.get_ips() if o.is_public()]:
-                self.check_is_up(obj.get_device())
         if guest is None:
             self._redundant_off()
             return
+
         CsHelper.mkdir(self.CS_RAMDISK_DIR, 0755, False)
         CsHelper.mount_tmpfs(self.CS_RAMDISK_DIR)
         CsHelper.mkdir(self.CS_ROUTER_DIR, 0755, False)
@@ -102,10 +100,6 @@ class CsRedundant(object):
             "%s/%s" % (self.CS_TEMPLATES_DIR, "keepalived.conf.templ"), self.KEEPALIVED_CONF)
         CsHelper.copy_if_needed(
             "%s/%s" % (self.CS_TEMPLATES_DIR, "checkrouter.sh.templ"), "/opt/cloud/bin/checkrouter.sh")
-        #The file is always copied so the RVR doesn't't get the wrong config.
-        #Concerning the r-VPC, the configuration will be applied in a different manner
-        CsHelper.copy(
-            "%s/%s" % (self.CS_TEMPLATES_DIR, "conntrackd.conf.templ"), self.CONNTRACKD_CONF)
 
         CsHelper.execute(
             'sed -i "s/--exec\ \$DAEMON;/--exec\ \$DAEMON\ --\ --vrrp;/g" /etc/init.d/keepalived')
@@ -127,12 +121,16 @@ class CsRedundant(object):
                                 "        auth_type AH \n", "        auth_pass %s\n" % self.cl.get_router_password()])
         keepalived_conf.section(
             "virtual_ipaddress {", "}", self._collect_ips())
-        keepalived_conf.commit()
 
         # conntrackd configuration
-        connt = CsFile(self.CONNTRACKD_CONF)
+        conntrackd_template_conf = "%s/%s" % (self.CS_TEMPLATES_DIR, "conntrackd.conf.templ")
+        conntrackd_temp_bkp = "%s/%s" % (self.CS_TEMPLATES_DIR, "conntrackd.conf.templ.bkp")
+        
+        CsHelper.copy(conntrackd_template_conf, conntrackd_temp_bkp)
+        
+        conntrackd_tmpl = CsFile(conntrackd_template_conf)
         if guest is not None:
-            connt.section("Multicast {", "}", [
+            conntrackd_tmpl.section("Multicast {", "}", [
                           "IPv4_address 225.0.0.50\n",
                           "Group 3780\n",
                           "IPv4_interface %s\n" % guest.get_ip(),
@@ -140,11 +138,20 @@ class CsRedundant(object):
                           "SndSocketBuffer 1249280\n",
                           "RcvSocketBuffer 1249280\n",
                           "Checksum on\n"])
-            connt.section("Address Ignore {", "}", self._collect_ignore_ips())
-            connt.commit()
+            conntrackd_tmpl.section("Address Ignore {", "}", self._collect_ignore_ips())
+            conntrackd_tmpl.commit()
 
-        if connt.is_changed():
+        conntrackd_conf = CsFile(self.CONNTRACKD_CONF)
+
+        is_equals = conntrackd_tmpl.compare(conntrackd_conf)
+        proc = CsProcess(['/etc/conntrackd/conntrackd.conf'])
+        if not proc.find() or not is_equals:
+            CsHelper.copy(conntrackd_template_conf, self.CONNTRACKD_CONF)
             CsHelper.service("conntrackd", "restart")
+
+        # Restore the template file and remove the backup.
+        CsHelper.copy(conntrackd_temp_bkp, conntrackd_template_conf)
+        CsHelper.execute("rm -rf %s" % conntrackd_temp_bkp)
 
         # Configure heartbeat cron job - runs every 30 seconds
         heartbeat_cron = CsFile("/etc/cron.d/heartbeat")
@@ -173,8 +180,9 @@ class CsRedundant(object):
         conntrackd_cron.add("@reboot root service conntrackd start", -1)
         conntrackd_cron.commit()
 
-        proc = CsProcess(['/usr/sbin/keepalived', '--vrrp'])
+        proc = CsProcess(['/usr/sbin/keepalived'])
         if not proc.find() or keepalived_conf.is_changed():
+            keepalived_conf.commit()
             CsHelper.service("keepalived", "restart")
 
     def release_lock(self):
@@ -285,7 +293,6 @@ class CsRedundant(object):
                     route.add_defaultroute(gateway)
                 except:
                     logging.error("ERROR getting gateway from device %s" % dev)
-                    
             else:
                 logging.error("Device %s was not ready could not bring it up" % dev)
 
@@ -300,6 +307,7 @@ class CsRedundant(object):
         ads = [o for o in self.address.get_ips() if o.needs_vrrp()]
         for o in ads:
             CsPasswdSvc(o.get_gateway()).restart()
+
         CsHelper.service("dnsmasq", "restart")
         self.cl.set_master_state(True)
         self.cl.save()
@@ -326,7 +334,7 @@ class CsRedundant(object):
 
         In a DomR there will only ever be one address in a VPC there can be many
         The new code also gives the possibility to cloudstack to have a hybrid device
-        thet could function as a router and VPC router at the same time
+        that could function as a router and VPC router at the same time
         """
         lines = []
         for o in self.address.get_ips():
@@ -337,12 +345,12 @@ class CsRedundant(object):
                 else:
                     str = "        %s brd %s dev %s\n" % (o.get_gateway_cidr(), o.get_broadcast(), o.get_device())
                 lines.append(str)
-                self.check_is_up(o.get_device())
         return lines
 
     def check_is_up(self, device):
         """ Ensure device is up """
         cmd = "ip link show %s | grep 'state DOWN'" % device
+
         for i in CsHelper.execute(cmd):
             if " DOWN " in i:
                 cmd2 = "ip link set %s up" % device

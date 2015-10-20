@@ -50,8 +50,8 @@ class CsApache(CsApp):
         file.search("Listen .*:80", "Listen %s:80" % (self.ip))
         file.search("Listen .*:443", "Listen %s:443" % (self.ip))
         file.search("ServerName.*", "\tServerName vhost%s.cloudinternal.com" % (self.dev))
-        file.commit()
         if file.is_changed():
+            file.commit()
             CsHelper.service("apache2", "restart")
 
         self.fw.append(["", "front",

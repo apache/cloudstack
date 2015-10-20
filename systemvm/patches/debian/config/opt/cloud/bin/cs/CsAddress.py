@@ -95,22 +95,6 @@ class CsAddress(CsDataBag):
                 return ip
         return None
 
-    def check_if_link_exists(self,dev):
-        cmd="ip link show dev %s"%dev
-        result = CsHelper.execute(cmd)
-        if(len(result) != 0):
-           return True
-        else:
-           return False
-
-    def check_if_link_up(self,dev):
-        cmd="ip link show dev %s | tr '\n' ' ' | cut -d ' ' -f 9"%dev
-        result = CsHelper.execute(cmd)
-        if(result and result[0].lower() == "up"):
-            return True
-        else:
-            return False
-
     def process(self):
         for dev in self.dbag:
             if dev == "id":
@@ -118,11 +102,6 @@ class CsAddress(CsDataBag):
             ip = CsIP(dev, self.config)
 
             for address in self.dbag[dev]:
-                #check if link is up
-                if not self.check_if_link_up(dev):
-                   cmd="ip link set %s up" % dev
-                   CsHelper.execute(cmd)
-
                 ip.setAddress(address)
 
                 if ip.configured():
@@ -328,7 +307,7 @@ class CsIP:
             if " DOWN " in i:
                 cmd2 = "ip link set %s up" % self.getDevice()
                 # If redundant do not bring up public interfaces
-                # master.py and keepalived deal with tham
+                # master.py and keepalived will deal with them
                 if self.cl.is_redundant() and not self.is_public():
                     CsHelper.execute(cmd2)
                 # if not redundant bring everything up

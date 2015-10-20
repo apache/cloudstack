@@ -64,6 +64,9 @@ class CsFile:
             handle.write(line)
         handle.close()
         logging.info("Wrote edited file %s" % self.filename)
+        self.config = list(self.new_config)
+        logging.info("Updated file in-cache configuration")
+        
 
     def dump(self):
         for line in self.new_config:
@@ -160,4 +163,6 @@ class CsFile:
 
 
     def compare(self, o):
-        return (isinstance(o, self.__class__) and set(self.config) == set(o.new_config))
+        result = (isinstance(o, self.__class__) and set(self.config) == set(o.config))
+        logging.debug("Comparison of CsFiles content is ==> %s" % result)
+        return result
