@@ -33,7 +33,7 @@ import java.util.List;
 @Component
 @Local(value = { QuotaAccountDao.class })
 public class QuotaAccountDaoImpl extends GenericDaoBase<QuotaAccountVO, Long> implements QuotaAccountDao {
-    public static final Logger s_logger = Logger.getLogger(QuotaAccountDaoImpl.class.getName());
+    public static final Logger s_logger = Logger.getLogger(QuotaAccountDaoImpl.class);
 
     @Override
     public List<QuotaAccountVO> listAll() {

@@ -17,23 +17,24 @@
 package org.apache.cloudstack.quota.constant;
 
 import junit.framework.TestCase;
+
 import org.apache.cloudstack.api.response.UsageTypeResponse;
 import org.apache.cloudstack.usage.UsageTypes;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RunWith(MockitoJUnitRunner.class)
 public class QuotaTypesTest extends TestCase {
 
     @Test
     public void testQuotaTypesList() {
-        HashMap<Integer, QuotaTypes> quotaTypes = QuotaTypes.listQuotaTypes();
+        Map<Integer, QuotaTypes> quotaTypes = QuotaTypes.listQuotaTypes();
         List<UsageTypeResponse> usageTypesResponseList = UsageTypes.listUsageTypes();
-        for (UsageTypeResponse usageTypeResponse: usageTypesResponseList) {
+        for (UsageTypeResponse usageTypeResponse : usageTypesResponseList) {
             final Integer usageTypeInt = usageTypeResponse.getUsageType();
             assertTrue(quotaTypes.containsKey(usageTypeInt));
         }

@@ -23,6 +23,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
+import com.google.common.base.Strings;
 
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.log4j.Logger;
@@ -35,7 +36,7 @@ import java.util.List;
 @Component
 @Local(value = { QuotaEmailTemplatesDao.class })
 public class QuotaEmailTemplatesDaoImpl extends GenericDaoBase<QuotaEmailTemplatesVO, Long> implements QuotaEmailTemplatesDao {
-    private static final Logger s_logger = Logger.getLogger(QuotaEmailTemplatesDaoImpl.class.getName());
+    private static final Logger s_logger = Logger.getLogger(QuotaEmailTemplatesDaoImpl.class);
 
     protected SearchBuilder<QuotaEmailTemplatesVO> QuotaEmailTemplateSearch;
 
@@ -53,7 +54,7 @@ public class QuotaEmailTemplatesDaoImpl extends GenericDaoBase<QuotaEmailTemplat
             @Override
             public List<QuotaEmailTemplatesVO> doInTransaction(final TransactionStatus status) {
                 SearchCriteria<QuotaEmailTemplatesVO> sc = QuotaEmailTemplateSearch.create();
-                if (templateName != null) {
+                if (!Strings.isNullOrEmpty(templateName)) {
                     sc.setParameters("template_name", templateName);
                 }
                 return listBy(sc);

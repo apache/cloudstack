@@ -56,7 +56,7 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
                 sc.addAnd("creditsId", SearchCriteria.Op.EQ, 0);
                 sc.addAnd("updatedOn", SearchCriteria.Op.LT, beforeThis);
                 quotaBalanceEntries = search(sc, filter);
-                return quotaBalanceEntries.size() > 0 ? quotaBalanceEntries.get(0) : null;
+                return ! quotaBalanceEntries.isEmpty() ? quotaBalanceEntries.get(0) : null;
             }
         });
     }
@@ -169,7 +169,9 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
 
                 // get records before startDate to find start balance
                 for (QuotaBalanceVO entry : quotaUsageRecords) {
-                    s_logger.debug("FindQuotaBalance Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
+                    if (s_logger.isDebugEnabled()){
+                        s_logger.debug("FindQuotaBalIance Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
+                    }
                     if (entry.getCreditsId() > 0) {
                         trimmedRecords.add(entry);
                     } else {
@@ -190,7 +192,9 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
         }
         BigDecimal finalBalance = new BigDecimal(0);
         for (QuotaBalanceVO entry : quotaBalance) {
-            s_logger.debug("lastQuotaBalance Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
+            if (s_logger.isDebugEnabled()){
+                s_logger.debug("lastQuotaBalance Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
+            }
             finalBalance = finalBalance.add(entry.getCreditBalance());
         }
         return finalBalance;

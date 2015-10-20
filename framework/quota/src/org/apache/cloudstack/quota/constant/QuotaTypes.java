@@ -18,7 +18,9 @@ package org.apache.cloudstack.quota.constant;
 
 import org.apache.cloudstack.usage.UsageTypes;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 
 public class QuotaTypes extends UsageTypes {
     public static final int CPU_CLOCK_RATE = 15;
@@ -30,9 +32,10 @@ public class QuotaTypes extends UsageTypes {
     private final String quotaUnit;
     private final String description;
     private final String discriminator;
-    private static final HashMap<Integer, QuotaTypes> quotaTypeList = new HashMap<Integer, QuotaTypes>();
+    private final static Map<Integer, QuotaTypes> quotaTypeMap;
 
     static {
+        final HashMap<Integer, QuotaTypes> quotaTypeList = new HashMap<Integer, QuotaTypes>();
         quotaTypeList.put(RUNNING_VM, new QuotaTypes(RUNNING_VM, "RUNNING_VM", "Compute-Month", "Running Vm Usage"));
         quotaTypeList.put(ALLOCATED_VM, new QuotaTypes(ALLOCATED_VM, "ALLOCATED_VM", "Compute-Month", "Allocated Vm Usage"));
         quotaTypeList.put(IP_ADDRESS, new QuotaTypes(IP_ADDRESS, "IP_ADDRESS", "IP-Month", "IP Address Usage"));
@@ -55,6 +58,7 @@ public class QuotaTypes extends UsageTypes {
         quotaTypeList.put(CPU_CLOCK_RATE, new QuotaTypes(CPU_CLOCK_RATE, "CPU_CLOCK_RATE", "Compute-Month", "Quota tariff for using 1 CPU of clock rate 100MHz"));
         quotaTypeList.put(CPU_NUMBER, new QuotaTypes(CPU_NUMBER, "CPU_NUMBER", "Compute-Month", "Quota tariff for running VM that has 1vCPU"));
         quotaTypeList.put(MEMORY, new QuotaTypes(MEMORY, "MEMORY", "Compute-Month", "Quota tariff for using 1MB or RAM for 1 hour"));
+        quotaTypeMap = Collections.unmodifiableMap(quotaTypeList);
     }
 
     private QuotaTypes(Integer quotaType, String name, String unit, String description) {
@@ -65,8 +69,8 @@ public class QuotaTypes extends UsageTypes {
         this.discriminator = "None";
     }
 
-    public static HashMap<Integer, QuotaTypes> listQuotaTypes() {
-        return quotaTypeList;
+    public static Map<Integer, QuotaTypes> listQuotaTypes() {
+        return quotaTypeMap;
     }
 
     public String getDiscriminator() {
@@ -90,10 +94,6 @@ public class QuotaTypes extends UsageTypes {
     }
 
     static public String getDescription(int quotaType) {
-        HashMap<Integer, QuotaTypes> quotaMap = listQuotaTypes();
-        if (quotaMap.containsKey(quotaType)) {
-            return quotaMap.get(quotaType).getDescription();
-        }
-        return null;
+        return quotaTypeMap.get(quotaType).getDescription();
     }
 }
