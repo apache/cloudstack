@@ -1,0 +1,33 @@
+FROM debian:7
+
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN apt-get update
+
+# Debian packaging
+RUN apt-get install -y                      \
+        debhelper                           \
+        devscripts                          \
+        genisoimage
+
+# Python
+RUN apt-get install -y                      \
+        python-software-properties          \
+        python-mysqldb
+
+# Java
+RUN apt-get install -y                      \
+        openjdk-7-jdk                       \
+        tomcat6                             \
+        libws-commons-util-java             \
+        libcommons-codec-java               \
+        libcommons-httpclient-java          \
+        liblog4j1.2-java                    \
+        ant                                 \
+        maven
+
+# debian packages are put in parent folder:
+RUN mkdir /build
+
+VOLUME /build/cloudstack
+WORKDIR /build/cloudstack

@@ -73,6 +73,7 @@ docs/runbook/publish
 .project
 Gemfile.lock
 debian/tmp
+debian/out
 debian/files
 debian/cloudstack-*/*
 debian/*.substvars
