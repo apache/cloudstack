@@ -158,9 +158,28 @@
             $elems.each(function() {
                 sortData.push($(this));
             });
-            sortData.sort(function(a, b) {
+
+            var stringComparator = function(a,b) {
                 return a.html().localeCompare(b.html());
-            });
+            };
+            var numericComparator = function(a,b) {
+                return parseFloat(a.children().html()) < parseFloat(b.children().html()) ? 1 : -1;
+            };
+            var stateComparator = function(a,b) {
+                return a.attr('title').localeCompare(b.attr('title'));
+            };
+            var isNumeric = function(obj) {
+                return !$.isArray(obj) && !isNaN(parseFloat(obj)) && isFinite(parseFloat(obj));
+            }
+
+            var comparator = stringComparator;
+            if ($($elems[0]).hasClass('state')) {
+                comparator = stateComparator;
+            } else if (columnIndex != 0 && isNumeric($($elems[0]).children().html())) {
+                comparator = numericComparator;
+            }
+
+            sortData.sort(comparator);
 
             if (direction == 'asc') {
                 sortData.reverse();
