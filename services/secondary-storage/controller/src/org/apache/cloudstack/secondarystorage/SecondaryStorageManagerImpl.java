@@ -36,6 +36,9 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigKey.Scope;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
@@ -143,6 +146,7 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+
 //
 // Possible secondary storage vm state transition cases
 //        Creating -> Destroyed
@@ -162,7 +166,8 @@ import com.cloud.vm.dao.VMInstanceDao;
 // because sooner or later, it will be driven into Running state
 //
 public class SecondaryStorageManagerImpl extends ManagerBase implements SecondaryStorageVmManager, VirtualMachineGuru, SystemVmLoadScanHandler<Long>,
-        ResourceStateAdapter {
+            ResourceStateAdapter,
+            Configurable {
     private static final Logger s_logger = Logger.getLogger(SecondaryStorageManagerImpl.class);
 
     private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000; // 30
@@ -1088,6 +1093,14 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             buf.append(" vmpassword=").append(_configDao.getValue("system.vm.password"));
         }
 
+        String nfsOptions = SecStorageNfsOptions.valueIn(profile.getVirtualMachine().getDataCenterId());
+        if (nfsOptions != null && !nfsOptions.isEmpty()) {
+            s_logger.debug("Adding custom NFS options to ssvm: " + nfsOptions);
+            //buf.append(" nfsoptions=").append(nfsOptions.replace("=", "%3D")); //encode = so agent can parse it
+            processNfsOptions(nfsOptions, buf);
+        }
+
+
         for (NicProfile nic : profile.getNics()) {
             int deviceId = nic.getDeviceId();
             if (nic.getIPv4Address() == null) {
@@ -1138,6 +1151,25 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         }
 
         return true;
+    }
+
+    private void processNfsOptions(String nfsOptions, StringBuilder buf) {
+        String[] options = nfsOptions.split(",");
+        String flags = "";
+        for (String option : options) {
+            if (!option.contains("=")) {
+                if (!flags.equals("")){
+                    flags += ",";
+                }
+                flags += option;
+            }
+            else {
+                buf.append(" nfsoption-" + option);
+            }
+        }
+        if (!flags.equalsIgnoreCase("")) {
+            buf.append(" nfsoption-flags=" + flags);
+        }
     }
 
     @Override
@@ -1429,5 +1461,19 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     @Inject
     public void setSecondaryStorageVmAllocators(List<SecondaryStorageVmAllocator> ssVmAllocators) {
         _ssVmAllocators = ssVmAllocators;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return SecondaryStorageVmManager.class.getSimpleName();
+    }
+
+    public static final ConfigKey<String> SecStorageNfsOptions = new ConfigKey<String>(
+            String.class, "secstorage.nfs.options", "Advanced", "soft,timeo=133,retrans=2147483647,tcp,acdirmax=0,acdirmin=0",
+            "NFS mount options for ssvm. Default: soft,timeo=133,retrans=2147483647,tcp,acdirmax=0,acdirmin=0", true, Scope.Zone, null);
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[]{SecStorageNfsOptions};
     }
 }

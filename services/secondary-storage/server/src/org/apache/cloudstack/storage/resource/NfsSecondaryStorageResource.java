@@ -201,6 +201,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     private String _storageIp;
     private String _storageNetmask;
     private String _storageGateway;
+    private String _nfsOptions;
     private final List<String> nfsIps = new ArrayList<String>();
     protected String _parent = "/mnt/SecStorage";
     final private String _tmpltpp = "template.properties";
@@ -2214,6 +2215,21 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             _params.put("secondary.storage.vm", "true");
         }
 
+        // extract the nfs options
+        for (String key : params.keySet()) {
+            if (key.startsWith("nfsoption-")) {
+                if (!_nfsOptions.equals("")) {
+                    _nfsOptions += ",";
+                }
+                if (key.startsWith("nfsoption-flags")) {
+                    _nfsOptions +=  params.get(key);
+                }
+                else {
+                    _nfsOptions += key.split("-")[1] + "=" + params.get(key);
+                }
+            }
+        }
+
         try {
             _params.put(StorageLayer.InstanceConfigKey, _storage);
             _dlMgr = new DownloadManagerImpl();
@@ -2465,8 +2481,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 command.add("-o", "resvport");
             }
             if (_inSystemVM) {
-                command.add("-o", "soft,timeo=133,retrans=2147483647,tcp,acdirmax=0,acdirmin=0");
+                command.add("-o", _nfsOptions);
             }
+
         } else if (scheme.equals("cifs")) {
             String extraOpts = parseCifsMountOptions(uri);
 
