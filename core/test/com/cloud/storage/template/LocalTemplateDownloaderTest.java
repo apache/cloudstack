@@ -22,6 +22,7 @@ package com.cloud.storage.template;
 import static org.junit.Assert.fail;
 
 import java.io.File;
+import java.net.MalformedURLException;
 
 import org.junit.Test;
 
@@ -29,9 +30,9 @@ import org.junit.Test;
 public class LocalTemplateDownloaderTest {
 
     @Test
-    public void localTemplateDownloaderTest() {
-        String url =  "file://" + new File("pom.xml").getAbsolutePath();
-        TemplateDownloader td = new LocalTemplateDownloader(null, url, "/tmp", TemplateDownloader.DEFAULT_MAX_TEMPLATE_SIZE_IN_BYTES, null);
+    public void localTemplateDownloaderTest() throws MalformedURLException {
+        String url = new File("pom.xml").toURI().toURL().toString();
+        TemplateDownloader td = new LocalTemplateDownloader(null, url, System.getProperty("java.io.tmpdir"), TemplateDownloader.DEFAULT_MAX_TEMPLATE_SIZE_IN_BYTES, null);
         long bytes = td.download(true, null);
         if (!(bytes > 0)) {
             fail("Failed download");
