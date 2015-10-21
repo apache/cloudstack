@@ -535,6 +535,12 @@
                     indicator: {
                         'Up': 'on',
                         'Down': 'off',
+                        'Disconnected': 'off',
+                        'Removed': 'off',
+                        'Error': 'off',
+                        'Connecting': 'transition',
+                        'Rebalancing': 'transition',
+                        'Alert': 'warning',
                     },
                     compact: true
                 },
@@ -711,7 +717,14 @@
                     },
                     indicator: {
                         'Running': 'on',
-                        'Stopped': 'off'
+                        'Stopped': 'off',
+                        'Error': 'off',
+                        'Destroyed': 'off',
+                        'Expunging': 'off',
+                        'Stopping': 'transition',
+                        'Starting': 'transition',
+                        'Migrating': 'transition',
+                        'Shutdowned': 'warning',
                     },
                     compact: true
                 },
@@ -836,6 +849,24 @@
                 name: {
                     label: 'label.metrics.name'
                 },
+                state: {
+                    label: 'label.metrics.state',
+                    converter: function (str) {
+                        // For localization
+                        return str;
+                    },
+                    indicator: {
+                        'Allocated': 'transition',
+                        'Creating': 'transition',
+                        'Ready': 'on',
+                        'Destroy': 'off',
+                        'Expunging': 'off',
+                        'Migrating': 'warning',
+                        'UploadOp': 'transition',
+                        'Snapshotting': 'warning',
+                    },
+                    compact: true
+                },
                 vmname: {
                     label: 'label.metrics.vm.name'
                 },
@@ -864,6 +895,7 @@
                             items = json.listvolumesresponse.volume;
                             $.each(items, function(idx, volume) {
                                 items[idx].name = volume.name;
+                                items[idx].state = volume.state;
                                 items[idx].vmname = volume.vmname;
                                 items[idx].diskoffering = volume.diskofferingname;
                                 items[idx].disksize = parseFloat(volume.size)/(1024.0*1024.0*1024.0) + "GB";
@@ -909,7 +941,12 @@
                             },
                             indicator: {
                                 'Up': 'on',
-                                'Down': 'off'
+                                'Down': 'off',
+                                'Removed': 'off',
+                                'ErrorInMaintenance': 'off',
+                                'PrepareForMaintenance': 'transition',
+                                'CancelMaintenance': 'warning',
+                                'Maintenance': 'warning',
                             },
                             compact: true
                         },
