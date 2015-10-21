@@ -41,7 +41,11 @@ class TestNiciraContoller(cloudstackTestCase):
         test_client    = test_case.getClsTestClient()
         cls.config     = test_case.getClsConfig()
         cls.api_client = test_client.getApiClient()
-
+        cls.cleanup=[]
+        cls.config_not_found = None
+        if not getattr(cls.config,'niciraNvp','None'):
+            cls.config_not_found = True
+            return
         cls.physical_networks = cls.config.zones[0].physical_networks
         cls.nicira_hosts      = cls.config.niciraNvp.hosts
 
@@ -122,11 +126,9 @@ class TestNiciraContoller(cloudstackTestCase):
             cls.api_client,
             cls.vm_services['service_offerings']['tiny']
         )
+        cls.cleanup.append(cls.service_offering)
+        cls.cleanup.append(cls.network_offering)
 
-        cls.cleanup = [
-            cls.network_offering,
-            cls.service_offering
-        ]
 
 
     @classmethod
@@ -138,6 +140,9 @@ class TestNiciraContoller(cloudstackTestCase):
 
     def setUp(self):
         self.test_cleanup = []
+        if self.config_not_found :
+            self.skipTest("nicira settings not found in config file")
+
 
     def tearDown(self):
         try:
