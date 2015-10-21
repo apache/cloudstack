@@ -248,9 +248,12 @@
                 $table.find('tbody').closest('table').addClass('body');
             }
 
-            $table.find('th:not(:has(input)):not(.collapsible-column)').bind('mousemove mouseout', hoverResizableEvent);
-            $table.find('th:not(:has(input)):not(.collapsible-column)').bind('mousedown mousemove mouseup mouseout', resizeDragEvent);
-            $table.find('th:not(:has(input)):not(.collapsible-column)').bind('click', function(event) {
+            if (!$table.hasClass('horizontal-overflow')) {
+                $table.find('th:not(:has(input))').bind('mousemove mouseout', hoverResizableEvent);
+                $table.find('th:not(:has(input))').bind('mousedown mousemove mouseup mouseout', resizeDragEvent);
+            }
+
+            $table.find('thead tr:last th:not(:has(input)):not(.collapsible-column):not(.quick-view)').unbind('click').bind('click', function(event) {
                 if ($(this).hasClass('resizable')) {
                     return false;
                 }

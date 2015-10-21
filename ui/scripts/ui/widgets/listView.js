@@ -1488,8 +1488,8 @@
                     .appendTo($tr);
                 $quickView.mouseover(
                     // Show quick view
-
                     function() {
+                        var $quickView = $(this);
                         var $quickViewTooltip = $('<div>').addClass('quick-view-tooltip hovered-elem');
                         var $tr = $quickView.closest('tr');
                         var $listView = $tr.closest('.list-view');
