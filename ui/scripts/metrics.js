@@ -894,13 +894,12 @@
                         if (json && json.listvolumesresponse && json.listvolumesresponse.volume) {
                             items = json.listvolumesresponse.volume;
                             $.each(items, function(idx, volume) {
-                                items[idx].id = volume.storageid; // replace id with storageid for volume to storagepool navigation
                                 items[idx].name = volume.name;
                                 items[idx].state = volume.state;
                                 items[idx].vmname = volume.vmname;
                                 items[idx].diskoffering = volume.diskofferingname;
                                 items[idx].disksize = parseFloat(volume.size)/(1024.0*1024.0*1024.0) + "GB";
-                                items[idx].storagetype = volume.storagetype.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+                                items[idx].storagetype = volume.storagetype.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();}) + ' (' + volume.type + ')';
                                 if (volume.storage) {
                                     items[idx].storagetype += " (" + volume.storage + ")";
                                 }
@@ -911,10 +910,6 @@
                         });
                     }
                 });
-            },
-            browseBy: {
-                filterBy: 'id',
-                resource: 'storagepool'
             },
             detailView: cloudStack.sections.storage.sections.volumes.listView.detailView
         }
