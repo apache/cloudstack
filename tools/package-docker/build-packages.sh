@@ -62,6 +62,6 @@ dpkg-buildpackage
 
 # Copy build files from parent folder to debian/out folder
 mkdir -p "${OUT_DIR}"
-cp /build/* "${OUT_DIR}" 2>/dev/null
+find /build -maxdepth 1 -type f | xargs -I file cp file "${OUT_DIR}"
 
 echo "Done packaging.  Files are in ${OUT_DIR}"
