@@ -626,13 +626,26 @@
                             $.each(items, function(idx, host) {
                                 items[idx].cores = host.cpunumber;
                                 items[idx].cputotal = (parseFloat(host.cpunumber) * parseFloat(host.cpuspeed) / 1000.0).toFixed(2);
-                                items[idx].cpuusedavg = host.cpuused;
+                                if (host.cpuused) {
+                                    items[idx].cpuusedavg = host.cpuused;
+                                } else {
+                                    items[idx].cpuusedavg = '--';
+                                }
                                 items[idx].cpuallocated = host.cpuallocated;
                                 items[idx].memtotal = (parseFloat(host.memorytotal)/(1024.0*1024.0*1024.0)).toFixed(2) + 'GB';
                                 items[idx].memallocated = (parseFloat(host.memoryallocated)/(1024.0*1024.0*1024.0)).toFixed(2) + 'GB';
-                                items[idx].memusedavg = (parseFloat(host.memoryused)/(1024.0*1024.0*1024.0)).toFixed(2) + 'GB';
-                                items[idx].networkread = (parseFloat(host.networkkbsread)/(1024.0*1024.0)).toFixed(2) + 'GB';
-                                items[idx].networkwrite = (parseFloat(host.networkkbswrite)/(1024.0*1024.0)).toFixed(2) + 'GB';
+                                if (host.memoryused) {
+                                    items[idx].memusedavg = (parseFloat(host.memoryused)/(1024.0*1024.0*1024.0)).toFixed(2) + 'GB';
+                                } else {
+                                    items[idx].memusedavg = '--';
+                                }
+                                if (host.networkkbsread && host.networkkbswrite) {
+                                    items[idx].networkread = (parseFloat(host.networkkbsread)/(1024.0*1024.0)).toFixed(2) + 'GB';
+                                    items[idx].networkwrite = (parseFloat(host.networkkbswrite)/(1024.0*1024.0)).toFixed(2) + 'GB';
+                                } else {
+                                    items[idx].networkread = '--';
+                                    items[idx].networkwrite = '--';
+                                }
 
                                 // Threshold color coding
                                 items[idx].cpunotificationthreshold = 75.0;
@@ -809,7 +822,8 @@
                                 items[idx].diskwrite = (parseFloat(vm.diskkbswrite)/(1024.0)).toFixed(2) + 'MB';
                                 items[idx].diskiopstotal = parseFloat(vm.diskioread) + parseFloat(vm.diskiowrite);
 
-                                var keys = [{'memoryused': 'memused'},
+                                var keys = [{'cpuused': 'cpuusedavg'},
+                                            {'memoryused': 'memused'},
                                             {'networkkbsread': 'networkread'},
                                             {'networkkbswrite': 'networkwrite'},
                                             {'diskkbsread': 'diskread'},
@@ -820,7 +834,7 @@
                                     var key = Object.keys(map)[0];
                                     var uiKey = map[key];
                                     if (!vm.hasOwnProperty(key)) {
-                                        items[idx][uiKey] = 'N/A';
+                                        items[idx][uiKey] = '--';
                                     }
                                 }
                             });
@@ -992,13 +1006,19 @@
                                 items[idx].scope = pool.scope;
                                 items[idx].type = pool.type;
                                 items[idx].overprovisionfactor = parseFloat(pool.overprovisionfactor);
-                                items[idx].disksizeused = parseFloat(pool.disksizeused);
+
+                                console.log(pool.disksizeused);
+                                if (pool.disksizeused) {
+                                    items[idx].disksizeused = (parseFloat(pool.disksizeused)/(1024.0*1024.0*1024.0)).toFixed(2) + 'GB';
+                                } else {
+                                    items[idx].disksizeused = '--';
+                                }
+
                                 items[idx].disksizetotal = parseFloat(pool.disksizetotal);
                                 items[idx].disksizeallocated = parseFloat(pool.disksizeallocated);
                                 items[idx].disksizeunallocated = (items[idx].overprovisionfactor * items[idx].disksizetotal) - items[idx].disksizeallocated;
 
                                 // Format presentation
-                                items[idx].disksizeused = (items[idx].disksizeused/(1024.0*1024.0*1024.0)).toFixed(2) + "GB";
                                 items[idx].disksizetotal = (items[idx].disksizetotal/(1024.0*1024.0*1024.0)).toFixed(2) + "GB (x" + items[idx].overprovisionfactor + ")";
                                 items[idx].disksizeallocated = (items[idx].disksizeallocated/(1024.0*1024.0*1024.0)).toFixed(2) + "GB";
                                 items[idx].disksizeunallocated = (items[idx].disksizeunallocated/(1024.0*1024.0*1024.0)).toFixed(2) + "GB";
