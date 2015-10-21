@@ -23,13 +23,13 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
 
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
@@ -39,28 +39,25 @@ import com.cloud.utils.db.TransactionStatus;
 @Component
 @Local(value = { QuotaCreditsDao.class })
 public class QuotaCreditsDaoImpl extends GenericDaoBase<QuotaCreditsVO, Long> implements QuotaCreditsDao {
-    private static final Logger s_logger = Logger.getLogger(QuotaCreditsDaoImpl.class.getName());
 
     @Inject
     QuotaBalanceDao _quotaBalanceDao;
 
-    @SuppressWarnings("deprecation")
     @Override
     public List<QuotaCreditsVO> findCredits(final long accountId, final long domainId, final Date startDate, final Date endDate) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaCreditsVO>>() {
             @Override
             public List<QuotaCreditsVO> doInTransaction(final TransactionStatus status) {
-                TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-                Filter filter = new Filter(QuotaCreditsVO.class, "updatedOn", true, 0L, Long.MAX_VALUE);
-                SearchCriteria<QuotaCreditsVO> sc = createSearchCriteria();
-                sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-                sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
                 if ((startDate != null) && (endDate != null) && startDate.before(endDate)) {
-                    sc.addAnd("updatedOn", SearchCriteria.Op.BETWEEN, startDate, endDate);
+                    Filter filter = new Filter(QuotaCreditsVO.class, "updatedOn", true, 0L, Long.MAX_VALUE);
+                    QueryBuilder<QuotaCreditsVO> qb = QueryBuilder.create(QuotaCreditsVO.class);
+                    qb.and(qb.entity().getAccountId(), SearchCriteria.Op.EQ, accountId);
+                    qb.and(qb.entity().getDomainId(), SearchCriteria.Op.EQ, domainId);
+                    qb.and(qb.entity().getUpdatedOn(), SearchCriteria.Op.BETWEEN, startDate, endDate);
+                    return search(qb.create(), filter);
                 } else {
-                    return Collections.<QuotaCreditsVO>emptyList();
+                    return Collections.<QuotaCreditsVO> emptyList();
                 }
-                return search(sc, filter);
             }
         });
     }

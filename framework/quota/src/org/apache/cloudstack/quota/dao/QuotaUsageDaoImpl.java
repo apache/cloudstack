@@ -17,11 +17,13 @@
 package org.apache.cloudstack.quota.dao;
 
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
+
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -42,7 +44,7 @@ public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implem
     public BigDecimal findTotalQuotaUsage(final Long accountId, final Long domainId, final Integer usageType, final Date startDate, final Date endDate) {
         List<QuotaUsageVO> quotaUsage = findQuotaUsage(accountId, domainId, null, startDate, endDate);
         BigDecimal total = new BigDecimal(0);
-        for (QuotaUsageVO quotaRecord: quotaUsage) {
+        for (QuotaUsageVO quotaRecord : quotaUsage) {
             total = total.add(quotaRecord.getQuotaUsed());
         }
         return total;
@@ -51,26 +53,25 @@ public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implem
     @Override
     public List<QuotaUsageVO> findQuotaUsage(final Long accountId, final Long domainId, final Integer usageType, final Date startDate, final Date endDate) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaUsageVO>>() {
-            @SuppressWarnings("deprecation")
             @Override
             public List<QuotaUsageVO> doInTransaction(final TransactionStatus status) {
-                SearchCriteria<QuotaUsageVO> sc = createSearchCriteria();
-                if (accountId != null) {
-                    sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-                }
-                if (domainId != null) {
-                    sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-                }
-                if (usageType != null) {
-                    sc.addAnd("usageType", SearchCriteria.Op.EQ, usageType);
-                }
                 if ((startDate != null) && (endDate != null) && startDate.before(endDate)) {
-                    sc.addAnd("startDate", SearchCriteria.Op.BETWEEN, startDate, endDate);
-                    sc.addAnd("endDate", SearchCriteria.Op.BETWEEN, startDate, endDate);
+                    QueryBuilder<QuotaUsageVO> qb = QueryBuilder.create(QuotaUsageVO.class);
+                    if (accountId != null) {
+                        qb.and(qb.entity().getAccountId(), SearchCriteria.Op.EQ, accountId);
+                    }
+                    if (domainId != null) {
+                        qb.and(qb.entity().getDomainId(), SearchCriteria.Op.EQ, domainId);
+                    }
+                    if (usageType != null) {
+                        qb.and(qb.entity().getUsageType(), SearchCriteria.Op.EQ, usageType);
+                    }
+                    qb.and(qb.entity().getStartDate(), SearchCriteria.Op.BETWEEN, startDate, endDate);
+                    qb.and(qb.entity().getEndDate(), SearchCriteria.Op.BETWEEN, startDate, endDate);
+                    return listBy(qb.create());
                 } else {
                     return new ArrayList<QuotaUsageVO>();
                 }
-                return listBy(sc);
             }
         });
     }

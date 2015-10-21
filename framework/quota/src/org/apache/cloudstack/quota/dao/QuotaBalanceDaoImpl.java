@@ -19,6 +19,7 @@ package org.apache.cloudstack.quota.dao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
@@ -42,7 +43,6 @@ import java.util.List;
 public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> implements QuotaBalanceDao {
     private static final Logger s_logger = Logger.getLogger(QuotaBalanceDaoImpl.class.getName());
 
-    @SuppressWarnings("deprecation")
     @Override
     public QuotaBalanceVO findLastBalanceEntry(final Long accountId, final Long domainId, final Date beforeThis) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<QuotaBalanceVO>() {
@@ -50,18 +50,17 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
             public QuotaBalanceVO doInTransaction(final TransactionStatus status) {
                 List<QuotaBalanceVO> quotaBalanceEntries = new ArrayList<>();
                 Filter filter = new Filter(QuotaBalanceVO.class, "updatedOn", false, 0L, 1L);
-                SearchCriteria<QuotaBalanceVO> sc = createSearchCriteria();
-                sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-                sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-                sc.addAnd("creditsId", SearchCriteria.Op.EQ, 0);
-                sc.addAnd("updatedOn", SearchCriteria.Op.LT, beforeThis);
-                quotaBalanceEntries = search(sc, filter);
-                return ! quotaBalanceEntries.isEmpty() ? quotaBalanceEntries.get(0) : null;
+                QueryBuilder<QuotaBalanceVO> qb = QueryBuilder.create(QuotaBalanceVO.class);
+                qb.and(qb.entity().getAccountId(), SearchCriteria.Op.EQ, accountId);
+                qb.and(qb.entity().getDomainId(), SearchCriteria.Op.EQ, domainId);
+                qb.and(qb.entity().getCreditsId(), SearchCriteria.Op.EQ, 0);
+                qb.and(qb.entity().getUpdatedOn(), SearchCriteria.Op.LT, beforeThis);
+                quotaBalanceEntries = search(qb.create(), filter);
+                return !quotaBalanceEntries.isEmpty() ? quotaBalanceEntries.get(0) : null;
             }
         });
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public QuotaBalanceVO findLaterBalanceEntry(final Long accountId, final Long domainId, final Date afterThis) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<QuotaBalanceVO>() {
@@ -69,12 +68,12 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
             public QuotaBalanceVO doInTransaction(final TransactionStatus status) {
                 List<QuotaBalanceVO> quotaBalanceEntries = new ArrayList<>();
                 Filter filter = new Filter(QuotaBalanceVO.class, "updatedOn", true, 0L, 1L);
-                SearchCriteria<QuotaBalanceVO> sc = createSearchCriteria();
-                sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-                sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-                sc.addAnd("creditsId", SearchCriteria.Op.EQ, 0);
-                sc.addAnd("updatedOn", SearchCriteria.Op.GT, afterThis);
-                quotaBalanceEntries = search(sc, filter);
+                QueryBuilder<QuotaBalanceVO> qb = QueryBuilder.create(QuotaBalanceVO.class);
+                qb.and(qb.entity().getAccountId(), SearchCriteria.Op.EQ, accountId);
+                qb.and(qb.entity().getDomainId(), SearchCriteria.Op.EQ, domainId);
+                qb.and(qb.entity().getCreditsId(), SearchCriteria.Op.EQ, 0);
+                qb.and(qb.entity().getUpdatedOn(), SearchCriteria.Op.GT, afterThis);
+                quotaBalanceEntries = search(qb.create(), filter);
                 return quotaBalanceEntries.size() > 0 ? quotaBalanceEntries.get(0) : null;
             }
         });
@@ -93,47 +92,45 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
         });
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public List<QuotaBalanceVO> findCreditBalance(final Long accountId, final Long domainId, final Date lastbalancedate, final Date beforeThis) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaBalanceVO>>() {
             @Override
             public List<QuotaBalanceVO> doInTransaction(final TransactionStatus status) {
-                Filter filter = new Filter(QuotaBalanceVO.class, "updatedOn", true, 0L, Long.MAX_VALUE);
-                SearchCriteria<QuotaBalanceVO> sc = createSearchCriteria();
-                sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-                sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-                sc.addAnd("creditsId", SearchCriteria.Op.GT, 0);
                 if ((lastbalancedate != null) && (beforeThis != null) && lastbalancedate.before(beforeThis)) {
-                    sc.addAnd("updatedOn", SearchCriteria.Op.BETWEEN, lastbalancedate, beforeThis);
+                    Filter filter = new Filter(QuotaBalanceVO.class, "updatedOn", true, 0L, Long.MAX_VALUE);
+                    QueryBuilder<QuotaBalanceVO> qb = QueryBuilder.create(QuotaBalanceVO.class);
+                    qb.and(qb.entity().getAccountId(), SearchCriteria.Op.EQ, accountId);
+                    qb.and(qb.entity().getDomainId(), SearchCriteria.Op.EQ, domainId);
+                    qb.and(qb.entity().getCreditsId(), SearchCriteria.Op.GT, 0);
+                    qb.and(qb.entity().getUpdatedOn(), SearchCriteria.Op.BETWEEN, lastbalancedate, beforeThis);
+                    return search(qb.create(), filter);
                 } else {
                     return new ArrayList<QuotaBalanceVO>();
                 }
-                return search(sc, filter);
             }
         });
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public List<QuotaBalanceVO> findQuotaBalance(final Long accountId, final Long domainId, final Date startDate, final Date endDate) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaBalanceVO>>() {
             @Override
             public List<QuotaBalanceVO> doInTransaction(final TransactionStatus status) {
                 List<QuotaBalanceVO> quotaUsageRecords = null;
-                SearchCriteria<QuotaBalanceVO> sc = createSearchCriteria();
+                QueryBuilder<QuotaBalanceVO> qb = QueryBuilder.create(QuotaBalanceVO.class);
                 if (accountId != null) {
-                    sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+                    qb.and(qb.entity().getAccountId(), SearchCriteria.Op.EQ, accountId);
                 }
                 if (domainId != null) {
-                    sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+                    qb.and(qb.entity().getDomainId(), SearchCriteria.Op.EQ, domainId);
                 }
                 if ((startDate != null) && (endDate != null) && startDate.before(endDate)) {
-                    sc.addAnd("updatedOn", SearchCriteria.Op.BETWEEN, startDate, endDate);
+                    qb.and(qb.entity().getUpdatedOn(), SearchCriteria.Op.BETWEEN, startDate, endDate);
                 } else {
                     return Collections.<QuotaBalanceVO> emptyList();
                 }
-                quotaUsageRecords = listBy(sc);
+                quotaUsageRecords = listBy(qb.create());
                 if (quotaUsageRecords.size() == 0) {
                     quotaUsageRecords.addAll(lastQuotaBalanceVO(accountId, domainId, startDate));
                 }
@@ -144,7 +141,6 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
 
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public List<QuotaBalanceVO> lastQuotaBalanceVO(final Long accountId, final Long domainId, final Date pivotDate) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaBalanceVO>>() {
@@ -155,21 +151,21 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
                 Filter filter = new Filter(QuotaBalanceVO.class, "updatedOn", false, 0L, 100L);
                 // ASSUMPTION there will be less than 100 continuous credit
                 // transactions
-                SearchCriteria<QuotaBalanceVO> sc = createSearchCriteria();
+                QueryBuilder<QuotaBalanceVO> qb = QueryBuilder.create(QuotaBalanceVO.class);
                 if (accountId != null) {
-                    sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+                    qb.and(qb.entity().getAccountId(), SearchCriteria.Op.EQ, accountId);
                 }
                 if (domainId != null) {
-                    sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+                    qb.and(qb.entity().getDomainId(), SearchCriteria.Op.EQ, domainId);
                 }
                 if ((pivotDate != null)) {
-                    sc.addAnd("updatedOn", SearchCriteria.Op.LTEQ, pivotDate);
+                    qb.and(qb.entity().getUpdatedOn(), SearchCriteria.Op.LTEQ, pivotDate);
                 }
-                quotaUsageRecords = search(sc, filter);
+                quotaUsageRecords = search(qb.create(), filter);
 
                 // get records before startDate to find start balance
                 for (QuotaBalanceVO entry : quotaUsageRecords) {
-                    if (s_logger.isDebugEnabled()){
+                    if (s_logger.isDebugEnabled()) {
                         s_logger.debug("FindQuotaBalIance Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
                     }
                     if (entry.getCreditsId() > 0) {
@@ -192,7 +188,7 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
         }
         BigDecimal finalBalance = new BigDecimal(0);
         for (QuotaBalanceVO entry : quotaBalance) {
-            if (s_logger.isDebugEnabled()){
+            if (s_logger.isDebugEnabled()) {
                 s_logger.debug("lastQuotaBalance Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
             }
             finalBalance = finalBalance.add(entry.getCreditBalance());
