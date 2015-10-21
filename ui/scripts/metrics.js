@@ -1006,14 +1006,11 @@
                                 items[idx].scope = pool.scope;
                                 items[idx].type = pool.type;
                                 items[idx].overprovisionfactor = parseFloat(pool.overprovisionfactor);
-
-                                console.log(pool.disksizeused);
                                 if (pool.disksizeused) {
-                                    items[idx].disksizeused = (parseFloat(pool.disksizeused)/(1024.0*1024.0*1024.0)).toFixed(2) + 'GB';
+                                    items[idx].disksizeused = (parseFloat(pool.disksizeused)/(1024.0*1024.0*1024.0)).toFixed(2) + "GB";
                                 } else {
                                     items[idx].disksizeused = '--';
                                 }
-
                                 items[idx].disksizetotal = parseFloat(pool.disksizetotal);
                                 items[idx].disksizeallocated = parseFloat(pool.disksizeallocated);
                                 items[idx].disksizeunallocated = (items[idx].overprovisionfactor * items[idx].disksizetotal) - items[idx].disksizeallocated;
