@@ -16,7 +16,7 @@
      KIND, either express or implied.  See the License for the
      specific language governing permissions and limitations
      under the License.
-     --%><%@ page contentType="text/html; charset=UTF-8" %>
+     --%><%@ page contentType="text/html; charset=UTF-8" session="false" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <c:if test="${!empty cookie.lang}">
