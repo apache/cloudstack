@@ -32,6 +32,12 @@
         <artifactId>cloud-server</artifactId>
         <version>${project.version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-client-ui</artifactId>
+        <version>${project.version}</version>
+	<type>pom</type>
+      </dependency>
     </dependencies>
 
     <build>
