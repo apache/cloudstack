@@ -11,6 +11,8 @@ import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonWriter;
 
 public class CommandArrayTypeAdaptor extends GenericArrayTypeAdaptor<Command> {
+
+    @Override
     protected Command[] newArray(int size) {
         Command[] commands = (Command[])Array.newInstance(Command.class, size);
         return commands;

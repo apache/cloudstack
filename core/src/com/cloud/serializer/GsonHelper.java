@@ -22,6 +22,7 @@ package com.cloud.serializer;
 import java.util.List;
 
 import org.apache.cloudstack.agent.transport.AnswerArrayTypeAdaptor;
+import org.apache.cloudstack.agent.transport.AnswerTypeAdaptor;
 import org.apache.cloudstack.agent.transport.CommandArrayTypeAdaptor;
 import org.apache.cloudstack.agent.transport.CommandTypeAdaptor;
 import org.apache.log4j.Logger;
@@ -70,7 +71,9 @@ public class GsonHelper {
         builder.registerTypeAdapter(Command[].class, cmdsAdaptor);
         CommandTypeAdaptor cmdAdaptor = new CommandTypeAdaptor();
         builder.registerTypeAdapter(Command.class, cmdAdaptor);
-        AnswerArrayTypeAdaptor ansAdaptor = new AnswerArrayTypeAdaptor();
+        AnswerArrayTypeAdaptor anssAdaptor = new AnswerArrayTypeAdaptor();
+        builder.registerTypeAdapter(Answer[].class, anssAdaptor);
+        AnswerTypeAdaptor ansAdaptor = new AnswerTypeAdaptor();
         builder.registerTypeAdapter(Answer[].class, ansAdaptor);
         builder.registerTypeAdapter(new TypeToken<List<PortConfig>>() {
         }.getType(), new PortConfigListTypeAdaptor());
@@ -81,6 +84,7 @@ public class GsonHelper {
         dtAdaptor.initGson(gson);
         cmdsAdaptor.initGson(gson);
         cmdAdaptor.initGson(gson);
+        anssAdaptor.initGson(gson);
         ansAdaptor.initGson(gson);
         return gson;
     }

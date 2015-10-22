@@ -45,6 +45,7 @@ public abstract class GenericArrayTypeAdaptor<T> extends TypeAdapter<T[]> {
             in.beginObject();
             String tiep = in.nextName();
             try {
+                @SuppressWarnings("unchecked")
                 Class<T> clz = (Class<T>)Class.forName(tiep);
                 T t = _gson.fromJson(in, clz);
                 arry.add(t);

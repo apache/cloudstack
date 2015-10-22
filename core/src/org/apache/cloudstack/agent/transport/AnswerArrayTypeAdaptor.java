@@ -4,7 +4,10 @@ import java.io.IOException;
 import java.lang.reflect.Array;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.serializer.GsonHelper;
+import com.google.gson.ExclusionStrategy;
+import com.google.gson.Gson;
+import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonWriter;
 
 public class AnswerArrayTypeAdaptor extends GenericArrayTypeAdaptor<Answer> {
@@ -14,19 +17,20 @@ public class AnswerArrayTypeAdaptor extends GenericArrayTypeAdaptor<Answer> {
         Answer[] answers = (Answer[])Array.newInstance(Answer.class, size);
         return answers;
     }
+    public void initGson(Gson gson) {
+        _gson = gson;
+        _adaptor = _gson.getAdapter(Answer.class);
+    }
+    TypeAdapter<Answer> _adaptor;
 
     @Override
-    protected void writeElement(JsonWriter out, Answer elem) {
-        try {
-            String data = _gson.toJson(elem);
-            if(data != null && !data.equals("null")) {
-                out.beginObject();
-                out.name(elem.getClass().getCanonicalName());
-                out.jsonValue(data);
-                out.endObject();
-            }
-        } catch (IOException e) {
-            throw new CloudRuntimeException("serializing json failed for " + elem.getClass(), e);
+    protected void writeElement(JsonWriter out, Answer elem) throws IOException {
+        // get the gsonHelper.
+        ExclusionStrategy excluder = GsonHelper.getExcluder();
+        if (!excluder.shouldSkipClass(elem.getClass())) {
+            out.beginObject();
+            _adaptor.write(out,elem);
+            out.endObject();
         }
     }
 
