@@ -29,6 +29,7 @@ public class AnswerArrayTypeAdaptor extends GenericArrayTypeAdaptor<Answer> {
         ExclusionStrategy excluder = GsonHelper.getExcluder();
         if (!excluder.shouldSkipClass(elem.getClass())) {
             out.beginObject();
+            out.name(elem.getClass().getCanonicalName());
             _adaptor.write(out,elem);
             out.endObject();
         }
