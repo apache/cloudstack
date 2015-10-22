@@ -740,6 +740,7 @@ dictionary = {
 'label.ovm.traffic.label': '<fmt:message key="label.ovm.traffic.label" />',
 'label.lxc.traffic.label': '<fmt:message key="label.lxc.traffic.label" />',
 'label.hyperv.traffic.label': '<fmt:message key="label.hyperv.traffic.label" />',
+'label.ovm3.traffic.label': '<fmt:message key="label.ovm3.traffic.label" />',
 'label.lang.chinese': '<fmt:message key="label.lang.chinese" />',
 'label.lang.english': '<fmt:message key="label.lang.english" />',
 'label.lang.japanese': '<fmt:message key="label.lang.japanese" />',
