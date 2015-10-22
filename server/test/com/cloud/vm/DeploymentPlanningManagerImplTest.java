@@ -25,6 +25,7 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -259,6 +260,11 @@ public class DeploymentPlanningManagerImplTest {
         @Bean
         public ServiceOfferingDetailsDao serviceOfferingDetailsDao() {
             return Mockito.mock(ServiceOfferingDetailsDao.class);
+        }
+
+        @Bean
+        public AffinityGroupDomainMapDao affinityGroupDomainMapDao() {
+            return Mockito.mock(AffinityGroupDomainMapDao.class);
         }
 
         @Bean
