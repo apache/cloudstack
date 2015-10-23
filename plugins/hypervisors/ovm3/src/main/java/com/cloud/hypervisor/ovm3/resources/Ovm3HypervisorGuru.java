@@ -20,27 +20,16 @@ package com.cloud.hypervisor.ovm3.resources;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.storage.command.CopyCommand;
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.to.DataObjectType;
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruBase;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = HypervisorGuru.class)
@@ -78,39 +67,5 @@ public class Ovm3HypervisorGuru extends HypervisorGuruBase implements Hypervisor
     @Override
     public boolean trackVmHostChange() {
         return true;
-    }
-
-    /* I dislike the notion of having to place this here, and not being able to just override
-     *
-     * (non-Javadoc)
-     * @see com.cloud.hypervisor.HypervisorGuruBase#getCommandHostDelegation(long, com.cloud.agent.api.Command)
-     */
-    public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
-        LOGGER.debug("getCommandHostDelegation: " + cmd.getClass());
-        if (cmd instanceof StorageSubSystemCommand) {
-            StorageSubSystemCommand c = (StorageSubSystemCommand)cmd;
-            c.setExecuteInSequence(true);
-        }
-        if (cmd instanceof CopyCommand) {
-            CopyCommand cpyCommand = (CopyCommand)cmd;
-            DataTO srcData = cpyCommand.getSrcTO();
-            DataTO destData = cpyCommand.getDestTO();
-
-            if (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.TEMPLATE) {
-                LOGGER.debug("Snapshot to Template: " + cmd);
-                DataStoreTO srcStore = srcData.getDataStore();
-                DataStoreTO destStore = destData.getDataStore();
-                if (srcStore instanceof NfsTO && destStore instanceof NfsTO) {
-                    HostVO host = hostDao.findById(hostId);
-                    EndPoint ep = endPointSelector.selectHypervisorHost(new ZoneScope(host.getDataCenterId()));
-                    host = hostDao.findById(ep.getId());
-                    hostDao.loadDetails(host);
-                    // String snapshotHotFixVersion = host.getDetail(XenserverConfigs.XS620HotFix);
-                    // if (snapshotHotFixVersion != null && snapshotHotFixVersion.equalsIgnoreCase(XenserverConfigs.XSHotFix62ESP1004)) {
-                    return new Pair<Boolean, Long>(Boolean.TRUE,  Long.valueOf(ep.getId()));
-                }
-            }
-        }
-        return new Pair<Boolean, Long>(Boolean.FALSE, Long.valueOf(hostId));
     }
 }
