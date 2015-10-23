@@ -25,7 +25,7 @@
 
 # set environment variables
 
-SHORTNAME=`basename $0`
+SHORTNAME="$(basename $(readlink -f $0))"
 PIDFILE=/var/run/"$SHORTNAME".pid
 LOCKFILE=/var/lock/subsys/"$SHORTNAME"
 LOGFILE=/var/log/cloudstack/ipallocator/ipallocator.log

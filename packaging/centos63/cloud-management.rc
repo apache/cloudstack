@@ -42,7 +42,7 @@ if [ -r /lib/lsb/init-functions ]; then
 fi
 
 
-NAME="$(basename $0)"
+NAME="$(basename $(readlink -f $0))"
 export SERVICE_NAME="$NAME"
 stop() {
 	SHUTDOWN_WAIT="30"
