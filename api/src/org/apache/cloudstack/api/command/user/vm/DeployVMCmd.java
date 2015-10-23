@@ -167,7 +167,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Deploy vm for the project")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.START_VM, type = CommandType.BOOLEAN, description = "true if network offering supports specifying ip ranges; defaulted to true if not specified")
+    @Parameter(name = ApiConstants.START_VM, type = CommandType.BOOLEAN, description = "true if start vm after creating; defaulted to true if not specified")
     private Boolean startVm;
 
     @ACL
