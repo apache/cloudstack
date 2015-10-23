@@ -4999,4 +4999,17 @@ public class LibvirtComputingResourceTest {
 
         assertFalse(answer.getResult());
     }
+
+    @Test
+    public void testIsInterface () {
+        LibvirtComputingResource lvcr = new LibvirtComputingResource();
+        assertFalse(lvcr.isInterface("bla"));
+        assertTrue(lvcr.isInterface("p99p00"));
+        for  (String ifNamePrefix : lvcr._ifNamePrefixes) {
+            // excluding regexps as "\\\\d+" won't replace with String.replaceAll(String,String);
+            if (!ifNamePrefix.contains("\\")) {
+                assertTrue(lvcr.isInterface(ifNamePrefix + "0"));
+            }
+        }
+    }
 }
