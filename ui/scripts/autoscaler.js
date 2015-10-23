@@ -531,7 +531,7 @@
                 }
             },
             scaleUpPolicy: {
-                title: 'ScaleUp Policy',
+                title: 'label.scaleup.policy',
                 label: 'label.scale.up.policy',
                 noSelect: true,
                 noHeaderActionsColumn: true,
@@ -636,7 +636,7 @@
             },
 
             scaleDownPolicy: {
-                title: 'ScaleDown Policy',
+                title: 'label.scaledown.policy',
                 noSelect: true,
                 noHeaderActionsColumn: true,
                 ignoreEmptyFields: true,
@@ -1341,7 +1341,7 @@
                         array1.push("&interval=" + args.data.interval);
                         array1.push("&scaleuppolicyids=" + args.scaleUpPolicyResponse.id);
                         array1.push("&scaledownpolicyids=" + args.scaleDownPolicyResponse.id);
-                        
+
                         $.ajax({
                             url: createURL('createAutoScaleVmGroup' + array1.join("")),
                             dataType: 'json',
@@ -1459,7 +1459,7 @@
 
                 var $dialog = $('<div>');
                 $dialog.dialog({
-                    title: 'AutoScale Configuration Wizard',
+                    title: 'label.autoscale.configuration.wizard',
                     closeonEscape: false,
 
                     draggable: true,

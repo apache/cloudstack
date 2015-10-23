@@ -32,7 +32,6 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
 
@@ -107,10 +106,10 @@ public class OnwireClassRegistry {
             if (resources != null) {
                 while (resources.hasMoreElements()) {
                     String filePath = resources.nextElement().getFile();
-                    // WINDOWS HACK
-                    if (filePath.indexOf("%20") > 0)
-                        filePath = filePath.replaceAll("%20", " ");
                     if (filePath != null) {
+                        // WINDOWS HACK
+                        if (filePath.indexOf("%20") > 0)
+                            filePath = filePath.replaceAll("%20", " ");
                         if ((filePath.indexOf("!") > 0) && (filePath.indexOf(".jar") > 0)) {
                             String jarPath = filePath.substring(0, filePath.indexOf("!")).substring(filePath.indexOf(":") + 1);
                             // WINDOWS HACK
@@ -126,6 +125,7 @@ public class OnwireClassRegistry {
         } catch (IOException e) {
             s_logger.debug("Encountered IOException", e);
         } catch (ClassNotFoundException e) {
+            s_logger.info("[ignored] class not found", e);
         }
         return classes;
     }
@@ -140,6 +140,7 @@ public class OnwireClassRegistry {
                         Class<?> clazz = Class.forName(name);
                         classes.add(clazz);
                     } catch (ClassNotFoundException e) {
+                        s_logger.info("[ignored] class not found in directory " + directory, e);
                     } catch (Exception e) {
                         s_logger.debug("Encountered unexpect exception! ", e);
                     }
@@ -156,28 +157,27 @@ public class OnwireClassRegistry {
 
     static Set<Class<?>> getFromJARFile(String jar, String packageName) throws IOException, ClassNotFoundException {
         Set<Class<?>> classes = new HashSet<Class<?>>();
-        JarInputStream jarFile = new JarInputStream(new FileInputStream(jar));
-        JarEntry jarEntry;
-        do {
-            jarEntry = jarFile.getNextJarEntry();
-            if (jarEntry != null) {
-                String className = jarEntry.getName();
-                if (className.endsWith(".class")) {
-                    className = stripFilenameExtension(className);
-                    if (className.startsWith(packageName)) {
-                        try {
-                            Class<?> clz = Class.forName(className.replace('/', '.'));
-                            classes.add(clz);
-                        } catch (ClassNotFoundException | NoClassDefFoundError e) {
-                            s_logger.warn("Unable to load class from jar file", e);
+        try (JarInputStream jarFile = new JarInputStream(new FileInputStream(jar));) {
+            JarEntry jarEntry;
+            do {
+                jarEntry = jarFile.getNextJarEntry();
+                if (jarEntry != null) {
+                    String className = jarEntry.getName();
+                    if (className.endsWith(".class")) {
+                        className = stripFilenameExtension(className);
+                        if (className.startsWith(packageName)) {
+                            try {
+                                Class<?> clz = Class.forName(className.replace('/', '.'));
+                                classes.add(clz);
+                            } catch (ClassNotFoundException | NoClassDefFoundError e) {
+                                s_logger.warn("Unable to load class from jar file", e);
+                            }
                         }
                     }
                 }
-            }
-        } while (jarEntry != null);
-
-        IOUtils.closeQuietly(jarFile);
-        return classes;
+            } while (jarEntry != null);
+            return classes;
+        }
     }
 
     static String stripFilenameExtension(String file) {

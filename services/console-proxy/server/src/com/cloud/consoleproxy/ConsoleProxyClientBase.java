@@ -230,6 +230,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
+                s_logger.debug("[ignored] Console proxy was interupted while waiting for viewer to become ready.");
             }
         }
         return false;
@@ -259,18 +260,6 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
 
         if (s_logger.isTraceEnabled())
             s_logger.trace("Ajax client start, frame buffer w: " + width + ", " + height);
-
-        /*
-                int retry = 0;
-                tracker.initCoverageTest();
-                while(!tracker.hasFullCoverage() && retry < 10) {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                    }
-                    retry++;
-                }
-        */
 
         List<TileInfo> tiles = tracker.scan(true);
         String imgUrl = prepareAjaxImage(tiles, true);
@@ -353,6 +342,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
                 try {
                     tileDirtyEvent.wait(3000);
                 } catch (InterruptedException e) {
+                    s_logger.debug("[ignored] Console proxy ajax update was interupted while waiting for viewer to become ready.");
                 }
             }
         }

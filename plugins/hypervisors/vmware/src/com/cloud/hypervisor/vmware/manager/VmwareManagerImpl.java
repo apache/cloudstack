@@ -321,6 +321,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         try {
             _hostScanScheduler.awaitTermination(3000, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
+            s_logger.debug("[ignored] interupted while stopping<:/.");
         }
 
         shutdownCleanup();

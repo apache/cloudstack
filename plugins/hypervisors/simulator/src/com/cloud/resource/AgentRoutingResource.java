@@ -136,6 +136,7 @@ public class AgentRoutingResource extends AgentStorageResource {
                         try {
                             clz = Class.forName(objectType);
                         } catch (ClassNotFoundException e) {
+                            s_logger.info("[ignored] ping returned class", e);
                         }
                         if (clz != null) {
                             StringReader reader = new StringReader(objectData);

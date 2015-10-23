@@ -1,0 +1,235 @@
+#!/bin/bash
+
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# Should we clean-up?
+cleanup=1
+
+clean_up_and_exit() {
+  if [ "${cleanup}" -eq 1 ]; then
+    echo
+    git branch -D pr/${prId} >/dev/null 2>&1
+    rm ${jsonTmp} ${tmpMessageFile} >/dev/null 2>&1
+  fi
+  exit $1
+}
+
+# Arguments
+argument=$1
+prId=${argument}
+force=0
+if [[ "${2}" == "--force" ]]; then
+  force=1
+fi
+
+# Some of us got used to a git pr alias that you had to feed with the PR url
+# Let's make this script backwards compatible with the previous one.
+if [[ ${argument} =~ https://github.com.* ]]; then
+  prId=$(echo "${argument}" | awk -F/ {'print $7'})
+  echo "INFO: Found PR id ${prId} from url"
+fi
+
+# Check the arguments
+if [ -z ${prId} ]; then
+  echo "Usage: git pr pool-request-number [ --force ]"
+  echo "Works for any Apache repository mirrored on GitHub'"
+  echo "For instructions, see: https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=61311655"
+  clean_up_and_exit 1
+fi
+
+# Vars we need
+jsonTmp="${PWD}/${prId}.json"
+tmpMessageFile="${PWD}/.git-tmp-message.txt"
+repoName=$(basename `git rev-parse --show-toplevel`)
+
+# We need UTF-8 to support the GitHub '...' 3-dots-in-1-char, for example.
+export LANG="en_EN.UTF-8"
+
+if [ "${prId}" -eq "${prId}" 2>/dev/null ]; then
+  # Get json data from Github API
+  curl -s https://api.github.com/repos/apache/${repoName}/pulls/${prId} > ${jsonTmp}
+else
+  echo "ERROR: Pull-request id must be an integer, not '${prId}'"
+  clean_up_and_exit 1
+fi
+
+# Get vars from the GitHub API and parse the returned json
+prAuthor=$(cat ${jsonTmp} | python -c "
+try:
+  import sys, json
+  print json.load(sys.stdin)['user']['login'].encode('utf-8').decode('ascii','ignore')
+except:
+  print ''
+")
+
+prTitle=$(cat ${jsonTmp} | python -c "
+try:
+  import sys, json
+  print json.load(sys.stdin)['title'].encode('utf-8').decode('ascii','ignore')
+except:
+  print ''
+")
+
+prBody=$(cat ${jsonTmp} | python -c "
+try:
+  import sys, json
+  print json.load(sys.stdin)['body'].encode('utf-8').decode('ascii','ignore')
+except:
+  print ''
+")
+
+prOriginBranch=$(cat ${jsonTmp} | python -c "
+try:
+  import sys, json
+  print json.load(sys.stdin)['head']['label'].encode('utf-8').decode('ascii','ignore')
+except:
+  print ''
+" | sed -e "s/:/\//")
+
+prState=$(cat ${jsonTmp} | python -c "
+try:
+  import sys, json
+  print json.load(sys.stdin)['state'].encode('utf-8').decode('ascii','ignore')
+except:
+  print 'Unknown'
+")
+
+prMergeableState=$(cat ${jsonTmp} | python -c "
+try:
+  import sys, json
+  print json.load(sys.stdin)['mergeable_state'].encode('utf-8').decode('ascii','ignore')
+except:
+  print 'Unknown'
+")
+
+prDestinationBranch=$(cat ${jsonTmp} | python -c "
+try:
+  import sys, json
+  print json.load(sys.stdin)['base']['ref'].encode('utf-8').decode('ascii','ignore')
+except:
+  print 'Unknown'
+")
+
+prCommits=$(cat ${jsonTmp} | python -c "
+try:
+  import sys, json
+  print json.load(sys.stdin)['commits']
+except:
+  print 'Unknown'
+")
+
+# Do some sanity checking
+if [ ${#prAuthor} -eq 0 ]; then
+  echo "ERROR: We couldn't grab the PR author. Something went wrong querying the GitHub API."
+  clean_up_and_exit 1
+fi
+
+if [ ${#prTitle} -eq 0 ]; then
+  echo "ERROR: We couldn't grab the PR title. Something went wrong querying the GitHub API."
+  clean_up_and_exit 1
+fi
+
+if [ ${#prOriginBranch} -eq 0 ]; then
+  echo "ERROR: We couldn't grab the PR branch name. Something went wrong querying the GitHub API."
+  clean_up_and_exit 1
+fi
+
+currentBranch=$(git branch | grep "^*" | sed -e "s/^[*] //")
+if [ "${prDestinationBranch}" != "${currentBranch}" ] && [ ${force} -lt 1 ]; then
+  echo "ERROR: This PR is made against branch '${prDestinationBranch}' while your current checked out branch is '${currentBranch}'."
+  echo "ERROR: Please make sure you're in the right branch and run this scipt again."
+  clean_up_and_exit 1
+elif [ "${prDestinationBranch}" != "${currentBranch}" ] && [ ${force} -eq 1 ]; then
+  echo "WARNING: You used --force to merge to '${currentBranch}' while this PR is for branch '${prDestinationBranch}'."
+fi
+
+if [ "${prState}" != "open" ] && [ ${force} -lt 1 ]; then
+  echo "ERROR: We couldn't merge the PR because the state is not 'open' but '${prState}'."
+  echo "ERROR: In general it's a bad idea to merge closed PRs!"
+  echo "ERROR: Run this script again with --force if you know what you're doing"
+  echo "ERROR: (continuing work on an abandoned PR in which case you'd merge to a branch in your fork"
+  echo "ERROR: and send that as a new PR). Ask for help on @dev if unsure."
+  clean_up_and_exit 1
+elif [ "${prState}" != "open" ] &&[ ${force} -eq 1 ]; then
+  echo "WARNING: You used --force to merge a PR with state '${prState}'."
+fi
+
+if [ "${prMergeableState}" != "clean" ] && [ ${force} -lt 1 ]; then
+  echo "ERROR: We couldn't merge the PR because it cannot be merged 'clean' (GitHub reports '${prMergeableState}')."
+  echo "ERROR: This can be caused by a Travis build in progress, a failed Travis build or an unclean merge (conflicts)"
+  echo "ERROR: Run this script again with --force if you know what you're doing. Ask for help on @dev if unsure."
+  clean_up_and_exit 1
+elif [ "${prMergeableState}" != "clean" ] && [ ${force} -eq 1 ]; then
+  echo "WARNING: You used --force to merge a PR with non-clean merge state '${prMergeableState}'."
+fi
+
+github_remote=$(git remote -v | grep -E "apache/${repoName}(.git)?" | head -n 1 | cut -f1)
+if [ ${#github_remote} -eq 0 ]; then
+  echo "ERROR: We couldn't find a git remote pointing to 'apache/${repoName}.git' to merge the PR from."
+  echo "INFO: Currently, your configured remotes are:"
+  echo "INFO: ***********************************************************************************"
+  git remote -v
+  echo "INFO: ***********************************************************************************"
+  echo "INFO: To merge a PR, we need access to two remotes: "
+  echo "INFO: 1. Read-only access to GitHub mirror"
+  echo "INFO: 2. Read/write access to Apache git"
+  echo "INFO: Please add a remote like this: 'git remote add github https://github.com/apache/${repoName}.git'"
+  echo "INFO: For more help, visit: https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=61311655"
+  echo "INFO: Once done, run this script again."
+  clean_up_and_exit 1
+fi
+
+echo "INFO: Using remote repository '${github_remote}' to fetch PR (should point to github.com/apache/${repoName}.git)"
+echo "INFO: PR #${prId} against branch '${prDestinationBranch}' from '${prAuthor}': '${prTitle}'"
+echo "INFO: has state '${prState}' and mergable state '${prMergeableState}', about to be merged in branch '${currentBranch}'."
+
+# Construct commit merge message
+echo "Merge pull request #${prId} from ${prOriginBranch}" > ${tmpMessageFile}
+echo "" >> ${tmpMessageFile}
+echo "${prTitle}${prBody}" >> ${tmpMessageFile}
+
+# Are you sure?
+echo "ATTENTION: Merging pull request #${prId} from ${prOriginBranch} into '${currentBranch}' branch in 5 seconds. CTRL+c to abort.."
+sec=5
+while [ $sec -ge 0 ]; do
+  printf "${sec} "
+  sec=$((sec-1))
+  sleep 1
+done
+echo
+echo "INFO: Executing the merge now.. Git output below:"
+echo "INFO: ***********************************************************************************"
+
+# Do the actual merge
+git fetch ${github_remote} pull/${prId}/head:pr/${prId}
+git merge --no-ff --log -m "$(cat ${tmpMessageFile})" pr/${prId}
+if [ $? -eq 0 ]; then
+  git commit --amend -s --allow-empty-message -m ''
+else
+  echo "ERROR: Merge failed, aborting."
+  git merge --abort
+  clean_up_and_exit 1
+fi
+
+# What's next
+echo "INFO: ***********************************************************************************"
+echo "INFO: Merged successfully! Please double check using 'git log -p' and 'git push' when you're sure."
+echo "INFO: About commits: there should be ${prCommits} from the PR plus 1 merge commit."
+echo
+
+clean_up_and_exit 0

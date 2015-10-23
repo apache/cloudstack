@@ -35,6 +35,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -56,6 +57,8 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
@@ -153,8 +156,44 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
     }
 
     @Override
-    public boolean revertSnapshot(Long snapshotId) {
-        throw new UnsupportedOperationException("Reverting not supported. Create a template or volume based on the snapshot instead.");
+    public boolean revertSnapshot(SnapshotInfo snapshot) {
+        if (canHandle(snapshot,SnapshotOperation.REVERT) == StrategyPriority.CANT_HANDLE) {
+            throw new UnsupportedOperationException("Reverting not supported. Create a template or volume based on the snapshot instead.");
+        }
+
+        SnapshotVO snapshotVO = _snapshotDao.acquireInLockTable(snapshot.getId());
+        if (snapshotVO == null) {
+            throw new CloudRuntimeException("Failed to get lock on snapshot:" + snapshot.getId());
+        }
+
+        try {
+            VolumeInfo volumeInfo = snapshot.getBaseVolume();
+            StoragePool store = (StoragePool)volumeInfo.getDataStore();
+            if (store != null && store.getStatus() != StoragePoolStatus.Up) {
+                snapshot.processEvent(Event.OperationFailed);
+                throw new CloudRuntimeException("store is not in up state");
+            }
+            volumeInfo.stateTransit(Volume.Event.RevertSnapshotRequested);
+            boolean result = false;
+            try {
+                result =  snapshotSvr.revertSnapshot(snapshot);
+                if (! result) {
+                    s_logger.debug("Failed to revert snapshot: " + snapshot.getId());
+                    throw new CloudRuntimeException("Failed to revert snapshot: " + snapshot.getId());
+                }
+            } finally {
+                if (result) {
+                    volumeInfo.stateTransit(Volume.Event.OperationSucceeded);
+                } else {
+                    volumeInfo.stateTransit(Volume.Event.OperationFailed);
+                }
+            }
+            return result;
+        } finally {
+            if (snapshotVO != null) {
+                _snapshotDao.releaseFromLockTable(snapshot.getId());
+            }
+        }
     }
 
     @Override
@@ -401,10 +440,6 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
     @Override
     public StrategyPriority canHandle(Snapshot snapshot, SnapshotOperation op) {
-        if (SnapshotOperation.REVERT.equals(op)) {
-            return StrategyPriority.CANT_HANDLE;
-        }
-
         long volumeId = snapshot.getVolumeId();
         VolumeVO volumeVO = _volumeDao.findById(volumeId);
 
@@ -422,6 +457,13 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
         }
         else {
             storagePoolId = volumeVO.getPoolId();
+        }
+
+        if (SnapshotOperation.REVERT.equals(op)) {
+            if (volumeVO != null && ImageFormat.QCOW2.equals(volumeVO.getFormat()))
+                return StrategyPriority.DEFAULT;
+            else
+                return StrategyPriority.CANT_HANDLE;
         }
 
         DataStore dataStore = _dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);

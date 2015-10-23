@@ -132,12 +132,12 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         }
 
         vlan = ip.getVlan();
-        nic.setIp4Address(ip.getIpAddress());
+        nic.setIPv4Address(ip.getIpAddress());
         nic.setMacAddress(NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ip.getMac())));
         nic.setFormat(AddressFormat.Ip4);
-        nic.setNetmask(ip.getNetmask());
+        nic.setIPv4Netmask(ip.getNetmask());
         nic.setBroadcastType(BroadcastDomainType.Storage);
-        nic.setGateway(ip.getGateway());
+        nic.setIPv4Gateway(ip.getGateway());
         if (vlan != null) {
             nic.setBroadcastUri(BroadcastDomainType.Storage.toUri(vlan));
         } else {
@@ -154,8 +154,8 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
             return super.release(nic, vm, reservationId);
         }
 
-        _sNwMgr.releaseIpAddress(nic.getIp4Address());
-        s_logger.debug("Release an storage ip " + nic.getIp4Address());
+        _sNwMgr.releaseIpAddress(nic.getIPv4Address());
+        s_logger.debug("Release an storage ip " + nic.getIPv4Address());
         nic.deallocate();
         return true;
     }

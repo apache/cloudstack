@@ -38,32 +38,17 @@ public class TransactionTest {
 
     @BeforeClass
     public static void oneTimeSetup() {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = TransactionLegacy.getStandaloneConnection();
-
-            pstmt =
-                conn.prepareStatement("CREATE TABLE `cloud`.`test` (" + "`id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT," + "`fld_int` int unsigned,"
-                    + "`fld_long` bigint unsigned," + "`fld_string` varchar(255)," + "PRIMARY KEY (`id`)" + ") ENGINE=InnoDB DEFAULT CHARSET=utf8;");
+        try (
+                Connection conn = TransactionLegacy.getStandaloneConnection();
+                PreparedStatement pstmt =
+                    conn.prepareStatement("CREATE TABLE `cloud`.`test` (" + "`id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT," + "`fld_int` int unsigned,"
+                        + "`fld_long` bigint unsigned," + "`fld_string` varchar(255)," + "PRIMARY KEY (`id`)" + ") ENGINE=InnoDB DEFAULT CHARSET=utf8;");
+            ) {
 
             pstmt.execute();
 
         } catch (SQLException e) {
             throw new CloudRuntimeException("Problem with sql", e);
-        } finally {
-            if (pstmt != null) {
-                try {
-                    pstmt.close();
-                } catch (SQLException e) {
-                }
-            }
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                }
-            }
         }
     }
 
@@ -157,57 +142,25 @@ public class TransactionTest {
      * Delete all records after each test, but table is still kept
      */
     public void tearDown() {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = TransactionLegacy.getStandaloneConnection();
-
-            pstmt = conn.prepareStatement("truncate table `cloud`.`test`");
+        try (
+                Connection conn = TransactionLegacy.getStandaloneConnection();
+                PreparedStatement pstmt = conn.prepareStatement("truncate table `cloud`.`test`");
+            ) {
             pstmt.execute();
-
         } catch (SQLException e) {
             throw new CloudRuntimeException("Problem with sql", e);
-        } finally {
-            if (pstmt != null) {
-                try {
-                    pstmt.close();
-                } catch (SQLException e) {
-                }
-            }
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                }
-            }
         }
     }
 
     @AfterClass
     public static void oneTimeTearDown() {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = TransactionLegacy.getStandaloneConnection();
-
-            pstmt = conn.prepareStatement("DROP TABLE IF EXISTS `cloud`.`test`");
+        try (
+                Connection conn = TransactionLegacy.getStandaloneConnection();
+                PreparedStatement pstmt = conn.prepareStatement("DROP TABLE IF EXISTS `cloud`.`test`");
+            ) {
             pstmt.execute();
-
         } catch (SQLException e) {
             throw new CloudRuntimeException("Problem with sql", e);
-        } finally {
-            if (pstmt != null) {
-                try {
-                    pstmt.close();
-                } catch (SQLException e) {
-                }
-            }
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                }
-            }
         }
     }
 }

@@ -354,6 +354,10 @@ CREATE VIEW `cloud`.`user_vm_view` AS
            left join
         `cloud`.`user_vm_details` `custom_ram_size`  ON (((`custom_ram_size`.`vm_id` = `cloud`.`vm_instance`.`id`) and (`custom_ram_size`.`name` = 'memory')));
 
+---Additional checks to ensure duplicate keys are not registered and remove the previously stored duplicate keys.
+DELETE `s1` FROM `ssh_keypairs` `s1`, `ssh_keypairs` `s2` WHERE `s1`.`id` > `s2`.`id` AND `s1`.`public_key` = `s2`.`public_key` AND `s1`.`account_id` = `s2`.`account_id`;
+ALTER TABLE `ssh_keypairs` ADD UNIQUE `unique_index`(`fingerprint`,`account_id`);
+
 -- ovm3 stuff
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("Ovm3", 'Sun Solaris 10(32-bit)', 79);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("Ovm3", 'Sun Solaris 10(64-bit)', 80);
@@ -397,4 +401,15 @@ CREATE TABLE `cloud`.`external_bigswitch_bcf_devices` (
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_external_bigswitch_bcf_devices__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_external_bigswitch_bcf_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`ldap_trust_map` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `domain_id` bigint unsigned NOT NULL,
+  `type` varchar(10) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `account_type` int(1) unsigned NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_ldap_trust_map__domain_id` (`domain_id`),
+  CONSTRAINT `fk_ldap_trust_map__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

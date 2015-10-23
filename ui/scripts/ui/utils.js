@@ -90,7 +90,7 @@
             return '';
         }
 
-        var sanitized = value            
+        var sanitized = value
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;");
 

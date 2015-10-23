@@ -372,7 +372,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         tmpltZoneSearch.and("zoneId", tmpltZoneSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
 
         TmpltsInZoneSearch = createSearchBuilder();
-        TmpltsInZoneSearch.and("state", TmpltsInZoneSearch.entity().getState(), SearchCriteria.Op.EQ);
+        TmpltsInZoneSearch.and("state", TmpltsInZoneSearch.entity().getState(), SearchCriteria.Op.IN);
         TmpltsInZoneSearch.and().op("avoidtype", TmpltsInZoneSearch.entity().getTemplateType(), SearchCriteria.Op.NEQ);
         TmpltsInZoneSearch.or("templateType", TmpltsInZoneSearch.entity().getTemplateType(), SearchCriteria.Op.NULL);
         TmpltsInZoneSearch.cp();
@@ -381,7 +381,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         TmpltsInZoneSearch.done();
 
         ActiveTmpltSearch = createSearchBuilder();
-        ActiveTmpltSearch.and("state", ActiveTmpltSearch.entity().getState(), SearchCriteria.Op.EQ);
+        ActiveTmpltSearch.and("state", ActiveTmpltSearch.entity().getState(), SearchCriteria.Op.IN);
 
         CountTemplatesByAccount = createSearchBuilder(Long.class);
         CountTemplatesByAccount.select(null, Func.COUNT, null);
@@ -793,9 +793,25 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
     @Override
+    public List<VMTemplateVO> listInZoneByState(long dataCenterId, VirtualMachineTemplate.State... states) {
+        SearchCriteria<VMTemplateVO> sc = TmpltsInZoneSearch.create();
+        sc.setParameters("avoidtype", TemplateType.PERHOST.toString());
+        sc.setParameters("state", (Object[])states);
+        sc.setJoinParameters("tmpltzone", "zoneId", dataCenterId);
+        return listBy(sc);
+    }
+
+    @Override
     public List<VMTemplateVO> listAllActive() {
         SearchCriteria<VMTemplateVO> sc = ActiveTmpltSearch.create();
         sc.setParameters("state", VirtualMachineTemplate.State.Active.toString());
+        return listBy(sc);
+    }
+
+    @Override
+    public List<VMTemplateVO> listByState(VirtualMachineTemplate.State... states) {
+        SearchCriteria<VMTemplateVO> sc = ActiveTmpltSearch.create();
+        sc.setParameters("state", (Object[])states);
         return listBy(sc);
     }
 

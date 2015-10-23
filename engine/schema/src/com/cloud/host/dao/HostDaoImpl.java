@@ -740,32 +740,21 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     @DB
     @Override
     public List<HostVO> findLostHosts(long timeout) {
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement pstmt = null;
         List<HostVO> result = new ArrayList<HostVO>();
-        ResultSet rs = null;
-        try {
-            String sql =
+        String sql =
                 "select h.id from host h left join  cluster c on h.cluster_id=c.id where h.mgmt_server_id is not null and h.last_ping < ? and h.status in ('Up', 'Updating', 'Disconnected', 'Connecting') and h.type not in ('ExternalFirewall', 'ExternalLoadBalancer', 'TrafficMonitor', 'SecondaryStorage', 'LocalSecondaryStorage', 'L2Networking') and (h.cluster_id is null or c.managed_state = 'Managed') ;";
-            pstmt = txn.prepareStatement(sql);
+        try (
+                TransactionLegacy txn = TransactionLegacy.currentTxn();
+                PreparedStatement pstmt = txn.prepareStatement(sql);) {
             pstmt.setLong(1, timeout);
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                long id = rs.getLong(1); //ID column
-                result.add(findById(id));
+            try (ResultSet rs = pstmt.executeQuery();) {
+                while (rs.next()) {
+                    long id = rs.getLong(1); //ID column
+                    result.add(findById(id));
+                }
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             s_logger.warn("Exception: ", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
         return result;
     }

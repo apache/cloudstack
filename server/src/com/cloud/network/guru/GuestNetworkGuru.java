@@ -234,10 +234,10 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     public void deallocate(final Network network, final NicProfile nic, final VirtualMachineProfile vm) {
         if (network.getSpecifyIpRanges()) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIp4Address());
+                s_logger.debug("Deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIPv4Address());
             }
 
-            final IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIp4Address());
+            final IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIPv4Address());
             if (ip != null) {
                 Transaction.execute(new TransactionCallbackNoReturn() {
                     @Override
@@ -342,14 +342,14 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
         final DataCenter dc = _dcDao.findById(network.getDataCenterId());
 
-        if (nic.getIp4Address() == null) {
+        if (nic.getIPv4Address() == null) {
             nic.setBroadcastUri(network.getBroadcastUri());
             nic.setIsolationUri(network.getBroadcastUri());
-            nic.setGateway(network.getGateway());
+            nic.setIPv4Gateway(network.getGateway());
 
             String guestIp = null;
             if (network.getSpecifyIpRanges()) {
-                _ipAddrMgr.allocateDirectIp(nic, dc, vm, network, nic.getRequestedIpv4(), null);
+                _ipAddrMgr.allocateDirectIp(nic, dc, vm, network, nic.getRequestedIPv4(), null);
             } else {
                 //if Vm is router vm and source nat is enabled in the network, set ip4 to the network gateway
                 boolean isGateway = false;
@@ -370,23 +370,23 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
                 if (isGateway) {
                     guestIp = network.getGateway();
                 } else {
-                    guestIp = _ipAddrMgr.acquireGuestIpAddress(network, nic.getRequestedIpv4());
+                    guestIp = _ipAddrMgr.acquireGuestIpAddress(network, nic.getRequestedIPv4());
                     if (guestIp == null) {
                         throw new InsufficientVirtualNetworkCapacityException("Unable to acquire Guest IP" + " address for network " + network, DataCenter.class,
                                 dc.getId());
                     }
                 }
 
-                nic.setIp4Address(guestIp);
-                nic.setNetmask(NetUtils.cidr2Netmask(network.getCidr()));
+                nic.setIPv4Address(guestIp);
+                nic.setIPv4Netmask(NetUtils.cidr2Netmask(network.getCidr()));
 
-                nic.setDns1(dc.getDns1());
-                nic.setDns2(dc.getDns2());
+                nic.setIPv4Dns1(dc.getDns1());
+                nic.setIPv4Dns2(dc.getDns2());
                 nic.setFormat(AddressFormat.Ip4);
             }
         }
 
-        nic.setStrategy(ReservationStrategy.Start);
+        nic.setReservationStrategy(ReservationStrategy.Start);
 
         if (nic.getMacAddress() == null) {
             nic.setMacAddress(_networkModel.getNextAvailableMacAddressInNetwork(network.getId()));
@@ -402,8 +402,8 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     public void updateNicProfile(final NicProfile profile, final Network network) {
         final DataCenter dc = _dcDao.findById(network.getDataCenterId());
         if (profile != null) {
-            profile.setDns1(dc.getDns1());
-            profile.setDns2(dc.getDns2());
+            profile.setIPv4Dns1(dc.getDns1());
+            profile.setIPv4Dns2(dc.getDns2());
         }
     }
 

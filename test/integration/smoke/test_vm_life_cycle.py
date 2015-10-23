@@ -72,8 +72,6 @@ class TestDeployVM(cloudstackTestCase):
         cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = template.id
 
-        cls.services["medium"]["zoneid"] = cls.zone.id
-        cls.services["medium"]["template"] = template.id
         cls.services["iso1"]["zoneid"] = cls.zone.id
 
         cls.account = Account.create(
@@ -286,8 +284,6 @@ class TestVMLifeCycle(cloudstackTestCase):
         cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = template.id
 
-        cls.services["medium"]["zoneid"] = cls.zone.id
-        cls.services["medium"]["template"] = template.id
         cls.services["iso1"]["zoneid"] = cls.zone.id
 
         # Create VMs, NAT Rules etc
@@ -317,7 +313,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                                         )
         cls.medium_virtual_machine = VirtualMachine.create(
                                        cls.apiclient,
-                                       cls.services["medium"],
+                                       cls.services["small"],
                                        accountid=cls.account.name,
                                        domainid=cls.account.domainid,
                                        serviceofferingid=cls.medium_offering.id,

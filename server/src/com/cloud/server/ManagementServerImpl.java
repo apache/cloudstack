@@ -16,9 +16,7 @@
 // under the License.
 package com.cloud.server;
 
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -527,6 +525,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.QueryManagerImpl;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -3380,6 +3379,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Integer apiLimitInterval = Integer.valueOf(_configDao.getValue(Config.ApiLimitInterval.key()));
         final Integer apiLimitMax = Integer.valueOf(_configDao.getValue(Config.ApiLimitMax.key()));
 
+        final boolean allowUserViewDestroyedVM = (QueryManagerImpl.AllowUserViewDestroyedVM.valueIn(caller.getId()) | _accountService.isAdmin(caller.getId()));
+        final boolean allowUserExpungeRecoverVM = (UserVmManager.AllowUserExpungeRecoverVm.valueIn(caller.getId()) | _accountService.isAdmin(caller.getId()));
+
         // check if region-wide secondary storage is used
         boolean regionSecondaryEnabled = false;
         final List<ImageStoreVO> imgStores = _imgStoreDao.findRegionImageStores();
@@ -3397,6 +3399,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put("customDiskOffMaxSize", diskOffMaxSize);
         capabilities.put("regionSecondaryEnabled", regionSecondaryEnabled);
         capabilities.put("KVMSnapshotEnabled", KVMSnapshotEnabled);
+        capabilities.put("allowUserViewDestroyedVM", allowUserViewDestroyedVM);
+        capabilities.put("allowUserExpungeRecoverVM", allowUserExpungeRecoverVM);
         if (apiLimitEnabled) {
             capabilities.put("apiLimitInterval", apiLimitInterval);
             capabilities.put("apiLimitMax", apiLimitMax);
@@ -3625,11 +3629,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final String name = cmd.getName();
         String key = cmd.getPublicKey();
-        try {
-            key = URLDecoder.decode(key, "UTF-8");
-        } catch (final UnsupportedEncodingException e) {
-            s_logger.warn("key decoding tried invain: " + e.getLocalizedMessage());
-        }
+
         final String publicKey = getPublicKeyFromKeyKeyMaterial(key);
         final String fingerprint = getFingerprint(publicKey);
 
@@ -3642,9 +3642,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      * @throws InvalidParameterValueException
      */
     private void checkForKeyByPublicKey(final RegisterSSHKeyPairCmd cmd, final Account owner) throws InvalidParameterValueException {
-        final SSHKeyPairVO existingPair = _sshKeyPairDao.findByPublicKey(owner.getAccountId(), owner.getDomainId(), cmd.getPublicKey());
+        final SSHKeyPairVO existingPair = _sshKeyPairDao.findByPublicKey(owner.getAccountId(), owner.getDomainId(), getPublicKeyFromKeyKeyMaterial(cmd.getPublicKey()));
         if (existingPair != null) {
-            throw new InvalidParameterValueException("A key pair with name '" + cmd.getPublicKey() + "' already exists for this account.");
+            throw new InvalidParameterValueException("A key pair with key '" + cmd.getPublicKey() + "' already exists for this account.");
         }
     }
 
@@ -3674,7 +3674,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      * @return
      * @throws InvalidParameterValueException
      */
-    private String getPublicKeyFromKeyKeyMaterial(final String key) throws InvalidParameterValueException {
+    protected String getPublicKeyFromKeyKeyMaterial(final String key) throws InvalidParameterValueException {
         final String publicKey = SSHKeysHelper.getPublicKeyFromKeyMaterial(key);
 
         if (publicKey == null) {

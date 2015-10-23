@@ -2638,6 +2638,22 @@ class StoragePool:
         return apiclient.enableStorageMaintenance(cmd)
 
     @classmethod
+    def enableMaintenance(cls, apiclient, id):
+        """enables maintenance mode Storage pool"""
+
+        cmd = enableStorageMaintenance.enableStorageMaintenanceCmd()
+        cmd.id = id
+        return apiclient.enableStorageMaintenance(cmd)
+
+    @classmethod
+    def cancelMaintenance(cls, apiclient, id):
+        """Cancels maintenance mode Host"""
+
+        cmd = cancelStorageMaintenance.cancelStorageMaintenanceCmd()
+        cmd.id = id
+        return apiclient.cancelStorageMaintenance(cmd)
+
+    @classmethod
     def list(cls, apiclient, **kwargs):
         """List all storage pools matching criteria"""
 
@@ -3817,6 +3833,52 @@ class NetScaler:
         if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
             cmd.listall = True
         return(apiclient.listNetscalerLoadBalancers(cmd))
+
+class NiciraNvp:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def add(cls, apiclient, services, physicalnetworkid,
+            hostname=None, username=None, password=None, transportzoneuuid=None):
+        cmd = addNiciraNvpDevice.addNiciraNvpDeviceCmd()
+        cmd.physicalnetworkid = physicalnetworkid
+        if hostname:
+            cmd.hostname = hostname
+        else:
+            cmd.hostname = services['hostname']
+
+        if username:
+            cmd.username = username
+        else:
+            cmd.username = services['username']
+
+        if password:
+            cmd.password = password
+        else:
+            cmd.password = services['password']
+
+        if transportzoneuuid:
+            cmd.transportzoneuuid = transportzoneuuid
+        else:
+            cmd.transportzoneuuid = services['transportZoneUuid']
+
+        return NiciraNvp(apiclient.addNiciraNvpDevice(cmd).__dict__)
+
+    def delete(self, apiclient):
+        cmd = deleteNiciraNvpDevice.deleteNiciraNvpDeviceCmd()
+        cmd.nvpdeviceid = self.nvpdeviceid
+        apiclient.deleteNiciraNvpDevice(cmd)
+        return
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listNiciraNvpDevices.listNiciraNvpDevicesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+            cmd.listall = True
+        return(apiclient.listNiciraNvpDevices(cmd))
 
 
 class NetworkServiceProvider:

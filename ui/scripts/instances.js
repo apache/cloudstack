@@ -61,7 +61,7 @@
                             }
 
                             args.form.fields.quiescevm.isChecked = true;
-                            
+
                             return false;
                         }
                     }
@@ -69,7 +69,7 @@
             },
             action: function(args) {
                 var instances = args.context.instances;
-                
+
                 $(instances).map(function(index, instance) {
                     var array1 = [];
                     array1.push("&snapshotmemory=" + (args.data.snapshotMemory == "on"));
@@ -103,7 +103,7 @@
                         error: function(json) {
                             args.response.error(parseXMLHttpResponse(json));
                         }
-                    });       
+                    });
                 });
 
             },
@@ -118,10 +118,10 @@
                 isMultiSelectAction: true
             });
         }
-        
+
         return action;
-    };    
-    
+    };
+
     cloudStack.sections.instances = {
         title: 'label.instances',
         id: 'instances',
@@ -601,10 +601,10 @@
                                 return 'label.action.reboot.instance';
                             },
                             complete: function(args) {
-                            	if (args.password != null && args.password.length > 0)
-                                    return 'Password has been reset to ' + args.password;
-                            	else
-                            		return null;
+                                if (args.password != null && args.password.length > 0)
+                                    return _l('message.password.has.been.reset.to') + ' ' + args.password;
+                                else
+                                    return null;
                             }
                         },
                         notification: {
@@ -616,51 +616,49 @@
                         label: 'label.action.destroy.instance',
                         compactLabel: 'label.destroy',
                         createForm: {
-                            title: 'label.action.destroy.instance', 
+                            title: 'label.action.destroy.instance',
                             desc: 'label.action.destroy.instance',
-			    isWarning: true,
+                            isWarning: true,
                             preFilter: function(args) {
-                            	if (isAdmin() || isDomainAdmin()) {
-                            		args.$form.find('.form-item[rel=expunge]').css('display', 'inline-block');
-                            	} else {
-                            		args.$form.find('.form-item[rel=expunge]').hide();
-                            	}
+                                if (! g_allowUserExpungeRecoverVm) {
+                                    args.$form.find('.form-item[rel=expunge]').hide();
+                                }
                             },
                             fields: {
-                            	expunge: {
+                                expunge: {
                                     label: 'label.expunge',
                                     isBoolean: true,
                                     isChecked: false
                                 }
                             }
-                        },                        
-                        messages: {                            
+                        },
+                        messages: {
                             notification: function(args) {
                                 return 'label.action.destroy.instance';
                             }
                         },
-                        action: function(args) {                        	
-                        	var data = {
-                        		id: args.context.instances[0].id		
-                        	};                        	
-                        	if (args.data.expunge == 'on') {
-                        		$.extend(data, {
-                        			expunge: true
-                        		});
-                        	}                        	
+                        action: function(args) {
+                            var data = {
+                                id: args.context.instances[0].id
+                            };
+                            if (args.data.expunge == 'on') {
+                                $.extend(data, {
+                                    expunge: true
+                                });
+                            }
                             $.ajax({
                                 url: createURL('destroyVirtualMachine'),
-                                data: data,                                
+                                data: data,
                                 success: function(json) {
                                     var jid = json.destroyvirtualmachineresponse.jobid;
                                     args.response.success({
                                         _custom: {
                                             jobId: jid,
-                                            getUpdatedItem: function(json) {                                            	
-                                            	if ('virtualmachine' in json.queryasyncjobresultresponse.jobresult) //destroy without expunge                                            	
+                                            getUpdatedItem: function(json) {
+                                                if ('virtualmachine' in json.queryasyncjobresultresponse.jobresult) //destroy without expunge
                                                     return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                                            	else //destroy with expunge
-                                            		return { 'toRemove': true };
+                                                else //destroy with expunge
+                                                    return { 'toRemove': true };
                                             },
                                             getActionFilter: function() {
                                                 return vmActionfilter;
@@ -753,10 +751,10 @@
                                 return 'label.reinstall.vm';
                             },
                             complete: function(args) {
-                            	if (args.password != null && args.password.length > 0)
+                                if (args.password != null && args.password.length > 0)
                                     return _l('label.password.reset.confirm') + args.password;
-                            	else
-                            		return null;
+                                else
+                                    return null;
                             }
                         },
 
@@ -765,19 +763,19 @@
                                 url: createURL("restoreVirtualMachine&virtualmachineid=" + args.context.instances[0].id),
                                 dataType: "json",
                                 async: true,
-                                success: function(json) {                                    
-                                	var jid = json.restorevmresponse.jobid;                                    	
-                                	args.response.success({
+                                success: function(json) {
+                                    var jid = json.restorevmresponse.jobid;
+                                    args.response.success({
                                         _custom: {
                                             jobId: jid,
-                                            getUpdatedItem: function(json) {                                         
+                                            getUpdatedItem: function(json) {
                                                 return json.queryasyncjobresultresponse.jobresult.virtualmachine;
                                             },
                                             getActionFilter: function() {
                                                 return vmActionfilter;
                                             }
                                         }
-                                    });                          	
+                                    });
                                 }
                             });
 
@@ -951,54 +949,54 @@
                                     });
                                 }
                             });
-                            
-                            
+
+
                             //***** addResourceDetail *****
-                            //XenServer only (starts here)                               
-			                if(args.$detailView.find('form').find('div .detail-group').find('.xenserverToolsVersion61plus').length > 0) {	  					                	
-			                	$.ajax({
-			                		url: createURL('addResourceDetail'),
-			                		data: {
-			                			resourceType: 'uservm',
-			                			resourceId: args.context.instances[0].id,
-			                			'details[0].key': 'hypervisortoolsversion',
-			                			'details[0].value': (args.data.xenserverToolsVersion61plus == "on") ? 'xenserver61' : 'xenserver56'
-			                		},
-			                		success: function(json) {			                			
-			                			 var jobId = json.addResourceDetailresponse.jobid;
+                            //XenServer only (starts here)
+                            if(args.$detailView.find('form').find('div .detail-group').find('.xenserverToolsVersion61plus').length > 0) {
+                                $.ajax({
+                                    url: createURL('addResourceDetail'),
+                                    data: {
+                                        resourceType: 'uservm',
+                                        resourceId: args.context.instances[0].id,
+                                        'details[0].key': 'hypervisortoolsversion',
+                                        'details[0].value': (args.data.xenserverToolsVersion61plus == "on") ? 'xenserver61' : 'xenserver56'
+                                    },
+                                    success: function(json) {
+                                         var jobId = json.addResourceDetailresponse.jobid;
                                          var addResourceDetailIntervalID = setInterval(function() {
                                              $.ajax({
                                                  url: createURL("queryAsyncJobResult&jobid=" + jobId),
                                                  dataType: "json",
                                                  success: function(json) {
                                                      var result = json.queryasyncjobresultresponse;
-                                                     
+
                                                      if (result.jobstatus == 0) {
                                                          return; //Job has not completed
                                                      } else {
                                                          clearInterval(addResourceDetailIntervalID);
 
-                                                         if (result.jobstatus == 1) {                                                        	 
-                                                        	 //do nothing                                                        	 
+                                                         if (result.jobstatus == 1) {
+                                                             //do nothing
                                                          } else if (result.jobstatus == 2) {
-                                                        	 cloudStack.dialog.notice({
+                                                             cloudStack.dialog.notice({
                                                                  message: _s(result.jobresult.errortext)
-                                                             });                                                             
+                                                             });
                                                          }
                                                      }
                                                  },
-                                                 error: function(XMLHttpResponse) {                                                    
+                                                 error: function(XMLHttpResponse) {
                                                      cloudStack.dialog.notice({
                                                          message: parseXMLHttpResponse(XMLHttpResponse)
-                                                     });                                                          
+                                                     });
                                                  }
                                              });
-                                         }, g_queryAsyncJobResultInterval);			                			   
-			                		}
-			                	});  					                					                	               
-						    }				      
-					        //XenServer only (ends here)  	
-                            
+                                         }, g_queryAsyncJobResultInterval);
+                                    }
+                                });
+                            }
+                            //XenServer only (ends here)
+
                         }
                     },
 
@@ -1015,9 +1013,9 @@
                                         $.ajax({
                                             url: createURL("listIsos"),
                                             data: {
-                                            	isofilter: 'featured',
-                                            	isReady: true,
-                                            	zoneid: args.context.instances[0].zoneid
+                                                isofilter: 'featured',
+                                                isReady: true,
+                                                zoneid: args.context.instances[0].zoneid
                                             },
                                             async: false,
                                             success: function(json) {
@@ -1034,9 +1032,9 @@
                                         $.ajax({
                                             url: createURL("listIsos"),
                                             data: {
-                                            	isofilter: 'community',
-                                            	isReady: true,
-                                            	zoneid: args.context.instances[0].zoneid
+                                                isofilter: 'community',
+                                                isReady: true,
+                                                zoneid: args.context.instances[0].zoneid
                                             },
                                             async: false,
                                             success: function(json) {
@@ -1055,9 +1053,9 @@
                                         $.ajax({
                                             url: createURL("listIsos"),
                                             data: {
-                                            	isofilter: 'selfexecutable',
-                                            	isReady: true,
-                                            	zoneid: args.context.instances[0].zoneid
+                                                isofilter: 'selfexecutable',
+                                                isReady: true,
+                                                zoneid: args.context.instances[0].zoneid
                                             },
                                             async: false,
                                             success: function(json) {
@@ -1155,10 +1153,10 @@
                                 return 'message.action.instance.reset.password';
                             },
                             notification: function(args) {
-                                return 'label.action.reset.password';
+                                return _l('label.action.reset.password');
                             },
                             complete: function(args) {
-                                return 'Password has been reset to ' + args.password;
+                                return _l('message.password.has.been.reset.to') + ' ' + args.password;
                             }
                         },
 
@@ -1233,18 +1231,18 @@
                                 },
                                 osTypeId: {
                                     label: 'label.os.type',
-                                    select: function(args) {                                   
-                                    	if (ostypeObjs == undefined) {                                     	
-	                                        $.ajax({
-	                                            url: createURL("listOsTypes"),
-	                                            dataType: "json",
-	                                            async: false,
-	                                            success: function(json) {	                                            	
-	                                            	ostypeObjs = json.listostypesresponse.ostype;	
-	                                            }
-	                                        });
-                                    	}                                    	
-                                    	var items = [];
+                                    select: function(args) {
+                                        if (ostypeObjs == undefined) {
+                                            $.ajax({
+                                                url: createURL("listOsTypes"),
+                                                dataType: "json",
+                                                async: false,
+                                                success: function(json) {
+                                                    ostypeObjs = json.listostypesresponse.ostype;
+                                                }
+                                            });
+                                        }
+                                        var items = [];
                                         $(ostypeObjs).each(function() {
                                             items.push({
                                                 id: this.id,
@@ -1253,7 +1251,7 @@
                                         });
                                         args.response.success({
                                             data: items
-                                        });                                    	
+                                        });
                                     }
                                 },
                                 isPublic: {
@@ -1493,73 +1491,73 @@
                         createForm: {
                             title: 'label.change.service.offering',
                             desc: function(args) {
-                            	var description = '';                            	
-                            	var vmObj = args.jsonObj;                            	
-                            	if (vmObj.state == 'Running' && vmObj.hypervisor == 'VMware') {
-                            		description = 'message.read.admin.guide.scaling.up';
-                            	}                             
-                                return description;                  	                
+                                var description = '';
+                                var vmObj = args.jsonObj;
+                                if (vmObj.state == 'Running' && vmObj.hypervisor == 'VMware') {
+                                    description = 'message.read.admin.guide.scaling.up';
+                                }
+                                return description;
                             },
                             fields: {
-                            	serviceofferingid: {
+                                serviceofferingid: {
                                     label: 'label.compute.offering',
                                     select: function(args) {
-                                    	var serviceofferingObjs;
+                                        var serviceofferingObjs;
                                         $.ajax({
                                             url: createURL("listServiceOfferings&VirtualMachineId=" + args.context.instances[0].id),
                                             dataType: "json",
                                             async: true,
                                             success: function(json) {
-                                            	serviceofferingObjs = json.listserviceofferingsresponse.serviceoffering;
-                                                var items = [];                                              
+                                                serviceofferingObjs = json.listserviceofferingsresponse.serviceoffering;
+                                                var items = [];
                                                 if (serviceofferingObjs != null) {
-                                                	for (var i = 0; i < serviceofferingObjs.length; i++) {
-                                                		items.push({
+                                                    for (var i = 0; i < serviceofferingObjs.length; i++) {
+                                                        items.push({
                                                             id: serviceofferingObjs[i].id,
                                                             description: serviceofferingObjs[i].name
                                                         });
-                                                	}
-                                                }                                               
+                                                    }
+                                                }
                                                 args.response.success({
                                                     data: items
                                                 });
                                             }
                                         });
-                                        
+
                                         args.$select.change(function(){
-                                        	var $form = $(this).closest('form');
-                                            
+                                            var $form = $(this).closest('form');
+
                                             var serviceofferingid = $(this).val();
                                             if (serviceofferingid == null || serviceofferingid.length == 0)
                                                 return;
-                                           
+
                                             var items = [];
                                             var selectedServiceofferingObj;
                                             if (serviceofferingObjs != null) {
-                                            	for (var i = 0; i < serviceofferingObjs.length; i++) {
-                                            		if (serviceofferingObjs[i].id == serviceofferingid) {
-                                            			selectedServiceofferingObj = serviceofferingObjs[i];
-                                            			break; 
-                                            		}
-                                            	}
-                                            }                                            
-                                            if (selectedServiceofferingObj == undefined) 
-                                            	return;                                                  
-                                            
+                                                for (var i = 0; i < serviceofferingObjs.length; i++) {
+                                                    if (serviceofferingObjs[i].id == serviceofferingid) {
+                                                        selectedServiceofferingObj = serviceofferingObjs[i];
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                            if (selectedServiceofferingObj == undefined)
+                                                return;
+
                                             if (selectedServiceofferingObj.iscustomized == true) {
-                                            	$form.find('.form-item[rel=cpuSpeed]').css('display', 'inline-block');
-                                            	$form.find('.form-item[rel=cpuNumber]').css('display', 'inline-block');
-                                            	$form.find('.form-item[rel=memory]').css('display', 'inline-block');
+                                                $form.find('.form-item[rel=cpuSpeed]').css('display', 'inline-block');
+                                                $form.find('.form-item[rel=cpuNumber]').css('display', 'inline-block');
+                                                $form.find('.form-item[rel=memory]').css('display', 'inline-block');
                                             } else {
-                                            	$form.find('.form-item[rel=cpuSpeed]').hide();
-                                            	$form.find('.form-item[rel=cpuNumber]').hide();
-                                            	$form.find('.form-item[rel=memory]').hide();
+                                                $form.find('.form-item[rel=cpuSpeed]').hide();
+                                                $form.find('.form-item[rel=cpuNumber]').hide();
+                                                $form.find('.form-item[rel=memory]').hide();
                                             }
                                         });
                                     }
-                                },                               
+                                },
                                 cpuSpeed: {
-                                	label: 'label.cpu.mhz',                                    
+                                    label: 'label.cpu.mhz',
                                     validation: {
                                         required: true,
                                         number: true
@@ -1567,7 +1565,7 @@
                                     isHidden: true
                                 },
                                 cpuNumber: {
-                                	label: 'label.num.cpu.cores',                                   
+                                    label: 'label.num.cpu.cores',
                                     validation: {
                                         required: true,
                                         number: true
@@ -1575,38 +1573,38 @@
                                     isHidden: true
                                 },
                                 memory: {
-                                	label: 'label.memory.mb',                                   
+                                    label: 'label.memory.mb',
                                     validation: {
                                         required: true,
                                         number: true
                                     },
                                     isHidden: true
-                                }      
+                                }
                             }
                         },
 
                         action: function(args) {
-                        	var data = {
-                        		id: args.context.instances[0].id,
-                        		serviceofferingid: args.data.serviceofferingid
-                        	};       
-                        	                        	
-                        	if (args.$form.find('.form-item[rel=cpuSpeed]').is(':visible')) {
+                            var data = {
+                                id: args.context.instances[0].id,
+                                serviceofferingid: args.data.serviceofferingid
+                            };
+
+                            if (args.$form.find('.form-item[rel=cpuSpeed]').is(':visible')) {
                                 $.extend(data, {
-                                	'details[0].cpuSpeed': args.data.cpuSpeed 
+                                    'details[0].cpuSpeed': args.data.cpuSpeed
                                 });
-                            }                        	
-                        	if (args.$form.find('.form-item[rel=cpuNumber]').is(':visible')) {
+                            }
+                            if (args.$form.find('.form-item[rel=cpuNumber]').is(':visible')) {
                                 $.extend(data, {
-                                	'details[0].cpuNumber': args.data.cpuNumber
+                                    'details[0].cpuNumber': args.data.cpuNumber
                                 });
-                            }                        	
-                        	if (args.$form.find('.form-item[rel=memory]').is(':visible')) {
+                            }
+                            if (args.$form.find('.form-item[rel=memory]').is(':visible')) {
                                 $.extend(data, {
-                                	'details[0].memory': args.data.memory
+                                    'details[0].memory': args.data.memory
                                 });
-                            }                        	
-                        	
+                            }
+
                             $.ajax({
                                 url: createURL('scaleVirtualMachine'),
                                 data: data,
@@ -1640,15 +1638,15 @@
                             poll: pollAsyncJobResult
                         }
                     },
-                  
+
                     resetSSHKeyForVirtualMachine: {
-                        label: 'Reset SSH Key Pair',
+                        label: 'label.reset.ssh.key.pair',
                         createForm: {
-                            title: 'Reset SSH Key Pair on VM',
-                            desc: 'Please specify a ssh key pair that you would like to add to this VM. Please note the root password will be changed by this operation if password is enabled.',
+                            title: 'label.reset.ssh.key.pair.on.vm',
+                            desc: 'message.desc.reset.ssh.key.pair',
                             fields: {
                                 sshkeypair: {
-                                    label: 'New SSH Key Pair',
+                                    label: 'label.new.ssh.key.pair',
                                     validation: {
                                         required: true
                                     },
@@ -1718,11 +1716,11 @@
                         },
                         messages: {
                             notification: function(args) {
-                                return 'Reset SSH Key Pair on VM';
+                                return _l('label.reset.ssh.key.pair.on.vm');
                             },
                             complete: function(args) {
                                 if (args.password != null) {
-                                    return 'Password of the VM has been reset to ' + args.password;
+                                    return _l('message.password.of.the.vm.has.been.reset.to') + ' ' + args.password;
                                 }
 
                                 return false;
@@ -1732,66 +1730,66 @@
                             poll: pollAsyncJobResult
                         }
                     },
- 
+
                     assignVmToAnotherAccount: {
                         label: 'label.assign.instance.another',
                         createForm: {
                             title: 'label.assign.instance.another',
-                            fields: {                                
-                            	domainid: {
-                				    label: 'label.domain',
-                				    validation: {
+                            fields: {
+                                domainid: {
+                                    label: 'label.domain',
+                                    validation: {
                                         required: true
                                     },
-                				    select: function(args) {	
-                				    	$.ajax({
-            				                url: createURL('listDomains'),
-            				                data: {
-            				                    listAll: true,
-            				                    details: 'min'
-            				                },
-            				                success: function(json) {
-            				                    var array1 = [];
-            				                    var domains = json.listdomainsresponse.domain;
-            				                    if (domains != null && domains.length > 0) {
-            				                        for (var i = 0; i < domains.length; i++) {
-            				                            array1.push({
-            				                                id: domains[i].id,
-            				                                description: domains[i].path
-            				                            });
-            				                        }
-            				                    }
+                                    select: function(args) {
+                                        $.ajax({
+                                            url: createURL('listDomains'),
+                                            data: {
+                                                listAll: true,
+                                                details: 'min'
+                                            },
+                                            success: function(json) {
+                                                var array1 = [];
+                                                var domains = json.listdomainsresponse.domain;
+                                                if (domains != null && domains.length > 0) {
+                                                    for (var i = 0; i < domains.length; i++) {
+                                                        array1.push({
+                                                            id: domains[i].id,
+                                                            description: domains[i].path
+                                                        });
+                                                    }
+                                                }
                                                             array1.sort(function(a, b) {
                                                                 return a.description.localeCompare(b.description);
                                                             });
-            				                    args.response.success({
-            				                        data: array1
-            				                    });
-            				                }
-            				            });				                   				                 
-                				    }
-                				},
-                				account: {
-                				    label: 'label.account',
-                				    validation: {
+                                                args.response.success({
+                                                    data: array1
+                                                });
+                                            }
+                                        });
+                                    }
+                                },
+                                account: {
+                                    label: 'label.account',
+                                    validation: {
                                         required: true
                                     }
-                				}		
+                                }
                             }
                         },
-                        action: function(args) {                            
+                        action: function(args) {
                             $.ajax({
                                 url: createURL('assignVirtualMachine'),
                                 data: {
                                     virtualmachineid: args.context.instances[0].id,
                                     domainid: args.data.domainid,
                                     account: args.data.account
-                                },                                
-                                success: function(json) {   
-                                    var item = json.assignvirtualmachineresponse.virtualmachine;                                     
+                                },
+                                success: function(json) {
+                                    var item = json.assignvirtualmachineresponse.virtualmachine;
                                     args.response.success({
                                         data: item
-                                    });                                    
+                                    });
                                 }
                             });
                         },
@@ -1805,8 +1803,8 @@
                                 args.complete();
                             }
                         }
-                    },                    
-                    
+                    },
+
                     viewConsole: {
                         label: 'label.view.console',
                         action: {
@@ -1835,36 +1833,36 @@
                             } else {
                                 hiddenFields = ["hypervisor", 'xenserverToolsVersion61plus'];
                             }
-                            
+
                             if ('instances' in args.context && args.context.instances[0].hypervisor != 'XenServer') {
-                          	    hiddenFields.push('xenserverToolsVersion61plus');
+                                  hiddenFields.push('xenserverToolsVersion61plus');
                             }
-                            
-                            if ('instances' in args.context && args.context.instances[0].guestosid != undefined) {                        
-                            	if (ostypeObjs == undefined) {
-	                            	$.ajax({
-	                                    url: createURL("listOsTypes"),
-	                                    dataType: "json",
-	                                    async: false,
-	                                    success: function(json) {	                                    	
-	                                    	ostypeObjs = json.listostypesresponse.ostype;		                                    	
-	                                    }
-	                                });
-                            	}                            	
-                            	if (ostypeObjs != undefined) {
-                            		var ostypeName;
-                            		for (var i = 0; i < ostypeObjs.length; i++) {
-                            			if (ostypeObjs[i].id == args.context.instances[0].guestosid) {                            				
-                            				ostypeName = ostypeObjs[i].description;
-                            				break;
-                            			}
-                            		}                            		
-                            		if (ostypeName == undefined || ostypeName.indexOf("Win") == -1) {                            			
-                            			hiddenFields.push('xenserverToolsVersion61plus');
-                            		}                            		
-                            	}
+
+                            if ('instances' in args.context && args.context.instances[0].guestosid != undefined) {
+                                if (ostypeObjs == undefined) {
+                                    $.ajax({
+                                        url: createURL("listOsTypes"),
+                                        dataType: "json",
+                                        async: false,
+                                        success: function(json) {
+                                            ostypeObjs = json.listostypesresponse.ostype;
+                                        }
+                                    });
+                                }
+                                if (ostypeObjs != undefined) {
+                                    var ostypeName;
+                                    for (var i = 0; i < ostypeObjs.length; i++) {
+                                        if (ostypeObjs[i].id == args.context.instances[0].guestosid) {
+                                            ostypeName = ostypeObjs[i].description;
+                                            break;
+                                        }
+                                    }
+                                    if (ostypeName == undefined || ostypeName.indexOf("Win") == -1) {
+                                        hiddenFields.push('xenserverToolsVersion61plus');
+                                    }
+                                }
                             }
-                            
+
                             if (!args.context.instances[0].publicip) {
                                 hiddenFields.push('publicip');
                             }
@@ -1920,17 +1918,17 @@
                             guestosid: {
                                 label: 'label.os.type',
                                 isEditable: true,
-                                select: function(args) {                                
-                                    if (ostypeObjs == undefined) {                                	
-	                                	$.ajax({
-	                                        url: createURL("listOsTypes"),
-	                                        dataType: "json",
-	                                        async: false,
-	                                        success: function(json) {	                                       
-	                                        	ostypeObjs = json.listostypesresponse.ostype;	 
-	                                        }
-	                                    });
-                                    }                                    
+                                select: function(args) {
+                                    if (ostypeObjs == undefined) {
+                                        $.ajax({
+                                            url: createURL("listOsTypes"),
+                                            dataType: "json",
+                                            async: false,
+                                            success: function(json) {
+                                                ostypeObjs = json.listostypesresponse.ostype;
+                                            }
+                                        });
+                                    }
                                     var items = [];
                                     $(ostypeObjs).each(function() {
                                         items.push({
@@ -1959,16 +1957,7 @@
                                 },
                                 converter: cloudStack.converters.toBooleanText
                             },
-                            
-                            /*
-								isoid: {
-                  label: 'label.attached.iso',
-                  isEditable: false,
-                  converter: function(isoid) {
-                    return cloudStack.converters.toBooleanText(isoid != null);
-                  }
-                },
-								*/
+
                             isoname: {
                                 label: 'label.attached.iso'
                             },
@@ -1977,13 +1966,13 @@
                                 label: 'label.compute.offering'
                             },
                             cpunumber: {
-                            	label: 'label.num.cpu.cores'
+                                label: 'label.num.cpu.cores'
                             },
                             cpuspeed: {
-                            	label: 'label.cpu.mhz'
+                                label: 'label.cpu.mhz'
                             },
                             memory: {
-                            	label: 'label.memory.mb'
+                                label: 'label.memory.mb'
                             },
                             vgpu: {
                                 label: 'label.vgpu'
@@ -2011,7 +2000,7 @@
                                 label: 'label.public.ip'
                             },
                             keypair: {
-                                label: 'SSH Key Pair'
+                                label: 'label.ssh.key.pair'
                             },
                             domain: {
                                 label: 'label.domain'
@@ -2045,7 +2034,7 @@
                                     var jsonObj;
                                     if (json.listvirtualmachinesresponse.virtualmachine != null && json.listvirtualmachinesresponse.virtualmachine.length > 0)
                                         jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];
-                                    else if (isAdmin()) 
+                                    else if (isAdmin())
                                         jsonObj = $.extend(args.context.instances[0], {
                                             state: "Expunged"
                                         }); //after root/domain admin expunge a VM, listVirtualMachines API will no longer returns this expunged VM to all users.
@@ -2060,12 +2049,12 @@
                                         else
                                             jsonObj.xenserverToolsVersion61plus = false;
                                     }
-                                                                           
+
                                     $(window).trigger('cloudStack.module.sharedFunctions.addExtraProperties', {
-                                    	obj: jsonObj,
-                                    	objType: "UserVM"
+                                        obj: jsonObj,
+                                        objType: "UserVM"
                                     });
-                                                                       
+
                                     args.response.success({
                                         actionFilter: vmActionfilter,
                                         data: jsonObj
@@ -2099,19 +2088,19 @@
                                         networkid: {
                                             label: 'label.network',
                                             select: function(args) {
-                                            	var data1 = {
-                                            		zoneid: args.context.instances[0].zoneid	
-                                            	};
-                                            	if (isAdmin()) {
-                                            		$.extend(data1, {
-                                            			listAll: true
-                                            		});
-                                            	} else {
-                                            		$.extend(data1, {
-                                            			account: args.context.instances[0].account,
+                                                var data1 = {
+                                                    zoneid: args.context.instances[0].zoneid
+                                                };
+                                                if (isAdmin()) {
+                                                    $.extend(data1, {
+                                                        listAll: true
+                                                    });
+                                                } else {
+                                                    $.extend(data1, {
+                                                        account: args.context.instances[0].account,
                                                         domainid: args.context.instances[0].domainid
-                                            		});
-                                            	}     
+                                                    });
+                                                }
                                                 $.ajax({
                                                     url: createURL('listNetworks'),
                                                     data: data1,
@@ -2322,7 +2311,7 @@
                                                     secondaryips: secondaryips
                                                 })
                                             }
-                                                
+
                                             var name = 'NIC ' + (index + 1);
                                             if (nic.isdefault) {
                                                 name += ' (' + _l('label.default') + ')';
@@ -2434,27 +2423,29 @@
         var allowedActions = [];
 
         if (jsonObj.state == 'Destroyed') {
-            if (isAdmin() || isDomainAdmin()) {
+            if (g_allowUserExpungeRecoverVm) {
                 allowedActions.push("recover");
             }
-            if (isAdmin() || isDomainAdmin())
+
+            if (g_allowUserExpungeRecoverVm) {
                 allowedActions.push("expunge");
+            }
         } else if (jsonObj.state == 'Running') {
             allowedActions.push("stop");
             allowedActions.push("restart");
-            
-            if ((jsonObj.hypervisor != 'KVM' || g_kvmsnapshotenabled == true) 
-            		&& (jsonObj.hypervisor != 'LXC')) {
+
+            if ((jsonObj.hypervisor != 'KVM' || g_kvmsnapshotenabled == true)
+                    && (jsonObj.hypervisor != 'LXC')) {
                 allowedActions.push("snapshot");
             }
-            
-            allowedActions.push("destroy");            
+
+            allowedActions.push("destroy");
             allowedActions.push("reinstall");
-             
+
             //when userVm is running, scaleUp is not supported for KVM, LXC
             if (jsonObj.hypervisor != 'KVM' && jsonObj.hypervisor != 'LXC') {
-            	allowedActions.push("scaleUp");
-            }              
+                allowedActions.push("scaleUp");
+            }
 
             if (isAdmin())
                 allowedActions.push("migrate");
@@ -2476,13 +2467,13 @@
             allowedActions.push("start");
             allowedActions.push("destroy");
             allowedActions.push("reinstall");
-            
-            if ((jsonObj.hypervisor != 'KVM' || g_kvmsnapshotenabled == true) 
-            		&& (jsonObj.hypervisor != 'LXC')) {
+
+            if ((jsonObj.hypervisor != 'KVM' || g_kvmsnapshotenabled == true)
+                    && (jsonObj.hypervisor != 'LXC')) {
                 allowedActions.push("snapshot");
             }
-            
-            allowedActions.push("scaleUp");  //when vm is stopped, scaleUp is supported for all hypervisors 
+
+            allowedActions.push("scaleUp");  //when vm is stopped, scaleUp is supported for all hypervisors
             allowedActions.push("changeAffinity");
 
             if (isAdmin())
@@ -2493,11 +2484,11 @@
             } else {
                 allowedActions.push("detachISO");
             }
-            allowedActions.push("resetPassword");            
+            allowedActions.push("resetPassword");
             if (jsonObj.hypervisor == "BareMetal") {
                 allowedActions.push("createTemplate");
             }
-            
+
             if (isAdmin() || isDomainAdmin()) {
                 allowedActions.push("assignVmToAnotherAccount");
             }
@@ -2507,8 +2498,9 @@
         } else if (jsonObj.state == 'Error') {
             allowedActions.push("destroy");
         } else if (jsonObj.state == 'Expunging') {
-            if (isAdmin() || isDomainAdmin())
+            if (g_allowUserExpungeRecoverVm) {
                 allowedActions.push("expunge");
+            }
         }
         return allowedActions;
     }

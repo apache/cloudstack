@@ -2363,10 +2363,8 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         // VM patching/rebooting time that may need
         int retry = _retry;
         while (System.currentTimeMillis() - startTick <= _opsTimeout || --retry > 0) {
-            SocketChannel sch = null;
-            try {
-                s_logger.info("Trying to connect to " + ipAddress);
-                sch = SocketChannel.open();
+            s_logger.info("Trying to connect to " + ipAddress);
+            try (SocketChannel sch = SocketChannel.open();) {
                 sch.configureBlocking(true);
                 sch.socket().setSoTimeout(5000);
                 // we need to connect to the control ip address to check the status of the system vm
@@ -2382,13 +2380,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
                     try {
                         Thread.sleep(5000);
                     } catch (InterruptedException ex) {
-                    }
-                }
-            } finally {
-                if (sch != null) {
-                    try {
-                        sch.close();
-                    } catch (IOException e) {
+                        s_logger.debug("[ignored] interupted while waiting to retry connecting to vm after exception: "+e.getLocalizedMessage());
                     }
                 }
             }
@@ -2396,6 +2388,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ex) {
+                s_logger.debug("[ignored] interupted while connecting to vm.");
             }
         }
 

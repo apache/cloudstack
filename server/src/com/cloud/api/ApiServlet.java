@@ -245,13 +245,7 @@ public class ApiServlet extends HttpServlet {
                 userId = (Long)session.getAttribute("userid");
                 final String account = (String) session.getAttribute("account");
                 final Object accountObj = session.getAttribute("accountobj");
-                final String sessionKey = (String) session.getAttribute(ApiConstants.SESSIONKEY);
-                final String sessionKeyFromCookie = HttpUtils.findCookie(req.getCookies(), ApiConstants.SESSIONKEY);
-                final String[] sessionKeyFromParams = (String[]) params.get(ApiConstants.SESSIONKEY);
-                if ((sessionKey == null)
-                        || (sessionKeyFromParams == null && sessionKeyFromCookie == null)
-                        || (sessionKeyFromParams != null && !sessionKey.equals(sessionKeyFromParams[0]))
-                        || (sessionKeyFromCookie != null && !sessionKey.equals(sessionKeyFromCookie))) {
+                if (!HttpUtils.validateSessionKey(session, params, req.getCookies(), ApiConstants.SESSIONKEY)) {
                     try {
                         session.invalidate();
                     } catch (final IllegalStateException ise) {

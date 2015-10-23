@@ -26,7 +26,7 @@ import os.path
 import configure
 import json
 
-logging.basicConfig(filename='/var/log/cloud.log', level=logging.DEBUG, format='%(asctime)s %(message)s')
+logging.basicConfig(filename='/var/log/cloud.log', level=logging.DEBUG, format='%(asctime)s  %(filename)s %(funcName)s:%(lineno)d %(message)s')
 
 # first commandline argument should be the file to process
 if (len(sys.argv) != 2):

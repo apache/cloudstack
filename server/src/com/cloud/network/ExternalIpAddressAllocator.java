@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.network;
 
+import static com.cloud.utils.AutoCloseableUtil.closeAutoCloseable;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -81,12 +83,7 @@ public class ExternalIpAddressAllocator extends AdapterBase implements IpAddrAll
         } catch (IOException e) {
             return new IpAddr();
         } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                }
-            }
+            closeAutoCloseable(in, "closing buffered reader");
         }
 
     }
@@ -121,12 +118,7 @@ public class ExternalIpAddressAllocator extends AdapterBase implements IpAddrAll
         } catch (IOException e) {
             return false;
         } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                }
-            }
+            closeAutoCloseable(in, "buffered reader close");
         }
     }
 

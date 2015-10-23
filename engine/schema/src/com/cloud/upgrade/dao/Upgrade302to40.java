@@ -34,7 +34,7 @@ import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
-public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
+public class Upgrade302to40 extends Upgrade30xBase {
     final static Logger s_logger = Logger.getLogger(Upgrade302to40.class);
 
     @Override
@@ -138,33 +138,10 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while correcting Virtual Router Entries", e);
         } finally {
-            if (rsVR != null) {
-                try {
-                    rsVR.close();
-                } catch (SQLException e) {
-                }
-            }
-
-            if (pstmtVR != null) {
-                try {
-                    pstmtVR.close();
-                } catch (SQLException e) {
-                }
-            }
-
-            if (rs != null) {
-                try {
-                    rs.close();
-                } catch (SQLException e) {
-                }
-            }
-
-            if (pstmt != null) {
-                try {
-                    pstmt.close();
-                } catch (SQLException e) {
-                }
-            }
+            closeAutoCloseable(rsVR);
+            closeAutoCloseable(pstmtVR);
+            closeAutoCloseable(rs);
+            closeAutoCloseable(pstmt);
         }
 
     }
@@ -398,33 +375,10 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while correcting PhysicalNetwork setup", e);
         } finally {
-            if (rsZone != null) {
-                try {
-                    rsZone.close();
-                } catch (SQLException e) {
-                }
-            }
-
-            if (pstmtZone != null) {
-                try {
-                    pstmtZone.close();
-                } catch (SQLException e) {
-                }
-            }
-
-            if (rs != null) {
-                try {
-                    rs.close();
-                } catch (SQLException e) {
-                }
-            }
-
-            if (pstmt != null) {
-                try {
-                    pstmt.close();
-                } catch (SQLException e) {
-                }
-            }
+            closeAutoCloseable(rsZone);
+            closeAutoCloseable(pstmtZone);
+            closeAutoCloseable(rs);
+            closeAutoCloseable(pstmt);
         }
     }
 
@@ -510,29 +464,23 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while cloning NetworkOffering", e);
         } finally {
+            closeAutoCloseable(rs);
             try {
                 pstmt = conn.prepareStatement("DROP TEMPORARY TABLE `cloud`.`network_offerings2`");
                 pstmt.executeUpdate();
-
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (pstmt != null) {
-                    pstmt.close();
-                }
             } catch (SQLException e) {
+                s_logger.info("[ignored] ",e);
             }
+            closeAutoCloseable(pstmt);
         }
     }
 
     private void addHostDetailsUniqueKey(Connection conn) {
         s_logger.debug("Checking if host_details unique key exists, if not we will add it");
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            pstmt = conn.prepareStatement("SHOW INDEX FROM `cloud`.`host_details` WHERE KEY_NAME = 'uk_host_id_name'");
-            rs = pstmt.executeQuery();
+        try (
+                PreparedStatement pstmt = conn.prepareStatement("SHOW INDEX FROM `cloud`.`host_details` WHERE KEY_NAME = 'uk_host_id_name'");
+                ResultSet rs = pstmt.executeQuery();
+            ) {
             if (rs.next()) {
                 s_logger.debug("Unique key already exists on host_details - not adding new one");
             } else {
@@ -545,17 +493,6 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Failed to check/update the host_details unique key ", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 
@@ -602,16 +539,8 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable add VPC physical network service provider ", e);
         } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
+            closeAutoCloseable(rs);
+            closeAutoCloseable(pstmt);
         }
         s_logger.debug("Done adding VPC physical network service providers to all physical networks");
     }
@@ -619,46 +548,33 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
     private void updateRouterNetworkRef(Connection conn) {
         //Encrypt config params and change category to Hidden
         s_logger.debug("Updating router network ref");
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            pstmt = conn.prepareStatement("SELECT d.id, d.network_id FROM `cloud`.`domain_router` d, `cloud`.`vm_instance` v " + "WHERE d.id=v.id AND v.removed is NULL");
-            rs = pstmt.executeQuery();
+        try (
+                PreparedStatement pstmt = conn.prepareStatement("SELECT d.id, d.network_id FROM `cloud`.`domain_router` d, `cloud`.`vm_instance` v " + "WHERE d.id=v.id AND v.removed is NULL");
+                PreparedStatement pstmt1 = conn.prepareStatement("SELECT guest_type from `cloud`.`networks` where id=?");
+                PreparedStatement pstmt2 = conn.prepareStatement("INSERT INTO `cloud`.`router_network_ref` (router_id, network_id, guest_type) " + "VALUES (?, ?, ?)");
+                ResultSet rs = pstmt.executeQuery();
+            ){
             while (rs.next()) {
                 Long routerId = rs.getLong(1);
                 Long networkId = rs.getLong(2);
 
                 //get the network type
-                pstmt = conn.prepareStatement("SELECT guest_type from `cloud`.`networks` where id=?");
-                pstmt.setLong(1, networkId);
-                ResultSet rs1 = pstmt.executeQuery();
-                rs1.next();
-                String networkType = rs1.getString(1);
+                pstmt1.setLong(1, networkId);
+                try (ResultSet rs1 = pstmt1.executeQuery();) {
+                    rs1.next();
+                    String networkType = rs1.getString(1);
 
-                //insert the reference
-                pstmt = conn.prepareStatement("INSERT INTO `cloud`.`router_network_ref` (router_id, network_id, guest_type) " + "VALUES (?, ?, ?)");
-
-                pstmt.setLong(1, routerId);
-                pstmt.setLong(2, networkId);
-                pstmt.setString(3, networkType);
-                pstmt.executeUpdate();
-
+                    //insert the reference
+                    pstmt2.setLong(1, routerId);
+                    pstmt2.setLong(2, networkId);
+                    pstmt2.setString(3, networkType);
+                    pstmt2.executeUpdate();
+                }
                 s_logger.debug("Added reference for router id=" + routerId + " and network id=" + networkId);
 
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Failed to update the router/network reference ", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
         s_logger.debug("Done updating router/network references");
     }
@@ -768,33 +684,19 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
                 }
             }
 
-            if (zoneResults != null) {
-                try {
-                    zoneResults.close();
-                } catch (SQLException e) {
-                }
-            }
-            if (zoneSearchStmt != null) {
-                try {
-                    zoneSearchStmt.close();
-                } catch (SQLException e) {
-                }
-            }
+            closeAutoCloseable(zoneResults);
+            closeAutoCloseable(zoneSearchStmt);
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while adding PhysicalNetworks", e);
-        } finally {
-
         }
     }
 
     private void addF5LoadBalancer(Connection conn, long hostId, long physicalNetworkId) {
-        PreparedStatement pstmtUpdate = null;
-        try {
-            s_logger.debug("Adding F5 Big IP load balancer with host id " + hostId + " in to physical network" + physicalNetworkId);
-            String insertF5 =
-                "INSERT INTO `cloud`.`external_load_balancer_devices` (physical_network_id, host_id, provider_name, "
-                    + "device_name, capacity, is_dedicated, device_state, allocation_state, is_inline, is_managed, uuid) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            pstmtUpdate = conn.prepareStatement(insertF5);
+        s_logger.debug("Adding F5 Big IP load balancer with host id " + hostId + " in to physical network" + physicalNetworkId);
+        String insertF5 =
+            "INSERT INTO `cloud`.`external_load_balancer_devices` (physical_network_id, host_id, provider_name, "
+                + "device_name, capacity, is_dedicated, device_state, allocation_state, is_inline, is_managed, uuid) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement pstmtUpdate = conn.prepareStatement(insertF5);) {
             pstmtUpdate.setLong(1, physicalNetworkId);
             pstmtUpdate.setLong(2, hostId);
             pstmtUpdate.setString(3, "F5BigIp");
@@ -809,24 +711,15 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
             pstmtUpdate.executeUpdate();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while adding F5 load balancer device", e);
-        } finally {
-            if (pstmtUpdate != null) {
-                try {
-                    pstmtUpdate.close();
-                } catch (SQLException e) {
-                }
-            }
         }
     }
 
     private void addSrxFirewall(Connection conn, long hostId, long physicalNetworkId) {
-        PreparedStatement pstmtUpdate = null;
-        try {
-            s_logger.debug("Adding SRX firewall device with host id " + hostId + " in to physical network" + physicalNetworkId);
-            String insertSrx =
-                "INSERT INTO `cloud`.`external_firewall_devices` (physical_network_id, host_id, provider_name, "
-                    + "device_name, capacity, is_dedicated, device_state, allocation_state, uuid) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            pstmtUpdate = conn.prepareStatement(insertSrx);
+        s_logger.debug("Adding SRX firewall device with host id " + hostId + " in to physical network" + physicalNetworkId);
+        String insertSrx =
+            "INSERT INTO `cloud`.`external_firewall_devices` (physical_network_id, host_id, provider_name, "
+                + "device_name, capacity, is_dedicated, device_state, allocation_state, uuid) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement pstmtUpdate = conn.prepareStatement(insertSrx);) {
             pstmtUpdate.setLong(1, physicalNetworkId);
             pstmtUpdate.setLong(2, hostId);
             pstmtUpdate.setString(3, "JuniperSRX");
@@ -839,28 +732,18 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
             pstmtUpdate.executeUpdate();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while adding SRX firewall device ", e);
-        } finally {
-            if (pstmtUpdate != null) {
-                try {
-                    pstmtUpdate.close();
-                } catch (SQLException e) {
-                }
-            }
         }
     }
 
     private void addF5ServiceProvider(Connection conn, long physicalNetworkId, long zoneId) {
-        PreparedStatement pstmtUpdate = null;
-        try {
-            // add physical network service provider - F5BigIp
-            s_logger.debug("Adding PhysicalNetworkServiceProvider F5BigIp" + " in to physical network" + physicalNetworkId);
-            String insertPNSP =
-                "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ,"
-                    + "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`,"
-                    + "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`,"
-                    + "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,0,0,0,0,0,0,0,1,0,0,0,0)";
-
-            pstmtUpdate = conn.prepareStatement(insertPNSP);
+        // add physical network service provider - F5BigIp
+        s_logger.debug("Adding PhysicalNetworkServiceProvider F5BigIp" + " in to physical network" + physicalNetworkId);
+        String insertPNSP =
+            "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ,"
+                + "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`,"
+                + "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`,"
+                + "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,0,0,0,0,0,0,0,1,0,0,0,0)";
+        try (PreparedStatement pstmtUpdate = conn.prepareStatement(insertPNSP);) {
             pstmtUpdate.setString(1, UUID.randomUUID().toString());
             pstmtUpdate.setLong(2, physicalNetworkId);
             pstmtUpdate.setString(3, "F5BigIp");
@@ -868,28 +751,18 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
             pstmtUpdate.executeUpdate();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while adding PhysicalNetworkServiceProvider F5BigIp", e);
-        } finally {
-            if (pstmtUpdate != null) {
-                try {
-                    pstmtUpdate.close();
-                } catch (SQLException e) {
-                }
-            }
         }
     }
 
     private void addSrxServiceProvider(Connection conn, long physicalNetworkId, long zoneId) {
-        PreparedStatement pstmtUpdate = null;
-        try {
-            // add physical network service provider - JuniperSRX
-            s_logger.debug("Adding PhysicalNetworkServiceProvider JuniperSRX");
-            String insertPNSP =
-                "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ,"
-                    + "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`,"
-                    + "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`,"
-                    + "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,0,0,0,0,1,1,1,0,1,1,0,0)";
-
-            pstmtUpdate = conn.prepareStatement(insertPNSP);
+        // add physical network service provider - JuniperSRX
+        s_logger.debug("Adding PhysicalNetworkServiceProvider JuniperSRX");
+        String insertPNSP =
+            "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ,"
+                + "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`,"
+                + "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`,"
+                + "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,0,0,0,0,1,1,1,0,1,1,0,0)";
+        try (PreparedStatement pstmtUpdate = conn.prepareStatement(insertPNSP);) {
             pstmtUpdate.setString(1, UUID.randomUUID().toString());
             pstmtUpdate.setLong(2, physicalNetworkId);
             pstmtUpdate.setString(3, "JuniperSRX");
@@ -897,13 +770,6 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
             pstmtUpdate.executeUpdate();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while adding PhysicalNetworkServiceProvider JuniperSRX", e);
-        } finally {
-            if (pstmtUpdate != null) {
-                try {
-                    pstmtUpdate.close();
-                } catch (SQLException e) {
-                }
-            }
         }
     }
 
@@ -1045,15 +911,8 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
             } catch (SQLException e) {
                 throw new CloudRuntimeException("Unable create a mapping for the networks in network_external_lb_device_map and network_external_firewall_device_map", e);
             } finally {
-                try {
-                    if (rs != null) {
-                        rs.close();
-                    }
-                    if (pstmt != null) {
-                        pstmt.close();
-                    }
-                } catch (SQLException e) {
-                }
+                closeAutoCloseable(rs);
+                closeAutoCloseable(pstmt);
             }
             s_logger.info("Successfully upgraded networks using F5 and SRX devices to have a entry in the network_external_lb_device_map and network_external_firewall_device_map");
         }
@@ -1062,12 +921,11 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
     private void encryptConfig(Connection conn) {
         //Encrypt config params and change category to Hidden
         s_logger.debug("Encrypting Config values");
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            pstmt =
-                conn.prepareStatement("select name, value from `cloud`.`configuration` where name in ('router.ram.size', 'secondary.storage.vm', 'security.hash.key') and category <> 'Hidden'");
-            rs = pstmt.executeQuery();
+        try (
+                PreparedStatement pstmt = conn.prepareStatement("select name, value from `cloud`.`configuration` where name in ('router.ram.size', 'secondary.storage.vm', 'security.hash.key') and category <> 'Hidden'");
+                PreparedStatement pstmt1 = conn.prepareStatement("update `cloud`.`configuration` set value=?, category = 'Hidden' where name=?");
+                ResultSet rs = pstmt.executeQuery();
+            ) {
             while (rs.next()) {
                 String name = rs.getString(1);
                 String value = rs.getString(2);
@@ -1075,37 +933,25 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
                     continue;
                 }
                 String encryptedValue = DBEncryptionUtil.encrypt(value);
-                pstmt = conn.prepareStatement("update `cloud`.`configuration` set value=?, category = 'Hidden' where name=?");
-                pstmt.setBytes(1, encryptedValue.getBytes("UTF-8"));
-                pstmt.setString(2, name);
-                pstmt.executeUpdate();
+                pstmt1.setBytes(1, encryptedValue.getBytes("UTF-8"));
+                pstmt1.setString(2, name);
+                pstmt1.executeUpdate();
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable encrypt configuration values ", e);
         } catch (UnsupportedEncodingException e) {
             throw new CloudRuntimeException("Unable encrypt configuration values ", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
         s_logger.debug("Done encrypting Config values");
     }
 
     private void encryptClusterDetails(Connection conn) {
         s_logger.debug("Encrypting cluster details");
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            pstmt = conn.prepareStatement("select id, value from `cloud`.`cluster_details` where name = 'password'");
-            rs = pstmt.executeQuery();
+        try (
+                PreparedStatement pstmt = conn.prepareStatement("select id, value from `cloud`.`cluster_details` where name = 'password'");
+                PreparedStatement pstmt1 = conn.prepareStatement("update `cloud`.`cluster_details` set value=? where id=?");
+                ResultSet rs = pstmt.executeQuery();
+            ) {
             while (rs.next()) {
                 long id = rs.getLong(1);
                 String value = rs.getString(2);
@@ -1113,26 +959,14 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
                     continue;
                 }
                 String encryptedValue = DBEncryptionUtil.encrypt(value);
-                pstmt = conn.prepareStatement("update `cloud`.`cluster_details` set value=? where id=?");
-                pstmt.setBytes(1, encryptedValue.getBytes("UTF-8"));
-                pstmt.setLong(2, id);
-                pstmt.executeUpdate();
+                pstmt1.setBytes(1, encryptedValue.getBytes("UTF-8"));
+                pstmt1.setLong(2, id);
+                pstmt1.executeUpdate();
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable encrypt cluster_details values ", e);
         } catch (UnsupportedEncodingException e) {
             throw new CloudRuntimeException("Unable encrypt cluster_details values ", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
         s_logger.debug("Done encrypting cluster_details");
     }

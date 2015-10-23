@@ -186,8 +186,12 @@ public class RegionsApiUtil {
                 XStream xstream = new XStream(new DomDriver());
                 xstream.alias("useraccount", UserAccountVO.class);
                 xstream.aliasField("id", UserAccountVO.class, "uuid");
-                ObjectInputStream in = xstream.createObjectInputStream(is);
-                return (UserAccountVO)in.readObject();
+                try(ObjectInputStream in = xstream.createObjectInputStream(is);) {
+                    return (UserAccountVO)in.readObject();
+                } catch (IOException e) {
+                    s_logger.error(e.getMessage());
+                    return null;
+                }
             } else {
                 return null;
             }

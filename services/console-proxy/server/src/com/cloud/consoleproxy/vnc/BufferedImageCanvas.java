@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.List;
 
 import com.cloud.consoleproxy.util.ImageHelper;
+import com.cloud.consoleproxy.util.Logger;
 import com.cloud.consoleproxy.util.TileInfo;
 
 /**
@@ -35,6 +36,7 @@ import com.cloud.consoleproxy.util.TileInfo;
  */
 public class BufferedImageCanvas extends Canvas implements FrameBufferCanvas {
     private static final long serialVersionUID = 1L;
+    private static final Logger s_logger = Logger.getLogger(BufferedImageCanvas.class);
 
     // Offline screen buffer
     private BufferedImage offlineImage;
@@ -42,7 +44,7 @@ public class BufferedImageCanvas extends Canvas implements FrameBufferCanvas {
     // Cached Graphics2D object for offline screen buffer
     private Graphics2D graphics;
 
-    private PaintNotificationListener listener;
+    private final PaintNotificationListener listener;
 
     public BufferedImageCanvas(PaintNotificationListener listener, int width, int height) {
         super();
@@ -59,7 +61,7 @@ public class BufferedImageCanvas extends Canvas implements FrameBufferCanvas {
     }
 
     public void setCanvasSize(int width, int height) {
-        this.offlineImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        offlineImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         graphics = offlineImage.createGraphics();
 
         setSize(offlineImage.getWidth(), offlineImage.getHeight());
@@ -121,6 +123,7 @@ public class BufferedImageCanvas extends Canvas implements FrameBufferCanvas {
         try {
             imgBits = ImageHelper.jpegFromImage(bufferedImage);
         } catch (IOException e) {
+            s_logger.info("[ignored] read error on image", e);
         }
         return imgBits;
     }
@@ -144,6 +147,7 @@ public class BufferedImageCanvas extends Canvas implements FrameBufferCanvas {
         try {
             imgBits = ImageHelper.jpegFromImage(bufferedImage);
         } catch (IOException e) {
+            s_logger.info("[ignored] read error on image tiles", e);
         }
         return imgBits;
     }

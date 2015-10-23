@@ -81,23 +81,23 @@ public interface MockVmManager extends Manager {
 
     Answer setVmData(VmDataCommand cmd);
 
-    Answer CheckConsoleProxyLoad(CheckConsoleProxyLoadCommand cmd);
+    Answer checkConsoleProxyLoad(CheckConsoleProxyLoadCommand cmd);
 
-    Answer WatchConsoleProxyLoad(WatchConsoleProxyLoadCommand cmd);
+    Answer watchConsoleProxyLoad(WatchConsoleProxyLoadCommand cmd);
 
-    Answer SavePassword(SavePasswordCommand cmd);
+    Answer savePassword(SavePasswordCommand cmd);
 
-    MigrateAnswer Migrate(MigrateCommand cmd, SimulatorInfo info);
+    MigrateAnswer migrate(MigrateCommand cmd, SimulatorInfo info);
 
     PrepareForMigrationAnswer prepareForMigrate(PrepareForMigrationCommand cmd);
 
-    SecurityGroupRuleAnswer AddSecurityGroupRules(SecurityGroupRulesCmd cmd, SimulatorInfo info);
+    SecurityGroupRuleAnswer addSecurityGroupRules(SecurityGroupRulesCmd cmd, SimulatorInfo info);
 
     GetDomRVersionAnswer getDomRVersion(GetDomRVersionCmd cmd);
 
     CheckRouterAnswer checkRouter(CheckRouterCommand cmd);
 
-    Answer CleanupNetworkRules(CleanupNetworkRulesCmd cmd, SimulatorInfo info);
+    Answer cleanupNetworkRules(CleanupNetworkRulesCmd cmd, SimulatorInfo info);
 
     Answer scaleVm(ScaleVmCommand cmd);
 

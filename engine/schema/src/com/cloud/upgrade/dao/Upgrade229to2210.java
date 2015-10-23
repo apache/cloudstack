@@ -68,41 +68,29 @@ public class Upgrade229to2210 implements DbUpgrade {
     }
 
     private void updateSnapshots(Connection conn) {
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
         long currentSnapshotId = 0;
-        try {
-            pstmt =
-                conn.prepareStatement("select id, prev_snap_id from snapshots where sechost_id is NULL and prev_snap_id is not NULL and status=\"BackedUp\" and removed is NULL order by id");
-            rs = pstmt.executeQuery();
+        try (
+                PreparedStatement pstmt = conn.prepareStatement("select id, prev_snap_id from snapshots where sechost_id is NULL and prev_snap_id is not NULL and status=\"BackedUp\" and removed is NULL order by id");
+                ResultSet rs = pstmt.executeQuery();
+                PreparedStatement pstmt2 = conn.prepareStatement("select sechost_id from snapshots where id=? and sechost_id is not NULL");
+                PreparedStatement updateSnapshotStatement = conn.prepareStatement("update snapshots set sechost_id=? where id=?");
+            ){
             while (rs.next()) {
                 long id = rs.getLong(1);
                 long preSnapId = rs.getLong(2);
                 currentSnapshotId = id;
-                pstmt = conn.prepareStatement("select sechost_id from snapshots where id=? and sechost_id is not NULL");
-                pstmt.setLong(1, preSnapId);
-                ResultSet sechost = pstmt.executeQuery();
-                if (sechost.next()) {
-                    long secHostId = sechost.getLong(1);
-                    pstmt = conn.prepareStatement("update snapshots set sechost_id=? where id=?");
-                    pstmt.setLong(1, secHostId);
-                    pstmt.setLong(2, id);
-                    pstmt.executeUpdate();
+                pstmt2.setLong(1, preSnapId);
+                try (ResultSet sechost = pstmt2.executeQuery();) {
+                    if (sechost.next()) {
+                        long secHostId = sechost.getLong(1);
+                        updateSnapshotStatement.setLong(1, secHostId);
+                        updateSnapshotStatement.setLong(2, id);
+                        updateSnapshotStatement.executeUpdate();
+                    }
                 }
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update snapshots id=" + currentSnapshotId, e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 
@@ -192,6 +180,7 @@ public class Upgrade229to2210 implements DbUpgrade {
                     pstmt.close();
                 }
             } catch (SQLException e) {
+                s_logger.info("[ignored]",e);
             }
         }
     }

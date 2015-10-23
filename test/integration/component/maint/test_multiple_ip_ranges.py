@@ -111,7 +111,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
         if cls.vr_state is False:
             cls.vm_res = VirtualMachine.create(
                 cls.api_client,
-                cls.testdata["server_without_disk"],
+                cls.testdata["small"],
                 templateid=cls.template.id,
                 accountid=cls.account.name,
                 domainid=cls.testdata["domainid"],
@@ -181,7 +181,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
         try:
             self.virtual_machine = VirtualMachine.create(
                 self.apiclient,
-                self.testdata["server_without_disk"],
+                self.testdata["small"],
                 templateid=self.template.id,
                 accountid=self.account.name,
                 domainid=self.testdata["domainid"],

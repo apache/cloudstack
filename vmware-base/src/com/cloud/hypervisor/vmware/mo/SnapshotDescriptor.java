@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
 public class SnapshotDescriptor {
     private static final Logger s_logger = Logger.getLogger(SnapshotDescriptor.class);
 
-    private Properties _properties = new Properties();
+    private final Properties _properties = new Properties();
 
     public SnapshotDescriptor() {
     }
@@ -90,11 +90,9 @@ public class SnapshotDescriptor {
     }
 
     public byte[] getVmsdContent() {
-        BufferedWriter out = null;
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
-        try {
-            out = new BufferedWriter(new OutputStreamWriter(bos, "UTF-8"));
+        try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(bos, "UTF-8"));) {
 
             out.write(".encoding = \"UTF-8\"");
             out.newLine();
@@ -165,13 +163,6 @@ public class SnapshotDescriptor {
         } catch (IOException e) {
             assert (false);
             s_logger.error("Unexpected exception ", e);
-        } finally {
-            if (out != null) {
-                try {
-                    out.close();
-                } catch (IOException e) {
-                }
-            }
         }
 
         return bos.toByteArray();
@@ -288,8 +279,8 @@ public class SnapshotDescriptor {
     }
 
     public static class DiskInfo {
-        private String _diskFileName;
-        private String _deviceName;
+        private final String _diskFileName;
+        private final String _deviceName;
 
         public DiskInfo(String diskFileName, String deviceName) {
             _diskFileName = diskFileName;

@@ -23,18 +23,9 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import org.apache.cxf.common.util.StringUtils;
 import org.apache.log4j.Logger;
-import org.opensaml.DefaultBootstrap;
-import org.opensaml.saml2.core.Response;
-import org.opensaml.saml2.core.StatusCode;
-import org.opensaml.xml.ConfigurationException;
-import org.opensaml.xml.io.UnmarshallingException;
-import org.xml.sax.SAXException;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.FactoryConfigurationError;
-import java.io.IOException;
 import java.util.Map;
 
 @Local(value = {UserAuthenticator.class})
@@ -63,18 +54,7 @@ public class SAML2UserAuthenticator extends DefaultUserAuthenticator {
             return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
         } else {
             User user = _userDao.getUser(userAccount.getId());
-            if (user != null && requestParameters != null && requestParameters.containsKey(SAMLPluginConstants.SAML_RESPONSE)) {
-                final String samlResponse = ((String[])requestParameters.get(SAMLPluginConstants.SAML_RESPONSE))[0];
-                Response responseObject = null;
-                try {
-                    DefaultBootstrap.bootstrap();
-                    responseObject = SAMLUtils.decodeSAMLResponse(samlResponse);
-                } catch (ConfigurationException | FactoryConfigurationError | ParserConfigurationException | SAXException | IOException | UnmarshallingException e) {
-                    return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
-                }
-                if (!responseObject.getStatus().getStatusCode().getValue().equals(StatusCode.SUCCESS_URI)) {
-                    return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
-                }
+            if (user != null && user.getSource() == User.Source.SAML2 && user.getExternalEntity() != null) {
                 return new Pair<Boolean, ActionOnFailedAuthentication>(true, null);
             }
         }

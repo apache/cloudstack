@@ -91,7 +91,8 @@ public class OVAProcessor extends AdapterBase implements Processor {
             long size = getTemplateVirtualSize(file.getParent(), file.getName());
             return size;
         } catch (Exception e) {
-
+            s_logger.info("[ignored]"
+                    + "failed to get virtual template size for ova: " + e.getLocalizedMessage());
         }
         return file.length();
     }

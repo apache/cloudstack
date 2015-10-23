@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 
 import javax.naming.ConfigurationException;
 
+import com.google.common.base.Strings;
 import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
 
@@ -275,7 +276,7 @@ public class BridgeVifDriver extends VifDriverBase {
         createControlNetwork(_bridges.get("linklocal"));
     }
 
-    private void deleteExitingLinkLocalRouteTable(String linkLocalBr) {
+    private void deleteExistingLinkLocalRouteTable(String linkLocalBr) {
         Script command = new Script("/bin/bash", _timeout);
         command.add("-c");
         command.add("ip route | grep " + NetUtils.getLinkLocalCIDR());
@@ -286,8 +287,12 @@ public class BridgeVifDriver extends VifDriverBase {
             String[] lines = parser.getLines().split("\\n");
             for (String line : lines) {
                 String[] tokens = line.split(" ");
-                if (!tokens[2].equalsIgnoreCase(linkLocalBr)) {
-                    Script.runSimpleBashScript("ip route del " + NetUtils.getLinkLocalCIDR());
+                if (tokens != null && tokens.length < 2) {
+                    continue;
+                }
+                final String device = tokens[2];
+                if (!Strings.isNullOrEmpty(device) && !device.equalsIgnoreCase(linkLocalBr)) {
+                    Script.runSimpleBashScript("ip route del " + NetUtils.getLinkLocalCIDR() + " dev " + tokens[2]);
                 } else {
                     foundLinkLocalBr = true;
                 }
@@ -300,7 +305,7 @@ public class BridgeVifDriver extends VifDriverBase {
     }
 
     private void createControlNetwork(String privBrName) {
-        deleteExitingLinkLocalRouteTable(privBrName);
+        deleteExistingLinkLocalRouteTable(privBrName);
         if (!isBridgeExists(privBrName)) {
             Script.runSimpleBashScript("brctl addbr " + privBrName + "; ip link set " + privBrName + " up; ip address add 169.254.0.1/16 dev " + privBrName, _timeout);
         }

@@ -81,16 +81,6 @@ test_data = {
         "publicport": 22,
         "protocol": 'TCP',
     },
-    "medium": {
-        "displayname": "testserver",
-        "username": "root",
-        "password": "password",
-        "ssh_port": 22,
-        "hypervisor": 'XenServer',
-        "privateport": 22,
-        "publicport": 22,
-        "protocol": 'TCP',
-    },
     "service_offering": {
         "name": "Tiny Instance",
         "displaytext": "Tiny Instance",
@@ -99,12 +89,6 @@ test_data = {
         "memory": 256,  # In MBs
     },
     "service_offerings": {
-        "name": "Tiny Instance",
-        "displaytext": "Tiny Instance",
-        "cpunumber": 1,
-        "cpuspeed": 100,
-        "memory": 128,
-
         "tiny": {
             "name": "Tiny Instance",
             "displaytext": "Tiny Instance",
@@ -379,16 +363,6 @@ test_data = {
     "virtual_machine3": {
         "name": "testvm3",
         "displayname": "Test VM3",
-    },
-    "server_without_disk": {
-        "displayname": "Test VM-No Disk",
-        "username": "root",
-        "password": "password",
-        "ssh_port": 22,
-        "hypervisor": 'XenServer',
-        "privateport": 22,
-        "publicport": 22,
-        "protocol": 'TCP',
     },
     "shared_network": {
         "name": "MySharedNetwork - Test",
@@ -801,6 +775,15 @@ test_data = {
         "ostype": "CentOS 5.6 (64-bit)"
 
     },
+    "CentOS6.3template": {
+        "displaytext": "Centos",
+        "name": "Centos",
+        "passwordenabled": False,
+        "ostype": "CentOS 6.3 (64-bit)",
+        "url": "http://10.147.28.7/templates/centos63.ova",
+        "format": "OVA",
+        "ispublic": "true"
+    },
     "template_2": {
         "displaytext": "Public Template",
         "name": "Public template",
@@ -863,7 +846,7 @@ test_data = {
         "displaytext": "xs",
         "name": "xs",
         "passwordenabled": False,
-        "url": "http://10.147.28.7/templates/ttylinux_pv.vhd",
+        "url": "http://10.147.28.7/templates/ttylinux_pv.vhd.bz2",
         "format": "VHD"
     },
     "security_group": {"name": "custom_Sec_Grp"},
@@ -994,16 +977,6 @@ test_data = {
         "gateway": "10.2.1.1",
         "netmask": "255.255.255.192"
     },
-    "server": {
-        "displayname": "TestVM",
-        "username": "root",
-        "password": "password",
-        "ssh_port": 22,
-        "hypervisor": 'XenServer',
-        "privateport": 22,
-        "publicport": 22,
-        "protocol": 'TCP'
-    },
     "privateport": 22,
     "publicport": 22,
     "protocol": 'TCP',
@@ -1114,28 +1087,6 @@ test_data = {
             # ensure unique username generated each time
             "password": "password",
         },
-        "vgpu260q":  # Create a virtual machine instance with vgpu type as 260q
-            {
-                "displayname": "testserver",
-                "username": "root",  # VM creds for SSH
-                "password": "password",
-                "ssh_port": 22,
-                "hypervisor": 'XenServer',
-                "privateport": 22,
-                "publicport": 22,
-                "protocol": 'TCP',
-            },
-        "vgpu140q":  # Create a virtual machine instance with vgpu type as 140q
-            {
-                "displayname": "testserver",
-                "username": "root",
-                "password": "password",
-                "ssh_port": 22,
-                "hypervisor": 'XenServer',
-                "privateport": 22,
-                "publicport": 22,
-                "protocol": 'TCP',
-            },
         "service_offerings":
             {
                 "GRID K260Q":

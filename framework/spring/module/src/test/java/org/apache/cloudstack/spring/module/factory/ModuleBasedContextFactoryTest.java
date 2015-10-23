@@ -103,16 +103,19 @@ public class ModuleBasedContextFactoryTest {
             assertEquals(parent, parentBean);
         }
 
+        int notfound = 0;
         for (String notThere : notTheres) {
             try {
                 context.getBean(notThere, String.class);
                 fail();
             } catch (NoSuchBeanDefinitionException e) {
+                notfound++;
             }
         }
 
         int count = context.getBean("count", InstantiationCounter.class).getCount();
 
+        assertEquals(notTheres.length, notfound);
         assertEquals(order, count);
     }
 

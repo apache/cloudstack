@@ -24,7 +24,7 @@ public interface SnapshotService {
 
     boolean deleteSnapshot(SnapshotInfo snapshot);
 
-    boolean revertSnapshot(Long snapshotId);
+    boolean revertSnapshot(SnapshotInfo snapshot);
 
     void syncVolumeSnapshotsToRegionStore(long volumeId, DataStore store);
 

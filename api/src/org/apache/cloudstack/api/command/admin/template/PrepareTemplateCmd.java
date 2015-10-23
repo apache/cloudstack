@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
@@ -60,6 +61,15 @@ public class PrepareTemplateCmd extends BaseCmd {
                description = "template ID of the template to be prepared in primary storage(s).")
     private Long templateId;
 
+    @ACL(accessType = AccessType.OperateEntry)
+    @Parameter(name = ApiConstants.STORAGE_ID,
+            type = CommandType.UUID,
+            entityType = StoragePoolResponse.class,
+            required = false,
+            description = "storage pool ID of the primary storage pool to which the template should be prepared. If it is not provided the template" +
+                    " is prepared on all the available primary storage pools.")
+    private Long storageId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -70,6 +80,10 @@ public class PrepareTemplateCmd extends BaseCmd {
 
     public Long getTemplateId() {
         return templateId;
+    }
+
+    public Long getStorageId() {
+        return storageId;
     }
 
     /////////////////////////////////////////////////////
@@ -90,7 +104,7 @@ public class PrepareTemplateCmd extends BaseCmd {
     public void execute() {
         ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
 
-        VirtualMachineTemplate vmTemplate = _templateService.prepareTemplate(templateId, zoneId);
+        VirtualMachineTemplate vmTemplate = _templateService.prepareTemplate(templateId, zoneId, storageId);
         List<TemplateResponse> templateResponses = _responseGenerator.createTemplateResponses(ResponseView.Full, vmTemplate, zoneId, true);
         response.setResponses(templateResponses);
         response.setResponseName(getCommandName());

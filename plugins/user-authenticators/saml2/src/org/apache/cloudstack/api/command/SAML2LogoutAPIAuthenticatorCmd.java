@@ -94,6 +94,7 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
             try {
                 resp.sendRedirect(SAML2AuthManager.SAMLCloudStackRedirectionUrl.value());
             } catch (IOException ignored) {
+                s_logger.info("[ignored] sending redirected failed.", ignored);
             }
             return responseString;
         }
@@ -123,6 +124,7 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
             try {
                 resp.sendRedirect(SAML2AuthManager.SAMLCloudStackRedirectionUrl.value());
             } catch (IOException ignored) {
+                s_logger.info("[ignored] second redirected sending failed.", ignored);
             }
             return responseString;
         }
@@ -134,6 +136,7 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
             try {
                 resp.sendRedirect(SAML2AuthManager.SAMLCloudStackRedirectionUrl.value());
             } catch (IOException ignored) {
+                s_logger.info("[ignored] final redirected failed.", ignored);
             }
             return responseString;
         }

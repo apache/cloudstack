@@ -43,7 +43,6 @@ import javax.crypto.SecretKey;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.nio.Link;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -118,6 +117,7 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.nio.Link;
 import com.cloud.utils.script.Script;
 
 public class ConfigurationServerImpl extends ManagerBase implements ConfigurationServer {
@@ -650,11 +650,11 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             } else { // !keystoreFile.exists() and dbExisted
                 // Export keystore to local file
                 byte[] storeBytes = Base64.decodeBase64(dbString);
-                try {
-                    String tmpKeystorePath = "/tmp/tmpkey";
-                    FileOutputStream fo = new FileOutputStream(tmpKeystorePath);
+                String tmpKeystorePath = "/tmp/tmpkey";
+                try (
+                        FileOutputStream fo = new FileOutputStream(tmpKeystorePath);
+                    ) {
                     fo.write(storeBytes);
-                    fo.close();
                     Script script = new Script(true, "cp", 5000, null);
                     script.add("-f");
                     script.add(tmpKeystorePath);
@@ -757,6 +757,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             try (DataInputStream dis = new DataInputStream(new FileInputStream(privkeyfile))) {
                 dis.readFully(arr1);
             } catch (EOFException e) {
+                s_logger.info("[ignored] eof reached");
             } catch (Exception e) {
                 s_logger.error("Cannot read the private key file", e);
                 throw new CloudRuntimeException("Cannot read the private key file");
@@ -766,6 +767,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             try (DataInputStream dis = new DataInputStream(new FileInputStream(pubkeyfile))) {
                 dis.readFully(arr2);
             } catch (EOFException e) {
+                s_logger.info("[ignored] eof reached");
             } catch (Exception e) {
                 s_logger.warn("Cannot read the public key file", e);
                 throw new CloudRuntimeException("Cannot read the public key file");
@@ -902,7 +904,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         } else {
             command = new Script("/bin/bash", s_logger);
         }
-        if (this.isOnWindows()) {
+        if (isOnWindows()) {
             scriptPath = scriptPath.replaceAll("\\\\" ,"/" );
             systemVmIsoPath = systemVmIsoPath.replaceAll("\\\\" ,"/" );
             publicKeyPath = publicKeyPath.replaceAll("\\\\" ,"/" );

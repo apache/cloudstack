@@ -49,7 +49,8 @@ from marvin.lib.common import (get_domain,
                                 get_template,
                                 get_pod,
                                 list_hosts,
-                                get_windows_template
+                                get_windows_template,
+                                list_virtual_machines
                                 )
 
 from marvin.codes import FAILED, PASS
@@ -58,6 +59,7 @@ from nose.plugins.attrib import attr
 import time
 import random
 import string
+import unittest
 
 _multiprocess_shared_ = True
 class TestXDCCPInterop(cloudstackTestCase):
@@ -168,9 +170,6 @@ class TestXDCCPInterop(cloudstackTestCase):
         cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = cls.template.id
 
-        cls.services["medium"]["zoneid"] = cls.zone.id
-        cls.services["medium"]["template"] = cls.template.id
-
         user_data = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(2500))
         cls.services["virtual_machine"]["userdata"] = user_data
 
@@ -180,7 +179,7 @@ class TestXDCCPInterop(cloudstackTestCase):
 
         cls.virtual_machine = VirtualMachine.create(
             cls.apiclient,
-            cls.services["medium"],
+            cls.services["small"],
             accountid=cls.account.name,
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id,  
@@ -727,7 +726,7 @@ class TestXDCCPInterop(cloudstackTestCase):
                         )
         restorevm = VirtualMachine.create(
             self.user_api_client,
-            self.services["medium"],
+            self.services["small"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
@@ -862,7 +861,7 @@ class TestXDCCPInterop(cloudstackTestCase):
 
         restorevm = VirtualMachine.create(
             self.user_api_client,
-            self.services["medium"],
+            self.services["small"],
             networkids=vm1network.id,
             accountid=self.account.name,
             domainid=self.account.domainid,
@@ -974,7 +973,7 @@ class TestXDCCPInterop(cloudstackTestCase):
 
         templatevm = VirtualMachine.create(
                                     self.user_api_client,
-                                    self.services["medium"],
+                                    self.services["small"],
                                     templateid=self.template.id,
                                     accountid=self.account.name,
                                     domainid=self.account.domainid,
@@ -1089,7 +1088,7 @@ class TestXDCCPInterop(cloudstackTestCase):
 
         templatevm = VirtualMachine.create(
                                     self.user_api_client,
-                                    self.services["medium"],
+                                    self.services["small"],
                                     templateid=roottemplate.id,
                                     networkids=vm3network.id,
                                     serviceofferingid=self.service_offering.id,
@@ -1227,8 +1226,8 @@ class TestXDCCPInterop(cloudstackTestCase):
 
             vm_1 = VirtualMachine.create(
                                     self.user_api_client,
-                                    self.services["medium"],
-                                    templateid=template.id,
+                                    self.services["small"],
+                                    templateid=self.template.id,
                                     networkids=vm4network.id,
                                     serviceofferingid=self.service_offering.id,
                                     accountid=self.account.name,

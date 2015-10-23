@@ -125,11 +125,9 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
             domainid=self.domain.id
         )
 
-        self.testdata["vgpu260q"]["zoneid"] = self.zone.id
-        self.testdata["vgpu260q"]["template"] = self.template.id
+        self.testdata["small"]["zoneid"] = self.zone.id
+        self.testdata["small"]["template"] = self.template.id
 
-        self.testdata["vgpu140q"]["zoneid"] = self.zone.id
-        self.testdata["vgpu140q"]["template"] = self.template.id
         self.testdata["service_offerings"]["vgpu260qwin"]["serviceofferingdetails"] = [
             {
                 'pciDevice': 'Group of NVIDIA Corporation GK107GL [GRID K1] GPUs'}, {
@@ -156,7 +154,7 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
         """
         self.virtual_machine = VirtualMachine.create(
             self.apiclient,
-            self.testdata["vgpu260q"],
+            self.testdata["small"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,

@@ -2678,6 +2678,34 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         return
 
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    def test_browser_upload_volume_incomplete(self):
+        """
+        Test browser based incomplete volume upload, followed by SSVM destroy. Volume should go to UploadAbandoned/Error state and get cleaned up.
+        """
+        try:
+            self.debug("========================= Test browser based incomplete volume upload ========================")
+
+            #Only register volume, without uploading
+            cmd = getUploadParamsForVolume.getUploadParamsForVolumeCmd()
+            cmd.zoneid = self.zone.id
+            cmd.format = self.uploadvolumeformat
+            cmd.name = self.volname + self.account.name + (random.choice(string.ascii_uppercase))
+            cmd.account = self.account.name
+            cmd.domainid = self.domain.id
+            upload_volume_response = self.apiclient.getUploadParamsForVolume(cmd)
+
+            #Destroy SSVM, and wait for new one to start
+            self.destroy_ssvm()
+
+            #Verify that the volume is cleaned up as part of sync-up during new SSVM start
+            self.validate_uploaded_volume(upload_volume_response.id, 'UploadAbandoned')
+
+        except Exception as e:
+            self.fail("Exceptione occurred  : %s" % e)
+        return
+
+
     @classmethod
     def tearDownClass(self):
         try:

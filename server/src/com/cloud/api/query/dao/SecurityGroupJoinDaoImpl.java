@@ -24,25 +24,28 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.server.ResourceTag;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.network.security.SecurityGroup;
+import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
+import com.cloud.network.security.dao.SecurityGroupVMMapDao;
+import com.cloud.server.ResourceTag;
 import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.dao.UserVmDao;
 
 @Component
 @Local(value = {SecurityGroupJoinDao.class})
@@ -51,9 +54,12 @@ public class SecurityGroupJoinDaoImpl extends GenericDaoBase<SecurityGroupJoinVO
 
     @Inject
     private ConfigurationDao _configDao;
-
     @Inject
     private ResourceTagJoinDao _resourceTagJoinDao;
+    @Inject
+    private SecurityGroupVMMapDao _securityGroupVMMapDao;
+    @Inject
+    private UserVmDao _userVmDao;
 
     private final SearchBuilder<SecurityGroupJoinVO> sgSearch;
 
@@ -122,6 +128,17 @@ public class SecurityGroupJoinDaoImpl extends GenericDaoBase<SecurityGroupJoinVO
             } else {
                 ruleData.setObjectName("egressrule");
                 sgResponse.addSecurityGroupEgressRule(ruleData);
+            }
+        }
+
+        List<SecurityGroupVMMapVO> securityGroupVmMap = _securityGroupVMMapDao.listBySecurityGroup(vsg.getId());
+        s_logger.debug("newSecurityGroupResponse() -> virtualmachine count: " + securityGroupVmMap.size());
+        sgResponse.setVirtualMachineCount(securityGroupVmMap.size());
+
+        for(SecurityGroupVMMapVO securityGroupVMMapVO : securityGroupVmMap) {
+            final UserVmVO userVmVO = _userVmDao.findById(securityGroupVMMapVO.getInstanceId());
+            if (userVmVO != null) {
+                sgResponse.addVirtualMachineId(userVmVO.getUuid());
             }
         }
 

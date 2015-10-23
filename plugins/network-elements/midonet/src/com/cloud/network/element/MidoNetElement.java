@@ -31,6 +31,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 import org.midonet.client.MidonetApi;
 import org.midonet.client.dto.DtoRule;
@@ -48,10 +49,6 @@ import org.midonet.client.resource.RouterPort;
 import org.midonet.client.resource.Rule;
 import org.midonet.client.resource.RuleChain;
 import org.springframework.stereotype.Component;
-
-import com.sun.jersey.core.util.MultivaluedMapImpl;
-
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
@@ -87,6 +84,7 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
+import com.sun.jersey.core.util.MultivaluedMapImpl;
 
 @Component
 @Local(value = {NetworkElement.class, ConnectivityProvider.class, FirewallServiceProvider.class, SourceNatServiceProvider.class, DhcpServiceProvider.class,
@@ -430,7 +428,7 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
             boolean isNewDhcpHost = true;
 
             for (DhcpHost dhcpHost : sub.getDhcpHosts()) {
-                if (dhcpHost.getIpAddr().equals(nic.getIp4Address())) {
+                if (dhcpHost.getIpAddr().equals(nic.getIPv4Address())) {
                     isNewDhcpHost = false;
                     break;
                 }
@@ -438,7 +436,7 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
 
             if (isNewDhcpHost) {
                 DhcpHost host = sub.addDhcpHost();
-                host.ipAddr(nic.getIp4Address());
+                host.ipAddr(nic.getIPv4Address());
                 host.macAddr(nic.getMacAddress());
                 // This only sets the cloudstack internal name
                 host.name(vm.getHostName());
@@ -776,7 +774,7 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
                 boolean routeExists = false;
                 for (Route route : providerRouter.getRoutes(new MultivaluedMapImpl())) {
                     String ip4 = route.getDstNetworkAddr();
-                    if (ip4 != null && ip4.equals(nic.getIp4Address())) {
+                    if (ip4 != null && ip4.equals(nic.getIPv4Address())) {
                         routeExists = true;
                         break;
                     }
@@ -788,7 +786,7 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
                         .weight(100)
                         .srcNetworkAddr("0.0.0.0")
                         .srcNetworkLength(0)
-                        .dstNetworkAddr(nic.getIp4Address())
+                        .dstNetworkAddr(nic.getIPv4Address())
                         .dstNetworkLength(32)
                         .nextHopPort(providerDownlink.getId())
                         .nextHopGateway(null)
@@ -826,7 +824,7 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
             //remove the routes associated with this IP address
             for (Route route : providerRouter.getRoutes(new MultivaluedMapImpl())) {
                 String routeDstAddr = route.getDstNetworkAddr();
-                if (routeDstAddr != null && routeDstAddr.equals(nic.getIp4Address())) {
+                if (routeDstAddr != null && routeDstAddr.equals(nic.getIPv4Address())) {
                     route.delete();
                 }
             }
@@ -1211,7 +1209,7 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
             if (peerPort != null && peerPort instanceof RouterPort) {
                 RouterPort checkPort = (RouterPort)peerPort;
                 // Check it's a port on the providerRouter with the right gateway address
-                if (checkPort.getDeviceId().compareTo(providerRouter.getId()) == 0 && checkPort.getPortAddress().equals(nic.getGateway())) {
+                if (checkPort.getDeviceId().compareTo(providerRouter.getId()) == 0 && checkPort.getPortAddress().equals(nic.getIPv4Gateway())) {
                     providerDownlink = checkPort;
                     bridgeUplink = (BridgePort)api.getPort(checkPort.getPeerId());
                     break;
@@ -1221,10 +1219,10 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
 
         // Create the ports and connection if they don't exist
         if (providerDownlink == null) {
-            String cidr = NetUtils.ipAndNetMaskToCidr(nic.getGateway(), nic.getNetmask());
+            String cidr = NetUtils.ipAndNetMaskToCidr(nic.getIPv4Gateway(), nic.getIPv4Netmask());
             String cidrSubnet = NetUtils.getCidrSubNet(cidr);
             int cidrSize = (int)NetUtils.getCidrSize(NetUtils.cidr2Netmask(cidr));
-            String gateway = nic.getGateway();
+            String gateway = nic.getIPv4Gateway();
 
             // Add interior port on router side, with network details
             providerDownlink = providerRouter.addInteriorRouterPort().networkAddress(cidrSubnet).networkLength(cidrSize).portAddress(gateway).create();

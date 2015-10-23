@@ -59,9 +59,9 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("instance", AllFieldsSearch.entity().getInstanceId(), Op.EQ);
         AllFieldsSearch.and("network", AllFieldsSearch.entity().getNetworkId(), Op.EQ);
-        AllFieldsSearch.and("gateway", AllFieldsSearch.entity().getGateway(), Op.EQ);
+        AllFieldsSearch.and("gateway", AllFieldsSearch.entity().getIPv4Gateway(), Op.EQ);
         AllFieldsSearch.and("vmType", AllFieldsSearch.entity().getVmType(), Op.EQ);
-        AllFieldsSearch.and("address", AllFieldsSearch.entity().getIp4Address(), Op.EQ);
+        AllFieldsSearch.and("address", AllFieldsSearch.entity().getIPv4Address(), Op.EQ);
         AllFieldsSearch.and("isDefault", AllFieldsSearch.entity().isDefaultNic(), Op.EQ);
         AllFieldsSearch.and("broadcastUri", AllFieldsSearch.entity().getBroadcastUri(), Op.EQ);
         AllFieldsSearch.and("secondaryip", AllFieldsSearch.entity().getSecondaryIp(), Op.EQ);
@@ -70,9 +70,9 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         AllFieldsSearch.done();
 
         IpSearch = createSearchBuilder(String.class);
-        IpSearch.select(null, Func.DISTINCT, IpSearch.entity().getIp4Address());
+        IpSearch.select(null, Func.DISTINCT, IpSearch.entity().getIPv4Address());
         IpSearch.and("network", IpSearch.entity().getNetworkId(), Op.EQ);
-        IpSearch.and("address", IpSearch.entity().getIp4Address(), Op.NNULL);
+        IpSearch.and("address", IpSearch.entity().getIPv4Address(), Op.NNULL);
         IpSearch.done();
 
         NonReleasedSearch = createSearchBuilder();
@@ -216,7 +216,7 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         sc.setParameters("instance", instanceId);
         NicVO nicVo = findOneBy(sc);
         if (nicVo != null) {
-            return nicVo.getIp4Address();
+            return nicVo.getIPv4Address();
         }
         return null;
     }

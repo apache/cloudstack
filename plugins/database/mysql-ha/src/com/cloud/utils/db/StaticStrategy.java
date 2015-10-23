@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.log4j.Logger;
+
 import com.mysql.jdbc.BalanceStrategy;
 import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.ConnectionImpl;
@@ -30,6 +32,7 @@ import com.mysql.jdbc.LoadBalancingConnectionProxy;
 import com.mysql.jdbc.SQLError;
 
 public class StaticStrategy implements BalanceStrategy {
+    private static final Logger s_logger = Logger.getLogger(StaticStrategy.class);
 
     public StaticStrategy() {
     }
@@ -91,6 +94,7 @@ public class StaticStrategy implements BalanceStrategy {
                             try {
                                 Thread.sleep(250);
                             } catch (InterruptedException e) {
+                                s_logger.debug("[ignored] interupted while fail over in progres.");
                             }
 
                             // start fresh

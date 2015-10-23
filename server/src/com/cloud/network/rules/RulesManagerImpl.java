@@ -25,11 +25,10 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.command.user.firewall.ListPortForwardingRulesCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.domain.dao.DomainDao;
@@ -275,10 +274,10 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             // Verify that vm has nic in the network
             Ip dstIp = rule.getDestinationIpAddress();
             guestNic = _networkModel.getNicInNetwork(vmId, networkId);
-            if (guestNic == null || guestNic.getIp4Address() == null) {
+            if (guestNic == null || guestNic.getIPv4Address() == null) {
                 throw new InvalidParameterValueException("Vm doesn't belong to network associated with ipAddress");
             } else {
-                dstIp = new Ip(guestNic.getIp4Address());
+                dstIp = new Ip(guestNic.getIPv4Address());
             }
 
             if (vmIp != null) {
@@ -482,7 +481,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             if (guestNic == null) {
                 throw new InvalidParameterValueException("Vm doesn't belong to the network with specified id");
             }
-            dstIp = guestNic.getIp4Address();
+            dstIp = guestNic.getIPv4Address();
 
             if (!_networkModel.areServicesSupportedInNetwork(network.getId(), Service.StaticNat)) {
                 throw new InvalidParameterValueException("Unable to create static nat rule; StaticNat service is not " + "supported in network with specified id");
@@ -1479,7 +1478,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         s_logger.debug("Checking if PF/StaticNat/LoadBalancer rules are configured for nic " + nic.getId());
         List<FirewallRuleVO> result = new ArrayList<FirewallRuleVO>();
         // add PF rules
-        result.addAll(_portForwardingDao.listByNetworkAndDestIpAddr(nic.getIp4Address(), nic.getNetworkId()));
+        result.addAll(_portForwardingDao.listByNetworkAndDestIpAddr(nic.getIPv4Address(), nic.getNetworkId()));
         if(result.size() > 0) {
             s_logger.debug("Found " + result.size() + " portforwarding rule configured for the nic in the network " + nic.getNetworkId());
         }
@@ -1493,7 +1492,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         }
         List<? extends IpAddress> staticNatIps = _ipAddressDao.listStaticNatPublicIps(nic.getNetworkId());
         for (IpAddress ip : staticNatIps) {
-            if (ip.getVmIp() != null && ip.getVmIp().equals(nic.getIp4Address())) {
+            if (ip.getVmIp() != null && ip.getVmIp().equals(nic.getIPv4Address())) {
                 VMInstanceVO vm = _vmInstanceDao.findById(nic.getInstanceId());
                 // generate a static Nat rule on the fly because staticNATrule does not persist into db anymore
                 // FIX ME
@@ -1544,10 +1543,10 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         if (virtualMachineId != null) {
             // Verify that vm has nic in the network
             Nic guestNic = _networkModel.getNicInNetwork(virtualMachineId, rule.getNetworkId());
-            if (guestNic == null || guestNic.getIp4Address() == null) {
+            if (guestNic == null || guestNic.getIPv4Address() == null) {
                 throw new InvalidParameterValueException("Vm doesn't belong to network associated with ipAddress");
             } else {
-                dstIp = new Ip(guestNic.getIp4Address());
+                dstIp = new Ip(guestNic.getIPv4Address());
             }
 
             if (vmGuestIp != null) {

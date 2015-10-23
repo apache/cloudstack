@@ -19,14 +19,13 @@ package org.apache.cloudstack.api.response;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = SecurityGroup.class)
@@ -76,7 +75,16 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledVie
     @Param(description = "the list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
     private Set<ResourceTagResponse> tags;
 
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_COUNT)
+    @Param(description = "the number of virtualmachines associated with this securitygroup", since = "4.6.0")
+    private Integer virtualMachineCount;
+
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_IDS)
+    @Param(description = "the list of virtualmachine ids associated with this securitygroup", since = "4.6.0")
+    private Set<String> virtualMachineIds;
+
     public SecurityGroupResponse() {
+        this.virtualMachineIds = new LinkedHashSet<String>();
         this.ingressRules = new LinkedHashSet<SecurityGroupRuleResponse>();
         this.egressRules = new LinkedHashSet<SecurityGroupRuleResponse>();
         this.tags = new LinkedHashSet<ResourceTagResponse>();
@@ -175,5 +183,17 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledVie
 
     public void addTag(ResourceTagResponse tag) {
         this.tags.add(tag);
+    }
+
+    public void setVirtualMachineCount(Integer virtualMachineCount) {
+        this.virtualMachineCount = virtualMachineCount;
+    }
+
+    public void setVirtualMachineIds(Set<String> virtualMachineIds) {
+        this.virtualMachineIds = virtualMachineIds;
+    }
+
+    public void addVirtualMachineId(String virtualMachineId) {
+        this.virtualMachineIds.add(virtualMachineId);
     }
 }

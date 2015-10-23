@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.security.SecureRandom;
 import java.security.Security;
 
+import org.apache.log4j.Logger;
 import org.bouncycastle.asn1.x509.X509CertificateStructure;
 import org.bouncycastle.crypto.tls.CertificateVerifyer;
 import org.bouncycastle.crypto.tls.TlsProtocolHandler;
@@ -34,6 +35,7 @@ import streamer.ssl.SSLState;
 
 @SuppressWarnings("deprecation")
 public class BcoSocketWrapperImpl extends SocketWrapperImpl {
+    private static final Logger s_logger = Logger.getLogger(BcoSocketWrapperImpl.class);
 
     static {
         Security.addProvider(new BouncyCastleProvider());
@@ -95,19 +97,27 @@ public class BcoSocketWrapperImpl extends SocketWrapperImpl {
         try {
             handleEvent(Event.STREAM_CLOSE, Direction.IN);
         } catch (Exception e) {
+            s_logger.info("[ignored]"
+                    + "failure handling close event for bso input stream: " + e.getLocalizedMessage());
         }
         try {
             handleEvent(Event.STREAM_CLOSE, Direction.OUT);
         } catch (Exception e) {
+            s_logger.info("[ignored]"
+                    + "failure handling close event for bso output stream: " + e.getLocalizedMessage());
         }
         try {
             if (bcoSslSocket != null)
                 bcoSslSocket.close();
         } catch (Exception e) {
+            s_logger.info("[ignored]"
+                    + "failure handling close event for bso socket: " + e.getLocalizedMessage());
         }
         try {
             socket.close();
         } catch (Exception e) {
+            s_logger.info("[ignored]"
+                    + "failure handling close event for socket: " + e.getLocalizedMessage());
         }
     }
 

@@ -29,6 +29,7 @@ getSPMetadata=15
 listIdps=15
 authorizeSamlSso=7
 listSamlAuthorization=7
+listAndSwitchSamlAccount=15
 
 ### Account commands
 createAccount=7
@@ -82,8 +83,8 @@ scaleVirtualMachine=15
 assignVirtualMachine=7
 migrateVirtualMachine=1
 migrateVirtualMachineWithVolume=1
-recoverVirtualMachine=7
-expungeVirtualMachine=7
+recoverVirtualMachine=15
+expungeVirtualMachine=15
 getVirtualMachineUserData=15
 
 #### snapshot commands
@@ -770,6 +771,7 @@ deleteLdapConfiguration=3
 listLdapUsers=3
 ldapCreateAccount=3
 importLdapUsers=3
+linkDomainToLdap=3
 
 
 #### juniper-contrail commands

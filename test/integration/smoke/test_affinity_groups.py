@@ -62,7 +62,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
         )
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offerings"]
+            cls.services["service_offerings"]["tiny"]
         )
 
         cls.ag = AffinityGroup.create(cls.apiclient, cls.services["virtual_machine"]["affinity"],

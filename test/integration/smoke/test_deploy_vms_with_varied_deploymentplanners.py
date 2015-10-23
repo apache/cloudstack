@@ -67,7 +67,7 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
         #FIXME: How do we know that first fit actually happened?
         self.service_offering_firstfit = ServiceOffering.create(
             self.apiclient,
-            self.services["service_offerings"],
+            self.services["service_offerings"]["tiny"],
             deploymentplanner='FirstFitPlanner'
         )
 
@@ -110,7 +110,7 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
         """
         self.service_offering_userdispersing = ServiceOffering.create(
             self.apiclient,
-            self.services["service_offerings"],
+            self.services["service_offerings"]["tiny"],
             deploymentplanner='UserDispersingPlanner'
         )
 
@@ -169,7 +169,7 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
         """
         self.service_offering_userconcentrated = ServiceOffering.create(
             self.apiclient,
-            self.services["service_offerings"],
+            self.services["service_offerings"]["tiny"],
             deploymentplanner='UserConcentratedPodPlanner'
         )
 

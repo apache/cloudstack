@@ -94,17 +94,10 @@ public class TemplateLocation {
     }
 
     public boolean load() throws IOException {
-        FileInputStream strm = null;
-        try {
-            strm = new FileInputStream(_file);
+        try (FileInputStream strm = new FileInputStream(_file);) {
             _props.load(strm);
-        } finally {
-            if (strm != null) {
-                try {
-                    strm.close();
-                } catch (IOException e) {
-                }
-            }
+        } catch (IOException e) {
+            s_logger.warn("Unable to load the template properties", e);
         }
 
         for (ImageFormat format : ImageFormat.values()) {
@@ -142,20 +135,11 @@ public class TemplateLocation {
             _props.setProperty(info.format.getFileExtension() + ".size", Long.toString(info.size));
             _props.setProperty(info.format.getFileExtension() + ".virtualsize", Long.toString(info.virtualSize));
         }
-        FileOutputStream strm = null;
-        try {
-            strm = new FileOutputStream(_file);
+        try (FileOutputStream strm =  new FileOutputStream(_file);) {
             _props.store(strm, "");
         } catch (IOException e) {
             s_logger.warn("Unable to save the template properties ", e);
             return false;
-        } finally {
-            if (strm != null) {
-                try {
-                    strm.close();
-                } catch (IOException e) {
-                }
-            }
         }
         return true;
     }

@@ -27,13 +27,12 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -821,7 +820,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 // On the firewall provider for the network, create a static NAT rule between the source IP
                 // address and the load balancing IP address
                 try {
-                    applyStaticNatRuleForInlineLBRule(zone, network, revoked, srcIp, loadBalancingIpNic.getIp4Address());
+                    applyStaticNatRuleForInlineLBRule(zone, network, revoked, srcIp, loadBalancingIpNic.getIPv4Address());
                 } catch (ResourceUnavailableException ex) {
                     // Rollback db operation
                     _inlineLoadBalancerNicMapDao.expunge(mapping.getId());
@@ -843,7 +842,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 if (count == 0) {
                     // On the firewall provider for the network, delete the static NAT rule between the source IP
                     // address and the load balancing IP address
-                    applyStaticNatRuleForInlineLBRule(zone, network, revoked, srcIp, loadBalancingIpNic.getIp4Address());
+                    applyStaticNatRuleForInlineLBRule(zone, network, revoked, srcIp, loadBalancingIpNic.getIPv4Address());
 
                     // Delete the mapping between the source IP address and the load balancing IP address
                     _inlineLoadBalancerNicMapDao.expunge(mapping.getId());
@@ -914,7 +913,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 }
 
                 // Change the source IP address for the load balancing rule to be the load balancing IP address
-                srcIp = loadBalancingIpNic.getIp4Address();
+                srcIp = loadBalancingIpNic.getIPv4Address();
             }
 
             if ((destinations != null && !destinations.isEmpty()) || rule.isAutoScaleConfig()) {
@@ -1037,7 +1036,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                     + " Either network implement failed half way through or already network shutdown is completed. So just returning.");
                 return true;
             }
-            selfIp = selfipNic.getIp4Address();
+            selfIp = selfipNic.getIPv4Address();
         }
 
         // It's a hack, using isOneToOneNat field for indicate if it's inline or not
@@ -1196,7 +1195,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
                 // Change the source IP address for the load balancing rule to
                 // be the load balancing IP address
-                srcIp = loadBalancingIpNic.getIp4Address();
+                srcIp = loadBalancingIpNic.getIPv4Address();
             }
 
             if ((destinations != null && !destinations.isEmpty()) || !rule.isAutoScaleConfig()) {
@@ -1235,7 +1234,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         for (NicVO guestIp : guestIps) {
             // only external firewall and external load balancer will create NicVO with PlaceHolder reservation strategy
             if (guestIp.getReservationStrategy().equals(ReservationStrategy.PlaceHolder) && guestIp.getVmType() == null && guestIp.getReserver() == null &&
-                !guestIp.getIp4Address().equals(network.getGateway())) {
+                !guestIp.getIPv4Address().equals(network.getGateway())) {
                 return guestIp;
             }
         }

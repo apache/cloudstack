@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.network.contrail.management;
 
+import static com.cloud.utils.AutoCloseableUtil.closeAutoCloseable;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -38,7 +40,6 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.PropertiesUtil;
-
 /**
  * ManagementNetworkGuru
  *
@@ -81,10 +82,7 @@ public class ManagementNetworkGuru extends ContrailGuru {
             s_logger.error(e.getMessage());
             throw new ConfigurationException(e.getMessage());
         } finally {
-            try {
-                inputFile.close();
-            } catch (IOException e) {
-            }
+            closeAutoCloseable(inputFile, "error closing config file");
         }
         _mgmtCidr = configProps.getProperty("management.cidr");
         _mgmtGateway = configProps.getProperty("management.gateway");

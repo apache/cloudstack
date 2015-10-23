@@ -16,6 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import sys
+import re
 from xml.dom.minidom import parse
 from cloudutils.configFileOps import configFileOps
 from cloudutils.networkConfig import networkConfig
@@ -24,21 +25,29 @@ def isOldStyleBridge(brName):
        return True
     else:
        return False
+def isNewStyleBridge(brName):
+    if re.match(r"br(\w+)-(\d+)", brName) == None:
+       return False
+    else:
+       return True
 def getGuestNetworkDevice():
     netlib = networkConfig() 
     cfo = configFileOps("/etc/cloudstack/agent/agent.properties")
     guestDev = cfo.getEntry("guest.network.device")
     enslavedDev = netlib.getEnslavedDev(guestDev, 1)
-    return enslavedDev 
+    return enslavedDev.split(".")[0]
 def handleMigrateBegin():
     try:
         domain = parse(sys.stdin)
         for interface in domain.getElementsByTagName("interface"):
             source = interface.getElementsByTagName("source")[0]
             bridge = source.getAttribute("bridge")
-            if not isOldStyleBridge(bridge):
+            if isOldStyleBridge(bridge):
+                vlanId = bridge.replace("cloudVirBr","")
+            elif isNewStyleBridge(bridge):
+                vlanId = re.sub(r"br(\w+)-","",bridge)
+            else:
                 continue
-            vlanId = bridge.replace("cloudVirBr","")
             phyDev = getGuestNetworkDevice()
             newBrName="br" + phyDev + "-" + vlanId
             source.setAttribute("bridge", newBrName)

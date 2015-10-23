@@ -22,7 +22,7 @@ class LdapUserSpec extends spock.lang.Specification {
 
     def "Testing LdapUsers hashCode generation"() {
 		given:
-		def userA = new LdapUser(usernameA, "", "", "", "", "")
+		def userA = new LdapUser(usernameA, "", "", "", "", "", false)
 		expect:
 		userA.hashCode() == usernameA.hashCode()
 		where:
@@ -31,8 +31,8 @@ class LdapUserSpec extends spock.lang.Specification {
 
     def "Testing that LdapUser successfully gives the correct result for a compare to"() {
 		given: "You have created two LDAP user objects"
-		def userA = new LdapUser(usernameA, "", "", "", "", "")
-		def userB = new LdapUser(usernameB, "", "", "", "", "")
+		def userA = new LdapUser(usernameA, "", "", "", "", "", false)
+		def userB = new LdapUser(usernameB, "", "", "", "", "", false)
 		expect: "That when compared the result is less than or equal to 0"
 		userA.compareTo(userB) <= 0
 		where: "The following values are used"
@@ -43,8 +43,8 @@ class LdapUserSpec extends spock.lang.Specification {
 
     def "Testing that LdapUsers equality"() {
 		given:
-		def userA = new LdapUser(usernameA, "", "", "", "", "")
-		def userB = new LdapUser(usernameB, "", "", "", "", "")
+		def userA = new LdapUser(usernameA, "", "", "", "", "", false)
+		def userB = new LdapUser(usernameB, "", "", "", "", "", false)
 		expect:
 		userA.equals(userA) == true
 		userA.equals(new Object()) == false
@@ -56,7 +56,7 @@ class LdapUserSpec extends spock.lang.Specification {
 
     def "Testing that the username is correctly set with the ldap object"() {
         given: "You have created a LDAP user object with a username"
-	def user = new LdapUser(username, "", "", "", "", "")
+	def user = new LdapUser(username, "", "", "", "", "", false)
         expect: "The username is equal to the given data source"
         user.getUsername() == username
         where: "The username is set to "
@@ -65,7 +65,7 @@ class LdapUserSpec extends spock.lang.Specification {
 
     def "Testing the email is correctly set with the ldap object"() {
         given: "You have created a LDAP user object with a email"
-	def user = new LdapUser("", email, "", "", "", "")
+	def user = new LdapUser("", email, "", "", "", "", false)
         expect: "The email is equal to the given data source"
         user.getEmail() == email
         where: "The email is set to "
@@ -74,7 +74,7 @@ class LdapUserSpec extends spock.lang.Specification {
 
     def "Testing the firstname is correctly set with the ldap object"() {
         given: "You have created a LDAP user object with a firstname"
-	def user = new LdapUser("", "", firstname, "", "", "")
+	def user = new LdapUser("", "", firstname, "", "", "", false)
         expect: "The firstname is equal to the given data source"
         user.getFirstname() == firstname
         where: "The firstname is set to "
@@ -83,7 +83,7 @@ class LdapUserSpec extends spock.lang.Specification {
 
     def "Testing the lastname is correctly set with the ldap object"() {
         given: "You have created a LDAP user object with a lastname"
-	def user = new LdapUser("", "", "", lastname, "", "")
+	def user = new LdapUser("", "", "", lastname, "", "", false)
         expect: "The lastname is equal to the given data source"
         user.getLastname() == lastname
         where: "The lastname is set to "
@@ -92,7 +92,7 @@ class LdapUserSpec extends spock.lang.Specification {
 
     def "Testing the principal is correctly set with the ldap object"() {
         given: "You have created a LDAP user object with a principal"
-	def user = new LdapUser("", "", "", "", principal, "")
+	def user = new LdapUser("", "", "", "", principal, "", false)
         expect: "The principal is equal to the given data source"
         user.getPrincipal() == principal
 	where: "The principal is set to "
@@ -101,7 +101,7 @@ class LdapUserSpec extends spock.lang.Specification {
 
     def "Testing the domain is correctly set with the ldap object"() {
 	given: "You have created a LDAP user object with a principal"
-	def user = new LdapUser("", "", "", "", "", domain)
+	def user = new LdapUser("", "", "", "", "", domain, false)
 	expect: "The principal is equal to the given data source"
 	user.getDomain() == domain
 	where: "The username is set to "

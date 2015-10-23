@@ -60,4 +60,7 @@ public interface SnapshotDataStoreDao extends GenericDao<SnapshotDataStoreVO, Lo
     SnapshotDataStoreVO findOldestSnapshotForVolume(Long volumeId, DataStoreRole role);
 
     void updateVolumeIds(long oldVolId, long newVolId);
+
+    SnapshotDataStoreVO findByVolume(long volumeId, DataStoreRole role);
+
 }

@@ -40,10 +40,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.fsm.StateMachine2;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.securitygroup.AuthorizeSecurityGroupEgressCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.AuthorizeSecurityGroupIngressCmd;
@@ -56,6 +52,8 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
@@ -107,6 +105,7 @@ import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
+import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -200,10 +199,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             try {
                 work();
             } catch (Throwable th) {
-                try {
                     s_logger.error("Problem with SG work", th);
-                } catch (Throwable th2) {
-                }
             }
         }
     }
@@ -216,10 +212,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                 cleanupUnfinishedWork();
                 //processScheduledWork();
             } catch (Throwable th) {
-                try {
-                    s_logger.error("Problem with SG Cleanup", th);
-                } catch (Throwable th2) {
-                }
+                s_logger.error("Problem with SG Cleanup", th);
             }
         }
     }
@@ -357,7 +350,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                     for (SecurityGroupVMMapVO ngmapVO : allowedInstances) {
                         Nic defaultNic = _networkModel.getDefaultNic(ngmapVO.getInstanceId());
                         if (defaultNic != null) {
-                            String cidr = defaultNic.getIp4Address();
+                            String cidr = defaultNic.getIPv4Address();
                             cidr = cidr + "/32";
                             cidrs.add(cidr);
                         }

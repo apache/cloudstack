@@ -262,6 +262,8 @@ public class StressTestDirectAttach {
                                     int stopResponseCode = executeStop(server, developerServer, username);
                                     s_logger.info("stop response code: " + stopResponseCode);
                                 } catch (Exception e1) {
+                                    s_logger.info("[ignored]"
+                                            + "error executing stop during stress test: " + e1.getLocalizedMessage());
                                 }
                             } finally {
                                 NDC.clear();
@@ -1335,6 +1337,7 @@ public class StressTestDirectAttach {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
+                        s_logger.debug("[ignored] interupted while during async job result query.");
                     }
                 } else {
                     break;

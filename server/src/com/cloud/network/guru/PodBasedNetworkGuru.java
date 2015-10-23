@@ -103,10 +103,10 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         assert trafficType == TrafficType.Management || trafficType == TrafficType.Storage : "Well, I can't take care of this config now can I? " + config;
 
         if (nic != null) {
-            if (nic.getRequestedIpv4() != null) {
+            if (nic.getRequestedIPv4() != null) {
                 throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
             }
-            nic.setStrategy(nic.getIp4Address() != null ? ReservationStrategy.Create : ReservationStrategy.Start);
+            nic.setReservationStrategy(nic.getIPv4Address() != null ? ReservationStrategy.Create : ReservationStrategy.Start);
         } else {
             nic = new NicProfile(ReservationStrategy.Start, null, null, null, null);
         }
@@ -124,12 +124,12 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
             throw new InsufficientAddressCapacityException("Unable to get a management ip address", Pod.class, pod.getId());
         }
 
-        nic.setIp4Address(ip.first());
+        nic.setIPv4Address(ip.first());
         nic.setMacAddress(NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ip.second())));
-        nic.setGateway(pod.getGateway());
+        nic.setIPv4Gateway(pod.getGateway());
         nic.setFormat(AddressFormat.Ip4);
         String netmask = NetUtils.getCidrNetmask(pod.getCidrSize());
-        nic.setNetmask(netmask);
+        nic.setIPv4Netmask(netmask);
         nic.setBroadcastType(BroadcastDomainType.Native);
         nic.setBroadcastUri(null);
         nic.setIsolationUri(null);

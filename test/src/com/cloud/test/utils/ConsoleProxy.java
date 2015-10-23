@@ -67,7 +67,7 @@ public class ConsoleProxy implements Runnable {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
-
+                s_logger.debug("[ignored] interupted.");
             }
 
         }

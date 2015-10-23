@@ -89,6 +89,7 @@ public class UsageServer implements Daemon {
             try {
                 Log4jConfigurer.initLogging(file.getAbsolutePath());
             } catch (FileNotFoundException e) {
+                s_logger.info("[ignored] log initialisation ;)" + e.getLocalizedMessage(), e);
             }
             DOMConfigurator.configureAndWatch(file.getAbsolutePath());
 
@@ -99,6 +100,7 @@ public class UsageServer implements Daemon {
                 try {
                     Log4jConfigurer.initLogging(file.getAbsolutePath());
                 } catch (FileNotFoundException e) {
+                    s_logger.info("[ignored] log properties initialization :)" + e.getLocalizedMessage(), e);
                 }
                 PropertyConfigurator.configureAndWatch(file.getAbsolutePath());
             }

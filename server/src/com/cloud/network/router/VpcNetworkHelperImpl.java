@@ -32,6 +32,7 @@ import org.cloud.network.router.deployment.RouterDeploymentDefinition;
 
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress;
@@ -121,9 +122,9 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
                 s_logger.debug("Allocating nic for router in vlan " + publicIp.getVlanTag());
                 final NicProfile publicNic = new NicProfile();
                 publicNic.setDefaultNic(false);
-                publicNic.setIp4Address(publicIp.getAddress().addr());
-                publicNic.setGateway(publicIp.getGateway());
-                publicNic.setNetmask(publicIp.getNetmask());
+                publicNic.setIPv4Address(publicIp.getAddress().addr());
+                publicNic.setIPv4Gateway(publicIp.getGateway());
+                publicNic.setIPv4Netmask(publicIp.getNetmask());
                 publicNic.setMacAddress(publicIp.getMacAddress());
                 publicNic.setBroadcastType(BroadcastDomainType.Vlan);
                 publicNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(publicIp.getVlanTag()));
@@ -152,5 +153,25 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
         final ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(vpcRouterDeploymentDefinition.getServiceOfferingId());
 
         _itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, vpcRouterDeploymentDefinition.getPlan(), hType);
+    }
+
+    @Override
+    public LinkedHashMap<Network, List<? extends NicProfile>> configureDefaultNics(final RouterDeploymentDefinition routerDeploymentDefinition) throws ConcurrentOperationException, InsufficientAddressCapacityException {
+
+        final LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
+
+        // 1) Control network
+        final LinkedHashMap<Network, List<? extends NicProfile>> controlNic = configureControlNic(routerDeploymentDefinition);
+        networks.putAll(controlNic);
+
+        // 2) Public network
+        final LinkedHashMap<Network, List<? extends NicProfile>> publicNic = configurePublicNic(routerDeploymentDefinition, false);
+        networks.putAll(publicNic);
+
+        // 3) Guest Network
+        final LinkedHashMap<Network, List<? extends NicProfile>> guestNic = configureGuestNic(routerDeploymentDefinition);
+        networks.putAll(guestNic);
+
+        return networks;
     }
 }

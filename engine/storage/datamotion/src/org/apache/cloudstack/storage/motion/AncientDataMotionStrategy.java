@@ -407,6 +407,10 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             VolumeVO volumeVo = volDao.findById(volume.getId());
             Long oldPoolId = volume.getPoolId();
             volumeVo.setPath(((MigrateVolumeAnswer)answer).getVolumePath());
+            String chainInfo = ((MigrateVolumeAnswer)answer).getVolumeChainInfo();
+            if (chainInfo != null) {
+                volumeVo.setChainInfo(chainInfo);
+            }
             volumeVo.setPodId(destPool.getPodId());
             volumeVo.setPoolId(destPool.getId());
             volumeVo.setLastPoolId(oldPoolId);

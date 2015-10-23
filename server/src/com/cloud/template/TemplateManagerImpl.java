@@ -269,9 +269,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     MessageBus _messageBus;
 
     private boolean _disableExtraction = false;
-    private ExecutorService _preloadExecutor;
-
     private List<TemplateAdapter> _adapters;
+
+    ExecutorService _preloadExecutor;
 
     @Inject
     private StorageCacheManager cacheMgr;
@@ -436,7 +436,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     @Override
-    public VirtualMachineTemplate prepareTemplate(long templateId, long zoneId) {
+    public VirtualMachineTemplate prepareTemplate(long templateId, long zoneId, Long storageId) {
 
         VMTemplateVO vmTemplate = _tmpltDao.findById(templateId);
         if (vmTemplate == null) {
@@ -445,7 +445,19 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), AccessType.OperateEntry, true, vmTemplate);
 
-        prepareTemplateInAllStoragePools(vmTemplate, zoneId);
+        if (storageId != null) {
+            StoragePoolVO pool = _poolDao.findById(storageId);
+            if (pool != null) {
+                if (pool.getStatus() == StoragePoolStatus.Up && pool.getDataCenterId() == zoneId) {
+                    prepareTemplateInOneStoragePool(vmTemplate, pool);
+                } else {
+                    s_logger.warn("Skip loading template " + vmTemplate.getId() + " into primary storage " + pool.getId() + " as either the pool zone "
+                            + pool.getDataCenterId() + " is different from the requested zone " + zoneId + " or the pool is currently not available.");
+                }
+            }
+        } else {
+            prepareTemplateInAllStoragePools(vmTemplate, zoneId);
+        }
         return vmTemplate;
     }
 
@@ -556,28 +568,32 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
     }
 
+    private void prepareTemplateInOneStoragePool(final VMTemplateVO template, final StoragePoolVO pool) {
+        s_logger.info("Schedule to preload template " + template.getId() + " into primary storage " + pool.getId());
+        _preloadExecutor.execute(new ManagedContextRunnable() {
+            @Override
+            protected void runInContext() {
+                try {
+                    reallyRun();
+                } catch (Throwable e) {
+                    s_logger.warn("Unexpected exception ", e);
+                }
+            }
+
+            private void reallyRun() {
+                s_logger.info("Start to preload template " + template.getId() + " into primary storage " + pool.getId());
+                StoragePool pol = (StoragePool)_dataStoreMgr.getPrimaryDataStore(pool.getId());
+                prepareTemplateForCreate(template, pol);
+                s_logger.info("End of preloading template " + template.getId() + " into primary storage " + pool.getId());
+            }
+        });
+    }
+
     public void prepareTemplateInAllStoragePools(final VMTemplateVO template, long zoneId) {
         List<StoragePoolVO> pools = _poolDao.listByStatus(StoragePoolStatus.Up);
         for (final StoragePoolVO pool : pools) {
             if (pool.getDataCenterId() == zoneId) {
-                s_logger.info("Schedule to preload template " + template.getId() + " into primary storage " + pool.getId());
-                _preloadExecutor.execute(new ManagedContextRunnable() {
-                    @Override
-                    protected void runInContext() {
-                        try {
-                            reallyRun();
-                        } catch (Throwable e) {
-                            s_logger.warn("Unexpected exception ", e);
-                        }
-                    }
-
-                    private void reallyRun() {
-                        s_logger.info("Start to preload template " + template.getId() + " into primary storage " + pool.getId());
-                        StoragePool pol = (StoragePool)_dataStoreMgr.getPrimaryDataStore(pool.getId());
-                        prepareTemplateForCreate(template, pol);
-                        s_logger.info("End of preloading template " + template.getId() + " into primary storage " + pool.getId());
-                    }
-                });
+                prepareTemplateInOneStoragePool(template, pool);
             } else {
                 s_logger.info("Skip loading template " + template.getId() + " into primary storage " + pool.getId() + " as pool zone " + pool.getDataCenterId() +
                         " is different from the requested zone " + zoneId);
@@ -1322,6 +1338,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             // public template (or domain private template) so
             // publishing to individual users is irrelevant
             throw new InvalidParameterValueException("Update template permissions is an invalid operation on template " + template.getName());
+        }
+
+        //Only admin or owner of the template should be able to change its permissions
+        if (caller.getId() != ownerId && !isAdmin) {
+            throw new InvalidParameterValueException("Unable to grant permission to account " + caller.getAccountName() + " as it is neither admin nor owner or the template");
         }
 
         VMTemplateVO updatedTemplate = _tmpltDao.createForUpdate();

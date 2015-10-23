@@ -8,9 +8,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -37,48 +37,49 @@ templateId=
 hyper=
 msKey=password
 DISKSPACE=2120000  #free disk space required in kilobytes
-dbHost=
-dbUser=
+dbHost="localhost"
+dbUser="root"
 dbPassword=
-dbPort=
+dbPort=3306
 jasypt='/usr/share/cloudstack-common/lib/jasypt-1.9.2.jar'
 while getopts 'm:h:f:u:Ft:e:s:o:r:d:p:'# OPTION
 do
   case $OPTION in
-  m)	mflag=1
-		mntpoint="$OPTARG"
-		;;
-  f)	fflag=1
-		tmpltimg="$OPTARG"
-		;;
-  u)	uflag=1
-		url="$OPTARG"
-		;;
-  F)	Fflag=1 ;;
+  m)    mflag=1
+        mntpoint="$OPTARG"
+        ;;
+  f)    fflag=1
+        tmpltimg="$OPTARG"
+        ;;
+  u)    uflag=1
+        url="$OPTARG"
+        ;;
+  F)    Fflag=1
+        ;;
   t)    templateId="$OPTARG"
-  		;;
+        ;;
   e)    ext="$OPTARG"
-  		;;
+        ;;
   h)    hyper="$OPTARG"
-  		;;
+        ;;
   s)    sflag=1
-		msKey="$OPTARG"
-                ;;
+        msKey="$OPTARG"
+        ;;
   o)    oflag=1
         dbHost="$OPTARG"
-                ;;
+        ;;
   r)    rflag=1
         dbUser="$OPTARG"
-                ;;
+        ;;
   d)    dflag=1
         dbPassword="$OPTARG"
-                ;;
+        ;;
   p)    pflag=1
         dbPort="$OPTARG"
-                ;;
-  ?)	usage
-		failed 2
-		;;
+        ;;
+  ?)    usage
+        failed 2
+        ;;
   esac
 done
 
@@ -94,30 +95,35 @@ then
   failed 2
 fi
 
-if [ ! -d $mntpoint ] 
+if [ ! -d $mntpoint ]
 then
   echo "mount point $mntpoint doesn't exist\n"
   failed 4
 fi
 
-if [[ "$fflag" == "1" && ! -f $tmpltimg ]] 
+if [[ "$fflag" == "1" && ! -f $tmpltimg ]]
 then
   echo "template image file $tmpltimg doesn't exist"
   failed 3
 fi
 
-if [ "$pflag" != 1 ]; then
-    dbPort=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.port'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-fi
+if [ -f /etc/cloudstack/management/db.properties ]
+then
+    if [ "$pflag" != 1 ]
+    then
+        dbPort=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.port'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    fi
 
-if [ "$oflag" != 1 ]; then
-    dbHost=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.host'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-fi
-if [ "$rflag" != 1 ]; then
-    dbUser=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.username'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-fi
+    if [ "$oflag" != 1 ]
+    then
+        dbHost=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.host'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    fi
 
-if [ -f /etc/cloudstack/management/db.properties ]; then
+    if [ "$rflag" != 1 ]
+    then
+        dbUser=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.username'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    fi
+
     encType=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.encryption.type'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
     if [ "$encType" == "file" ]
     then
@@ -130,23 +136,24 @@ if [ -f /etc/cloudstack/management/db.properties ]; then
             failed 9
         fi
     fi
-fi
 
-if [[ "$encType" == "file" || "$encType" == "web" ]]
-then
-	encPassword=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'i | sed 's/^ENC(\(.*\))/\1/')
-	if [ ! $encPassword == "" ]
-	then
-		dbPassword=(`java -classpath $jasypt org.jasypt.intf.cli.JasyptPBEStringDecryptionCLI decrypt.sh input=$encPassword password=$msKey verbose=false`)
-		if [ ! $dbPassword ]
-		then
-			echo "Failed to decrypt DB password from db.properties"
-			failed 9
-		fi
-	fi
-else
-    if [ "$dflag" != 1 ]; then
-        dbPassword=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'i )
+    if [[ "$encType" == "file" || "$encType" == "web" ]]
+    then
+        encPassword=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'i | sed 's/^ENC(\(.*\))/\1/')
+        if [ ! $encPassword == "" ]
+        then
+            dbPassword=(`java -classpath $jasypt org.jasypt.intf.cli.JasyptPBEStringDecryptionCLI decrypt.sh input=$encPassword password=$msKey verbose=false`)
+            if [ ! $dbPassword ]
+            then
+                echo "Failed to decrypt DB password from db.properties"
+                failed 9
+            fi
+        fi
+    else
+        if [ "$dflag" != 1 ]
+        then
+            dbPassword=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'i )
+        fi
     fi
 fi
 
@@ -184,14 +191,14 @@ fi
 
 if [ ! $templateId ]
 then
-	echo "Unable to get template Id from database"
-	failed 8
+    echo "Unable to get template Id from database"
+    failed 8
 fi
 
 _uuid=$(uuidgen)
 localfile=$_uuid.$ext
 
-_res=(`mysql -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "update cloud.vm_template set uuid=\"$_uuid\", url=\"$url\" where id=\"$templateId\""`)
+_res=(`mysql -P $dbPort -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "update cloud.vm_template set uuid=\"$_uuid\", url=\"$url\" where id=\"$templateId\""`)
 
 mntpoint=`echo "$mntpoint" | sed 's|/*$||'`
 

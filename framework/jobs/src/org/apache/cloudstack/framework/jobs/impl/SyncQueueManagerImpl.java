@@ -207,6 +207,7 @@ public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManage
     @Override
     @DB
     public void returnItem(final long queueItemId) {
+        s_logger.info("Returning queue item " + queueItemId + " back to queue for second try in case of DB deadlock");
         try {
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override

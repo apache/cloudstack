@@ -40,8 +40,6 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
-import com.cloud.agent.api.AttachVolumeAnswer;
-import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.CheckNetworkAnswer;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
@@ -810,10 +808,6 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         return new GetVmStatsAnswer(cmd, vmStatsNameMap);
     }
 
-    protected AttachVolumeAnswer execute(AttachVolumeCommand cmd) {
-        return new AttachVolumeAnswer(cmd, "You must stop " + cmd.getVmName() + " first, OVM doesn't support hotplug datadisk");
-    }
-
     public Answer execute(DestroyCommand cmd) {
         try {
             OvmVolume.destroy(_conn, cmd.getVolume().getPoolUuid(), cmd.getVolume().getPath());
@@ -1183,8 +1177,6 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             return execute((GetStorageStatsCommand)cmd);
         } else if (clazz == GetVmStatsCommand.class) {
             return execute((GetVmStatsCommand)cmd);
-        } else if (clazz == AttachVolumeCommand.class) {
-            return execute((AttachVolumeCommand)cmd);
         } else if (clazz == DestroyCommand.class) {
             return execute((DestroyCommand)cmd);
         } else if (clazz == PrepareForMigrationCommand.class) {

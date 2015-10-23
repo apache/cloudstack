@@ -53,6 +53,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     protected final SearchBuilder<StoragePoolVO> DcPodSearch;
     protected final SearchBuilder<StoragePoolVO> DcPodAnyClusterSearch;
     protected final SearchBuilder<StoragePoolVO> DeleteLvmSearch;
+    protected final SearchBuilder<StoragePoolVO> DcLocalStorageSearch;
     protected final GenericSearchBuilder<StoragePoolVO, Long> StatusCountSearch;
 
     @Inject
@@ -115,6 +116,11 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         StatusCountSearch.select(null, Func.COUNT, null);
         StatusCountSearch.done();
 
+        DcLocalStorageSearch = createSearchBuilder();
+        DcLocalStorageSearch.and("datacenterId", DcLocalStorageSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        DcLocalStorageSearch.and("path", DcLocalStorageSearch.entity().getPath(), SearchCriteria.Op.EQ);
+        DcLocalStorageSearch.and("scope", DcLocalStorageSearch.entity().getScope(), SearchCriteria.Op.EQ);
+        DcLocalStorageSearch.done();
     }
 
     @Override
@@ -193,6 +199,16 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         sc.setParameters("uuid", uuid);
 
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<StoragePoolVO> listLocalStoragePoolByPath(long datacenterId, String path) {
+        SearchCriteria<StoragePoolVO> sc = DcLocalStorageSearch.create();
+        sc.setParameters("path", path);
+        sc.setParameters("datacenterId", datacenterId);
+        sc.setParameters("scope", ScopeType.HOST);
+
+        return listBy(sc);
     }
 
     @Override
@@ -380,7 +396,6 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
 
     @Override
     public List<StoragePoolVO> findZoneWideStoragePoolsByTags(long dcId, String[] tags) {
-        List<StoragePoolVO> storagePools = null;
         if (tags == null || tags.length == 0) {
             QueryBuilder<StoragePoolVO> sc = QueryBuilder.create(StoragePoolVO.class);
             sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
@@ -399,17 +414,20 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
             sql.append(ZoneWideDetailsSqlSuffix);
             TransactionLegacy txn = TransactionLegacy.currentTxn();
             try (PreparedStatement pstmt = txn.prepareStatement(sql.toString());){
-                int i=0;
-                for (Map.Entry<String, String> detail : details.entrySet()) {
-                    pstmt.setString(++i,detail.getKey());
-                    pstmt.setString(++i,detail.getValue());
-                }
                 List<StoragePoolVO> pools = new ArrayList<StoragePoolVO>();
                 if (pstmt != null) {
-                    i = 1;
+                    int i = 1;
+
                     pstmt.setLong(i++, dcId);
                     pstmt.setString(i++, ScopeType.ZONE.toString());
+
+                    for (Map.Entry<String, String> detail : details.entrySet()) {
+                        pstmt.setString(i++, detail.getKey());
+                        pstmt.setString(i++, detail.getValue());
+                    }
+
                     pstmt.setInt(i++, details.size());
+
                     try(ResultSet rs = pstmt.executeQuery();) {
                         while (rs.next()) {
                             pools.add(toEntityBean(rs, false));

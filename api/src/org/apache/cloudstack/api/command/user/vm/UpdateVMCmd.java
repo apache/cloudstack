@@ -94,7 +94,7 @@ public class UpdateVMCmd extends BaseCustomIdCmd {
     private String instanceName;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Details in key/value pairs.")
-    protected Map details;
+    protected Map<String, String> details;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -136,13 +136,13 @@ public class UpdateVMCmd extends BaseCustomIdCmd {
         return instanceName;
     }
 
-    public Map getDetails() {
+    public Map<String, String> getDetails() {
         if (this.details == null || this.details.isEmpty()) {
             return null;
         }
 
-        Collection paramsCollection = this.details.values();
-        return (Map) (paramsCollection.toArray())[0];
+        Collection<String> paramsCollection = this.details.values();
+        return (Map<String, String>) (paramsCollection.toArray())[0];
     }
 
 /////////////////////////////////////////////////////

@@ -56,7 +56,7 @@ public class DhcpPvlanRules extends RuleApplier {
         NetworkModel networkModel = visitor.getVirtualNetworkApplianceFactory().getNetworkModel();
         final String networkTag = networkModel.getNetworkTag(_router.getHypervisorType(), network);
 
-        _setupCommand = PvlanSetupCommand.createDhcpSetup(op, _nic.getBroadCastUri(), networkTag, _router.getInstanceName(), _nic.getMacAddress(), _nic.getIp4Address());
+        _setupCommand = PvlanSetupCommand.createDhcpSetup(op, _nic.getBroadCastUri(), networkTag, _router.getInstanceName(), _nic.getMacAddress(), _nic.getIPv4Address());
 
         return visitor.visit(this);
     }

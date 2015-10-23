@@ -802,6 +802,7 @@ public class ApiCommand {
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
+                            s_logger.debug("[ignored] interupted while during async job result query.");
                         }
                     } else {
                         break;

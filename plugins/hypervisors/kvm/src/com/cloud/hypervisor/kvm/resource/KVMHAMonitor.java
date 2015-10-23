@@ -160,13 +160,13 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
             try {
                 monitorThread.join();
             } catch (InterruptedException e) {
-
+                s_logger.debug("[ignored] interupted joining monitor.");
             }
 
             try {
                 Thread.sleep(_heartBeatUpdateFreq);
             } catch (InterruptedException e) {
-
+                s_logger.debug("[ignored] interupted between heartbeats.");
             }
         }
     }

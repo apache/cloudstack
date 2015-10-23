@@ -150,9 +150,7 @@ public class CreateUserCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        if (StringUtils.isEmpty(getPassword())) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Empty passwords are not allowed");
-        }
+        validateParams();
         CallContext.current().setEventDetails("UserName: " + getUserName() + ", FirstName :" + getFirstName() + ", LastName: " + getLastName());
         User user =
             _accountService.createUser(getUserName(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimezone(), getAccountName(), getDomainId(),
@@ -163,6 +161,15 @@ public class CreateUserCmd extends BaseCmd {
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create a user");
+        }
+    }
+
+    /**
+     * TODO: this should be done through a validator. for now replicating the validation logic in create account and user
+     */
+    private void validateParams() {
+        if(StringUtils.isEmpty(getPassword())) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Empty passwords are not allowed");
         }
     }
 }

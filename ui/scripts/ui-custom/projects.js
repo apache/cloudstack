@@ -706,7 +706,7 @@
      */
     var addProject = function() {
         pageElems.newProjectForm().dialog({
-            title: 'New Project',
+            title: 'label.new.project',
             closeOnEscape: false,
             width: 760
         }).closest('.ui-dialog').overlay();

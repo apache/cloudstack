@@ -114,6 +114,7 @@ public class ClusterServiceServletContainer {
                 try {
                     _serverSocket.close();
                 } catch (IOException e) {
+                    s_logger.info("[ignored] error on closing server socket", e);
                 }
                 _serverSocket = null;
             }
@@ -170,6 +171,7 @@ public class ClusterServiceServletContainer {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e1) {
+                        s_logger.debug("[ignored] interupted while waiting to retry running the servlet container.");
                     }
                 }
             }

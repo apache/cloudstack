@@ -21,10 +21,9 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -43,15 +42,15 @@ import com.cloud.network.Network.State;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetwork.IsolationMethod;
+import com.cloud.network.dao.FirewallRulesCidrsDao;
+import com.cloud.network.dao.FirewallRulesCidrsVO;
+import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.dao.FirewallRulesCidrsDao;
-import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
-import com.cloud.network.dao.FirewallRulesCidrsVO;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.NetworkOffering;
@@ -191,9 +190,9 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         // Mask the Ipv4 address of all nics that use this network with the new guest VLAN offset
         List<NicVO> nicsInNetwork = _nicDao.listByNetworkId(config.getId());
         for (NicVO nic : nicsInNetwork) {
-            if (nic.getIp4Address() != null) {
-                long ipMask = getIpMask(nic.getIp4Address(), cidrSize);
-                nic.setIp4Address(NetUtils.long2Ip(newCidrAddress | ipMask));
+            if (nic.getIPv4Address() != null) {
+                long ipMask = getIpMask(nic.getIPv4Address(), cidrSize);
+                nic.setIPv4Address(NetUtils.long2Ip(newCidrAddress | ipMask));
                 _nicDao.persist(nic);
             }
         }
@@ -250,18 +249,18 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapacityException,
         InsufficientAddressCapacityException {
 
-        if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId()) && nic != null && nic.getRequestedIpv4() != null) {
+        if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId()) && nic != null && nic.getRequestedIPv4() != null) {
             throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
         }
 
         NicProfile profile = super.allocate(config, nic, vm);
 
         if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
-            profile.setStrategy(ReservationStrategy.Start);
+            profile.setReservationStrategy(ReservationStrategy.Start);
             /* We won't clear IP address, because router may set gateway as it IP, and it would be updated properly later */
             //profile.setIp4Address(null);
-            profile.setGateway(null);
-            profile.setNetmask(null);
+            profile.setIPv4Gateway(null);
+            profile.setIPv4Netmask(null);
         }
 
         return profile;
@@ -273,9 +272,9 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         super.deallocate(config, nic, vm);
 
         if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
-            nic.setIp4Address(null);
-            nic.setGateway(null);
-            nic.setNetmask(null);
+            nic.setIPv4Address(null);
+            nic.setIPv4Gateway(null);
+            nic.setIPv4Netmask(null);
             nic.setBroadcastUri(null);
             nic.setIsolationUri(null);
         }
@@ -291,23 +290,23 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
             nic.setBroadcastUri(config.getBroadcastUri());
             nic.setIsolationUri(config.getBroadcastUri());
-            nic.setDns1(dc.getDns1());
-            nic.setDns2(dc.getDns2());
-            nic.setNetmask(NetUtils.cidr2Netmask(config.getCidr()));
+            nic.setIPv4Dns1(dc.getDns1());
+            nic.setIPv4Dns2(dc.getDns2());
+            nic.setIPv4Netmask(NetUtils.cidr2Netmask(config.getCidr()));
             long cidrAddress = NetUtils.ip2Long(config.getCidr().split("/")[0]);
             int cidrSize = getGloballyConfiguredCidrSize();
-            nic.setGateway(config.getGateway());
+            nic.setIPv4Gateway(config.getGateway());
 
-            if (nic.getIp4Address() == null) {
+            if (nic.getIPv4Address() == null) {
                 String guestIp = _ipAddrMgr.acquireGuestIpAddress(config, null);
                 if (guestIp == null) {
                     throw new InsufficientVirtualNetworkCapacityException("Unable to acquire guest IP address for network " + config, DataCenter.class, dc.getId());
                 }
 
-                nic.setIp4Address(guestIp);
+                nic.setIPv4Address(guestIp);
             } else {
-                long ipMask = NetUtils.ip2Long(nic.getIp4Address()) & ~(0xffffffffffffffffl << (32 - cidrSize));
-                nic.setIp4Address(NetUtils.long2Ip(cidrAddress | ipMask));
+                long ipMask = NetUtils.ip2Long(nic.getIPv4Address()) & ~(0xffffffffffffffffl << (32 - cidrSize));
+                nic.setIPv4Address(NetUtils.long2Ip(cidrAddress | ipMask));
             }
         } else {
             super.reserve(nic, config, vm, dest, context);

@@ -63,7 +63,6 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
             return
 
         try:
-
             # Create an account
             cls.account = Account.create(
                 cls.apiclient,

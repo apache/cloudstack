@@ -264,7 +264,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         String hostname = dest.getHost().getName();
         String nicId = nic.getUuid();
         Integer vlan = Integer.valueOf(BroadcastDomainType.getValue(nic.getIsolationUri()));
-        String ipv4 = nic.getIp4Address();
+        String ipv4 = nic.getIPv4Address();
         String mac = nic.getMacAddress();
         long zoneId = network.getDataCenterId();
         String vmwareVswitchLabel = _networkModel.getDefaultGuestTrafficLabel(zoneId, HypervisorType.VMware);

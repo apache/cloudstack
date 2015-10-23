@@ -16,32 +16,6 @@
 // under the License.
 package com.cloud.network.ovs;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.OvsCreateTunnelAnswer;
-import com.cloud.agent.api.OvsCreateTunnelCommand;
-import com.cloud.agent.api.OvsDestroyBridgeCommand;
-import com.cloud.agent.api.OvsDestroyTunnelCommand;
-import com.cloud.agent.api.OvsFetchInterfaceAnswer;
-import com.cloud.agent.api.OvsFetchInterfaceCommand;
-import com.cloud.agent.api.OvsSetupBridgeCommand;
-import com.cloud.agent.api.OvsVpcPhysicalTopologyConfigCommand;
-import com.cloud.agent.api.OvsVpcRoutingPolicyConfigCommand;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.vpc.NetworkACLVO;
-import com.cloud.network.vpc.NetworkACLItemDao;
-import com.cloud.network.vpc.NetworkACLItemVO;
-import com.cloud.network.vpc.dao.VpcDao;
-import com.cloud.network.vpc.VpcManager;
-import com.cloud.network.vpc.VpcVO;
-import com.cloud.network.vpc.dao.NetworkACLDao;
-import com.cloud.utils.fsm.StateMachine2;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.vm.Nic;
-import com.cloud.vm.NicVO;
-import com.cloud.vm.VirtualMachine;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -53,14 +27,24 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.OvsCreateTunnelAnswer;
+import com.cloud.agent.api.OvsCreateTunnelCommand;
+import com.cloud.agent.api.OvsDestroyBridgeCommand;
+import com.cloud.agent.api.OvsDestroyTunnelCommand;
+import com.cloud.agent.api.OvsFetchInterfaceAnswer;
+import com.cloud.agent.api.OvsFetchInterfaceCommand;
+import com.cloud.agent.api.OvsSetupBridgeCommand;
+import com.cloud.agent.api.OvsVpcPhysicalTopologyConfigCommand;
+import com.cloud.agent.api.OvsVpcRoutingPolicyConfigCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.Config;
 import com.cloud.exception.AgentUnavailableException;
@@ -73,24 +57,39 @@ import com.cloud.network.Network;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkTrafficType;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
+import com.cloud.network.ovs.dao.OvsTunnel;
 import com.cloud.network.ovs.dao.OvsTunnelInterfaceDao;
 import com.cloud.network.ovs.dao.OvsTunnelInterfaceVO;
 import com.cloud.network.ovs.dao.OvsTunnelNetworkDao;
 import com.cloud.network.ovs.dao.OvsTunnelNetworkVO;
-import com.cloud.network.ovs.dao.OvsTunnel;
 import com.cloud.network.ovs.dao.VpcDistributedRouterSeqNoDao;
 import com.cloud.network.ovs.dao.VpcDistributedRouterSeqNoVO;
+import com.cloud.network.vpc.NetworkACLItemDao;
+import com.cloud.network.vpc.NetworkACLItemVO;
+import com.cloud.network.vpc.NetworkACLVO;
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.NetworkACLDao;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
-import com.cloud.utils.fsm.StateListener;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.StateListener;
+import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.vm.Nic;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 @Local(value = {OvsTunnelManager.class})
@@ -510,7 +509,8 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                 Answer ans = _agentMgr.send(host.getId(), cmd);
                 handleDestroyBridgeAnswer(ans, host.getId(), nw.getId());
             } catch (Exception e) {
-
+                s_logger.info("[ignored]"
+                        + "exception while removing host from networks: " + e.getLocalizedMessage());
             }
         } else {
             List<Long> vmIds = _ovsNetworkToplogyGuru.getActiveVmsInNetworkOnHost(nw.getId(), host.getId(), true);
@@ -770,7 +770,8 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                 try {
                     remoteIp = getGreEndpointIP(hostDetails, network);
                 } catch (Exception e) {
-
+                    s_logger.info("[ignored]"
+                            + "error getting GRE endpoint: " + e.getLocalizedMessage());
                 }
             }
             OvsVpcPhysicalTopologyConfigCommand.Host host = new OvsVpcPhysicalTopologyConfigCommand.Host(hostId, remoteIp);
@@ -803,7 +804,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                 Network network = _networkDao.findById(vmNic.getNetworkId());
                 if (network.getTrafficType() == TrafficType.Guest) {
                     OvsVpcPhysicalTopologyConfigCommand.Nic nic =  new OvsVpcPhysicalTopologyConfigCommand.Nic(
-                            vmNic.getIp4Address(), vmNic.getMacAddress(), network.getUuid());
+                            vmNic.getIPv4Address(), vmNic.getMacAddress(), network.getUuid());
                     vmNics.add(nic);
                 }
             }

@@ -52,6 +52,7 @@ public class AsyncJobTestDispatcher extends AdapterBase implements AsyncJobDispa
         try {
             Thread.sleep(interval);
         } catch (InterruptedException e) {
+            s_logger.debug("[ignored] .");
         }
 
         _asyncJobMgr.completeAsyncJob(job.getId(), Status.SUCCEEDED, 0, null);

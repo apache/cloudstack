@@ -860,10 +860,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 return file.length();
             }
 
-            processor.configure("template processor", new HashMap<String, Object>());
+            Map<String, Object> params = new HashMap<String, Object>();
+            params.put(StorageLayer.InstanceConfigKey, _storage);
+            processor.configure("template processor", params);
             return processor.getVirtualSize(file);
         } catch (Exception e) {
-            s_logger.warn("Failed to get virtual size, returning file size instead:", e);
+            s_logger.warn("Failed to get virtual size of file " + file.getPath() + ", returning file size instead: ", e);
             return file.length();
         }
 

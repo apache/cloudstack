@@ -22,6 +22,7 @@ import java.util.Formatter;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.simulator.MockConfigurationVO;
@@ -33,11 +34,12 @@ import com.cloud.utils.db.TransactionLegacy;
 @Component
 @Local(value = {MockConfigurationDao.class})
 public class MockConfigurationDaoImpl extends GenericDaoBase<MockConfigurationVO, Long> implements MockConfigurationDao {
-    private SearchBuilder<MockConfigurationVO> _searchByDcIdName;
-    private SearchBuilder<MockConfigurationVO> _searchByDcIDPodIdName;
-    private SearchBuilder<MockConfigurationVO> _searchByDcIDPodIdClusterIdName;
-    private SearchBuilder<MockConfigurationVO> _searchByDcIDPodIdClusterIdHostIdName;
-    private SearchBuilder<MockConfigurationVO> _searchByGlobalName;
+    final static Logger s_logger = Logger.getLogger(MockConfigurationDaoImpl.class);
+    private final SearchBuilder<MockConfigurationVO> _searchByDcIdName;
+    private final SearchBuilder<MockConfigurationVO> _searchByDcIDPodIdName;
+    private final SearchBuilder<MockConfigurationVO> _searchByDcIDPodIdClusterIdName;
+    private final SearchBuilder<MockConfigurationVO> _searchByDcIDPodIdClusterIdHostIdName;
+    private final SearchBuilder<MockConfigurationVO> _searchByGlobalName;
 
     public MockConfigurationDaoImpl() {
         _searchByGlobalName = createSearchBuilder();
@@ -131,16 +133,16 @@ public class MockConfigurationDaoImpl extends GenericDaoBase<MockConfigurationVO
         formatter.format(" and removed is NULL ORDER BY id ASC LIMIT 1 for update");
         formatter.close();
 
-        PreparedStatement pstmt = null;
-        try {
-            String sql = search.toString();
-            pstmt = txn.prepareAutoCloseStatement(sql);
-            ResultSet rs = pstmt.executeQuery();
+        String sql = search.toString();
+        try (
+                PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql);
+                ResultSet rs = pstmt.executeQuery();) {
             if (rs.next()) {
                 return toEntityBean(rs, false);
             }
         } catch (Exception e) {
-
+            s_logger.info("[ignored]"
+                    + "error while executing dynamically build search: " + e.getLocalizedMessage());
         }
         return null;
     }

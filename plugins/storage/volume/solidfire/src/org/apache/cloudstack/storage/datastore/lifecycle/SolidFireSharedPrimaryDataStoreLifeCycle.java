@@ -20,9 +20,9 @@ package org.apache.cloudstack.storage.datastore.lifecycle;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 
 import javax.inject.Inject;
 
@@ -43,9 +43,6 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
 
-import com.cloud.template.TemplateManager;
-import com.cloud.user.AccountDetailsDao;
-import com.cloud.user.AccountVO;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CreateStoragePoolCommand;
@@ -56,19 +53,22 @@ import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.host.dao.HostDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolAutomation;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
+import com.cloud.user.AccountDetailsDao;
+import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -178,6 +178,8 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
                 lMinIops = Long.parseLong(minIops);
             }
         } catch (Exception ex) {
+            s_logger.info("[ignored]"
+                    + "error getting minimals iops: " + ex.getLocalizedMessage());
         }
 
         try {
@@ -187,6 +189,8 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
                 lMaxIops = Long.parseLong(maxIops);
             }
         } catch (Exception ex) {
+            s_logger.info("[ignored]"
+                    + "error getting maximal iops: " + ex.getLocalizedMessage());
         }
 
         try {
@@ -196,6 +200,8 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
                 lBurstIops = Long.parseLong(burstIops);
             }
         } catch (Exception ex) {
+            s_logger.info("[ignored]"
+                    + "error getting iops bursts: " + ex.getLocalizedMessage());
         }
 
         if (lMinIops > lMaxIops) {
@@ -325,9 +331,9 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
             SolidFireUtil.SolidFireAccount sfAccount = SolidFireUtil.getSolidFireAccount(sfConnection, sfAccountName);
 
             if (sfAccount == null) {
-                long accountNumber = SolidFireUtil.createSolidFireAccount(sfConnection, sfAccountName);
+                long sfAccountNumber = SolidFireUtil.createSolidFireAccount(sfConnection, sfAccountName);
 
-                sfAccount = SolidFireUtil.getSolidFireAccountById(sfConnection, accountNumber);
+                sfAccount = SolidFireUtil.getSolidFireAccountById(sfConnection, sfAccountNumber);
             }
 
             long sfVolumeId = SolidFireUtil.createSolidFireVolume(sfConnection, SolidFireUtil.getSolidFireVolumeName(volumeName), sfAccount.getId(), volumeSize,
@@ -526,7 +532,7 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
             if (answer != null && answer.getResult()) {
                 s_logger.info("Successfully deleted storage pool using Host ID " + host.getHostId());
 
-                HostVO hostVO = this._hostDao.findById(host.getHostId());
+                HostVO hostVO = _hostDao.findById(host.getHostId());
 
                 if (hostVO != null) {
                     clusterId = hostVO.getClusterId();

@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# Var
+tmpMessageFile="${PWD}/.git-tmp-message.txt"
+
+# Check if branch was specified
+branch=$1
+if [ -z ${branch} ]; then
+  echo "Usage: git fwd-merge branch-name"
+  echo
+  exit 1
+fi
+
+# Construct merge message
+currentBranch=$(git branch | grep "^*" | sed -e "s/^[*] //")
+echo "Merge release branch ${branch} to ${currentBranch}" > ${tmpMessageFile}
+
+# Are you sure?
+echo "Merging release branch ***${branch}*** into ***${currentBranch}*** branch in 5 seconds. CTRL+c to abort.."
+sec=5
+while [ $sec -ge 0 ]; do
+  echo -n "${sec} "
+  sec=$((sec-1))
+  sleep 1
+done
+echo "There we go!"
+
+# Do the actual merge
+git merge --no-ff --log -m "$(cat .git-tmp-message.txt)" ${branch}
+if [ $? -gt 0 ]; then
+  echo "ERROR: Merge failed, aborting."
+  git merge --abort
+fi
+
+# Clean up
+rm -fr ${tmpMessageFile}
+
+# What's next
+echo "We're done! Please double check using 'git log -p' and 'git push' when you're sure."

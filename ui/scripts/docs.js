@@ -1317,5 +1317,16 @@ cloudStack.docs = {
     helpOvm3Vip: {
         desc: 'The VIP used by the pool and cluster',
         externalLink: ''
+    },
+    helpLdapGroupName: {
+        desc: 'Fully qualified name of OU/GROUP in LDAP',
+        externalLink: ''
+    },
+    helpLdapGroupType: {
+        desc: 'Type of LDAP name provided. Can be either GROUP/OU',
+        externalLink: ''
+    },
+    helpLdapLinkDomainAdmin: {
+        desc: 'domain admin of the linked domain. Specify a username in GROUP/OU of LDAP'
     }
 };

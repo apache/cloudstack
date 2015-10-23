@@ -41,6 +41,43 @@ from marvin.codes import (
                           EMPTY_LIST,
                           FAILED)
 
+def _configure_ssh_credentials(hypervisor):
+    ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -ostricthostkeychecking=no "
+    
+    if (str(hypervisor).lower() == 'vmware'
+        or str(hypervisor).lower() == 'hyperv'):
+        ssh_command = "ssh -i /var/cloudstack/management/.ssh/id_rsa -ostricthostkeychecking=no "
+
+    return ssh_command
+
+
+def _configure_timeout(hypervisor):
+    timeout = 5
+
+    # Increase hop into router
+    if str(hypervisor).lower() == 'hyperv':
+        timeout = 12
+
+    return timeout
+
+
+def _execute_ssh_command(hostip, port, username, password, ssh_command):
+    #SSH to the machine
+    ssh = SshClient(hostip, port, username, password)
+    # Ensure the SSH login is successful
+    while True:
+        res = ssh.execute(ssh_command)
+        if "Connection refused".lower() in res[0].lower():
+            pass
+        elif res[0] != "Host key verification failed.":
+            break
+        elif timeout == 0:
+            break
+
+        time.sleep(5)
+        timeout = timeout - 1
+    return res
+
 def restart_mgmt_server(server):
     """Restarts the management server"""
 
@@ -191,40 +228,19 @@ def get_host_credentials(config, hostip):
     raise KeyError("Please provide the marvin configuration file with credentials to your hosts")
 
 
-def get_process_status(hostip, port, username, password, linklocalip, process, hypervisor=None):
-    """Double hop and returns a process status"""
+def get_process_status(hostip, port, username, password, linklocalip, command, hypervisor=None):
+    """Double hop and returns a command execution result"""
 
-    #SSH to the machine
-    ssh = SshClient(hostip, port, username, password)
-    if (str(hypervisor).lower() == 'vmware'
-		or str(hypervisor).lower() == 'hyperv'):
-        ssh_command = "ssh -i /var/cloudstack/management/.ssh/id_rsa -ostricthostkeychecking=no "
-    else:
-        ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -ostricthostkeychecking=no "
+    ssh_command = _configure_ssh_credentials(hypervisor)
 
     ssh_command = ssh_command +\
                   "-oUserKnownHostsFile=/dev/null -p 3922 %s %s" % (
                       linklocalip,
-                      process)
+                      command)
+    timeout = _configure_timeout(hypervisor)
 
-    # Double hop into router
-    if str(hypervisor).lower() == 'hyperv':
-        timeout = 12
-    else:
-        timeout = 5
-    # Ensure the SSH login is successful
-    while True:
-        res = ssh.execute(ssh_command)
-        if "Connection refused".lower() in res[0].lower():
-            pass
-        elif res[0] != "Host key verification failed.":
-            break
-        elif timeout == 0:
-            break
-
-        time.sleep(5)
-        timeout = timeout - 1
-    return res
+    result = _execute_ssh_command(hostip, port, username, password, ssh_command)
+    return result
 
 
 def isAlmostEqual(first_digit, second_digit, range=0):
@@ -505,4 +521,3 @@ def verifyRouterState(apiclient, routerid, allowedstates):
         return [FAIL, "state of the router should be in %s but is %s" %
             (allowedstates, routers[0].state)]
     return [PASS, None]
-        

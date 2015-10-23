@@ -71,182 +71,144 @@ public class Upgrade420to421 implements DbUpgrade {
 
 
     private void updateOverprovisioningPerVm(Connection conn) {
-        PreparedStatement pstmt1 = null;
-        PreparedStatement pstmt2 = null;
-        PreparedStatement pstmt3 = null;
-        ResultSet result1 = null;
-        ResultSet result2 = null;
-
         // Get cpu overprovisioning factor from global setting and update user vm details table for all the vms if factor > 1
 
-        try {
-            pstmt1 = conn.prepareStatement("select value from `cloud`.`configuration` where name='cpu.overprovisioning.factor'");
-            result1 = pstmt1.executeQuery();
+        try (PreparedStatement selectConfiguration = conn.prepareStatement("select value from `cloud`.`configuration` where name=?");) {
             String cpuoverprov = "1";
-            if(result1.next()){
-                cpuoverprov = result1.getString(1);
+            selectConfiguration.setString(1, "cpu.overprovisioning.factor");
+            try (ResultSet configData = selectConfiguration.executeQuery()) {
+                if (configData.next()) {
+                    cpuoverprov = configData.getString(1);
+                }
             }
-            result1.close();
-            pstmt1.close();
-
-            pstmt1 = conn.prepareStatement("select value from `cloud`.`configuration` where name='mem.overprovisioning.factor'");
-            result1 = pstmt1.executeQuery();
             String memoverprov = "1";
-            if(result1.next()){
-                memoverprov = result1.getString(1);
+            selectConfiguration.setString(1, "mem.overprovisioning.factor");
+            try (ResultSet configData = selectConfiguration.executeQuery()) {
+                if (configData.next()) {
+                    memoverprov = configData.getString(1);
+                }
             }
-            result1.close();
-            pstmt1.close();
-
             // Need to populate only when overprovisioning factor doesn't pre exist.
             s_logger.debug("Starting updating user_vm_details with cpu/memory overprovisioning factors");
-            pstmt2 = conn.prepareStatement("select id, hypervisor_type from `cloud`.`vm_instance` where removed is null and id not in (select vm_id from  `cloud`.`user_vm_details` where name='cpuOvercommitRatio')");
-            pstmt3 = conn.prepareStatement("INSERT IGNORE INTO cloud.user_vm_details (vm_id, name, value) VALUES (?, ?, ?)");
-            result2 = pstmt2.executeQuery();
-            while (result2.next()) {
-                String hypervisor_type = result2.getString(2);
-                if (hypervisor_type.equalsIgnoreCase(Hypervisor.HypervisorType.VMware.name())) {
-                    //For cpu
-                    pstmt3.setLong(1, result2.getLong(1));
-                    pstmt3.setString(2, "cpuOvercommitRatio");
-                    pstmt3.setString(3, cpuoverprov);
-                    pstmt3.executeUpdate();
+            try (
+                    PreparedStatement pstmt2 = conn
+                            .prepareStatement("select id, hypervisor_type from `cloud`.`vm_instance` where removed is null and id not in (select vm_id from  `cloud`.`user_vm_details` where name='cpuOvercommitRatio')");
+                    PreparedStatement pstmt3 = conn.prepareStatement("INSERT IGNORE INTO cloud.user_vm_details (vm_id, name, value) VALUES (?, ?, ?)");
+                    ResultSet result2 = pstmt2.executeQuery();) {
+                while (result2.next()) {
+                    String hypervisor_type = result2.getString(2);
+                    if (hypervisor_type.equalsIgnoreCase(Hypervisor.HypervisorType.VMware.name())) {
+                        //For cpu
+                        pstmt3.setLong(1, result2.getLong(1));
+                        pstmt3.setString(2, "cpuOvercommitRatio");
+                        pstmt3.setString(3, cpuoverprov);
+                        pstmt3.executeUpdate();
+                        // For memory
+                        pstmt3.setLong(1, result2.getLong(1));
+                        pstmt3.setString(2, "memoryOvercommitRatio");
+                        pstmt3.setString(3, memoverprov); // memory overprovisioning was used to reserve memory in case of VMware.
+                        pstmt3.executeUpdate();
+                    } else {
+                        //For cpu
+                        pstmt3.setLong(1, result2.getLong(1));
+                        pstmt3.setString(2, "cpuOvercommitRatio");
+                        pstmt3.setString(3, cpuoverprov);
+                        pstmt3.executeUpdate();
 
-                    // For memory
-                    pstmt3.setLong(1, result2.getLong(1));
-                    pstmt3.setString(2, "memoryOvercommitRatio");
-                    pstmt3.setString(3, memoverprov); // memory overprovisioning was used to reserve memory in case of VMware.
-                    pstmt3.executeUpdate();
-                } else {
-                    //For cpu
-                    pstmt3.setLong(1, result2.getLong(1));
-                    pstmt3.setString(2, "cpuOvercommitRatio");
-                    pstmt3.setString(3, cpuoverprov);
-                    pstmt3.executeUpdate();
-
-                    // For memory
-                    pstmt3.setLong(1, result2.getLong(1));
-                    pstmt3.setString(2, "memoryOvercommitRatio");
-                    pstmt3.setString(3, "1"); // memory overprovisioning didn't exist earlier.
-                    pstmt3.executeUpdate();
+                        // For memory
+                        pstmt3.setLong(1, result2.getLong(1));
+                        pstmt3.setString(2, "memoryOvercommitRatio");
+                        pstmt3.setString(3, "1"); // memory overprovisioning didn't exist earlier.
+                        pstmt3.executeUpdate();
+                    }
                 }
             }
             s_logger.debug("Done updating user_vm_details with cpu/memory overprovisioning factors");
-
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update cpu/memory overprovisioning factors", e);
-        } finally {
-            try {
-                if (pstmt1 != null && !pstmt1.isClosed())  {
-                    pstmt1.close();
-                }
-            } catch (SQLException e) {
-            }
-            try {
-                if (pstmt2 != null && !pstmt2.isClosed())  {
-                    pstmt2.close();
-                }
-            } catch (SQLException e) {
-            }
-            try {
-                if (pstmt3 != null && !pstmt3.isClosed())  {
-                    pstmt3.close();
-                }
-            } catch (SQLException e) {
-            }
-            try {
-                if (result1 != null) {
-                    result1.close();
-                }
-            } catch (SQLException e) {
-            }
-            try {
-                if (result2 != null) {
-                    result2.close();
-                }
-            }catch (SQLException e){
-
-            }
         }
-
     }
 
     private void upgradeResourceCount(Connection conn) {
         s_logger.debug("upgradeResourceCount start");
-        PreparedStatement pstmt1 = null;
-        PreparedStatement pstmt2 = null;
-        PreparedStatement pstmt3 = null;
-        PreparedStatement pstmt4 = null;
-        PreparedStatement pstmt5 = null;
-        ResultSet rsAccount = null;
-        ResultSet rsCount = null;
-        try {
-            pstmt1 = conn.prepareStatement("select id, domain_id FROM `cloud`.`account` where removed is NULL ");
-            rsAccount = pstmt1.executeQuery();
+        String sqlSelectAccountIds = "select id, domain_id FROM `cloud`.`account` where removed is NULL ";
+        String sqlSelectOfferingTotals = "SELECT SUM(service_offering.cpu), SUM(service_offering.ram_size)"
+                + " FROM `cloud`.`vm_instance`, `cloud`.`service_offering`"
+                + " WHERE vm_instance.service_offering_id = service_offering.id AND vm_instance.account_id = ?"
+                + " AND vm_instance.removed is NULL"
+                + " AND vm_instance.vm_type='User' AND state not in ('Destroyed', 'Error', 'Expunging')";
+        String sqlSelectTotalVolumeSize =
+                "SELECT sum(size) FROM `cloud`.`volumes` WHERE account_id= ?"
+                + " AND (path is not NULL OR state in ('Allocated')) AND removed is NULL"
+                + " AND instance_id IN (SELECT id FROM `cloud`.`vm_instance` WHERE vm_type='User')";
+        String sqlSelectTotalPathlessVolumeSize =
+                "SELECT sum(size) FROM `cloud`.`volumes` WHERE account_id= ?"
+                + " AND path is NULL AND state not in ('Allocated') AND removed is NULL";
+        String sqlSelectTotalSnapshotSize = "SELECT sum(size) FROM `cloud`.`snapshots` WHERE account_id= ? AND removed is NULL";
+        String sqlSelectTotalTemplateStoreSize = "SELECT sum(template_store_ref.size) FROM `cloud`.`template_store_ref`,`cloud`.`vm_template` WHERE account_id = ?"
+                + " AND template_store_ref.template_id = vm_template.id AND download_state = 'DOWNLOADED' AND destroyed = false AND removed is NULL";
+        String sqlSelectDomainIds = "select id FROM `cloud`.`domain`";
+        String sqlSelectAccountCount = "select account.domain_id,sum(resource_count.count) from `cloud`.`account` left join `cloud`.`resource_count` on account.id=resource_count.account_id "
+                + "where resource_count.type=? group by account.domain_id;";
+
+        try (
+                PreparedStatement pstmtSelectAccountIds = conn.prepareStatement(sqlSelectAccountIds);
+                PreparedStatement pstmtSelectOfferingTotals = conn.prepareStatement(sqlSelectOfferingTotals);
+                PreparedStatement pstmtSelectTotalVolumeSize = conn.prepareStatement(sqlSelectTotalVolumeSize);
+                PreparedStatement pstmtSelectTotalPathlessVolumeSize = conn.prepareStatement(sqlSelectTotalPathlessVolumeSize);
+                PreparedStatement pstmtSelectTotalSnapshotSize = conn.prepareStatement(sqlSelectTotalSnapshotSize);
+                PreparedStatement pstmtSelectTotalTemplateStoreSize = conn.prepareStatement(sqlSelectTotalTemplateStoreSize);
+                PreparedStatement pstmtSelectDomainIds = conn.prepareStatement(sqlSelectDomainIds);
+                PreparedStatement pstmtSelectAccountCount = conn.prepareStatement(sqlSelectAccountCount);
+                ResultSet rsAccount = pstmtSelectAccountIds.executeQuery();
+            ) {
             while (rsAccount.next()) {
                 long account_id = rsAccount.getLong(1);
                 long domain_id = rsAccount.getLong(2);
                 // 1. update cpu,memory for all accounts
-                pstmt2 =
-                        conn.prepareStatement("SELECT SUM(service_offering.cpu), SUM(service_offering.ram_size)" + " FROM `cloud`.`vm_instance`, `cloud`.`service_offering`"
-                                + " WHERE vm_instance.service_offering_id = service_offering.id AND vm_instance.account_id = ?" + " AND vm_instance.removed is NULL"
-                                + " AND vm_instance.vm_type='User' AND state not in ('Destroyed', 'Error', 'Expunging')");
-                pstmt2.setLong(1, account_id);
-                rsCount = pstmt2.executeQuery();
-                if (rsCount.next()) {
-                    upgradeResourceCountforAccount(conn, account_id, domain_id, "cpu", rsCount.getLong(1));
-                    upgradeResourceCountforAccount(conn, account_id, domain_id, "memory", rsCount.getLong(2));
-                } else {
-                    upgradeResourceCountforAccount(conn, account_id, domain_id, "cpu", 0L);
-                    upgradeResourceCountforAccount(conn, account_id, domain_id, "memory", 0L);
+                pstmtSelectOfferingTotals.setLong(1, account_id);
+                try (ResultSet rsOfferingTotals = pstmtSelectOfferingTotals.executeQuery();) {
+                    if (rsOfferingTotals.next()) {
+                        upgradeResourceCountforAccount(conn, account_id, domain_id, "cpu", rsOfferingTotals.getLong(1));
+                        upgradeResourceCountforAccount(conn, account_id, domain_id, "memory", rsOfferingTotals.getLong(2));
+                    } else {
+                        upgradeResourceCountforAccount(conn, account_id, domain_id, "cpu", 0L);
+                        upgradeResourceCountforAccount(conn, account_id, domain_id, "memory", 0L);
+                    }
                 }
-                rsCount.close();
 
                 // 2. update primary_storage for all accounts
-                pstmt3 =
-                        conn.prepareStatement("SELECT sum(size) FROM `cloud`.`volumes` WHERE account_id= ?"
-                                + " AND (path is not NULL OR state in ('Allocated')) AND removed is NULL"
-                                + " AND instance_id IN (SELECT id FROM `cloud`.`vm_instance` WHERE vm_type='User')");
-                pstmt3.setLong(1, account_id);
-                rsCount = pstmt3.executeQuery();
-                if (rsCount.next()) {
-                    upgradeResourceCountforAccount(conn, account_id, domain_id, "primary_storage", rsCount.getLong(1));
-                } else {
-                    upgradeResourceCountforAccount(conn, account_id, domain_id, "primary_storage", 0L);
+                pstmtSelectTotalVolumeSize.setLong(1, account_id);
+                try (ResultSet rsTotalVolumeSize = pstmtSelectTotalVolumeSize.executeQuery();) {
+                    if (rsTotalVolumeSize.next()) {
+                        upgradeResourceCountforAccount(conn, account_id, domain_id, "primary_storage", rsTotalVolumeSize.getLong(1));
+                    } else {
+                        upgradeResourceCountforAccount(conn, account_id, domain_id, "primary_storage", 0L);
+                    }
                 }
-                rsCount.close();
 
                 // 3. update secondary_storage for all accounts
                 long totalVolumesSize = 0;
                 long totalSnapshotsSize = 0;
                 long totalTemplatesSize = 0;
-                pstmt4 =
-                        conn.prepareStatement("SELECT sum(size) FROM `cloud`.`volumes` WHERE account_id= ?"
-                                + " AND path is NULL AND state not in ('Allocated') AND removed is NULL");
-                pstmt4.setLong(1, account_id);
-                rsCount = pstmt4.executeQuery();
-                if (rsCount.next()) {
-                    totalVolumesSize = rsCount.getLong(1);
+                pstmtSelectTotalPathlessVolumeSize.setLong(1, account_id);
+                try (ResultSet rsTotalPathlessVolumeSize = pstmtSelectTotalPathlessVolumeSize.executeQuery();) {
+                    if (rsTotalPathlessVolumeSize.next()) {
+                        totalVolumesSize = rsTotalPathlessVolumeSize.getLong(1);
+                    }
                 }
-                rsCount.close();
-                pstmt4.close();
 
-                pstmt4 = conn.prepareStatement("SELECT sum(size) FROM `cloud`.`snapshots` WHERE account_id= ? AND removed is NULL");
-                pstmt4.setLong(1, account_id);
-                rsCount = pstmt4.executeQuery();
-                if (rsCount.next()) {
-                    totalSnapshotsSize = rsCount.getLong(1);
+                pstmtSelectTotalSnapshotSize.setLong(1, account_id);
+                try (ResultSet rsTotalSnapshotSize = pstmtSelectTotalSnapshotSize.executeQuery();) {
+                    if (rsTotalSnapshotSize.next()) {
+                        totalSnapshotsSize = rsTotalSnapshotSize.getLong(1);
+                    }
                 }
-                rsCount.close();
-                pstmt4.close();
-
-                pstmt4 =
-                        conn.prepareStatement("SELECT sum(template_store_ref.size) FROM `cloud`.`template_store_ref`,`cloud`.`vm_template` WHERE account_id = ?"
-                                + " AND template_store_ref.template_id = vm_template.id AND download_state = 'DOWNLOADED' AND destroyed = false AND removed is NULL");
-                pstmt4.setLong(1, account_id);
-                rsCount = pstmt4.executeQuery();
-                if (rsCount.next()) {
-                    totalTemplatesSize = rsCount.getLong(1);
+                pstmtSelectTotalTemplateStoreSize.setLong(1, account_id);
+                try (ResultSet rsTotalTemplateStoreSize = pstmtSelectTotalTemplateStoreSize.executeQuery();) {
+                    if (rsTotalTemplateStoreSize.next()) {
+                        totalTemplatesSize = rsTotalTemplateStoreSize.getLong(1);
+                    }
                 }
                 upgradeResourceCountforAccount(conn, account_id, domain_id, "secondary_storage", totalVolumesSize + totalSnapshotsSize + totalTemplatesSize);
             }
@@ -254,82 +216,53 @@ public class Upgrade420to421 implements DbUpgrade {
 
             // 4. upgrade cpu,memory,primary_storage,secondary_storage for domains
             String resource_types[] = {"cpu", "memory", "primary_storage", "secondary_storage"};
-            pstmt5 = conn.prepareStatement("select id FROM `cloud`.`domain`");
-            rsAccount = pstmt5.executeQuery();
-            while (rsAccount.next()) {
-                long domain_id = rsAccount.getLong(1);
-                for (int count = 0; count < resource_types.length; count++) {
-                    String resource_type = resource_types[count];
-                    upgradeResourceCountforDomain(conn, domain_id, resource_type, 0L); // reset value to 0 before statistics
+            try (ResultSet rsDomainIds = pstmtSelectDomainIds.executeQuery();) {
+                while (rsDomainIds.next()) {
+                    long domain_id = rsDomainIds.getLong(1);
+                    for (int count = 0; count < resource_types.length; count++) {
+                        String resource_type = resource_types[count];
+                        upgradeResourceCountforDomain(conn, domain_id, resource_type, 0L); // reset value to 0 before statistics
+                    }
                 }
             }
             for (int count = 0; count < resource_types.length; count++) {
                 String resource_type = resource_types[count];
-                pstmt5 =
-                        conn.prepareStatement("select account.domain_id,sum(resource_count.count) from `cloud`.`account` left join `cloud`.`resource_count` on account.id=resource_count.account_id "
-                                + "where resource_count.type=? group by account.domain_id;");
-                pstmt5.setString(1, resource_type);
-                rsCount = pstmt5.executeQuery();
-                while (rsCount.next()) {
-                    long domain_id = rsCount.getLong(1);
-                    long resource_count = rsCount.getLong(2);
-                    upgradeResourceCountforDomain(conn, domain_id, resource_type, resource_count);
+                pstmtSelectAccountCount.setString(1, resource_type);
+                try (ResultSet rsAccountCount = pstmtSelectAccountCount.executeQuery();) {
+                    while (rsAccountCount.next()) {
+                        long domain_id = rsAccountCount.getLong(1);
+                        long resource_count = rsAccountCount.getLong(2);
+                        upgradeResourceCountforDomain(conn, domain_id, resource_type, resource_count);
+                    }
                 }
             }
             s_logger.debug("upgradeResourceCount finish");
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to upgrade resource count (cpu,memory,primary_storage,secondary_storage) ", e);
-        } finally {
-            try {
-                if (rsAccount != null) {
-                    rsAccount.close();
-                }
-                if (rsCount != null) {
-                    rsCount.close();
-                }
-                if (pstmt1 != null) {
-                    pstmt1.close();
-                }
-                if (pstmt2 != null) {
-                    pstmt2.close();
-                }
-                if (pstmt3 != null) {
-                    pstmt3.close();
-                }
-                if (pstmt4 != null) {
-                    pstmt4.close();
-                }
-                if (pstmt5 != null) {
-                    pstmt5.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 
     private static void upgradeResourceCountforAccount(Connection conn, Long accountId, Long domainId, String type, Long resourceCount) throws SQLException {
         //update or insert into resource_count table.
-        PreparedStatement pstmt = null;
-        pstmt =
-                conn.prepareStatement("INSERT INTO `cloud`.`resource_count` (account_id, type, count) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), count=?");
-        pstmt.setLong(1, accountId);
-        pstmt.setString(2, type);
-        pstmt.setLong(3, resourceCount);
-        pstmt.setLong(4, resourceCount);
-        pstmt.executeUpdate();
-        pstmt.close();
+        String sqlInsertResourceCount = "INSERT INTO `cloud`.`resource_count` (account_id, type, count) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), count=?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sqlInsertResourceCount);) {
+            pstmt.setLong(1, accountId);
+            pstmt.setString(2, type);
+            pstmt.setLong(3, resourceCount);
+            pstmt.setLong(4, resourceCount);
+            pstmt.executeUpdate();
+        }
     }
 
     private static void upgradeResourceCountforDomain(Connection conn, Long domainId, String type, Long resourceCount) throws SQLException {
         //update or insert into resource_count table.
-        PreparedStatement pstmt = null;
-        pstmt =
-                conn.prepareStatement("INSERT INTO `cloud`.`resource_count` (domain_id, type, count) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), count=?");
-        pstmt.setLong(1, domainId);
-        pstmt.setString(2, type);
-        pstmt.setLong(3, resourceCount);
-        pstmt.setLong(4, resourceCount);
-        pstmt.executeUpdate();
-        pstmt.close();
+        String sqlInsertResourceCount = "INSERT INTO `cloud`.`resource_count` (domain_id, type, count) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), count=?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sqlInsertResourceCount);) {
+            pstmt.setLong(1, domainId);
+            pstmt.setString(2, type);
+            pstmt.setLong(3, resourceCount);
+            pstmt.setLong(4, resourceCount);
+            pstmt.executeUpdate();
+        }
     }
 }

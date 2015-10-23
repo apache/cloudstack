@@ -76,7 +76,6 @@ import org.xml.sax.SAXException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
-import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkCommand;
@@ -1246,7 +1245,8 @@ public class LibvirtComputingResourceTest {
             when(conn.domainLookupByName(vmName)).thenReturn(dm);
 
             when(libvirtComputingResource.getPrivateIp()).thenReturn("127.0.0.1");
-            when(dm.getXMLDesc(0)).thenReturn("host_domain");
+            when(dm.getXMLDesc(8)).thenReturn("host_domain");
+            when(dm.getXMLDesc(1)).thenReturn("host_domain");
             when(dm.isPersistent()).thenReturn(1);
             doNothing().when(dm).undefine();
 
@@ -1274,9 +1274,19 @@ public class LibvirtComputingResourceTest {
         verify(libvirtComputingResource, times(1)).getDisks(conn, vmName);
         try {
             verify(conn, times(1)).domainLookupByName(vmName);
-            verify(dm, times(1)).getXMLDesc(0);
         } catch (final LibvirtException e) {
             fail(e.getMessage());
+        }
+
+        try {
+            verify(dm, times(1)).getXMLDesc(8);
+        } catch (final Throwable t) {
+            try {
+                verify(dm, times(1)).getXMLDesc(1);
+            }
+            catch (final LibvirtException e) {
+                fail(e.getMessage());
+            }
         }
     }
 
@@ -1488,141 +1498,6 @@ public class LibvirtComputingResourceTest {
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
-
-        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
-        assertNotNull(wrapper);
-
-        final Answer answer = wrapper.execute(command, libvirtComputingResource);
-        assertFalse(answer.getResult());
-
-        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
-        try {
-            verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(vmName);
-        } catch (final LibvirtException e) {
-            fail(e.getMessage());
-        }
-    }
-
-    @Test
-    public void testAttachVolumeCommand() {
-        final Connect conn = Mockito.mock(Connect.class);
-        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
-
-        final boolean attach = true;
-        final boolean managed = true;
-        final String vmName = "Test";
-        final StoragePoolType poolType = StoragePoolType.ISO;
-        final String volumePath = "/path";
-        final String volumeName = "volume";
-        final Long volumeSize = 200l;
-        final Long deviceId = 1l;
-        final String chainInfo = "none";
-        final AttachVolumeCommand command = new AttachVolumeCommand(attach, managed, vmName, poolType, volumePath, volumeName, volumeSize, deviceId, chainInfo);
-
-        final KVMStoragePoolManager poolManager = Mockito.mock(KVMStoragePoolManager.class);
-        final KVMStoragePool primary = Mockito.mock(KVMStoragePool.class);
-        final KVMPhysicalDisk disk = Mockito.mock(KVMPhysicalDisk.class);
-
-        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
-        try {
-            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
-        } catch (final LibvirtException e) {
-            fail(e.getMessage());
-        }
-
-        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(poolManager);
-        when(poolManager.getStoragePool(command.getPooltype(), command.getPoolUuid())).thenReturn(primary);
-        when(primary.getPhysicalDisk(command.getVolumePath())).thenReturn(disk);
-
-        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
-        assertNotNull(wrapper);
-
-        final Answer answer = wrapper.execute(command, libvirtComputingResource);
-        assertTrue(answer.getResult());
-
-        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
-        try {
-            verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(vmName);
-        } catch (final LibvirtException e) {
-            fail(e.getMessage());
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testAttachVolumeCommandLibvirtException() {
-        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
-
-        final boolean attach = true;
-        final boolean managed = true;
-        final String vmName = "Test";
-        final StoragePoolType poolType = StoragePoolType.ISO;
-        final String volumePath = "/path";
-        final String volumeName = "volume";
-        final Long volumeSize = 200l;
-        final Long deviceId = 1l;
-        final String chainInfo = "none";
-        final AttachVolumeCommand command = new AttachVolumeCommand(attach, managed, vmName, poolType, volumePath, volumeName, volumeSize, deviceId, chainInfo);
-
-        final KVMStoragePoolManager poolManager = Mockito.mock(KVMStoragePoolManager.class);
-        final KVMStoragePool primary = Mockito.mock(KVMStoragePool.class);
-        final KVMPhysicalDisk disk = Mockito.mock(KVMPhysicalDisk.class);
-
-        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
-        try {
-            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenThrow(LibvirtException.class);
-        } catch (final LibvirtException e) {
-            fail(e.getMessage());
-        }
-
-        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(poolManager);
-        when(poolManager.getStoragePool(command.getPooltype(), command.getPoolUuid())).thenReturn(primary);
-        when(primary.getPhysicalDisk(command.getVolumePath())).thenReturn(disk);
-
-        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
-        assertNotNull(wrapper);
-
-        final Answer answer = wrapper.execute(command, libvirtComputingResource);
-        assertFalse(answer.getResult());
-
-        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
-        try {
-            verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(vmName);
-        } catch (final LibvirtException e) {
-            fail(e.getMessage());
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testAttachVolumeCommandInternalErrorException() {
-        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
-
-        final boolean attach = true;
-        final boolean managed = true;
-        final String vmName = "Test";
-        final StoragePoolType poolType = StoragePoolType.ISO;
-        final String volumePath = "/path";
-        final String volumeName = "volume";
-        final Long volumeSize = 200l;
-        final Long deviceId = 1l;
-        final String chainInfo = "none";
-        final AttachVolumeCommand command = new AttachVolumeCommand(attach, managed, vmName, poolType, volumePath, volumeName, volumeSize, deviceId, chainInfo);
-
-        final KVMStoragePoolManager poolManager = Mockito.mock(KVMStoragePoolManager.class);
-        final KVMStoragePool primary = Mockito.mock(KVMStoragePool.class);
-        final KVMPhysicalDisk disk = Mockito.mock(KVMPhysicalDisk.class);
-
-        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
-        try {
-            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenThrow(InternalErrorException.class);
-        } catch (final LibvirtException e) {
-            fail(e.getMessage());
-        }
-
-        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(poolManager);
-        when(poolManager.getStoragePool(command.getPooltype(), command.getPoolUuid())).thenReturn(primary);
-        when(primary.getPhysicalDisk(command.getVolumePath())).thenReturn(disk);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);

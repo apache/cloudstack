@@ -23,6 +23,7 @@ import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostVO;
@@ -252,7 +253,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         final List<DomainRouterVO> routerIds = listBy(sc);
         final List<DomainRouterVO> routers = new ArrayList<DomainRouterVO>();
         for (final DomainRouterVO router : routerIds) {
-            routers.add(findById(router.getId()));
+            CollectionUtils.addIgnoreNull(routers, findById(router.getId()));
         }
         return routers;
     }

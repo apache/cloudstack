@@ -28,7 +28,7 @@ from marvin.lib.base import (Account,
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template,
-                              )
+                               )
 
 from marvin.sshClient import SshClient
 import time
@@ -45,6 +45,7 @@ class TestSameVMName(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
 
         cls.template = get_template(
             cls.apiclient,
@@ -82,7 +83,7 @@ class TestSameVMName(cloudstackTestCase):
                 UserName=cls.account_2.name,
                 DomainName=cls.account_2.domain
             )
-           # Create Service offering
+            # Create Service offering
             cls.service_offering = ServiceOffering.create(
                 cls.apiclient,
                 cls.testdata["service_offering"],
@@ -103,11 +104,11 @@ class TestSameVMName(cloudstackTestCase):
         """Restart management server"""
 
         sshClient = SshClient(
-                cls.mgtSvrDetails["mgtSvrIp"],
-                22,
-                cls.mgtSvrDetails["user"],
-                cls.mgtSvrDetails["passwd"]
-                )
+            cls.mgtSvrDetails["mgtSvrIp"],
+            22,
+            cls.mgtSvrDetails["user"],
+            cls.mgtSvrDetails["passwd"]
+        )
         command = "service cloudstack-management restart"
         sshClient.execute(command)
 
@@ -125,7 +126,9 @@ class TestSameVMName(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
         if self.skiptest:
-            self.skipTest("This test is to be checked on VMWare only  Hence, skip for %s"  % self.hypervisor)
+            self.skipTest(
+                "This test is to be checked on VMWare only  \
+                        Hence, skip for %s" % self.hypervisor)
 
     def tearDown(self):
         try:
@@ -160,8 +163,8 @@ class TestSameVMName(cloudstackTestCase):
             self.RestartServer()
             time.sleep(120)
 
-        self.testdata["small"]["displayname"]="TestName"
-        self.testdata["small"]["name"]="TestName"
+        self.testdata["small"]["displayname"] = "TestName"
+        self.testdata["small"]["name"] = "TestName"
         VirtualMachine.create(
             self.userapiclient_1,
             self.testdata["small"],

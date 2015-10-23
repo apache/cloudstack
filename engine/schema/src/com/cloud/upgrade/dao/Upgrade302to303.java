@@ -36,7 +36,7 @@ import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
-public class Upgrade302to303 implements DbUpgrade {
+public class Upgrade302to303 extends LegacyDbUpgrade {
     final static Logger s_logger = Logger.getLogger(Upgrade302to303.class);
 
     @Override
@@ -133,23 +133,10 @@ public class Upgrade302to303 implements DbUpgrade {
                     }
                 }
             }
-
-            if (zoneResults != null) {
-                try {
-                    zoneResults.close();
-                } catch (SQLException e) {
-                }
-            }
-            if (zoneSearchStmt != null) {
-                try {
-                    zoneSearchStmt.close();
-                } catch (SQLException e) {
-                }
-            }
+            closeAutoCloseable(zoneResults);
+            closeAutoCloseable(zoneSearchStmt);
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while adding PhysicalNetworks", e);
-        } finally {
-
         }
     }
 
@@ -176,12 +163,7 @@ public class Upgrade302to303 implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while adding F5 load balancer device", e);
         } finally {
-            if (pstmtUpdate != null) {
-                try {
-                    pstmtUpdate.close();
-                } catch (SQLException e) {
-                }
-            }
+            closeAutoCloseable(pstmtUpdate);
         }
     }
 
@@ -206,12 +188,7 @@ public class Upgrade302to303 implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while adding SRX firewall device ", e);
         } finally {
-            if (pstmtUpdate != null) {
-                try {
-                    pstmtUpdate.close();
-                } catch (SQLException e) {
-                }
-            }
+            closeAutoCloseable(pstmtUpdate);
         }
     }
 
@@ -235,12 +212,7 @@ public class Upgrade302to303 implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while adding PhysicalNetworkServiceProvider F5BigIp", e);
         } finally {
-            if (pstmtUpdate != null) {
-                try {
-                    pstmtUpdate.close();
-                } catch (SQLException e) {
-                }
-            }
+            closeAutoCloseable(pstmtUpdate);
         }
     }
 
@@ -264,12 +236,7 @@ public class Upgrade302to303 implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while adding PhysicalNetworkServiceProvider JuniperSRX", e);
         } finally {
-            if (pstmtUpdate != null) {
-                try {
-                    pstmtUpdate.close();
-                } catch (SQLException e) {
-                }
-            }
+            closeAutoCloseable(pstmtUpdate);
         }
     }
 
@@ -299,16 +266,8 @@ public class Upgrade302to303 implements DbUpgrade {
         } catch (UnsupportedEncodingException e) {
             throw new CloudRuntimeException("Unable encrypt configuration values ", e);
         } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
+            closeAutoCloseable(rs);
+            closeAutoCloseable(pstmt);
         }
         s_logger.debug("Done encrypting Config values");
     }

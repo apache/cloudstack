@@ -103,6 +103,8 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.HypervisorVersionChangedException;
+import com.cloud.utils.exception.NioConnectionException;
+import com.cloud.utils.exception.TaskExecutionException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.nio.HandlerFactory;
@@ -593,7 +595,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         startDirectlyConnectedHosts();
 
         if (_connection != null) {
-            _connection.start();
+            try {
+                _connection.start();
+            } catch (final NioConnectionException e) {
+                s_logger.error("Error when connecting to the NioServer!", e);
+            }
         }
 
         _monitorExecutor.scheduleWithFixedDelay(new MonitorTask(), PingInterval.value(), PingInterval.value(), TimeUnit.SECONDS);
@@ -824,25 +830,30 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 /* OK, we are going to the bad status, let's see what happened */
                 s_logger.info("Investigating why host " + hostId + " has disconnected with event " + event);
 
-                final Status determinedState = investigate(attache);
+                Status determinedState = investigate(attache);
                 // if state cannot be determined do nothing and bail out
                 if (determinedState == null) {
-                    s_logger.warn("Agent state cannot be determined, do nothing");
-                    return false;
+                    if ((System.currentTimeMillis() >> 10) - host.getLastPinged() > AlertWait.value()) {
+                        s_logger.warn("Agent " + hostId + " state cannot be determined for more than " + AlertWait + "(" + AlertWait.value() + ") seconds, will go to Alert state");
+                        determinedState = Status.Alert;
+                    } else {
+                        s_logger.warn("Agent " + hostId + " state cannot be determined, do nothing");
+                        return false;
+                    }
                 }
 
                 final Status currentStatus = host.getStatus();
-                s_logger.info("The state determined is " + determinedState);
+                s_logger.info("The agent " + hostId + " state determined is " + determinedState);
 
                 if (determinedState == Status.Down) {
-                    s_logger.error("Host is down: " + host.getId() + "-" + host.getName() + ".  Starting HA on the VMs");
+                    final String message = "Host is down: " + host.getId() + "-" + host.getName() + ". Starting HA on the VMs";
+                    s_logger.error(message);
                     if (host.getType() != Host.Type.SecondaryStorage && host.getType() != Host.Type.ConsoleProxy) {
-                        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host disconnected, " + host.getId(),
-                                "Host is down: " + host.getId() + "-" + host.getName() + ".  Starting HA on the VMs");
+                        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host down, " + host.getId(), message);
                     }
                     event = Status.Event.HostDown;
                 } else if (determinedState == Status.Up) {
-                    /* Got ping response from host, bring it back*/
+                    /* Got ping response from host, bring it back */
                     s_logger.info("Agent is determined to be up and running");
                     agentStatusTransitTo(host, Status.Event.Ping, _nodeId);
                     return false;
@@ -850,10 +861,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     s_logger.warn("Agent is disconnected but the host is still up: " + host.getId() + "-" + host.getName());
                     if (currentStatus == Status.Disconnected) {
                         if ((System.currentTimeMillis() >> 10) - host.getLastPinged() > AlertWait.value()) {
-                            s_logger.warn("Host " + host.getId() + " has been disconnected pass the time it should be disconnected.");
+                            s_logger.warn("Host " + host.getId() + " has been disconnected past the wait time it should be disconnected.");
                             event = Status.Event.WaitedTooLong;
                         } else {
-                            s_logger.debug("Host has been determined to be disconnected but it hasn't passed the wait time yet.");
+                            s_logger.debug("Host " + host.getId() + " has been determined to be disconnected but it hasn't passed the wait time yet.");
                             return false;
                         }
                     } else if (currentStatus == Status.Up) {
@@ -862,7 +873,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         final String hostDesc = "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
                         if (host.getType() != Host.Type.SecondaryStorage && host.getType() != Host.Type.ConsoleProxy) {
                             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host disconnected, " + hostDesc,
-                                    "If the agent for host [" + hostDesc + "] is not restarted within " + AlertWait + " seconds, HA will begin on the VMs");
+                                    "If the agent for host [" + hostDesc + "] is not restarted within " + AlertWait + " seconds, host will go to Alert state");
                         }
                         event = Status.Event.AgentDisconnected;
                     }
@@ -872,11 +883,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     final HostPodVO podVO = _podDao.findById(host.getPodId());
                     final String hostDesc = "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
                     _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host in ALERT state, " + hostDesc,
-                            "In availability zone " + host.getDataCenterId() + ", " + host.getId() + "-" + host.getName()
-                            + " disconnect due to event " + event + ", ms can't determine the host status" );
+                            "In availability zone " + host.getDataCenterId() + ", host is in alert state: " + host.getId() + "-" + host.getName());
                 }
             } else {
-                s_logger.debug("The next status of Agent " + host.getId() + " is not Alert, no need to investigate what happened");
+                s_logger.debug("The next status of agent " + host.getId() + " is not Alert, no need to investigate what happened");
             }
         }
         handleDisconnectWithoutInvestigation(attache, event, true, true);
@@ -1295,7 +1305,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
 
         @Override
-        protected void doTask(final Task task) throws Exception {
+        protected void doTask(final Task task) throws TaskExecutionException {
             final TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             try {
                 final Type type = task.getType();
@@ -1311,6 +1321,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     } catch (final UnsupportedVersionException e) {
                         s_logger.warn(e.getMessage());
                         // upgradeAgent(task.getLink(), data, e.getReason());
+                    } catch (final ClassNotFoundException e) {
+                        final String message = String.format("Exception occured when executing taks! Error '%s'", e.getMessage());
+                        s_logger.error(message);
+                        throw new TaskExecutionException(message, e);
                     }
                 } else if (type == Task.Type.CONNECT) {
                 } else if (type == Task.Type.DISCONNECT) {

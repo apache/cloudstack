@@ -9657,7 +9657,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
 }
 
 /*** View switcher (drop-down)*/
-.project-switcher {
+.project-switcher, .domain-switcher {
   float: left;
   width: 223px;
   padding: 9px 17px 0 19px;
@@ -9668,7 +9668,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   border-radius: 4px;
 }
 
-.project-switcher label {
+.project-switcher label, .domain-switcher label {
   top: 29px;
   color: #FFFFFF;
   font-size: 13px;
@@ -9677,7 +9677,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   margin-top: 5px;
 }
 
-.project-switcher select {
+.project-switcher select, .domain-switcher select {
   width: 70%;
   float: left;
   margin-top: 0px;
@@ -12675,6 +12675,7 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -167px -677px;
 }
 
+.revertSnapshot .icon,
 .restoreVM .icon,
 .restore .icon,
 .recover .icon {
@@ -12690,6 +12691,7 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -167px -66px;
 }
 
+.revertSnapshot:hover .icon,
 .restoreVM:hover .icon,
 .restore:hover .icon {
   background-position: -168px -613px;
@@ -12849,6 +12851,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .addAccount:hover .icon {
   background-position: -230px -677px;
+}
+
+.linktoldap .icon {
+  background-position: -197px -65px;
+}
+
+.linktoldap:hover .icon {
+  background-position: -197px -647px;
 }
 
 .label-hovered {

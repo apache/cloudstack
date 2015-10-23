@@ -288,7 +288,7 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
 
         try {
             s_logger.debug("Handling deallocate() call back, which is called when a VM is destroyed or interface is removed, " + "to delete VM Interface with IP "
-                    + nic.getIp4Address() + " from a VM " + vm.getInstanceName() + " with state " + vm.getVirtualMachine().getState());
+                    + nic.getIPv4Address() + " from a VM " + vm.getInstanceName() + " with state " + vm.getVirtualMachine().getState());
             DomainVO networksDomain = _domainDao.findById(network.getDomainId());
             NicVO nicFrmDd = _nicDao.findById(nic.getId());
             long networkOfferingId = _ntwkOfferingDao.findById(network.getNetworkOfferingId()).getId();
@@ -299,7 +299,7 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
                 vpcUuid = vpcObj.getUuid();
             }
             HostVO nuageVspHost = getNuageVspHost(network.getPhysicalNetworkId());
-            DeallocateVmVspCommand cmd = new DeallocateVmVspCommand(network.getUuid(), nicFrmDd.getUuid(), nic.getMacAddress(), nic.getIp4Address(),
+            DeallocateVmVspCommand cmd = new DeallocateVmVspCommand(network.getUuid(), nicFrmDd.getUuid(), nic.getMacAddress(), nic.getIPv4Address(),
                     isL3Network(networkOfferingId), vpcUuid, networksDomain.getUuid(), vm.getInstanceName(), vm.getUuid());
             DeallocateVmVspAnswer answer = (DeallocateVmVspAnswer)_agentMgr.easySend(nuageVspHost.getId(), cmd);
             if (answer == null || !answer.getResult()) {
@@ -309,7 +309,7 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
                 }
             }
         } catch (InsufficientVirtualNetworkCapacityException e) {
-            s_logger.error("Handling deallocate(). VM " + vm.getInstanceName() + " with NIC IP " + nic.getIp4Address()
+            s_logger.error("Handling deallocate(). VM " + vm.getInstanceName() + " with NIC IP " + nic.getIPv4Address()
                     + " is getting destroyed. REST API failed to update the VM state in NuageVsp", e);
         }
         super.deallocate(network, nic, vm);
@@ -383,9 +383,9 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
             for (Map<String, String> interfaces : vmInterfacesDetails) {
                 String macFromNuage = interfaces.get("mac");
                 if (StringUtils.equals(macFromNuage, nic.getMacAddress())) {
-                    nic.setIp4Address(interfaces.get("ip4Address"));
-                    nic.setGateway(interfaces.get("gateway"));
-                    nic.setNetmask(interfaces.get("netmask"));
+                    nic.setIPv4Address(interfaces.get("ip4Address"));
+                    nic.setIPv4Gateway(interfaces.get("gateway"));
+                    nic.setIPv4Netmask(interfaces.get("netmask"));
                     break;
                 }
             }

@@ -75,7 +75,7 @@ class TestCreateServiceOffering(cloudstackTestCase):
 
         service_offering = ServiceOffering.create(
             self.apiclient,
-            self.services["service_offerings"]
+            self.services["service_offerings"]["tiny"]
         )
         self.cleanup.append(service_offering)
 
@@ -101,27 +101,27 @@ class TestCreateServiceOffering(cloudstackTestCase):
 
         self.assertEqual(
             list_service_response[0].cpunumber,
-            self.services["service_offerings"]["cpunumber"],
+            self.services["service_offerings"]["tiny"]["cpunumber"],
             "Check server id in createServiceOffering"
         )
         self.assertEqual(
             list_service_response[0].cpuspeed,
-            self.services["service_offerings"]["cpuspeed"],
+            self.services["service_offerings"]["tiny"]["cpuspeed"],
             "Check cpuspeed in createServiceOffering"
         )
         self.assertEqual(
             list_service_response[0].displaytext,
-            self.services["service_offerings"]["displaytext"],
+            self.services["service_offerings"]["tiny"]["displaytext"],
             "Check server displaytext in createServiceOfferings"
         )
         self.assertEqual(
             list_service_response[0].memory,
-            self.services["service_offerings"]["memory"],
+            self.services["service_offerings"]["tiny"]["memory"],
             "Check memory in createServiceOffering"
         )
         self.assertEqual(
             list_service_response[0].name,
-            self.services["service_offerings"]["name"],
+            self.services["service_offerings"]["tiny"]["name"],
             "Check name in createServiceOffering"
         )
         return
@@ -157,11 +157,11 @@ class TestServiceOfferings(cloudstackTestCase):
 
         cls.service_offering_1 = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offerings"]
+            cls.services["service_offerings"]["tiny"]
         )
         cls.service_offering_2 = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offerings"]
+            cls.services["service_offerings"]["tiny"]
         )
         template = get_template(
             cls.apiclient,
@@ -176,8 +176,6 @@ class TestServiceOfferings(cloudstackTestCase):
         cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = template.id
 
-        cls.services["medium"]["zoneid"] = cls.zone.id
-        cls.services["medium"]["template"] = template.id
 
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
@@ -197,7 +195,7 @@ class TestServiceOfferings(cloudstackTestCase):
         )
         cls.medium_virtual_machine = VirtualMachine.create(
             cls.apiclient,
-            cls.services["medium"],
+            cls.services["small"],
             accountid=cls.account.name,
             domainid=cls.account.domainid,
             serviceofferingid=cls.medium_offering.id,

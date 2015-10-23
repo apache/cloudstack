@@ -301,7 +301,7 @@
 
                     'select-iso': function($step, formData) {
                         $step.find('.section.custom-size').hide();
-                        
+
                         var originalValues = function(formData) {
                             var $inputs = $step.find('.wizard-step-conditional:visible')
                                 .find('input[type=radio]');
@@ -323,7 +323,7 @@
 
                         return {
                             response: {
-                                success: function(args) {                                    
+                                success: function(args) {
                                     if (formData['select-template']) {
                                         $step.find('.wizard-step-conditional').filter(function() {
                                             return $(this).hasClass(formData['select-template']);
@@ -462,7 +462,7 @@
                                         }, {
                                             'wizard-field': 'service-offering'
                                         })
-                                    );                                    
+                                    );
 
                                     $step.find('input[type=radio]').bind('change', function() {
                                         var $target = $(this);
@@ -576,7 +576,7 @@
                                         $selectContainer.hide();
 
                                         // Fix issue with containers always showing after reload
-                                        $multiDiskSelect.find('.select-container').attr('style', null); 
+                                        $multiDiskSelect.find('.select-container').attr('style', null);
                                     } else {
                                         $selectContainer.show();
                                         $step.find('.content .select-container').append(
@@ -618,7 +618,7 @@
                                                 // handle removal of custom IOPS controls
                                                 $step.removeClass('custom-iops-do');
                                             }
-                                            
+
                                             return true;
                                         }
 
@@ -738,7 +738,7 @@
                                     if (args.data.sshkeyPairs && args.data.sshkeyPairs.length) {
                                         $step.prepend(
                                             $('<div>').addClass('main-desc').append(
-                                                $('<p>').html(_l('Please select a ssh key pair you want this VM to use:'))
+                                                $('<p>').html(_l('message.please.select.ssh.key.pair.use.with.this.vm'))
                                             )
                                         );
                                         $step.find('.section.no-thanks').show();
@@ -1137,19 +1137,19 @@
                     // Next button
                     if ($target.closest('div.button.next').size()) {
                         //step 2 - select template/ISO
-                    	if($activeStep.hasClass('select-iso')) {	                        
-                    		if ($activeStep.find('.content:visible input:checked').size() == 0) {
-	                            cloudStack.dialog.notice({
-	                                message: 'message.step.1.continue'
-	                            });
-	                            return false;
-	                        }	
-	                        $(window).trigger("cloudStack.module.instanceWizard.clickNextButton", {
-	                        	$form: $form,
-                            	currentStep: 2
-                            });   	                       
-                    	}                    	
-                        
+                        if($activeStep.hasClass('select-iso')) {
+                            if ($activeStep.find('.content:visible input:checked').size() == 0) {
+                                cloudStack.dialog.notice({
+                                    message: 'message.step.1.continue'
+                                });
+                                return false;
+                            }
+                            $(window).trigger("cloudStack.module.instanceWizard.clickNextButton", {
+                                $form: $form,
+                                currentStep: 2
+                            });
+                        }
+
                         //step 6 - select network
                         if ($activeStep.find('.wizard-step-conditional.select-network:visible').size() > 0) {
                             var data = $activeStep.data('my-networks');
@@ -1277,7 +1277,7 @@
                 $wizard.find('.tab-view').tabs();
                 $wizard.find('.slider').each(function() {
                    var $slider = $(this);
-                   
+
                     $slider.slider({
                         min: minCustomDiskSize,
                         max: maxCustomDiskSize,

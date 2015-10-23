@@ -387,7 +387,7 @@ public class BigSwitchBcfGuestNetworkGuru extends GuestNetworkGuru implements Ne
 
         String nicId = nic.getUuid();
         Integer vlan = Integer.valueOf(BroadcastDomainType.getValue(nic.getIsolationUri()));
-        String ipv4 = nic.getIp4Address();
+        String ipv4 = nic.getIPv4Address();
         String mac = nic.getMacAddress();
 
         CreateBcfAttachmentCommand cmd = new CreateBcfAttachmentCommand(tenantId,

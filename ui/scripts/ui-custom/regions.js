@@ -36,10 +36,6 @@
 
                             $li.data('region-data', region);
 
-                            /* e.g.
-							region.endpoint	== "http://localhost:8080/client/"
-							document.location.href == "http://localhost:8080/client/#"
-							*/
                             if (document.location.href.indexOf(region.endpoint) != -1) {
                                 currentRegion = region;
                                 $li.addClass('active');

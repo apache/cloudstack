@@ -40,6 +40,7 @@
         <!--[if IE 7]>
             <link type="text/css" rel="stylesheet" href="css/cloudstack3-ie7.css" />
             <![endif]-->
+	<link type="text/css" rel="stylesheet" href="css/custom.css" />
     </head>
     <body>
         <!-- CloudStack widget content -->
@@ -72,13 +73,6 @@
                             <div class="field domain">
                                 <label for="domain"><fmt:message key="label.domain"/></label>
                                 <input type="text" name="domain" />
-                            </div>
-                        </div>
-
-                        <div id="saml-login">
-                            <div class="field domain">
-                                <label for="saml-domain"><fmt:message key="label.domain"/></label>
-                                <input id="saml-domain" type="text" name="saml-domain" />
                             </div>
                         </div>
 
@@ -580,7 +574,7 @@
                                     <!-- SSH Key Pairs -->
                                     <div class="select">
                                         <div class="name">
-                                            <span>SSH Key Pairs</span>
+                                            <span><fmt:message key="label.ssh.key.pairs"/></span>
                                         </div>
                                         <div class="value">
                                             <span wizard-field="sshkey-pairs"></span>
@@ -1841,6 +1835,7 @@
         <script type="text/javascript" src="scripts/docs.js"></script>
         <script type="text/javascript" src="scripts/vm_snapshots.js"></script>
         <script type="text/javascript" src="scripts/ui-custom/projectSelect.js"></script>
+        <script type="text/javascript" src="scripts/ui-custom/saml.js"></script>
 
         <!-- Plugin/module API -->
         <script type="text/javascript" src="scripts/ui-custom/pluginListing.js"></script>

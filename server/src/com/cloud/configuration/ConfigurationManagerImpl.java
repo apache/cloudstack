@@ -3312,6 +3312,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // Check if the VLAN has any allocated public IPs
         final List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(vlanDbId);
         if (isAccountSpecific) {
+            int resourceCountToBeDecrement = 0;
             try {
                 vlanRange = _vlanDao.acquireInLockTable(vlanDbId, 30);
                 if (vlanRange == null) {
@@ -3338,19 +3339,23 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         throw new InvalidParameterValueException("Can't delete account specific vlan " + vlanDbId + " as ip " + ip
                                 + " belonging to the range has firewall rules applied. Cleanup the rules first");
                     }
-                    if(ip.getAllocatedTime() != null) {// This means IP is allocated
+                    if (ip.getAllocatedTime() != null) {// This means IP is allocated
                         // release public ip address here
                         success = _ipAddrMgr.disassociatePublicIpAddress(ip.getId(), userId, caller);
                     }
                     if (!success) {
                         s_logger.warn("Some ip addresses failed to be released as a part of vlan " + vlanDbId + " removal");
                     } else {
+                        resourceCountToBeDecrement++;
                         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE, acctVln.get(0).getAccountId(), ip.getDataCenterId(), ip.getId(),
                                 ip.getAddress().toString(), ip.isSourceNat(), vlanRange.getVlanType().toString(), ip.getSystem(), ip.getClass().getName(), ip.getUuid());
                     }
                 }
             } finally {
                 _vlanDao.releaseFromLockTable(vlanDbId);
+                if (resourceCountToBeDecrement > 0) {  //Making sure to decrement the count of only success operations above. For any reaason if disassociation fails then this number will vary from original range length.
+                    _resourceLimitMgr.decrementResourceCount(acctVln.get(0).getAccountId(), ResourceType.public_ip, new Long(resourceCountToBeDecrement));
+                }
             }
         } else {   // !isAccountSpecific
             final NicIpAliasVO ipAlias = _nicIpAliasDao.findByGatewayAndNetworkIdAndState(vlanRange.getVlanGateway(), vlanRange.getNetworkId(), NicIpAlias.state.active);

@@ -70,7 +70,7 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
         List<? extends Nic> nics = _networkMgr.getNicsForTraffic(userVm.getId(), TrafficType.Guest);
 
         for (Nic nic : nics) {
-            if (nic.getIp4Address() == null) {
+            if (nic.getIPv4Address() == null) {
                 continue;
             }
 
@@ -154,7 +154,7 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
     }
 
     private Boolean testUserVM(VirtualMachine vm, Nic nic, VirtualRouter router) {
-        String privateIp = nic.getIp4Address();
+        String privateIp = nic.getIPv4Address();
         String routerPrivateIp = router.getPrivateIpAddress();
 
         List<Long> otherHosts = new ArrayList<Long>();

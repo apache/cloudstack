@@ -48,11 +48,11 @@
 
             // Description text
             var formDesc;
-            if (typeof(args.form.desc) == 'function') {            	
-            	formDesc = args.form.desc(args);
+            if (typeof(args.form.desc) == 'function') {
+                formDesc = args.form.desc(args);
             } else { //typeof(args.form.desc) == 'string' or 'undefined'
-            	formDesc = args.form.desc;
-            }              
+                formDesc = args.form.desc;
+            }
             $('<span>').addClass('message').prependTo($formContainer).html(
                 _l(formDesc)
             );
@@ -225,7 +225,7 @@
 
                     if ($dependsOn.is('[type=checkbox]')) {
                         var isReverse = false;
-                        
+
                         if (args.form.fields[dependsOn]) {
                             isReverse = args.form.fields[dependsOn].isReverse;
                             isChecked = args.form.fields[dependsOn].isChecked;
@@ -238,10 +238,10 @@
 
                             if (($target.is(':checked') && !isReverse) ||
                                 ($target.is(':unchecked') && isReverse)) {
-                                
-                            	$dependent.css('display', 'inline-block'); //show dependent dropdown field
+
+                                $dependent.css('display', 'inline-block'); //show dependent dropdown field
                                 $dependent.change(); //trigger event handler for default option in dependent dropdown field (CLOUDSTACK-7826)
-                                
+
                                 $dependent.each(function() {
                                     if ($(this).data('dialog-select-fn')) {
                                         $(this).data('dialog-select-fn')();
@@ -281,11 +281,11 @@
                         context: args.context,
                         response: {
                             success: function(args) {
-                            	if (args.data == undefined || args.data.length == 0) {
-                            		var $option = $('<option>')
-                                    .appendTo($input)                                    
+                                if (args.data == undefined || args.data.length == 0) {
+                                    var $option = $('<option>')
+                                    .appendTo($input)
                                     .html("");
-                            	} else {
+                                } else {
                                 $(args.data).each(function() {
                                     var id;
                                     if (field.valueField)
@@ -305,7 +305,7 @@
                                             .data('json-obj', this)
                                             .html(_s(desc));
                                 });
-                            	}
+                                }
 
                                 if (field.defaultValue) {
                                     $input.val(_s(strOrFunc(field.defaultValue, args.data)));
@@ -410,14 +410,14 @@
                             name: key,
                             type: 'checkbox'
                         }).appendTo($value);
-                    	var isChecked;
-                    	if (typeof (field.isChecked) == 'function') {
-                    	    isChecked = field.isChecked(args);
-                    	} else {
-                    	    isChecked = field.isChecked;
-                    	}
+                        var isChecked;
+                        if (typeof (field.isChecked) == 'function') {
+                            isChecked = field.isChecked(args);
+                        } else {
+                            isChecked = field.isChecked;
+                        }
                         if (isChecked) {
-                        	$input.attr('checked', strOrFunc(field.isChecked, args));
+                            $input.attr('checked', strOrFunc(field.isChecked, args));
                         } else {
                             // This is mainly for IE compatibility
                             setTimeout(function() {

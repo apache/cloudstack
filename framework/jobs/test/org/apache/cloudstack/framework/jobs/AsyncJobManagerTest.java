@@ -61,6 +61,7 @@ public class AsyncJobManagerTest extends TestCase {
                 try {
                     Thread.sleep(3000);
                 } catch (InterruptedException e) {
+                    s_logger.debug("[ignored] .");
                 }
 
                 s_logger.info("wakeup");
@@ -119,6 +120,7 @@ public class AsyncJobManagerTest extends TestCase {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
+                s_logger.debug("[ignored] .");
             }
         }
 

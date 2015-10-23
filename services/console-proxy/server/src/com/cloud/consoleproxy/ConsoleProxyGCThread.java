@@ -33,7 +33,7 @@ public class ConsoleProxyGCThread extends Thread {
 
     private final static int MAX_SESSION_IDLE_SECONDS = 180;
 
-    private Hashtable<String, ConsoleProxyClient> connMap;
+    private final Hashtable<String, ConsoleProxyClient> connMap;
     private long lastLogScan = 0;
 
     public ConsoleProxyGCThread(Hashtable<String, ConsoleProxyClient> connMap) {
@@ -54,6 +54,8 @@ public class ConsoleProxyGCThread extends Thread {
                     try {
                         file.delete();
                     } catch (Throwable e) {
+                        s_logger.info("[ignored]"
+                                + "failed to delete file: " + e.getLocalizedMessage());
                     }
                 }
             }
@@ -109,6 +111,7 @@ public class ConsoleProxyGCThread extends Thread {
             try {
                 Thread.sleep(5000);
             } catch (InterruptedException ex) {
+                s_logger.debug("[ignored] Console proxy was interupted during GC.");
             }
         }
     }

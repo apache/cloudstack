@@ -1674,6 +1674,42 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         return
 
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    def test_browser_upload_template_incomplete(self):
+        """
+        Test browser based incomplete template upload, followed by SSVM destroy. Template should go to UploadAbandoned state and get cleaned up.
+        """
+        try:
+            self.debug("========================= Test browser based incomplete template upload ========================")
+
+            #Only register template, without uploading
+            cmd = getUploadParamsForTemplate.getUploadParamsForTemplateCmd()
+            cmd.zoneid = self.zone.id
+            cmd.format = self.uploadtemplateformat
+            cmd.name=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
+            cmd.account=self.account.name
+            cmd.domainid=self.domain.id
+            cmd.displaytext=cmd.name
+            cmd.hypervisor=self.templatehypervisor
+            cmd.ostypeid=self.templateostypeid
+            template_response=self.apiclient.getUploadParamsForTemplate(cmd)
+
+            #Destroy SSVM, and wait for new one to start
+            self.destroy_ssvm()
+
+            #Verify that the template is cleaned up as part of sync-up during new SSVM start
+            list_template_response=Template.list(
+                                        self.apiclient,
+                                        id=template_response.id,
+                                        templatefilter="all",
+                                        zoneid=self.zone.id)
+            self.assertEqual(list_template_response, None, "Template is not cleaned up, some issue with template sync-up")
+
+        except Exception as e:
+            self.fail("Exceptione occurred  : %s" % e)
+        return
+
+
     @classmethod
     def tearDownClass(self):
         try:

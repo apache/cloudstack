@@ -16,20 +16,19 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import com.google.gson.annotations.SerializedName;
-
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.EntityReference;
-
 import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @EntityReference(value = Host.class)
 public class HostResponse extends BaseResponse {
@@ -216,6 +215,12 @@ public class HostResponse extends BaseResponse {
     @SerializedName(ApiConstants.DETAILS)
     @Param(description = "Host details in key/value pairs.", since = "4.5")
     private Map details;
+
+
+    // Default visibility to support accessing the details from unit tests
+    Map getDetails() {
+        return details;
+    }
 
     @Override
     public String getObjectId() {
@@ -423,7 +428,21 @@ public class HostResponse extends BaseResponse {
     }
 
     public void setDetails(Map details) {
-        this.details = details;
+
+        if (details == null) {
+            return;
+        }
+
+        final Map detailsCopy = new HashMap(details);
+
+        // Fix for CVE ID 2015-3251
+        // Remove sensitive host credential information from
+        // the details to prevent leakage through API calls
+        detailsCopy.remove("username");
+        detailsCopy.remove("password");
+
+        this.details = detailsCopy;
+
     }
 
 }

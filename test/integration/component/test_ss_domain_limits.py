@@ -559,7 +559,9 @@ class TestDeleteAccount(cloudstackTestCase):
         self.assertFalse(result[0], result[1])
         self.assertTrue(result[2], "Resource count does not match")
 
-        expectedCount *= 2
+        self.templateSize = int((int(templates[0].size)*2) / (1024**3))
+
+        expectedCount = self.templateSize
         result = isDomainResourceCountEqualToExpectedCount(
                                     self.apiclient, self.parent_domain.id,
                                     expectedCount, RESOURCE_SECONDARY_STORAGE)

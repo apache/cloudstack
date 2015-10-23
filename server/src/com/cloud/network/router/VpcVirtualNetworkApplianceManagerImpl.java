@@ -246,8 +246,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     if (nic.getTrafficType() == TrafficType.Public || nic.getTrafficType() == TrafficType.Guest) {
                         // save dns information
                         if (nic.getTrafficType() == TrafficType.Public) {
-                            defaultDns1 = nic.getDns1();
-                            defaultDns2 = nic.getDns2();
+                            defaultDns1 = nic.getIPv4Dns1();
+                            defaultDns2 = nic.getIPv4Dns2();
                         }
                         s_logger.debug("Removing nic " + nic + " of type " + nic.getTrafficType() + " from the nics passed on vm start. " + "The nic will be plugged later");
                         it.remove();
@@ -316,7 +316,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 for (final Pair<Nic, Network> nicNtwk : publicNics) {
                     final Nic publicNic = nicNtwk.first();
                     final Network publicNtwk = nicNtwk.second();
-                    final IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(publicNtwk.getId(), publicNic.getIp4Address());
+                    final IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(publicNtwk.getId(), publicNic.getIPv4Address());
 
                     if (userIp.isSourceNat()) {
                         final PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
@@ -324,8 +324,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
                         if (domainRouterVO.getPublicIpAddress() == null) {
                             final DomainRouterVO routerVO = _routerDao.findById(domainRouterVO.getId());
-                            routerVO.setPublicIpAddress(publicNic.getIp4Address());
-                            routerVO.setPublicNetmask(publicNic.getNetmask());
+                            routerVO.setPublicIpAddress(publicNic.getIPv4Address());
+                            routerVO.setPublicNetmask(publicNic.getIPv4Netmask());
                             routerVO.setPublicMacAddress(publicNic.getMacAddress());
                             _routerDao.update(routerVO.getId(), routerVO);
                         }
@@ -334,12 +334,12 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                             domainRouterVO.getInstanceName(), domainRouterVO.getType());
                     cmds.addCommand(plugNicCmd);
                     final VpcVO vpc = _vpcDao.findById(domainRouterVO.getVpcId());
-                    final NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(domainRouterVO.getPrivateIpAddress(), domainRouterVO.getInstanceName(), true, publicNic.getIp4Address(), vpc.getCidr());
+                    final NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(domainRouterVO.getPrivateIpAddress(), domainRouterVO.getInstanceName(), true, publicNic.getIPv4Address(), vpc.getCidr());
                     usageCmds.add(netUsageCmd);
-                    UserStatisticsVO stats = _userStatsDao.findBy(domainRouterVO.getAccountId(), domainRouterVO.getDataCenterId(), publicNtwk.getId(), publicNic.getIp4Address(), domainRouterVO.getId(),
+                    UserStatisticsVO stats = _userStatsDao.findBy(domainRouterVO.getAccountId(), domainRouterVO.getDataCenterId(), publicNtwk.getId(), publicNic.getIPv4Address(), domainRouterVO.getId(),
                             domainRouterVO.getType().toString());
                     if (stats == null) {
-                        stats = new UserStatisticsVO(domainRouterVO.getAccountId(), domainRouterVO.getDataCenterId(), publicNic.getIp4Address(), domainRouterVO.getId(), domainRouterVO.getType().toString(),
+                        stats = new UserStatisticsVO(domainRouterVO.getAccountId(), domainRouterVO.getDataCenterId(), publicNic.getIPv4Address(), domainRouterVO.getId(), domainRouterVO.getType().toString(),
                                 publicNtwk.getId());
                         _userStatsDao.persist(stats);
                     }
@@ -365,7 +365,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     } else {
 
                         // set private network
-                        final PrivateIpVO ipVO = _privateIpDao.findByIpAndSourceNetworkId(guestNic.getNetworkId(), guestNic.getIp4Address());
+                        final PrivateIpVO ipVO = _privateIpDao.findByIpAndSourceNetworkId(guestNic.getNetworkId(), guestNic.getIPv4Address());
                         final Network network = _networkDao.findById(guestNic.getNetworkId());
                         BroadcastDomainType.getValue(network.getBroadcastUri());
                         final String netmask = NetUtils.getCidrNetmask(network.getCidr());
@@ -433,7 +433,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
             for (final Pair<Nic, Network> nicNtwk : guestNics) {
                 final Nic guestNic = nicNtwk.first();
-                final AggregationControlCommand startCmd = new AggregationControlCommand(Action.Start, domainRouterVO.getInstanceName(), controlNic.getIp4Address(), _routerControlHelper.getRouterIpInNetwork(
+                final AggregationControlCommand startCmd = new AggregationControlCommand(Action.Start, domainRouterVO.getInstanceName(), controlNic.getIPv4Address(), _routerControlHelper.getRouterIpInNetwork(
                         guestNic.getNetworkId(), domainRouterVO.getId()));
                 cmds.addCommand(startCmd);
                 if (reprogramGuestNtwks) {
@@ -442,7 +442,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 }
 
                 finalizeUserDataAndDhcpOnStart(cmds, domainRouterVO, provider, guestNic.getNetworkId());
-                final AggregationControlCommand finishCmd = new AggregationControlCommand(Action.Finish, domainRouterVO.getInstanceName(), controlNic.getIp4Address(), _routerControlHelper.getRouterIpInNetwork(
+                final AggregationControlCommand finishCmd = new AggregationControlCommand(Action.Finish, domainRouterVO.getInstanceName(), controlNic.getIPv4Address(), _routerControlHelper.getRouterIpInNetwork(
                         guestNic.getNetworkId(), domainRouterVO.getId()));
                 cmds.addCommand(finishCmd);
             }
@@ -499,7 +499,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     protected boolean setupVpcPrivateNetwork(final VirtualRouter router, final boolean add, final NicProfile privateNic) throws ResourceUnavailableException {
 
         if (router.getState() == State.Running) {
-            final PrivateIpVO ipVO = _privateIpDao.findByIpAndSourceNetworkId(privateNic.getNetworkId(), privateNic.getIp4Address());
+            final PrivateIpVO ipVO = _privateIpDao.findByIpAndSourceNetworkId(privateNic.getNetworkId(), privateNic.getIPv4Address());
             final Network network = _networkDao.findById(privateNic.getNetworkId());
             final String netmask = NetUtils.getCidrNetmask(network.getCidr());
             final PrivateIpAddress ip = new PrivateIpAddress(ipVO, network.getBroadcastUri().toString(), network.getGateway(), netmask, privateNic.getMacAddress());
@@ -657,7 +657,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     final PublicIpAddress nicToUnplug = nicsToUnplug.get(ip.getVlanTag());
                     if (nicToUnplug != null) {
                         final NicVO nicVO = _nicDao.findByIp4AddressAndNetworkIdAndInstanceId(publicNtwkId, router.getId(), nicToUnplug.getAddress().addr());
-                        nicVO.setIp4Address(ip.getAddress().addr());
+                        nicVO.setIPv4Address(ip.getAddress().addr());
                         _nicDao.update(nicVO.getId(), nicVO);
                         s_logger.debug("Updated the nic " + nicVO + " with the new ip address " + ip.getAddress().addr());
                         nicsToUnplug.remove(ip.getVlanTag());

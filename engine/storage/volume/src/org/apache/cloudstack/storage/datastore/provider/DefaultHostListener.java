@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.storage.datastore.provider;
 
+import java.util.List;
+
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -32,6 +34,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.alert.AlertManager;
+import com.cloud.exception.StorageConflictException;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
@@ -52,7 +55,7 @@ public class DefaultHostListener implements HypervisorHostListener {
     PrimaryDataStoreDao primaryStoreDao;
 
     @Override
-    public boolean hostConnect(long hostId, long poolId) {
+    public boolean hostConnect(long hostId, long poolId) throws StorageConflictException {
         StoragePool pool = (StoragePool)this.dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool);
         final Answer answer = agentMgr.easySend(hostId, cmd);
@@ -71,6 +74,17 @@ public class DefaultHostListener implements HypervisorHostListener {
         assert (answer instanceof ModifyStoragePoolAnswer) : "Well, now why won't you actually return the ModifyStoragePoolAnswer when it's ModifyStoragePoolCommand? Pool=" +
             pool.getId() + "Host=" + hostId;
         ModifyStoragePoolAnswer mspAnswer = (ModifyStoragePoolAnswer)answer;
+        if (mspAnswer.getLocalDatastoreName() != null && pool.isShared()) {
+            String datastoreName = mspAnswer.getLocalDatastoreName();
+            List<StoragePoolVO> localStoragePools = this.primaryStoreDao.listLocalStoragePoolByPath(pool.getDataCenterId(), datastoreName);
+            for (StoragePoolVO localStoragePool : localStoragePools) {
+                if (datastoreName.equals(localStoragePool.getPath())) {
+                    s_logger.warn("Storage pool: " + pool.getId() + " has already been added as local storage: " + localStoragePool.getName());
+                    throw new StorageConflictException("Cannot add shared storage pool: " + pool.getId() + " because it has already been added as local storage:"
+                            + localStoragePool.getName());
+                }
+            }
+        }
 
         StoragePoolHostVO poolHost = storagePoolHostDao.findByPoolHost(pool.getId(), hostId);
         if (poolHost == null) {

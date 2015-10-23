@@ -71,7 +71,15 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
             _concierge = new ConnectionConcierge("LockMaster", conn, true);
         } catch (SQLException e) {
             s_logger.error("Unable to get a new db connection", e);
-            throw new CloudRuntimeException("Unable to initialize a connection to the database for locking purposes: ", e);
+            throw new CloudRuntimeException("Unable to initialize a connection to the database for locking purposes", e);
+        } finally {
+            if (_concierge == null && conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    s_logger.debug("closing connection failed after everything else.", e);
+                }
+            }
         }
     }
 
@@ -136,6 +144,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
                 }
                 Thread.sleep(5000);
             } catch (InterruptedException e) {
+                s_logger.debug("[ignored] interupted while aquiring " + key);
             }
         }
         String msg = "Timed out on acquiring lock " + key + " .  Waited for " + ((InaccurateClock.getTime() - startTime)/1000) +  "seconds";

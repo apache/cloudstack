@@ -134,59 +134,59 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager, SnapshotApiService {
     private static final Logger s_logger = Logger.getLogger(SnapshotManagerImpl.class);
     @Inject
-    private VMTemplateDao _templateDao;
+    VMTemplateDao _templateDao;
     @Inject
-    private UserVmDao _vmDao;
+    UserVmDao _vmDao;
     @Inject
-    private VolumeDao _volsDao;
+    VolumeDao _volsDao;
     @Inject
-    private AccountDao _accountDao;
+    AccountDao _accountDao;
     @Inject
-    private SnapshotDao _snapshotDao;
+    SnapshotDao _snapshotDao;
     @Inject
-    private SnapshotDataStoreDao _snapshotStoreDao;
+    SnapshotDataStoreDao _snapshotStoreDao;
     @Inject
-    private PrimaryDataStoreDao _storagePoolDao;
+    PrimaryDataStoreDao _storagePoolDao;
     @Inject
-    private final SnapshotPolicyDao _snapshotPolicyDao = null;
+    SnapshotPolicyDao _snapshotPolicyDao = null;
     @Inject
-    private SnapshotScheduleDao _snapshotScheduleDao;
+    SnapshotScheduleDao _snapshotScheduleDao;
     @Inject
-    private DomainDao _domainDao;
+    DomainDao _domainDao;
     @Inject
-    private StorageManager _storageMgr;
+    StorageManager _storageMgr;
     @Inject
-    private SnapshotScheduler _snapSchedMgr;
+    SnapshotScheduler _snapSchedMgr;
     @Inject
-    private AccountManager _accountMgr;
+    AccountManager _accountMgr;
     @Inject
-    private AlertManager _alertMgr;
+    AlertManager _alertMgr;
     @Inject
-    private ClusterDao _clusterDao;
+    ClusterDao _clusterDao;
     @Inject
-    private ResourceLimitService _resourceLimitMgr;
+    ResourceLimitService _resourceLimitMgr;
     @Inject
-    private DomainManager _domainMgr;
+    DomainManager _domainMgr;
     @Inject
-    private ResourceTagDao _resourceTagDao;
+    ResourceTagDao _resourceTagDao;
     @Inject
-    private ConfigurationDao _configDao;
+    ConfigurationDao _configDao;
     @Inject
-    private VMSnapshotDao _vmSnapshotDao;
+    VMSnapshotDao _vmSnapshotDao;
     @Inject
-    private DataStoreManager dataStoreMgr;
+    DataStoreManager dataStoreMgr;
     @Inject
-    private SnapshotService snapshotSrv;
+    SnapshotService snapshotSrv;
     @Inject
-    private VolumeDataFactory volFactory;
+    VolumeDataFactory volFactory;
     @Inject
-    private SnapshotDataFactory snapshotFactory;
+    SnapshotDataFactory snapshotFactory;
     @Inject
-    private EndPointSelector _epSelector;
+    EndPointSelector _epSelector;
     @Inject
-    private ResourceManager _resourceMgr;
+    ResourceManager _resourceMgr;
     @Inject
-    private StorageStrategyFactory _storageStrategyFactory;
+    StorageStrategyFactory _storageStrategyFactory;
 
     private int _totalRetries;
     private int _pauseInterval;
@@ -221,6 +221,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             try {
                 Thread.sleep(_pauseInterval * 1000);
             } catch (InterruptedException e) {
+                s_logger.debug("[ignored] interupted while retry cmd.");
             }
 
             s_logger.debug("Retrying...");
@@ -245,13 +246,17 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     }
 
     @Override
-    public boolean revertSnapshot(Long snapshotId) {
-        Snapshot snapshot = _snapshotDao.findById(snapshotId);
+    public Snapshot revertSnapshot(Long snapshotId) {
+        SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
         if (snapshot == null) {
             throw new InvalidParameterValueException("No such snapshot");
         }
 
-        Volume volume = _volsDao.findById(snapshot.getVolumeId());
+        VolumeVO volume = _volsDao.findById(snapshot.getVolumeId());
+        if (volume.getState() != Volume.State.Ready) {
+            throw new InvalidParameterValueException("The volume is not in Ready state.");
+        }
+
         Long instanceId = volume.getInstanceId();
 
         // If this volume is attached to an VM, then the VM needs to be in the stopped state
@@ -263,14 +268,28 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             }
         }
 
+        SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Image);
+        if (snapshotInfo == null) {
+            throw new CloudRuntimeException("snapshot:" + snapshotId + " not exist in data store");
+        }
+
         SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.REVERT);
 
         if (snapshotStrategy == null) {
             s_logger.error("Unable to find snaphot strategy to handle snapshot with id '" + snapshotId + "'");
-            return false;
+            return null;
         }
 
-        return snapshotStrategy.revertSnapshot(snapshotId);
+        boolean result = snapshotStrategy.revertSnapshot(snapshotInfo);
+        if (result) {
+            // update volume size and primary storage count
+            _resourceLimitMgr.decrementResourceCount(snapshot.getAccountId(), ResourceType.primary_storage,
+                    new Long(volume.getSize() - snapshot.getSize()));
+            volume.setSize(snapshot.getSize());
+            _volsDao.update(volume.getId(), volume);
+            return snapshotInfo;
+        }
+        return null;
     }
 
     @Override

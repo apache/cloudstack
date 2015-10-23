@@ -20,6 +20,7 @@ package org.apache.cloudstack.storage.cache.manager;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -41,6 +42,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
@@ -50,6 +52,7 @@ import org.apache.cloudstack.storage.cache.allocator.StorageCacheAllocator;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 
+import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.configuration.Config;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.NumbersUtil;
@@ -78,6 +81,9 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
     int workers;
     ScheduledExecutorService executors;
     int cacheReplaceMentInterval;
+    private static final Object templateLock = new Object();
+    private static final Object volumeLock = new Object();
+    private static final Object snapshotLock = new Object();
 
     @Override
     public DataStore getCacheStorage(Scope scope) {
@@ -216,15 +222,94 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
 
     @Override
     public DataObject createCacheObject(DataObject data, DataStore store) {
-        DataObjectInStore obj = objectInStoreMgr.findObject(data, store);
-        if (obj != null && obj.getState() == ObjectInDataStoreStateMachine.State.Ready) {
-            s_logger.debug("there is already one in the cache store");
-            DataObject dataObj = objectInStoreMgr.get(data, store);
-            dataObj.incRefCount();
-            return dataObj;
-        }
+        DataObject objOnCacheStore = null;
+        final Object lock;
+        final DataObjectType type = data.getType();
+        final String typeName;
+        final long storeId = store.getId();
+        final long dataId = data.getId();
 
-        DataObject objOnCacheStore = store.create(data);
+        /*
+         * Make sure any thread knows own lock type.
+         */
+        if (type == DataObjectType.TEMPLATE) {
+            lock = templateLock;
+            typeName = "template";
+        } else if (type == DataObjectType.VOLUME) {
+            lock = volumeLock;
+            typeName = "volume";
+        } else if (type == DataObjectType.SNAPSHOT) {
+            lock = snapshotLock;
+            typeName = "snapshot";
+        } else {
+            String msg = "unsupported DataObject comes, then can't acquire correct lock object";
+            throw new CloudRuntimeException(msg);
+        }
+        s_logger.debug("check " + typeName + " cache entry(id: " + dataId + ") on store(id: " + storeId + ")");
+
+        DataObject existingDataObj = null;
+        synchronized (lock) {
+            DataObjectInStore obj = objectInStoreMgr.findObject(data, store);
+            if (obj != null) {
+                State st = obj.getState();
+
+                long miliSeconds = 10000;
+                long timeoutSeconds = 3600;
+                long timeoutMiliSeconds = timeoutSeconds * 1000;
+                Date now = new Date();
+                long expiredEpoch = now.getTime() + timeoutMiliSeconds;
+                Date expiredDate = new Date(expiredEpoch);
+
+                /*
+                 * Waiting for completion of cache copy.
+                 */
+                while (st == ObjectInDataStoreStateMachine.State.Allocated ||
+                    st == ObjectInDataStoreStateMachine.State.Creating ||
+                    st == ObjectInDataStoreStateMachine.State.Copying) {
+
+                    /*
+                     * Threads must release lock within waiting for cache copy and
+                     * must be waken up at completion.
+                     */
+                    s_logger.debug("waiting cache copy completion type: " + typeName + ", id: " + obj.getObjectId() + ", lock: " + lock.hashCode());
+                    try {
+                        lock.wait(miliSeconds);
+                    } catch (InterruptedException e) {
+                        s_logger.debug("[ignored] interupted while waiting for cache copy completion.");
+                    }
+                    s_logger.debug("waken up");
+
+                    now = new Date();
+                    if (now.after(expiredDate)) {
+                        String msg = "Waiting time exceeds timeout limit(" + timeoutSeconds + " s)";
+                        throw new CloudRuntimeException(msg);
+                    }
+
+                    obj = objectInStoreMgr.findObject(data, store);
+                    st = obj.getState();
+                }
+
+                if (st == ObjectInDataStoreStateMachine.State.Ready) {
+                    s_logger.debug("there is already one in the cache store");
+                    DataObject dataObj = objectInStoreMgr.get(data, store);
+                    dataObj.incRefCount();
+                    existingDataObj = dataObj;
+                }
+            }
+
+            if(existingDataObj == null) {
+                s_logger.debug("create " + typeName + " cache entry(id: " + dataId + ") on store(id: " + storeId + ")");
+                objOnCacheStore = store.create(data);
+            }
+            lock.notifyAll();
+        }
+        if (existingDataObj != null) {
+            return existingDataObj;
+        }
+        if (objOnCacheStore == null) {
+            s_logger.error("create " + typeName + " cache entry(id: " + dataId + ") on store(id: " + storeId + ") failed");
+            return null;
+        }
 
         AsyncCallFuture<CopyCommandResult> future = new AsyncCallFuture<CopyCommandResult>();
         CopyCommandResult result = null;
@@ -250,6 +335,13 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
         } finally {
             if (result == null) {
                 objOnCacheStore.processEvent(Event.OperationFailed);
+            }
+            synchronized (lock) {
+                /*
+                 * Wake up all threads waiting for cache copy.
+                 */
+                s_logger.debug("wake up all waiting threads(lock: " + lock.hashCode() + ")");
+                lock.notifyAll();
             }
         }
         return null;

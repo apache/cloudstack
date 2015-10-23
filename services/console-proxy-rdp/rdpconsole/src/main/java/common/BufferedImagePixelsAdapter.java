@@ -21,12 +21,15 @@ import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferInt;
 import java.util.Arrays;
 
+import org.apache.log4j.Logger;
+
 import streamer.BaseElement;
 import streamer.ByteBuffer;
 import streamer.Element;
 import streamer.Link;
 
 public class BufferedImagePixelsAdapter extends BaseElement {
+    private static final Logger s_logger = Logger.getLogger(BufferedImagePixelsAdapter.class);
 
     public static final String TARGET_X = "x";
     public static final String TARGET_Y = "y";
@@ -55,7 +58,7 @@ public class BufferedImagePixelsAdapter extends BaseElement {
     @Override
     public void handleData(ByteBuffer buf, Link link) {
         if (verbose)
-            System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
+            s_logger.debug("[" + this + "] INFO: Data received: " + buf + ".");
 
         int x = (Integer)buf.getMetadata(TARGET_X);
         int y = (Integer)buf.getMetadata(TARGET_Y);
@@ -100,6 +103,7 @@ public class BufferedImagePixelsAdapter extends BaseElement {
                 try {
                     System.arraycopy(intArray, srcLine * rectWidth, imageBuffer, x + dstLine * imageWidth, rectWidth);
                 } catch (IndexOutOfBoundsException e) {
+                    s_logger.info("[ignored] copy error",e);
                 }
             }
             break;
@@ -141,7 +145,7 @@ public class BufferedImagePixelsAdapter extends BaseElement {
         String actualData = Arrays.toString(((DataBufferInt)canvas.getOfflineImage().getRaster().getDataBuffer()).getData());
         String expectedData = Arrays.toString(pixelsLE);
         if (!actualData.equals(expectedData))
-            System.err.println("Actual image:   " + actualData + "\nExpected image: " + expectedData + ".");
+            s_logger.error("Actual image:   " + actualData + "\nExpected image: " + expectedData + ".");
 
     }
 

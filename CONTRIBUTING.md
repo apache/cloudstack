@@ -105,4 +105,3 @@ $ git checkout master
 $ git branch -D feature_x
 $ git push origin :feature_x
 ```
-

@@ -347,6 +347,8 @@ public class TestClientWithAPI {
                                     int stopResponseCode = executeStop(server, developerServer, username, true);
                                     s_logger.info("stop response code: " + stopResponseCode);
                                 } catch (Exception e1) {
+                                    s_logger.info("[ignored]"
+                                            + "error executing stop during api test: " + e1.getLocalizedMessage());
                                 }
                             } finally {
                                 NDC.clear();
@@ -2271,6 +2273,7 @@ public class TestClientWithAPI {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
+                        s_logger.debug("[ignored] interupted while during async job result query.");
                     }
                 } else {
                     break;

@@ -235,12 +235,21 @@ backup_snapshot() {
   fi
   return 0
 }
+
+revert_snapshot() {
+  local snapshotPath=$1
+  local destPath=$2
+  ${qemu_img} convert -f qcow2 -O qcow2 "$snapshotPath" "$destPath" || \
+   ( printf "${qemu_img} failed to revert snapshot ${snapshotPath} to disk ${destPath}.\n" >&2; return 2 )
+  return 0
+}
 #set -x
 
 cflag=
 dflag=
 rflag=
 bflag=
+vflag=
 nflag=
 pathval=
 snapshot=
@@ -249,7 +258,7 @@ deleteDir=
 dmsnapshot=no
 dmrollback=no
 
-while getopts 'c:d:r:n:b:p:t:f' OPTION
+while getopts 'c:d:r:n:b:v:p:t:f' OPTION
 do
   case $OPTION in
   c)	cflag=1
@@ -262,6 +271,9 @@ do
         pathval="$OPTARG"
         ;;
   b)    bflag=1
+        pathval="$OPTARG"
+        ;;
+  v)    vflag=1
         pathval="$OPTARG"
         ;;
   n)	nflag=1
@@ -303,6 +315,10 @@ then
 elif [ "$rflag" == "1" ]
 then
   rollback_snapshot $pathval "$snapshot" $destPath
+  exit $?
+elif [ "$vflag" == "1" ]
+then
+  revert_snapshot $pathval $destPath
   exit $?
 fi
 

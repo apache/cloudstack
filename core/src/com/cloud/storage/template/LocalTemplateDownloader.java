@@ -123,6 +123,7 @@ public class LocalTemplateDownloader extends TemplateDownloaderBase implements T
                 try {
                     fic.close();
                 } catch (IOException e) {
+                    s_logger.info("[ignore] error while closing file input channel.");
                 }
             }
 
@@ -130,6 +131,7 @@ public class LocalTemplateDownloader extends TemplateDownloaderBase implements T
                 try {
                     foc.close();
                 } catch (IOException e) {
+                    s_logger.info("[ignore] error while closing file output channel.");
                 }
             }
 
@@ -137,6 +139,7 @@ public class LocalTemplateDownloader extends TemplateDownloaderBase implements T
                 try {
                     fis.close();
                 } catch (IOException e) {
+                    s_logger.info("[ignore] error while closing file input stream.");
                 }
             }
 
@@ -144,6 +147,7 @@ public class LocalTemplateDownloader extends TemplateDownloaderBase implements T
                 try {
                     fos.close();
                 } catch (IOException e) {
+                    s_logger.info("[ignore] error while closing file output stream.");
                 }
             }
 
@@ -154,17 +158,5 @@ public class LocalTemplateDownloader extends TemplateDownloaderBase implements T
                 callback.downloadComplete(_status);
             }
         }
-    }
-
-    public static void main(String[] args) {
-        String url = "file:///home/ahuang/Download/E3921_P5N7A-VM_manual.zip";
-        TemplateDownloader td = new LocalTemplateDownloader(null, url, "/tmp/mysql", TemplateDownloader.DEFAULT_MAX_TEMPLATE_SIZE_IN_BYTES, null);
-        long bytes = td.download(true, null);
-        if (bytes > 0) {
-            System.out.println("Downloaded  (" + bytes + " bytes)" + " in " + td.getDownloadTime() / 1000 + " secs");
-        } else {
-            System.out.println("Failed download");
-        }
-
     }
 }

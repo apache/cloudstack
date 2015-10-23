@@ -134,15 +134,4 @@ public class ClusterServiceServletImpl implements ClusterService {
         return s_client;
     }
 
-    // for test purpose only
-    public static void main(final String[] args) {
-        /*
-                ClusterServiceServletImpl service = new ClusterServiceServletImpl("http://localhost:9090/clusterservice", 300);
-                try {
-                    String result = service.execute("test", 1, "{ p1:v1, p2:v2 }", true);
-                    System.out.println(result);
-                } catch (RemoteException e) {
-                }
-         */
-    }
 }

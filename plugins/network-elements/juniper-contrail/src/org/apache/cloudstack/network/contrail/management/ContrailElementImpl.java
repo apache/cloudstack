@@ -27,24 +27,19 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.network.contrail.api.command.CreateServiceInstanceCmd;
 import org.apache.cloudstack.network.contrail.model.InstanceIpModel;
 import org.apache.cloudstack.network.contrail.model.VMInterfaceModel;
 import org.apache.cloudstack.network.contrail.model.VirtualMachineModel;
 import org.apache.cloudstack.network.contrail.model.VirtualNetworkModel;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkVO;
-import com.cloud.resource.ResourceManager;
-
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -52,12 +47,17 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
-import com.cloud.network.element.IpDeployer;
-import com.cloud.network.element.StaticNatServiceProvider;
-import com.cloud.network.element.SourceNatServiceProvider;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.DhcpServiceProvider;
+import com.cloud.network.element.IpDeployer;
+import com.cloud.network.element.SourceNatServiceProvider;
+import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.resource.ResourceManager;
+import com.cloud.server.ConfigurationServer;
+import com.cloud.server.ConfigurationServerImpl;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -65,8 +65,6 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
-import com.cloud.server.ConfigurationServer;
-import com.cloud.server.ConfigurationServerImpl;
 
 @Component
 @Local(value = {ContrailElement.class, StaticNatServiceProvider.class, IpDeployer.class, SourceNatServiceProvider.class})
@@ -196,7 +194,7 @@ public class ContrailElementImpl extends AdapterBase
             ipModel = new InstanceIpModel(vm.getInstanceName(), nic.getDeviceId());
             ipModel.addToVMInterface(vmiModel);
         }
-        ipModel.setAddress(nicProfile.getIp4Address());
+        ipModel.setAddress(nicProfile.getIPv4Address());
 
         try {
             vmModel.update(_manager.getModelController());

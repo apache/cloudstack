@@ -82,23 +82,14 @@ public class Upgrade40to41 implements DbUpgrade {
         if (regionId != null) {
             region_id = Integer.parseInt(regionId);
         }
-        PreparedStatement pstmt = null;
-        try {
+        try (PreparedStatement pstmt = conn.prepareStatement("update `cloud`.`region` set id = ?");) {
             //Update regionId in region table
             s_logger.debug("Updating region table with Id: " + region_id);
-            pstmt = conn.prepareStatement("update `cloud`.`region` set id = ?");
             pstmt.setInt(1, region_id);
             pstmt.executeUpdate();
 
         } catch (SQLException e) {
             throw new CloudRuntimeException("Error while updating region entries", e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 

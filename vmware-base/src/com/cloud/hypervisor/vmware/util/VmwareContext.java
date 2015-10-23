@@ -19,6 +19,7 @@ package com.cloud.hypervisor.vmware.util;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreFile;
 import com.cloud.utils.ActionDelegate;
+import com.cloud.utils.StringUtils;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.ObjectSpec;
@@ -50,6 +51,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -357,7 +359,7 @@ public class VmwareContext {
             }
             out.flush();
 
-            br = new BufferedReader(new InputStreamReader(conn.getInputStream(),conn.getContentEncoding()));
+            br = new BufferedReader(new InputStreamReader(conn.getInputStream(), getCharSetFromConnection(conn)));
             String line;
             while ((line = br.readLine()) != null) {
                 if (s_logger.isTraceEnabled())
@@ -373,6 +375,18 @@ public class VmwareContext {
             if (br != null)
                 br.close();
         }
+    }
+
+    private Charset getCharSetFromConnection(HttpURLConnection conn) {
+        String charsetName = conn.getContentEncoding();
+        Charset charset;
+        try {
+            charset = Charset.forName(charsetName);
+        } catch (IllegalArgumentException e) {
+            s_logger.warn("Illegal/unsupported/null charset name from connection. charsetname from connection is " + charsetName);
+            charset = StringUtils.getPreferredCharset();
+        }
+        return charset;
     }
 
     public void uploadVmdkFile(String httpMethod, String urlString, String localFileName, long totalBytesUpdated, ActionDelegate<Long> progressUpdater) throws Exception {
@@ -483,9 +497,9 @@ public class VmwareContext {
         out.write(content);
         out.flush();
 
-        BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream(),conn.getContentEncoding()));
+        BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream(), getCharSetFromConnection(conn)));
         String line;
-        while ((line = in.readLine()) != null) {
+        while ((in.ready()) && (line = in.readLine()) != null) {
             if (s_logger.isTraceEnabled())
                 s_logger.trace("Upload " + urlString + " response: " + line);
         }
@@ -632,6 +646,7 @@ public class VmwareContext {
                 try {
                     Thread.sleep(CONNECT_RETRY_INTERVAL);
                 } catch (InterruptedException ex) {
+                    s_logger.debug("[ignored] interupted while connecting.");
                 }
             }
         }

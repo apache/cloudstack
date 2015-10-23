@@ -17,7 +17,7 @@
 (function(cloudStack) {
 
     var domainObjs;
-    
+
     cloudStack.sections.accounts = {
         title: 'label.accounts',
         id: 'accounts',
@@ -91,7 +91,7 @@
                             }
 
                         },
-                                                
+
                         addLdapAccount: {
                             label: 'label.add.ldap.account',
                             isHeader: true,
@@ -123,7 +123,7 @@
                                 )
                             }
 
-                        }                        
+                        }
                     },
 
                     dataProvider: function(args) {
@@ -168,7 +168,7 @@
                     },
 
                     detailView: {
-                        name: 'Account details',
+                        name: 'label.account.details',
                         isMaximized: true,
                         viewAll: {
                             path: 'accounts.users',
@@ -422,59 +422,59 @@
                                         data: data,
                                         async: true,
                                         success: function(json) {
-                                            var resourcecounts= json.updateresourcecountresponse.resourcecount;                                               
+                                            var resourcecounts= json.updateresourcecountresponse.resourcecount;
                                             //pop up API response in a dialog box since only updateResourceCount API returns resourcecount (listResourceLimits API does NOT return resourcecount)
                                             var msg = '';
                                             if (resourcecounts != null) {
-                                            	for (var i = 0; i < resourcecounts.length; i++) {                                            		
-                                            		switch (resourcecounts[i].resourcetype) {
-                                            		case '0':
-                                            			msg += 'Instance'; //vmLimit
-                                            			break;
-                                            		case '1':
-                                            			msg += 'Public IP'; //ipLimit
-                                            			break;
-                                            		case '2':
-                                            			msg += 'Volume'; //volumeLimit
-                                            			break;
-                                            		case '3':
-                                            		    msg += 'Snapshot'; //snapshotLimit
-                                            		    break;
-                                            		case '4':
-                                            			msg += 'Template'; //templateLimit
-                                            			break;
-                                            		case '5':                                            			
-                                            			continue; //resourcetype 5 is not in use. so, skip to next item.                                          			
-                                            			break;
-                                            		case '6':
-                                            			msg += 'Network'; //networkLimit
-                                            			break;
-                                            		case '7':
-                                            			msg += 'VPC'; //vpcLimit
-                                            			break;
-                                            		case '8':
-                                            			msg += 'CPU'; //cpuLimit
-                                            			break;
-                                            		case '9':
-                                            			msg += 'Memory'; //memoryLimit
-                                            			break;
-                                            		case '10':
-                                            			msg += 'Primary Storage'; //primaryStorageLimit
-                                            			break;
-                                            		case '11':
-                                            			msg += 'Secondary Storage'; //secondaryStorageLimit
-                                            			break;      
-                                            		}
-                                            		                                      		
-                                            		msg += ' Count: ' + resourcecounts[i].resourcecount + ' <br> ';
-                                            	}
+                                                for (var i = 0; i < resourcecounts.length; i++) {
+                                                    switch (resourcecounts[i].resourcetype) {
+                                                    case '0':
+                                                        msg += 'Instance'; //vmLimit
+                                                        break;
+                                                    case '1':
+                                                        msg += 'Public IP'; //ipLimit
+                                                        break;
+                                                    case '2':
+                                                        msg += 'Volume'; //volumeLimit
+                                                        break;
+                                                    case '3':
+                                                        msg += 'Snapshot'; //snapshotLimit
+                                                        break;
+                                                    case '4':
+                                                        msg += 'Template'; //templateLimit
+                                                        break;
+                                                    case '5':
+                                                        continue; //resourcetype 5 is not in use. so, skip to next item.
+                                                        break;
+                                                    case '6':
+                                                        msg += 'Network'; //networkLimit
+                                                        break;
+                                                    case '7':
+                                                        msg += 'VPC'; //vpcLimit
+                                                        break;
+                                                    case '8':
+                                                        msg += 'CPU'; //cpuLimit
+                                                        break;
+                                                    case '9':
+                                                        msg += 'Memory'; //memoryLimit
+                                                        break;
+                                                    case '10':
+                                                        msg += 'Primary Storage'; //primaryStorageLimit
+                                                        break;
+                                                    case '11':
+                                                        msg += 'Secondary Storage'; //secondaryStorageLimit
+                                                        break;
+                                                    }
+
+                                                    msg += ' Count: ' + resourcecounts[i].resourcecount + ' <br> ';
+                                                }
                                             }
-                                            
-                                            
+
+
                                             cloudStack.dialog.notice({
-                                            	message: msg
-                                            });                                            
-                                            
+                                                message: msg
+                                            });
+
                                             args.response.success();
                                         },
                                         error: function(json) {
@@ -653,13 +653,13 @@
                             }
 
                         },
-                        
+
                         tabFilter: function(args) {
-                        	var hiddenTabs = [];
-                        	if(!isAdmin()) {
-                        		hiddenTabs.push('settings');
-                        	}                        	
-                        	return hiddenTabs;
+                            var hiddenTabs = [];
+                            if(!isAdmin()) {
+                                hiddenTabs.push('settings');
+                            }
+                            return hiddenTabs;
                         },
 
                         tabs: {
@@ -896,7 +896,7 @@
 
                             // Granular settings for account
                             settings: {
-                                title: 'Settings',
+                                title: 'label.settings',
                                 custom: cloudStack.uiCustom.granularSettings({
                                     dataProvider: function(args) {
                                         $.ajax({
@@ -1221,7 +1221,7 @@
                     },
 
                     detailView: {
-                        name: 'User details',
+                        name: 'label.user.details',
                         isMaximized: true,
                         actions: {
                             edit: {
@@ -1665,7 +1665,7 @@
             sshkeypairs: {
                 type: 'select',
                 id: 'sshkeypairs',
-                title: 'SSH Key Pairs',
+                title: 'label.ssh.key.pairs',
                 listView: {
                     name: 'sshkeypairs',
                     fields: {
@@ -1679,7 +1679,7 @@
                            label: 'label.account'
                         },
                         privatekey: {
-                            label: 'Private Key',
+                            label: 'label.private.key',
                             span: false
                         }
                     },
@@ -1704,7 +1704,7 @@
                     },
                     actions: {
                         add: {
-                            label: 'Create a SSH Key Pair',
+                            label: 'label.create.ssh.key.pair',
 
                             preFilter: function(args) {
                                 return true;
@@ -1712,13 +1712,13 @@
 
                             messages: {
                                 notification: function(args) {
-                                    return 'Created a SSH Key Pair.';
+                                    return _l('message.desc.created.ssh.key.pair');
                                 }
                             },
 
                             createForm: {
-                                title: 'Create a SSH Key Pair',
-                                desc: 'Please fill in the following data to create or register a ssh key pair.<br><br>(1) If public key is set, CloudStack will register the public key. You can use it through your private key.<br><br>(2) If public key is not set, CloudStack will create a new SSH Key pair. In this case, please copy and save the private key. CloudStack will not keep it.<br>',
+                                title: 'label.create.ssh.key.pair',
+                                desc: 'message.desc.create.ssh.key.pair',
                                 fields: {
                                     name: {
                                         label: 'label.name',
@@ -1727,7 +1727,7 @@
                                         }
                                     },
                                     publickey: {
-                                        label: 'Public Key'
+                                        label: 'label.public.key'
                                     },
                                     domain: {
                                         label: 'label.domain',
@@ -1813,7 +1813,7 @@
 
                                 if (args.data.publickey != null && args.data.publickey.length > 0) {
                                     $.extend(data, {
-                                        publickey: encodeURIComponent(args.data.publickey)
+                                        publickey: args.data.publickey
                                     });
                                     $.ajax({
                                         url: createURL('registerSSHKeyPair'),
@@ -1857,7 +1857,7 @@
                     },
 
                     detailView: {
-                        name: 'SSH Key Pair Details',
+                        name: 'label.ssh.key.pair.details',
                         isMaximized: true,
                         viewAll: {
                             label: 'label.instances',
@@ -1865,13 +1865,13 @@
                         },
                         actions: {
                             remove: {
-                                label: 'Remove SSH Key Pair',
+                                label: 'label.remove.ssh.key.pair',
                                 messages: {
                                     confirm: function(args) {
-                                        return 'Please confirm that you want to remove this SSH Key Pair';
+                                        return _l('message.please.confirm.remove.ssh.key.pair');
                                     },
                                     notification: function(args) {
-                                        return 'Removed a SSH Key Pair';
+                                        return _l('message.removed.ssh.key.pair');
                                     }
                                 },
                                 action: function(args) {
@@ -1911,11 +1911,11 @@
                                         label: 'label.account'
                                     },
                                     privatekey: {
-                                        label: 'Private Key',
+                                        label: 'label.private.key',
                                         span: false
                                     },
                                     fingerprint: {
-                                        label: 'FingerPrint'
+                                        label: 'label.fingerprint'
                                     }
                                 }],
 
@@ -2001,23 +2001,23 @@
                 allowedActions.push("remove");
             }
         } else { //domain-admin, regular-user
-        	if (jsonObj.username == g_username) { //selected user is self
-        		allowedActions.push("changePassword");
+            if (jsonObj.username == g_username) { //selected user is self
+                allowedActions.push("changePassword");
                 allowedActions.push("generateKeys");
-        	} else if (isDomainAdmin()) { //if selected user is not self, and the current login is domain-admin
-        		allowedActions.push("edit");
+            } else if (isDomainAdmin()) { //if selected user is not self, and the current login is domain-admin
+                allowedActions.push("edit");
                 if (jsonObj.state == "enabled")
                     allowedActions.push("disable");
                 if (jsonObj.state == "disabled")
                     allowedActions.push("enable");
                 allowedActions.push("remove");
-                
+
                 allowedActions.push("changePassword");
                 allowedActions.push("generateKeys");
                 if (g_idpList) {
                     allowedActions.push("configureSamlAuthorization");
                 }
-        	}        	
+            }
         }
         return allowedActions;
     }

@@ -94,15 +94,15 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
     @Override
     protected void getIp(NicProfile nic, DataCenter dc, VirtualMachineProfile vm, Network network) throws InsufficientVirtualNetworkCapacityException,
         InsufficientAddressCapacityException, ConcurrentOperationException {
-        if (nic.getIp4Address() == null) {
+        if (nic.getIPv4Address() == null) {
             PublicIp ip = _ipAddrMgr.assignPublicIpAddress(dc.getId(), null, vm.getOwner(), Vlan.VlanType.VirtualNetwork, null, null, false);
-            nic.setIp4Address(ip.getAddress().addr());
+            nic.setIPv4Address(ip.getAddress().addr());
 
-            nic.setGateway(ip.getGateway());
+            nic.setIPv4Gateway(ip.getGateway());
 
             // Set netmask to /24 for now
             // TDO make it /32 and go via router for anything else on the subnet
-            nic.setNetmask("255.255.255.0");
+            nic.setIPv4Netmask("255.255.255.0");
 
             // Make it the default nic so that a default route is set up.
             nic.setDefaultNic(true);
@@ -115,8 +115,8 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
             nic.setMacAddress(ip.getMacAddress());
         }
 
-        nic.setDns1(dc.getDns1());
-        nic.setDns2(dc.getDns2());
+        nic.setIPv4Dns1(dc.getDns1());
+        nic.setIPv4Dns2(dc.getDns2());
     }
 
     @Override
@@ -125,8 +125,8 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
 
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
         if (profile != null) {
-            profile.setDns1(dc.getDns1());
-            profile.setDns2(dc.getDns2());
+            profile.setIPv4Dns1(dc.getDns1());
+            profile.setIPv4Dns2(dc.getDns2());
         }
     }
 
@@ -140,18 +140,18 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
         s_logger.debug("allocate called with network: " + network + " nic: " + nic + " vm: " + vm);
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
 
-        if (nic.getRequestedIpv4() != null) {
+        if (nic.getRequestedIPv4() != null) {
             throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
         }
 
         getIp(nic, dc, vm, network);
 
-        if (nic.getIp4Address() == null) {
-            nic.setStrategy(Nic.ReservationStrategy.Start);
+        if (nic.getIPv4Address() == null) {
+            nic.setReservationStrategy(Nic.ReservationStrategy.Start);
         } else if (vm.getVirtualMachine().getType() == VirtualMachine.Type.DomainRouter) {
-            nic.setStrategy(Nic.ReservationStrategy.Managed);
+            nic.setReservationStrategy(Nic.ReservationStrategy.Managed);
         } else {
-            nic.setStrategy(Nic.ReservationStrategy.Create);
+            nic.setReservationStrategy(Nic.ReservationStrategy.Create);
         }
 
         nic.setBroadcastUri(generateBroadcastUri(network));
@@ -163,7 +163,7 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
         throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException {
         s_logger.debug("reserve called with network: " + network + " nic: " + nic + " vm: " + vm);
-        if (nic.getIp4Address() == null) {
+        if (nic.getIPv4Address() == null) {
             getIp(nic, dest.getDataCenter(), vm, network);
         }
     }
@@ -206,10 +206,10 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile vm) {
         s_logger.debug("deallocate called with network: " + network + " nic: " + nic + " vm: " + vm);
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("public network deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIp4Address());
+            s_logger.debug("public network deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIPv4Address());
         }
 
-        final IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIp4Address());
+        final IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIPv4Address());
         if (ip != null && nic.getReservationStrategy() != Nic.ReservationStrategy.Managed) {
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override

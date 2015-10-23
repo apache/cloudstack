@@ -90,7 +90,7 @@
                 if (isHidden) {
                     return true;
                 }
-                
+
                 var $td = $('<td>').addClass(fieldName).appendTo($tr);
                 var $input, val;
                 var $addButton = $multi.find('form .button.add-vm:not(.custom-action)').clone();
@@ -280,7 +280,7 @@
 
                 // Align width to main header
                 _medit.refreshItemWidths($multi);
-                
+
                 if (data._hideFields &&
                     $.inArray(fieldName, data._hideFields) > -1) {
                     $td.addClass('disabled');
@@ -437,7 +437,7 @@
 
                             cloudStack.dialog.createForm({
                                 form: {
-                                    title: 'Edit rule',
+                                    title: 'label.edit.rule',
                                     desc: '',
                                     fields: editableFields
                                 },
@@ -712,7 +712,7 @@
 
             itemRow: function(item, itemActions, multiRule, $tbody) {
                 var $tr = $('<tr>');
-                
+
                 var itemName = multiRule._itemName ? item[multiRule._itemName] : item.name;
                 var $itemName = $('<span>').html(_s(itemName));
 
@@ -727,14 +727,14 @@
                     });
                 });
 
-                                
+
                 var itemIp = multiRule._itemIp ? item[multiRule._itemIp] : null;
                 if (itemIp != null) {
-                	 var $itemIp = $('<span>').html(_s(itemIp));
+                     var $itemIp = $('<span>').html(_s(itemIp));
                      $tr.append($('<td>').addClass('state').appendTo($tr).append($itemIp));
-                }                        
-                
-                
+                }
+
+
                 var itemState = item._itemState ? item._itemState : item.state;
 
                 $tr.append($('<td>').addClass('state').appendTo($tr).append(
@@ -993,7 +993,7 @@
                         .appendTo($td);
 
                     if (field.validation) {
-                        $td.find('input').first().data("validation-settings",  field.validation );    
+                        $td.find('input').first().data("validation-settings",  field.validation );
                     }
 
                     if (field.isDisabled) $input.hide();

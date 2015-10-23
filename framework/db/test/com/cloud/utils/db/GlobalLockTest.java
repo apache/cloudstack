@@ -54,6 +54,7 @@ public class GlobalLockTest {
                     Thread.sleep(jobDuration * 1000);
                 }
             } catch (InterruptedException e) {
+                s_logger.debug("[ignored] interupted while testing global lock.");
             } finally {
                 if (locked) {
                     boolean unlocked = WorkLock.unlock();

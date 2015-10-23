@@ -1339,6 +1339,10 @@ start() {
      dhcpsrvr)
          [ "$NAME" == "" ] && NAME=dhcpsrvr
          setup_dhcpsrvr
+         if [ -x /opt/cloud/bin/update_config.py ]
+         then
+	         /opt/cloud/bin/update_config.py cmd_line.json
+         fi
 	  ;;
      secstorage)
          [ "$NAME" == "" ] && NAME=secstorage

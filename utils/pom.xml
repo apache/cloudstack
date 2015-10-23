@@ -18,7 +18,8 @@
     under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <artifactId>cloud-utils</artifactId>
   <name>Apache CloudStack Utils</name>
@@ -96,8 +97,8 @@
       <artifactId>ejb-api</artifactId>
     </dependency>
     <dependency>
-        <groupId>com.googlecode.java-ipv6</groupId>
-        <artifactId>java-ipv6</artifactId>
+      <groupId>com.googlecode.java-ipv6</groupId>
+      <artifactId>java-ipv6</artifactId>
     </dependency>
     <dependency>
       <groupId>commons-configuration</groupId>
@@ -115,10 +116,10 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-        <groupId>commons-io</groupId>
-        <artifactId>commons-io</artifactId>
-        <scope>provided</scope>
-        <version>${cs.commons-io.version}</version>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <scope>provided</scope>
+      <version>${cs.commons-io.version}</version>
     </dependency>
     <dependency>
       <groupId>org.reflections</groupId>
@@ -154,9 +155,9 @@
       <version>${cs.opensaml.version}</version>
     </dependency>
     <dependency>
-        <groupId>commons-net</groupId>
-        <artifactId>commons-net</artifactId>
-        <version>3.3</version>
+      <groupId>commons-net</groupId>
+      <artifactId>commons-net</artifactId>
+      <version>3.3</version>
     </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>
@@ -169,6 +170,20 @@
     </dependency>
   </dependencies>
   <build>
+    <sourceDirectory>src/main/java</sourceDirectory>
+    <testSourceDirectory>src/test/java</testSourceDirectory>
+    <outputDirectory>target/classes</outputDirectory>
+    <testOutputDirectory>target/test-classes</testOutputDirectory>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+    </resources>
+    <testResources>
+      <testResource>
+        <directory>src/test/resources</directory>
+      </testResource>
+    </testResources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -191,15 +206,9 @@
             <exclude>com/cloud/utils/testcase/NioTest.java</exclude>
           </excludes>
         </configuration>
-      </plugin>      
+      </plugin>
     </plugins>
-    <resources>
-       <resource>
-          <directory>certs</directory>
-       </resource>
-    </resources>
   </build>
-
   <profiles>
     <profile>
       <id>integration</id>
@@ -221,5 +230,4 @@
       </build>
     </profile>
   </profiles>
-
 </project>

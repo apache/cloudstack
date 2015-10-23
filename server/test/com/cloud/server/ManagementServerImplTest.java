@@ -16,12 +16,17 @@
 // under the License.
 package com.cloud.server;
 
+import com.cloud.user.SSHKeyPair;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.any;
 
 import org.apache.cloudstack.api.command.user.ssh.RegisterSSHKeyPairCmd;
 
@@ -35,33 +40,71 @@ public class ManagementServerImplTest {
 
     @Mock
     RegisterSSHKeyPairCmd regCmd;
+
     @Mock
     SSHKeyPairVO existingPair;
+
     @Mock
     Account account;
+
     @Mock
     SSHKeyPairDao sshKeyPairDao;
     ManagementServerImpl ms = new ManagementServerImpl();
+
+    @Mock
+    SSHKeyPair sshKeyPair;
+
     @Spy
     ManagementServerImpl spy;
 
     @Test(expected = InvalidParameterValueException.class)
-    public void testExistingPairRegistration() {
+    public void testDuplicateRegistraitons(){
         String accountName = "account";
-        String publicKeyString = "very public";
-        // setup owner with domainid
+        String publicKeyString = "ssh-rsa very public";
+        String publicKeyMaterial = spy.getPublicKeyFromKeyKeyMaterial(publicKeyString);
+
         Mockito.doReturn(account).when(spy).getCaller();
         Mockito.doReturn(account).when(spy).getOwner(regCmd);
-        // mock _sshKeyPairDao.findByName to return null
+
         Mockito.doNothing().when(spy).checkForKeyByName(regCmd, account);
-        // mock _sshKeyPairDao.findByPublicKey to return a known object
         Mockito.doReturn(accountName).when(regCmd).getAccountName();
+
         Mockito.doReturn(publicKeyString).when(regCmd).getPublicKey();
         Mockito.doReturn("name").when(regCmd).getName();
+
         spy._sshKeyPairDao = sshKeyPairDao;
         Mockito.doReturn(1L).when(account).getAccountId();
         Mockito.doReturn(1L).when(account).getDomainId();
-        Mockito.doReturn(existingPair).when(sshKeyPairDao).findByPublicKey(1L, 1L, publicKeyString);
+        Mockito.doReturn(Mockito.mock(SSHKeyPairVO.class)).when(sshKeyPairDao).persist(any(SSHKeyPairVO.class));
+
+        when(sshKeyPairDao.findByName(1L, 1L, "name")).thenReturn(null).thenReturn(null);
+        when(sshKeyPairDao.findByPublicKey(1L, 1L, publicKeyMaterial)).thenReturn(null).thenReturn(existingPair);
+
         spy.registerSSHKeyPair(regCmd);
+        spy.registerSSHKeyPair(regCmd);
+    }
+    @Test
+    public void testSuccess(){
+        String accountName = "account";
+        String publicKeyString = "ssh-rsa very public";
+        String publicKeyMaterial = spy.getPublicKeyFromKeyKeyMaterial(publicKeyString);
+
+        Mockito.doReturn(1L).when(account).getAccountId();
+        Mockito.doReturn(1L).when(account).getAccountId();
+        spy._sshKeyPairDao = sshKeyPairDao;
+
+
+        //Mocking the DAO object functions - NO object found in DB
+        Mockito.doReturn(Mockito.mock(SSHKeyPairVO.class)).when(sshKeyPairDao).findByPublicKey(1L, 1L,publicKeyMaterial);
+        Mockito.doReturn(Mockito.mock(SSHKeyPairVO.class)).when(sshKeyPairDao).findByName(1L, 1L, accountName);
+        Mockito.doReturn(Mockito.mock(SSHKeyPairVO.class)).when(sshKeyPairDao).persist(any(SSHKeyPairVO.class));
+
+        //Mocking the User Params
+        Mockito.doReturn(accountName).when(regCmd).getName();
+        Mockito.doReturn(publicKeyString).when(regCmd).getPublicKey();
+        Mockito.doReturn(account).when(spy).getOwner(regCmd);
+
+        spy.registerSSHKeyPair(regCmd);
+        Mockito.verify(spy, Mockito.times(3)).getPublicKeyFromKeyKeyMaterial(anyString());
     }
 }

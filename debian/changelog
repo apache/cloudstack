@@ -6,7 +6,7 @@ cloudstack (4.6.0-SNAPSHOT) unstable; urgency=low
   [ Rafael da Fonseca ]
   * Switch to dpkg-source 3.0 (native) format
 
- -- Rafael da Fonseca <rsafonseca@gmail.com>  Fri, 22 May 2015 16:03:55 +0200
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Thu, 18 Jun 2015 11:17:09 +0200
 
 cloudstack (4.5.0-snapshot) unstable; urgency=low
 

@@ -464,6 +464,7 @@ public class AgentShell implements IAgentShell, Daemon {
                 while (!_exit)
                     Thread.sleep(1000);
             } catch (InterruptedException e) {
+                s_logger.debug("[ignored] AgentShell was interupted.");
             }
 
         } catch (final ConfigurationException e) {

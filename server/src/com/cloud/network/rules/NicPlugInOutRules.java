@@ -100,9 +100,9 @@ public class NicPlugInOutRules extends RuleApplier {
             if (ip.isSourceNat()) {
                 defaultNic.setDefaultNic(true);
             }
-            defaultNic.setIp4Address(ip.getAddress().addr());
-            defaultNic.setGateway(ip.getGateway());
-            defaultNic.setNetmask(ip.getNetmask());
+            defaultNic.setIPv4Address(ip.getAddress().addr());
+            defaultNic.setIPv4Gateway(ip.getGateway());
+            defaultNic.setIPv4Netmask(ip.getNetmask());
             defaultNic.setMacAddress(ip.getMacAddress());
             defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
             defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ip.getVlanTag()));
@@ -125,14 +125,14 @@ public class NicPlugInOutRules extends RuleApplier {
             }
             // Create network usage commands. Send commands to router after
             // IPAssoc
-            NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(_router.getPrivateIpAddress(), _router.getInstanceName(), true, defaultNic.getIp4Address(), vpc.getCidr());
+            NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(_router.getPrivateIpAddress(), _router.getInstanceName(), true, defaultNic.getIPv4Address(), vpc.getCidr());
             _netUsageCommands.addCommand(netUsageCmd);
 
             UserStatisticsDao userStatsDao = visitor.getVirtualNetworkApplianceFactory().getUserStatsDao();
-            UserStatisticsVO stats = userStatsDao.findBy(_router.getAccountId(), _router.getDataCenterId(), publicNtwk.getId(), publicNic.getIp4Address(), _router.getId(),
+            UserStatisticsVO stats = userStatsDao.findBy(_router.getAccountId(), _router.getDataCenterId(), publicNtwk.getId(), publicNic.getIPv4Address(), _router.getId(),
                     _router.getType().toString());
             if (stats == null) {
-                stats = new UserStatisticsVO(_router.getAccountId(), _router.getDataCenterId(), publicNic.getIp4Address(), _router.getId(), _router.getType().toString(),
+                stats = new UserStatisticsVO(_router.getAccountId(), _router.getDataCenterId(), publicNic.getIPv4Address(), _router.getId(), _router.getType().toString(),
                         publicNtwk.getId());
                 userStatsDao.persist(stats);
             }
@@ -201,7 +201,7 @@ public class NicPlugInOutRules extends RuleApplier {
                     final PublicIpAddress nicToUnplug = nicsToUnplug.get(ip.getVlanTag());
                     if (nicToUnplug != null) {
                         NicVO nicVO = nicDao.findByIp4AddressAndNetworkIdAndInstanceId(publicNtwkId, _router.getId(), nicToUnplug.getAddress().addr());
-                        nicVO.setIp4Address(ip.getAddress().addr());
+                        nicVO.setIPv4Address(ip.getAddress().addr());
                         nicDao.update(nicVO.getId(), nicVO);
                         s_logger.debug("Updated the nic " + nicVO + " with the new ip address " + ip.getAddress().addr());
                         nicsToUnplug.remove(ip.getVlanTag());

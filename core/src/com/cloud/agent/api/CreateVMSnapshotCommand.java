@@ -25,8 +25,14 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 
 public class CreateVMSnapshotCommand extends VMSnapshotBaseCommand {
+    private String vmUuid;
 
-    public CreateVMSnapshotCommand(String vmName, VMSnapshotTO snapshot, List<VolumeObjectTO> volumeTOs, String guestOSType) {
+    public CreateVMSnapshotCommand(String vmName, String vmUuid, VMSnapshotTO snapshot, List<VolumeObjectTO> volumeTOs, String guestOSType) {
         super(vmName, snapshot, volumeTOs, guestOSType);
+        this.vmUuid = vmUuid;
+    }
+
+    public String getVmUuid() {
+        return vmUuid;
     }
 }

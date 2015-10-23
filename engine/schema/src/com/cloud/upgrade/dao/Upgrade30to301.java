@@ -28,7 +28,7 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
-public class Upgrade30to301 implements DbUpgrade {
+public class Upgrade30to301 extends LegacyDbUpgrade {
     final static Logger s_logger = Logger.getLogger(Upgrade30to301.class);
 
     @Override
@@ -100,20 +100,9 @@ public class Upgrade30to301 implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update network resource count for account id=" + accountId, e);
         } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (rs1 != null) {
-                    rs1.close();
-                }
-
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
+            closeAutoCloseable(rs);
+            closeAutoCloseable(rs1);
+            closeAutoCloseable(pstmt);
         }
     }
 

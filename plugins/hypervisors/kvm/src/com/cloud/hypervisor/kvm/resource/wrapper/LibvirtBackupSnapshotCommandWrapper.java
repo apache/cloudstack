@@ -171,7 +171,11 @@ public final class LibvirtBackupSnapshotCommandWrapper extends CommandWrapper<Ba
                 final String snapshot = snapshotXML.format(args);
                 s_logger.debug(snapshot);
                 final DomainSnapshot snap = vm.snapshotLookupByName(snapshotName);
-                snap.delete(0);
+                if (snap != null) {
+                    snap.delete(0);
+                } else {
+                    throw new CloudRuntimeException("Unable to find vm snapshot with name -" + snapshotName);
+                }
 
                 /*
                  * libvirt on RHEL6 doesn't handle resume event emitted from

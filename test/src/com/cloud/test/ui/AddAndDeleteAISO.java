@@ -56,6 +56,8 @@ public class AddAndDeleteAISO extends AbstractSeleniumTestCase {
                     selenium.click("//div[" + i + "]/div/div[2]/span/span");
                 }
             } catch (Exception ex) {
+                s_logger.info("[ignored]"
+                        + "error during clicking test on iso: " + e.getLocalizedMessage());
             }
 
             for (int second = 0;; second++) {
@@ -65,6 +67,8 @@ public class AddAndDeleteAISO extends AbstractSeleniumTestCase {
                     if (selenium.isVisible("//div[@id='after_action_info_container_on_top']"))
                         break;
                 } catch (Exception e) {
+                    s_logger.info("[ignored]"
+                            + "error during visibility test of iso: " + e.getLocalizedMessage());
                 }
                 Thread.sleep(10000);
             }
@@ -101,6 +105,8 @@ public class AddAndDeleteAISO extends AbstractSeleniumTestCase {
                     if (selenium.isVisible("after_action_info_container_on_top"))
                         break;
                 } catch (Exception e) {
+                    s_logger.info("[ignored]"
+                            + "error checking visibility after test completion for iso: " + e.getLocalizedMessage());
                 }
                 Thread.sleep(1000);
             }

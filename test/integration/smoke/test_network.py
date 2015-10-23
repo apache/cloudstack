@@ -272,7 +272,7 @@ class TestPortForwarding(cloudstackTestCase):
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offerings"]
+            cls.services["service_offerings"]["tiny"]
         )
         cls.virtual_machine = VirtualMachine.create(
             cls.apiclient,
@@ -596,7 +596,7 @@ class TestRebootRouter(cloudstackTestCase):
         )
         self.service_offering = ServiceOffering.create(
             self.apiclient,
-            self.services["service_offerings"]
+            self.services["service_offerings"]["tiny"]
         )
         self.vm_1 = VirtualMachine.create(
             self.apiclient,
@@ -765,7 +765,7 @@ class TestReleaseIP(cloudstackTestCase):
 
         self.service_offering = ServiceOffering.create(
             self.apiclient,
-            self.services["service_offerings"]
+            self.services["service_offerings"]["tiny"]
         )
 
         self.virtual_machine = VirtualMachine.create(
@@ -905,7 +905,7 @@ class TestDeleteAccount(cloudstackTestCase):
         )
         self.service_offering = ServiceOffering.create(
             self.apiclient,
-            self.services["service_offerings"]
+            self.services["service_offerings"]["tiny"]
         )
         self.vm_1 = VirtualMachine.create(
             self.apiclient,
@@ -1050,7 +1050,7 @@ class TestRouterRules(cloudstackTestCase):
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offerings"]
+            cls.services["service_offerings"]["tiny"]
         )
         cls.virtual_machine = VirtualMachine.create(
             cls.apiclient,

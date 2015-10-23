@@ -2469,6 +2469,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     _volsDao.update(volumeToAttach.getId(), volumeToAttach);
                 }
             } else {
+                deviceId = getDeviceId(vm.getId(), deviceId);
+
                 _volsDao.attachVolume(volumeToAttach.getId(), vm.getId(), deviceId);
             }
 

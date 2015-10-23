@@ -31,7 +31,7 @@
                 subselect: {
                     isMultiple: true,
                     label: 'label.use.vm.ip',
-                    dataProvider: function(args) {        
+                    dataProvider: function(args) {
                         var instance = args.context.instances[0];
                         var network = args.context.networks[0];
 
@@ -41,7 +41,7 @@
                                 virtualmachineid: instance.id,
                                 nicId: instance.nic[0].id
                             },
-                            success: function(json) {                	
+                            success: function(json) {
                                 var nic = json.listnicsresponse.nic[0];
                                 var primaryIp = nic.ipaddress;
                                 var secondaryIps = nic.secondaryip ? nic.secondaryip : [];
@@ -126,14 +126,14 @@
                     });
                 }
             }),
-            action: function(args) {  
-            	/*
-            	 * path 1: Network > VPC (list) > click "Configure" > pick an internal LB tier > click "Internal LB" (list) > click on a grid row (Details tab) > click "Assign VMs" tab > click Assign VMs" button on top of list 
-            	 * path 2: Network > VPC (list) > click "Configure" > pick an internal LB tier > click "Internal LB" (list) > "QuickView" on a grid row > click "Assign VMs" button in QuickView 
-            	 */            	
+            action: function(args) {
+                /*
+                 * path 1: Network > VPC (list) > click "Configure" > pick an internal LB tier > click "Internal LB" (list) > click on a grid row (Details tab) > click "Assign VMs" tab > click Assign VMs" button on top of list
+                 * path 2: Network > VPC (list) > click "Configure" > pick an internal LB tier > click "Internal LB" (list) > "QuickView" on a grid row > click "Assign VMs" button in QuickView
+                 */
                 var $rows = $(':ui-dialog .list-view tbody tr');
                 var vms = args.context.instances;
-                
+
                 // Assign subselect values
                 $(vms).each(function() {
                     var vm = this;
@@ -143,53 +143,31 @@
                     $.extend(vm, { _subselect: $vmRow.find('.subselect select').val() });
                 });
 
-                /*
-                 var array1 = [];
-                 for (var i = 0; i < vms.length; i++) {
-                 array1.push(vms[i].id);
-                 }
-                 var virtualmachineids = array1.join(',');
-                 var inputData = {
-                 id: args.context.internalLoadBalancers[0].id,
-                 virtualmachineids: virtualmachineids
-                 };
-                 */
-                //virtualmachineids parameter has been replaced with vmidipmap parameter, so comment out the lines above.
-                
-                
                 var inputData = {
                     id: args.context.internalLoadBalancers[0].id
-                };   
-                /* 
+                };
+                /*
                  * e.g. first VM(xxx) has two IPs(10.1.1.~), second VM(yyy) has three IPs(10.2.2.~):
-                 * vmidipmap[0].vmid=xxx  vmidipmap[0].vmip=10.1.1.11 
-                 * vmidipmap[1].vmid=xxx  vmidipmap[1].vmip=10.1.1.12 
-                 * vmidipmap[2].vmid=yyy  vmidipmap[2].vmip=10.2.2.77 
-                 * vmidipmap[3].vmid=yyy  vmidipmap[3].vmip=10.2.2.78 
-                 * vmidipmap[4].vmid=yyy  vmidipmap[4].vmip=10.2.2.79 
+                 * vmidipmap[0].vmid=xxx  vmidipmap[0].vmip=10.1.1.11
+                 * vmidipmap[1].vmid=xxx  vmidipmap[1].vmip=10.1.1.12
+                 * vmidipmap[2].vmid=yyy  vmidipmap[2].vmip=10.2.2.77
+                 * vmidipmap[3].vmid=yyy  vmidipmap[3].vmip=10.2.2.78
+                 * vmidipmap[4].vmid=yyy  vmidipmap[4].vmip=10.2.2.79
                  */
                 var selectedVMs = vms;
                 if (selectedVMs != null) {
                     var vmidipmapIndex = 0;
-                    for (var vmIndex = 0; vmIndex < selectedVMs.length; vmIndex++) {      
+                    for (var vmIndex = 0; vmIndex < selectedVMs.length; vmIndex++) {
                         var selectedIPs = selectedVMs[vmIndex]._subselect;
                         for (var ipIndex = 0; ipIndex < selectedIPs.length; ipIndex++) {
                             inputData['vmidipmap[' + vmidipmapIndex + '].vmid'] = selectedVMs[vmIndex].id;
-                            
-                            //"ipAddresses" is not in args.context since this LB rule is under a VPC, not an address. 
-                            /*
-                             if (args.context.ipAddresses[0].isportable) {
-                             inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex].split(',')[1];  
-                             } else {
-                             inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex];
-                             }
-                             */
+
                             inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex];
-                            
+
                             vmidipmapIndex++;
-                        }                                                			
+                        }
                     }
-                }   
+                }
 
                 $.ajax({
                     url: createURL('assignToLoadBalancerRule'),
@@ -211,10 +189,10 @@
             }
         };
     };
-    
+
     var aclMultiEdit = {
         noSelect: true,
-       
+
         reorder: {
             moveDrag: {
                 action: function(args) {
@@ -746,7 +724,7 @@
 
             // Internal load balancers
             internalLoadBalancers: {
-                title: 'Internal LB',
+                title: 'label.internal.lb',
                 listView: {
                     id: 'internalLoadBalancers',
                     fields: {
@@ -1024,7 +1002,7 @@
               */
 
                             assignedVms: {
-                                title: 'Assigned VMs',
+                                title: 'label.assigned.vms',
                                 listView: {
                                     id: 'assignedVms',
                                     fields: {
@@ -1116,7 +1094,7 @@
                 }
             },
             publicLbIps: {
-                title: 'Public LB',
+                title: 'label.public.ip',
                 listView: {
                     id: 'publicLbIps',
                     fields: {
@@ -1192,12 +1170,12 @@
                             label: 'label.id'
                         }
                     },
-                    dataProvider: function(args) {                    	                  	
-                    	var data = {
-                    		vpcid: args.context.vpc[0].id
-                    	};                    	
+                    dataProvider: function(args) {
+                        var data = {
+                            vpcid: args.context.vpc[0].id
+                        };
                         listViewDataProvider(args, data);
-                                            	
+
                         $.ajax({
                             url: createURL('listNetworkACLLists'),
                             data: data,
@@ -1326,7 +1304,7 @@
                             },
 
                             aclRules: {
-                                title: 'ACL List Rules',
+                                title: 'label.acl.list.rules',
                                 custom: function(args) {
                                     return $('<div>').multiEdit($.extend(true, {}, aclMultiEdit, {
                                         context: args.context,
@@ -1432,7 +1410,7 @@
 
         routerDetailView: function() {
             return {
-                title: 'VPC router details',
+                title: 'label.VPC.router.details',
                 updateContext: function(args) {
                     var router;
 
@@ -2281,7 +2259,7 @@
                                                                 if (this.id == args.context.vpcGateways[0].aclid) {
                                                                     return true;
                                                                 }
-                                                                
+
                                                                 items.push({
                                                                     id: this.id,
                                                                     description: this.name
@@ -2289,7 +2267,7 @@
 
                                                                 return true;
                                                             });
-                                                            
+
                                                             args.response.success({
                                                                 data: items
                                                             });
@@ -2412,13 +2390,13 @@
                                                     success: function(json) {
                                                         var objs = json.listnetworkacllistsresponse.networkacllist;
                                                         var acl = $.grep(objs, function(obj) {
-                                                            return obj.id === args.context.vpcGateways[0].aclid;                                                            
+                                                            return obj.id === args.context.vpcGateways[0].aclid;
                                                         });
-                                                        
+
                                                         item.aclName = acl[0] ? acl[0].name : 'None';
                                                     }
                                                 });
-                                                
+
                                                 args.response.success({
                                                     data: item,
                                                     actionFilter: function(args) {
@@ -2436,7 +2414,7 @@
                                     }
                                 },
                                 staticRoutes: {
-                                    title: 'Static Routes',
+                                    title: 'label.static.routes',
                                     custom: function(args) {
                                         return $('<div>').multiEdit({
                                             noSelect: true,
@@ -2813,12 +2791,12 @@
                                                     }
                                                 });
                                             }
-                                        },                                        
+                                        },
                                         passive: {
                                             label: 'label.passive',
                                             isBoolean: true,
                                             isChecked: false
-                                        }                                        
+                                        }
                                     }
                                 },
                                 action: function(args) {
@@ -2882,10 +2860,10 @@
                                         passive: {
                                             label: 'label.passive',
                                             converter: cloudStack.converters.toBooleanText
-                                        },                                                                                
+                                        },
                                         publicip: {
                                             label: 'label.ip.address'
-                                        },                                        
+                                        },
                                         gateway: {
                                             label: 'label.gateway'
                                         },
@@ -3099,7 +3077,7 @@
                                 if (args.context.networks[0].type == "Isolated") { //Isolated network
                                     cloudStack.dialog.confirm({
                                         message: 'message.confirm.current.guest.CIDR.unchanged',
-                                        action: function() { //"Yes"	button is clicked
+                                        action: function() { //"Yes"    button is clicked
                                             array1.push("&changecidr=false");
                                             $.ajax({
                                                 url: createURL("updateNetwork&id=" + args.context.networks[0].id + array1.join("")),
@@ -3352,37 +3330,37 @@
                 },
 
                 tabFilter: function(args) {
-                	var hiddenTabs = ['ipAddresses', 'acl']; // Disable IP address tab; it is redundant with 'view all' button
-                	
-                	var networkOfferingHavingELB = false;                                       
+                    var hiddenTabs = ['ipAddresses', 'acl']; // Disable IP address tab; it is redundant with 'view all' button
+
+                    var networkOfferingHavingELB = false;
                     var services = args.context.networks[0].service;
                     if(services != null) {
-                    	for(var i = 0; i < services.length; i++) {                    		
-                    		if (services[i].name == "Lb") {
-                    			var capabilities = services[i].capability;
-                    			if(capabilities != null) {
-                    				for(var k = 0; k < capabilities.length; k++) {
-                    					if(capabilities[k].name == "ElasticLb") {
-                    						networkOfferingHavingELB = true;
-                    						break;                    					
-                    					}
-                    				}
-                    			}  
+                        for(var i = 0; i < services.length; i++) {
+                            if (services[i].name == "Lb") {
+                                var capabilities = services[i].capability;
+                                if(capabilities != null) {
+                                    for(var k = 0; k < capabilities.length; k++) {
+                                        if(capabilities[k].name == "ElasticLb") {
+                                            networkOfferingHavingELB = true;
+                                            break;
+                                        }
+                                    }
+                                }
                                 break;
-                            }                    		
-                    	}
-                    }   
+                            }
+                        }
+                    }
                     if (networkOfferingHavingELB == false) {
                         hiddenTabs.push("addloadBalancer");
                     }
-                    
+
                     return hiddenTabs;
                 },
 
                 isMaximized: true,
                 tabs: {
                     details: {
-                        title: 'Network Details',
+                        title: 'label.network.details',
                         preFilter: function(args) {
                             var hiddenFields = [];
                             var zone;
@@ -3490,13 +3468,13 @@
                                             });
                                         }
                                     });
-                                   
+
                                     //include currently selected network offeirng to dropdown
                                     items.push({
                                         id: args.context.networks[0].networkofferingid,
                                         description: args.context.networks[0].networkofferingdisplaytext
-                                    });                             
-                                    
+                                    });
+
                                     args.response.success({
                                         data: items
                                     });
@@ -3975,7 +3953,7 @@
                             zoneid: {
                                 label: 'label.zone',
                                 validation: {
-                                    required: true 
+                                    required: true
                                 },
                                 isHidden: true,
 

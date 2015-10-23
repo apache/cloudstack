@@ -30,8 +30,6 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.UUID;
 
-import junit.framework.TestCase;
-
 import org.midonet.client.MidonetApi;
 import org.midonet.client.resource.Bridge;
 import org.midonet.client.resource.BridgePort;
@@ -52,6 +50,8 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+
+import junit.framework.TestCase;
 
 public class MidoNetElementTest extends TestCase {
 
@@ -104,7 +104,7 @@ public class MidoNetElementTest extends TestCase {
 
         //mockNic
         NicProfile mockNic = mock(NicProfile.class);
-        when(mockNic.getIp4Address()).thenReturn("10.10.10.170");
+        when(mockNic.getIPv4Address()).thenReturn("10.10.10.170");
         when(mockNic.getMacAddress()).thenReturn("02:00:73:3e:00:01");
         when(mockNic.getName()).thenReturn("Fake Name");
 

@@ -21,9 +21,8 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ZoneConfig;
 import com.cloud.dc.DataCenter;
@@ -105,16 +104,16 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
             rsStrategy = ReservationStrategy.Create;
         }
 
-        if (nic != null && nic.getRequestedIpv4() != null) {
+        if (nic != null && nic.getRequestedIPv4() != null) {
             throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
         }
 
         if (nic == null) {
             nic = new NicProfile(rsStrategy, null, null, null, null);
-        } else if (nic.getIp4Address() == null) {
-            nic.setStrategy(ReservationStrategy.Start);
+        } else if (nic.getIPv4Address() == null) {
+            nic.setReservationStrategy(ReservationStrategy.Start);
         } else {
-            nic.setStrategy(ReservationStrategy.Create);
+            nic.setReservationStrategy(ReservationStrategy.Create);
         }
 
         if (rsStrategy == ReservationStrategy.Create) {
@@ -129,7 +128,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
         throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException {
 
-        String oldIp = nic.getIp4Address();
+        String oldIp = nic.getIPv4Address();
         boolean getNewIp = false;
 
         if (oldIp == null) {
@@ -149,7 +148,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
                         }
                     });
 
-                    nic.setIp4Address(null);
+                    nic.setIPv4Address(null);
                     getNewIp = true;
                 }
             }
@@ -161,15 +160,15 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
         }
 
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
-        nic.setDns1(dc.getDns1());
-        nic.setDns2(dc.getDns2());
+        nic.setIPv4Dns1(dc.getDns1());
+        nic.setIPv4Dns2(dc.getDns2());
     }
 
     @DB
     protected void getIp(final NicProfile nic, final Pod pod, final VirtualMachineProfile vm, final Network network) throws InsufficientVirtualNetworkCapacityException,
         InsufficientAddressCapacityException, ConcurrentOperationException {
         final DataCenter dc = _dcDao.findById(pod.getDataCenterId());
-        if (nic.getIp4Address() == null) {
+        if (nic.getIPv4Address() == null) {
             Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientAddressCapacityException>() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientAddressCapacityException {
@@ -183,9 +182,9 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
                     if (vm.getType() == VirtualMachine.Type.DomainRouter) {
                         Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, pod.getId());
                         if (placeholderNic != null) {
-                            IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), placeholderNic.getIp4Address());
+                            IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), placeholderNic.getIPv4Address());
                             ip = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
-                            s_logger.debug("Nic got an ip address " + placeholderNic.getIp4Address() + " stored in placeholder nic for the network " + network +
+                            s_logger.debug("Nic got an ip address " + placeholderNic.getIPv4Address() + " stored in placeholder nic for the network " + network +
                                 " and gateway " + podRangeGateway);
                         }
                     }
@@ -194,10 +193,10 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
                         ip = _ipAddrMgr.assignPublicIpAddress(dc.getId(), pod.getId(), vm.getOwner(), VlanType.DirectAttached, network.getId(), null, false);
                     }
 
-                    nic.setIp4Address(ip.getAddress().toString());
+                    nic.setIPv4Address(ip.getAddress().toString());
                     nic.setFormat(AddressFormat.Ip4);
-                    nic.setGateway(ip.getGateway());
-                    nic.setNetmask(ip.getNetmask());
+                    nic.setIPv4Gateway(ip.getGateway());
+                    nic.setIPv4Netmask(ip.getNetmask());
                     if (ip.getVlanTag() != null && ip.getVlanTag().equalsIgnoreCase(Vlan.UNTAGGED)) {
                         nic.setIsolationUri(IsolationType.Ec2.toUri(Vlan.UNTAGGED));
                         nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(Vlan.UNTAGGED));
@@ -210,15 +209,15 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
                     if (vm.getType() == VirtualMachine.Type.DomainRouter) {
                         Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, pod.getId());
                         if (placeholderNic == null) {
-                            s_logger.debug("Saving placeholder nic with ip4 address " + nic.getIp4Address() + " for the network " + network);
-                            _networkMgr.savePlaceholderNic(network, nic.getIp4Address(), null, VirtualMachine.Type.DomainRouter);
+                            s_logger.debug("Saving placeholder nic with ip4 address " + nic.getIPv4Address() + " for the network " + network);
+                            _networkMgr.savePlaceholderNic(network, nic.getIPv4Address(), null, VirtualMachine.Type.DomainRouter);
                         }
                     }
                 }
             });
         }
-        nic.setDns1(dc.getDns1());
-        nic.setDns2(dc.getDns2());
+        nic.setIPv4Dns1(dc.getDns1());
+        nic.setIPv4Dns2(dc.getDns2());
     }
 
 }

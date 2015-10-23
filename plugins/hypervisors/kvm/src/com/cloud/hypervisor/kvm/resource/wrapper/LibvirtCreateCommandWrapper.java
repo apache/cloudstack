@@ -59,17 +59,19 @@ public final class LibvirtCreateCommandWrapper extends CommandWrapper<CreateComm
                     vol = libvirtComputingResource.templateToPrimaryDownload(command.getTemplateUrl(), primaryPool, dskch.getPath());
                 } else {
                     baseVol = primaryPool.getPhysicalDisk(command.getTemplateUrl());
-                    vol = storagePoolMgr.createDiskFromTemplate(baseVol,
-                            dskch.getPath(), dskch.getProvisioningType(), primaryPool, 0);
+                    vol = storagePoolMgr.createDiskFromTemplate(baseVol, dskch.getPath(), dskch.getProvisioningType(), primaryPool, 0);
                 }
                 if (vol == null) {
                     return new Answer(command, false, " Can't create storage volume on storage pool");
                 }
             } else {
                 vol = primaryPool.createPhysicalDisk(dskch.getPath(), dskch.getProvisioningType(), dskch.getSize());
+                if (vol == null) {
+                    return new Answer(command, false, " Can't create Physical Disk");
+                }
             }
-            final VolumeTO volume =
-                    new VolumeTO(command.getVolumeId(), dskch.getType(), pool.getType(), pool.getUuid(), pool.getPath(), vol.getName(), vol.getName(), disksize, null);
+            final VolumeTO volume = new VolumeTO(command.getVolumeId(), dskch.getType(), pool.getType(), pool.getUuid(), pool.getPath(), vol.getName(), vol.getName(), disksize,
+                    null);
 
             volume.setBytesReadRate(dskch.getBytesReadRate());
             volume.setBytesWriteRate(dskch.getBytesWriteRate());

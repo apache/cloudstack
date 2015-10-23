@@ -48,6 +48,18 @@ public final class LibvirtFenceCommandWrapper extends CommandWrapper<FenceComman
         final KVMHAMonitor monitor = libvirtComputingResource.getMonitor();
 
         final List<NfsStoragePool> pools = monitor.getStoragePools();
+
+        /**
+         * We can only safely fence off hosts when we use NFS
+         * On NFS primary storage pools hosts continuesly write
+         * a heartbeat. Disable Fencing Off for hosts without NFS
+         */
+        if (pools.size() == 0) {
+            String logline = "No NFS storage pools found. No way to safely fence " + command.getVmName() + " on host " + command.getHostGuid();
+            s_logger.warn(logline);
+            return new FenceAnswer(command, false, logline);
+        }
+
         final KVMHAChecker ha = new KVMHAChecker(pools, command.getHostIp());
 
         final Future<Boolean> future = executors.submit(ha);

@@ -668,8 +668,6 @@ namespace HypervResource
     {
         public const string Answer = "com.cloud.agent.api.Answer";
         public const string AttachIsoCommand = "com.cloud.agent.api.AttachIsoCommand";
-        public const string AttachVolumeAnswer = "com.cloud.agent.api.AttachVolumeAnswer";
-        public const string AttachVolumeCommand = "com.cloud.agent.api.AttachVolumeCommand";
         public const string AnsBackupSnapshotAnswerwer = "com.cloud.agent.api.BackupSnapshotAnswer";
         public const string BackupSnapshotCommand = "com.cloud.agent.api.BackupSnapshotCommand";
         public const string BumpUpPriorityCommand = "com.cloud.agent.api.BumpUpPriorityCommand";
