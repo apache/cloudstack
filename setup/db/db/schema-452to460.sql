@@ -415,3 +415,5 @@ CREATE TABLE `cloud`.`ldap_trust_map` (
   UNIQUE KEY `uk_ldap_trust_map__domain_id` (`domain_id`),
   CONSTRAINT `fk_ldap_trust_map__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Advanced", 'DEFAULT', 'management-server', "usage.report.interval", 7, "Interval (days) between sending anonymous Usage Reports back to the CloudStack project", "", NULL, NULL, 0);
