@@ -1165,7 +1165,7 @@
                                             <File Id="fil5C88104CC07D3894D5C6618F2480D894" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\classes\scripts\vm\hypervisor\xenserver\swift" />
                                         </Component>
                                         <Component Id="cmp29E6175F9E42A05F0ACA5E9DEC427DA9" Guid="{08A3A34A-662E-40F5-AC4C-6224AF8E3204}">
-                                            <File Id="fil30689D2F97C68DD797DC8681851DC4A0" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\classes\scripts\vm\hypervisor\xenserver\swiftxenserver" />
+                                            <File Id="fil30689D2F97C68DD797DC8681851DC4A0" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\classes\scripts\vm\hypervisor\xenserver\swiftxen" />
                                         </Component>
                                         <Component Id="cmp795E37CA1E2B235A5F5500D0CFC92E07" Guid="{4CAFC2DE-B603-485C-B8ED-A6A016962788}">
                                             <File Id="filAD37A67E4680F1FFC939AE9759EA6193" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\classes\scripts\vm\hypervisor\xenserver\upgrade_snapshot.sh" />

@@ -1017,7 +1017,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
         String result = null;
         try {
             result =
-                    hypervisorResource.callHostPluginAsync(conn, "swiftxenserver", "swift", wait, "op", "upload", "url", swift.getUrl(), "account", swift.getAccount(), "username",
+                    hypervisorResource.callHostPluginAsync(conn, "swiftxen", "swift", wait, "op", "upload", "url", swift.getUrl(), "account", swift.getAccount(), "username",
                             swift.getUserName(), "key", swift.getKey(), "container", container, "ldir", ldir, "lfilename", lfilename, "isISCSI", isISCSI.toString());
             if (result != null && result.equals("true")) {
                 return true;
