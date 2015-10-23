@@ -114,6 +114,9 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             } else if ((srcData.getObjectType() == DataObjectType.SNAPSHOT)
                     && (destData.getObjectType() == DataObjectType.TEMPLATE)) {
                 return createTemplateFromSnapshot(cmd);
+            } else if ((srcData.getObjectType() == DataObjectType.SNAPSHOT)
+                    && (destData.getObjectType() == DataObjectType.VOLUME)) {
+                return createVolumeFromSnapshot(cmd);
             } else {
                 msg = "Unable to do stuff for " + srcStore.getClass() + ":"
                         + srcData.getObjectType() + " to "
