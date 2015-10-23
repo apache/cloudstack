@@ -105,9 +105,6 @@ public class Ovm3HypervisorGuru extends HypervisorGuruBase implements Hypervisor
                     EndPoint ep = endPointSelector.selectHypervisorHost(new ZoneScope(host.getDataCenterId()));
                     host = hostDao.findById(ep.getId());
                     hostDao.loadDetails(host);
-                    // String snapshotHotFixVersion = host.getDetail(XenserverConfigs.XS620HotFix);
-                    // if (snapshotHotFixVersion != null && snapshotHotFixVersion.equalsIgnoreCase(XenserverConfigs.XSHotFix62ESP1004)) {
-                    return new Pair<Boolean, Long>(Boolean.TRUE,  Long.valueOf(ep.getId()));
                 }
             }
         }
