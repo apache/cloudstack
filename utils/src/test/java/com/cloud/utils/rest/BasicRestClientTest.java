@@ -22,6 +22,7 @@ package com.cloud.utils.rest;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -41,7 +42,7 @@ import org.junit.Test;
 
 public class BasicRestClientTest {
 
-    private static final String LOCALHOST = "fakelocalhost";
+    private static final String LOCALHOST = "fakelocalhost.fakelocaldomain";
     private static final String HTTPS = HttpConstants.HTTPS;
 
     private static final StatusLine HTTP_200_REPSONSE = new BasicStatusLine(new ProtocolVersion(HTTPS, 1, 1), 200, "OK");
@@ -100,7 +101,10 @@ public class BasicRestClientTest {
             .client(HttpClientHelper.createHttpClient(5))
             .build();
 
-        restClient.execute(request);
+        final CloseableHttpResponse response = restClient.execute(request);
+        fail("A CloudstackRESTException should have been thrown by now."+
+                "\nWe got " + response.getStatusLine() +
+                "\nMake sure you cannot reach '" + request.getURI() + "' by method " + request.getMethod());
     }
 
 }
