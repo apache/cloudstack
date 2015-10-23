@@ -103,7 +103,6 @@ public class VmwareHelper {
             break;
 
         default:
-            assert (false);
             nic = new VirtualE1000();
         }
 

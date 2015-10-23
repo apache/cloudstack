@@ -190,7 +190,7 @@ public class NiciraNvpResource implements ServerResource {
         ClusterRoleConfig[] configuredRoles = ccs.getConfiguredRoles();
         if (configuredRoles != null){
             String apiProviderMajorityVersion = searchApiProvider(configuredRoles);
-            NiciraNvpApiVersion.pingNiciraApiVersion(apiProviderMajorityVersion);
+            NiciraNvpApiVersion.setNiciraApiVersion(apiProviderMajorityVersion);
             NiciraNvpApiVersion.logNiciraApiVersion();
         }
     }
