@@ -1144,7 +1144,7 @@
                                             <File Id="fil4573D848D63904E25199DFC7C5F3C630" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\classes\scripts\vm\hypervisor\xenserver\perfmon.py" />
                                         </Component>
                                         <Component Id="cmpD76E671ADB5BD6A4D78727948C10979D" Guid="{EA4A8C61-6B09-4489-ACE6-00B9A0F1A4BC}">
-                                            <File Id="filD3A7AE13D824593E31FF5468A9B764AB" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\classes\scripts\vm\hypervisor\xenserver\s3xenserver" />
+                                            <File Id="filD3A7AE13D824593E31FF5468A9B764AB" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\classes\scripts\vm\hypervisor\xenserver\s3xen" />
                                         </Component>
                                         <Component Id="cmpA5ACE2ABDAD485164B610A43CF7260AC" Guid="{D6BC09D7-775E-4DBE-8E97-603B00B26BC2}">
                                             <File Id="filA1C0191B48050912F371A13BC75AD95A" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\classes\scripts\vm\hypervisor\xenserver\setupxenserver.sh" />

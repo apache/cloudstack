@@ -1067,7 +1067,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
             parameters.addAll(Arrays.asList("operation", "put", "filename", dir + "/" + filename, "iSCSIFlag", iSCSIFlag.toString(), "bucket", s3.getBucketName(), "key",
                     key, "https", s3.isHttps() != null ? s3.isHttps().toString() : "null", "maxSingleUploadSizeInBytes", String.valueOf(s3.getMaxSingleUploadSizeInBytes())));
-            final String result = hypervisorResource.callHostPluginAsync(connection, "s3xenserver", "s3", wait, parameters.toArray(new String[parameters.size()]));
+            final String result = hypervisorResource.callHostPluginAsync(connection, "s3xen", "s3", wait, parameters.toArray(new String[parameters.size()]));
 
             if (result != null && result.equals("true")) {
                 return key;
