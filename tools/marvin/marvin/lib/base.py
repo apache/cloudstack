@@ -2936,7 +2936,7 @@ class Vpn:
 
     @classmethod
     def create(cls, apiclient, publicipid, account=None, domainid=None,
-               projectid=None, networkid=None, vpcid=None, openfirewall=None):
+               projectid=None, networkid=None, vpcid=None, openfirewall=None, iprange=None, fordisplay=False):
         """Create VPN for Public IP address"""
         cmd = createRemoteAccessVpn.createRemoteAccessVpnCmd()
         cmd.publicipid = publicipid
@@ -2950,8 +2950,12 @@ class Vpn:
             cmd.networkid = networkid
         if vpcid:
             cmd.vpcid = vpcid
+        if iprange:
+            cmd.iprange = iprange
         if openfirewall:
             cmd.openfirewall = openfirewall
+
+        cmd.fordisplay = fordisplay
         return Vpn(apiclient.createRemoteAccessVpn(cmd).__dict__)
 
     @classmethod
@@ -2962,11 +2966,13 @@ class Vpn:
         return (apiclient.createVpnGateway(cmd).__dict__)
 
     @classmethod
-    def createVpnConnection(cls, apiclient, s2scustomergatewayid, s2svpngatewayid):
+    def createVpnConnection(cls, apiclient, s2scustomergatewayid, s2svpngatewayid, passive=False):
         """Create VPN Connection """
         cmd = createVpnConnection.createVpnConnectionCmd()
         cmd.s2scustomergatewayid = s2scustomergatewayid
         cmd.s2svpngatewayid = s2svpngatewayid
+        if passive:
+            cmd.passive = passive
         return (apiclient.createVpnGateway(cmd).__dict__)
 
     @classmethod

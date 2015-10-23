@@ -53,6 +53,7 @@ import com.cloud.projects.Project;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
+import com.cloud.user.UserVO;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
@@ -112,7 +113,10 @@ public class ServiceManagerImpl implements ServiceManager {
 
         long userId = CallContext.current().getCallingUserId();
         if (CallContext.current().getCallingAccount().getId() != owner.getId()) {
-            userId =  _userDao.listByAccount(owner.getAccountId()).get(0).getId();
+            List<UserVO> userVOs = _userDao.listByAccount(owner.getAccountId());
+            if (!userVOs.isEmpty()) {
+                userId =  userVOs.get(0).getId();
+            }
         }
 
         ServiceVirtualMachine svm =

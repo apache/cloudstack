@@ -1098,6 +1098,7 @@ under the License.
 'label.remove.this.physical.network': '<fmt:message key="label.remove.this.physical.network" />',
 'label.physical.network.name': '<fmt:message key="label.physical.network.name" />',
 'label.save.changes': '<fmt:message key="label.save.changes" />',
+'label.launch.zone': '<fmt:message key="label.launch.zone" />',
 'label.autoscale.configuration.wizard': '<fmt:message key="label.autoscale.configuration.wizard" />',
 'label.health.check.wizard': '<fmt:message key="label.health.check.wizard" />',
 'label.health.check.message.desc': '<fmt:message key="label.health.check.message.desc" />',

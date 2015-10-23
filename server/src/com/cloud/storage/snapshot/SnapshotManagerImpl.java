@@ -777,7 +777,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
         }
         // TODO - Make createSnapshotPolicy - BaseAsyncCreate and remove this.
-        CallContext.current().putContextParameter(SnapshotPolicy.class.getName(), policy.getUuid());
+        CallContext.current().putContextParameter(SnapshotPolicy.class, policy.getUuid());
         return policy;
     }
 

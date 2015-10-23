@@ -46,6 +46,8 @@ class CsProcess(object):
             matches = len([m for m in proc if m in self.search])
             if matches == items:
                 self.pid.append(re.split("\s+", i)[1])
+
+        logging.debug("CsProcess:: Searching for process ==> %s and found PIDs ==> %s", self.search, self.pid)
         return self.pid
 
     def find(self):

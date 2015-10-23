@@ -95,67 +95,25 @@ class CsAddress(CsDataBag):
                 return ip
         return None
 
-    def check_if_link_exists(self,dev):
-        cmd="ip link show dev %s"%dev
-        result=CsHelper.execute(cmd)
-        if(len(result)!=0):
-           return True
-        else:
-           return False
-
-    def check_if_link_up(self,dev):
-        cmd="ip link show dev %s | tr '\n' ' ' | cut -d ' ' -f 9"%dev
-        result=CsHelper.execute(cmd)
-        if(result[0].lower()=="up"):
-            return True
-        else:
-            return False
-
-
     def process(self):
-        route = CsRoute()
-
         for dev in self.dbag:
             if dev == "id":
                 continue
             ip = CsIP(dev, self.config)
 
             for address in self.dbag[dev]:
-                if(address["nw_type"]!="public"):
-                    continue
-
-                #check if link is up
-                if (not self.check_if_link_exists(dev)):
-                    logging.info("link %s does not exist, so not processing"%dev)
-                    continue
-                if not self.check_if_link_up(dev):
-                   cmd="ip link set %s up"%dev
-                   CsHelper.execute(cmd)
-
-                network = str(address["network"])
-
                 ip.setAddress(address)
 
                 if ip.configured():
                     logging.info(
                         "Address %s on device %s already configured", ip.ip(), dev)
 
-                    ip.post_configure()
-
+                    ip.post_configure(address)
                 else:
                     logging.info(
                         "Address %s on device %s not configured", ip.ip(), dev)
                     if CsDevice(dev, self.config).waitfordevice():
-                        ip.configure()
-                route.add_route(dev, network)
-
-        # once we start processing public ip's we need to verify there
-        # is a default route and add if needed
-        if not route.defaultroute_exists():
-            cmdline=self.config.get_cmdline_instance()
-            if(cmdline.get_gateway()):
-                route.add_defaultroute(cmdline.get_gateway())
-
+                        ip.configure(address)
 
 
 class CsInterface:
@@ -176,7 +134,7 @@ class CsInterface:
         return self.get_attr("netmask")
 
     def get_gateway(self):
-        if self.config.is_vpc():
+        if self.config.is_vpc() or self.config.cmdline().is_redundant():
             return self.get_attr("gateway")
         else:
             return self.config.cmdline().get_guest_gw()
@@ -304,28 +262,43 @@ class CsIP:
     def getAddress(self):
         return self.address
 
-    def configure(self):
+    def configure(self, address):
         logging.info(
             "Configuring address %s on device %s", self.ip(), self.dev)
         cmd = "ip addr add dev %s %s brd +" % (self.dev, self.ip())
         subprocess.call(cmd, shell=True)
-        self.post_configure()
+        self.post_configure(address)
 
-    def post_configure(self):
+    def post_configure(self, address):
         """ The steps that must be done after a device is configured """
+        route = CsRoute()
         if not self.get_type() in ["control"]:
-            route = CsRoute()
             route.add_table(self.dev)
+            
             CsRule(self.dev).addMark()
             self.check_is_up()
             self.set_mark()
             self.arpPing()
+            
             CsRpsrfs(self.dev).enable()
             self.post_config_change("add")
 
         '''For isolated/redundant and dhcpsrvr routers, call this method after the post_config is complete '''
         if not self.config.is_vpc():
             self.setup_router_control()
+        
+        if self.config.is_vpc() or self.cl.is_redundant():
+            # The code looks redundant here, but we actually have to cater for routers and
+            # VPC routers in a different manner. Please do not remove this block otherwise
+            # The VPC default route will be broken.
+            if self.get_type() in ["public"]:
+                gateway = str(address["gateway"])
+                route.add_defaultroute(gateway)
+        else:
+            # once we start processing public ip's we need to verify there
+            # is a default route and add if needed
+            if(self.cl.get_gateway()):
+                route.add_defaultroute(self.cl.get_gateway())
 
     def check_is_up(self):
         """ Ensure device is up """
@@ -334,11 +307,11 @@ class CsIP:
             if " DOWN " in i:
                 cmd2 = "ip link set %s up" % self.getDevice()
                 # If redundant do not bring up public interfaces
-                # master.py and keepalived deal with tham
-                if self.config.cmdline().is_redundant() and not self.is_public():
+                # master.py and keepalived will deal with them
+                if self.cl.is_redundant() and not self.is_public():
                     CsHelper.execute(cmd2)
                 # if not redundant bring everything up
-                if not self.config.cmdline().is_redundant():
+                if not self.cl.is_redundant():
                     CsHelper.execute(cmd2)
 
     def set_mark(self):
@@ -516,9 +489,10 @@ class CsIP:
         self.fw.append(["", "", "-A NETWORK_STATS -i eth2 -o eth0 -p tcp"])
         self.fw.append(["", "", "-A NETWORK_STATS ! -i eth0 -o eth2 -p tcp"])
         self.fw.append(["", "", "-A NETWORK_STATS -i eth2 ! -o eth0 -p tcp"])
-        
+
+        self.fw.append(["filter", "", "-A INPUT -p icmp -j ACCEPT"])
         self.fw.append(["filter", "", "-A INPUT -i eth0 -p tcp -m tcp --dport 3922 -m state --state NEW,ESTABLISHED -j ACCEPT"])
-        
+
         self.fw.append(["filter", "", "-P INPUT DROP"])
         self.fw.append(["filter", "", "-P FORWARD DROP"])
 
@@ -539,19 +513,20 @@ class CsIP:
             CsDevice(self.dev, self.config).configure_rp()
 
             logging.error(
-                "Not able to setup sourcenat for a regular router yet")
+                "Not able to setup source-nat for a regular router yet")
             dns = CsDnsmasq(self)
             dns.add_firewall_rules()
             app = CsApache(self)
             app.setup()
 
+        cmdline = self.config.cmdline()
         # If redundant then this is dealt with by the master backup functions
-        if self.get_type() in ["guest"] and not self.config.cl.is_redundant():
+        if self.get_type() in ["guest"] and not cmdline.is_redundant():
             pwdsvc = CsPasswdSvc(self.address['public_ip']).start()
 
         if self.get_type() == "public" and self.config.is_vpc():
             if self.address["source_nat"]:
-                vpccidr = self.config.cmdline().get_vpccidr()
+                vpccidr = cmdline.get_vpccidr()
                 self.fw.append(
                     ["filter", "", "-A FORWARD -s %s ! -d %s -j ACCEPT" % (vpccidr, vpccidr)])
                 self.fw.append(
@@ -563,7 +538,15 @@ class CsIP:
         for i in CsHelper.execute(cmd):
             vals = i.lstrip().split()
             if (vals[0] == 'inet'):
-                self.iplist[vals[1]] = self.dev
+                
+                cidr = vals[1]
+                for ip, device in self.iplist.iteritems():
+                    logging.info(
+                                 "Iterating over the existing IPs. CIDR to be configured ==> %s, existing IP ==> %s on device ==> %s",
+                                 cidr, ip, device)
+
+                    if cidr[0] != ip[0] and device != self.dev:
+                        self.iplist[cidr] = self.dev
 
     def configured(self):
         if self.address['cidr'] in self.iplist.keys():
@@ -631,8 +614,13 @@ class CsIP:
         interface = CsInterface(bag, self.config)
         if not self.config.cl.is_redundant():
             return False
+
         rip = ip.split('/')[0]
+        logging.info("Checking if cidr is a gateway for rVPC. IP ==> %s / device ==> %s", ip, self.dev)
+
         gw = interface.get_gateway()
+        logging.info("Interface has the following gateway ==> %s", gw)
+        
         if bag['nw_type'] == "guest" and rip == gw:
             return True
         return False

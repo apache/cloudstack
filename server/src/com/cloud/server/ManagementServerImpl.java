@@ -3250,7 +3250,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_PROXY_REBOOT, eventDescription = "", async = true)
     public VMInstanceVO rebootSystemVM(final RebootSystemVmCmd cmd) {
         final VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(cmd.getId(), VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
 

@@ -15,13 +15,24 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from cs.CsGuestNetwork import CsGuestNetwork
-import merge
+[Unit]
+Description=CloudStack Agent
+Documentation=http://www.cloudstack.org/
+Requires=libvirtd.service
+After=libvirtd.service
 
-merge.DataBag.DPATH = "."
-csguestnetwork = CsGuestNetwork({}, {})
-csguestnetwork.guest = True
-csguestnetwork.set_dns("1.1.1.1,2.2.2.2")
-csguestnetwork.set_router("3.3.3.3")
-dns = csguestnetwork.get_dns()
-print dns
+[Service]
+Type=simple
+Environment=JAVA_HOME=/usr/lib/jvm/jre
+Environment=JAVA_HEAP_INITIAL=256m
+Environment=JAVA_HEAP_MAX=2048m
+Environment=JAVA_CLASS=com.cloud.agent.AgentShell
+ExecStart=/bin/sh -ec '\
+    export ACP=`ls /usr/share/cloudstack-agent/lib/*.jar /usr/share/cloudstack-agent/plugins/*.jar 2>/dev/null|tr "\\n" ":"`; \
+    export CLASSPATH="$ACP:/etc/cloudstack/agent:/usr/share/cloudstack-common/scripts"; \
+    ${JAVA_HOME}/bin/java -Xms${JAVA_HEAP_INITIAL} -Xmx${JAVA_HEAP_MAX} -cp "$CLASSPATH" $JAVA_CLASS'
+Restart=always
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target

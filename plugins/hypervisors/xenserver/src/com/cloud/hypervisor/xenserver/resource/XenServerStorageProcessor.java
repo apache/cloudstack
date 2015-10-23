@@ -269,34 +269,18 @@ public class XenServerStorageProcessor implements StorageProcessor {
                 vdi = hypervisorResource.mount(conn, null, null, data.getPath());
             }
 
-            // Figure out the disk number to attach the VM to
-            String diskNumber = null;
-            final Long deviceId = disk.getDiskSeq();
-
-            if (deviceId != null) {
-                if (deviceId.longValue() == 3) {
-                    final String msg = "Device 3 is reserved for CD-ROM, choose other device";
-
-                    return new AttachAnswer(msg);
-                }
-
-                if (hypervisorResource.isDeviceUsed(conn, vm, deviceId)) {
-                    final String msg = "Device " + deviceId + " is used in VM " + vmName;
-
-                    return new AttachAnswer(msg);
-                }
-
-                diskNumber = deviceId.toString();
-            } else {
-                diskNumber = hypervisorResource.getUnusedDeviceNum(conn, vm);
-            }
+            hypervisorResource.destroyUnattachedVBD(conn, vm);
 
             final VBD.Record vbdr = new VBD.Record();
 
             vbdr.VM = vm;
             vbdr.VDI = vdi;
             vbdr.bootable = false;
-            vbdr.userdevice = diskNumber;
+            vbdr.userdevice = "autodetect";
+            final Long deviceId = disk.getDiskSeq();
+            if (deviceId != null && !hypervisorResource.isDeviceUsed(conn, vm, deviceId)) {
+                vbdr.userdevice = deviceId.toString();
+            }
             vbdr.mode = Types.VbdMode.RW;
             vbdr.type = Types.VbdType.DISK;
             vbdr.unpluggable = true;
@@ -313,11 +297,11 @@ public class XenServerStorageProcessor implements StorageProcessor {
             // Update the VDI's label to include the VM name
             vdi.setNameLabel(conn, vdiNameLabel);
 
-            final DiskTO newDisk = new DiskTO(disk.getData(), Long.parseLong(diskNumber), vdi.getUuid(conn), disk.getType());
+            final DiskTO newDisk = new DiskTO(disk.getData(), Long.parseLong(vbd.getUserdevice(conn)), vdi.getUuid(conn), disk.getType());
 
             return new AttachAnswer(newDisk);
         } catch (final Exception e) {
-            final String msg = "Failed to attach volume" + " for uuid: " + data.getPath() + "  due to "  + e.toString();
+            final String msg = "Failed to attach volume for uuid: " + data.getPath() + " due to "  + e.toString();
             s_logger.warn(msg, e);
             return new AttachAnswer(msg);
         }

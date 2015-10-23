@@ -22,20 +22,28 @@ import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.spy;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.inject.Inject;
-
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.user.AccountManager;
+import com.cloud.user.DomainManager;
 import junit.framework.Assert;
 
 import org.apache.log4j.Logger;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 
@@ -52,9 +60,9 @@ import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.utils.component.ComponentContext;
 
-@Ignore("Requires database to be set up")
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = "classpath:/testContext.xml")
+//@Ignore("Requires database to be set up")
+@RunWith(MockitoJUnitRunner.class)
+//@ContextConfiguration(locations = "classpath:/testContext.xml")
 //@ComponentSetup(managerName="management-server", setupXml="network-mgr-component.xml")
 public class FirewallManagerTest {
     private static final Logger s_logger = Logger.getLogger(FirewallManagerTest.class);
@@ -71,6 +79,7 @@ public class FirewallManagerTest {
 //        super.setUp();
 //    }
 
+    @Ignore("Requires database to be set up")
     @Test
     public void testInjected() {
 
@@ -100,9 +109,30 @@ public class FirewallManagerTest {
 
     }
 
-    @Inject
-    FirewallManager _firewallMgr;
+    @Mock
+    AccountManager _accountMgr;
+    @Mock
+    NetworkOrchestrationService _networkMgr;
+    @Mock
+    NetworkModel _networkModel;
+    @Mock
+    DomainManager _domainMgr;
+    @Mock
+    VpcManager _vpcMgr;
+    @Mock
+    IpAddressManager _ipAddrMgr;
+    @Mock
+    FirewallRulesDao _firewallDao;
 
+    @InjectMocks
+    FirewallManager _firewallMgr = new FirewallManagerImpl();
+
+    @Before
+    public void initMocks() {
+        MockitoAnnotations.initMocks(this);
+    }
+
+    @Ignore("Requires database to be set up")
     @Test
     public void testApplyRules() {
         List<FirewallRuleVO> ruleList = new ArrayList<FirewallRuleVO>();
@@ -123,6 +153,7 @@ public class FirewallManagerTest {
         }
     }
 
+    @Ignore("Requires database to be set up")
     @Test
     public void testApplyFWRules() {
         List<FirewallRuleVO> ruleList = new ArrayList<FirewallRuleVO>();
@@ -150,5 +181,39 @@ public class FirewallManagerTest {
             Assert.fail("Unreachable code");
         }
     }
+
+    @Test
+    public void testDetectRulesConflict() {
+        List<FirewallRuleVO> ruleList = new ArrayList<FirewallRuleVO>();
+        FirewallRuleVO rule1 = spy(new FirewallRuleVO("rule1", 3, 500, "UDP", 1, 2, 1, Purpose.Vpn, null, null, null, null));
+        FirewallRuleVO rule2 = spy(new FirewallRuleVO("rule2", 3, 1701, "UDP", 1, 2, 1, Purpose.Vpn, null, null, null, null));
+        FirewallRuleVO rule3 = spy(new FirewallRuleVO("rule3", 3, 4500, "UDP", 1, 2, 1, Purpose.Vpn, null, null, null, null));
+
+        ruleList.add(rule1);
+        ruleList.add(rule2);
+        ruleList.add(rule3);
+
+        FirewallManagerImpl firewallMgr = (FirewallManagerImpl)_firewallMgr;
+
+        when(firewallMgr._firewallDao.listByIpAndPurposeAndNotRevoked(3,null)).thenReturn(ruleList);
+        when(rule1.getId()).thenReturn(1L);
+        when(rule2.getId()).thenReturn(2L);
+        when(rule3.getId()).thenReturn(3L);
+
+        FirewallRule newRule1 = new FirewallRuleVO("newRule1", 3, 500, "TCP", 1, 2, 1, Purpose.PortForwarding, null, null, null, null);
+        FirewallRule newRule2 = new FirewallRuleVO("newRule2", 3, 1701, "TCP", 1, 2, 1, Purpose.PortForwarding, null, null, null, null);
+        FirewallRule newRule3 = new FirewallRuleVO("newRule3", 3, 4500, "TCP", 1, 2, 1, Purpose.PortForwarding, null, null, null, null);
+
+        try {
+            firewallMgr.detectRulesConflict(newRule1);
+            firewallMgr.detectRulesConflict(newRule2);
+            firewallMgr.detectRulesConflict(newRule3);
+        }
+        catch (NetworkRuleConflictException ex) {
+            Assert.fail();
+        }
+    }
+
+
 
 }

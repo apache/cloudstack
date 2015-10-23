@@ -79,6 +79,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
+import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.db.DB;
@@ -279,7 +280,10 @@ public class LoadBalanceRuleHandler {
 
                 long userId = CallContext.current().getCallingUserId();
                 if (CallContext.current().getCallingAccount().getId() != owner.getId()) {
-                    userId =  _userDao.listByAccount(owner.getAccountId()).get(0).getId();
+                    List<UserVO> userVOs = _userDao.listByAccount(owner.getAccountId());
+                    if (!userVOs.isEmpty()) {
+                        userId =  userVOs.get(0).getId();
+                    }
                 }
 
                 ServiceOfferingVO elasticLbVmOffering = _serviceOfferingDao.findDefaultSystemOffering(ServiceOffering.elbVmDefaultOffUniqueName, ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId()));

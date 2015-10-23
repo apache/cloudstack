@@ -36,21 +36,23 @@ class CsDhcp(CsDataBag):
         self.preseed()
         self.cloud = CsFile(DHCP_HOSTS)
         self.conf = CsFile(CLOUD_CONF)
-        length = len(self.conf)
+
         for item in self.dbag:
             if item == "id":
                 continue
             self.add(self.dbag[item])
         self.write_hosts()
+        
         if self.cloud.is_changed():
             self.delete_leases()
+
         self.configure_server()
+
+        # We restart DNSMASQ every time the configure.py is called in order to avoid lease problems.
+        CsHelper.service("dnsmasq", "restart")
+
         self.conf.commit()
         self.cloud.commit()
-        if self.conf.is_changed():
-            CsHelper.service("dnsmasq", "restart")
-        elif self.cloud.is_changed():
-            CsHelper.hup_dnsmasq("dnsmasq", "dnsmasq")
 
     def configure_server(self):
         # self.conf.addeq("dhcp-hostsfile=%s" % DHCP_HOSTS)
@@ -131,8 +133,8 @@ class CsDhcp(CsDataBag):
         file.repopulate()
         for ip in self.hosts:
             file.add("%s\t%s" % (ip, self.hosts[ip]))
-        file.commit()
         if file.is_changed():
+            file.commit()
             logging.info("Updated hosts file")
         else:
             logging.debug("Hosts file unchanged")

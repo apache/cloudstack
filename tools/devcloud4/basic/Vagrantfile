@@ -55,7 +55,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   end
 
   config.vm.define 'management' do |management|
-    management.vm.box = 'chef/centos-6.5'
+    management.vm.box = 'bento/centos-6.7'
 
     management.vm.network :private_network, :auto_config => true, :ip => '192.168.22.5'
 

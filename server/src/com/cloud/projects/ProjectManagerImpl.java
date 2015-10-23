@@ -222,6 +222,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
 
         if (project != null) {
             CallContext.current().setEventDetails("Project id=" + project.getId());
+            CallContext.current().putContextParameter(Project.class, project.getUuid());
         }
 
         //Increment resource count

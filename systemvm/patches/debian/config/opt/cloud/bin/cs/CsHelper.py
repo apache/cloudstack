@@ -213,12 +213,7 @@ def copy_if_needed(src, dest):
     """
     if os.path.isfile(dest):
         return
-    try:
-        shutil.copy2(src, dest)
-    except IOError:
-        logging.Error("Could not copy %s to %s" % (src, dest))
-    else:
-        logging.info("Copied %s to %s" % (src, dest))
+    copy(src, dest)
 
 def copy(src, dest):
     """

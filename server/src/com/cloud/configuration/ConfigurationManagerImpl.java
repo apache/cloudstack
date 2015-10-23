@@ -19,8 +19,6 @@ package com.cloud.configuration;
 import java.net.URI;
 import java.sql.Date;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -134,6 +132,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.gpu.GPU;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
@@ -182,6 +181,7 @@ import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.test.IPRangeConfig;
 import com.cloud.user.Account;
 import com.cloud.user.AccountDetailVO;
@@ -214,6 +214,7 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = {ConfigurationManager.class, ConfigurationService.class})
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
@@ -227,6 +228,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     ConfigDepot _configDepot;
     @Inject
     HostPodDao _podDao;
+    @Inject
+    HostDao _hostDao;
+    @Inject
+    VolumeDao _volumeDao;
+    @Inject
+    VMInstanceDao _vmInstanceDao;
+    //@Inject
+    //VmwareDatacenterZoneMapDao _vmwareDatacenterZoneMapDao;
     @Inject
     AccountVlanMapDao _accountVlanMapDao;
     @Inject
@@ -878,81 +887,34 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return count > 0;
     }
 
-    @DB
     protected void checkIfPodIsDeletable(final long podId) {
-        final List<List<String>> tablesToCheck = new ArrayList<List<String>>();
-
         final HostPodVO pod = _podDao.findById(podId);
+
+        final String errorMsg = "The pod cannot be deleted because ";
 
         // Check if there are allocated private IP addresses in the pod
         if (_privateIpAddressDao.countIPs(podId, pod.getDataCenterId(), true) != 0) {
-            throw new CloudRuntimeException("There are private IP addresses allocated for this pod");
+            throw new CloudRuntimeException(errorMsg + "there are private IP addresses allocated in this pod.");
         }
 
-        final List<String> volumes = new ArrayList<String>();
-        volumes.add(0, "volumes");
-        volumes.add(1, "pod_id");
-        volumes.add(2, "there are storage volumes for this pod");
-        tablesToCheck.add(volumes);
+        // Check if there are any non-removed volumes in the pod.
+        if (!_volumeDao.findByPod(podId).isEmpty()) {
+            throw new CloudRuntimeException(errorMsg + "there are storage volumes in this pod.");
+        }
 
-        final List<String> host = new ArrayList<String>();
-        host.add(0, "host");
-        host.add(1, "pod_id");
-        host.add(2, "there are servers running in this pod");
-        tablesToCheck.add(host);
+        // Check if there are any non-removed hosts in the pod.
+        if (!_hostDao.findByPodId(podId).isEmpty()) {
+            throw new CloudRuntimeException(errorMsg + "there are servers in this pod.");
+        }
 
-        final List<String> vmInstance = new ArrayList<String>();
-        vmInstance.add(0, "vm_instance");
-        vmInstance.add(1, "pod_id");
-        vmInstance.add(2, "there are virtual machines running in this pod");
-        tablesToCheck.add(vmInstance);
+        // Check if there are any non-removed vms in the pod.
+        if (!_vmInstanceDao.listByPodId(podId).isEmpty()) {
+            throw new CloudRuntimeException(errorMsg + "there are virtual machines in this pod.");
+        }
 
-        final List<String> cluster = new ArrayList<String>();
-        cluster.add(0, "cluster");
-        cluster.add(1, "pod_id");
-        cluster.add(2, "there are clusters in this pod");
-        tablesToCheck.add(cluster);
-
-        for (final List<String> table : tablesToCheck) {
-            final String tableName = table.get(0);
-            final String column = table.get(1);
-            final String errorMsg = table.get(2);
-
-            String dbName;
-            if (tableName.equals("event") || tableName.equals("cloud_usage") || tableName.equals("usage_vm_instance") || tableName.equals("usage_ip_address")
-                    || tableName.equals("usage_network") || tableName.equals("usage_job") || tableName.equals("account") || tableName.equals("user_statistics")) {
-                dbName = "cloud_usage";
-            } else {
-                dbName = "cloud";
-            }
-
-            String selectSql = "SELECT * FROM `?`.`?` WHERE ? = ?";
-
-            if(tableName.equals("vm_instance")) {
-                selectSql += " AND state != ? AND removed IS NULL";
-            }
-
-            if (tableName.equals("host") || tableName.equals("cluster") || tableName.equals("volumes")) {
-                selectSql += " and removed IS NULL";
-            }
-
-            final TransactionLegacy txn = TransactionLegacy.currentTxn();
-            try {
-                final PreparedStatement stmt = txn.prepareAutoCloseStatement(selectSql);
-                stmt.setString(1,dbName);
-                stmt.setString(2,tableName);
-                stmt.setString(3,column);
-                stmt.setLong(4, podId);
-                if(tableName.equals("vm_instance")) {
-                    stmt.setString(5, VirtualMachine.State.Expunging.toString());
-                }
-                final ResultSet rs = stmt.executeQuery();
-                if (rs != null && rs.next()) {
-                    throw new CloudRuntimeException("The pod cannot be deleted because " + errorMsg);
-                }
-            } catch (final SQLException ex) {
-                throw new CloudRuntimeException("The Management Server failed to detect if pod is deletable. Please contact Cloud Support.");
-            }
+        // Check if there are any non-removed clusters in the pod.
+        if (!_clusterDao.listByPodId(podId).isEmpty()) {
+            throw new CloudRuntimeException(errorMsg + "there are clusters in this pod.");
         }
     }
 
@@ -1334,104 +1296,49 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @DB
     protected void checkIfZoneIsDeletable(final long zoneId) {
-        final List<List<String>> tablesToCheck = new ArrayList<List<String>>();
+        final String errorMsg = "The zone cannot be deleted because ";
 
-        final List<String> host = new ArrayList<String>();
-        host.add(0, "host");
-        host.add(1, "data_center_id");
-        host.add(2, "there are servers running in this zone");
-        tablesToCheck.add(host);
 
-        final List<String> hostPodRef = new ArrayList<String>();
-        hostPodRef.add(0, "host_pod_ref");
-        hostPodRef.add(1, "data_center_id");
-        hostPodRef.add(2, "there are pods in this zone");
-        tablesToCheck.add(hostPodRef);
 
-        final List<String> privateIP = new ArrayList<String>();
-        privateIP.add(0, "op_dc_ip_address_alloc");
-        privateIP.add(1, "data_center_id");
-        privateIP.add(2, "there are private IP addresses allocated for this zone");
-        tablesToCheck.add(privateIP);
-
-        final List<String> publicIP = new ArrayList<String>();
-        publicIP.add(0, "user_ip_address");
-        publicIP.add(1, "data_center_id");
-        publicIP.add(2, "there are public IP addresses allocated for this zone");
-        tablesToCheck.add(publicIP);
-
-        final List<String> vmInstance = new ArrayList<String>();
-        vmInstance.add(0, "vm_instance");
-        vmInstance.add(1, "data_center_id");
-        vmInstance.add(2, "there are virtual machines running in this zone");
-        tablesToCheck.add(vmInstance);
-
-        final List<String> volumes = new ArrayList<String>();
-        volumes.add(0, "volumes");
-        volumes.add(1, "data_center_id");
-        volumes.add(2, "there are storage volumes for this zone");
-        tablesToCheck.add(volumes);
-
-        final List<String> physicalNetworks = new ArrayList<String>();
-        physicalNetworks.add(0, "physical_network");
-        physicalNetworks.add(1, "data_center_id");
-        physicalNetworks.add(2, "there are physical networks in this zone");
-        tablesToCheck.add(physicalNetworks);
-
-        final List<String> vmwareDcs = new ArrayList<String>();
-        vmwareDcs.add(0, "vmware_data_center_zone_map");
-        vmwareDcs.add(1, "zone_id");
-        vmwareDcs.add(2, "there are VMware datacenters associated with this zone. Remove VMware DC from this zone.");
-        tablesToCheck.add(vmwareDcs);
-
-        for (final List<String> table : tablesToCheck) {
-            final String tableName = table.get(0);
-            final String column = table.get(1);
-            final String errorMsg = table.get(2);
-
-            final String dbName = "cloud";
-
-            String selectSql = "SELECT * FROM `?`.`?` WHERE ? = ?";
-
-            if (tableName.equals("op_dc_vnet_alloc")) {
-                selectSql += " AND taken IS NOT NULL";
-            }
-
-            if (tableName.equals("user_ip_address")) {
-                selectSql += " AND state!='Free'";
-            }
-
-            if (tableName.equals("op_dc_ip_address_alloc")) {
-                selectSql += " AND taken IS NOT NULL";
-            }
-
-            if (tableName.equals("host_pod_ref") || tableName.equals("host") || tableName.equals("volumes") || tableName.equals("physical_network")) {
-                selectSql += " AND removed is NULL";
-            }
-
-            if (tableName.equals("vm_instance")) {
-                selectSql += " AND state != ? AND removed IS NULL";
-            }
-
-            final TransactionLegacy txn = TransactionLegacy.currentTxn();
-            try {
-                final PreparedStatement stmt = txn.prepareAutoCloseStatement(selectSql);
-                stmt.setString(1,dbName);
-                stmt.setString(2,tableName);
-                stmt.setString(3,column);
-                stmt.setLong(4, zoneId);
-                if (tableName.equals("vm_instance")) {
-                    stmt.setString(5, VirtualMachine.State.Expunging.toString());
-                }
-                final ResultSet rs = stmt.executeQuery();
-                if (rs != null && rs.next()) {
-                    throw new CloudRuntimeException("The zone is not deletable because " + errorMsg);
-                }
-            } catch (final SQLException ex) {
-                throw new CloudRuntimeException("The Management Server failed to detect if zone is deletable. Please contact Cloud Support.");
-            }
+        // Check if there are any non-removed hosts in the zone.
+        if (!_hostDao.listByDataCenterId(zoneId).isEmpty()) {
+            throw new CloudRuntimeException(errorMsg + "there are servers in this zone.");
         }
 
+        // Check if there are any non-removed pods in the zone.
+        if (!_podDao.listByDataCenterId(zoneId).isEmpty()) {
+            throw new CloudRuntimeException(errorMsg + "there are pods in this zone.");
+        }
+
+        // Check if there are allocated private IP addresses in the zone.
+        if (_privateIpAddressDao.countIPs(zoneId, true) != 0) {
+            throw new CloudRuntimeException(errorMsg + "there are private IP addresses allocated in this zone.");
+        }
+
+        // Check if there are allocated public IP addresses in the zone.
+        if (_publicIpAddressDao.countIPs(zoneId, true) != 0) {
+            throw new CloudRuntimeException(errorMsg + "there are public IP addresses allocated in this zone.");
+        }
+
+        // Check if there are any non-removed vms in the zone.
+        if (!_vmInstanceDao.listByZoneId(zoneId).isEmpty()) {
+            throw new CloudRuntimeException(errorMsg + "there are virtual machines in this zone.");
+        }
+
+        // Check if there are any non-removed volumes in the zone.
+        if (!_volumeDao.findByDc(zoneId).isEmpty()) {
+            throw new CloudRuntimeException(errorMsg + "there are storage volumes in this zone.");
+        }
+
+        // Check if there are any non-removed physical networks in the zone.
+        if (!_physicalNetworkDao.listByZone(zoneId).isEmpty()) {
+            throw new CloudRuntimeException(errorMsg + "there are physical networks in this zone.");
+        }
+
+        // Check if there are any non-removed VMware datacenters in the zone.
+        //if (_vmwareDatacenterZoneMapDao.findByZoneId(zoneId) != null) {
+        //    throw new CloudRuntimeException(errorMsg + "there are VMware datacenters in this zone.");
+        //}
     }
 
     private void checkZoneParameters(final String zoneName, final String dns1, final String dns2, final String internalDns1, final String internalDns2, final boolean checkForDuplicates, final Long domainId,

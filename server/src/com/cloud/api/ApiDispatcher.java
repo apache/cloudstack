@@ -21,6 +21,8 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.projects.Project;
+import com.cloud.utils.db.EntityManager;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -53,6 +55,9 @@ public class ApiDispatcher {
 
     @Inject
     AccountManager _accountMgr;
+
+    @Inject
+    EntityManager _entityMgr;
 
     @Inject()
     protected DispatchChainFactory dispatchChainFactory;
@@ -102,6 +107,10 @@ public class ApiDispatcher {
 
         final CallContext ctx = CallContext.current();
         ctx.setEventDisplayEnabled(cmd.isDisplay());
+        if(params.get(ApiConstants.PROJECT_ID) != null) {
+            Project project = _entityMgr.findByUuidIncludingRemoved(Project.class, params.get(ApiConstants.PROJECT_ID));
+            ctx.setProject(project);
+        }
 
         // TODO This if shouldn't be here. Use polymorphism and move it to validateSpecificParameters
         if (cmd instanceof BaseAsyncCmd) {

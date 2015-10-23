@@ -56,7 +56,7 @@ public class VmWorkStart extends VmWork {
 
     public DeploymentPlan getPlan() {
 
-        if (podId != null || clusterId != null || hostId != null || poolId != null || physicalNetworkId != null) {
+        if (podId != null || clusterId != null || hostId != null || poolId != null || physicalNetworkId != null || avoids !=null) {
             // this is ugly, to work with legacy code, we need to re-construct the DeploymentPlan hard-codely
             // this has to be refactored together with migrating legacy code into the new way
             ReservationContext context = null;
@@ -70,6 +70,7 @@ public class VmWorkStart extends VmWork {
             DeploymentPlan plan = new DataCenterDeployment(
                     dcId, podId, clusterId, hostId, poolId, physicalNetworkId,
                     context);
+            plan.setAvoids(avoids);
             return plan;
         }
 

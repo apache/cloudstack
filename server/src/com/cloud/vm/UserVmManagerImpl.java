@@ -1212,7 +1212,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (guestNic == null) {
             throw new CloudRuntimeException("Unable to add NIC to " + vmInstance);
         }
-        CallContext.current().putContextParameter(Nic.class.getName(), guestNic.getUuid());
+        CallContext.current().putContextParameter(Nic.class, guestNic.getUuid());
         s_logger.debug("Successful addition of " + network + " from " + vmInstance);
         return _vmDao.findById(vmInstance.getId());
     }
@@ -3220,7 +3220,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         long userId = CallContext.current().getCallingUserId();
         if (CallContext.current().getCallingAccount().getId() != owner.getId()) {
-            userId =  _userDao.listByAccount(owner.getAccountId()).get(0).getId();
+            List<UserVO> userVOs = _userDao.listByAccount(owner.getAccountId());
+            if (!userVOs.isEmpty()) {
+                userId =  userVOs.get(0).getId();
+            }
         }
 
         UserVmVO vm = commitUserVm(zone, template, hostName, displayName, owner, diskOfferingId, diskSize, userData, caller, isDisplayVm, keyboard, accountId, userId, offering,

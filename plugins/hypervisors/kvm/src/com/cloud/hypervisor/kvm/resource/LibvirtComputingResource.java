@@ -1160,13 +1160,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         for (int i = 0; i < interfaces.length; i++) {
             final String fname = interfaces[i].getName();
             s_logger.debug("matchPifFileInDirectory: file name '" + fname + "'");
-            if (fname.startsWith("eth") || fname.startsWith("bond") || fname.startsWith("vlan") || fname.startsWith("vx") || fname.startsWith("em") ||
+            if (fname.startsWith("eth") || fname.startsWith("bond") || fname.startsWith("team") || fname.startsWith("vlan") || fname.startsWith("vx") || fname.startsWith("em") ||
                     fname.matches("^p\\d+p\\d+.*") || fname.startsWith("ens") || fname.startsWith("eno") || fname.startsWith("enp") || fname.startsWith("enx")) {
                 return fname;
             }
         }
 
-        s_logger.debug("failing to get physical interface from bridge " + bridgeName + ", did not find an eth*, bond*, vlan*, em*, p*p*, ens*, eno*, enp*, or enx* in " + brif.getAbsolutePath());
+        s_logger.debug("failing to get physical interface from bridge " + bridgeName + ", did not find an eth*, bond*, team*, vlan*, em*, p*p*, ens*, eno*, enp*, or enx* in " + brif.getAbsolutePath());
         return "";
     }
 
@@ -1450,7 +1450,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if (!matcher.group(4).isEmpty()) {
                     return BroadcastDomainType.Vlan.toUri(matcher.group(4)).toString();
                 } else {
-                    //untagged or not matching (eth|bond)#.#
+                    //untagged or not matching (eth|bond|team)#.#
                     s_logger.debug("failed to get vNet id from bridge " + brName
                             + "attached to physical interface" + pif + ", perhaps untagged interface");
                     return "";

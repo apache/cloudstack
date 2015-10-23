@@ -230,21 +230,19 @@ class TestVPCIpTablesPolicies(cloudstackTestCase):
             admin=True,
             domainid=cls.domain.id)
         
-        cls._cleanup = [cls.account]
-
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offering"])
         
-        cls._cleanup.append(cls.service_offering)
 
         cls.logger = logging.getLogger('TestVPCIpTablesPolicies')
         cls.stream_handler = logging.StreamHandler()
         cls.logger.setLevel(logging.DEBUG)
         cls.logger.addHandler(cls.stream_handler)
 
-        cls.entity_manager = EntityManager(cls.apiclient, cls.services, cls.service_offering, cls.account, cls.zone, cls._cleanup, cls.logger)
+        cls.entity_manager = EntityManager(cls.apiclient, cls.services, cls.service_offering, cls.account, cls.zone, cls.logger)
 
+        cls._cleanup = [cls.service_offering, cls.account]
         return
 
     @classmethod
@@ -274,6 +272,16 @@ class TestVPCIpTablesPolicies(cloudstackTestCase):
             account=self.account.name,
             domainid=self.account.domainid)
 
+        self.cleanup = [self.vpc, self.vpc_off]
+        self.entity_manager.set_cleanup(self.cleanup)
+        return
+
+    def tearDown(self):
+        try:
+            self.entity_manager.destroy_routers()
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
@@ -361,27 +369,36 @@ class TestRouterIpTablesPolicies(cloudstackTestCase):
             admin=True,
             domainid=cls.domain.id)
         
-        cls._cleanup = [cls.account]
-
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offering"])
-        
-        cls._cleanup.append(cls.service_offering)
         
         cls.logger = logging.getLogger('TestRouterIpTablesPolicies')
         cls.stream_handler = logging.StreamHandler()
         cls.logger.setLevel(logging.DEBUG)
         cls.logger.addHandler(cls.stream_handler)
 
-        cls.entity_manager = EntityManager(cls.apiclient, cls.services, cls.service_offering, cls.account, cls.zone, cls._cleanup, cls.logger)
+        cls.entity_manager = EntityManager(cls.apiclient, cls.services, cls.service_offering, cls.account, cls.zone, cls.logger)
 
+        cls._cleanup = [cls.service_offering, cls.account]
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
             cleanup_resources(cls.apiclient, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+        self.cleanup = []
+        self.entity_manager.set_cleanup(self.cleanup)
+        return
+
+    def tearDown(self):
+        try:
+            cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -442,18 +459,21 @@ class TestRouterIpTablesPolicies(cloudstackTestCase):
 
 class EntityManager(object):
 
-    def __init__(self, apiclient, services, service_offering, account, zone, cleanup, logger):
+    def __init__(self, apiclient, services, service_offering, account, zone, logger):
         self.apiclient = apiclient
         self.services = services
         self.service_offering = service_offering
         self.account = account
         self.zone = zone
-        self.cleanup = cleanup
         self.logger = logger
 
+        self.cleanup = []
         self.networks = []
         self.routers = []
         self.ips = []
+    
+    def set_cleanup(self, cleanup):
+        self.cleanup = cleanup
 
     def add_nat_rules(self, vpc_id):
         for o in self.networks:
@@ -514,7 +534,6 @@ class EntityManager(object):
                 conservemode=False)
 
             nw_off.update(self.apiclient, state='Enabled')
-            self.cleanup.append(nw_off)
             self.logger.debug('Created and Enabled NetworkOffering')
 
             self.services["network"]["name"] = "NETWORK-" + str(gateway)
@@ -528,13 +547,18 @@ class EntityManager(object):
                 zoneid=self.zone.id,
                 gateway=gateway,
                 vpcid=vpc_id)
+
             self.logger.debug("Created network with ID: %s" % obj_network.id)
         except Exception, e:
             raise Exception('Unable to create a Network with offering=%s because of %s ' % (net_offerring, e))
 
         o = networkO(obj_network)
-        o.add_vm(self.deployvm_in_network(obj_network))
 
+        vm1 = self.deployvm_in_network(obj_network)
+        self.cleanup.insert(1, obj_network)
+        self.cleanup.insert(2, nw_off)
+
+        o.add_vm(vm1)
         self.networks.append(o)
         return o
 
@@ -548,7 +572,9 @@ class EntityManager(object):
                 domainid=self.account.domainid,
                 serviceofferingid=self.service_offering.id,
                 networkids=[str(network.id)])
+
             self.logger.debug('Created VM=%s in network=%s' % (vm.id, network.name))
+            self.cleanup.insert(0, vm)
             return vm
         except:
             raise Exception('Unable to create VM in a Network=%s' % network.name)
@@ -562,6 +588,8 @@ class EntityManager(object):
                 accountid=self.account.name,
                 domainid=self.account.domainid,
                 serviceofferingid=self.service_offering.id)
+
+            self.cleanup.insert(0, vm)
             self.logger.debug('Created VM=%s' % vm.id)
             return vm
         except:
@@ -590,22 +618,23 @@ class EntityManager(object):
 
         return self.routers
 
-    def stop_router(self):
+    def stop_router(self, router):
         self.logger.debug('Stopping router')
-        for router in self.routers:
-            cmd = stopRouter.stopRouterCmd()
-            cmd.id = router.id
-            self.apiclient.stopRouter(cmd)
+        cmd = stopRouter.stopRouterCmd()
+        cmd.id = router.id
+        self.apiclient.stopRouter(cmd)
 
-    def destroy_router(self):
-        self.logger.debug('Destroying router')
+    def destroy_routers(self):
+        self.logger.debug('Destroying routers')
         for router in self.routers:
+            self.stop_router(router)
             cmd = destroyRouter.destroyRouterCmd()
             cmd.id = router.id
             self.apiclient.destroyRouter(cmd)
+        self.routers = []
 
-    def start_router(self):
-        self.logger.debug('Starting router')
+    def start_routers(self):
+        self.logger.debug('Starting routers')
         for router in self.routers:
             cmd = startRouter.startRouterCmd()
             cmd.id = router.id

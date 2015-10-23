@@ -47,6 +47,13 @@ class TestSSVMs(cloudstackTestCase):
         self.cleanup = []
         self.services = self.testClient.getParsedTestDataConfig()
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
+
+        # Default sleep is set to 90 seconds, which is too long if the SSVM takes up to 2min to start.
+        # Second sleep in the loop will waste test time.
+        self.services["sleep"] = 30
+        # Default value is 120 seconds. That's just too much.
+        self.services["configurableData"]["systemVmDelay"] = 60
+
         return
 
     def tearDown(self):
@@ -470,6 +477,47 @@ class TestSSVMs(cloudstackTestCase):
             1,
             "Check cloud service is running or not"
         )
+        
+        linklocal_ip = None
+        # Check status of cloud service
+        if self.hypervisor.lower() in ('vmware', 'hyperv'):
+            # SSH into SSVMs is done via management server for Vmware and
+            # Hyper-V
+            linklocal_ip = ssvm.privateip
+            result = get_process_status(
+                self.apiclient.connection.mgtSvr,
+                22,
+                self.apiclient.connection.user,
+                self.apiclient.connection.passwd,
+                ssvm.privateip,
+                "cat /var/cache/cloud/cmdline | xargs | sed \"s/ /\\n/g\" | grep eth0ip= | sed \"s/\=/ /g\" | awk '{print $2}'",
+                hypervisor=self.hypervisor
+            )
+        else:
+            try:
+                linklocal_ip = ssvm.linklocalip
+                host.user, host.passwd = get_host_credentials(
+                    self.config, host.ipaddress)
+                result = get_process_status(
+                    host.ipaddress,
+                    22,
+                    host.user,
+                    host.passwd,
+                    ssvm.linklocalip,
+                    "cat /var/cache/cloud/cmdline | xargs | sed \"s/ /\\n/g\" | grep eth0ip= | sed \"s/\=/ /g\" | awk '{print $2}'"
+                )
+            except KeyError:
+                self.skipTest(
+                    "Marvin configuration has no host\
+                            credentials to check router services")
+        res = result[0]
+        self.debug("Cached Link Local IP: %s" % res)
+        self.assertEqual(
+            linklocal_ip,
+            res,
+            "The cached Link Local should be the same as the current Link Local IP, but they are different! Current ==> %s; Cached ==> %s " % (linklocal_ip, res)
+        )
+        
         return
 
     @attr(
@@ -564,6 +612,47 @@ class TestSSVMs(cloudstackTestCase):
             1,
             "Check cloud service is running or not"
         )
+
+        linklocal_ip = None
+        # Check status of cloud service
+        if self.hypervisor.lower() in ('vmware', 'hyperv'):
+            # SSH into SSVMs is done via management server for Vmware and
+            # Hyper-V
+            linklocal_ip = cpvm.privateip
+            result = get_process_status(
+                self.apiclient.connection.mgtSvr,
+                22,
+                self.apiclient.connection.user,
+                self.apiclient.connection.passwd,
+                cpvm.privateip,
+                "cat /var/cache/cloud/cmdline | xargs | sed \"s/ /\\n/g\" | grep eth0ip= | sed \"s/\=/ /g\" | awk '{print $2}'",
+                hypervisor=self.hypervisor
+            )
+        else:
+            try:
+                linklocal_ip = cpvm.linklocalip
+                host.user, host.passwd = get_host_credentials(
+                    self.config, host.ipaddress)
+                result = get_process_status(
+                    host.ipaddress,
+                    22,
+                    host.user,
+                    host.passwd,
+                    cpvm.linklocalip,
+                    "cat /var/cache/cloud/cmdline | xargs | sed \"s/ /\\n/g\" | grep eth0ip= | sed \"s/\=/ /g\" | awk '{print $2}'"
+                )
+            except KeyError:
+                self.skipTest(
+                    "Marvin configuration has no host\
+                            credentials to check router services")
+        res = result[0]
+        self.debug("Cached Link Local IP: %s" % res)
+        self.assertEqual(
+            linklocal_ip,
+            res,
+            "The cached Link Local should be the same as the current Link Local IP, but they are different! Current ==> %s; Cached ==> %s " % (linklocal_ip, res)
+        )
+
         return
 
     @attr(
@@ -817,7 +906,7 @@ class TestSSVMs(cloudstackTestCase):
             old_public_ip,
             "Check Public IP after reboot with that of before reboot"
         )
-        
+
         # Private IP Address of System VMs are allowed to change after reboot - CLOUDSTACK-7745
 
         # Wait for the agent to be up

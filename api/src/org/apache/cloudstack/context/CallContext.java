@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.UUID;
 
+import com.cloud.projects.Project;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
@@ -59,6 +60,7 @@ public class CallContext {
     private User user;
     private long userId;
     private final Map<Object, Object> context = new HashMap<Object, Object>();
+    private Project project;
 
     static EntityManager s_entityMgr;
 
@@ -312,6 +314,14 @@ public class CallContext {
 
     public void setEventDescription(String eventDescription) {
         this.eventDescription = eventDescription;
+    }
+
+    public Project getProject() {
+        return this.project;
+    }
+
+    public void setProject(Project project) {
+        this.project = project;
     }
 
     /**

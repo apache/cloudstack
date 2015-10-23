@@ -65,6 +65,7 @@ public interface AlertService {
         public static final AlertType ALERT_TYPE_LOCAL_STORAGE = new AlertType((short)25, "ALERT.STORAGE.LOCAL", true);
         public static final AlertType ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED = new AlertType((short)26, "ALERT.RESOURCE.EXCEED", true);
         public static final AlertType ALERT_TYPE_SYNC = new AlertType((short)27, "ALERT.TYPE.SYNC", true);
+        public static final AlertType ALERT_TYPE_UPLOAD_FAILED = new AlertType((short)28, "ALERT.UPLOAD.FAILED", true);
 
         public short getType() {
             return type;

@@ -1129,18 +1129,19 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             vbdr.bootable = true;
         }
 
-        vbdr.userdevice = Long.toString(volume.getDiskSeq());
         if (volume.getType() == Volume.Type.ISO) {
             vbdr.mode = Types.VbdMode.RO;
             vbdr.type = Types.VbdType.CD;
-        } else if (volume.getType() == Volume.Type.ROOT) {
-            vbdr.mode = Types.VbdMode.RW;
-            vbdr.type = Types.VbdType.DISK;
-            vbdr.unpluggable = false;
+            vbdr.userdevice = "3";
         } else {
             vbdr.mode = Types.VbdMode.RW;
             vbdr.type = Types.VbdType.DISK;
-            vbdr.unpluggable = true;
+            vbdr.unpluggable = (volume.getType() == Volume.Type.ROOT) ? false : true;
+            vbdr.userdevice = "autodetect";
+            final Long deviceId = volume.getDiskSeq();
+            if (deviceId != null && !isDeviceUsed(conn, vm, deviceId)) {
+                vbdr.userdevice = deviceId.toString();
+            }
         }
         final VBD vbd = VBD.create(conn, vbdr);
 
@@ -1400,7 +1401,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 vbdr.bootable = false;
                 vbdr.unpluggable = true;
             }
-            vbdr.userdevice = Long.toString(volumeTO.getDeviceId());
+            vbdr.userdevice = "autodetect";
             vbdr.mode = Types.VbdMode.RW;
             vbdr.type = Types.VbdType.DISK;
             VBD.create(conn, vbdr);
@@ -3072,24 +3073,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return com.cloud.host.Host.Type.Routing;
     }
 
-    public String getUnusedDeviceNum(final Connection conn, final VM vm) {
-        // Figure out the disk number to attach the VM to
-        try {
-            final Set<String> allowedVBDDevices = vm.getAllowedVBDDevices(conn);
-            if (allowedVBDDevices.size() == 0) {
-                throw new CloudRuntimeException("Could not find an available slot in VM with name: " + vm.getNameLabel(conn) + " to attach a new disk.");
-            }
-            return allowedVBDDevices.iterator().next();
-        } catch (final XmlRpcException e) {
-            final String msg = "Catch XmlRpcException due to: " + e.getMessage();
-            s_logger.warn(msg, e);
-        } catch (final XenAPIException e) {
-            final String msg = "Catch XenAPIException due to: " + e.toString();
-            s_logger.warn(msg, e);
-        }
-        throw new CloudRuntimeException("Could not find an available slot in VM with name to attach a new disk.");
-    }
-
     protected VDI getVDIbyLocationandSR(final Connection conn, final String loc, final SR sr) {
         try {
             final Set<VDI> vdis = sr.getVDIs(conn);
@@ -3405,6 +3388,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         final SR sr = getStorageRepository(conn, iqn);
 
         removeSR(conn, sr);
+    }
+
+    protected void destroyUnattachedVBD(Connection conn, VM vm) {
+        try {
+            for (VBD vbd : vm.getVBDs(conn)) {
+                if (Types.VbdType.DISK.equals(vbd.getType(conn)) && !vbd.getCurrentlyAttached(conn)) {
+                    vbd.destroy(conn);
+                }
+            }
+        } catch (final Exception e) {
+            s_logger.debug("Failed to destroy unattached VBD due to ", e);
+        }
     }
 
     public String handleVmStartFailure(final Connection conn, final String vmName, final VM vm, final String message, final Throwable th) {

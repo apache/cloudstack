@@ -45,7 +45,9 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
 
     private final SearchBuilder<DataCenterIpAddressVO> AllFieldsSearch;
     private final GenericSearchBuilder<DataCenterIpAddressVO, Integer> AllIpCount;
+    private final GenericSearchBuilder<DataCenterIpAddressVO, Integer> AllIpCountForDc;
     private final GenericSearchBuilder<DataCenterIpAddressVO, Integer> AllAllocatedIpCount;
+    private final GenericSearchBuilder<DataCenterIpAddressVO, Integer> AllAllocatedIpCountForDc;
 
     @Override
     @DB
@@ -221,6 +223,20 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
         return count.get(0);
     }
 
+    @Override
+    public int countIPs(long dcId, boolean onlyCountAllocated) {
+        SearchCriteria<Integer> sc;
+        if (onlyCountAllocated) {
+            sc = AllAllocatedIpCountForDc.create();
+        } else {
+            sc = AllIpCountForDc.create();
+        }
+
+        sc.setParameters("data_center_id", dcId);
+        List<Integer> count = customSearch(sc, null);
+        return count.get(0);
+    }
+
     public DataCenterIpAddressDaoImpl() {
         super();
 
@@ -239,10 +255,21 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
         AllIpCount.and("pod", AllIpCount.entity().getPodId(), SearchCriteria.Op.EQ);
         AllIpCount.done();
 
+        AllIpCountForDc = createSearchBuilder(Integer.class);
+        AllIpCountForDc.select(null, Func.COUNT, AllIpCountForDc.entity().getId());
+        AllIpCountForDc.and("data_center_id", AllIpCountForDc.entity().getPodId(), SearchCriteria.Op.EQ);
+        AllIpCountForDc.done();
+
         AllAllocatedIpCount = createSearchBuilder(Integer.class);
         AllAllocatedIpCount.select(null, Func.COUNT, AllAllocatedIpCount.entity().getId());
         AllAllocatedIpCount.and("pod", AllAllocatedIpCount.entity().getPodId(), SearchCriteria.Op.EQ);
         AllAllocatedIpCount.and("removed", AllAllocatedIpCount.entity().getTakenAt(), SearchCriteria.Op.NNULL);
         AllAllocatedIpCount.done();
+
+        AllAllocatedIpCountForDc = createSearchBuilder(Integer.class);
+        AllAllocatedIpCountForDc.select(null, Func.COUNT, AllAllocatedIpCountForDc.entity().getId());
+        AllAllocatedIpCountForDc.and("data_center_id", AllAllocatedIpCountForDc.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        AllAllocatedIpCountForDc.and("removed", AllAllocatedIpCountForDc.entity().getTakenAt(), SearchCriteria.Op.NNULL);
+        AllAllocatedIpCountForDc.done();
     }
 }

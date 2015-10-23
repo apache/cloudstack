@@ -71,7 +71,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
         String result = command.execute();
         if (result != null) {
             s_logger.info("failed to untar OVA package due to " + result + ". templatePath: " + templatePath + ", templateName: " + templateName);
-            return null;
+            throw new InternalErrorException("failed to untar OVA package");
         }
 
         FormatInfo info = new FormatInfo();
