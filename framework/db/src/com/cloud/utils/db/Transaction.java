@@ -35,8 +35,7 @@ public class Transaction {
         if (currentTxn != null) {
             databaseId = currentTxn.getDatabaseId();
         }
-        TransactionLegacy txn = TransactionLegacy.open(name, databaseId, false);
-        try {
+        try (final TransactionLegacy txn = TransactionLegacy.open(name, databaseId, false)) {
             // if (txn.dbTxnStarted()){
             // String warnMsg = "Potential Wrong Usage: TRANSACTION.EXECUTE IS WRAPPED INSIDE ANOTHER DB TRANSACTION!";
             // s_logger.warn(warnMsg, new CloudRuntimeException(warnMsg));
@@ -45,8 +44,6 @@ public class Transaction {
             T result = callback.doInTransaction(STATUS);
             txn.commit();
             return result;
-        } finally {
-            txn.close();
         }
     }
 
@@ -64,14 +61,12 @@ public class Transaction {
         String name = "tx-" + counter.incrementAndGet();
         TransactionLegacy currentTxn = TransactionLegacy.currentTxn(false);
         short outer_txn_databaseId = (currentTxn != null ? currentTxn.getDatabaseId() : databaseId);
-        TransactionLegacy txn = TransactionLegacy.open(name, databaseId, true);
-        try {
+        try (final TransactionLegacy txn = TransactionLegacy.open(name, databaseId, true)) {
             txn.start();
             T result = callback.doInTransaction(STATUS);
             txn.commit();
             return result;
         } finally {
-            txn.close();
             TransactionLegacy.open(outer_txn_databaseId).close();
         }
     }
