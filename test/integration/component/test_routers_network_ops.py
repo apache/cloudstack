@@ -81,9 +81,9 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
             cls.api_client,
             cls.services["service_offering"]
         )
-        
+
         cls.services["nw_off_persistent_RVR"]["egress_policy"] = "true"
-        
+
         cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
                                             cls.services["nw_off_persistent_RVR"],
@@ -95,7 +95,7 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
                         cls.service_offering,
                         cls.network_offering,
                         ]
-        
+
         cls.logger = logging.getLogger('TestRedundantIsolateNetworks')
         cls.stream_handler = logging.StreamHandler()
         cls.logger.setLevel(logging.DEBUG)
@@ -168,7 +168,7 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
-        
+
         self.logger.debug("Deployed VM in network: %s" % network.id)
 
         vms = VirtualMachine.list(
@@ -305,7 +305,7 @@ class TestIsolatedNetworks(cloudstackTestCase):
             cls.api_client,
             cls.services["service_offering"]
         )
-        
+
         cls.services["network_offering"]["egress_policy"] = "true"
 
         cls.network_offering = NetworkOffering.create(cls.api_client,
@@ -313,7 +313,7 @@ class TestIsolatedNetworks(cloudstackTestCase):
                                                        conservemode=True)
 
         cls.network_offering.update(cls.api_client, state='Enabled')
-        
+
         cls.network = Network.create(cls.api_client,
                                       cls.services["network"],
                                       accountid=cls.account.name,
@@ -336,7 +336,7 @@ class TestIsolatedNetworks(cloudstackTestCase):
             cls.service_offering,
             cls.account
         ]
-        
+
         cls.logger = logging.getLogger('TestIsolatedNetworks')
         cls.stream_handler = logging.StreamHandler()
         cls.logger.setLevel(logging.DEBUG)
@@ -435,17 +435,17 @@ class TestIsolatedNetworks(cloudstackTestCase):
             'Active',
             "Check list port forwarding rules"
         )
-        
+
         result = 'failed'
         try:
             ssh_command = "ping -c 3 8.8.8.8"
-            self.logger.debug("SSH into VM with ID: %s" % nat_rule.ipaddress)
+            self.logger.debug("SSH into VM with IP: %s" % nat_rule.ipaddress)
 
             ssh = self.vm_1.get_ssh_client(ipaddress=nat_rule.ipaddress, port=self.services["natrule"]["publicport"], retries=5)
             result = str(ssh.execute(ssh_command))
             self.logger.debug("SSH result: %s; COUNT is ==> %s" % (result, result.count("3 packets received")))
         except:
-            self.fail("Failed to SSH into VM - %s" % (public_ip.ipaddress.ipaddress))
+            self.fail("Failed to SSH into VM - %s" % (nat_rule.ipaddress))
 
         self.assertEqual(
                          result.count("3 packets received"),
