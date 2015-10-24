@@ -39,7 +39,7 @@ class CsGuestNetwork:
         if not self.guest:
             return self.config.get_dns()
         # Can a router provide dhcp but not dns?
-        if 'dns' in self.data:
+        if 'dns' in self.data and 'router_guest_gateway' in self.data:
             return [self.data['router_guest_gateway']] + self.data['dns'].split(',')
         elif "router_guest_gateway" in self.data:
             return [self.data['router_guest_gateway']]

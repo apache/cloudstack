@@ -432,7 +432,9 @@ class TestPortForwarding(cloudstackTestCase):
                 src_nat_ip_addr.ipaddress,
                 self.virtual_machine.ssh_port,
                 self.virtual_machine.username,
-                self.virtual_machine.password
+                self.virtual_machine.password,
+                retries=2,
+                delay=0
             )
         return
 
@@ -726,7 +728,8 @@ class TestRebootRouter(cloudstackTestCase):
                 self.public_ip.ipaddress.ipaddress,
                 self.services["natrule"]["publicport"],
                 self.vm_1.username,
-                self.vm_1.password
+                self.vm_1.password,
+                retries=5
             )
         except Exception as e:
             self.fail(

@@ -69,9 +69,11 @@ class CsDhcp(CsDataBag):
             line = "dhcp-option=tag:interface-%s,15,%s" % (device, gn.get_domain())
             self.conf.search(sline, line)
             # DNS search order
-            sline = "dhcp-option=tag:interface-%s,6" % device
-            line = "dhcp-option=tag:interface-%s,6,%s" % (device, ','.join(gn.get_dns()))
-            self.conf.search(sline, line)
+            if gn.get_dns() and device:
+                sline = "dhcp-option=tag:interface-%s,6" % device
+                dns_list = [x for x in gn.get_dns() if x is not None]
+                line = "dhcp-option=tag:interface-%s,6,%s" % (device, ','.join(dns_list))
+                self.conf.search(sline, line)
             # Gateway
             gateway = ''
             if self.config.is_vpc():
