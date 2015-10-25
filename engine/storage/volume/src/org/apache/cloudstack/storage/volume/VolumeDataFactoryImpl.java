@@ -77,7 +77,7 @@ public class VolumeDataFactoryImpl implements VolumeDataFactory {
 
     @Override
     public VolumeInfo getVolume(long volumeId) {
-        VolumeVO volumeVO = volumeDao.findById(volumeId);
+        VolumeVO volumeVO = volumeDao.findByIdIncludingRemoved(volumeId);
         if (volumeVO == null) {
             return null;
         }
