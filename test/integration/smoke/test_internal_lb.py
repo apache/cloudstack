@@ -204,24 +204,27 @@ class Services:
                 "publicport": 22,
                 "protocol": 'TCP',
             },
-            "template_kvm": {
-                "name": "tiny-kvm",
-                "displaytext": "macchinina kvm",
-                "format": "qcow2",
-                "hypervisor": "kvm",
-                "ostype": "Other PV (64-bit)",
-                "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-kvm.qcow2.bz2",
-                "requireshvm": "True",
-            },
-            "template_xen": {
-                "name": "tiny-xen",
-                "displaytext": "macchinina xen",
-                "format": "vhd",
-                "hypervisor": "xen",
-                "ostype": "Other (64-bit)",
-                "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-xen.vhd.bz2",
-                "requireshvm": "True",
-            },
+            "template": {
+                "kvm": {
+                    "name": "tiny-kvm",
+                    "displaytext": "macchinina kvm",
+                    "format": "qcow2",
+                    "hypervisor": "kvm",
+                    "ostype": "Other PV (64-bit)",
+                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-kvm.qcow2.bz2",
+                    "requireshvm": "True"
+                },
+
+                "xen": {
+                    "name": "tiny-xen",
+                    "displaytext": "macchinina xen",
+                    "format": "vhd",
+                    "hypervisor": "xen",
+                    "ostype": "Other (64-bit)",
+                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-xen.vhd.bz2",
+                    "requireshvm": "True",
+                }
+            }
         }
 
 
@@ -244,6 +247,7 @@ class TestInternalLb(cloudstackTestCase):
 
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
+        cls.logger.debug("Creating compute offering: %s" %cls.services["compute_offering"]["name"])
         cls.compute_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["compute_offering"]
@@ -252,12 +256,11 @@ class TestInternalLb(cloudstackTestCase):
         cls.account = Account.create(
             cls.apiclient, services=cls.services["account"])
 
-        if cls.services["default_hypervisor"] == "kvm":
-            cls.template = Template.register(cls.apiclient, cls.services["template_kvm"], cls.zone.id, hypervisor=cls.services[
-                                             "template_kvm"]["hypervisor"], account=cls.account.name, domainid=cls.domain.id)
-        else:
-            cls.template = Template.register(cls.apiclient, cls.services["template_xen"], cls.zone.id, hypervisor=cls.services[
-                                             "template_xen"]["hypervisor"], account=cls.account.name, domainid=cls.domain.id)
+        cls.hypervisor = cls.services["default_hypervisor"]
+
+        cls.logger.debug("Downloading Template: %s from: %s" %(cls.services["template"][cls.hypervisor]["name"], cls.services["template"][cls.hypervisor]["url"]))
+        cls.template = Template.register(cls.apiclient, cls.services["template"][cls.hypervisor], cls.zone.id, hypervisor=cls.hypervisor, account=cls.account.name, domainid=cls.domain.id)
+        cls.template.download(cls.apiclient)
 
         if cls.template == FAILED:
             assert False, "get_template() failed to return template"
@@ -266,7 +269,7 @@ class TestInternalLb(cloudstackTestCase):
                    %s" % (cls.account.name,
                           cls.account.id))
 
-        cls.cleanup = [cls.account]
+        cls.cleanup = [cls.template, cls.account, cls.compute_offering]
         return
 
     def get_networkoffering_state(self, offering):
@@ -366,8 +369,7 @@ class TestInternalLb(cloudstackTestCase):
                                        accountid=self.account.name,
                                        domainid=self.domain.id,
                                        serviceofferingid=self.compute_offering.id,
-                                       hypervisor=self.services[
-                                           "template_kvm"]["hypervisor"]
+                                       hypervisor=self.hypervisor
                                        )
             self.assertIsNotNone(
                 vm, "Failed to deploy vm in network: %s" % networkid)
