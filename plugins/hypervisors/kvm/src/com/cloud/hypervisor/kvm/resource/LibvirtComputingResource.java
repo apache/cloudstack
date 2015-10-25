@@ -1160,14 +1160,41 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         for (int i = 0; i < interfaces.length; i++) {
             final String fname = interfaces[i].getName();
             s_logger.debug("matchPifFileInDirectory: file name '" + fname + "'");
-            if (fname.startsWith("eth") || fname.startsWith("bond") || fname.startsWith("vlan") || fname.startsWith("vx") || fname.startsWith("em") ||
-                    fname.matches("^p\\d+p\\d+.*")) {
+            if (isInterface(fname)) {
                 return fname;
             }
         }
 
-        s_logger.debug("failing to get physical interface from bridge " + bridgeName + ", did not find an eth*, bond*, vlan*, em*, or p*p* in " + brif.getAbsolutePath());
+        s_logger.debug("failing to get physical interface from bridge " + bridgeName + ", did not find an eth*, bond*, team*, vlan*, em*, p*p*, ens*, eno*, enp*, or enx* in " + brif.getAbsolutePath());
         return "";
+    }
+
+    String [] _ifNamePrefixes = {
+            "eth",
+            "bond",
+            "vlan",
+            "vx",
+            "em",
+            "ens",
+            "eno",
+            "enp",
+            "team",
+            "enx",
+            "^p\\d+p\\d+"
+    };
+    /**
+     * @param fname
+     * @return
+     */
+    boolean isInterface(final String fname) {
+        StringBuffer commonPattern = new StringBuffer();
+        for (String ifNamePrefix : _ifNamePrefixes) {
+            commonPattern.append("|(").append(ifNamePrefix).append(".*)");
+        }
+        if(fname.matches(commonPattern.toString())) {
+            return true;
+        }
+        return false;
     }
 
     public boolean checkNetwork(final String networkName) {
@@ -1450,7 +1477,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if (!matcher.group(4).isEmpty()) {
                     return BroadcastDomainType.Vlan.toUri(matcher.group(4)).toString();
                 } else {
-                    //untagged or not matching (eth|bond)#.#
+                    //untagged or not matching (eth|bond|team)#.#
                     s_logger.debug("failed to get vNet id from bridge " + brName
                             + "attached to physical interface" + pif + ", perhaps untagged interface");
                     return "";
