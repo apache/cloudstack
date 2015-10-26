@@ -27,7 +27,7 @@ import util
 import cloudstack_pluginlib as lib
 import logging
 
-lib.setup_logging("/var/log/cloud/swiftxen.log")
+lib.setup_logging("/var/log/cloud/swiftxenserver.log")
 
 def echo(fn):
     def wrapped(*v, **k):

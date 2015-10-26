@@ -42,7 +42,7 @@ import util
 import cloudstack_pluginlib as lib
 import logging
 
-lib.setup_logging("/var/log/cloud/s3xen.log")
+lib.setup_logging("/var/log/cloud/s3xenserver.log")
 
 NULL = 'null'
 
