@@ -32,7 +32,7 @@
     cloudStack.sections.metrics.zones = {
         title: 'label.metrics',
         listView: {
-            id: 'zones',
+            id: 'physicalResources',
             fields: {
                 name: {
                     label: 'label.metrics.name'
@@ -250,7 +250,8 @@
             browseBy: {
                 filterBy: 'zoneid',
                 resource: 'clusters'
-            }
+            },
+            detailView: cloudStack.sections.system.physicalResourceSection.sections.physicalResources.listView.zones.detailView
         }
     };
 

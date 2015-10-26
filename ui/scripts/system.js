@@ -7622,7 +7622,7 @@
                 }
             }
         },
-        show: cloudStack.uiCustom.physicalResources({
+        physicalResourceSection: {
             sections: {
                 physicalResources: {
                     type: 'select',
@@ -9403,7 +9403,7 @@
                     }
                 }
             }
-        }),
+        },
         subsections: {
             virtualRouters: {
                 sectionSelect: {
@@ -19702,7 +19702,10 @@
             });
         }
     }
-    
+
+    // Inject cloudStack infra page
+    cloudStack.sections.system.show = cloudStack.uiCustom.physicalResources(cloudStack.sections.system.physicalResourceSection);
+
     function addExternalLoadBalancer(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) {
         var array1 =[];
         array1.push("&physicalnetworkid=" + physicalNetworkObj.id);
