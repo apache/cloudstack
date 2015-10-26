@@ -39,6 +39,9 @@ SOURCE_ROOT=$(pwd)
 mkdir -p ${OUT_DIR}
 rm -f ${OUT_DIR}/*
 
+# Make sure the user running the process owns the files.
+find / -user 1000 -group 1000 | xargs chown --no-dereference root:root
+
 DOCKER_VOLUMES="-v ${SOURCE_ROOT}:/build/cloudstack"
 DOCKER_RUN="tools/package-docker/build-packages.sh"
 
