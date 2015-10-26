@@ -3729,8 +3729,14 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             }
             trafficType.setHypervNetworkLabel(hypervLabel);
         }
-        _pNTrafficTypeDao.update(id, trafficType);
 
+        if (ovm3Label != null) {
+            if ("".equals(ovm3Label)) {
+                ovm3Label = null;
+            }
+            trafficType.setOvm3NetworkLabel(ovm3Label);
+        }
+        _pNTrafficTypeDao.update(id, trafficType);
         return trafficType;
     }
 
