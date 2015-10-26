@@ -520,6 +520,107 @@
                             poll: pollAsyncJobResult
                         }
                     },
+                    startByAdmin: {
+                        label: 'label.action.start.instance',
+                        createForm: {
+                            title: 'label.action.start.instance',
+                            desc: 'message.action.start.instance',
+                            fields: {
+                                hostId: {
+                                    label: 'label.host',
+                                    isHidden: function(args) {
+                                        if (isAdmin())
+                                            return false;
+                                        else
+                                            return true;
+                                    },
+                                    select: function(args) {
+                                        if (isAdmin()) {
+                                            $.ajax({
+                                                url: createURL("listHosts&state=Up&type=Routing&zoneid=" + args.context.instances[0].zoneid),
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    if (json.listhostsresponse.host != undefined) {
+                                                        hostObjs = json.listhostsresponse.host;
+                                                        var items = [{
+                                                            id: -1,
+                                                            description: 'Default'
+                                                        }];
+                                                        $(hostObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.name
+                                                            });
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    } else {
+                                                        cloudStack.dialog.notice({
+                                                            message: _l('No Hosts are avaialble')
+                                                        });
+                                                    }
+                                                }
+                                            });
+                                        } else {
+                                            args.response.success({
+                                                data: null
+                                            });
+                                        }
+                                    }
+                                },
+                            }
+                        },
+                        action: function(args) {
+                            var data = {
+                                id: args.context.instances[0].id
+                            }
+                            if (args.$form.find('.form-item[rel=hostId]').css("display") != "none" && args.data.hostId != -1) {
+                                $.extend(data, {
+                                    hostid: args.data.hostId
+                                });
+                            }
+                            $.ajax({
+                                url: createURL("startVirtualMachine"),
+                                data: data,
+                                dataType: "json",
+                                async: true,
+                                success: function(json) {
+                                    var jid = json.startvirtualmachineresponse.jobid;
+                                    args.response.success({
+                                        _custom: {
+                                            jobId: jid,
+                                            getUpdatedItem: function(json) {
+                                                return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                            },
+                                            getActionFilter: function() {
+                                                return vmActionfilter;
+                                            }
+                                        }
+                                    });
+                                }
+                            });
+                        },
+                        messages: {
+                            confirm: function(args) {
+                                return 'message.action.start.instance';
+                            },
+                            notification: function(args) {
+                                return 'label.action.start.instance';
+                            },
+                            complete: function(args) {
+                                if (args.password != null) {
+                                    return 'label.vm.password' + ' ' + args.password;
+                                }
+
+                                return false;
+                            }
+                        },
+                        notification: {
+                            poll: pollAsyncJobResult
+                        }
+                    },
                     stop: {
                         label: 'label.action.stop.instance',
                         compactLabel: 'label.stop',
@@ -2464,7 +2565,10 @@
             allowedActions.push("viewConsole");
         } else if (jsonObj.state == 'Stopped') {
             allowedActions.push("edit");
-            allowedActions.push("start");
+            if (isAdmin())
+                allowedActions.push("startByAdmin");
+            else
+                allowedActions.push("start");
             allowedActions.push("destroy");
             allowedActions.push("reinstall");
 

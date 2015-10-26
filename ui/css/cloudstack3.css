@@ -12363,11 +12363,13 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: 1px -583px;
 }
 
-.start .icon {
+.start .icon,
+.startByAdmin .icon {
   background-position: -169px -1px;
 }
 
-.start:hover .icon {
+.start:hover .icon,
+.startByAdmin:hover .icon {
   background-position: -169px -583px;
 }
 
