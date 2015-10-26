@@ -150,6 +150,10 @@ public class LoadBalancerTO {
         return lbProtocol;
     }
 
+    public void setLbProtocol(String lbProtocol) {
+        this.lbProtocol = lbProtocol;
+    }
+
     public boolean isRevoked() {
         return revoked;
     }

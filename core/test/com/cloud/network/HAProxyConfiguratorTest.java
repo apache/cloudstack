@@ -29,6 +29,10 @@ import org.junit.Test;
 
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
+import com.cloud.network.lb.LoadBalancingRule.LbDestination;
+
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * @author dhoogland
@@ -85,6 +89,24 @@ public class HAProxyConfiguratorTest {
         // setup tests for
         // maxconn (test for maxpipes as well)
         // httpmode
+    }
+
+    /**
+     * Test method for {@link com.cloud.network.HAProxyConfigurator#generateConfiguration(com.cloud.agent.api.routing.LoadBalancerConfigCommand)}.
+     */
+    @Test
+    public void testGenerateConfigurationLoadBalancerProxyProtocolConfigCommand() {
+        final List<LbDestination> dests = new ArrayList<>();
+        dests.add(new LbDestination(443, 8443, "10.1.10.2", false));
+        dests.add(new LbDestination(443, 8443, "10.1.10.2", true));
+        LoadBalancerTO lb = new LoadBalancerTO("1", "10.2.0.1", 443, "tcp", "http", false, false, false, dests);
+        lb.setLbProtocol("tcp-proxy");
+        LoadBalancerTO[] lba = new LoadBalancerTO[1];
+        lba[0] = lb;
+        HAProxyConfigurator hpg = new HAProxyConfigurator();
+        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", false);
+        String result = genConfig(hpg, cmd);
+        assertTrue("'send-proxy' should result if protocol is 'tcp-proxy'", result.contains("send-proxy"));
     }
 
     private String genConfig(HAProxyConfigurator hpg, LoadBalancerConfigCommand cmd) {
