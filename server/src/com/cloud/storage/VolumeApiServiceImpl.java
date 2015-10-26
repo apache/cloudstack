@@ -1222,13 +1222,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (instanceId == null || (vmInstance.getType().equals(VirtualMachine.Type.User))) {
                     // Decrement the resource count for volumes and primary storage belonging user VM's only
                     _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume, volume.isDisplayVolume());
-                    /* If volume is in primary storage, decrement primary storage count else decrement secondary
-                     storage count (in case of upload volume). */
-                    if (volume.getFolder() != null || volume.getPath() != null || volume.getState() == Volume.State.Allocated) {
-                        _resourceLimitMgr.recalculateResourceCount(volume.getAccountId(), volume.getDomainId(), ResourceType.primary_storage.getOrdinal());
-                    } else {
-                        _resourceLimitMgr.recalculateResourceCount(volume.getAccountId(), volume.getDomainId(), ResourceType.secondary_storage.getOrdinal());
-                    }
                 }
             }
             // Mark volume as removed if volume has not been created on primary or secondary
@@ -1243,6 +1236,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 s_logger.info("Expunging volume " + volume.getId() + " from primary data store");
                 AsyncCallFuture<VolumeApiResult> future = volService.expungeVolumeAsync(volOnPrimary);
                 future.get();
+                //decrement primary storage count
+                _resourceLimitMgr.recalculateResourceCount(volume.getAccountId(), volume.getDomainId(), ResourceType.primary_storage.getOrdinal());
             }
             // expunge volume from secondary if volume is on image store
             VolumeInfo volOnSecondary = volFactory.getVolume(volume.getId(), DataStoreRole.Image);
@@ -1250,6 +1245,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 s_logger.info("Expunging volume " + volume.getId() + " from secondary data store");
                 AsyncCallFuture<VolumeApiResult> future2 = volService.expungeVolumeAsync(volOnSecondary);
                 future2.get();
+                //decrement secondary storage count
+                _resourceLimitMgr.recalculateResourceCount(volume.getAccountId(), volume.getDomainId(), ResourceType.secondary_storage.getOrdinal());
             }
             // delete all cache entries for this volume
             List<VolumeInfo> cacheVols = volFactory.listVolumeOnCache(volume.getId());
