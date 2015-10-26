@@ -59,7 +59,7 @@ if [ -n "${VERSION}" ]; then
 fi
 
 # Make sure the user running the process owns the files (problem with volume mounts in docker build).
-find . -user 1000 -group 1000 | xargs chown --no-dereference root:root
+find . -user 1000 -group 1000 -exec chown --no-dereference root:root {} \;
 
 dpkg-buildpackage
 
