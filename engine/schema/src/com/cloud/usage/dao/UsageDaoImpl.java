@@ -460,7 +460,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             @Override
             public Pair<List<? extends UsageVO>, Integer> doInTransaction(final TransactionStatus status) {
                 Pair<List<UsageVO>, Integer> usageRecords = new Pair<List<UsageVO>, Integer>(new ArrayList<UsageVO>(), 0);
-                Filter usageFilter = new Filter(UsageVO.class, "startDate", true, 0L, 10000L);
+                Filter usageFilter = new Filter(UsageVO.class, "startDate", true, 0L, Long.MAX_VALUE);
                 QueryBuilder<UsageVO> qb = QueryBuilder.create(UsageVO.class);
                 if (accountId != -1) {
                     qb.and(qb.entity().getAccountId(), SearchCriteria.Op.EQ, accountId);
