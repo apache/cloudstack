@@ -28,6 +28,7 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Command;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.Pair;
@@ -74,7 +75,9 @@ public class HypervisorGuruManagerImpl extends ManagerBase implements Hypervisor
 
     @Override
     public long getGuruProcessedCommandTargetHost(long hostId, Command cmd) {
-        for (HypervisorGuru guru : _hvGuruList) {
+        HostVO host = _hostDao.findById(hostId);
+        HypervisorGuru guru = getGuru(host.getHypervisorType());
+        if (guru != null) {
             Pair<Boolean, Long> result = guru.getCommandHostDelegation(hostId, cmd);
             if (result.first()) {
                 return result.second();
