@@ -778,7 +778,7 @@ public class ApiDBUtils {
     // ///////////////////////////////////////////////////////////
 
     public static VMInstanceVO findVMInstanceById(long vmId) {
-        return s_vmDao.findById(vmId);
+        return s_vmDao.findByIdIncludingRemoved(vmId);
     }
 
     public static long getStorageCapacitybyPool(Long poolId, short capacityType) {
@@ -1033,12 +1033,7 @@ public class ApiDBUtils {
     }
 
     public static Snapshot findSnapshotById(long snapshotId) {
-        SnapshotVO snapshot = s_snapshotDao.findById(snapshotId);
-        if (snapshot != null && snapshot.getRemoved() == null && snapshot.getState() == Snapshot.State.BackedUp) {
-            return snapshot;
-        } else {
-            return null;
-        }
+        return s_snapshotDao.findByIdIncludingRemoved(snapshotId);
     }
 
     public static StoragePoolVO findStoragePoolById(Long storagePoolId) {
@@ -1222,7 +1217,7 @@ public class ApiDBUtils {
     }
 
     public static NetworkVO findNetworkById(long id) {
-        return s_networkDao.findById(id);
+        return s_networkDao.findByIdIncludingRemoved(id);
     }
 
     public static Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId, long zoneId) {
@@ -1603,6 +1598,11 @@ public class ApiDBUtils {
             AutoScaleVmGroupVO group = ApiDBUtils.findAutoScaleVmGroupById(job.getInstanceId());
             if (group != null) {
                 jobInstanceId = group.getUuid();
+            }
+        } else if (jobInstanceType == ApiCommandJobType.Network) {
+            NetworkVO networkVO = ApiDBUtils.findNetworkById(job.getInstanceId());
+            if(networkVO != null) {
+                jobInstanceId = networkVO.getUuid();
             }
         } else if (jobInstanceType != ApiCommandJobType.None) {
             // TODO : when we hit here, we need to add instanceType -> UUID
