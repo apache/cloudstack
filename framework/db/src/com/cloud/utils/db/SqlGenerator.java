@@ -663,4 +663,10 @@ public class SqlGenerator {
 
         return sql.append("SELECT COUNT(*) FROM ").append(buildTableReferences()).append(" WHERE ").append(buildDiscriminatorClause().first()).toString();
     }
+
+    public String buildDistinctIdSql() {
+        StringBuilder sql = new StringBuilder();
+
+        return sql.append("SELECT DISTINCT id FROM ").append(buildTableReferences()).append(" WHERE ").append(buildDiscriminatorClause().first()).toString();
+    }
 }
