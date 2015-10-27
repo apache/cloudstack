@@ -211,6 +211,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private KeysManager _keysMgr;
     @Inject
     private VirtualMachineManager _itMgr;
+    @Inject
+    private VirtualMachineName _vmNameService;
 
     private ConsoleProxyListener _listener;
 
@@ -671,7 +673,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     protected Map<String, Object> createProxyInstance(long dataCenterId, VMTemplateVO template) throws ConcurrentOperationException {
 
         long id = _consoleProxyDao.getNextInSequence(Long.class, "id");
-        String name = VirtualMachineName.getConsoleProxyName(id, _instance);
+        String name = _vmNameService.getConsoleProxyName(id, _instance);
         DataCenterVO dc = _dcDao.findById(dataCenterId);
         Account systemAcct = _accountMgr.getSystemAccount();
 

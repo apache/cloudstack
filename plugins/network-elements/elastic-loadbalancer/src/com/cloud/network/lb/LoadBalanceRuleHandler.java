@@ -131,6 +131,8 @@ public class LoadBalanceRuleHandler {
     @Inject
     private VirtualMachineManager _itMgr;
     @Inject
+    private VirtualMachineName _vmNameService;
+    @Inject
     private AccountService _accountService;
     @Inject
     private LoadBalancerDao _lbDao;
@@ -287,9 +289,10 @@ public class LoadBalanceRuleHandler {
                 }
 
                 ServiceOfferingVO elasticLbVmOffering = _serviceOfferingDao.findDefaultSystemOffering(ServiceOffering.elbVmDefaultOffUniqueName, ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId()));
-                elbVm = new DomainRouterVO(id, elasticLbVmOffering.getId(), vrProvider.getId(), VirtualMachineName.getSystemVmName(id, _instance, ELB_VM_NAME_PREFIX),
+                elbVm = new DomainRouterVO(id, elasticLbVmOffering.getId(), vrProvider.getId(), _vmNameService.getSystemVmName(id, _instance, ELB_VM_NAME_PREFIX),
                         template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), userId, false, RedundantState.UNKNOWN,
                         elasticLbVmOffering.getOfferHA(), false, null);
+
                 elbVm.setRole(Role.LB);
                 elbVm = _routerDao.persist(elbVm);
                 _itMgr.allocate(elbVm.getInstanceName(), template, elasticLbVmOffering, networks, plan, null);

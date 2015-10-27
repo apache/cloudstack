@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -279,6 +280,9 @@ import com.cloud.vm.VmDetailConstants;
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService, VirtualRouterDeployer {
     private static final Logger s_logger = Logger.getLogger(VmwareResource.class);
 
+    @Inject
+    protected VirtualMachineName _vmNameService;
+
     protected String _name;
 
     protected final long _opsTimeout = 900000;   // 15 minutes time out to time
@@ -327,6 +331,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected VirtualRoutingResource _vrResource;
 
     protected final static HashMap<VirtualMachinePowerState, PowerState> s_powerStatesTable = new HashMap<VirtualMachinePowerState, PowerState>();
+
     static {
         s_powerStatesTable.put(VirtualMachinePowerState.POWERED_ON, PowerState.PowerOn);
         s_powerStatesTable.put(VirtualMachinePowerState.POWERED_OFF, PowerState.PowerOff);
@@ -1234,7 +1239,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.debug("Ping command port succeeded for vm " + vmName);
         }
 
-        if (VirtualMachineName.isValidRouterName(vmName)) {
+        if (_vmNameService.isValidRouterName(vmName)) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Execute network usage setup command on " + vmName);
             }

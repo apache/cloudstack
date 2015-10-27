@@ -208,6 +208,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     @Inject
     private VirtualMachineManager _itMgr;
     @Inject
+    private VirtualMachineName _vmNameService;
+    @Inject
     protected VMInstanceDao _vmDao;
     @Inject
     protected CapacityDao _capacityDao;
@@ -524,7 +526,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         }
 
         long id = _secStorageVmDao.getNextInSequence(Long.class, "id");
-        String name = VirtualMachineName.getSystemVmName(id, _instance, "s").intern();
+        String name = _vmNameService.getSystemVmName(id, _instance, "s").intern();
         Account systemAcct = _accountMgr.getSystemAccount();
 
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);

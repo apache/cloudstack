@@ -135,6 +135,8 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
     @Inject
     VirtualMachineManager _itMgr;
     @Inject
+    VirtualMachineName _vmNameService;
+    @Inject
     DomainRouterDao _internalLbVmDao;
     @Inject
     ConfigurationDao _configDao;
@@ -780,7 +782,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
                 }
 
                 internalLbVm =
-                        new DomainRouterVO(id, routerOffering.getId(), internalLbProviderId, VirtualMachineName.getSystemVmName(id, _instance, InternalLbVmNamePrefix),
+                        new DomainRouterVO(id, routerOffering.getId(), internalLbProviderId, _vmNameService.getSystemVmName(id, _instance, InternalLbVmNamePrefix),
                                 template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), userId, false, RedundantState.UNKNOWN, false, false, VirtualMachine.Type.InternalLoadBalancerVm, vpcId);
                 internalLbVm.setRole(Role.INTERNAL_LB_VM);
                 internalLbVm = _internalLbVmDao.persist(internalLbVm);

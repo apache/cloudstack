@@ -78,6 +78,8 @@ public class ServiceManagerImpl implements ServiceManager {
     @Inject
     AccountService _accountService;
     @Inject
+    VirtualMachineName _vmNameService;
+    @Inject
     ContrailManager _manager;
 
     /**
@@ -109,7 +111,8 @@ public class ServiceManagerImpl implements ServiceManager {
         networks.put(linklocal, new ArrayList<NicProfile>());
         networks.put((NetworkVO)left, new ArrayList<NicProfile>());
         networks.put((NetworkVO)right, new ArrayList<NicProfile>());
-        String instanceName = VirtualMachineName.getVmName(id, owner.getId(), "SRV");
+
+        String instanceName = _vmNameService.getVmName(id, owner.getId(), "SRV");
 
         long userId = CallContext.current().getCallingUserId();
         if (CallContext.current().getCallingAccount().getId() != owner.getId()) {

@@ -79,4 +79,6 @@
         <property name="name" value="Basic" />
     </bean>
     
+    <bean id="vmNameService" class="com.cloud.vm.VirtualMachineName" />
+    
 </beans>

@@ -381,6 +381,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     protected VirtualMachineManager _itMgr;
     @Inject
+    protected VirtualMachineName _vmNameService;
+    @Inject
     protected NetworkDao _networkDao;
     @Inject
     protected NicDao _nicDao;
@@ -3208,7 +3210,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // Check is hostName is RFC compliant
             checkNameForRFCCompliance(hostName);
         }
-        instanceName = VirtualMachineName.getVmName(id, owner.getId(), _instance);
+        instanceName = _vmNameService.getVmName(id, owner.getId(), _instance);
 
         // Check if VM with instanceName already exists.
         VMInstanceVO vmObj = _vmInstanceDao.findVMByInstanceName(instanceName);
