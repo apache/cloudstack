@@ -798,21 +798,25 @@
                         startIndex += parseInt($(this).attr('colspan'));
                     });
                     var endIndex = startIndex + parseInt(prevTh.attr('colspan'));
-                    prevTh.closest('table').find('tbody td').filter(function() {
+                    var bodySection = prevTh.closest('table').find('tbody td').filter(function() {
                         return $(this).index() >= startIndex && $(this).index() < endIndex;
-                    }).toggle();
-                    prevTh.closest('table').find('thead tr:last th').filter(function() {
+                    });
+                    var headSection = prevTh.closest('table').find('thead tr:last th').filter(function() {
                         return $(this).index() >= startIndex && $(this).index() < endIndex;
-                    }).toggle();
+                    });
                     prevTh.toggle();
                     karet.empty();
                     var karetSpan = $('<span>');
                     karetSpan.css({'font-size': '15px'});
                     if (prevTh.is(':visible')) {
                         karetSpan.html('&laquo').appendTo(karet);
+                        headSection.show();
+                        bodySection.show();
                     } else {
                         $('<span>').html(trText.substring(0,3) + ' ').appendTo(karet);
                         karetSpan.html('&raquo').appendTo(karet);
+                        headSection.hide();
+                        bodySection.hide();
                     }
                     $tr.closest('.list-view').find('.no-split').dataTable('refresh');
                 });
@@ -1108,6 +1112,7 @@
         var listViewArgs = $listView.data('view-args');
         var uiCustom = listViewArgs.uiCustom;
         var subselect = uiCustom ? listViewArgs.listView.subselect : null;
+        var hasCollapsibleColumn = false;
 
         if (!(data && data.length)) {
             $listView.data('end-of-table', true);
@@ -1173,6 +1178,7 @@
                     });
                     reducedFields['blank-cell-' + idx] = {blankCell: true};
                     idx += 1;
+                    hasCollapsibleColumn = true;
                 } else {
                     reducedFields[key] = this;
                 }
@@ -1587,6 +1593,13 @@
                 );
             }
         });
+
+        // Toggle collapsible column to fix alignment of hidden/shown cells
+        if (hasCollapsibleColumn) {
+            var collapsibleKarets = $tbody.closest('table').find('th.collapsible-column');
+            collapsibleKarets.click();
+            collapsibleKarets.click();
+        }
 
         return rows;
     };
