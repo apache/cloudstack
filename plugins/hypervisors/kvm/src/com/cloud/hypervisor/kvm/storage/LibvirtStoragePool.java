@@ -32,7 +32,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class LibvirtStoragePool implements KVMStoragePool {
     private static final Logger s_logger = Logger.getLogger(LibvirtStoragePool.class);
     protected String uuid;
-    protected String uri;
     protected long capacity;
     protected long used;
     protected long available;
@@ -98,10 +97,6 @@ public class LibvirtStoragePool implements KVMStoragePool {
     @Override
     public String getUuid() {
         return this.uuid;
-    }
-
-    public String uri() {
-        return this.uri;
     }
 
     @Override
