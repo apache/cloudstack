@@ -59,4 +59,26 @@ public class Answer extends Command {
     public static UnsupportedAnswer createUnsupportedVersionAnswer(final Command cmd) {
         return new UnsupportedAnswer(cmd, "Unsuppored Version.");
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Answer)) return false;
+        if (!super.equals(o)) return false;
+
+        Answer answer = (Answer) o;
+
+        if (result != answer.result) return false;
+        if (details != null ? !details.equals(answer.details) : answer.details != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result1 = super.hashCode();
+        result1 = 31 * result1 + (result ? 1 : 0);
+        result1 = 31 * result1 + (details != null ? details.hashCode() : 0);
+        return result1;
+    }
 }

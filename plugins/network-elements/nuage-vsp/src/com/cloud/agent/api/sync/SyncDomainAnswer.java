@@ -21,14 +21,37 @@ package com.cloud.agent.api.sync;
 
 import com.cloud.agent.api.Answer;
 
-public class SyncVspAnswer extends Answer {
+public class SyncDomainAnswer extends Answer {
 
-    public SyncVspAnswer(SyncVspCommand cmd, boolean success, String details) {
-        super(cmd, success, details);
+    private final boolean _success;
+
+    public SyncDomainAnswer(boolean success) {
+        super();
+        this._success = success;
     }
 
-    public SyncVspAnswer(SyncVspCommand cmd, Exception e) {
-        super(cmd, e);
+    public boolean getSuccess() {
+        return _success;
     }
 
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof SyncDomainAnswer)) return false;
+        if (!super.equals(o)) return false;
+
+        SyncDomainAnswer that = (SyncDomainAnswer) o;
+
+        if (_success != that._success) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (_success ? 1 : 0);
+        return result;
+    }
 }

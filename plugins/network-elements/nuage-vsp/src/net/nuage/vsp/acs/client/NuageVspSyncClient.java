@@ -19,9 +19,11 @@
 
 package net.nuage.vsp.acs.client;
 
+import java.util.concurrent.ExecutionException;
+
 public interface NuageVspSyncClient {
 
-    public void syncWithNuageVsp(String nuageVspEntity) throws Exception;
+    void syncWithNuageVsp(String nuageVspEntity) throws ExecutionException;
 
-    public void setNuageVspApiClient(NuageVspApiClient nuageVspApiClient);
+    void setNuageVspApiClient(NuageVspApiClient nuageVspApiClient);
 }

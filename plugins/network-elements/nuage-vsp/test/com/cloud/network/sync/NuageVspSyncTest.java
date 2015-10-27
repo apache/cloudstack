@@ -19,23 +19,22 @@
 
 package com.cloud.network.sync;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.util.Arrays;
-
-import org.junit.Before;
-import org.junit.Test;
-
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.sync.SyncVspAnswer;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.NuageVspDeviceVO;
 import com.cloud.network.dao.NuageVspDao;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.Arrays;
+
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class NuageVspSyncTest {
     private static final long NETWORK_ID = 42L;
@@ -64,7 +63,7 @@ public class NuageVspSyncTest {
         when(host.getId()).thenReturn(NETWORK_ID);
         when(hostDao.findById(NETWORK_ID)).thenReturn(host);
 
-        final SyncVspAnswer answer = mock(SyncVspAnswer.class);
+        final Answer answer = mock(Answer.class);
         when(answer.getResult()).thenReturn(true);
         when(agentManager.easySend(eq(NETWORK_ID), (Command)any())).thenReturn(answer);
 

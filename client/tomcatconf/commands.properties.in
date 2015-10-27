@@ -644,6 +644,7 @@ deleteStratoshereSsp=1
 #### nuage vsp commands
 
 addNuageVspDevice=1
+updateNuageVspDevice=1
 deleteNuageVspDevice=1
 listNuageVspDevices=1
 issueNuageVspResourceRequest=15

@@ -38,12 +38,14 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = "addNuageVspDevice", responseObject = NuageVspDeviceResponse.class, description = "Adds a Nuage VSP device", since = "4.5")
-public class AddNuageVspDeviceCmd extends BaseAsyncCmd {
-    private static final String s_name = "addnuagevspdeviceresponse";
+@APICommand(name = "updateNuageVspDevice", responseObject = NuageVspDeviceResponse.class, description = "Update a Nuage VSP device", since = "4.6")
+public class UpdateNuageVspDeviceCmd extends BaseAsyncCmd {
+    private static final Logger s_logger = Logger.getLogger(UpdateNuageVspDeviceCmd.class);
+    private static final String s_name = "updatenuagevspdeviceresponse";
 
     @Inject
     NuageVspManager _nuageVspManager;
@@ -56,26 +58,26 @@ public class AddNuageVspDeviceCmd extends BaseAsyncCmd {
             required = true, description = "the ID of the physical network in to which Nuage VSP is added")
     private Long physicalNetworkId;
 
-    @Parameter(name = VspConstants.NUAGE_VSP_API_PORT, type = CommandType.INTEGER, required = true, description = "the port to communicate to Nuage VSD")
-    private int port;
+    @Parameter(name = VspConstants.NUAGE_VSP_API_PORT, type = CommandType.INTEGER, description = "the port to communicate to Nuage VSD")
+    private Integer port;
 
-    @Parameter(name = ApiConstants.HOST_NAME, type = CommandType.STRING, required = true, description = "the hostname of the Nuage VSD")
+    @Parameter(name = ApiConstants.HOST_NAME, type = CommandType.STRING, description = "the hostname of the Nuage VSD")
     private String hostName;
 
-    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "the user name of the CMS user in Nuage VSD")
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, description = "the user name of the CMS user in Nuage VSD")
     private String userName;
 
-    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = true, description = "the password of CMS user in Nuage VSD")
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, description = "the password of CMS user in Nuage VSD")
     private String password;
 
-    @Parameter(name = VspConstants.NUAGE_VSP_API_VERSION, type = CommandType.STRING, required = true, description = "the version of the API to use to communicate to Nuage VSD")
+    @Parameter(name = VspConstants.NUAGE_VSP_API_VERSION, type = CommandType.STRING, description = "the version of the API to use to communicate to Nuage VSD")
     private String apiVersion;
 
-    @Parameter(name = VspConstants.NUAGE_VSP_API_RETRY_COUNT, type = CommandType.INTEGER, required = true, description = "the number of retries on failure to communicate to Nuage VSD")
-    private int apiRetryCount;
+    @Parameter(name = VspConstants.NUAGE_VSP_API_RETRY_COUNT, type = CommandType.INTEGER, description = "the number of retries on failure to communicate to Nuage VSD")
+    private Integer apiRetryCount;
 
-    @Parameter(name = VspConstants.NUAGE_VSP_API_RETRY_INTERVAL, type = CommandType.LONG, required = true, description = "the time to wait after failure before retrying to communicate to Nuage VSD")
-    private long apiRetryInterval;
+    @Parameter(name = VspConstants.NUAGE_VSP_API_RETRY_INTERVAL, type = CommandType.LONG, description = "the time to wait after failure before retrying to communicate to Nuage VSD")
+    private Long apiRetryInterval;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -85,11 +87,11 @@ public class AddNuageVspDeviceCmd extends BaseAsyncCmd {
         return physicalNetworkId;
     }
 
-    public int getPort() {
+    public Integer getPort() {
         return port;
     }
 
-    public void setPort(int port) {
+    public void setPort(Integer port) {
         this.port = port;
     }
 
@@ -117,19 +119,19 @@ public class AddNuageVspDeviceCmd extends BaseAsyncCmd {
         this.apiVersion = apiVersion;
     }
 
-    public int getApiRetryCount() {
+    public Integer getApiRetryCount() {
         return apiRetryCount;
     }
 
-    public void setApiRetryCount(int apiRetryCount) {
+    public void setApiRetryCount(Integer apiRetryCount) {
         this.apiRetryCount = apiRetryCount;
     }
 
-    public long getApiRetryInterval() {
+    public Long getApiRetryInterval() {
         return apiRetryInterval;
     }
 
-    public void setApiRetryInterval(long apiRetryInterval) {
+    public void setApiRetryInterval(Long apiRetryInterval) {
         this.apiRetryInterval = apiRetryInterval;
     }
 
@@ -140,7 +142,7 @@ public class AddNuageVspDeviceCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         try {
-            NuageVspDeviceVO nuageVspDeviceVO = _nuageVspManager.addNuageVspDevice(this);
+            NuageVspDeviceVO nuageVspDeviceVO = _nuageVspManager.updateNuageVspDevice(this);
             if (nuageVspDeviceVO != null) {
                 NuageVspDeviceResponse response = _nuageVspManager.createNuageVspDeviceResponse(nuageVspDeviceVO);
                 response.setObjectName("nuagevspdevice");
@@ -168,11 +170,11 @@ public class AddNuageVspDeviceCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_EXTERNAL_VSP_VSD_ADD;
+        return EventTypes.EVENT_EXTERNAL_VSP_VSD_UPDATE;
     }
 
     @Override
     public String getEventDescription() {
-        return "Adding a Nuage VSD";
+        return "Updating a Nuage VSD";
     }
 }

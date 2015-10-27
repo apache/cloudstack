@@ -73,4 +73,24 @@ public abstract class Command {
     public boolean allowCaching() {
         return true;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Command)) return false;
+
+        Command command = (Command) o;
+
+        if (wait != command.wait) return false;
+        if (contextMap != null ? !contextMap.equals(command.contextMap) : command.contextMap != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = contextMap != null ? contextMap.hashCode() : 0;
+        result = 31 * result + wait;
+        return result;
+    }
 }

@@ -19,16 +19,9 @@
 
 package com.cloud.network.manager;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.util.ArrayList;
-
-import javax.naming.ConfigurationException;
-
-import org.junit.Before;
-import org.junit.Test;
-
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.sync.SyncNuageVspCmsIdAnswer;
 import com.cloud.api.commands.DeleteNuageVspDeviceCmd;
 import com.cloud.api.commands.ListNuageVspDevicesCmd;
 import com.cloud.host.HostVO;
@@ -42,6 +35,18 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.resource.ResourceManager;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.naming.ConfigurationException;
+import java.util.ArrayList;
+
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class NuageVspManagerTest {
     private static final long NETWORK_ID = 42L;
@@ -53,6 +58,8 @@ public class NuageVspManagerTest {
     NuageVspDao nuageVspDao = mock(NuageVspDao.class);
     NetworkDao networkDao = mock(NetworkDao.class);
     HostDao hostDao = mock(HostDao.class);
+    AgentManager agentManager = mock(AgentManager.class);
+    ConfigurationDao configDao = mock(ConfigurationDao.class);
 
     NuageVspManagerImpl manager;
 
@@ -67,6 +74,8 @@ public class NuageVspManagerTest {
         manager._nuageVspDao = nuageVspDao;
         manager._networkDao = networkDao;
         manager._hostDao = hostDao;
+        manager._agentMgr = agentManager;
+        manager._configDao = configDao;
     }
 
     @Test
@@ -90,6 +99,14 @@ public class NuageVspManagerTest {
 
         final DeleteNuageVspDeviceCmd cmd = mock(DeleteNuageVspDeviceCmd.class);
         when(cmd.getNuageVspDeviceId()).thenReturn(NETWORK_ID);
+
+        ConfigurationVO cmsIdConfig = mock(ConfigurationVO.class);
+        when(cmsIdConfig.getValue()).thenReturn("1:1");
+        when(configDao.findByName("nuagevsp.cms.id")).thenReturn(cmsIdConfig);
+
+        final SyncNuageVspCmsIdAnswer answer = mock(SyncNuageVspCmsIdAnswer.class);
+        when(answer.getResult()).thenReturn(true);
+        when(agentManager.easySend(eq(NETWORK_ID), (Command)any())).thenReturn(answer);
 
         manager.deleteNuageVspDevice(cmd);
     }

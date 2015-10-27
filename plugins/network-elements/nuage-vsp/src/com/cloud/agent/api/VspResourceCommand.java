@@ -21,14 +21,14 @@ package com.cloud.agent.api;
 
 public class VspResourceCommand extends Command {
 
-    String _method;
-    String _resource;
-    String _resourceId;
-    String _childResource;
-    Object _entityDetails;
-    String _resourceFilter;
-    String _proxyUserUuid;
-    String _proxyUserDomainuuid;
+    private final String _method;
+    private final String _resource;
+    private final String _resourceId;
+    private final String _childResource;
+    private final Object _entityDetails;
+    private final String _resourceFilter;
+    private final String _proxyUserUuid;
+    private final String _proxyUserDomainuuid;
 
     public VspResourceCommand(String method, String resource, String resourceId, String childResource, Object entityDetails, String resourceFilter, String proxyUserUuid,
             String proxyUserDomainuuid) {
@@ -78,5 +78,42 @@ public class VspResourceCommand extends Command {
     @Override
     public boolean executeInSequence() {
         return false;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        VspResourceCommand that = (VspResourceCommand) o;
+
+        if (_childResource != null ? !_childResource.equals(that._childResource) : that._childResource != null)
+            return false;
+        if (_entityDetails != null ? !_entityDetails.equals(that._entityDetails) : that._entityDetails != null)
+            return false;
+        if (_method != null ? !_method.equals(that._method) : that._method != null) return false;
+        if (_proxyUserDomainuuid != null ? !_proxyUserDomainuuid.equals(that._proxyUserDomainuuid) : that._proxyUserDomainuuid != null)
+            return false;
+        if (_proxyUserUuid != null ? !_proxyUserUuid.equals(that._proxyUserUuid) : that._proxyUserUuid != null)
+            return false;
+        if (_resource != null ? !_resource.equals(that._resource) : that._resource != null) return false;
+        if (_resourceFilter != null ? !_resourceFilter.equals(that._resourceFilter) : that._resourceFilter != null)
+            return false;
+        if (_resourceId != null ? !_resourceId.equals(that._resourceId) : that._resourceId != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = _method != null ? _method.hashCode() : 0;
+        result = 31 * result + (_resource != null ? _resource.hashCode() : 0);
+        result = 31 * result + (_resourceId != null ? _resourceId.hashCode() : 0);
+        result = 31 * result + (_childResource != null ? _childResource.hashCode() : 0);
+        result = 31 * result + (_entityDetails != null ? _entityDetails.hashCode() : 0);
+        result = 31 * result + (_resourceFilter != null ? _resourceFilter.hashCode() : 0);
+        result = 31 * result + (_proxyUserUuid != null ? _proxyUserUuid.hashCode() : 0);
+        result = 31 * result + (_proxyUserDomainuuid != null ? _proxyUserDomainuuid.hashCode() : 0);
+        return result;
     }
 }

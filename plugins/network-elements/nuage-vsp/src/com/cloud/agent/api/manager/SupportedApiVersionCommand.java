@@ -17,28 +17,21 @@
 // under the License.
 //
 
-package com.cloud.agent.api;
+package com.cloud.agent.api.manager;
 
-import com.cloud.host.Host;
+import com.cloud.agent.api.Command;
 
-public class PingCommand extends Command {
-    Host.Type hostType;
-    long hostId;
+public class SupportedApiVersionCommand extends Command {
 
-    protected PingCommand() {
+    private final String _apiVersion;
+
+    public SupportedApiVersionCommand(String apiVersion) {
+        super();
+        this._apiVersion = apiVersion;
     }
 
-    public PingCommand(Host.Type type, long id) {
-        hostType = type;
-        hostId = id;
-    }
-
-    public Host.Type getHostType() {
-        return hostType;
-    }
-
-    public long getHostId() {
-        return hostId;
+    public String getApiVersion() {
+        return _apiVersion;
     }
 
     @Override
@@ -49,13 +42,12 @@ public class PingCommand extends Command {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof PingCommand)) return false;
+        if (!(o instanceof SupportedApiVersionCommand)) return false;
         if (!super.equals(o)) return false;
 
-        PingCommand that = (PingCommand) o;
+        SupportedApiVersionCommand that = (SupportedApiVersionCommand) o;
 
-        if (hostId != that.hostId) return false;
-        if (hostType != that.hostType) return false;
+        if (_apiVersion != null ? !_apiVersion.equals(that._apiVersion) : that._apiVersion != null) return false;
 
         return true;
     }
@@ -63,8 +55,7 @@ public class PingCommand extends Command {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (hostType != null ? hostType.hashCode() : 0);
-        result = 31 * result + (int) (hostId ^ (hostId >>> 32));
+        result = 31 * result + (_apiVersion != null ? _apiVersion.hashCode() : 0);
         return result;
     }
 }

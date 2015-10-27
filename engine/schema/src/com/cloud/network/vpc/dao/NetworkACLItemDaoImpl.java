@@ -21,6 +21,7 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.google.common.collect.Lists;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -115,7 +116,9 @@ public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long
     }
 
     @Override
-    public List<NetworkACLItemVO> listByACL(long aclId) {
+    public List<NetworkACLItemVO> listByACL(Long aclId) {
+        if (aclId == null) return Lists.newArrayList();
+
         SearchCriteria<NetworkACLItemVO> sc = AllFieldsSearch.create();
         sc.setParameters("aclId", aclId);
         List<NetworkACLItemVO> list = listBy(sc);

@@ -29,7 +29,7 @@ public interface NetworkACLItemDao extends GenericDao<NetworkACLItemVO, Long> {
 
     boolean revoke(NetworkACLItemVO rule);
 
-    List<NetworkACLItemVO> listByACL(long aclId);
+    List<NetworkACLItemVO> listByACL(Long aclId);
 
     int getMaxNumberByACL(long aclId);
 

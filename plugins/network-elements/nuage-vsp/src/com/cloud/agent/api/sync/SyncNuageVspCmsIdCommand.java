@@ -17,28 +17,29 @@
 // under the License.
 //
 
-package com.cloud.agent.api;
+package com.cloud.agent.api.sync;
 
-import com.cloud.host.Host;
+import com.cloud.agent.api.Command;
 
-public class PingCommand extends Command {
-    Host.Type hostType;
-    long hostId;
+public class SyncNuageVspCmsIdCommand extends Command {
 
-    protected PingCommand() {
+    public static enum SyncType { AUDIT, AUDIT_ONLY, REGISTER, UNREGISTER }
+
+    private final SyncType _syncType;
+    private final String _nuageVspCmsId;
+
+    public SyncNuageVspCmsIdCommand(SyncType syncType, String nuageVspCmsId) {
+        super();
+        this._syncType = syncType;
+        this._nuageVspCmsId = nuageVspCmsId;
     }
 
-    public PingCommand(Host.Type type, long id) {
-        hostType = type;
-        hostId = id;
+    public SyncType getSyncType() {
+        return _syncType;
     }
 
-    public Host.Type getHostType() {
-        return hostType;
-    }
-
-    public long getHostId() {
-        return hostId;
+    public String getNuageVspCmsId() {
+        return _nuageVspCmsId;
     }
 
     @Override
@@ -49,13 +50,14 @@ public class PingCommand extends Command {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof PingCommand)) return false;
+        if (!(o instanceof SyncNuageVspCmsIdCommand)) return false;
         if (!super.equals(o)) return false;
 
-        PingCommand that = (PingCommand) o;
+        SyncNuageVspCmsIdCommand that = (SyncNuageVspCmsIdCommand) o;
 
-        if (hostId != that.hostId) return false;
-        if (hostType != that.hostType) return false;
+        if (_nuageVspCmsId != null ? !_nuageVspCmsId.equals(that._nuageVspCmsId) : that._nuageVspCmsId != null)
+            return false;
+        if (_syncType != that._syncType) return false;
 
         return true;
     }
@@ -63,8 +65,8 @@ public class PingCommand extends Command {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (hostType != null ? hostType.hashCode() : 0);
-        result = 31 * result + (int) (hostId ^ (hostId >>> 32));
+        result = 31 * result + (_syncType != null ? _syncType.hashCode() : 0);
+        result = 31 * result + (_nuageVspCmsId != null ? _nuageVspCmsId.hashCode() : 0);
         return result;
     }
 }

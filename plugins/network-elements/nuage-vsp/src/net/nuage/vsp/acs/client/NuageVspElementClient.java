@@ -21,16 +21,22 @@ package net.nuage.vsp.acs.client;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 public interface NuageVspElementClient {
 
-    public void applyStaticNats(String networkDomainUuid, String vpcOrSubnetUuid, boolean isL3Network, List<Map<String, Object>> staticNatDetails) throws Exception;
+    boolean implement(long networkId, String networkDomainUuid, String networkUuid, String networkName, String vpcOrSubnetUuid, boolean isL2Network, boolean isL3Network,
+                             boolean isVpc, boolean isShared, String domainTemplateName, boolean isFirewallServiceSupported, List<String> dnsServers, List<Map<String, Object>> ingressFirewallRules,
+                             List<Map<String, Object>> egressFirewallRules, List<String> acsFipUuid, boolean egressDefaultPolicy) throws ExecutionException;
 
-    public void applyAclRules(String networkUuid, String networkDomainUuid, String vpcOrSubnetUuid, boolean isL3Network, List<Map<String, Object>> aclRules, boolean isVpc, long networkId)
-            throws Exception;
+    void applyStaticNats(String networkDomainUuid, String networkUuid, String vpcOrSubnetUuid, boolean isL3Network, boolean isVpc,
+                                List<Map<String, Object>> staticNatDetails) throws ExecutionException;
 
-    public void shutDownVpc(String domainUuid, String vpcUuid) throws Exception;
+    void applyAclRules(boolean isNetworkAcl, String networkUuid, String networkDomainUuid, String vpcOrSubnetUuid, String networkName, boolean isL2Network,
+                              List<Map<String, Object>> rules, long networkId, boolean egressDefaultPolicy, Boolean isAcsIngressAcl, boolean networkReset, String domainTemplateName) throws ExecutionException;
 
-    public <C extends NuageVspApiClient> void setNuageVspApiClient(NuageVspApiClient nuageVspApiClient);
+    void shutdownVpc(String domainUuid, String vpcUuid, String domainTemplateName) throws ExecutionException;
+
+    <C extends NuageVspApiClient> void setNuageVspApiClient(NuageVspApiClient nuageVspApiClient);
 
 }

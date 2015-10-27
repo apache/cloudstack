@@ -21,24 +21,23 @@ package net.nuage.vsp.acs.client;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 public interface NuageVspGuruClient {
 
-    public void implement(String networkDomainName, String networkDomainPath, String networkDomainUuid, String networkAccountName, String networkAccountUuid, String networkName,
-            String networkCidr, String networkGateway, String networkUuid, boolean isL3Network, String vpcName, String vpcUuid, boolean defaultEgressPolicy,
-            Collection<String> ipAddressRange) throws Exception;
+    void implement(String networkDomainName, String networkDomainPath, String networkDomainUuid, String networkAccountName, String networkAccountUuid, String networkName,
+                          String networkCidr, String networkGateway, Long networkAclId, List<String> dnsServers, List<String> gatewaySystemIds, boolean isL3Network, boolean isVpc, boolean isSharedNetwork,
+                          String networkUuid, String vpcName, String vpcUuid, boolean defaultEgressPolicy, Collection<String[]> ipAddressRange, String domainTemplateName) throws ExecutionException;
 
-    public List<Map<String, String>> reserve(String nicUuid, String nicMacAddress, String networkUuid, boolean isL3Network, String vpcUuid, String networkDomainUuid,
-            String networksAccountUuid, boolean isDomainRouter, String domainRouterIp, String vmInstanceName, String vmUuid) throws Exception;
+    void reserve(String nicUuid, String nicMacAddress, String networkUuid, boolean isL3Network, boolean isSharedNetwork, String vpcUuid, String networkDomainUuid,
+                                             String networksAccountUuid, boolean isDomainRouter, String domainRouterIp, String vmInstanceName, String vmUuid, boolean useStaticIp, String staticIp, String staticNatIpUuid,
+                                             String staticNatIpAddress, boolean isStaticNatIpAllocated, boolean isOneToOneNat, String staticNatVlanUuid, String staticNatVlanGateway, String staticNatVlanNetmask) throws ExecutionException;
 
-    public void release(String networkUuid, String vmUuid, String vmInstanceName) throws Exception;
+    void deallocate(String networkUuid, String nicFrmDdUuid, String nicMacAddress, String nicIp4Address, boolean isL3Network, boolean isSharedNetwork,
+                           String vpcUuid, String networksDomainUuid, String vmInstanceName, String vmUuid, boolean isExpungingState) throws ExecutionException;
 
-    public void deallocate(String networkUuid, String nicFrmDdUuid, String nicMacAddress, String nicIp4Address, boolean isL3Network, String vpcUuid, String networksDomainUuid,
-            String vmInstanceName, String vmUuid) throws Exception;
+    void trash(String domainUuid, String networkUuid, boolean isL3Network, boolean isSharedNetwork, String vpcUuid, String domainTemplateName) throws ExecutionException;
 
-    public void trash(String domainUuid, String networkUuid, boolean isL3Network, String vpcUuid) throws Exception;
-
-    public void setNuageVspApiClient(NuageVspApiClient nuageVspApiClient);
+    void setNuageVspApiClient(NuageVspApiClient nuageVspApiClient);
 
 }

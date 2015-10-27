@@ -19,23 +19,6 @@
 
 package com.cloud.api.commands;
 
-import java.util.List;
-
-import javax.inject.Inject;
-
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.NetworkOfferingResponse;
-import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.VspResourceAnswer;
 import com.cloud.agent.api.VspResourceCommand;
@@ -53,8 +36,23 @@ import com.cloud.network.dao.NuageVspDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.NetworkOfferingResponse;
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 
-@APICommand(name = "issueNuageVspResourceRequest", responseObject = NuageVspResourceResponse.class, description = "Issues a Nuage VSP REST API resource request")
+import javax.inject.Inject;
+import java.util.List;
+
+@APICommand(name = "issueNuageVspResourceRequest", responseObject = NuageVspResourceResponse.class, description = "Issues a Nuage VSP REST API resource request", since = "4.5")
 public class IssueNuageVspResourceRequestCmd extends BaseCmd {
     private static final Logger s_logger = Logger.getLogger(IssueNuageVspResourceRequestCmd.class.getName());
     private static final String s_name = "nuagevspresourceresponse";

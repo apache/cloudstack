@@ -21,6 +21,7 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.log4j.Logger;
 
@@ -98,6 +99,8 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     NicDao _nicDao;
     @Inject
     IpAddressManager _ipAddrMgr;
+    @Inject
+    NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
 
     private static final TrafficType[] TrafficTypes = {TrafficType.Guest};
 
@@ -118,7 +121,8 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
 
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
         // this guru handles only Guest networks in Advance zone with source nat service disabled
-        if (dc.getNetworkType() == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) && offering.getGuestType() == GuestType.Shared) {
+        if (dc.getNetworkType() == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) && offering.getGuestType() == GuestType.Shared
+                && !_ntwkOfferingSrvcDao.isProviderForNetworkOffering(offering.getId(), Network.Provider.NuageVsp)) {
             return true;
         } else {
             s_logger.trace("We only take care of Guest networks of type " + GuestType.Shared);

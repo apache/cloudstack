@@ -33,4 +33,12 @@ public interface NuageVspDao extends GenericDao<NuageVspDeviceVO, Long> {
      */
     List<NuageVspDeviceVO> listByPhysicalNetwork(long physicalNetworkId);
 
+    /**
+     * List all the Nuage Vsp devices by a specific host
+     *
+     * @param hostId host Id
+     * @return list of NuageVspDeviceVO for this host.
+     */
+    List<NuageVspDeviceVO> listByHost(long hostId);
+
 }

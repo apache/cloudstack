@@ -19,12 +19,14 @@
 
 package net.nuage.vsp.acs.client;
 
+import java.util.concurrent.ExecutionException;
+
 public interface NuageVspApiClient {
 
-    public void login() throws Exception;
+    void login() throws ExecutionException;
 
-    public void setNuageVspHost(String restRelativePath, String[] cmsUserInfo, int noofRetry, int retryInterval);
+    void setNuageVspHost(String restRelativePath, String[] cmsUserInfo, int noofRetry, int retryInterval, String nuageVspCmsId);
 
-    public String executeRestApi(String method, String resource, String resourceId, String childResource, Object entityDetails, String resourceFilter, String proxyUserUuid,
-            String proxyUserDomainuuid) throws Exception;
+    String executeRestApi(String method, String resource, String resourceId, String childResource, Object entityDetails, String resourceFilter, String proxyUserUuid,
+                                 String proxyUserDomainuuid) throws ExecutionException;
 }

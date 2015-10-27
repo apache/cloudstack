@@ -19,7 +19,7 @@
 
 package com.cloud.network;
 
-import java.util.UUID;
+import org.apache.cloudstack.api.InternalIdentity;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -27,8 +27,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-
-import org.apache.cloudstack.api.InternalIdentity;
+import java.util.UUID;
 
 @Entity
 @Table(name = "external_nuage_vsp_devices")
