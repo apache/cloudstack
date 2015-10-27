@@ -381,7 +381,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     protected VirtualMachineManager _itMgr;
     @Inject
-    protected VirtualMachineName _vmNameService;
+    protected VirtualMachineNameService _vmNameService;
     @Inject
     protected NetworkDao _networkDao;
     @Inject

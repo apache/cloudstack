@@ -137,7 +137,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineName;
+import com.cloud.vm.VirtualMachineNameService;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
@@ -208,7 +208,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     @Inject
     private VirtualMachineManager _itMgr;
     @Inject
-    private VirtualMachineName _vmNameService;
+    private VirtualMachineNameService _vmNameService;
     @Inject
     protected VMInstanceDao _vmDao;
     @Inject

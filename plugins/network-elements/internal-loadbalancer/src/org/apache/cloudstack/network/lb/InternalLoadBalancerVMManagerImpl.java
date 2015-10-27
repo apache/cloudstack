@@ -114,7 +114,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineName;
+import com.cloud.vm.VirtualMachineNameService;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -135,7 +135,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
     @Inject
     VirtualMachineManager _itMgr;
     @Inject
-    VirtualMachineName _vmNameService;
+    VirtualMachineNameService _vmNameService;
     @Inject
     DomainRouterDao _internalLbVmDao;
     @Inject

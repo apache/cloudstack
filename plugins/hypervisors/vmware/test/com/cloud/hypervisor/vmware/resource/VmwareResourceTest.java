@@ -35,7 +35,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.cloud.vm.VirtualMachineName;
+import com.cloud.vm.VirtualMachineNameService;
 
 public class VmwareResourceTest {
 
@@ -66,7 +66,7 @@ public class VmwareResourceTest {
     @Mock
     VirtualMachineConfigSpec vmConfigSpec;
     @Mock
-    VirtualMachineName _vmName;
+    VirtualMachineNameService _vmName;
 
     @Before
     public void setup() {

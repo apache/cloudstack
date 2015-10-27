@@ -1,4 +1,4 @@
-// Licensed to the Apache Software Foundation (ASF) under one
+// Licensed to the Apacohe Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -18,10 +18,7 @@ package com.cloud.vm;
 
 import java.util.Formatter;
 
-/**
- * VM Name.
- */
-public class VirtualMachineName {
+public class VirtualMachineNameServiceImpl implements VirtualMachineNameService {
     public static final String SEPARATOR = "-";
 
     public boolean isValidCloudStackVmName(String name, String instance) {

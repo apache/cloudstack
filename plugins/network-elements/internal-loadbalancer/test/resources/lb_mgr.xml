@@ -37,8 +37,6 @@
     </property>
   </bean>
   
-  <bean id="vmNameService" class="com.cloud.vm.VirtualMachineName" />
-
     <bean id="InternalLoadBalancerVMManager" class="org.apache.cloudstack.network.lb.InternalLoadBalancerVMManagerImpl">
         <property name="name" value="InternalLoadBalancerVMManager"/>
     </bean>

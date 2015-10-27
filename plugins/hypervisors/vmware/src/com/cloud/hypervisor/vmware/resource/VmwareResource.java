@@ -274,14 +274,14 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
-import com.cloud.vm.VirtualMachineName;
+import com.cloud.vm.VirtualMachineNameService;
 import com.cloud.vm.VmDetailConstants;
 
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService, VirtualRouterDeployer {
     private static final Logger s_logger = Logger.getLogger(VmwareResource.class);
 
     @Inject
-    protected VirtualMachineName _vmNameService;
+    protected VirtualMachineNameService _vmNameService;
 
     protected String _name;
 

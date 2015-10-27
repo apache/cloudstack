@@ -155,7 +155,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
-import com.cloud.vm.VirtualMachineName;
+import com.cloud.vm.VirtualMachineNameService;
 
 
 /**
@@ -192,7 +192,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
     @Inject
     HypervManager _hypervMgr;
     @Inject
-    VirtualMachineName _vmNameService;
+    VirtualMachineNameService _vmNameService;
     protected VirtualRoutingResource _vrResource;
 
     @PostConstruct

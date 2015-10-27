@@ -93,7 +93,7 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineName;
+import com.cloud.vm.VirtualMachineNameService;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -131,7 +131,7 @@ public class LoadBalanceRuleHandler {
     @Inject
     private VirtualMachineManager _itMgr;
     @Inject
-    private VirtualMachineName _vmNameService;
+    private VirtualMachineNameService _vmNameService;
     @Inject
     private AccountService _accountService;
     @Inject

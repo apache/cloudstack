@@ -132,7 +132,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineName;
+import com.cloud.vm.VirtualMachineNameService;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
@@ -212,7 +212,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     @Inject
     private VirtualMachineManager _itMgr;
     @Inject
-    private VirtualMachineName _vmNameService;
+    private VirtualMachineNameService _vmNameService;
 
     private ConsoleProxyListener _listener;
 

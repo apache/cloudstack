@@ -78,7 +78,4 @@
     <bean id="ExternalIpAddressAllocator" class="com.cloud.network.ExternalIpAddressAllocator">
         <property name="name" value="Basic" />
     </bean>
-    
-    <bean id="vmNameService" class="com.cloud.vm.VirtualMachineName" />
-    
 </beans>
