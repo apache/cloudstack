@@ -20,8 +20,8 @@
 package com.cloud.agent.api;
 
 public class StartupAnswer extends Answer {
-    Long hostId;
-    Integer pingInterval;
+    Long hostId = 0l;
+    Integer pingInterval = 3000;
 
     protected StartupAnswer() {
     }

@@ -19,7 +19,7 @@ package com.cloud.agent.api;
 import com.cloud.utils.exception.ExceptionUtil;
 
 public class Answer extends Command {
-    protected Boolean result;
+    protected Boolean result = false;
     protected String details;
 
     protected Answer() {
