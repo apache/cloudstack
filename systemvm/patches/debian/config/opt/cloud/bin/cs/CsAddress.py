@@ -610,8 +610,8 @@ class CsIP:
             if self.dev in bag.keys():
                 for address in bag[self.dev]:
                     self.setAddress(address)
-                    if (self.hasIP(ip) or self.is_guest_gateway(address, ip)) and addess["add"]:
-                        logging.debig("The IP address in '%s' will be configured" % address)
+                    if (self.hasIP(ip) or self.is_guest_gateway(address, ip)) and address["add"]:
+                        logging.debug("The IP address in '%s' will be configured" % address)
                         found = True
             if not found:
                 self.delete(ip)

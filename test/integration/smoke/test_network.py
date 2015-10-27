@@ -1177,7 +1177,7 @@ class TestRouterRules(cloudstackTestCase):
             )
         return
 
-    def removeNetworkRules(self, rule, ipaddressobj):
+    def removeNetworkRules(self, rule):
         """ Remove specified rule on acquired public IP and
         default network of virtual machine
         """
@@ -1186,14 +1186,15 @@ class TestRouterRules(cloudstackTestCase):
         if rule == STATIC_NAT_RULE:
             StaticNATRule.disable(
                 self.apiclient,
-                ipaddressobj.ipaddress.id)
+                self.ipaddress.ipaddress.id)
 
         elif rule == LB_RULE:
             self.lb_rule.delete(self.apiclient)
         else:
             self.nat_rule.delete(self.apiclient)
 
-        ipaddressobj.delete(self.apiclient)
+        logger.debug("Releasing IP %s from account %s" % (self.ipaddress.ipaddress.ipaddress, self.account.name))
+        self.ipaddress.delete(self.apiclient)
 
         return
 
@@ -1213,7 +1214,6 @@ class TestRouterRules(cloudstackTestCase):
             domainid=self.account.domainid,
             networkid=self.defaultNetworkId
         )
-        self.cleanup.append(self.ipaddress)
 
         self.createNetworkRules(rule=value,
                                 ipaddressobj=self.ipaddress,
@@ -1247,7 +1247,7 @@ class TestRouterRules(cloudstackTestCase):
         # 1. listIpForwardingRules should not return the deleted rule anymore
         # 2. attempt to do ssh should now fail
 
-        self.removeNetworkRules(rule=value, ipaddressobj=self.ipaddress)
+        self.removeNetworkRules(rule=value)
 
         response = self.getCommandResultFromRouter(router, "ip addr")
         logger.debug(response)
