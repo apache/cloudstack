@@ -21,6 +21,7 @@ package com.cloud.hypervisor.kvm.resource;
 
 import junit.framework.TestCase;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.utils.Pair;
 
 public class LibvirtVMDefTest extends TestCase {
@@ -116,6 +117,20 @@ public class LibvirtVMDefTest extends TestCase {
         assertTrue((hostOsVersion.first() == 6 && hostOsVersion.second() >= 5) || (hostOsVersion.first() >= 7));
         hostOsVersion = new Pair<Integer,Integer>(7,1);
         assertTrue((hostOsVersion.first() == 6 && hostOsVersion.second() >= 5) || (hostOsVersion.first() >= 7));
+    }
+
+    public void testChannelDef() {
+        ChannelDef.ChannelType type = ChannelDef.ChannelType.UNIX;
+        ChannelDef.ChannelState state = ChannelDef.ChannelState.CONNECTED;
+        String name = "v-136-VM.vport";
+        String path = "/var/lib/libvirt/qemu/" + name;
+
+        ChannelDef channelDef = new ChannelDef(name, type, state, path);
+
+        assertEquals(state, channelDef.getChannelState());
+        assertEquals(type, channelDef.getChannelType());
+        assertEquals(name, channelDef.getName());
+        assertEquals(path, channelDef.getPath());
     }
 
 }

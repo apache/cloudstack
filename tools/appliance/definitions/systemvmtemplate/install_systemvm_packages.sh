@@ -75,7 +75,7 @@ function install_packages() {
     radvd \
     sharutils
 
-  ${apt_get} -t wheezy-backports install keepalived irqbalance open-vm-tools
+  ${apt_get} -t wheezy-backports install keepalived irqbalance open-vm-tools qemu-guest-agent
 
   # hold on installed openswan version, upgrade rest of the packages (if any)
   apt-mark hold openswan
