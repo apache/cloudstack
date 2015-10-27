@@ -33,6 +33,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.NicModel;
@@ -41,6 +42,7 @@ public class LibvirtDomainXMLParser {
     private static final Logger s_logger = Logger.getLogger(LibvirtDomainXMLParser.class);
     private final List<InterfaceDef> interfaces = new ArrayList<InterfaceDef>();
     private final List<DiskDef> diskDefs = new ArrayList<DiskDef>();
+    private final List<ChannelDef> channels = new ArrayList<ChannelDef>();
     private Integer vncPort;
     private String desc;
 
@@ -171,6 +173,25 @@ public class LibvirtDomainXMLParser {
                 interfaces.add(def);
             }
 
+            NodeList ports = devices.getElementsByTagName("channel");
+            for (int i = 0; i < ports.getLength(); i++) {
+                Element channel = (Element)ports.item(i);
+
+                String type = channel.getAttribute("type");
+                String path = getAttrValue("source", "path", channel);
+                String name = getAttrValue("target", "name", channel);
+                String state = getAttrValue("target", "state", channel);
+
+                ChannelDef def = null;
+                if (state == null || state.length() == 0) {
+                    def = new ChannelDef(name, ChannelDef.ChannelType.valueOf(type.toUpperCase()), path);
+                } else {
+                    def = new ChannelDef(name, ChannelDef.ChannelType.valueOf(type.toUpperCase()), ChannelDef.ChannelState.valueOf(state.toUpperCase()), path);
+                }
+
+                channels.add(def);
+            }
+
             Element graphic = (Element)devices.getElementsByTagName("graphics").item(0);
 
             if (graphic != null) {
@@ -232,6 +253,10 @@ public class LibvirtDomainXMLParser {
 
     public List<DiskDef> getDisks() {
         return diskDefs;
+    }
+
+    public List<ChannelDef> getChannels() {
+        return channels;
     }
 
     public String getDescription() {

@@ -91,6 +91,7 @@ import com.cloud.dc.Vlan;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ClockDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ConsoleDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.CpuModeDef;
@@ -110,7 +111,6 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.GuestNetType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SerialDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.TermPolicy;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VideoDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VirtioSerialDef;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtRequestWrapper;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
@@ -1981,9 +1981,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final SerialDef serial = new SerialDef("pty", null, (short)0);
         devices.addDevice(serial);
 
+        /* Add a VirtIO channel for the Qemu Guest Agent tools */
+        devices.addDevice(new ChannelDef("org.qemu.guest_agent.0", ChannelDef.ChannelType.UNIX,
+                                         "/var/lib/libvirt/qemu/" + vmTO.getName() + ".org.qemu.guest_agent.0"));
+
+        /* Add a VirtIO channel for SystemVMs for communication and provisioning */
         if (vmTO.getType() != VirtualMachine.Type.User) {
-            final VirtioSerialDef vserial = new VirtioSerialDef(vmTO.getName(), null);
-            devices.addDevice(vserial);
+            devices.addDevice(new ChannelDef(vmTO.getName() + ".vport", ChannelDef.ChannelType.UNIX,
+                                             "/var/lib/libvirt/qemu/" + vmTO.getName() + ".agent"));
         }
 
         final VideoDef videoCard = new VideoDef(_videoHw, _videoRam);
