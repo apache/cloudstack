@@ -783,14 +783,48 @@
             var $th = $('<th>').addClass(key).attr('colspan', colspan).appendTo($tr);
             if ($th.index()) $th.addClass('reduced-hide');
             if (colspan > 1) {
-                $th.css({'border-right': 'none', 'border-left': '1px solid #C6C3C3'});
+                $th.css({'border-right': '1px solid #C6C3C3', 'border-left': '1px solid #C6C3C3'});
                 $('<span>').html(trText).appendTo($th);
 
-                var karet = addColumnToTr($tr, 'collapsible-column', 1, '');
-                $('<span>').css({'font-size': '15px'}).html('&laquo').appendTo(karet);
-                karet.attr('title', trText);
-                karet.css({'border-right': '1px solid #C6C3C3', 'border-left': 'none', 'min-width': '10px', 'width': '10px', 'max-width': '45px', 'padding': '2px'});
-                karet.click(function(event) {
+                var karetLeft = $('<span>').html('&laquo').css({'float': 'right', 'font-size': '15px'});
+                karetLeft.attr('title', trText);
+                karetLeft.appendTo($th);
+
+                karetLeft.click(function(event) {
+                    event.stopPropagation();
+                    var $th = $(this).parent();
+                    var startIndex = 0;
+                    $th.prevAll('th').each(function() {
+                        startIndex += parseInt($(this).attr('colspan'));
+                    });
+                    var endIndex = startIndex + parseInt($th.attr('colspan'));
+                    // Hide Column group
+                    $th.hide();
+                    $th.closest('table').find('tbody td').filter(function() {
+                        return $(this).index() >= startIndex && $(this).index() < endIndex;
+                    }).hide();
+                    $th.closest('table').find('thead tr:last th').filter(function() {
+                        return $(this).index() >= startIndex && $(this).index() < endIndex;
+                    }).hide();
+                    // Show collapsible column with blank cells
+                    $th.next('th').show();
+                    $th.closest('table').find('tbody td').filter(function() {
+                        return $(this).index() == endIndex;
+                    }).show();
+                    $th.closest('table').find('thead tr:last th').filter(function() {
+                        return $(this).index() == endIndex;
+                    }).show();
+                    // Refresh list view
+                    $tr.closest('.list-view').find('.no-split').dataTable('refresh');
+                });
+
+                var karetRight = addColumnToTr($tr, 'collapsible-column', 1, '');
+                $('<span>').html(trText.substring(0,3)).appendTo(karetRight);
+                $('<span>').css({'font-size': '15px'}).html('&raquo').appendTo(karetRight);
+                karetRight.attr('title', trText);
+                karetRight.css({'border-right': '1px solid #C6C3C3', 'border-left': '1px solid #C6C3C3', 'min-width': '10px', 'width': '10px', 'max-width': '45px', 'padding': '2px'});
+                karetRight.hide();
+                karetRight.click(function(event) {
                     event.stopPropagation();
                     var prevTh = $(this).prev('th');
                     var startIndex = 0;
@@ -798,26 +832,23 @@
                         startIndex += parseInt($(this).attr('colspan'));
                     });
                     var endIndex = startIndex + parseInt(prevTh.attr('colspan'));
-                    var bodySection = prevTh.closest('table').find('tbody td').filter(function() {
+
+                    prevTh.show();
+                    prevTh.closest('table').find('tbody td').filter(function() {
                         return $(this).index() >= startIndex && $(this).index() < endIndex;
-                    });
-                    var headSection = prevTh.closest('table').find('thead tr:last th').filter(function() {
+                    }).show();
+                    prevTh.closest('table').find('thead tr:last th').filter(function() {
                         return $(this).index() >= startIndex && $(this).index() < endIndex;
-                    });
-                    prevTh.toggle();
-                    karet.empty();
-                    var karetSpan = $('<span>');
-                    karetSpan.css({'font-size': '15px'});
-                    if (prevTh.is(':visible')) {
-                        karetSpan.html('&laquo').appendTo(karet);
-                        headSection.show();
-                        bodySection.show();
-                    } else {
-                        $('<span>').html(trText.substring(0,3) + ' ').appendTo(karet);
-                        karetSpan.html('&raquo').appendTo(karet);
-                        headSection.hide();
-                        bodySection.hide();
-                    }
+                    }).show();
+
+                    prevTh.next('th').hide();
+                    prevTh.closest('table').find('tbody td').filter(function() {
+                        return $(this).index() == endIndex;
+                    }).hide();
+                    prevTh.closest('table').find('thead tr:last th').filter(function() {
+                        return $(this).index() == endIndex;
+                    }).hide();
+
                     $tr.closest('.list-view').find('.no-split').dataTable('refresh');
                 });
             } else {
@@ -874,8 +905,8 @@
                     return true;
                 });
                 var blankCell = addColumnToTr($tr, 'collapsible-column', 1, '');
-                blankCell.css({'border-right': '1px solid #C6C3C3', 'border-left': 'none', 'min-width': '10px', 'width': '10px'});
-                blankCell.prev('th').css({'border-right': 'none'});
+                blankCell.css({'min-width': '10px', 'width': '10px'});
+                blankCell.hide();
             } else {
                 addColumnToTr($tr, key, 1, field.label);
             }
@@ -1201,8 +1232,8 @@
                 }
 
                 if (field.blankCell) {
-                    $td.css({'min-width': '10px', 'width': '10px', 'border-left': 'none'});
-                    $td.prev('td').css({'border-right': 'none'});
+                    $td.css({'min-width': '10px', 'width': '10px'});
+                    $td.hide();
                 }
 
                 if (field.indicator) {
