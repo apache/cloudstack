@@ -118,11 +118,10 @@ class cloudManagementConfig(serviceCfgBase):
                 bash("ln -s /etc/cloudstack/management/tomcat6-nonssl.conf /etc/cloudstack/management/tomcat6.conf")
         bash("touch /var/run/cloudstack-management.pid")
         bash("chown cloud.cloud /var/run/cloudstack-management.pid")
-        #distro like sl 6.1 needs this folder, or tomcat6 failed to start
         checkHostName()
-        bash("mkdir /var/log/cloudstack-management/")
         bash("chown cloud:cloud -R /var/lib/cloudstack/")
         bash("chmod +x -R /usr/share/cloudstack-management/webapps/client/WEB-INF/classes/scripts/")
+
         #set max process per account is unlimited
         if os.path.exists("/etc/security/limits.conf"):
             cfo = configFileOps("/etc/security/limits.conf")
