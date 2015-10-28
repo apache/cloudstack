@@ -42,6 +42,7 @@ import java.util.List;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang.ArrayUtils;
 
 import com.cloud.utils.Ternary;
 import org.bouncycastle.openssl.PEMReader;
@@ -57,7 +58,7 @@ public class CertificateHelper {
         return os.toByteArray();
     }
 
-    public static byte[] buildAndSaveKeystore(List<Ternary<String, String, String>> certs, String storePassword) throws KeyStoreException, NoSuchAlgorithmException,
+    public static Byte[] buildAndSaveKeystore(List<Ternary<String, String, String>> certs, String storePassword) throws KeyStoreException, NoSuchAlgorithmException,
         CertificateException, IOException, InvalidKeySpecException {
         KeyStore ks = KeyStore.getInstance("JKS");
         ks.load(null, storePassword != null ? storePassword.toCharArray() : null);
@@ -81,7 +82,7 @@ public class CertificateHelper {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         ks.store(os, storePassword != null ? storePassword.toCharArray() : null);
         os.close();
-        return os.toByteArray();
+        return ArrayUtils.toObject(os.toByteArray());
     }
 
     public static KeyStore loadKeystore(byte[] ksData, String storePassword) throws KeyStoreException, CertificateException, NoSuchAlgorithmException, IOException {

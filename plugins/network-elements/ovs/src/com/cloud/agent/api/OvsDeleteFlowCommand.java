@@ -21,7 +21,7 @@ public class OvsDeleteFlowCommand extends Command {
     String vmName;
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 

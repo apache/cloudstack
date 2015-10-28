@@ -154,7 +154,7 @@ public class SnapshotObject implements SnapshotInfo {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return snapshot.getId();
     }
 

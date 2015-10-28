@@ -99,7 +99,7 @@ public class DomainVO implements Domain {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

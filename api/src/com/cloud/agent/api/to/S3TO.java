@@ -40,8 +40,8 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
     private Integer socketTimeout;
     private Integer connectionTtl;
     private Date created;
-    private boolean enableRRS;
-    private long maxSingleUploadSizeInBytes;
+    private Boolean enableRRS;
+    private Long maxSingleUploadSizeInBytes;
     private static final String pathSeparator = "/";
 
     public S3TO() {
@@ -52,7 +52,7 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
 
     public S3TO(final Long id, final String uuid, final String accessKey, final String secretKey, final String endPoint, final String bucketName,
             final Boolean httpsFlag, final Integer connectionTimeout, final Integer maxErrorRetry, final Integer socketTimeout, final Date created,
-            final boolean enableRRS, final long maxUploadSize, final Integer connectionTtl, final Boolean useTCPKeepAlive) {
+            final Boolean enableRRS, final Long maxUploadSize, final Integer connectionTtl, final Boolean useTCPKeepAlive) {
 
         super();
 
@@ -290,19 +290,19 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
         return DataStoreRole.Image;
     }
 
-    public boolean getEnableRRS() {
+    public Boolean getEnableRRS() {
         return enableRRS;
     }
 
-    public void setEnableRRS(boolean enableRRS) {
+    public void setEnableRRS(Boolean enableRRS) {
         this.enableRRS = enableRRS;
     }
 
-    public long getMaxSingleUploadSizeInBytes() {
+    public Long getMaxSingleUploadSizeInBytes() {
         return maxSingleUploadSizeInBytes;
     }
 
-    public void setMaxSingleUploadSizeInBytes(long maxSingleUploadSizeInBytes) {
+    public void setMaxSingleUploadSizeInBytes(Long maxSingleUploadSizeInBytes) {
         this.maxSingleUploadSizeInBytes = maxSingleUploadSizeInBytes;
     }
 

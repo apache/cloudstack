@@ -276,7 +276,7 @@ public class NiciraNvpResource implements ServerResource {
 
     }
 
-    public NatRule[] generatePortForwardingRulePair(final String insideIp, final int[] insidePorts, final String outsideIp, final int[] outsidePorts,
+    public NatRule[] generatePortForwardingRulePair(final String insideIp, final Integer[] insidePorts, final String outsideIp, final Integer[] outsidePorts,
                     final String protocol) {
         // Start with a basic static nat rule, then add port and protocol details
         final NatRule[] rulepair = generateStaticNatRulePair(insideIp, outsideIp);

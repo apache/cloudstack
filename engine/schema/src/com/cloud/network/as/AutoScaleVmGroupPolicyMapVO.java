@@ -52,7 +52,7 @@ public class AutoScaleVmGroupPolicyMapVO implements InternalIdentity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

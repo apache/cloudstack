@@ -40,7 +40,7 @@ public class SnapshotCommandTest {
 
     public StoragePool pool = new StoragePool() {
         @Override
-        public long getId() {
+        public Long getId() {
             return 1L;
         };
 

@@ -24,14 +24,14 @@ import java.util.Map;
 
 public class DirectNetworkUsageAnswer extends Answer {
 
-    Map<String, long[]> ipBytesSentAndReceived;
+    Map<String, Long[]> ipBytesSentAndReceived;
 
     protected DirectNetworkUsageAnswer() {
     }
 
     public DirectNetworkUsageAnswer(Command command) {
         super(command);
-        this.ipBytesSentAndReceived = new HashMap<String, long[]>();
+        this.ipBytesSentAndReceived = new HashMap<String, Long[]>();
     }
 
     public DirectNetworkUsageAnswer(Command command, Exception e) {
@@ -39,21 +39,21 @@ public class DirectNetworkUsageAnswer extends Answer {
         this.ipBytesSentAndReceived = null;
     }
 
-    public void put(String ip, long[] bytesSentAndReceived) {
+    public void put(String ip, Long[] bytesSentAndReceived) {
         this.ipBytesSentAndReceived.put(ip, bytesSentAndReceived);
     }
 
-    public long[] get(String ip) {
-        long[] entry = ipBytesSentAndReceived.get(ip);
+    public Long[] get(String ip) {
+        Long[] entry = ipBytesSentAndReceived.get(ip);
         if (entry == null) {
-            ipBytesSentAndReceived.put(ip, new long[] {0, 0});
+            ipBytesSentAndReceived.put(ip, new Long[] {0L, 0L});
             return ipBytesSentAndReceived.get(ip);
         } else {
             return entry;
         }
     }
 
-    public Map<String, long[]> getIpBytesSentAndReceived() {
+    public Map<String, Long[]> getIpBytesSentAndReceived() {
         return ipBytesSentAndReceived;
     }
 }

@@ -23,16 +23,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ExternalNetworkResourceUsageAnswer extends Answer {
-    public Map<String, long[]> ipBytes;
-    public Map<String, long[]> guestVlanBytes;
+    public Map<String, Long[]> ipBytes;
+    public Map<String, Long[]> guestVlanBytes;
 
     protected ExternalNetworkResourceUsageAnswer() {
     }
 
     public ExternalNetworkResourceUsageAnswer(Command command) {
         super(command);
-        this.ipBytes = new HashMap<String, long[]>();
-        this.guestVlanBytes = new HashMap<String, long[]>();
+        this.ipBytes = new HashMap<String, Long[]>();
+        this.guestVlanBytes = new HashMap<String, Long[]>();
     }
 
     public ExternalNetworkResourceUsageAnswer(Command command, Exception e) {

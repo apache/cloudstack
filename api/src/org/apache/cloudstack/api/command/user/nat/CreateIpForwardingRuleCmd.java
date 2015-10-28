@@ -198,7 +198,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         throw new UnsupportedOperationException("Don't call me");
     }
 

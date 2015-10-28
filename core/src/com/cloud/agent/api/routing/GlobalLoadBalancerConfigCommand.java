@@ -41,15 +41,15 @@ public class GlobalLoadBalancerConfigCommand extends Command {
     String persistenceType;
 
     // unique Id given per gslb rule, that is uniquely represents glsb rule on all participant sites
-    long gslbId;
+    Long gslbId;
 
     // true if global load balancer rule is being deleted
-    boolean revoked;
+    Boolean revoked;
 
     // list of the site details that are participating in the GSLB service
     List<SiteLoadBalancerConfig> siteLoadBalancers;
 
-    public GlobalLoadBalancerConfigCommand(String domainName, String lbMethod, String persistenceType, String serviceType, long gslbId, boolean revoked) {
+    public GlobalLoadBalancerConfigCommand(String domainName, String lbMethod, String persistenceType, String serviceType, Long gslbId, Boolean revoked) {
         this.domainName = domainName;
         this.serviceType = serviceType;
         this.lbMethod = lbMethod;
@@ -78,7 +78,7 @@ public class GlobalLoadBalancerConfigCommand extends Command {
         return persistenceType;
     }
 
-    public long getGslbId() {
+    public Long getGslbId() {
         return this.gslbId;
     }
 
@@ -86,16 +86,16 @@ public class GlobalLoadBalancerConfigCommand extends Command {
         return domainName;
     }
 
-    public boolean isForRevoke() {
+    public Boolean isForRevoke() {
         return revoked;
     }
 
-    public void setForRevoke(boolean revoke) {
+    public void setForRevoke(Boolean revoke) {
         this.revoked = revoke;
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 }

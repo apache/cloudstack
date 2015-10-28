@@ -55,7 +55,7 @@ public class NetworkACLItemCidrsVO implements InternalIdentity {
      * @see org.apache.cloudstack.api.InternalIdentity#getId()
      */
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

@@ -19,7 +19,7 @@ package com.cloud.agent.api.to;
 import org.apache.cloudstack.api.InternalIdentity;
 
 public class MonitorServiceTO implements InternalIdentity {
-    long id;
+    Long id;
     String service;
     String processname;
     String serviceName;
@@ -48,7 +48,7 @@ public class MonitorServiceTO implements InternalIdentity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

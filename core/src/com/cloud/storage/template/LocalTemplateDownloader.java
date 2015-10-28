@@ -38,7 +38,7 @@ public class LocalTemplateDownloader extends TemplateDownloaderBase implements T
 
     public LocalTemplateDownloader(StorageLayer storageLayer, String downloadUrl, String toDir, long maxTemplateSizeInBytes, DownloadCompleteCallback callback) {
         super(storageLayer, downloadUrl, toDir, maxTemplateSizeInBytes, callback);
-        String filename = downloadUrl.substring(downloadUrl.lastIndexOf(File.separator));
+        String filename = new File(downloadUrl).getName();
         _toFile = toDir.endsWith(File.separator) ? (toDir + filename) : (toDir + File.separator + filename);
     }
 

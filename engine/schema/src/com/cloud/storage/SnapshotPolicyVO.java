@@ -77,7 +77,7 @@ public class SnapshotPolicyVO implements SnapshotPolicy {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

@@ -64,7 +64,7 @@ public class MockVMVO implements MockVm, InternalIdentity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return this.id;
     }
 

@@ -29,7 +29,7 @@ public class DeleteVMSnapshotAnswer extends Answer {
     public DeleteVMSnapshotAnswer() {
     }
 
-    public DeleteVMSnapshotAnswer(DeleteVMSnapshotCommand cmd, boolean result, String message) {
+    public DeleteVMSnapshotAnswer(DeleteVMSnapshotCommand cmd, Boolean result, String message) {
         super(cmd, result, message);
     }
 

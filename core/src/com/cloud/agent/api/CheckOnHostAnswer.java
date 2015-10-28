@@ -20,8 +20,8 @@
 package com.cloud.agent.api;
 
 public class CheckOnHostAnswer extends Answer {
-    boolean determined;
-    boolean alive;
+    Boolean determined;
+    Boolean alive;
 
     protected CheckOnHostAnswer() {
     }
@@ -40,11 +40,11 @@ public class CheckOnHostAnswer extends Answer {
         super(cmd, false, details);
     }
 
-    public boolean isDetermined() {
+    public Boolean isDetermined() {
         return determined;
     }
 
-    public boolean isAlive() {
+    public Boolean isAlive() {
         return alive;
     }
 

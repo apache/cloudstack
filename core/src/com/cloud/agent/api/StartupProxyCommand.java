@@ -22,8 +22,8 @@ package com.cloud.agent.api;
 import com.cloud.host.Host;
 
 public class StartupProxyCommand extends StartupCommand {
-    private int proxyPort;
-    private long proxyVmId;
+    private Integer proxyPort;
+    private Long proxyVmId;
 
     public StartupProxyCommand() {
         super(Host.Type.ConsoleProxy);
@@ -31,23 +31,23 @@ public class StartupProxyCommand extends StartupCommand {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 
-    public int getProxyPort() {
+    public Integer getProxyPort() {
         return proxyPort;
     }
 
-    public void setProxyPort(int proxyPort) {
+    public void setProxyPort(Integer proxyPort) {
         this.proxyPort = proxyPort;
     }
 
-    public long getProxyVmId() {
+    public Long getProxyVmId() {
         return proxyVmId;
     }
 
-    public void setProxyVmId(long proxyVmId) {
+    public void setProxyVmId(Long proxyVmId) {
         this.proxyVmId = proxyVmId;
     }
 }

@@ -198,7 +198,7 @@ public class Ovm3HypervisorSupport {
                 LOGGER.debug("Hypervisor version: " + host.getOvmVersion());
             }
             cmd.setName(host.getHostName());
-            cmd.setSpeed(host.getCpuKhz());
+            cmd.setSpeed(host.getCpuKhz().longValue());
             cmd.setCpus(host.getTotalThreads());
             cmd.setCpuSockets(host.getCpuSockets());
             cmd.setMemory(host.getMemory().longValue());
@@ -703,7 +703,7 @@ public class Ovm3HypervisorSupport {
             Double freeMemory = Double.parseDouble(stats.get("free"));
             HostStatsEntry hostStats = new HostStatsEntry(cmd.getHostId(),
                     cpuUtil, rxBytes, txBytes, "host", totalMemory, freeMemory,
-                    0, 0);
+                    0.0, 0.0);
             return new GetHostStatsAnswer(cmd, hostStats);
         } catch (Exception e) {
             LOGGER.debug("Unable to get host stats for: " + cmd.getHostName(),

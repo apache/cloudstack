@@ -20,19 +20,19 @@
 package com.cloud.agent.api;
 
 public class RecurringNetworkUsageCommand extends Command implements CronCommand {
-    int interval;
+    Integer interval;
 
-    public RecurringNetworkUsageCommand(int interval) {
+    public RecurringNetworkUsageCommand(Integer interval) {
         this.interval = interval;
     }
 
     @Override
-    public int getInterval() {
+    public Integer getInterval() {
         return interval;
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 

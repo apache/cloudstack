@@ -33,7 +33,7 @@ public class ModifyVmNicConfigAnswer extends Answer {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 }

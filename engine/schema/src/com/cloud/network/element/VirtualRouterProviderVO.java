@@ -76,7 +76,7 @@ public class VirtualRouterProviderVO implements VirtualRouterProvider {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

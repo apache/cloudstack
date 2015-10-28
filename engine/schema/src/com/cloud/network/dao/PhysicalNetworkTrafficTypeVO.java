@@ -87,7 +87,7 @@ public class PhysicalNetworkTrafficTypeVO implements PhysicalNetworkTrafficType 
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

@@ -149,7 +149,7 @@ public class AsyncJobVO implements AsyncJob, JobInfo {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

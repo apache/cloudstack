@@ -61,7 +61,7 @@ public class SyncQueueItemVO implements SyncQueueItem, InternalIdentity {
     private Date created;
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

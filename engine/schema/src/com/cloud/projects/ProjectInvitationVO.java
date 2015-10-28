@@ -77,7 +77,7 @@ public class ProjectInvitationVO implements ProjectInvitation {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

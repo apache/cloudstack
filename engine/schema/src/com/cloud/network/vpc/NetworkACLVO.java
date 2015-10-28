@@ -76,7 +76,7 @@ public class NetworkACLVO implements NetworkACL {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

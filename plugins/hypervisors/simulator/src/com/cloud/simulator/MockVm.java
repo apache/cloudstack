@@ -47,7 +47,7 @@ public interface MockVm {
 
     public void setVncPort(int vncPort);
 
-    public long getId();
+    public Long getId();
 
     public String getBootargs();
 

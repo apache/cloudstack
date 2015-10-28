@@ -73,7 +73,7 @@
     <cs.jasypt.version>1.9.2</cs.jasypt.version>
     <cs.trilead.version>1.0.0-build217</cs.trilead.version>
     <cs.ehcache.version>2.6.9</cs.ehcache.version>
-    <cs.gson.version>1.7.2</cs.gson.version>
+    <cs.gson.version>[2.4,)</cs.gson.version>
     <cs.guava-testlib.version>18.0</cs.guava-testlib.version>
     <cs.guava.version>18.0</cs.guava.version>
     <cs.xapi.version>6.2.0-3.1</cs.xapi.version>

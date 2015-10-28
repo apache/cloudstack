@@ -21,29 +21,29 @@ package com.cloud.agent.api;
 
 
 public class ClusterVMMetaDataSyncCommand extends Command implements CronCommand {
-    int _interval;
+    Integer _interval;
 
-    long _clusterId;
+    Long _clusterId;
 
     public ClusterVMMetaDataSyncCommand() {
     }
 
-    public ClusterVMMetaDataSyncCommand(int interval, long clusterId){
+    public ClusterVMMetaDataSyncCommand(Integer interval, Long clusterId){
         _interval = interval;
         _clusterId = clusterId;
     }
 
     @Override
-    public int getInterval() {
+    public Integer getInterval() {
         return _interval;
     }
 
-    public long getClusterId() {
+    public Long getClusterId() {
         return _clusterId;
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 

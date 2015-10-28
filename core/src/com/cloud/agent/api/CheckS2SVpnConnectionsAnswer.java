@@ -32,7 +32,7 @@ public class CheckS2SVpnConnectionsAnswer extends Answer {
         ipToDetail = new HashMap<String, String>();
     }
 
-    public CheckS2SVpnConnectionsAnswer(CheckS2SVpnConnectionsCommand cmd, boolean result, String details) {
+    public CheckS2SVpnConnectionsAnswer(CheckS2SVpnConnectionsCommand cmd, Boolean result, String details) {
         super(cmd, result, details);
         ipToConnected = new HashMap<String, Boolean>();
         ipToDetail = new HashMap<String, String>();
@@ -58,7 +58,7 @@ public class CheckS2SVpnConnectionsAnswer extends Answer {
         }
     }
 
-    public boolean isConnected(String ip) {
+    public Boolean isConnected(String ip) {
         if (this.getResult()) {
             Boolean status = ipToConnected.get(ip);
 

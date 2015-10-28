@@ -86,7 +86,7 @@ public class ImageStoreJoinVO extends BaseViewVO implements InternalIdentity, Id
     private Date removed;
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

@@ -21,8 +21,12 @@ package com.cloud.serializer;
 
 import java.util.List;
 
+import org.apache.cloudstack.agent.transport.AnswerArrayTypeAdaptor;
+import org.apache.cloudstack.agent.transport.CommandArrayTypeAdaptor;
+import org.apache.cloudstack.agent.transport.CommandTypeAdaptor;
 import org.apache.log4j.Logger;
 
+import com.google.gson.ExclusionStrategy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -32,7 +36,6 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
-import com.cloud.agent.transport.ArrayTypeAdaptor;
 import com.cloud.agent.transport.InterfaceTypeAdaptor;
 import com.cloud.agent.transport.LoggingExclusionStrategy;
 import com.cloud.agent.transport.Request.NwGroupsCommandTypeAdaptor;
@@ -44,13 +47,15 @@ public class GsonHelper {
 
     protected static final Gson s_gson;
     protected static final Gson s_gogger;
+    private static final ExclusionStrategy excluder;
 
     static {
         GsonBuilder gsonBuilder = new GsonBuilder();
         s_gson = setDefaultGsonConfig(gsonBuilder);
         GsonBuilder loggerBuilder = new GsonBuilder();
         loggerBuilder.disableHtmlEscaping();
-        loggerBuilder.setExclusionStrategies(new LoggingExclusionStrategy(s_logger));
+        excluder = new LoggingExclusionStrategy(s_logger);
+        loggerBuilder.setExclusionStrategies(getExcluder());
         s_gogger = setDefaultGsonConfig(loggerBuilder);
         s_logger.info("Default Builder inited.");
     }
@@ -61,10 +66,12 @@ public class GsonHelper {
         builder.registerTypeAdapter(DataStoreTO.class, dsAdaptor);
         InterfaceTypeAdaptor<DataTO> dtAdaptor = new InterfaceTypeAdaptor<DataTO>();
         builder.registerTypeAdapter(DataTO.class, dtAdaptor);
-        ArrayTypeAdaptor<Command> cmdAdaptor = new ArrayTypeAdaptor<Command>();
-        builder.registerTypeAdapter(Command[].class, cmdAdaptor);
-        ArrayTypeAdaptor<Answer> ansAdaptor = new ArrayTypeAdaptor<Answer>();
-        builder.registerTypeAdapter(Answer[].class, ansAdaptor);
+        CommandArrayTypeAdaptor cmdsAdaptor = new CommandArrayTypeAdaptor();
+        builder.registerTypeAdapter(Command[].class, cmdsAdaptor);
+        CommandTypeAdaptor cmdAdaptor = new CommandTypeAdaptor();
+        builder.registerTypeAdapter(Command.class, cmdAdaptor);
+        AnswerArrayTypeAdaptor anssAdaptor = new AnswerArrayTypeAdaptor();
+        builder.registerTypeAdapter(Answer[].class, anssAdaptor);
         builder.registerTypeAdapter(new TypeToken<List<PortConfig>>() {
         }.getType(), new PortConfigListTypeAdaptor());
         builder.registerTypeAdapter(new TypeToken<Pair<Long, Long>>() {
@@ -72,8 +79,9 @@ public class GsonHelper {
         Gson gson = builder.create();
         dsAdaptor.initGson(gson);
         dtAdaptor.initGson(gson);
+        cmdsAdaptor.initGson(gson);
         cmdAdaptor.initGson(gson);
-        ansAdaptor.initGson(gson);
+        anssAdaptor.initGson(gson);
         return gson;
     }
 
@@ -87,5 +95,9 @@ public class GsonHelper {
 
     public final static Logger getLogger() {
         return s_logger;
+    }
+
+    public static ExclusionStrategy getExcluder() {
+        return excluder;
     }
 }

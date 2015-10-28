@@ -163,7 +163,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

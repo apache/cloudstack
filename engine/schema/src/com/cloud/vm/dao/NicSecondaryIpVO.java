@@ -78,7 +78,7 @@ public class NicSecondaryIpVO implements NicSecondaryIp {
     long vmId;
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

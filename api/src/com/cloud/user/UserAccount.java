@@ -22,7 +22,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface UserAccount extends InternalIdentity {
     @Override
-    long getId();
+    Long getId();
 
     String getUsername();
 

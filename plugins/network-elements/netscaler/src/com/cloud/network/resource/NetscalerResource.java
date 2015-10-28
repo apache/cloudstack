@@ -3631,9 +3631,9 @@ public class NetscalerResource implements ServerResource {
                 if (vserver != null) {
                     String lbVirtualServerIp = vserver.get_ipv46();
 
-                    long[] bytesSentAndReceived = answer.ipBytes.get(lbVirtualServerIp);
+                    Long[] bytesSentAndReceived = answer.ipBytes.get(lbVirtualServerIp);
                     if (bytesSentAndReceived == null) {
-                        bytesSentAndReceived = new long[] {0, 0};
+                        bytesSentAndReceived = new Long[] {0l, 0l};
                     }
                     bytesSentAndReceived[0] += stat_entry.get_totalrequestbytes();
                     bytesSentAndReceived[1] += stat_entry.get_totalresponsebytes();

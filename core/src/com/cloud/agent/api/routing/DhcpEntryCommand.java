@@ -33,19 +33,19 @@ public class DhcpEntryCommand extends NetworkElementCommand {
     String vmIp6Address;
     String ip6Gateway;
     String duid;
-    private boolean isDefault;
-    boolean executeInSequence = false;
+    private Boolean isDefault;
+    Boolean executeInSequence = false;
 
     protected DhcpEntryCommand() {
 
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return executeInSequence;
     }
 
-    public DhcpEntryCommand(String vmMac, String vmIpAddress, String vmName, String vmIp6Address, boolean executeInSequence) {
+    public DhcpEntryCommand(String vmMac, String vmIpAddress, String vmName, String vmIp6Address, Boolean executeInSequence) {
         this.vmMac = vmMac;
         this.vmIpAddress = vmIpAddress;
         this.vmName = vmName;
@@ -54,7 +54,7 @@ public class DhcpEntryCommand extends NetworkElementCommand {
         this.executeInSequence = executeInSequence;
     }
 
-    public DhcpEntryCommand(String vmMac, String vmIpAddress, String vmName, String vmIp6Address, String dns, String gateway, String ip6Gateway, boolean executeInSequence) {
+    public DhcpEntryCommand(String vmMac, String vmIpAddress, String vmName, String vmIp6Address, String dns, String gateway, String ip6Gateway, Boolean executeInSequence) {
         this(vmMac, vmIpAddress, vmName, vmIp6Address, executeInSequence);
         this.dns = dns;
         this.gateway = gateway;
@@ -136,11 +136,11 @@ public class DhcpEntryCommand extends NetworkElementCommand {
         this.vmIp6Address = ip6Address;
     }
 
-    public boolean isDefault() {
+    public Boolean isDefault() {
         return isDefault;
     }
 
-    public void setDefault(boolean isDefault) {
+    public void setDefault(Boolean isDefault) {
         this.isDefault = isDefault;
     }
 }

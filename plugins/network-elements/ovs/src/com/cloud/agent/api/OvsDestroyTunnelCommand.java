@@ -43,7 +43,7 @@ public class OvsDestroyTunnelCommand extends Command {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 }

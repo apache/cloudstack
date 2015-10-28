@@ -104,7 +104,7 @@ public class UserIpv6AddressVO implements UserIpv6Address {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

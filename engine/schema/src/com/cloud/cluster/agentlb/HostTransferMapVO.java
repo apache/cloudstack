@@ -89,7 +89,7 @@ public class HostTransferMapVO implements InternalIdentity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

@@ -23,12 +23,12 @@ import com.cloud.host.Host;
 
 public class PingCommand extends Command {
     Host.Type hostType;
-    long hostId;
+    Long hostId;
 
     protected PingCommand() {
     }
 
-    public PingCommand(Host.Type type, long id) {
+    public PingCommand(Host.Type type, Long id) {
         hostType = type;
         hostId = id;
     }
@@ -37,12 +37,12 @@ public class PingCommand extends Command {
         return hostType;
     }
 
-    public long getHostId() {
+    public Long getHostId() {
         return hostId;
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 }

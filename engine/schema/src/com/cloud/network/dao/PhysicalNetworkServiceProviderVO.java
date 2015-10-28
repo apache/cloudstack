@@ -110,7 +110,7 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

@@ -28,20 +28,20 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 
 public class DownloadAnswer extends Answer {
     private String jobId;
-    private int downloadPct;
+    private Integer downloadPct;
     private String errorString;
     private VMTemplateStorageResourceAssoc.Status downloadStatus;
     private String downloadPath;
     private String installPath;
-    private long templateSize = 0L;
-    private long templatePhySicalSize = 0L;
+    private Long templateSize = 0L;
+    private Long templatePhySicalSize = 0L;
     private String checkSum;
 
     public String getCheckSum() {
         return checkSum;
     }
 
-    public int getDownloadPct() {
+    public Integer getDownloadPct() {
         return downloadPct;
     }
 
@@ -81,8 +81,8 @@ public class DownloadAnswer extends Answer {
         this.details = errorString;
     }
 
-    public DownloadAnswer(String jobId, int downloadPct, String errorString, Status downloadStatus, String fileSystemPath, String installPath, long templateSize,
-            long templatePhySicalSize, String checkSum) {
+    public DownloadAnswer(String jobId, Integer downloadPct, String errorString, Status downloadStatus, String fileSystemPath,
+            String installPath, Long templateSize, Long templatePhySicalSize, String checkSum) {
         super();
         this.jobId = jobId;
         this.downloadPct = downloadPct;
@@ -96,7 +96,8 @@ public class DownloadAnswer extends Answer {
         this.checkSum = checkSum;
     }
 
-    public DownloadAnswer(String jobId, int downloadPct, Command command, Status downloadStatus, String fileSystemPath, String installPath) {
+    public DownloadAnswer(String jobId, Integer downloadPct, Command command, Status downloadStatus, String fileSystemPath,
+            String installPath) {
         super(command);
         this.jobId = jobId;
         this.downloadPct = downloadPct;
@@ -130,7 +131,7 @@ public class DownloadAnswer extends Answer {
         this.installPath = fixPath(installPath);
     }
 
-    public void setTemplateSize(long templateSize) {
+    public void setTemplateSize(Long templateSize) {
         this.templateSize = templateSize;
     }
 
@@ -138,11 +139,11 @@ public class DownloadAnswer extends Answer {
         return templateSize;
     }
 
-    public void setTemplatePhySicalSize(long templatePhySicalSize) {
+    public void setTemplatePhySicalSize(Long templatePhySicalSize) {
         this.templatePhySicalSize = templatePhySicalSize;
     }
 
-    public long getTemplatePhySicalSize() {
+    public Long getTemplatePhySicalSize() {
         return templatePhySicalSize;
     }
 

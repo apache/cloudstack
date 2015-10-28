@@ -25,12 +25,12 @@ import com.cloud.agent.api.LogLevel.Log4jLevel;
 public class GetHostStatsCommand extends Command {
     String hostGuid;
     String hostName;
-    long hostId;
+    Long hostId;
 
     protected GetHostStatsCommand() {
     }
 
-    public GetHostStatsCommand(String hostGuid, String hostName, long hostId) {
+    public GetHostStatsCommand(String hostGuid, String hostName, Long hostId) {
         this.hostGuid = hostGuid;
         this.hostName = hostName;
         this.hostId = hostId;
@@ -44,12 +44,12 @@ public class GetHostStatsCommand extends Command {
         return this.hostName;
     }
 
-    public long getHostId() {
+    public Long getHostId() {
         return this.hostId;
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 }

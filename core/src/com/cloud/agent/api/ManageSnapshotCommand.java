@@ -37,13 +37,13 @@ public class ManageSnapshotCommand extends Command {
     // Information about the snapshot
     private String _snapshotPath = null;
     private String _snapshotName = null;
-    private long _snapshotId;
+    private Long _snapshotId;
     private String _vmName = null;
 
     public ManageSnapshotCommand() {
     }
 
-    public ManageSnapshotCommand(long snapshotId, String volumePath, StoragePool pool, String preSnapshotPath, String snapshotName, String vmName) {
+    public ManageSnapshotCommand(Long snapshotId, String volumePath, StoragePool pool, String preSnapshotPath, String snapshotName, String vmName) {
         _commandSwitch = ManageSnapshotCommand.CREATE_SNAPSHOT;
         _volumePath = volumePath;
         _pool = new StorageFilerTO(pool);
@@ -53,13 +53,13 @@ public class ManageSnapshotCommand extends Command {
         _vmName = vmName;
     }
 
-    public ManageSnapshotCommand(long snapshotId, String snapshotPath) {
+    public ManageSnapshotCommand(Long snapshotId, String snapshotPath) {
         _commandSwitch = ManageSnapshotCommand.DESTROY_SNAPSHOT;
         _snapshotPath = snapshotPath;
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 
@@ -83,7 +83,7 @@ public class ManageSnapshotCommand extends Command {
         return _snapshotName;
     }
 
-    public long getSnapshotId() {
+    public Long getSnapshotId() {
         return _snapshotId;
     }
 

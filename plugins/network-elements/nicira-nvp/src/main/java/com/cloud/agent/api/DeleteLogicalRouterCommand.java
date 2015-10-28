@@ -34,7 +34,7 @@ public class DeleteLogicalRouterCommand extends Command {
      * @see com.cloud.agent.api.Command#executeInSequence()
      */
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 

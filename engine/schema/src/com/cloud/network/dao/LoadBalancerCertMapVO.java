@@ -59,7 +59,7 @@ public class LoadBalancerCertMapVO implements InternalIdentity {
 
     // Getters
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

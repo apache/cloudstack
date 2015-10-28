@@ -28,7 +28,7 @@ public class ManageVolumeAvailabilityAnswer extends Answer {
         super();
     }
 
-    public ManageVolumeAvailabilityAnswer(Command command, boolean success, String details) {
+    public ManageVolumeAvailabilityAnswer(Command command, Boolean success, String details) {
         super(command, success, details);
     }
 

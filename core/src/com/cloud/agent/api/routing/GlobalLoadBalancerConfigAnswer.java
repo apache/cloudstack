@@ -23,7 +23,7 @@ import com.cloud.agent.api.Answer;
 
 public class GlobalLoadBalancerConfigAnswer extends Answer {
 
-    public GlobalLoadBalancerConfigAnswer(boolean success, String details) {
+    public GlobalLoadBalancerConfigAnswer(Boolean success, String details) {
         this.result = success;
         this.details = details;
     }

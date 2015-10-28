@@ -56,7 +56,7 @@ public class UserIpAddressDetailVO implements ResourceDetail {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

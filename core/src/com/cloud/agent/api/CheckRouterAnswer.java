@@ -30,7 +30,7 @@ public class CheckRouterAnswer extends Answer {
     protected CheckRouterAnswer() {
     }
 
-    public CheckRouterAnswer(final CheckRouterCommand cmd, final String details, final boolean parse) {
+    public CheckRouterAnswer(final CheckRouterCommand cmd, final String details, final Boolean parse) {
         super(cmd, true, details);
         if (parse) {
             if (!parseDetails(details)) {

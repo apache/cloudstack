@@ -22,14 +22,14 @@ package com.cloud.agent.api;
 import java.util.HashMap;
 
 public class ClusterVMMetaDataSyncAnswer extends Answer {
-    private long _clusterId;
+    private Long _clusterId;
     private HashMap<String, String> _vmMetaDatum;
-    private boolean _isExecuted=false;
+    private Boolean _isExecuted=false;
 
     // this is here because a cron command answer is being sent twice
     //  AgentAttache.processAnswers
     //  AgentManagerImpl.notifyAnswersToMonitors
-    public boolean isExecuted(){
+    public Boolean isExecuted(){
         return _isExecuted;
     }
 
@@ -38,13 +38,13 @@ public class ClusterVMMetaDataSyncAnswer extends Answer {
     }
 
 
-    public ClusterVMMetaDataSyncAnswer(long clusterId, HashMap<String, String> vmMetaDatum){
+    public ClusterVMMetaDataSyncAnswer(Long clusterId, HashMap<String, String> vmMetaDatum){
         _clusterId = clusterId;
         _vmMetaDatum = vmMetaDatum;
         result = true;
     }
 
-    public long getClusterId() {
+    public Long getClusterId() {
         return _clusterId;
     }
 

@@ -23,7 +23,7 @@ public class PlugNicAnswer extends Answer {
     public PlugNicAnswer() {
     }
 
-    public PlugNicAnswer(PlugNicCommand cmd, boolean success, String result) {
+    public PlugNicAnswer(PlugNicCommand cmd, Boolean success, String result) {
         super(cmd, success, result);
     }
 }

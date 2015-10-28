@@ -304,7 +304,7 @@ public class NetworkVO implements Network {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

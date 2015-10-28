@@ -30,7 +30,7 @@ public class CopyVolumeAnswer extends Answer {
         super();
     }
 
-    public CopyVolumeAnswer(Command command, boolean success, String details, String volumeFolder, String volumePath) {
+    public CopyVolumeAnswer(Command command, Boolean success, String details, String volumeFolder, String volumePath) {
         super(command, success, details);
         this.volumeFolder = volumeFolder;
         this.volumePath = volumePath;

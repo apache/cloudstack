@@ -61,7 +61,7 @@ public class GuestOSHypervisorVO implements GuestOSHypervisor {
     private boolean isUserDefined;
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

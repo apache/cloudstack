@@ -28,7 +28,7 @@ public class ValidateSnapshotAnswer extends Answer {
 
     }
 
-    public ValidateSnapshotAnswer(ValidateSnapshotCommand cmd, boolean success, String result, String expectedSnapshotBackupUuid, String actualSnapshotBackupUuid,
+    public ValidateSnapshotAnswer(ValidateSnapshotCommand cmd, Boolean success, String result, String expectedSnapshotBackupUuid, String actualSnapshotBackupUuid,
             String actualSnapshotUuid) {
         super(cmd, success, result);
         this.expectedSnapshotBackupUuid = expectedSnapshotBackupUuid;

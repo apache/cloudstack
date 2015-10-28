@@ -31,7 +31,7 @@ public class FenceCommand extends Command {
     String vmName;
     String hostGuid;
     String hostIp;
-    boolean inSeq;
+    Boolean inSeq;
 
     public FenceCommand(VirtualMachine vm, Host host) {
         super();
@@ -41,7 +41,7 @@ public class FenceCommand extends Command {
         inSeq = false;
     }
 
-    public void setSeq(boolean inseq) {
+    public void setSeq(Boolean inseq) {
         inSeq = inseq;
     }
 
@@ -58,7 +58,7 @@ public class FenceCommand extends Command {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return inSeq;
     }
 }

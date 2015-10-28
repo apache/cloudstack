@@ -55,7 +55,7 @@ public class VmwareDatacenterZoneMapVO implements VmwareDatacenterZoneMap {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

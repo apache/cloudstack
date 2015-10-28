@@ -24,7 +24,7 @@ public class CheckHealthAnswer extends Answer {
     public CheckHealthAnswer() {
     }
 
-    public CheckHealthAnswer(CheckHealthCommand cmd, boolean alive) {
+    public CheckHealthAnswer(CheckHealthCommand cmd, Boolean alive) {
         super(cmd, alive, "resource is " + (alive ? "alive" : "not alive"));
     }
 }

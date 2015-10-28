@@ -19,10 +19,10 @@
 
 package com.cloud.storage.template;
 
-import com.cloud.exception.InternalErrorException;
-import com.cloud.storage.Storage;
-import com.cloud.storage.StorageLayer;
-import com.cloud.utils.script.Script;
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,9 +33,10 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
+import com.cloud.exception.InternalErrorException;
+import com.cloud.storage.Storage;
+import com.cloud.storage.StorageLayer;
+import com.cloud.utils.script.Script;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(OVAProcessor.class)
@@ -55,7 +56,7 @@ public class OVAProcessorTest {
 
     @Test(expected = InternalErrorException.class)
     public void testProcessWhenUntarFails() throws Exception {
-        String templatePath = "/tmp";
+        String templatePath = System.getProperty("java.io.tmpdir");
         String templateName = "template";
 
         Mockito.when(mockStorageLayer.exists(Mockito.anyString())).thenReturn(true);
@@ -69,7 +70,7 @@ public class OVAProcessorTest {
 
     @Test(expected = InternalErrorException.class)
     public void testProcessWhenVirtualSizeThrowsException() throws Exception {
-        String templatePath = "/tmp";
+        String templatePath = System.getProperty("java.io.tmpdir");
         String templateName = "template";
 
         Mockito.when(mockStorageLayer.exists(Mockito.anyString())).thenReturn(true);
@@ -85,7 +86,7 @@ public class OVAProcessorTest {
 
     @Test
     public void testProcess() throws Exception {
-        String templatePath = "/tmp";
+        String templatePath = System.getProperty("java.io.tmpdir");
         String templateName = "template";
         long virtualSize = 2000;
         long actualSize = 1000;
@@ -107,9 +108,8 @@ public class OVAProcessorTest {
 
     @Test
     public void testGetVirtualSizeWhenVirtualSizeThrowsException() throws Exception {
-        long virtualSize = 2000;
         long actualSize = 1000;
-        String templatePath = "/tmp";
+        String templatePath = System.getProperty("java.io.tmpdir");
         String templateName = "template";
         File mockFile = Mockito.mock(File.class);
         Mockito.when(mockFile.length()).thenReturn(actualSize);
@@ -124,7 +124,7 @@ public class OVAProcessorTest {
     public void testGetVirtualSize() throws Exception {
         long virtualSize = 2000;
         long actualSize = 1000;
-        String templatePath = "/tmp";
+        String templatePath = System.getProperty("java.io.tmpdir");
         String templateName = "template";
         File mockFile = Mockito.mock(File.class);
         Mockito.when(mockFile.length()).thenReturn(actualSize);

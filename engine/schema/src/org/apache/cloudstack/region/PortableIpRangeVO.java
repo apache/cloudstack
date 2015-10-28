@@ -70,7 +70,7 @@ public class PortableIpRangeVO implements PortableIpRange {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

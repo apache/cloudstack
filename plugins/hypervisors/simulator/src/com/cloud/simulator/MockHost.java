@@ -25,7 +25,7 @@ public interface MockHost {
 
     public String getCapabilities();
 
-    public long getId();
+    public Long getId();
 
     public String getName();
 

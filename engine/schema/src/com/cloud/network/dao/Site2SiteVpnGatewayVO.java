@@ -71,7 +71,7 @@ public class Site2SiteVpnGatewayVO implements Site2SiteVpnGateway {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

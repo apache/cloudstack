@@ -61,12 +61,12 @@ public class RequestTest extends TestCase {
     public void testSerDeser() {
         s_logger.info("Testing serializing and deserializing works as expected");
 
-        s_logger.info("UpdateHostPasswordCommand should have two parameters that doesn't show in logging");
+        s_logger.info("UpdateHostPasswordCommand should have two parameters that don't show in logging");
         UpdateHostPasswordCommand cmd1 = new UpdateHostPasswordCommand("abc", "def");
         s_logger.info("SecStorageFirewallCfgCommand has a context map that shouldn't show up in debug level");
         SecStorageFirewallCfgCommand cmd2 = new SecStorageFirewallCfgCommand();
         s_logger.info("GetHostStatsCommand should not show up at all in debug level");
-        GetHostStatsCommand cmd3 = new GetHostStatsCommand("hostguid", "hostname", 101);
+        GetHostStatsCommand cmd3 = new GetHostStatsCommand("hostguid", "hostname", 101L);
         cmd2.addPortConfig("abc", "24", true, "eth0");
         cmd2.addPortConfig("127.0.0.1", "44", false, "eth1");
         Request sreq = new Request(2, 3, new Command[] {cmd1, cmd2, cmd3}, true, true);
@@ -77,32 +77,32 @@ public class RequestTest extends TestCase {
 
         logger.setLevel(Level.DEBUG);
         String log = sreq.log("Debug", true, Level.DEBUG);
-        assert (log.contains(UpdateHostPasswordCommand.class.getSimpleName()));
-        assert (log.contains(SecStorageFirewallCfgCommand.class.getSimpleName()));
-        assert (!log.contains(GetHostStatsCommand.class.getSimpleName()));
-        assert (!log.contains("username"));
-        assert (!log.contains("password"));
+        assertTrue (log.contains(UpdateHostPasswordCommand.class.getSimpleName()));
+        assertTrue (log.contains(SecStorageFirewallCfgCommand.class.getSimpleName()));
+        assertFalse("Did not expect GetHostStatsCommand in message", log.contains(GetHostStatsCommand.class.getSimpleName()));
+        assertFalse (log.contains("username"));
+        assertFalse (log.contains("password"));
 
         logger.setLevel(Level.TRACE);
         log = sreq.log("Trace", true, Level.TRACE);
-        assert (log.contains(UpdateHostPasswordCommand.class.getSimpleName()));
-        assert (log.contains(SecStorageFirewallCfgCommand.class.getSimpleName()));
-        assert (log.contains(GetHostStatsCommand.class.getSimpleName()));
-        assert (!log.contains("username"));
-        assert (!log.contains("password"));
+        assertFalse (log.contains("username"));
+        assertFalse (log.contains("password"));
+        assertTrue (log.contains(UpdateHostPasswordCommand.class.getSimpleName()));
+        assertTrue (log.contains(SecStorageFirewallCfgCommand.class.getSimpleName()));
+        assertTrue (log.contains(GetHostStatsCommand.class.getSimpleName()));
 
         logger.setLevel(Level.INFO);
         log = sreq.log("Info", true, Level.INFO);
-        assert (log == null);
+        assertNull(log);
 
         logger.setLevel(level);
 
         byte[] bytes = sreq.getBytes();
 
-        assert Request.getSequence(bytes) == 892403717;
-        assert Request.getManagementServerId(bytes) == 3;
-        assert Request.getAgentId(bytes) == 2;
-        assert Request.getViaAgentId(bytes) == 2;
+        assertEquals(Request.getSequence(bytes), 892403717);
+        assertEquals(Request.getManagementServerId(bytes), 3);
+        assertEquals(Request.getAgentId(bytes), 2);
+        assertEquals(Request.getViaAgentId(bytes), 2);
         Request creq = null;
         try {
             creq = Request.parse(bytes);
@@ -112,7 +112,7 @@ public class RequestTest extends TestCase {
             s_logger.error("Unable to parse bytes: ", e);
         }
 
-        assert creq != null : "Couldn't get the request back";
+        assertNotNull("Couldn't get the request back", creq);
 
         compareRequest(creq, sreq);
 
@@ -130,7 +130,7 @@ public class RequestTest extends TestCase {
             s_logger.error("Unable to parse bytes: ", e);
         }
 
-        assert sresp != null : "Couldn't get the response back";
+        assertNotNull("Couldn't get the response back", sresp);
 
         compareRequest(cresp, sresp);
     }
@@ -146,10 +146,10 @@ public class RequestTest extends TestCase {
 
         byte[] bytes = sreq.getBytes();
 
-        assert Request.getSequence(bytes) == 892403718;
-        assert Request.getManagementServerId(bytes) == 3;
-        assert Request.getAgentId(bytes) == 2;
-        assert Request.getViaAgentId(bytes) == 2;
+        assertEquals(Request.getSequence(bytes), 892403718);
+        assertEquals(Request.getManagementServerId(bytes), 3);
+        assertEquals(Request.getAgentId(bytes), 2);
+        assertEquals(Request.getViaAgentId(bytes), 2);
         Request creq = null;
         try {
             creq = Request.parse(bytes);
@@ -159,7 +159,7 @@ public class RequestTest extends TestCase {
             s_logger.error("Unable to parse bytes: ", e);
         }
 
-        assert creq != null : "Couldn't get the request back";
+        assertNotNull("Couldn't get the request back", creq);
 
         compareRequest(creq, sreq);
         assertEquals("nfs://192.168.56.10/opt/storage/secondary", ((NfsTO)((ListTemplateCommand)creq.getCommand()).getDataStore()).getUrl());
@@ -184,7 +184,7 @@ public class RequestTest extends TestCase {
 
         req.logD("Debug for Download");
 
-        DownloadAnswer answer = new DownloadAnswer("jobId", 50, "errorString", Status.ABANDONED, "filesystempath", "installpath", 10000000, 20000000, "chksum");
+        DownloadAnswer answer = new DownloadAnswer("jobId", 50, "errorString", Status.ABANDONED, "filesystempath", "installpath", 10000000L, 20000000L, "chksum");
         Response resp = new Response(req, answer);
         resp.logD("Debug for Download");
 
@@ -212,41 +212,44 @@ public class RequestTest extends TestCase {
 
     public void testLogging() {
         s_logger.info("Testing Logging");
-        GetHostStatsCommand cmd3 = new GetHostStatsCommand("hostguid", "hostname", 101);
+        GetHostStatsCommand cmd3 = new GetHostStatsCommand("hostguid", "hostname", 101L);
         Request sreq = new Request(2, 3, new Command[] {cmd3}, true, true);
         sreq.setSequence(1);
         Logger logger = Logger.getLogger(GsonHelper.class);
         Level level = logger.getLevel();
 
+        String log;
+
         logger.setLevel(Level.DEBUG);
-        String log = sreq.log("Debug", true, Level.DEBUG);
-        assert (log == null);
+        log = sreq.log("Debug", true, Level.DEBUG);
+        assertNull("did not expect a string for this level." + log , log);
 
         log = sreq.log("Debug", false, Level.DEBUG);
-        assert (log != null);
+        assertNotNull (log);
 
         logger.setLevel(Level.TRACE);
         log = sreq.log("Trace", true, Level.TRACE);
-        assert (log.contains(GetHostStatsCommand.class.getSimpleName()));
+        assertNotNull (log);
+        assertTrue(log.contains(GetHostStatsCommand.class.getSimpleName()));
         s_logger.debug(log);
 
         logger.setLevel(level);
     }
 
     protected void compareRequest(Request req1, Request req2) {
-        assert req1.getSequence() == req2.getSequence();
-        assert req1.getAgentId() == req2.getAgentId();
-        assert req1.getManagementServerId() == req2.getManagementServerId();
-        assert req1.isControl() == req2.isControl();
-        assert req1.isFromServer() == req2.isFromServer();
-        assert req1.executeInSequence() == req2.executeInSequence();
-        assert req1.stopOnError() == req2.stopOnError();
-        assert req1.getVersion().equals(req2.getVersion());
-        assert req1.getViaAgentId() == req2.getViaAgentId();
+        assertEquals(req1.getSequence(), req2.getSequence());
+        assertEquals(req1.getAgentId(), req2.getAgentId());
+        assertEquals(req1.getManagementServerId(), req2.getManagementServerId());
+        assertEquals(req1.isControl(), req2.isControl());
+        assertEquals(req1.isFromServer(), req2.isFromServer());
+        assertEquals(req1.executeInSequence(), req2.executeInSequence());
+        assertEquals(req1.stopOnError(), req2.stopOnError());
+        assertEquals(req1.getVersion(), req2.getVersion());
+        assertEquals(req1.getViaAgentId(), req2.getViaAgentId());
         Command[] cmd1 = req1.getCommands();
         Command[] cmd2 = req2.getCommands();
         for (int i = 0; i < cmd1.length; i++) {
-            assert cmd1[i].getClass().equals(cmd2[i].getClass());
+            assertEquals(cmd1[i].getClass(), cmd2[i].getClass());
         }
     }
 

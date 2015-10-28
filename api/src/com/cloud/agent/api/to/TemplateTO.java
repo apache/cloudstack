@@ -22,7 +22,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.template.VirtualMachineTemplate;
 
 public class TemplateTO implements InternalIdentity {
-    private long id;
+    private Long id;
     private String uniqueName;
     private ImageFormat format;
 
@@ -36,7 +36,7 @@ public class TemplateTO implements InternalIdentity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

@@ -49,7 +49,7 @@ public class EngineClusterVO implements EngineCluster, Identity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    long id;
+    Long id;
 
     @Column(name = "name")
     String name;
@@ -126,7 +126,7 @@ public class EngineClusterVO implements EngineCluster, Identity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

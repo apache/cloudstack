@@ -83,7 +83,7 @@ public class InstanceGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

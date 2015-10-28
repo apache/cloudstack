@@ -23,17 +23,17 @@ import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.vm.VirtualMachine;
 
 public class StopCommand extends RebootCommand {
-    private boolean isProxy = false;
+    private Boolean isProxy = false;
     private String urlPort = null;
     private String publicConsoleProxyIpAddress = null;
-    boolean executeInSequence = false;
+    Boolean executeInSequence = false;
     private GPUDeviceTO gpuDevice;
-    boolean checkBeforeCleanup = false;
+    Boolean checkBeforeCleanup = false;
 
     protected StopCommand() {
     }
 
-    public StopCommand(VirtualMachine vm, boolean isProxy, String urlPort, String publicConsoleProxyIpAddress, boolean executeInSequence, boolean checkBeforeCleanup) {
+    public StopCommand(VirtualMachine vm, Boolean isProxy, String urlPort, String publicConsoleProxyIpAddress, Boolean executeInSequence, Boolean checkBeforeCleanup) {
         super(vm);
         this.isProxy = isProxy;
         this.urlPort = urlPort;
@@ -42,20 +42,20 @@ public class StopCommand extends RebootCommand {
         this.checkBeforeCleanup = checkBeforeCleanup;
     }
 
-    public StopCommand(VirtualMachine vm, boolean executeInSequence, boolean checkBeforeCleanup) {
+    public StopCommand(VirtualMachine vm, Boolean executeInSequence, Boolean checkBeforeCleanup) {
         super(vm);
         this.executeInSequence = executeInSequence;
         this.checkBeforeCleanup = checkBeforeCleanup;
     }
 
-    public StopCommand(String vmName, boolean executeInSequence, boolean checkBeforeCleanup) {
+    public StopCommand(String vmName, Boolean executeInSequence, Boolean checkBeforeCleanup) {
         super(vmName);
         this.executeInSequence = executeInSequence;
         this.checkBeforeCleanup = checkBeforeCleanup;
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         //VR stop doesn't go through queue
         if (vmName != null && vmName.startsWith("r-")) {
             return false;
@@ -63,7 +63,7 @@ public class StopCommand extends RebootCommand {
         return executeInSequence;
     }
 
-    public boolean isProxy() {
+    public Boolean isProxy() {
         return this.isProxy;
     }
 
@@ -83,7 +83,7 @@ public class StopCommand extends RebootCommand {
         this.gpuDevice = gpuDevice;
     }
 
-    public boolean checkBeforeCleanup() {
+    public Boolean checkBeforeCleanup() {
         return this.checkBeforeCleanup;
     }
 }

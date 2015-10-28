@@ -100,7 +100,7 @@ public class CapacityVO implements Capacity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

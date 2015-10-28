@@ -161,7 +161,7 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         throw new UnsupportedOperationException("database id can only provided by VO objects");
     }
 

@@ -98,7 +98,7 @@ public class ClusterEntityImpl implements ClusterEntity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return clusterVO.getId();
     }
 

@@ -21,21 +21,21 @@ package com.cloud.agent.api;
 
 public class CheckNetworkAnswer extends Answer {
     // indicate if agent reconnect is needed after setupNetworkNames command
-    private boolean _reconnect;
+    private Boolean _reconnect;
 
     public CheckNetworkAnswer() {
     }
 
-    public CheckNetworkAnswer(CheckNetworkCommand cmd, boolean result, String details, boolean reconnect) {
+    public CheckNetworkAnswer(CheckNetworkCommand cmd, Boolean result, String details, Boolean reconnect) {
         super(cmd, result, details);
         _reconnect = reconnect;
     }
 
-    public CheckNetworkAnswer(CheckNetworkCommand cmd, boolean result, String details) {
+    public CheckNetworkAnswer(CheckNetworkCommand cmd, Boolean result, String details) {
         this(cmd, result, details, false);
     }
 
-    public boolean needReconnect() {
+    public Boolean needReconnect() {
         return _reconnect;
     }
 

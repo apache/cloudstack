@@ -25,11 +25,11 @@ public class ScaleVmCommand extends Command {
 
     VirtualMachineTO vm;
     String vmName;
-    int cpus;
+    Integer cpus;
     Integer minSpeed;
     Integer maxSpeed;
-    long minRam;
-    long maxRam;
+    Long minRam;
+    Long maxRam;
 
     public VirtualMachineTO getVm() {
         return vm;
@@ -39,11 +39,11 @@ public class ScaleVmCommand extends Command {
         this.vm = vm;
     }
 
-    public int getCpus() {
+    public Integer getCpus() {
         return cpus;
     }
 
-    public ScaleVmCommand(String vmName, int cpus, Integer minSpeed, Integer maxSpeed, long minRam, long maxRam, boolean limitCpuUse) {
+    public ScaleVmCommand(String vmName, Integer cpus, Integer minSpeed, Integer maxSpeed, Long minRam, Long maxRam, Boolean limitCpuUse) {
         super();
         this.vmName = vmName;
         this.cpus = cpus;
@@ -52,12 +52,9 @@ public class ScaleVmCommand extends Command {
         this.minRam = minRam;
         this.maxRam = maxRam;
         this.vm = new VirtualMachineTO(1L, vmName, null, cpus, minSpeed, maxSpeed, minRam, maxRam, null, null, false, limitCpuUse, null);
-        /*vm.setName(vmName);
-        vm.setCpus(cpus);
-        vm.setRam(minRam, maxRam);*/
     }
 
-    public void setCpus(int cpus) {
+    public void setCpus(Integer cpus) {
         this.cpus = cpus;
     }
 
@@ -77,19 +74,19 @@ public class ScaleVmCommand extends Command {
         this.maxSpeed = maxSpeed;
     }
 
-    public long getMinRam() {
+    public Long getMinRam() {
         return minRam;
     }
 
-    public void setMinRam(long minRam) {
+    public void setMinRam(Long minRam) {
         this.minRam = minRam;
     }
 
-    public long getMaxRam() {
+    public Long getMaxRam() {
         return maxRam;
     }
 
-    public void setMaxRam(long maxRam) {
+    public void setMaxRam(Long maxRam) {
         this.maxRam = maxRam;
     }
 
@@ -106,7 +103,7 @@ public class ScaleVmCommand extends Command {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 
@@ -117,8 +114,7 @@ public class ScaleVmCommand extends Command {
         this.vm = vm;
     }
 
-    public boolean getLimitCpuUse() {
-        // TODO Auto-generated method stub
+    public Boolean getLimitCpuUse() {
         return false;
     }
 

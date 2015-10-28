@@ -21,7 +21,7 @@ package org.apache.cloudstack.storage.command;
 
 public class TemplateOrVolumePostUploadCommand {
 
-    long entityId;
+    Long entityId;
 
     String entityUUID;
 
@@ -35,7 +35,7 @@ public class TemplateOrVolumePostUploadCommand {
 
     String localPath;
 
-    boolean requiresHvm;
+    Boolean requiresHvm;
 
     String imageFormat;
 
@@ -51,10 +51,10 @@ public class TemplateOrVolumePostUploadCommand {
 
     private String defaultMaxAccountSecondaryStorage;
 
-    private long accountId;
+    private Long accountId;
 
-    public TemplateOrVolumePostUploadCommand(long entityId, String entityUUID, String absolutePath, String checksum, String type, String name, String imageFormat, String dataTo,
-            String dataToRole) {
+    public TemplateOrVolumePostUploadCommand(Long entityId, String entityUUID, String absolutePath, String checksum, String type,
+            String name, String imageFormat, String dataTo, String dataToRole) {
         this.entityId = entityId;
         this.entityUUID = entityUUID;
         this.absolutePath = absolutePath;
@@ -101,11 +101,11 @@ public class TemplateOrVolumePostUploadCommand {
         this.localPath = localPath;
     }
 
-    public boolean getRequiresHvm() {
+    public Boolean getRequiresHvm() {
         return requiresHvm;
     }
 
-    public void setRequiresHvm(boolean requiresHvm) {
+    public void setRequiresHvm(Boolean requiresHvm) {
         this.requiresHvm = requiresHvm;
     }
 
@@ -117,11 +117,11 @@ public class TemplateOrVolumePostUploadCommand {
         this.imageFormat = imageFormat;
     }
 
-    public long getEntityId() {
+    public Long getEntityId() {
         return entityId;
     }
 
-    public void setEntityId(long entityId) {
+    public void setEntityId(Long entityId) {
         this.entityId = entityId;
     }
 
@@ -189,11 +189,11 @@ public class TemplateOrVolumePostUploadCommand {
         return defaultMaxAccountSecondaryStorage;
     }
 
-    public void setAccountId(long accountId) {
+    public void setAccountId(Long accountId) {
         this.accountId = accountId;
     }
 
-    public long getAccountId() {
+    public Long getAccountId() {
         return accountId;
     }
 }

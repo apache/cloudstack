@@ -21,7 +21,7 @@ package com.cloud.agent.api.routing;
 
 public class Site2SiteVpnCfgCommand extends NetworkElementCommand {
 
-    private boolean create;
+    private Boolean create;
     private String localPublicIp;
     private String localGuestCidr;
     private String localPublicGateway;
@@ -30,13 +30,13 @@ public class Site2SiteVpnCfgCommand extends NetworkElementCommand {
     private String ipsecPsk;
     private String ikePolicy;
     private String espPolicy;
-    private long ikeLifetime;
-    private long espLifetime;
-    private boolean dpd;
-    private boolean passive;
+    private Long ikeLifetime;
+    private Long espLifetime;
+    private Boolean dpd;
+    private Boolean passive;
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 
@@ -44,8 +44,8 @@ public class Site2SiteVpnCfgCommand extends NetworkElementCommand {
         this.create = false;
     }
 
-    public Site2SiteVpnCfgCommand(boolean create, String localPublicIp, String localPublicGateway, String localGuestCidr, String peerGatewayIp, String peerGuestCidrList,
-            String ikePolicy, String espPolicy, String ipsecPsk, Long ikeLifetime, Long espLifetime, Boolean dpd, boolean passive) {
+    public Site2SiteVpnCfgCommand(Boolean create, String localPublicIp, String localPublicGateway, String localGuestCidr, String peerGatewayIp, String peerGuestCidrList,
+            String ikePolicy, String espPolicy, String ipsecPsk, Long ikeLifetime, Long espLifetime, Boolean dpd, Boolean passive) {
         this.create = create;
         this.setLocalPublicIp(localPublicIp);
         this.setLocalPublicGateway(localPublicGateway);
@@ -61,11 +61,11 @@ public class Site2SiteVpnCfgCommand extends NetworkElementCommand {
         this.passive = passive;
     }
 
-    public boolean isCreate() {
+    public Boolean isCreate() {
         return create;
     }
 
-    public void setCreate(boolean create) {
+    public void setCreate(Boolean create) {
         this.create = create;
     }
 
@@ -93,19 +93,19 @@ public class Site2SiteVpnCfgCommand extends NetworkElementCommand {
         this.espPolicy = espPolicy;
     }
 
-    public long getIkeLifetime() {
+    public Long getIkeLifetime() {
         return ikeLifetime;
     }
 
-    public void setikeLifetime(long ikeLifetime) {
+    public void setikeLifetime(Long ikeLifetime) {
         this.ikeLifetime = ikeLifetime;
     }
 
-    public long getEspLifetime() {
+    public Long getEspLifetime() {
         return espLifetime;
     }
 
-    public void setEspLifetime(long espLifetime) {
+    public void setEspLifetime(Long espLifetime) {
         this.espLifetime = espLifetime;
     }
 
@@ -157,11 +157,11 @@ public class Site2SiteVpnCfgCommand extends NetworkElementCommand {
         this.peerGuestCidrList = peerGuestCidrList;
     }
 
-    public boolean isPassive() {
+    public Boolean isPassive() {
         return passive;
     }
 
-    public void setPassive(boolean passive) {
+    public void setPassive(Boolean passive) {
         this.passive = passive;
     }
 }

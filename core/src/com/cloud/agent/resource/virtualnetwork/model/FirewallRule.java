@@ -42,13 +42,13 @@ public class FirewallRule {
         // Empty constructor for (de)serialization
     }
 
-    public FirewallRule(long id, String srcVlanTag, String srcIp, String protocol, int[] srcPortRange, boolean revoked, boolean alreadyAdded, List<String> sourceCidrList,
+    public FirewallRule(long id, String srcVlanTag, String srcIp, String protocol, Integer[] srcPortRange, boolean revoked, boolean alreadyAdded, List<String> sourceCidrList,
             String purpose, Integer icmpType, Integer icmpCode, String trafficType, String guestCidr, boolean defaultEgressPolicy) {
         this.id = id;
         this.srcVlanTag = srcVlanTag;
         this.srcIp = srcIp;
         this.protocol = protocol;
-        this.srcPortRange = srcPortRange;
+        this.srcPortRange = new int[] {srcPortRange[0], srcPortRange[1]};
         this.revoked = revoked;
         this.alreadyAdded = alreadyAdded;
         this.sourceCidrList = sourceCidrList;

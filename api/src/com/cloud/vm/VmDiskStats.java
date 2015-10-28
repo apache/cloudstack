@@ -19,12 +19,12 @@ package com.cloud.vm;
 public interface VmDiskStats {
     // vm related disk stats
 
-    public long getIORead();
+    public Long getIORead();
 
-    public long getIOWrite();
+    public Long getIOWrite();
 
-    public long getBytesRead();
+    public Long getBytesRead();
 
-    public long getBytesWrite();
+    public Long getBytesWrite();
 
 }

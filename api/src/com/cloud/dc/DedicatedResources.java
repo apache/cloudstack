@@ -22,7 +22,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface DedicatedResources extends InfrastructureEntity, InternalIdentity, Identity {
     @Override
-    long getId();
+    Long getId();
 
     Long getDataCenterId();
 

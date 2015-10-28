@@ -27,7 +27,7 @@ import com.cloud.utils.net.NetUtils;
  */
 public class PortForwardingRuleTO extends FirewallRuleTO {
     String dstIp;
-    int[] dstPortRange;
+    Integer[] dstPortRange;
 
     protected PortForwardingRuleTO() {
         super();
@@ -36,21 +36,21 @@ public class PortForwardingRuleTO extends FirewallRuleTO {
     public PortForwardingRuleTO(PortForwardingRule rule, String srcVlanTag, String srcIp) {
         super(rule, srcVlanTag, srcIp);
         this.dstIp = rule.getDestinationIpAddress().addr();
-        this.dstPortRange = new int[] {rule.getDestinationPortStart(), rule.getDestinationPortEnd()};
+        this.dstPortRange = new Integer[] {rule.getDestinationPortStart(), rule.getDestinationPortEnd()};
     }
 
     public PortForwardingRuleTO(long id, String srcIp, int srcPortStart, int srcPortEnd, String dstIp, int dstPortStart, int dstPortEnd, String protocol,
             boolean revoked, boolean alreadyAdded) {
         super(id, null, srcIp, protocol, srcPortStart, srcPortEnd, revoked, alreadyAdded, FirewallRule.Purpose.PortForwarding, null, 0, 0);
         this.dstIp = dstIp;
-        this.dstPortRange = new int[] {dstPortStart, dstPortEnd};
+        this.dstPortRange = new Integer[] {dstPortStart, dstPortEnd};
     }
 
     public String getDstIp() {
         return dstIp;
     }
 
-    public int[] getDstPortRange() {
+    public Integer[] getDstPortRange() {
         return dstPortRange;
     }
 

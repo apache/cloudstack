@@ -30,7 +30,7 @@ public class RebootAnswer extends Answer {
         this.vncPort = vncport;
     }
 
-    public RebootAnswer(RebootCommand cmd, String details, boolean success) {
+    public RebootAnswer(RebootCommand cmd, String details, Boolean success) {
         super(cmd, success, details);
         this.vncPort = null;
     }

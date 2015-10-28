@@ -23,18 +23,18 @@ import com.cloud.agent.api.to.IpAddressTO;
 
 public class SetSourceNatCommand extends NetworkElementCommand {
     IpAddressTO ipAddress;
-    boolean add;
+    Boolean add;
 
     protected SetSourceNatCommand() {
     }
 
-    public SetSourceNatCommand(IpAddressTO ip, boolean add) {
+    public SetSourceNatCommand(IpAddressTO ip, Boolean add) {
         this.ipAddress = ip;
         this.add = add;
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 

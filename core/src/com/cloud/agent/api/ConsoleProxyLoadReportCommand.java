@@ -21,18 +21,18 @@ package com.cloud.agent.api;
 
 public class ConsoleProxyLoadReportCommand extends AgentControlCommand {
 
-    private long _proxyVmId;
+    private Long _proxyVmId;
     private String _loadInfo;
 
     public ConsoleProxyLoadReportCommand() {
     }
 
-    public ConsoleProxyLoadReportCommand(long proxyVmId, String loadInfo) {
+    public ConsoleProxyLoadReportCommand(Long proxyVmId, String loadInfo) {
         _proxyVmId = proxyVmId;
         _loadInfo = loadInfo;
     }
 
-    public long getProxyVmId() {
+    public Long getProxyVmId() {
         return _proxyVmId;
     }
 
