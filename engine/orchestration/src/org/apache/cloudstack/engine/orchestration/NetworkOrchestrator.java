@@ -744,7 +744,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
                         Pair<NicProfile, Integer> vmNicPair = allocateNic(requested, config, isDefaultNic, deviceId, vm);
                         NicProfile vmNic = null;
-                        if(vmNicPair != null) {
+                        if (vmNicPair != null) {
                             vmNic = vmNicPair.first();
                             if (vmNic == null) {
                                 continue;
@@ -1244,12 +1244,16 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         return false;
                     }
                 }
-                sp.addDhcpEntry(network, profile, vmProfile, dest, context);
+                if(!sp.addDhcpEntry(network, profile, vmProfile, dest, context)) {
+                    return false;
+                }
             }
             if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.UserData)
                     && _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.UserData, element.getProvider()) && element instanceof UserDataServiceProvider) {
                 UserDataServiceProvider sp = (UserDataServiceProvider)element;
-                sp.addPasswordAndUserdata(network, profile, vmProfile, dest, context);
+                if(!sp.addPasswordAndUserdata(network, profile, vmProfile, dest, context)){
+                    return false;
+                }
             }
         }
         return true;
