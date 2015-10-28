@@ -1748,6 +1748,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final HostVO srcHost = _hostDao.findById(srchostId);
         final Long srcClusterId = srcHost.getClusterId();
 
+        if (destPool == null) {
+            throw new CloudRuntimeException("Unable to migrate vm: missing destination storage pool");
+        }
+
         try {
             stateTransitTo(vm, VirtualMachine.Event.StorageMigrationRequested, null);
         } catch (final NoTransitionException e) {
@@ -1763,7 +1767,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (migrationResult) {
                 //if the vm is migrated to different pod in basic mode, need to reallocate ip
 
-                if (!vm.getPodIdToDeployIn().equals(destPool.getPodId())) {
+                if (destPool.getPodId() != null && !destPool.getPodId().equals(vm.getPodIdToDeployIn())) {
                     final DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), destPool.getPodId(), null, null, null, null);
                     final VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, null, null, null, null);
                     _networkMgr.reallocate(vmProfile, plan);
