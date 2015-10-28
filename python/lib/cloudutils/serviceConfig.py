@@ -678,7 +678,8 @@ class cloudAgentConfig(serviceCfgBase):
             cfo.addEntry("guid", str(self.syscfg.env.uuid))
             if cfo.getEntry("local.storage.uuid") == "":
                 cfo.addEntry("local.storage.uuid", str(bash("uuidgen").getStdout()))
-            cfo.addEntry("resource", "com.cloud.hypervisor.kvm.resource.LibvirtComputingResource")
+            if cfo.getEntry("resource") == "":
+                cfo.addEntry("resource", "com.cloud.hypervisor.kvm.resource.LibvirtComputingResource")
             cfo.save()
 
             self.syscfg.svo.stopService("cloudstack-agent")
