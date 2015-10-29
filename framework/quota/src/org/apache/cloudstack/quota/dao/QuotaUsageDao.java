@@ -24,6 +24,10 @@ import java.util.Date;
 import java.util.List;
 
 public interface QuotaUsageDao extends GenericDao<QuotaUsageVO, Long> {
+
+    QuotaUsageVO persistQuotaUsage(QuotaUsageVO quotaUsage);
+
     List<QuotaUsageVO> findQuotaUsage(Long accountId, Long domainId, Integer usageType, Date startDate, Date endDate);
+
     BigDecimal findTotalQuotaUsage(Long accountId, Long domainId, Integer usageType, Date startDate, Date endDate);
 }

@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.api.response.QuotaTariffResponse;
+import org.apache.cloudstack.quota.QuotaManager;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.log4j.Logger;
 
@@ -42,6 +43,9 @@ public class QuotaTariffListCmd extends BaseListCmd {
     @Inject
     QuotaResponseBuilder _responseBuilder;
 
+    @Inject
+    QuotaManager _quotaManager;
+
     @Parameter(name = ApiConstants.USAGE_TYPE, type = CommandType.INTEGER, required = false, description = "Usage type of the resource")
     private Integer usageType;
 
@@ -54,11 +58,13 @@ public class QuotaTariffListCmd extends BaseListCmd {
 
     @Override
     public void execute() {
+        _quotaManager.calculateQuotaUsage();
+
         final List<QuotaTariffVO> result = _responseBuilder.listQuotaTariffPlans(this);
 
         final List<QuotaTariffResponse> responses = new ArrayList<QuotaTariffResponse>();
         for (final QuotaTariffVO resource : result) {
-            if (s_logger.isDebugEnabled()){
+            if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Result desc=" + resource.getDescription() + " date=" + resource.getEffectiveOn() + " val=" + resource.getCurrencyValue());
             }
             responses.add(_responseBuilder.createQuotaTariffResponse(resource));

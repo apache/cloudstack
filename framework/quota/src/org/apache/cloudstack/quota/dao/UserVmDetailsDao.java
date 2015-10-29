@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.quota.dao;
 
-
 import java.util.Map;
 
 import com.cloud.utils.db.GenericDao;

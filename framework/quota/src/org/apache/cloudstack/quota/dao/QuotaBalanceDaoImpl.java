@@ -39,11 +39,10 @@ import java.util.Date;
 import java.util.List;
 
 @Component
-@Local(value = { QuotaBalanceDao.class })
+@Local(value = {QuotaBalanceDao.class})
 public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> implements QuotaBalanceDao {
     private static final Logger s_logger = Logger.getLogger(QuotaBalanceDaoImpl.class.getName());
 
-    @Override
     public QuotaBalanceVO findLastBalanceEntry(final Long accountId, final Long domainId, final Date beforeThis) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<QuotaBalanceVO>() {
             @Override
@@ -61,7 +60,6 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
         });
     }
 
-    @Override
     public QuotaBalanceVO findLaterBalanceEntry(final Long accountId, final Long domainId, final Date afterThis) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<QuotaBalanceVO>() {
             @Override
@@ -79,20 +77,15 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
         });
     }
 
-    @Override
-    public void saveQuotaBalance(final List<QuotaBalanceVO> credits) {
-        Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<Void>() {
+    public QuotaBalanceVO saveQuotaBalance(final QuotaBalanceVO qb) {
+        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<QuotaBalanceVO>() {
             @Override
-            public Void doInTransaction(final TransactionStatus status) {
-                for (QuotaBalanceVO credit : credits) {
-                    persist(credit);
-                }
-                return null;
+            public QuotaBalanceVO doInTransaction(final TransactionStatus status) {
+                return persist(qb);
             }
         });
     }
 
-    @Override
     public List<QuotaBalanceVO> findCreditBalance(final Long accountId, final Long domainId, final Date lastbalancedate, final Date beforeThis) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaBalanceVO>>() {
             @Override
@@ -112,7 +105,6 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
         });
     }
 
-    @Override
     public List<QuotaBalanceVO> findQuotaBalance(final Long accountId, final Long domainId, final Date startDate, final Date endDate) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaBalanceVO>>() {
             @Override
@@ -141,7 +133,6 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
 
     }
 
-    @Override
     public List<QuotaBalanceVO> lastQuotaBalanceVO(final Long accountId, final Long domainId, final Date pivotDate) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaBalanceVO>>() {
             @Override
@@ -180,7 +171,6 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
         });
     }
 
-    @Override
     public BigDecimal lastQuotaBalance(final Long accountId, final Long domainId, Date startDate) {
         List<QuotaBalanceVO> quotaBalance = lastQuotaBalanceVO(accountId, domainId, startDate);
         if (quotaBalance.size() == 0) {

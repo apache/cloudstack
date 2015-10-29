@@ -36,7 +36,7 @@ import java.util.Date;
 import java.util.List;
 
 @Component
-@Local(value = { QuotaTariffDao.class })
+@Local(value = {QuotaTariffDao.class})
 public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> implements QuotaTariffDao {
     private static final Logger s_logger = Logger.getLogger(QuotaTariffDaoImpl.class.getName());
 
@@ -55,7 +55,6 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         listAllIncludedUsageType.done();
     }
 
-    @Override
     public QuotaTariffVO findTariffPlanByUsageType(final int quotaType, final Date effectiveDate) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<QuotaTariffVO>() {
             @Override
@@ -67,9 +66,6 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
                 sc.setParameters("quotatype", quotaType);
                 result = search(sc, filter);
                 if (result != null && !result.isEmpty()) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("QuotaTariffDaoImpl::findTariffPlanByUsageType: " + effectiveDate + "quota type " + quotaType + " val=" + result.get(0).getCurrencyValue());
-                    }
                     return result.get(0);
                 } else {
                     if (s_logger.isDebugEnabled()) {
@@ -81,8 +77,7 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         });
     }
 
-    @Override
-    public List<QuotaTariffVO> listAll() {
+    public List<QuotaTariffVO> listAllTariffPlans() {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaTariffVO>>() {
             @Override
             public List<QuotaTariffVO> doInTransaction(final TransactionStatus status) {
@@ -91,7 +86,6 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         });
     }
 
-    @Override
     public List<QuotaTariffVO> listAllTariffPlans(final Date effectiveDate) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaTariffVO>>() {
             @Override
@@ -105,8 +99,8 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
                     List<QuotaTariffVO> result = search(sc, filter);
                     if (result != null && !result.isEmpty()) {
                         tariffs.add(result.get(0));
-                        s_logger.debug("ListAllTariffPlans on or before " + effectiveDate + " quota type " + result.get(0).getDescription() + " , effective Date=" + result.get(0).getEffectiveOn()
-                                + " val=" + result.get(0).getCurrencyValue());
+                        s_logger.debug("ListAllTariffPlans on or before " + effectiveDate + " quota type " + result.get(0).getDescription() + " , effective Date="
+                                + result.get(0).getEffectiveOn() + " val=" + result.get(0).getCurrencyValue());
                     }
                 }
                 return tariffs;
@@ -114,7 +108,6 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         });
     }
 
-    @Override
     public Boolean updateQuotaTariff(final QuotaTariffVO plan) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<Boolean>() {
             @Override
@@ -124,7 +117,6 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         });
     }
 
-    @Override
     public QuotaTariffVO addQuotaTariff(final QuotaTariffVO plan) {
         if (plan.getIdObj() != null) {
             throw new IllegalStateException("The QuotaTariffVO being added should not have an Id set ");

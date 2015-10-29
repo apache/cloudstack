@@ -123,7 +123,7 @@ public class QuotaCreditsCmd extends BaseCmd {
         if (getValue() == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please send a valid non-empty quota value");
         }
-        if (getQuotaEnforce() != null) {
+        if (getQuotaEnforce() != null && getQuotaEnforce()) {
             _quotaService.setLockAccount(accountId, getQuotaEnforce());
         }
         if (getMinBalance() != null) {

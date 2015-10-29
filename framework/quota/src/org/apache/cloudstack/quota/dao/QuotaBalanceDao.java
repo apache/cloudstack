@@ -26,7 +26,7 @@ import com.cloud.utils.db.GenericDao;
 
 public interface QuotaBalanceDao extends GenericDao<QuotaBalanceVO, Long> {
 
-    void saveQuotaBalance(List<QuotaBalanceVO> credits);
+    QuotaBalanceVO saveQuotaBalance(QuotaBalanceVO qb);
 
     List<QuotaBalanceVO> findCreditBalance(Long accountId, Long domainId, Date startDate, Date endDate);
 

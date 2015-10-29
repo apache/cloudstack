@@ -22,10 +22,6 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallback;
-import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.db.TransactionStatus;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
@@ -83,8 +79,6 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     final static BigDecimal s_minutesInMonth = new BigDecimal(30 * 24 * 60);
     final static BigDecimal s_gb = new BigDecimal(1024 * 1024 * 1024);
 
-    int _pid = -1;
-
     public QuotaManagerImpl() {
         super();
     }
@@ -128,7 +122,6 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Starting Quota Manager");
         }
-        _pid = Integer.parseInt(System.getProperty("pid"));
         return true;
     }
 
@@ -194,69 +187,75 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         Date endDate = quotaListForAccount.get(0).getEndDate();
         BigDecimal aggrUsage = new BigDecimal(0);
         for (QuotaUsageVO entry : quotaListForAccount) {
+            if (entry.getQuotaUsed().compareTo(BigDecimal.ZERO) == 0) {
+                continue;
+            }
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(account.getAccountName() + ", Entry=" + entry.getQuotaUsed().setScale(6, RoundingMode.HALF_EVEN).toString() + " SD=" + entry.getStartDate() + " ED="
+                        + entry.getEndDate());
+            }
             if (startDate.compareTo(entry.getStartDate()) != 0) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(
+                            "Saving Balance" + account.getAccountName() + ",Balance entry=" + aggrUsage.setScale(6, RoundingMode.HALF_EVEN).toString() + " on Date=" + endDate);
+                }
+                QuotaBalanceVO newBalance = new QuotaBalanceVO(account.getAccountId(), account.getDomainId(), aggrUsage, endDate);
+                _quotaBalanceDao.saveQuotaBalance(newBalance);
+
+                //New balance entry
+                aggrUsage = new BigDecimal(0);
+                startDate = entry.getStartDate();
+                endDate = entry.getEndDate();
+
                 QuotaBalanceVO lastRealBalanceEntry = _quotaBalanceDao.findLastBalanceEntry(account.getAccountId(), account.getDomainId(), startDate);
                 Date lastBalanceDate = new Date(0);
                 if (lastRealBalanceEntry != null) {
                     lastBalanceDate = lastRealBalanceEntry.getUpdatedOn();
                     aggrUsage = aggrUsage.add(lastRealBalanceEntry.getCreditBalance());
                 }
-
                 List<QuotaBalanceVO> creditsReceived = _quotaBalanceDao.findCreditBalance(account.getAccountId(), account.getDomainId(), lastBalanceDate, endDate);
                 if (creditsReceived != null) {
                     for (QuotaBalanceVO credit : creditsReceived) {
                         aggrUsage = aggrUsage.add(credit.getCreditBalance());
                     }
                 }
-
-                QuotaBalanceVO newBalance = new QuotaBalanceVO(account.getAccountId(), account.getDomainId(), aggrUsage, endDate);
-
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Balance entry=" + aggrUsage + " on Date=" + endDate);
+                    s_logger.debug(
+                            "Getting Balance" + account.getAccountName() + ",Balance entry=" + aggrUsage.setScale(6, RoundingMode.HALF_EVEN).toString() + " on Date=" + endDate);
                 }
-                _quotaBalanceDao.persist(newBalance);
-                aggrUsage = new BigDecimal(0);
             }
-            startDate = entry.getStartDate();
-            endDate = entry.getEndDate();
             aggrUsage = aggrUsage.subtract(entry.getQuotaUsed());
         }
 
         // update quota_accounts
-        QuotaAccountVO quota_account = _quotaAcc.findById(account.getAccountId());
+        QuotaAccountVO quota_account = _quotaAcc.findByIdQuotaAccount(account.getAccountId());
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Updating quota account bal=" + aggrUsage + " date=" + endDate);
+            s_logger.debug("Updating quota account bal=" + aggrUsage.setScale(6, RoundingMode.HALF_EVEN).toString() + " date=" + endDate);
         }
         if (quota_account == null) {
             quota_account = new QuotaAccountVO(account.getAccountId());
             quota_account.setQuotaBalance(aggrUsage);
             quota_account.setQuotaBalanceDate(endDate);
-            _quotaAcc.persist(quota_account);
+            _quotaAcc.persistQuotaAccount(quota_account);
         } else {
             quota_account.setQuotaBalance(aggrUsage);
             quota_account.setQuotaBalanceDate(endDate);
-            _quotaAcc.update(account.getAccountId(), quota_account);
+            _quotaAcc.updateQuotaAccount(account.getAccountId(), quota_account);
         }
     }
 
     @Override
     public boolean calculateQuotaUsage() {
-        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<Boolean>() {
-            @Override
-            public Boolean doInTransaction(final TransactionStatus status) {
-                boolean jobResult = false;
-                List<AccountVO> accounts = _accountDao.listAll();
-                for (AccountVO account : accounts) {
-                    Pair<List<? extends UsageVO>, Integer> usageRecords = _usageDao.getUsageRecordsPendingQuotaAggregation(account.getAccountId(), account.getDomainId());
-                    List<QuotaUsageVO> quotaListForAccount = aggregatePendingQuotaRecordsForAccount(account, usageRecords);
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Quota entries size = " + quotaListForAccount.size() + ", accId" + account.getAccountId() + ", domId" + account.getDomainId());
-                    }
-                    processQuotaBalanceForAccount(account, quotaListForAccount);
-                }
-                return true;
+        List<AccountVO> accounts = _accountDao.listAll();
+        for (AccountVO account : accounts) {
+            Pair<List<? extends UsageVO>, Integer> usageRecords = _usageDao.getUsageRecordsPendingQuotaAggregation(account.getAccountId(), account.getDomainId());
+            List<QuotaUsageVO> quotaListForAccount = aggregatePendingQuotaRecordsForAccount(account, usageRecords);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Quota entries size = " + quotaListForAccount.size() + ", accId" + account.getAccountId() + ", domId" + account.getDomainId());
             }
-        });
+            processQuotaBalanceForAccount(account, quotaListForAccount);
+        }
+        return true;
     }
 
     public QuotaUsageVO updateQuotaDiskUsage(UsageVO usageRecord, final BigDecimal aggregationRatio, final int quotaType) {
@@ -271,10 +270,10 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             quotaUsgage = new BigDecimal(usageRecord.getRawUsage()).multiply(onehourcostpergb).multiply(noofgbinuse);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), usageRecord.getUsageType(),
                     quotaUsgage, usageRecord.getStartDate(), usageRecord.getEndDate());
-            _quotaUsageDao.persist(quota_usage);
+            _quotaUsageDao.persistQuotaUsage(quota_usage);
         }
         usageRecord.setQuotaCalculated(1);
-        _usageDao.persist(usageRecord);
+        _usageDao.persistUsage(usageRecord);
         return quota_usage;
     }
 
@@ -295,7 +294,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             cpuquotausgage = rawusage.multiply(onehourcostpercpu).multiply(cpu);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), QuotaTypes.CPU_NUMBER,
                     cpuquotausgage, usageRecord.getStartDate(), usageRecord.getEndDate());
-            _quotaUsageDao.persist(quota_usage);
+            _quotaUsageDao.persistQuotaUsage(quota_usage);
             quotalist.add(quota_usage);
         }
         tariff = _quotaTariffDao.findTariffPlanByUsageType(QuotaTypes.CPU_CLOCK_RATE, usageRecord.getEndDate());
@@ -305,7 +304,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             speedquotausage = rawusage.multiply(onehourcostper100mhz).multiply(speed);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), QuotaTypes.CPU_CLOCK_RATE,
                     speedquotausage, usageRecord.getStartDate(), usageRecord.getEndDate());
-            _quotaUsageDao.persist(quota_usage);
+            _quotaUsageDao.persistQuotaUsage(quota_usage);
             quotalist.add(quota_usage);
         }
         tariff = _quotaTariffDao.findTariffPlanByUsageType(QuotaTypes.MEMORY, usageRecord.getEndDate());
@@ -315,7 +314,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             memoryquotausage = rawusage.multiply(onehourcostper1mb).multiply(memory);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), QuotaTypes.MEMORY, memoryquotausage,
                     usageRecord.getStartDate(), usageRecord.getEndDate());
-            _quotaUsageDao.persist(quota_usage);
+            _quotaUsageDao.persistQuotaUsage(quota_usage);
             quotalist.add(quota_usage);
         }
         tariff = _quotaTariffDao.findTariffPlanByUsageType(QuotaTypes.RUNNING_VM, usageRecord.getEndDate());
@@ -324,12 +323,12 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             vmusage = rawusage.multiply(onehourcostforvmusage);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), QuotaTypes.RUNNING_VM, vmusage,
                     usageRecord.getStartDate(), usageRecord.getEndDate());
-            _quotaUsageDao.persist(quota_usage);
+            _quotaUsageDao.persistQuotaUsage(quota_usage);
             quotalist.add(quota_usage);
         }
 
         usageRecord.setQuotaCalculated(1);
-        _usageDao.persist(usageRecord);
+        _usageDao.persistUsage(usageRecord);
         return quotalist;
     }
 
@@ -343,11 +342,11 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             vmusage = new BigDecimal(usageRecord.getRawUsage()).multiply(onehourcostforvmusage);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), QuotaTypes.ALLOCATED_VM, vmusage,
                     usageRecord.getStartDate(), usageRecord.getEndDate());
-            _quotaUsageDao.persist(quota_usage);
+            _quotaUsageDao.persistQuotaUsage(quota_usage);
         }
 
         usageRecord.setQuotaCalculated(1);
-        _usageDao.persist(usageRecord);
+        _usageDao.persistUsage(usageRecord);
         return quota_usage;
     }
 
@@ -361,11 +360,11 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             ruleusage = new BigDecimal(usageRecord.getRawUsage()).multiply(onehourcost);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), ruleType, ruleusage,
                     usageRecord.getStartDate(), usageRecord.getEndDate());
-            _quotaUsageDao.persist(quota_usage);
+            _quotaUsageDao.persistQuotaUsage(quota_usage);
         }
 
         usageRecord.setQuotaCalculated(1);
-        _usageDao.persist(usageRecord);
+        _usageDao.persistUsage(usageRecord);
         return quota_usage;
     }
 
@@ -381,11 +380,11 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             networkusage = rawusageingb.multiply(onegbcost);
             quota_usage = new QuotaUsageVO(usageRecord.getId(), usageRecord.getZoneId(), usageRecord.getAccountId(), usageRecord.getDomainId(), transferType, networkusage,
                     usageRecord.getStartDate(), usageRecord.getEndDate());
-            _quotaUsageDao.persist(quota_usage);
+            _quotaUsageDao.persistQuotaUsage(quota_usage);
         }
 
         usageRecord.setQuotaCalculated(1);
-        _usageDao.persist(usageRecord);
+        _usageDao.persistUsage(usageRecord);
         return quota_usage;
     }
 

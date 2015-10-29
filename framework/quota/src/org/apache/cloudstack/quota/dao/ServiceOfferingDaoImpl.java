@@ -35,7 +35,7 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value = { ServiceOfferingDao.class })
+@Local(value = {ServiceOfferingDao.class})
 @DB()
 public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Long> implements ServiceOfferingDao {
     protected static final Logger s_logger = Logger.getLogger(ServiceOfferingDaoImpl.class);
@@ -43,17 +43,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     @Inject
     UserVmDetailsDao userVmDetailsDao;
 
-    @Override
     public ServiceOfferingVO findServiceOffering(final Long vmId, final long serviceOfferingId) {
-        return Transaction.execute(TransactionLegacy.CLOUD_DB, new TransactionCallback<ServiceOfferingVO>() {
-            @Override
-            public ServiceOfferingVO doInTransaction(final TransactionStatus status) {
-                return findById(vmId, serviceOfferingId);
-            }
-        });
-    }
-
-    private ServiceOfferingVO findById(final Long vmId, final long serviceOfferingId) {
         return Transaction.execute(TransactionLegacy.CLOUD_DB, new TransactionCallback<ServiceOfferingVO>() {
             @Override
             public ServiceOfferingVO doInTransaction(final TransactionStatus status) {

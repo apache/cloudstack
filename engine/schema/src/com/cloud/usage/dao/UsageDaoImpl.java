@@ -46,7 +46,7 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value = { UsageDao.class })
+@Local(value = {UsageDao.class})
 public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements UsageDao {
     public static final Logger s_logger = Logger.getLogger(UsageDaoImpl.class.getName());
     private static final String DELETE_ALL = "DELETE FROM cloud_usage";
@@ -451,7 +451,15 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
         }
     }
 
-    @Override
+    public UsageVO persistUsage(final UsageVO usage) {
+        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<UsageVO>() {
+            @Override
+            public UsageVO doInTransaction(final TransactionStatus status) {
+                return persist(usage);
+            }
+        });
+    }
+
     public Pair<List<? extends UsageVO>, Integer> getUsageRecordsPendingQuotaAggregation(final long accountId, final long domainId) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Getting usage records for account: " + accountId + ", domainId: " + domainId);

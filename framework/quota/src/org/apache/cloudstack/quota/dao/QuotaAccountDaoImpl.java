@@ -35,8 +35,7 @@ import java.util.List;
 public class QuotaAccountDaoImpl extends GenericDaoBase<QuotaAccountVO, Long> implements QuotaAccountDao {
     public static final Logger s_logger = Logger.getLogger(QuotaAccountDaoImpl.class);
 
-    @Override
-    public List<QuotaAccountVO> listAll() {
+    public List<QuotaAccountVO> listAllQuotaAccount() {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaAccountVO>>() {
             @Override
             public List<QuotaAccountVO> doInTransaction(final TransactionStatus status) {
@@ -45,8 +44,7 @@ public class QuotaAccountDaoImpl extends GenericDaoBase<QuotaAccountVO, Long> im
         });
     }
 
-    @Override
-    public QuotaAccountVO findById(final Long id) {
+    public QuotaAccountVO findByIdQuotaAccount(final Long id) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<QuotaAccountVO>() {
             @Override
             public QuotaAccountVO doInTransaction(final TransactionStatus status) {
@@ -55,8 +53,7 @@ public class QuotaAccountDaoImpl extends GenericDaoBase<QuotaAccountVO, Long> im
         });
     }
 
-    @Override
-    public QuotaAccountVO persist(final QuotaAccountVO entity) {
+    public QuotaAccountVO persistQuotaAccount(final QuotaAccountVO entity) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<QuotaAccountVO>() {
             @Override
             public QuotaAccountVO doInTransaction(final TransactionStatus status) {
@@ -65,8 +62,7 @@ public class QuotaAccountDaoImpl extends GenericDaoBase<QuotaAccountVO, Long> im
         });
     }
 
-    @Override
-    public boolean update(final Long id, final QuotaAccountVO entity) {
+    public boolean updateQuotaAccount(final Long id, final QuotaAccountVO entity) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(final TransactionStatus status) {

@@ -27,6 +27,8 @@ public interface QuotaTariffDao extends GenericDao<QuotaTariffVO, Long> {
 
     QuotaTariffVO findTariffPlanByUsageType(int quotaType, Date onOrBefore);
 
+    List<QuotaTariffVO> listAllTariffPlans();
+
     List<QuotaTariffVO> listAllTariffPlans(Date onOrBefore);
 
     Boolean updateQuotaTariff(QuotaTariffVO plan);

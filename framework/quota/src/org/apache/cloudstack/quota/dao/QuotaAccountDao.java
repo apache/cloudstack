@@ -24,12 +24,12 @@ import com.cloud.utils.db.GenericDao;
 
 public interface QuotaAccountDao extends GenericDao<QuotaAccountVO, Long> {
 
-    List<QuotaAccountVO> listAll();
+    List<QuotaAccountVO> listAllQuotaAccount();
 
-    QuotaAccountVO findById(Long id);
+    QuotaAccountVO findByIdQuotaAccount(Long id);
 
-    QuotaAccountVO persist(QuotaAccountVO entity);
+    QuotaAccountVO persistQuotaAccount(QuotaAccountVO entity);
 
-    boolean update(Long id, QuotaAccountVO entity);
+    boolean updateQuotaAccount(Long id, QuotaAccountVO entity);
 
 }

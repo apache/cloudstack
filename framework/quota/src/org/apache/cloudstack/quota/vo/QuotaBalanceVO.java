@@ -57,7 +57,7 @@ public class QuotaBalanceVO implements InternalIdentity {
     public QuotaBalanceVO() {
     }
 
-    public QuotaBalanceVO(QuotaCreditsVO credit) {
+    public QuotaBalanceVO(final QuotaCreditsVO credit) {
         super();
         this.accountId = credit.getAccountId();
         this.domainId = credit.getDomainId();
@@ -66,7 +66,7 @@ public class QuotaBalanceVO implements InternalIdentity {
         this.creditsId = credit.getId();
     }
 
-    public QuotaBalanceVO(Long accountId, Long domainId, BigDecimal creditBalance, Date updatedOn) {
+    public QuotaBalanceVO(final Long accountId, final Long domainId, final BigDecimal creditBalance, final Date updatedOn) {
         super();
         this.accountId = accountId;
         this.domainId = domainId;

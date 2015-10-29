@@ -27,5 +27,6 @@
 
     <bean id="QuotaService" class="org.apache.cloudstack.quota.QuotaServiceImpl" />
     <bean id="QuotaResponseBuilder" class="org.apache.cloudstack.api.response.QuotaResponseBuilderImpl"/>
+    <bean id="QuotaManager" class="org.apache.cloudstack.quota.QuotaManagerImpl"/>
 
 </beans>

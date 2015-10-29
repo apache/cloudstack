@@ -100,7 +100,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
 
     private void mergeConfigs(Map<String, String> dbParams, Map<String, Object> xmlParams) {
         for (Map.Entry<String, Object> param : xmlParams.entrySet()) {
-            dbParams.put(param.getKey(), (String) param.getValue());
+            dbParams.put(param.getKey(), (String)param.getValue());
         }
     }
 
@@ -157,7 +157,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         Date lastDateOfPreviousMonth = aCalendar.getTime(); // actually the first day of this month
 
         List<DeferredQuotaEmail> deferredQuotaEmailList = new ArrayList<DeferredQuotaEmail>();
-        for (final QuotaAccountVO quotaAccount : _quotaAcc.listAll()) {
+        for (final QuotaAccountVO quotaAccount : _quotaAcc.listAllQuotaAccount()) {
             if (quotaAccount.getQuotaBalance() == null) {
                 continue; // no quota usage for this account ever, ignore
             }
@@ -176,7 +176,8 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
                     }
                 }
             } else if (lastStatementDate != null) {
-                s_logger.info("For " + quotaAccount.getId() + " it is already more than " + getDifferenceDays(lastStatementDate, new Date()) + " days, will send statement in next cycle");
+                s_logger.info("For " + quotaAccount.getId() + " it is already more than " + getDifferenceDays(lastStatementDate, new Date())
+                        + " days, will send statement in next cycle");
             }
         }
 
@@ -193,7 +194,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         s_logger.info("Running checkAndSendQuotaAlertEmails");
         List<DeferredQuotaEmail> deferredQuotaEmailList = new ArrayList<DeferredQuotaEmail>();
         final BigDecimal zeroBalance = new BigDecimal(0);
-        for (final QuotaAccountVO quotaAccount : _quotaAcc.listAll()) {
+        for (final QuotaAccountVO quotaAccount : _quotaAcc.listAllQuotaAccount()) {
             s_logger.debug("checkAndSendQuotaAlertEmails accId=" + quotaAccount.getId());
             BigDecimal accountBalance = quotaAccount.getQuotaBalance();
             Date balanceDate = quotaAccount.getQuotaBalanceDate();
@@ -266,8 +267,8 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
             }
 
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("accountName" + account.getAccountName() + "accountID" + account.getUuid() + "accountUsers" + userNames + "domainName" + accountDomain.getName() + "domainID"
-                        + accountDomain.getUuid());
+                s_logger.debug("accountName" + account.getAccountName() + "accountID" + account.getUuid() + "accountUsers" + userNames + "domainName" + accountDomain.getName()
+                        + "domainID" + accountDomain.getUuid());
             }
 
             final StrSubstitutor templateEngine = new StrSubstitutor(optionMap);
@@ -277,11 +278,15 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
                 _emailQuotaAlert.sendQuotaAlert(emailRecipients, subject, body);
                 emailToBeSent.sentSuccessfully(_quotaAcc);
             } catch (Exception e) {
-                s_logger.error(String.format("Unable to send quota alert email (subject=%s; body=%s) to account %s (%s) recipients (%s) due to error (%s)", subject, body, account.getAccountName(),
-                        account.getUuid(), emailRecipients, e));
+                s_logger.error(String.format("Unable to send quota alert email (subject=%s; body=%s) to account %s (%s) recipients (%s) due to error (%s)", subject, body,
+                        account.getAccountName(), account.getUuid(), emailRecipients, e));
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Exception", e);
+                }
             }
         } else {
-            s_logger.error(String.format("No quota email template found for type %s, cannot send quota alert email to account %s(%s)", emailType, account.getAccountName(), account.getUuid()));
+            s_logger.error(String.format("No quota email template found for type %s, cannot send quota alert email to account %s(%s)", emailType, account.getAccountName(),
+                    account.getUuid()));
         }
     }
 
@@ -362,7 +367,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
                 quotaAccount.setQuotaAlertDate(new Date());
                 quotaAccount.setQuotaAlertType(emailTemplateType.ordinal());
             }
-            quotaAccountDao.update(quotaAccount.getAccountId(), quotaAccount);
+            quotaAccountDao.updateQuotaAccount(quotaAccount.getAccountId(), quotaAccount);
         }
     };
 

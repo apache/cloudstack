@@ -54,5 +54,7 @@ public interface UsageDao extends GenericDao<UsageVO, Long> {
 
     void saveUsageRecords(List<UsageVO> usageRecords);
 
+    UsageVO persistUsage(final UsageVO usage);
+
     Pair<List<? extends UsageVO>, Integer> getUsageRecordsPendingQuotaAggregation(long accountId, long domainId);
 }

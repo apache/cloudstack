@@ -36,11 +36,10 @@ import java.util.Date;
 import java.util.List;
 
 @Component
-@Local(value = { QuotaUsageDao.class })
+@Local(value = {QuotaUsageDao.class})
 public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implements QuotaUsageDao {
     private static final Logger s_logger = Logger.getLogger(QuotaUsageDaoImpl.class);
 
-    @Override
     public BigDecimal findTotalQuotaUsage(final Long accountId, final Long domainId, final Integer usageType, final Date startDate, final Date endDate) {
         List<QuotaUsageVO> quotaUsage = findQuotaUsage(accountId, domainId, null, startDate, endDate);
         BigDecimal total = new BigDecimal(0);
@@ -50,7 +49,6 @@ public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implem
         return total;
     }
 
-    @Override
     public List<QuotaUsageVO> findQuotaUsage(final Long accountId, final Long domainId, final Integer usageType, final Date startDate, final Date endDate) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaUsageVO>>() {
             @Override
@@ -72,6 +70,15 @@ public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implem
                 } else {
                     return new ArrayList<QuotaUsageVO>();
                 }
+            }
+        });
+    }
+
+    public QuotaUsageVO persistQuotaUsage(final QuotaUsageVO quotaUsage) {
+        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<QuotaUsageVO>() {
+            @Override
+            public QuotaUsageVO doInTransaction(final TransactionStatus status) {
+                return persist(quotaUsage);
             }
         });
     }
