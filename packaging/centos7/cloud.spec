@@ -254,6 +254,7 @@ for name in catalina.properties db.properties log4j-cloud.xml web.xml \
 do
   cp packaging/centos7/tomcat7/$name \
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
+  rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/$name
 done
 
 #ln -s %{_sysconfdir}/%{name}/management/log4j-cloud.xml \
