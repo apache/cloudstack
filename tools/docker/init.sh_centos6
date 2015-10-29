@@ -26,7 +26,13 @@ if [ ! -d /var/cloudstack/management/.ssh ]; then
 	mknod /dev/loop6 -m0660 b 7 6
 fi
 
+# if global setting are changed, it will restart the management server
 RESTART_REQUIRED=false
+
+if [ ! $MYSQL_PORT_3306_TCP_ADDR ]; then
+	echo "variable MYSQL_PORT_3306_TCP_ADDR not define"
+	exit 12
+fi
 
 until nc -z $MYSQL_PORT_3306_TCP_ADDR 3306; do
     echo "waiting for mysql-server..."
