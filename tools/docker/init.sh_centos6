@@ -17,27 +17,41 @@
 # under the License.
 #
 # update database connection
+# /usr/bin/cloudstack-setup-databases cloud:password@$MYSQL_PORT_3306_TCP_ADDR
 # start cloudstack-management server
-#/usr/bin/cloudstack-setup-databases cloud:password@$MYSQL_PORT_3306_TCP_ADDR
 
 # initial startup of the container to generage ssh_key
 # performed as privileged
 if [ ! -d /var/cloudstack/management/.ssh ]; then
 	mknod /dev/loop6 -m0660 b 7 6
 fi
-sleep 5
 
-mysql -p"$MYSQL_ENV_MYSQL_ROOT_PASSWORD" -h"$MYSQL_PORT_3306_TCP_ADDR" \
+# if global setting are changed, it will restart the management server
+RESTART_REQUIRED=false
+
+if [ ! $MYSQL_PORT_3306_TCP_ADDR ]; then
+	echo "variable MYSQL_PORT_3306_TCP_ADDR not define"
+	exit 12
+fi
+
+until nc -z $MYSQL_PORT_3306_TCP_ADDR 3306; do
+    echo "waiting for mysql-server..."
+    sleep 1
+done
+
+mysql -p"$MYSQL_ENV_MYSQL_ROOT_PASSWORD" -h "$MYSQL_PORT_3306_TCP_ADDR" \
    -e "show databases;"|grep -q cloud
 
 case $? in
   1)
 	echo "deploying new cloud databases"
+	INITIATED=false
 	cloudstack-setup-databases cloud:password@${MYSQL_PORT_3306_TCP_ADDR} \
 	--deploy-as=root:${MYSQL_ENV_MYSQL_ROOT_PASSWORD} -i localhost
     ;;
   0)
 	echo "using existing databases"
+	INITIATED=true
 	cloudstack-setup-databases cloud:password@${MYSQL_PORT_3306_TCP_ADDR}
     ;;
   *)
@@ -47,4 +61,27 @@ case $? in
 esac
 
 service cloudstack-management start
-tail -f /var/log/cloudstack/management/catalina.out
+sleep 10
+
+if [ $HYPERVISOR_TEMPLATE ]; then
+	#download the systemvm template into /exports
+	/root/systemtpl.sh $HYPERVISOR_TEMPLATE
+fi
+
+if [ $CLOUDSTACK_HOST ]; then
+	mysql -u root -p${MYSQL_ENV_MYSQL_ROOT_PASSWORD} -h ${MYSQL_PORT_3306_TCP_ADDR} -e \
+	"UPDATE cloud.configuration SET value='${CLOUDSTACK_HOST}' where name = 'host';"
+	RESTART_REQUIRED=true
+fi
+
+if [ $DEV_API ] && [ $INITIATED == false ]; then
+	mysql -u root -p${MYSQL_ENV_MYSQL_ROOT_PASSWORD} -h ${MYSQL_PORT_3306_TCP_ADDR} -e \
+	"UPDATE cloud.configuration SET value='8096' where name = 'integration.api.port';"
+	mysql -u root -p${MYSQL_ENV_MYSQL_ROOT_PASSWORD} -h ${MYSQL_PORT_3306_TCP_ADDR} -e \
+	"UPDATE cloud.configuration SET value='true' where name = 'system.vm.use.local.storage';"
+	RESTART_REQUIRED=true
+fi
+
+[ $RESTART_REQUIRED == true ] && service cloudstack-management restart
+
+tail -f /var/log/cloudstack/management/management-server.log
