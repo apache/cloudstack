@@ -41,6 +41,7 @@
                 metricsLabel = _l('label.volumes') + ' ' + metricsLabel;
             }
 
+            // list view refresh button
             metricsListView.actions = {
                 refreshMetrics: {
                     label: 'label.refresh',
@@ -97,9 +98,17 @@
                       var filterMetricView = metricsListView.browseBy;
                       if (filterMetricView) {
                           $newPanel.bind('click', function(event) {
+                              event.stopPropagation();
                               var $target = $(event.target);
                               var id = $target.closest('tr').data('list-view-item-id');
                               var jsonObj = $target.closest('tr').data('jsonObj');
+                              if (filterMetricView.filterKey && jsonObj) {
+                                  if (jsonObj.hasOwnProperty(filterMetricView.filterKey)) {
+                                      id = jsonObj[filterMetricView.filterKey];
+                                  } else {
+                                      return; // return if provided key is missing
+                                  }
+                              }
                               if (id && ($target.hasClass('first') || $target.parent().hasClass('first')) && ($target.is('td') || $target.parent().is('td'))) {
                                   filterMetricView.id = id;
                                   cloudStack.uiCustom.metricsView(filterMetricView)();

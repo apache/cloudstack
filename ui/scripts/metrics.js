@@ -934,6 +934,11 @@
                     }
                 });
             },
+            browseBy: {
+                filterKey: 'storageid',
+                filterBy: 'id',
+                resource: 'storagepool'
+            },
             detailView: cloudStack.sections.storage.sections.volumes.listView.detailView
         }
     };
