@@ -784,11 +784,11 @@
             if ($th.index()) $th.addClass('reduced-hide');
             if (colspan > 1) {
                 $th.css({'border-right': '1px solid #C6C3C3', 'border-left': '1px solid #C6C3C3'});
-                $('<span>').html(trText).appendTo($th);
 
                 var karetLeft = $('<span>').html('&laquo').css({'float': 'right', 'font-size': '15px'});
                 karetLeft.attr('title', trText);
                 karetLeft.appendTo($th);
+                $('<span>').html(trText).appendTo($th);
 
                 karetLeft.click(function(event) {
                     event.stopPropagation();
@@ -820,7 +820,7 @@
 
                 var karetRight = addColumnToTr($tr, 'collapsible-column', 1, '');
                 $('<span>').html(trText.substring(0,3)).appendTo(karetRight);
-                $('<span>').css({'font-size': '15px'}).html('&raquo').appendTo(karetRight);
+                $('<span>').css({'font-size': '15px'}).html(' &raquo').appendTo(karetRight);
                 karetRight.attr('title', trText);
                 karetRight.css({'border-right': '1px solid #C6C3C3', 'border-left': '1px solid #C6C3C3', 'min-width': '10px', 'width': '10px', 'max-width': '45px', 'padding': '2px'});
                 karetRight.hide();
