@@ -123,24 +123,25 @@ class TestStorageSnapshotsLimits(cloudstackTestCase):
                 "Snapshots are not supported on %s" %
                 self.hypervisor)
 
-
     def tearDown(self):
         try:
-            data_volumes_list = Volume.list(
-                self.userapiclient,
-                id=self.data_volume_created.id,
-                virtualmachineid=self.vm.id
-            )
-            status = validateList(data_volumes_list)
-            self.assertEqual(
-                status[0],
-                PASS,
-                "DATA Volume List Validation Failed")
+            if hasattr(self, "data_volume_created"):
+                data_volumes_list = Volume.list(
+                    self.userapiclient,
+                    id=self.data_volume_created.id,
+                    virtualmachineid=self.vm.id
+                )
+                status = validateList(data_volumes_list)
+                self.assertEqual(
+                    status[0],
+                    PASS,
+                    "DATA Volume List Validation Failed")
 
-            self.vm.detach_volume(
-                self.userapiclient,
-                data_volumes_list[0]
-            )
+            if data_volumes_list:
+                self.vm.detach_volume(
+                    self.userapiclient,
+                    data_volumes_list[0]
+                )
 
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
