@@ -899,6 +899,9 @@
                 storagetype: {
                     label: 'label.metrics.disk.storagetype'
                 },
+                storagepool: {
+                    label: 'label.metrics.storagepool'
+                },
             },
             dataProvider: function(args) {
                 var data = {listAll: true};
@@ -918,10 +921,10 @@
                                 items[idx].state = volume.state;
                                 items[idx].vmname = volume.vmname;
                                 items[idx].diskoffering = volume.diskofferingname;
-                                items[idx].disksize = parseFloat(volume.size)/(1024.0*1024.0*1024.0) + "GB";
+                                items[idx].disksize = parseFloat(volume.size)/(1024.0*1024.0*1024.0) + ' GB';
                                 items[idx].storagetype = volume.storagetype.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();}) + ' (' + volume.type + ')';
                                 if (volume.storage) {
-                                    items[idx].storagetype += " (" + volume.storage + ")";
+                                    items[idx].storagepool = volume.storage;
                                 }
                             });
                         }
@@ -1013,7 +1016,7 @@
                                 items[idx].type = pool.type;
                                 items[idx].overprovisionfactor = parseFloat(pool.overprovisionfactor);
                                 if (pool.disksizeused) {
-                                    items[idx].disksizeused = (parseFloat(pool.disksizeused)/(1024.0*1024.0*1024.0)).toFixed(2) + "GB";
+                                    items[idx].disksizeused = (parseFloat(pool.disksizeused)/(1024.0*1024.0*1024.0)).toFixed(2) + ' GB';
                                 } else {
                                     items[idx].disksizeused = '--';
                                 }
@@ -1022,9 +1025,9 @@
                                 items[idx].disksizeunallocated = (items[idx].overprovisionfactor * items[idx].disksizetotal) - items[idx].disksizeallocated;
 
                                 // Format presentation
-                                items[idx].disksizetotal = (items[idx].disksizetotal/(1024.0*1024.0*1024.0)).toFixed(2) + "GB (x" + items[idx].overprovisionfactor + ")";
-                                items[idx].disksizeallocated = (items[idx].disksizeallocated/(1024.0*1024.0*1024.0)).toFixed(2) + "GB";
-                                items[idx].disksizeunallocated = (items[idx].disksizeunallocated/(1024.0*1024.0*1024.0)).toFixed(2) + "GB";
+                                items[idx].disksizetotal = (items[idx].disksizetotal/(1024.0*1024.0*1024.0)).toFixed(2) + ' GB (x' + items[idx].overprovisionfactor + ')';
+                                items[idx].disksizeallocated = (items[idx].disksizeallocated/(1024.0*1024.0*1024.0)).toFixed(2) + ' GB';
+                                items[idx].disksizeunallocated = (items[idx].disksizeunallocated/(1024.0*1024.0*1024.0)).toFixed(2) + ' GB';
                             });
                         }
                         args.response.success({
