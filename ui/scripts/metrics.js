@@ -817,15 +817,15 @@
                             items = json.listvirtualmachinesresponse.virtualmachine;
                             $.each(items, function(idx, vm) {
                                 items[idx].cores = vm.cpunumber;
-                                items[idx].cputotal = (parseFloat(vm.cpunumber) * parseFloat(vm.cpuspeed)).toFixed(2) + 'Mhz';
+                                items[idx].cputotal = (parseFloat(vm.cpunumber) * parseFloat(vm.cpuspeed)).toFixed(0) + ' Mhz';
                                 items[idx].cpuusedavg = vm.cpuused;
                                 items[idx].cpuallocated = vm.cpuallocated;
-                                items[idx].memallocated = (parseFloat(vm.memory)/1024.0).toFixed(2) + 'GB';
-                                items[idx].memused = (parseFloat(vm.memoryused)/(1024.0*1024.0*1024.0)).toFixed(2) + 'GB';
-                                items[idx].networkread = (parseFloat(vm.networkkbsread)/(1024.0)).toFixed(2) + 'MB';
-                                items[idx].networkwrite = (parseFloat(vm.networkkbswrite)/(1024.0)).toFixed(2) + 'MB';
-                                items[idx].diskread = (parseFloat(vm.diskkbsread)/(1024.0)).toFixed(2) + 'MB';
-                                items[idx].diskwrite = (parseFloat(vm.diskkbswrite)/(1024.0)).toFixed(2) + 'MB';
+                                items[idx].memallocated = (parseFloat(vm.memory)/1024.0).toFixed(2) + ' GB';
+                                items[idx].memused = (parseFloat(vm.memoryused)/(1024.0*1024.0*1024.0)).toFixed(2) + ' GB';
+                                items[idx].networkread = (parseFloat(vm.networkkbsread)/(1024.0)).toFixed(2) + ' MB';
+                                items[idx].networkwrite = (parseFloat(vm.networkkbswrite)/(1024.0)).toFixed(2) + ' MB';
+                                items[idx].diskread = (parseFloat(vm.diskkbsread)/(1024.0)).toFixed(2) + ' MB';
+                                items[idx].diskwrite = (parseFloat(vm.diskkbswrite)/(1024.0)).toFixed(2) + ' MB';
                                 items[idx].diskiopstotal = parseFloat(vm.diskioread) + parseFloat(vm.diskiowrite);
 
                                 var keys = [{'cpuused': 'cpuusedavg'},
