@@ -301,6 +301,7 @@ public class CommandSetupHelper {
         for (final LoadBalancingRule rule : rules) {
             final boolean revoked = rule.getState().equals(FirewallRule.State.Revoke);
             final String protocol = rule.getProtocol();
+            final String lb_protocol = rule.getLbProtocol();
             final String algorithm = rule.getAlgorithm();
             final String uuid = rule.getUuid();
 
@@ -309,6 +310,7 @@ public class CommandSetupHelper {
             final List<LbDestination> destinations = rule.getDestinations();
             final List<LbStickinessPolicy> stickinessPolicies = rule.getStickinessPolicies();
             final LoadBalancerTO lb = new LoadBalancerTO(uuid, srcIp, srcPort, protocol, algorithm, revoked, false, inline, destinations, stickinessPolicies);
+            lb.setLbProtocol(lb_protocol);
             lbs[i++] = lb;
         }
         String routerPublicIp = null;
