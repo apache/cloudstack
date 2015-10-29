@@ -866,6 +866,7 @@ dictionary = {
 'label.metrics.property': '<fmt:message key="label.metrics.property" />',
 'label.metrics.scope': '<fmt:message key="label.metrics.scope" />',
 'label.metrics.state': '<fmt:message key="label.metrics.state" />',
+'label.metrics.storagepool': '<fmt:message key="label.metrics.storagepool" />',
 'label.metrics.vm.name': '<fmt:message key="label.metrics.vm.name" />',
 'label.migrate.instance.to': '<fmt:message key="label.migrate.instance.to" />',
 'label.migrate.instance.to.host': '<fmt:message key="label.migrate.instance.to.host" />',
