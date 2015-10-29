@@ -54,7 +54,7 @@ public final class LibvirtCreatePrivateTemplateFromSnapshotCommandWrapper extend
 
         final String templateFolder = command.getAccountId() + File.separator + command.getNewTemplateId();
         final String templateInstallFolder = "template/tmpl/" + templateFolder;
-        final String tmplName = libvirtUtilitiesHelper.generatereUUIDName();
+        final String tmplName = libvirtUtilitiesHelper.generateUUIDName();
         final String tmplFileName = tmplName + ".qcow2";
 
         KVMStoragePool secondaryPool = null;
