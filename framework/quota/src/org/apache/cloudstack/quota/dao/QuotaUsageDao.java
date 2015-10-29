@@ -17,6 +17,7 @@
 package org.apache.cloudstack.quota.dao;
 
 import com.cloud.utils.db.GenericDao;
+
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 
 import java.math.BigDecimal;
@@ -30,4 +31,6 @@ public interface QuotaUsageDao extends GenericDao<QuotaUsageVO, Long> {
     List<QuotaUsageVO> findQuotaUsage(Long accountId, Long domainId, Integer usageType, Date startDate, Date endDate);
 
     BigDecimal findTotalQuotaUsage(Long accountId, Long domainId, Integer usageType, Date startDate, Date endDate);
+
+    QuotaUsageVO findLastQuotaUsageEntry(Long accountId, Long domainId, Date beforeThis);
 }

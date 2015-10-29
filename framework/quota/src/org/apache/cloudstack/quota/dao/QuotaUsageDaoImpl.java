@@ -16,6 +16,7 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -70,6 +71,22 @@ public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implem
                 } else {
                     return new ArrayList<QuotaUsageVO>();
                 }
+            }
+        });
+    }
+
+    public QuotaUsageVO findLastQuotaUsageEntry(final Long accountId, final Long domainId, final Date beforeThis) {
+        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<QuotaUsageVO>() {
+            @Override
+            public QuotaUsageVO doInTransaction(final TransactionStatus status) {
+                List<QuotaUsageVO> quotaUsageEntries = new ArrayList<>();
+                Filter filter = new Filter(QuotaUsageVO.class, "startDate", false, 0L, 1L);
+                QueryBuilder<QuotaUsageVO> qb = QueryBuilder.create(QuotaUsageVO.class);
+                qb.and(qb.entity().getAccountId(), SearchCriteria.Op.EQ, accountId);
+                qb.and(qb.entity().getDomainId(), SearchCriteria.Op.EQ, domainId);
+                qb.and(qb.entity().getStartDate(), SearchCriteria.Op.LT, beforeThis);
+                quotaUsageEntries = search(qb.create(), filter);
+                return !quotaUsageEntries.isEmpty() ? quotaUsageEntries.get(0) : null;
             }
         });
     }

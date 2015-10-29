@@ -186,8 +186,33 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         Date startDate = quotaListForAccount.get(0).getStartDate();
         Date endDate = quotaListForAccount.get(0).getEndDate();
         BigDecimal aggrUsage = new BigDecimal(0);
+        List<QuotaBalanceVO> creditsReceived = null;
+
+        //bootstrapping
+        QuotaUsageVO lastQuotaUsage = _quotaUsageDao.findLastQuotaUsageEntry(account.getAccountId(), account.getDomainId(), startDate);
+        if (lastQuotaUsage == null) {
+            creditsReceived = _quotaBalanceDao.findCreditBalance(account.getAccountId(), account.getDomainId(), new Date(0), startDate);
+            if (creditsReceived != null) {
+                for (QuotaBalanceVO credit : creditsReceived) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Credit entry found " + aggrUsage.setScale(6, RoundingMode.HALF_EVEN).toString() + " on Date=" + startDate);
+                    }
+                    aggrUsage = aggrUsage.add(credit.getCreditBalance());
+                }
+            }
+        }
         for (QuotaUsageVO entry : quotaListForAccount) {
             if (entry.getQuotaUsed().compareTo(BigDecimal.ZERO) == 0) {
+                // check if there were credits
+                creditsReceived = _quotaBalanceDao.findCreditBalance(account.getAccountId(), account.getDomainId(), entry.getStartDate(), entry.getEndDate());
+                if (creditsReceived != null) {
+                    for (QuotaBalanceVO credit : creditsReceived) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Credit entry found " + aggrUsage.setScale(6, RoundingMode.HALF_EVEN).toString() + " on Date=" + entry.getStartDate());
+                        }
+                        aggrUsage = aggrUsage.add(credit.getCreditBalance());
+                    }
+                }
                 continue;
             }
             if (s_logger.isDebugEnabled()) {
@@ -207,13 +232,13 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
                 startDate = entry.getStartDate();
                 endDate = entry.getEndDate();
 
-                QuotaBalanceVO lastRealBalanceEntry = _quotaBalanceDao.findLastBalanceEntry(account.getAccountId(), account.getDomainId(), startDate);
+                QuotaBalanceVO lastRealBalanceEntry = _quotaBalanceDao.findLastBalanceEntry(account.getAccountId(), account.getDomainId(), endDate);
                 Date lastBalanceDate = new Date(0);
                 if (lastRealBalanceEntry != null) {
                     lastBalanceDate = lastRealBalanceEntry.getUpdatedOn();
                     aggrUsage = aggrUsage.add(lastRealBalanceEntry.getCreditBalance());
                 }
-                List<QuotaBalanceVO> creditsReceived = _quotaBalanceDao.findCreditBalance(account.getAccountId(), account.getDomainId(), lastBalanceDate, endDate);
+                creditsReceived = _quotaBalanceDao.findCreditBalance(account.getAccountId(), account.getDomainId(), lastBalanceDate, endDate);
                 if (creditsReceived != null) {
                     for (QuotaBalanceVO credit : creditsReceived) {
                         aggrUsage = aggrUsage.add(credit.getCreditBalance());
