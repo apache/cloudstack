@@ -132,6 +132,7 @@
                         if (items) {
                             $.each(items, function(idx, zone) {
                                 items[idx].clusters = 0;
+                                items[idx].clustersUp = 0;
                                 items[idx].hosts = 0;
                                 items[idx].cpuusedavg = 0.0;
                                 items[idx].cpumaxdev = 0.0;
@@ -157,6 +158,9 @@
                                         if (json && json.listclustersresponse && json.listclustersresponse.cluster && json.listclustersresponse.count) {
                                             items[idx].clusters += parseInt(json.listclustersresponse.count);
                                             $.each(json.listclustersresponse.cluster, function(i, cluster) {
+                                                if (cluster.allocationstate == 'Enabled' && cluster.managedstate == 'Managed') {
+                                                    items[idx].clustersUp++;
+                                                }
                                                 $.ajax({
                                                     url: createURL('listHosts'),
                                                     data: {clusterid: cluster.id, type: 'routing'},
@@ -231,13 +235,14 @@
                                 items[idx].cpuusedavg = (items[idx].cpuusedavg).toFixed(2) + "%";
                                 items[idx].cpumaxdev = (items[idx].cpumaxdev).toFixed(2) + "%";
                                 items[idx].cpuallocated = (items[idx].cpuallocated).toFixed(2) + "%";
-                                items[idx].cputotal = (items[idx].cputotal).toFixed(2) + "Ghz";
+                                items[idx].cputotal = (items[idx].cputotal).toFixed(2) + " Ghz";
 
                                 items[idx].memusedavg = (items[idx].memusedavg).toFixed(2) + "%";
                                 items[idx].memmaxdev = (items[idx].memmaxdev).toFixed(2) + "%";
                                 items[idx].memallocated = (items[idx].memallocated).toFixed(2) + "%";
-                                items[idx].memtotal = (items[idx].memtotal).toFixed(2) + "GB";
+                                items[idx].memtotal = (items[idx].memtotal).toFixed(2) + " GB";
 
+                                items[idx].clusters = items[idx].clusters + ' / ' + items[idx].clustersUp;
                                 items[idx].state = items[idx].allocationstate;
                             });
                         }
@@ -481,12 +486,12 @@
                                 items[idx].cpuusedavg = (items[idx].cpuusedavg).toFixed(2) + "%";
                                 items[idx].cpumaxdev = (items[idx].cpumaxdev).toFixed(2) + "%";
                                 items[idx].cpuallocated = (items[idx].cpuallocated).toFixed(2) + "%";
-                                items[idx].cputotal = (items[idx].cputotal).toFixed(2) + "Ghz";
+                                items[idx].cputotal = (items[idx].cputotal).toFixed(2) + " Ghz";
 
                                 items[idx].memusedavg = (items[idx].memusedavg).toFixed(2) + "%";
                                 items[idx].memmaxdev = (items[idx].memmaxdev).toFixed(2) + "%";
                                 items[idx].memallocated = (items[idx].memallocated).toFixed(2) + "%";
-                                items[idx].memtotal = (items[idx].memtotal).toFixed(2) + "GB";
+                                items[idx].memtotal = (items[idx].memtotal).toFixed(2) + " GB";
                                 items[idx].hosts = items[idx].hostsUp + ' / ' + items[idx].hosts;
 
                                 items[idx].state = items[idx].allocationstate;
