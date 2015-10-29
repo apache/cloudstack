@@ -585,16 +585,16 @@
                         memtotal: {
                             label: 'label.metrics.memory.total'
                         },
-                        memallocated: {
-                            label: 'label.metrics.allocated',
+                        memusedavg: {
+                            label: 'label.metrics.memory.used.avg',
                             thresholdcolor: true,
                             thresholds: {
                                 notification: 'memnotificationthreshold',
                                 disable: 'memdisablethreshold'
                             }
                         },
-                        memusedavg: {
-                            label: 'label.metrics.memory.used.avg',
+                        memallocated: {
+                            label: 'label.metrics.allocated',
                             thresholdcolor: true,
                             thresholds: {
                                 notification: 'memnotificationthreshold',
@@ -633,31 +633,31 @@
                                 items[idx].cores = host.cpunumber;
                                 items[idx].cputotal = (parseFloat(host.cpunumber) * parseFloat(host.cpuspeed) / 1000.0).toFixed(2);
                                 if (host.cpuused) {
-                                    items[idx].cpuusedavg = host.cpuused;
+                                    items[idx].cpuusedavg = (parseFloat(host.cpuused) * items[idx].cputotal / 100.0).toFixed(2) + ' Ghz';
                                 } else {
                                     items[idx].cpuusedavg = '--';
                                 }
-                                items[idx].cpuallocated = host.cpuallocated;
-                                items[idx].memtotal = (parseFloat(host.memorytotal)/(1024.0*1024.0*1024.0)).toFixed(2) + 'GB';
-                                items[idx].memallocated = (parseFloat(host.memoryallocated)/(1024.0*1024.0*1024.0)).toFixed(2) + 'GB';
+                                items[idx].cpuallocated = (parseFloat(host.cpuallocated) * items[idx].cputotal / 100.0).toFixed(2) + ' Ghz';
+                                items[idx].memtotal = (parseFloat(host.memorytotal)/(1024.0*1024.0*1024.0)).toFixed(2) + ' GB';
+                                items[idx].memallocated = (parseFloat(host.memoryallocated)/(1024.0*1024.0*1024.0)).toFixed(2) + ' GB';
                                 if (host.memoryused) {
-                                    items[idx].memusedavg = (parseFloat(host.memoryused)/(1024.0*1024.0*1024.0)).toFixed(2) + 'GB';
+                                    items[idx].memusedavg = (parseFloat(host.memoryused)/(1024.0*1024.0*1024.0)).toFixed(2) + ' GB';
                                 } else {
                                     items[idx].memusedavg = '--';
                                 }
                                 if (host.networkkbsread && host.networkkbswrite) {
-                                    items[idx].networkread = (parseFloat(host.networkkbsread)/(1024.0*1024.0)).toFixed(2) + 'GB';
-                                    items[idx].networkwrite = (parseFloat(host.networkkbswrite)/(1024.0*1024.0)).toFixed(2) + 'GB';
+                                    items[idx].networkread = (parseFloat(host.networkkbsread)/(1024.0*1024.0)).toFixed(2) + ' GB';
+                                    items[idx].networkwrite = (parseFloat(host.networkkbswrite)/(1024.0*1024.0)).toFixed(2) + ' GB';
                                 } else {
                                     items[idx].networkread = '--';
                                     items[idx].networkwrite = '--';
                                 }
 
                                 // Threshold color coding
-                                items[idx].cpunotificationthreshold = 75.0;
-                                items[idx].cpudisablethreshold = 95.0;
-                                items[idx].memnotificationthreshold = 75.0;
-                                items[idx].memdisablethreshold = 95.0;
+                                items[idx].cpunotificationthreshold = 0.75 * parseFloat(items[idx].cputotal);
+                                items[idx].cpudisablethreshold = 0.95 * parseFloat(items[idx].cputotal);
+                                items[idx].memnotificationthreshold = 0.75 * parseFloat(items[idx].memtotal);
+                                items[idx].memdisablethreshold = 0.95 * parseFloat(items[idx].memtotal);
 
                                 $.ajax({
                                     url: createURL('listConfigurations'),
@@ -700,7 +700,7 @@
                                     async: false
                                 });
 
-                                items[idx].cputotal = items[idx].cputotal + 'Ghz (x' + cpuOverCommit + ')';
+                                items[idx].cputotal = items[idx].cputotal + ' Ghz (x' + cpuOverCommit + ')';
                                 items[idx].memtotal = items[idx].memtotal + ' (x' + memOverCommit + ')';
                             });
                         }
