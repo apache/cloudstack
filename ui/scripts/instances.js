@@ -160,12 +160,11 @@
                 instancename: {
                     label: 'label.internal.name'
                 },
-                displayname: {
-                    label: 'label.display.name',
-                    truncate: true
-                },
                 zonename: {
                     label: 'label.zone.name'
+                },
+                ipaddress: {
+                    label: 'label.ip.address'
                 },
                 state: {
                     label: 'label.state',
@@ -355,6 +354,11 @@
                     data: data,
                     success: function(json) {
                         var items = json.listvirtualmachinesresponse.virtualmachine;
+                        $.each(items, function(idx, vm) {
+                            if (vm.nic.length > 0) {
+                                items[idx].ipaddress = vm.nic[0].ipaddress;
+                            }
+                        });
                         args.response.success({
                             data: items
                         });
