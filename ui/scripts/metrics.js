@@ -242,7 +242,7 @@
                                 items[idx].memallocated = (items[idx].memallocated).toFixed(2) + "%";
                                 items[idx].memtotal = (items[idx].memtotal).toFixed(2) + " GB";
 
-                                items[idx].clusters = items[idx].clusters + ' / ' + items[idx].clustersUp;
+                                items[idx].clusters = items[idx].clustersUp + ' / ' + items[idx].clusters;
                                 items[idx].state = items[idx].allocationstate;
                             });
                         }
