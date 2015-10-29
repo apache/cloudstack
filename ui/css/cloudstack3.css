@@ -1426,6 +1426,11 @@ div.list-view td.state.transition span {
 
 .horizontal-overflow tbody td, .horizontal-overflow thead th {
   min-width: 50px;
+  padding: 10px 5px 8px 0px;
+}
+
+.horizontal-overflow th.quick-view {
+  padding-left: 5px;
 }
 
 .groupable-header {
