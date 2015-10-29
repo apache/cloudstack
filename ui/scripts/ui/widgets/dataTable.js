@@ -154,10 +154,21 @@
                 return $(this).index() == columnIndex;
             });
 
+            var hasAllRowsSameValue = true;
+            var firstElem = $($elems[0]).html();
             var sortData = [];
             $elems.each(function() {
+                if (hasAllRowsSameValue) {
+                    if (firstElem !== $(this).html()) {
+                        hasAllRowsSameValue = false;
+                    }
+                }
                 sortData.push($(this));
             });
+
+            if (hasAllRowsSameValue) {
+                return;
+            }
 
             var stringComparator = function(a,b) {
                 return a.html().localeCompare(b.html());
