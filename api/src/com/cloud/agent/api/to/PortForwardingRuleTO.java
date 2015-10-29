@@ -26,6 +26,7 @@ import com.cloud.utils.net.NetUtils;
  *
  */
 public class PortForwardingRuleTO extends FirewallRuleTO {
+    private static final long serialVersionUID = 2L;
     String dstIp;
     Integer[] dstPortRange;
 

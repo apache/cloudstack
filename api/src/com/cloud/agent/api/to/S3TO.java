@@ -40,8 +40,8 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
     private Integer socketTimeout;
     private Integer connectionTtl;
     private Date created;
-    private Boolean enableRRS;
-    private Long maxSingleUploadSizeInBytes;
+    private Boolean enableRRS = false;
+    private Long maxSingleUploadSizeInBytes = 0l;
     private static final String pathSeparator = "/";
 
     public S3TO() {

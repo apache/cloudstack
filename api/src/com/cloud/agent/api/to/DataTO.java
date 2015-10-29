@@ -18,9 +18,11 @@
  */
 package com.cloud.agent.api.to;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import com.cloud.hypervisor.Hypervisor;
 
-public interface DataTO {
+public interface DataTO extends InternalIdentity{
     public DataObjectType getObjectType();
 
     public DataStoreTO getDataStore();
@@ -31,6 +33,4 @@ public interface DataTO {
      * @return
      */
     String getPath();
-
-    Long getId();
 }

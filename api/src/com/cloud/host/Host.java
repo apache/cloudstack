@@ -34,7 +34,7 @@ public interface Host extends StateObject<Status>, Identity, InternalIdentity {
                 false), ExternalVirtualSwitchSupervisor(false), PxeServer(false), BaremetalPxe(false), BaremetalDhcp(false), TrafficMonitor(false),
 
         ExternalDhcp(false), SecondaryStorageVM(true), LocalSecondaryStorage(false), L2Networking(false);
-        Boolean _virtual;
+        Boolean _virtual = false;
 
         private Type(Boolean virtual) {
             _virtual = virtual;

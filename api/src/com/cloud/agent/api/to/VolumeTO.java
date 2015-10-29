@@ -23,18 +23,20 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 
 public class VolumeTO implements InternalIdentity {
+    private static final long serialVersionUID = 2L;
+
     protected VolumeTO() {
     }
 
-    private Long id;
+    private Long id = 0l;
     private String name;
     private String mountPoint;
     private String path;
-    private Long size;
+    private Long size = 0l;
     private Volume.Type type;
     private StoragePoolType storagePoolType;
     private String storagePoolUuid;
-    private Long deviceId;
+    private Long deviceId = 0l;
     private String chainInfo;
     private String guestOsType;
     private Long bytesReadRate;

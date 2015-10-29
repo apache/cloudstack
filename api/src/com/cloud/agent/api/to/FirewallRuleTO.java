@@ -40,13 +40,14 @@ import com.cloud.utils.net.NetUtils;
  *
  */
 public class FirewallRuleTO implements InternalIdentity {
-    Long id;
+    private static final long serialVersionUID = 2L;
+    Long id = 0l;
     String srcVlanTag;
     String srcIp;
     String protocol;
     Integer[] srcPortRange;
-    Boolean revoked;
-    Boolean alreadyAdded;
+    Boolean revoked = false;
+    Boolean alreadyAdded = false;
     private List<String> sourceCidrList;
     FirewallRule.Purpose purpose;
     private Integer icmpType;

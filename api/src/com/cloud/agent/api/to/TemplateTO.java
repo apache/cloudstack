@@ -22,7 +22,8 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.template.VirtualMachineTemplate;
 
 public class TemplateTO implements InternalIdentity {
-    private Long id;
+    private static final long serialVersionUID = 2L;
+    private Long id = 0l;
     private String uniqueName;
     private ImageFormat format;
 

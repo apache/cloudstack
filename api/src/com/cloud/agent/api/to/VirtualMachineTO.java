@@ -24,11 +24,11 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 
 public class VirtualMachineTO {
-    private Long id;
+    private Long id = 0l;
     private String name;
     private BootloaderType bootloader;
     Type type;
-    Integer cpus;
+    Integer cpus = 0;
 
     /**
         'speed' is still here since 4.0.X/4.1.X management servers do not support
@@ -43,17 +43,17 @@ public class VirtualMachineTO {
     Integer minSpeed;
     Integer maxSpeed;
 
-    Long minRam;
-    Long maxRam;
+    Long minRam = 0l;
+    Long maxRam = 0l;
     String hostName;
     String arch;
     String os;
     String platformEmulator;
     String bootArgs;
     String[] bootupScripts;
-    Boolean enableHA;
-    Boolean limitCpuUse;
-    Boolean enableDynamicallyScaleVm;
+    Boolean enableHA = false;
+    Boolean limitCpuUse = false;
+    Boolean enableDynamicallyScaleVm = false;
     String vncPassword;
     String vncAddr;
     Map<String, String> params;

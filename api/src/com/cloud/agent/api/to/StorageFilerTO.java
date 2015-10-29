@@ -25,7 +25,7 @@ public class StorageFilerTO {
     String host;
     String path;
     String userInfo;
-    Integer port;
+    Integer port = 0;
     StoragePoolType type;
 
     public StorageFilerTO(StoragePool pool) {

@@ -19,11 +19,11 @@ package com.cloud.agent.api.to;
 import java.util.List;
 
 public class NicTO extends NetworkTO {
-    Integer deviceId;
+    Integer deviceId = 0;
     Integer networkRateMbps;
     Integer networkRateMulticastMbps;
-    Boolean defaultNic;
-    Boolean pxeDisable;
+    Boolean defaultNic = false;
+    Boolean pxeDisable = false;
     String nicUuid;
     List<String> nicSecIps;
 

@@ -36,7 +36,7 @@ public class NetworkTO {
     protected TrafficType type;
     protected URI broadcastUri;
     protected URI isolationUri;
-    protected Boolean isSecurityGroupEnabled;
+    protected Boolean isSecurityGroupEnabled = false;
     protected String name;
 
     public NetworkTO() {

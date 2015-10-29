@@ -38,13 +38,13 @@ import com.cloud.utils.Pair;
 public class LoadBalancerTO {
     String uuid;
     String srcIp;
-    Integer srcPort;
+    Integer srcPort = 0;
     String protocol;
     String lbProtocol;
     String algorithm;
-    Boolean revoked;
-    Boolean alreadyAdded;
-    Boolean inline;
+    Boolean revoked = false;
+    Boolean alreadyAdded = false;
+    Boolean inline = false;
     DestinationTO[] destinations;
     private StickinessPolicyTO[] stickinessPolicies;
     private HealthCheckPolicyTO[] healthCheckPolicies;
@@ -215,10 +215,10 @@ public class LoadBalancerTO {
     public static class HealthCheckPolicyTO {
         private String pingPath;
         private String description;
-        private Integer responseTime;
-        private Integer healthcheckInterval;
-        private Integer healthcheckThresshold;
-        private Integer unhealthThresshold;
+        private Integer responseTime = 0;
+        private Integer healthcheckInterval = 0;
+        private Integer healthcheckThresshold = 0;
+        private Integer unhealthThresshold = 0;
         private Boolean revoke = false;
 
         public HealthCheckPolicyTO(String pingPath, String description, Integer responseTime, Integer healthcheckInterval, Integer healthcheckThresshold, Integer unhealthThresshold,
@@ -272,11 +272,11 @@ public class LoadBalancerTO {
     }
 
     public static class DestinationTO {
-        String destIp;
-        Integer destPort;
-        Boolean revoked;
-        Boolean alreadyAdded;
-        String monitorState;
+        private String destIp;
+        private Integer destPort = 0;
+        private Boolean revoked = false;
+        private Boolean alreadyAdded = false;
+        private String monitorState;
 
         public DestinationTO(String destIp, Integer destPort, Boolean revoked, Boolean alreadyAdded) {
             this.destIp = destIp;
@@ -341,7 +341,7 @@ public class LoadBalancerTO {
 
     public static class ConditionTO implements Serializable {
         private static final long serialVersionUID = 2L;
-        private final long threshold;
+        private final Long threshold;
         private final String relationalOperator;
         private final CounterTO counter;
 
@@ -366,14 +366,14 @@ public class LoadBalancerTO {
 
     public static class AutoScalePolicyTO implements Serializable {
         private static final long serialVersionUID = 2L;
-        private final long id;
+        private final Long id;
         private final Integer duration;
         private final Integer quietTime;
-        private String action;
-        Boolean revoked;
+        private final String action;
+        private final Boolean revoked;
         private final List<ConditionTO> conditions;
 
-        public AutoScalePolicyTO(long id, Integer duration, Integer quietTime, String action, List<ConditionTO> conditions, Boolean revoked) {
+        public AutoScalePolicyTO(Long id, Integer duration, Integer quietTime, String action, List<ConditionTO> conditions, Boolean revoked) {
             this.id = id;
             this.duration = duration;
             this.quietTime = quietTime;
@@ -382,7 +382,7 @@ public class LoadBalancerTO {
             this.revoked = revoked;
         }
 
-        public long getId() {
+        public Long getId() {
             return id;
         }
 

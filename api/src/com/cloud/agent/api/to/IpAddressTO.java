@@ -20,12 +20,12 @@ import com.cloud.network.Networks.TrafficType;
 
 public class IpAddressTO {
 
-    private Long accountId;
+    private Long accountId = 0l;
     private String publicIp;
-    private Boolean sourceNat;
-    private Boolean add;
-    private Boolean oneToOneNat;
-    private Boolean firstIP;
+    private Boolean sourceNat = false;
+    private Boolean add = false;
+    private Boolean oneToOneNat = false;
+    private Boolean firstIP = false;
     private String broadcastUri;
     private String vlanGateway;
     private String vlanNetmask;
@@ -33,8 +33,8 @@ public class IpAddressTO {
     private Integer networkRate;
     private TrafficType trafficType;
     private String networkName;
-    private Integer nicDevId;
-    private Boolean newNic;
+    private Integer nicDevId = 0;
+    private Boolean newNic = false;
 
     public IpAddressTO(Long accountId, String ipAddress, Boolean add, Boolean firstIP, Boolean sourceNat, String broadcastUri, String vlanGateway, String vlanNetmask,
             String vifMacAddress, Integer networkRate, Boolean isOneToOneNat) {
@@ -49,8 +49,6 @@ public class IpAddressTO {
         this.vifMacAddress = vifMacAddress;
         this.networkRate = networkRate;
         this.oneToOneNat = isOneToOneNat;
-        setNicDevId(0);
-        setNewNic(false);
     }
 
     protected IpAddressTO() {

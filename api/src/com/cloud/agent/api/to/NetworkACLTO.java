@@ -27,18 +27,19 @@ import com.cloud.network.vpc.NetworkACLItem.TrafficType;
 import com.cloud.utils.net.NetUtils;
 
 public class NetworkACLTO implements InternalIdentity {
-    Long id;
+    private static final long serialVersionUID = 2L;
+    Long id = 0l;
     String vlanTag;
     String protocol;
     Integer[] portRange;
-    Boolean revoked;
-    Boolean alreadyAdded;
+    Boolean revoked = false;
+    Boolean alreadyAdded = false;
     private List<String> cidrList;
     private Integer icmpType;
     private Integer icmpCode;
     private TrafficType trafficType;
     String action;
-    Integer number;
+    Integer number = 0;
 
     protected NetworkACLTO() {
     }

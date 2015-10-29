@@ -27,6 +27,7 @@ import com.cloud.network.rules.StaticNatRule;
  */
 
 public class StaticNatRuleTO extends FirewallRuleTO {
+    private static final long serialVersionUID = 1L;
     String dstIp;
 
     protected StaticNatRuleTO() {
