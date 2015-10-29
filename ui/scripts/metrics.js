@@ -987,13 +987,23 @@
                     collapsible: true,
                     columns: {
                         disksizeused: {
-                            label: 'label.metrics.disk.used'
+                            label: 'label.metrics.disk.used',
+                            thresholdcolor: true,
+                            thresholds: {
+                                notification: 'storagenotificationthreshold',
+                                disable: 'storagedisablethreshold'
+                            }
                         },
                         disksizetotal: {
                             label: 'label.metrics.disk.total'
                         },
                         disksizeallocated: {
-                            label: 'label.metrics.disk.allocated'
+                            label: 'label.metrics.disk.allocated',
+                            thresholdcolor: true,
+                            thresholds: {
+                                notification: 'storageallocatednotificationthreshold',
+                                disable: 'storageallocateddisablethreshold'
+                            }
                         },
                         disksizeunallocated: {
                             label: 'label.metrics.disk.unallocated'
@@ -1033,6 +1043,45 @@
                                 items[idx].disksizetotal = (items[idx].disksizetotal/(1024.0*1024.0*1024.0)).toFixed(2) + ' GB (x' + items[idx].overprovisionfactor + ')';
                                 items[idx].disksizeallocated = (items[idx].disksizeallocated/(1024.0*1024.0*1024.0)).toFixed(2) + ' GB';
                                 items[idx].disksizeunallocated = (items[idx].disksizeunallocated/(1024.0*1024.0*1024.0)).toFixed(2) + ' GB';
+
+                                // Threshold color coding
+                                items[idx].storagenotificationthreshold = 0.75 * parseFloat(items[idx].disksizetotal);
+                                items[idx].storagedisablethreshold = 0.95 * parseFloat(items[idx].disksizetotal);
+                                items[idx].storageallocatednotificationthreshold = 0.75 * parseFloat(items[idx].disksizetotal);
+                                items[idx].storageallocateddisablethreshold = 0.95 * parseFloat(items[idx].disksizetotal);
+
+
+                                var getThresholds = function(data, items, idx) {
+                                    data.listAll = true;
+                                    $.ajax({
+                                        url: createURL('listConfigurations'),
+                                        data: data,
+                                        success: function(json) {
+                                            if (json.listconfigurationsresponse && json.listconfigurationsresponse.configuration) {
+                                                $.each(json.listconfigurationsresponse.configuration, function(i, config) {
+                                                    switch (config.name) {
+                                                        case 'cluster.storage.allocated.capacity.notificationthreshold':
+                                                            items[idx].storageallocatednotificationthreshold = parseFloat(config.value) * parseFloat(items[idx].disksizetotal);
+                                                            break;
+                                                        case 'cluster.storage.capacity.notificationthreshold':
+                                                            items[idx].storagenotificationthreshold = parseFloat(config.value) * parseFloat(items[idx].disksizetotal);
+                                                            break;
+                                                        case 'pool.storage.allocated.capacity.disablethreshold':
+                                                            items[idx].storageallocateddisablethreshold = parseFloat(config.value) * parseFloat(items[idx].disksizetotal);
+                                                            break;
+                                                        case 'pool.storage.capacity.disablethreshold':
+                                                            items[idx].storagedisablethreshold = parseFloat(config.value) * parseFloat(items[idx].disksizetotal);
+                                                            break;
+                                                    }
+                                                });
+                                            }
+                                        },
+                                        async: false
+                                    });
+                                };
+                                // Update global and cluster level thresholds
+                                getThresholds({}, items, idx);
+                                getThresholds({clusterid: pool.clusterid}, items, idx);
                             });
                         }
                         args.response.success({

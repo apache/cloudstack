@@ -104,7 +104,7 @@
                               var jsonObj = $target.closest('tr').data('jsonObj');
                               if (filterMetricView.filterKey && jsonObj) {
                                   if (jsonObj.hasOwnProperty(filterMetricView.filterKey)) {
-                                      id = jsonObj[filterMetricView.filterKey];
+                                  id = jsonObj[filterMetricView.filterKey];
                                   } else {
                                       return; // return if provided key is missing
                                   }
