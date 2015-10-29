@@ -166,9 +166,6 @@
                 sortData.push($(this));
             });
 
-            if (hasAllRowsSameValue) {
-                return;
-            }
 
             var stringComparator = function(a,b) {
                 return a.html().localeCompare(b.html());
@@ -186,8 +183,13 @@
             var comparator = stringComparator;
             if ($($elems[0]).hasClass('state')) {
                 comparator = stateComparator;
-            } else if (columnIndex != 0 && isNumeric($($elems[0]).children().html())) {
-                comparator = numericComparator;
+            } else {
+                if (hasAllRowsSameValue) {
+                    return;
+                }
+                if (columnIndex != 0 && isNumeric($($elems[0]).children().html())) {
+                    comparator = numericComparator;
+                }
             }
 
             sortData.sort(comparator);
