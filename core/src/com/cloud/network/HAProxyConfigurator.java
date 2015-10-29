@@ -503,6 +503,9 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             .append(":")
             .append(dest.getDestPort())
             .append(" check");
+            if(lbTO.getLbProtocol() != null && lbTO.getLbProtocol().equals("tcp-proxy")) {
+                sb.append(" send-proxy");
+            }
             dstSubRule.add(sb.toString());
             if (stickinessSubRule != null) {
                 sb.append(" cookie ").append(dest.getDestIp().replace(".", "_")).append('-').append(dest.getDestPort()).toString();

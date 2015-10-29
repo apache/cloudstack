@@ -294,12 +294,20 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public long getUsedBytes(StoragePool storagePool) {
+        return getUsedBytes(storagePool, Long.MIN_VALUE);
+    }
+
+    private long getUsedBytes(StoragePool storagePool, long volumeIdToIgnore) {
         long usedSpace = 0;
 
         List<VolumeVO> lstVolumes = _volumeDao.findByPoolId(storagePool.getId(), null);
 
         if (lstVolumes != null) {
             for (VolumeVO volume : lstVolumes) {
+                if (volume.getId() == volumeIdToIgnore) {
+                    continue;
+                }
+
                 VolumeDetailVO volumeDetail = _volumeDetailsDao.findDetail(volume.getId(), SolidFireUtil.VOLUME_SIZE);
 
                 if (volumeDetail != null && volumeDetail.getValue() != null) {
@@ -309,15 +317,21 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 }
                 else {
                     SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePool.getId(), _storagePoolDetailsDao);
-                    long lVolumeId = Long.parseLong(volume.getFolder());
 
-                    SolidFireUtil.SolidFireVolume sfVolume = SolidFireUtil.getSolidFireVolume(sfConnection, lVolumeId);
+                    try {
+                        long lVolumeId = Long.parseLong(volume.getFolder());
 
-                    // SolidFireUtil.VOLUME_SIZE was introduced in 4.5.
-                    // To be backward compatible with releases prior to 4.5, call updateVolumeDetails here.
-                    // That way if SolidFireUtil.VOLUME_SIZE wasn't put in the volume_details table when the
-                    // volume was initially created, it can be placed in volume_details here.
-                    updateVolumeDetails(volume.getId(), sfVolume.getTotalSize());
+                        SolidFireUtil.SolidFireVolume sfVolume = SolidFireUtil.getSolidFireVolume(sfConnection, lVolumeId);
+
+                        // SolidFireUtil.VOLUME_SIZE was introduced in 4.5.
+                        // To be backward compatible with releases prior to 4.5, call updateVolumeDetails here.
+                        // That way if SolidFireUtil.VOLUME_SIZE wasn't put in the volume_details table when the
+                        // volume was initially created, it can be placed in volume_details here.
+                        updateVolumeDetails(volume.getId(), sfVolume.getTotalSize());
+                    }
+                    catch (NumberFormatException ex) {
+                        // can be ignored (the "folder" column didn't have a valid "long" in it (hasn't been placed there yet))
+                    }
                 }
             }
         }
@@ -519,8 +533,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
                 StoragePoolVO storagePool = _storagePoolDao.findById(storagePoolId);
 
-                // getUsedBytes(StoragePool) will not include the volume to delete because it has already been deleted by this point
-                long usedBytes = getUsedBytes(storagePool);
+                long usedBytes = getUsedBytes(storagePool, volumeId);
 
                 storagePool.setUsedBytes(usedBytes < 0 ? 0 : usedBytes);
 

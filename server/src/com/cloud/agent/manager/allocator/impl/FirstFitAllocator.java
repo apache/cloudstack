@@ -297,6 +297,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
                     s_logger.debug("Host name: " + host.getName() + ", hostId: " + host.getId() +
                         " already has max Running VMs(count includes system VMs), skipping this and trying other available hosts");
                 }
+                avoid.addHost(host.getId());
                 continue;
             }
 
@@ -305,6 +306,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
                 ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.pciDevice.toString());
                 if(!_resourceMgr.isGPUDeviceAvailable(host.getId(), groupName.getValue(), offeringDetails.getValue())){
                     s_logger.info("Host name: " + host.getName() + ", hostId: "+ host.getId() +" does not have required GPU devices available");
+                    avoid.addHost(host.getId());
                     continue;
                 }
             }

@@ -103,6 +103,7 @@ class CsAddress(CsDataBag):
 
             for address in self.dbag[dev]:
                 ip.setAddress(address)
+                logging.info("Address found in DataBag ==> %s" % address)
 
                 if ip.configured():
                     logging.info(
@@ -263,10 +264,17 @@ class CsIP:
         return self.address
 
     def configure(self, address):
-        logging.info(
-            "Configuring address %s on device %s", self.ip(), self.dev)
-        cmd = "ip addr add dev %s %s brd +" % (self.dev, self.ip())
-        subprocess.call(cmd, shell=True)
+        # When "add" is false, it means that the IP has to be removed.
+        if address["add"]:
+            try:
+                logging.info("Configuring address %s on device %s", self.ip(), self.dev)
+                cmd = "ip addr add dev %s %s brd +" % (self.dev, self.ip())
+                subprocess.call(cmd, shell=True)
+            except Exception as e:
+                logging.info("Exception occurred ==> %s" % e)
+
+        else:
+            self.delete(self.ip())
         self.post_configure(address)
 
     def post_configure(self, address):
@@ -602,9 +610,8 @@ class CsIP:
             if self.dev in bag.keys():
                 for address in bag[self.dev]:
                     self.setAddress(address)
-                    if self.hasIP(ip):
-                        found = True
-                    if self.is_guest_gateway(address, ip):
+                    if (self.hasIP(ip) or self.is_guest_gateway(address, ip)) and address["add"]:
+                        logging.debug("The IP address in '%s' will be configured" % address)
                         found = True
             if not found:
                 self.delete(ip)
@@ -620,7 +627,7 @@ class CsIP:
 
         gw = interface.get_gateway()
         logging.info("Interface has the following gateway ==> %s", gw)
-        
+
         if bag['nw_type'] == "guest" and rip == gw:
             return True
         return False

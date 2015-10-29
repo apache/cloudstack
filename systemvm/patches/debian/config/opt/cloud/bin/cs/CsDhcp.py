@@ -37,6 +37,8 @@ class CsDhcp(CsDataBag):
         self.cloud = CsFile(DHCP_HOSTS)
         self.conf = CsFile(CLOUD_CONF)
 
+        self.cloud.repopulate()
+
         for item in self.dbag:
             if item == "id":
                 continue
