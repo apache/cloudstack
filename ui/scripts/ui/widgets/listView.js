@@ -1632,6 +1632,9 @@
             collapsibleKarets.click();
         }
 
+        // Re-sort table if a column was previously sorted
+        $listView.find('thead tr:last th.sorted').click().click();
+
         return rows;
     };
 
