@@ -91,8 +91,26 @@
                       $newPanel.find('.list-view').css({'overflow-x': 'visible'});
                       // Refresh metrics when refresh button is clicked
                       $newPanel.find('.refreshMetrics').click(function() {
+                          var sortedTh = $newPanel.find('table thead tr:last th.sorted');
+                          var thIndex = sortedTh.index();
+                          var thClassName = null;
+                          var wasSorted = false;
+                          var sortClassName = 'asc';
+                          if (sortedTh && sortedTh.hasClass('sorted')) {
+                              wasSorted = true;
+                              var classes = sortedTh.attr('class').split(/\s+/);
+                              thClassName = classes[0];
+                              if (classes.indexOf('desc') > -1) {
+                                  sortClassName = 'desc';
+                              }
+                          }
                           $browser.cloudBrowser('removeLastPanel', {});
-                          cloudStack.uiCustom.metricsView(args)();
+                          var refreshedPanel = cloudStack.uiCustom.metricsView(args)();
+                          if (wasSorted && thClassName) {
+                              refreshedPanel.find('th.' + thClassName).filter(function() {
+                                  return $(this).index() == thIndex;
+                              }).addClass('sorted').addClass(sortClassName);
+                          }
                       });
 
                       var filterMetricView = metricsListView.browseBy;
