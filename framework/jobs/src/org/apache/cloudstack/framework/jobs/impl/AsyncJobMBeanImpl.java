@@ -62,16 +62,16 @@ public class AsyncJobMBeanImpl extends StandardMBean implements AsyncJobMBean {
                 return "Completed";
 
             case IN_PROGRESS:
-                return "In preogress";
+                return "In progress";
 
             case FAILED:
-                return "failed";
+                return "Failed";
 
             case CANCELLED:
-                return "cancelled";
+                return "Cancelled";
         }
 
-        return "Unknow";
+        return "Unknown";
     }
 
     @Override
