@@ -176,7 +176,7 @@ public class QuotaManagerImplTest extends TestCase {
         quotaListForAccount.add(quotaUsageVO);
 
         quotaManager.processQuotaBalanceForAccount(accountVO, quotaListForAccount);
-        Mockito.verify(quotaAcc, Mockito.times(1)).persist(Mockito.any(QuotaAccountVO.class));
+        Mockito.verify(quotaAcc, Mockito.times(1)).persistQuotaAccount(Mockito.any(QuotaAccountVO.class));
     }
 
     @Test
@@ -197,7 +197,7 @@ public class QuotaManagerImplTest extends TestCase {
         quotaManager.updateQuotaDiskUsage(usageVO, new BigDecimal(0.5), UsageTypes.VOLUME);
         quotaManager.updateQuotaRaw(usageVO, new BigDecimal(0.5), UsageTypes.VPN_USERS);
 
-        Mockito.verify(quotaUsageDao, Mockito.times(4)).persist(Mockito.any(QuotaUsageVO.class));
-        Mockito.verify(usageDao, Mockito.times(4)).persist(Mockito.any(UsageVO.class));
+        Mockito.verify(quotaUsageDao, Mockito.times(4)).persistQuotaUsage(Mockito.any(QuotaUsageVO.class));
+        Mockito.verify(usageDao, Mockito.times(4)).persistUsage(Mockito.any(UsageVO.class));
     }
 }

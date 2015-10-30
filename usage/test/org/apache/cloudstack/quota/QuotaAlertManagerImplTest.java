@@ -116,7 +116,7 @@ public class QuotaAlertManagerImplTest extends TestCase {
         acc.setLastStatementDate(null);
         List<QuotaAccountVO> accounts = new ArrayList<>();
         accounts.add(acc);
-        Mockito.when(quotaAcc.listAll()).thenReturn(accounts);
+        Mockito.when(quotaAcc.listAllQuotaAccount()).thenReturn(accounts);
 
         Mockito.when(quotaUsage.findTotalQuotaUsage(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyInt(),
                 Mockito.any(Date.class), Mockito.any(Date.class))).thenReturn(new BigDecimal(100));
@@ -153,7 +153,7 @@ public class QuotaAlertManagerImplTest extends TestCase {
         acc.setQuotaEnforce(0);
         List<QuotaAccountVO> accounts = new ArrayList<>();
         accounts.add(acc);
-        Mockito.when(quotaAcc.listAll()).thenReturn(accounts);
+        Mockito.when(quotaAcc.listAllQuotaAccount()).thenReturn(accounts);
 
         // Don't test sendQuotaAlert yet
         Mockito.doNothing().when(quotaAlertManager).sendQuotaAlert(Mockito.any(QuotaAlertManagerImpl.DeferredQuotaEmail.class));
