@@ -921,6 +921,9 @@
                                 items[idx].state = volume.state;
                                 items[idx].vmname = volume.vmname;
                                 items[idx].diskoffering = volume.diskofferingname;
+                                if (volume.type == 'ROOT') {
+                                    items[idx].diskoffering = volume.serviceofferingname;
+                                }
                                 items[idx].disksize = parseFloat(volume.size)/(1024.0*1024.0*1024.0) + ' GB';
                                 items[idx].storagetype = volume.storagetype.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();}) + ' (' + volume.type + ')';
                                 if (volume.storage) {
