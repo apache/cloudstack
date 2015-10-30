@@ -191,22 +191,57 @@ public class LibvirtVMDef {
     }
 
     public static class HyperVEnlightenmentFeatureDef {
-        private final Map<String, String> features = new HashMap<String,String>();
-        public void setRelaxed(boolean on) {
-            String state = on ? "On":"Off";
-            features.put("relaxed", state);
+        enum Enlight {
+            RELAX("relaxed"),
+            VAPIC("vapic"),
+            SPIN("spinlocks");
+
+            private final String featureName;
+            Enlight(String featureName) { this.featureName = featureName; }
+            String getFeatureName() { return featureName; }
+
+            static boolean isValidFeature(String featureName) {
+                Enlight[] enlights = Enlight.values();
+                for(Enlight e : enlights) {
+                    if(e.getFeatureName().equals(featureName))
+                        return true;
+                }
+                return false;
+            }
         }
+
+        private final Map<String, String> features = new HashMap<String, String>();
+        private int retries = 4096; // set to sane default
+
+        public void setFeature(String feature, boolean on) {
+            if(on && Enlight.isValidFeature(feature))
+                setFeature(feature);
+        }
+
+        private void setFeature(String feature) {
+            features.put(feature, "on");
+        }
+
+        public void setRetries(int retry) {
+            if(retry>=retries)
+                retries=retry;
+        }
+
+        public int getRetries() {
+            return retries;
+        }
+
         @Override
         public String toString() {
-            if (features.isEmpty()) {
-                return "";
-            }
             StringBuilder feaBuilder = new StringBuilder();
             feaBuilder.append("<hyperv>\n");
             for (Map.Entry<String, String> e : features.entrySet()) {
                 feaBuilder.append("<");
                 feaBuilder.append(e.getKey());
-                feaBuilder.append(" state='" + e.getValue() + "'");
+
+                if(e.getKey().equals("spinlocks"))  feaBuilder.append(" state='" + e.getValue() + "' retries='" + getRetries() + "'");
+                else                                feaBuilder.append(" state='" + e.getValue() + "'");
+
                 feaBuilder.append("/>\n");
             }
             feaBuilder.append("</hyperv>\n");
