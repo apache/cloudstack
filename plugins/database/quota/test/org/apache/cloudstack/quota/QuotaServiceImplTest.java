@@ -152,15 +152,15 @@ public class QuotaServiceImplTest extends TestCase {
     public void testSetLockAccount() {
         // existing account
         QuotaAccountVO quotaAccountVO = new QuotaAccountVO();
-        Mockito.when(quotaAcc.findById(Mockito.anyLong())).thenReturn(quotaAccountVO);
+        Mockito.when(quotaAcc.findByIdQuotaAccount(Mockito.anyLong())).thenReturn(quotaAccountVO);
         quotaService.setLockAccount(2L, true);
-        Mockito.verify(quotaAcc, Mockito.times(0)).persist(Mockito.any(QuotaAccountVO.class));
-        Mockito.verify(quotaAcc, Mockito.times(1)).update(Mockito.anyLong(), Mockito.any(QuotaAccountVO.class));
+        Mockito.verify(quotaAcc, Mockito.times(0)).persistQuotaAccount(Mockito.any(QuotaAccountVO.class));
+        Mockito.verify(quotaAcc, Mockito.times(1)).updateQuotaAccount(Mockito.anyLong(), Mockito.any(QuotaAccountVO.class));
 
         // new account
-        Mockito.when(quotaAcc.findById(Mockito.anyLong())).thenReturn(null);
+        Mockito.when(quotaAcc.findByIdQuotaAccount(Mockito.anyLong())).thenReturn(null);
         quotaService.setLockAccount(2L, true);
-        Mockito.verify(quotaAcc, Mockito.times(1)).persist(Mockito.any(QuotaAccountVO.class));
+        Mockito.verify(quotaAcc, Mockito.times(1)).persistQuotaAccount(Mockito.any(QuotaAccountVO.class));
     }
 
     @Test
@@ -170,14 +170,14 @@ public class QuotaServiceImplTest extends TestCase {
 
         // existing account setting
         QuotaAccountVO quotaAccountVO = new QuotaAccountVO();
-        Mockito.when(quotaAcc.findById(Mockito.anyLong())).thenReturn(quotaAccountVO);
+        Mockito.when(quotaAcc.findByIdQuotaAccount(Mockito.anyLong())).thenReturn(quotaAccountVO);
         quotaService.setMinBalance(accountId, balance);
-        Mockito.verify(quotaAcc, Mockito.times(0)).persist(Mockito.any(QuotaAccountVO.class));
-        Mockito.verify(quotaAcc, Mockito.times(1)).update(Mockito.anyLong(), Mockito.any(QuotaAccountVO.class));
+        Mockito.verify(quotaAcc, Mockito.times(0)).persistQuotaAccount(Mockito.any(QuotaAccountVO.class));
+        Mockito.verify(quotaAcc, Mockito.times(1)).updateQuotaAccount(Mockito.anyLong(), Mockito.any(QuotaAccountVO.class));
 
         // no account with limit set
-        Mockito.when(quotaAcc.findById(Mockito.anyLong())).thenReturn(null);
+        Mockito.when(quotaAcc.findByIdQuotaAccount(Mockito.anyLong())).thenReturn(null);
         quotaService.setMinBalance(accountId, balance);
-        Mockito.verify(quotaAcc, Mockito.times(1)).persist(Mockito.any(QuotaAccountVO.class));
+        Mockito.verify(quotaAcc, Mockito.times(1)).persistQuotaAccount(Mockito.any(QuotaAccountVO.class));
     }
 }
