@@ -87,6 +87,15 @@ public class Ovm3HypervisorGuru extends HypervisorGuruBase implements Hypervisor
      */
     public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
         LOGGER.debug("getCommandHostDelegation: " + cmd.getClass());
+        performSideEffectsForDelegationOnCommand(hostId, cmd);
+        return new Pair<Boolean, Long>(Boolean.FALSE, Long.valueOf(hostId));
+    }
+
+    /**
+     * @param hostId
+     * @param cmd
+     */
+    void performSideEffectsForDelegationOnCommand(long hostId, Command cmd) {
         if (cmd instanceof StorageSubSystemCommand) {
             StorageSubSystemCommand c = (StorageSubSystemCommand)cmd;
             c.setExecuteInSequence(true);
@@ -108,6 +117,5 @@ public class Ovm3HypervisorGuru extends HypervisorGuruBase implements Hypervisor
                 }
             }
         }
-        return new Pair<Boolean, Long>(Boolean.FALSE, Long.valueOf(hostId));
     }
 }
