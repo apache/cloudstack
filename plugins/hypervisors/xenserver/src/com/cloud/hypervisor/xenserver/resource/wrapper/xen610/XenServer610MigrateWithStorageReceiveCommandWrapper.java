@@ -19,8 +19,10 @@
 
 package com.cloud.hypervisor.xenserver.resource.wrapper.xen610;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 import com.google.gson.Gson;
 import org.apache.log4j.Logger;
@@ -39,6 +41,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.Pair;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Network;
@@ -53,7 +56,7 @@ public final class XenServer610MigrateWithStorageReceiveCommandWrapper extends C
     public Answer execute(final MigrateWithStorageReceiveCommand command, final XenServer610Resource xenServer610Resource) {
         final Connection connection = xenServer610Resource.getConnection();
         final VirtualMachineTO vmSpec = command.getVirtualMachine();
-        final Map<VolumeTO, StorageFilerTO> volumeToFiler = command.getVolumeToFiler();
+        final List<Pair<VolumeTO, StorageFilerTO>> volumeToFiler = command.getVolumeToFiler();
 
         try {
             // In a cluster management server setup, the migrate with storage receive and send
@@ -66,18 +69,18 @@ public final class XenServer610MigrateWithStorageReceiveCommandWrapper extends C
             // storage send command execution.
             Gson gson = new Gson();
             // Get a map of all the SRs to which the vdis will be migrated.
-            final Map<VolumeTO, String> volumeToSr = new HashMap<VolumeTO, String>();
-            for (final Map.Entry<VolumeTO, StorageFilerTO> entry : volumeToFiler.entrySet()) {
-                final StorageFilerTO storageFiler = entry.getValue();
+            final List<Pair<VolumeTO, Object>> volumeToSr = new ArrayList<Pair<VolumeTO, Object>>();
+            for (final Pair<VolumeTO, StorageFilerTO> entry : volumeToFiler) {
+                final StorageFilerTO storageFiler = entry.second();
                 final SR sr = xenServer610Resource.getStorageRepository(connection, storageFiler.getUuid());
-                volumeToSr.put(entry.getKey(), gson.toJson(sr));
+                volumeToSr.add(new Pair<VolumeTO, Object>(entry.first(), sr));
             }
 
             // Get the list of networks to which the vifs will attach.
-            final Map<NicTO, String> nicToNetwork = new HashMap<NicTO, String>();
+            final List<Pair<NicTO, Object>> nicToNetwork = new ArrayList<Pair<NicTO, Object>>();
             for (final NicTO nicTo : vmSpec.getNics()) {
                 final Network network = xenServer610Resource.getNetwork(connection, nicTo);
-                nicToNetwork.put(nicTo, gson.toJson(network));
+                nicToNetwork.add(new Pair<NicTO, Object>(nicTo, network));
             }
 
             final XsLocalNetwork nativeNetworkForTraffic = xenServer610Resource.getNativeNetworkForTraffic(connection, TrafficType.Storage, null);

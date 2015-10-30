@@ -40,6 +40,13 @@ public class MigrateWithStorageCommand extends Command {
         this.tgtHost = null;
     }
 
+    public MigrateWithStorageCommand(VirtualMachineTO vm, List<Pair<VolumeTO, StorageFilerTO>> volumeToFilerAsList) {
+        this.vm = vm;
+        this.volumeToFiler = null;
+        this.volumeToFilerAsList = volumeToFilerAsList;
+        this.tgtHost = null;
+    }
+
     public MigrateWithStorageCommand(VirtualMachineTO vm, Map<VolumeTO, StorageFilerTO> volumeToFiler, String tgtHost) {
         this.vm = vm;
         this.volumeToFiler = volumeToFiler;
