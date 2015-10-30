@@ -74,6 +74,7 @@ install:
 	install -D agent/target/transformed/cloud-setup-agent $(DESTDIR)/usr/bin/cloudstack-setup-agent
 	install -D agent/target/transformed/cloud-ssh $(DESTDIR)/usr/bin/cloudstack-ssh
 	install -D agent/target/transformed/cloudstack-agent-profile.sh $(DESTDIR)/$(SYSCONFDIR)/profile.d/cloudstack-agent-profile.sh
+	install -D agent/target/transformed/cloudstack-agent.logrotate $(DESTDIR)/$(SYSCONFDIR)/logrotate.d/cloudstack-agent
 	install -D agent/target/transformed/cloudstack-agent-upgrade $(DESTDIR)/usr/bin/cloudstack-agent-upgrade
 	install -D agent/target/transformed/libvirtqemuhook $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
 	install -D agent/target/transformed/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/agent
