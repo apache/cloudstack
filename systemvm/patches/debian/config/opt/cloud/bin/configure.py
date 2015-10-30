@@ -154,7 +154,7 @@ class CsAcl(CsDataBag):
                     fwr = " -A FW_EGRESS_RULES"
                     if rule['protocol'] != "all":
                         fwr += " -s %s " % cidr + \
-                               " -p %s " % cidr, rule['protocol'] + \
+                               " -p %s " % rule['protocol'] + \
                                " -m %s " % rule['protocol'] + \
                                " --dport %s" % rnge
 
