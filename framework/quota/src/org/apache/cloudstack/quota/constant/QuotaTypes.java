@@ -94,6 +94,10 @@ public class QuotaTypes extends UsageTypes {
     }
 
     static public String getDescription(int quotaType) {
-        return quotaTypeMap.get(quotaType).getDescription();
+        QuotaTypes t = quotaTypeMap.get(quotaType);
+        if (t != null) {
+            return t.getDescription();
+        }
+        return null;
     }
 }
