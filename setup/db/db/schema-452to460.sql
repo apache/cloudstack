@@ -335,7 +335,7 @@ CREATE VIEW `cloud`.`user_vm_view` AS
         `cloud`.`user_vm_details` as ssh_details ON ssh_details.vm_id = vm_instance.id
             and ssh_details.name = 'SSH.PublicKey'
             left join
-        `cloud`.`ssh_keypairs` ON ssh_keypairs.public_key = ssh_details.value
+        `cloud`.`ssh_keypairs` ON ssh_keypairs.public_key = ssh_details.value AND ssh_keypairs.account_id = account.id
             left join
         `cloud`.`resource_tags` ON resource_tags.resource_id = vm_instance.id
             and resource_tags.resource_type = 'UserVm'
