@@ -24,13 +24,15 @@ Description=CloudStack Management Server
 After=syslog.target network.target
 
 [Service]
-Type=forking
-ExecStart=/usr/sbin/tomcat-sysd start
-ExecStop=/usr/sbin/tomcat-sysd stop
+Type=simple
+EnvironmentFile=/etc/tomcat/tomcat.conf
+Environment="NAME=cloudstack-management"
+EnvironmentFile=-/etc/sysconfig/cloudstack-management
+ExecStart=/usr/libexec/tomcat/server start
+ExecStop=/usr/libexec/tomcat/server stop
 SuccessExitStatus=143
 User=cloud
 Group=cloud
-EnvironmentFile=/etc/sysconfig/cloudstack-management
 
 [Install]
 WantedBy=multi-user.target
