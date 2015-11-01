@@ -48,6 +48,7 @@ public class TemplateProfile {
     String templateTag;
     Map details;
     Boolean isDynamicallyScalable;
+    Boolean isAgentEnabled;
     TemplateType templateType;
 
     public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm, String url,
@@ -87,7 +88,7 @@ public class TemplateProfile {
             Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, Long zoneId,
 
             HypervisorType hypervisorType, String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, String templateTag, Map details,
-            Boolean sshKeyEnabled, Long imageStoreId, Boolean isDynamicallyScalable, TemplateType templateType) {
+            Boolean sshKeyEnabled, Long imageStoreId, Boolean isDynamicallyScalable, TemplateType templateType, Boolean isAgentEnabled) {
         this(templateId,
             userId,
             name,
@@ -113,6 +114,7 @@ public class TemplateProfile {
         this.templateTag = templateTag;
         this.isDynamicallyScalable = isDynamicallyScalable;
         this.templateType = templateType;
+        this.isAgentEnabled = isAgentEnabled;
     }
 
     public Long getTemplateId() {
@@ -305,6 +307,13 @@ public class TemplateProfile {
 
     public void setScalabe(Boolean isDynamicallyScalabe) {
         this.isDynamicallyScalable = isDynamicallyScalabe;
+    }
+
+    public Boolean isAgentEnabled() {
+        return isAgentEnabled;
+    }
+    public void setAgentEnabled(Boolean enabled) {
+        this.isAgentEnabled = enabled;
     }
 
     public TemplateType getTemplateType() {

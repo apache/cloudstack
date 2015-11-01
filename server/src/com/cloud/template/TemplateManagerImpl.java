@@ -1587,6 +1587,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Integer bits = cmd.getBits();
         Boolean requiresHvm = cmd.getRequiresHvm();
         Boolean passwordEnabled = cmd.isPasswordEnabled();
+        Boolean isAgentEnabled = cmd.isAgentEnabled();
         Boolean isPublic = cmd.isPublic();
         Boolean featured = cmd.isFeatured();
         int bitsValue = ((bits == null) ? 64 : bits.intValue());
@@ -1700,7 +1701,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
         privateTemplate = new VMTemplateVO(nextTemplateId, name, ImageFormat.RAW, isPublic, featured, isExtractable,
                 TemplateType.USER, null, requiresHvmValue, bitsValue, templateOwner.getId(), null, description,
-                passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails(), false, isDynamicScalingEnabled);
+                passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails(), false, isDynamicScalingEnabled, isAgentEnabled);
 
         if (sourceTemplateId != null) {
             if (s_logger.isDebugEnabled()) {
@@ -1842,6 +1843,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Long guestOSId = cmd.getOsTypeId();
         Boolean passwordEnabled = cmd.getPasswordEnabled();
         Boolean isDynamicallyScalable = cmd.isDynamicallyScalable();
+        Boolean isAgentEnabled = cmd.isAgentEnabled();
         Boolean isRoutingTemplate = cmd.isRoutingType();
         Boolean bootable = cmd.getBootable();
         Boolean requiresHvm = cmd.getRequiresHvm();
@@ -1878,6 +1880,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                   requiresHvm == null &&
                   sortKey == null &&
                   isDynamicallyScalable == null &&
+                  isAgentEnabled == null &&
                   isRoutingTemplate == null &&
                   details == null);
         if (!updateNeeded) {
@@ -1947,6 +1950,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         if (isDynamicallyScalable != null) {
             template.setDynamicallyScalable(isDynamicallyScalable);
+        }
+
+        if (isAgentEnabled != null) {
+            template.setEnableAgent(isAgentEnabled);
         }
 
         if (isRoutingTemplate != null) {

@@ -233,6 +233,12 @@
 
                                                     $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
                                                 }
+
+                                                if ($(this).val() == "KVM") {
+                                                    $form.find('.form-item[rel=isAgentEnabled').css('display', 'inline-block');
+                                                } else {
+                                                    $form.find('.form-item[rel=isAgentEnabled]').hide();
+                                                }
                                             });
 
                                             args.$select.trigger('change');
@@ -454,6 +460,13 @@
                                         isBoolean: true
                                     },
 
+                                    isAgentEnabled: {
+                                        label: "label.agent.enabled",
+                                        docID: 'helpRegisterTemplateAgent',
+                                        isBoolean: true,
+                                        isHidden: true
+                                    },
+
                                     isPublic: {
                                         label: "label.public",
                                         docID: 'helpRegisterTemplatePublic',
@@ -492,6 +505,7 @@
                                     format: args.data.format,
                                     isextractable: (args.data.isExtractable == "on"),
                                     passwordEnabled: (args.data.isPasswordEnabled == "on"),
+                                    agentenabled: (args.$form.find('.form-item[rel=isAgentEnabled]').css("display") != "none") && (args.data.isAgentEnabled == "on"),
                                     isdynamicallyscalable: (args.data.isdynamicallyscalable == "on"),
                                     osTypeId: args.data.osTypeId,
                                     hypervisor: args.data.hypervisor
@@ -976,6 +990,7 @@
                                         displaytext: args.data.displaytext,
                                         ostypeid: args.data.ostypeid,
                                         passwordenabled: (args.data.passwordenabled == "on"),
+                                        agentenabled: (args.$form.find('.form-item[rel=agentenabled]').css("display") != "none") && (args.data.agentenabled == "on"),
                                         isdynamicallyscalable: (args.data.isdynamicallyscalable == "on")
                                     };
                                     $.ajax({
@@ -1165,6 +1180,10 @@
                                         hiddenFields.push('xenserverToolsVersion61plus');
                                     }
 
+                                    if ('templates' in args.context && args.context.templates[0].hypervisor != 'KVM') {
+                                        hiddenFields.push('agentenabled');
+                                    }
+
                                     if ('templates' in args.context && args.context.templates[0].ostypeid != undefined) {
                                         var ostypeObjs;
                                         $.ajax({
@@ -1239,6 +1258,12 @@
                                     },
                                     passwordenabled: {
                                         label: 'label.password.enabled',
+                                        isBoolean: true,
+                                        isEditable: true,
+                                        converter: cloudStack.converters.toBooleanText
+                                    },
+                                    agentenabled: {
+                                        label: 'Agent Enabled',
                                         isBoolean: true,
                                         isEditable: true,
                                         converter: cloudStack.converters.toBooleanText

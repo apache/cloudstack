@@ -54,6 +54,7 @@ public class VirtualMachineTO {
     boolean enableHA;
     boolean limitCpuUse;
     boolean enableDynamicallyScaleVm;
+    boolean enableAgent;
     String vncPassword;
     String vncAddr;
     Map<String, String> params;
@@ -120,6 +121,14 @@ public class VirtualMachineTO {
 
     public void setEnableDynamicallyScaleVm(boolean enableDynamicallyScaleVm) {
         this.enableDynamicallyScaleVm = enableDynamicallyScaleVm;
+    }
+
+    public boolean isEnableAgent() {
+        return enableAgent;
+    }
+
+    public void setEnableAgent(boolean enableAgent) {
+        this.enableAgent = enableAgent;
     }
 
     public String getName() {

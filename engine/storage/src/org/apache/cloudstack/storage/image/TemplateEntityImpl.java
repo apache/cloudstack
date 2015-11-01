@@ -191,6 +191,12 @@ public class TemplateEntityImpl implements TemplateEntity {
     }
 
     @Override
+    public boolean getEnableAgent() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
     public boolean isCrossZones() {
         // TODO Auto-generated method stub
         return false;

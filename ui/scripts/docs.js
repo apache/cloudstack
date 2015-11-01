@@ -1220,6 +1220,10 @@ cloudStack.docs = {
         desc: 'Check this if the template has the password change script installed.',
         externalLink: ''
     },
+    helpRegisterTemplateAgent: {
+        desc: 'Check this if the template has qemu guest agent inside.',
+        externalLink: ''
+    },
     helpRegisterTemplatePublic: {
         desc: 'Check this to make the template accessible to all users. The template will appear in the Community Templates list.',
         externalLink: ''

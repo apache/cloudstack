@@ -137,6 +137,9 @@ public class RegisterTemplateCmd extends BaseCmd {
                description = "true if template contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
     protected Boolean isDynamicallyScalable;
 
+    @Parameter(name = ApiConstants.AGENT_ENABLED, type = CommandType.BOOLEAN, description = "true if the template supports guest agent")
+    protected Boolean isAgentEnabled;
+
     @Parameter(name = ApiConstants.ROUTING, type = CommandType.BOOLEAN, description = "true if the template type is routing i.e., if template is used to deploy router")
     protected Boolean isRoutingType;
 
@@ -228,6 +231,10 @@ public class RegisterTemplateCmd extends BaseCmd {
 
     public Boolean isDynamicallyScalable() {
         return isDynamicallyScalable == null ? Boolean.FALSE : isDynamicallyScalable;
+    }
+
+    public Boolean isAgentEnabled() {
+        return isAgentEnabled == null ? false : isAgentEnabled;
     }
 
     public Boolean isRoutingType() {

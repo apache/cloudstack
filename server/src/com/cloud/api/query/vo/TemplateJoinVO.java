@@ -100,6 +100,9 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "dynamically_scalable")
     private boolean dynamicallyScalable;
 
+    @Column(name = "enable_agent")
+    private boolean enableAgent;
+
     @Column(name = "guest_os_id")
     private long guestOSId;
 
@@ -433,6 +436,14 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public boolean isDynamicallyScalable() {
         return dynamicallyScalable;
+    }
+
+    public boolean isEnableAgent() {
+        return enableAgent;
+    }
+
+    public void setEnableAgent(boolean enable) {
+        enableAgent = enable;
     }
 
     public long getGuestOSId() {

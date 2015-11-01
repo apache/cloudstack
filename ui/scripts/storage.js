@@ -1282,6 +1282,9 @@
                                                 args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').css('display', 'inline-block');
                                             }
                                         }
+                                        if (args.context.volumes[0].hypervisor == "KVM") {
+                                            args.$form.find('.form-item[rel=isAgentEnabled]').css('display', 'inline-block');
+                                        }
                                     },
                                     fields: {
                                         name: {
@@ -1377,6 +1380,11 @@
                                         isdynamicallyscalable: {
                                             label: 'label.dynamically.scalable',
                                             isBoolean: true
+                                        },
+                                        isAgentEnabled: {
+                                            label: "label.agent.enabled",
+                                            docID: 'helpRegisterTemplateAgent',
+                                            isBoolean: true
                                         }
                                     }
                                 },
@@ -1388,6 +1396,7 @@
                                         osTypeId: args.data.osTypeId,
                                         isPublic: (args.data.isPublic == "on"),
                                         passwordEnabled: (args.data.isPasswordEnabled == "on"),
+                                        agentenabled: (args.$form.find('.form-item[rel=isAgentEnabled]').css("display") != "none") && (args.data.isAgentEnabled == "on"),
                                         isdynamicallyscalable: (args.data.isdynamicallyscalable == "on")
 
                                     };
@@ -2012,6 +2021,13 @@
                                 createForm: {
                                     title: 'label.create.template',
                                     desc: '',
+                                    preFilter: function(args) {
+                                        if (args.context.snapshots[0].hypervisor == "KVM") {
+                                            args.$form.find('.form-item[rel=isAgentEnabled]').css('display', 'inline-block');
+                                        } else {
+                                            args.$form.find('.form-item[rel=isAgentEnabled]').hide();
+                                        }
+                                    },
                                     fields: {
                                         name: {
                                             label: 'label.name',
@@ -2059,6 +2075,12 @@
                                         isdynamicallyscalable: {
                                             label: 'label.dynamically.scalable',
                                             isBoolean: true
+                                        },
+                                        isAgentEnabled: {
+                                            label: "Agent Enabled",
+                                            docID: 'helpRegisterTemplateAgent',
+                                            isBoolean: true,
+                                            isHidden: true
                                         }
                                     }
                                 },
@@ -2070,6 +2092,7 @@
                                         osTypeId: args.data.osTypeId,
                                         isPublic: (args.data.isPublic == "on"),
                                         passwordEnabled: (args.data.isPasswordEnabled == "on"),
+                                        agentenabled: (args.$form.find('.form-item[rel=isAgentEnabled]').css("display") != "none") && (args.data.isAgentEnabled == "on"),
                                         isdynamicallyscalable: (args.data.isdynamicallyscalable == "on")
                                     };
 

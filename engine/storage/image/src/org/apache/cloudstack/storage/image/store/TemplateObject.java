@@ -373,6 +373,11 @@ public class TemplateObject implements TemplateInfo {
     }
 
     @Override
+    public boolean getEnableAgent() {
+        return this.imageVO.getEnableAgent();
+    }
+
+    @Override
     public boolean isCrossZones() {
         return imageVO.isCrossZones();
     }

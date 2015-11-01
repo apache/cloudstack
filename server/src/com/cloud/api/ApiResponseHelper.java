@@ -475,6 +475,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             DataCenter zone = ApiDBUtils.findZoneById(volume.getDataCenterId());
             if (zone != null) {
                 snapshotResponse.setZoneId(zone.getUuid());
+                snapshotResponse.setHypervisor(ApiDBUtils.getHypervisorTypeFromFormat(volume.getDataCenterId(), volume.getFormat()).toString());
             }
         }
         snapshotResponse.setCreated(snapshot.getCreated());

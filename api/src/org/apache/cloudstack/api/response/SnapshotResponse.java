@@ -70,6 +70,10 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     @Param(description = "type of the disk volume")
     private String volumeType;
 
+    @SerializedName(ApiConstants.HYPERVISOR)
+    @Param(description = "hypervisor type of the disk volume")
+    private String hypervisor;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "  the date the snapshot was created")
     private Date created;
@@ -152,6 +156,10 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
 
     public void setVolumeType(String volumeType) {
         this.volumeType = volumeType;
+    }
+
+    public void setHypervisor(String hypervisor) {
+        this.hypervisor = hypervisor;
     }
 
     public void setCreated(Date created) {

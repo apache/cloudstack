@@ -146,6 +146,9 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     @Column(name = "dynamically_scalable")
     protected boolean dynamicallyScalable;
 
+    @Column(name = "enable_agent")
+    private boolean enableAgent;
+
     @Override
     public String getUniqueName() {
         return uniqueName;
@@ -188,7 +191,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 
     public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type, String url,
             boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable,
-            HypervisorType hyperType, String templateTag, Map<String, String> details, boolean sshKeyEnabled, boolean isDynamicallyScalable) {
+            HypervisorType hyperType, String templateTag, Map<String, String> details, boolean sshKeyEnabled, boolean isDynamicallyScalable, boolean agentEnabled) {
         this(id,
             name,
             format,
@@ -211,6 +214,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         uuid = UUID.randomUUID().toString();
         enableSshKey = sshKeyEnabled;
         dynamicallyScalable = isDynamicallyScalable;
+        enableAgent = agentEnabled;
         state = State.Active;
     }
 
@@ -572,6 +576,15 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 
     public void setEnableSshKey(boolean enable) {
         enableSshKey = enable;
+    }
+
+    @Override
+    public boolean getEnableAgent() {
+        return enableAgent;
+    }
+
+    public void setEnableAgent(boolean enable) {
+        enableAgent = enable;
     }
 
     public void setSize(Long size) {

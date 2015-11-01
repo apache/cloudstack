@@ -18,6 +18,7 @@ package org.apache.cloudstack.api;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.command.user.iso.UpdateIsoCmd;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
@@ -67,6 +68,9 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
                description = "true if template/ISO contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
     private Boolean isDynamicallyScalable;
 
+    @Parameter(name = ApiConstants.AGENT_ENABLED, type = CommandType.BOOLEAN, description = "true if the template supports guest agent")
+    protected Boolean isAgentEnabled;
+
     @Parameter(name = ApiConstants.ROUTING, type = CommandType.BOOLEAN, description = "true if the template type is routing i.e., if template is used to deploy router")
     protected Boolean isRoutingType;
 
@@ -115,6 +119,10 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
 
     public Boolean isDynamicallyScalable() {
         return isDynamicallyScalable;
+    }
+
+    public Boolean isAgentEnabled() {
+        return isAgentEnabled;
     }
 
     public Boolean isRoutingType() {
