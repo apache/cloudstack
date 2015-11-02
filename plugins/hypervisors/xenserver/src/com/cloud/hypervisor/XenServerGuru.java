@@ -58,9 +58,11 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
+import org.apache.log4j.Logger;
 
 @Local(value = HypervisorGuru.class)
 public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru, Configurable {
+    private final Logger LOGGER = Logger.getLogger(XenServerGuru.class);
     @Inject
     GuestOSDao _guestOsDao;
     @Inject
@@ -173,6 +175,7 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
 
     @Override
     public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
+        LOGGER.debug("getCommandHostDelegation: " + cmd.getClass());
         if (cmd instanceof StorageSubSystemCommand) {
             StorageSubSystemCommand c = (StorageSubSystemCommand)cmd;
             c.setExecuteInSequence(true);

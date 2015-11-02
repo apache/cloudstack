@@ -87,6 +87,15 @@ public class Ovm3HypervisorGuru extends HypervisorGuruBase implements Hypervisor
      */
     public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
         LOGGER.debug("getCommandHostDelegation: " + cmd.getClass());
+        performSideEffectsForDelegationOnCommand(hostId, cmd);
+        return new Pair<Boolean, Long>(Boolean.FALSE, Long.valueOf(hostId));
+    }
+
+    /**
+     * @param hostId
+     * @param cmd
+     */
+    void performSideEffectsForDelegationOnCommand(long hostId, Command cmd) {
         if (cmd instanceof StorageSubSystemCommand) {
             StorageSubSystemCommand c = (StorageSubSystemCommand)cmd;
             c.setExecuteInSequence(true);
@@ -105,12 +114,8 @@ public class Ovm3HypervisorGuru extends HypervisorGuruBase implements Hypervisor
                     EndPoint ep = endPointSelector.selectHypervisorHost(new ZoneScope(host.getDataCenterId()));
                     host = hostDao.findById(ep.getId());
                     hostDao.loadDetails(host);
-                    // String snapshotHotFixVersion = host.getDetail(XenserverConfigs.XS620HotFix);
-                    // if (snapshotHotFixVersion != null && snapshotHotFixVersion.equalsIgnoreCase(XenserverConfigs.XSHotFix62ESP1004)) {
-                    return new Pair<Boolean, Long>(Boolean.TRUE,  Long.valueOf(ep.getId()));
                 }
             }
         }
-        return new Pair<Boolean, Long>(Boolean.FALSE, Long.valueOf(hostId));
     }
 }
