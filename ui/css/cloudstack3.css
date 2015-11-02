@@ -3115,14 +3115,14 @@ div.toolbar div.button.main-action,
   font-size: 12px;
   font-weight: 100;
   color: #000000;
-  margin: 0 14px 0 0;
+  margin: 0 10px 0 0;
   cursor: pointer;
   /*+text-shadow:0px 1px 1px #DEE5EA;*/
   -moz-text-shadow: 0px 1px 1px #DEE5EA;
   -webkit-text-shadow: 0px 1px 1px #DEE5EA;
   -o-text-shadow: 0px 1px 1px #DEE5EA;
   text-shadow: 0px 1px 1px #DEE5EA;
-  padding: 5px 7px 5px 6px;
+  padding: 5px 5px 5px 5px;
   background: #F7F7F7;
   background: rgb(247, 247, 247);
   background: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiA/Pgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDEgMSIgcHJlc2VydmVBc3BlY3RSYXRpbz0ibm9uZSI+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJncmFkLXVjZ2ctZ2VuZXJhdGVkIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeDE9IjAlIiB5MT0iMCUiIHgyPSIwJSIgeTI9IjEwMCUiPgogICAgPHN0b3Agb2Zmc2V0PSIxJSIgc3RvcC1jb2xvcj0iI2Y3ZjdmNyIgc3RvcC1vcGFjaXR5PSIxIi8+CiAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNlYWVhZWEiIHN0b3Atb3BhY2l0eT0iMSIvPgogIDwvbGluZWFyR3JhZGllbnQ+CiAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0idXJsKCNncmFkLXVjZ2ctZ2VuZXJhdGVkKSIgLz4KPC9zdmc+);
