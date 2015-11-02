@@ -158,6 +158,10 @@ public class Script implements Callable<String> {
         return builder.toString();
     }
 
+    public long getTimeout() {
+        return _timeout;
+    }
+
     public String execute() {
         return execute(new OutputInterpreter.OutputLogger(_logger));
     }

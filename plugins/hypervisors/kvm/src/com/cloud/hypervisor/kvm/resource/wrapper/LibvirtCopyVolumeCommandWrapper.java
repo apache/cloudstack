@@ -66,7 +66,7 @@ public final class LibvirtCopyVolumeCommandWrapper extends CommandWrapper<CopyVo
             }
 
             final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
-            final String volumeName = libvirtUtilitiesHelper.generatereUUIDName();
+            final String volumeName = libvirtUtilitiesHelper.generateUUIDName();
 
             if (copyToSecondary) {
                 final String destVolumeName = volumeName + ".qcow2";

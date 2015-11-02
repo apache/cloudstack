@@ -3743,7 +3743,7 @@ public class LibvirtComputingResourceTest {
 
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         when(libvirtUtilitiesHelper.buildTemplateLocation(storage, tmplPath)).thenReturn(location);
-        when(libvirtUtilitiesHelper.generatereUUIDName()).thenReturn(tmplName);
+        when(libvirtUtilitiesHelper.generateUUIDName()).thenReturn(tmplName);
 
         try {
             when(libvirtUtilitiesHelper.buildQCOW2Processor(storage)).thenReturn(qcow2Processor);
@@ -3817,7 +3817,7 @@ public class LibvirtComputingResourceTest {
 
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         when(libvirtUtilitiesHelper.buildTemplateLocation(storage, tmplPath)).thenReturn(location);
-        when(libvirtUtilitiesHelper.generatereUUIDName()).thenReturn(tmplName);
+        when(libvirtUtilitiesHelper.generateUUIDName()).thenReturn(tmplName);
 
         try {
             when(libvirtUtilitiesHelper.buildQCOW2Processor(storage)).thenThrow(ConfigurationException.class);
@@ -3890,7 +3890,7 @@ public class LibvirtComputingResourceTest {
 
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         when(libvirtUtilitiesHelper.buildTemplateLocation(storage, tmplPath)).thenReturn(location);
-        when(libvirtUtilitiesHelper.generatereUUIDName()).thenReturn(tmplName);
+        when(libvirtUtilitiesHelper.generateUUIDName()).thenReturn(tmplName);
 
         try {
             when(libvirtUtilitiesHelper.buildQCOW2Processor(storage)).thenReturn(qcow2Processor);
@@ -3964,7 +3964,7 @@ public class LibvirtComputingResourceTest {
 
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         when(libvirtUtilitiesHelper.buildTemplateLocation(storage, tmplPath)).thenReturn(location);
-        when(libvirtUtilitiesHelper.generatereUUIDName()).thenReturn(tmplName);
+        when(libvirtUtilitiesHelper.generateUUIDName()).thenReturn(tmplName);
 
         try {
             when(libvirtUtilitiesHelper.buildQCOW2Processor(storage)).thenReturn(qcow2Processor);
@@ -4022,7 +4022,7 @@ public class LibvirtComputingResourceTest {
         snapshotPath = snapshotPath.substring(0, index);
 
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
-        when(libvirtUtilitiesHelper.generatereUUIDName()).thenReturn(tmplName);
+        when(libvirtUtilitiesHelper.generateUUIDName()).thenReturn(tmplName);
 
         when(storagePoolMgr.getStoragePoolByURI(command.getSecondaryStorageUrl() + snapshotPath)).thenReturn(snapshotPool);
         when(storagePoolMgr.getStoragePoolByURI(command.getSecondaryStorageUrl())).thenReturn(secondaryPool);
@@ -4067,7 +4067,7 @@ public class LibvirtComputingResourceTest {
         when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(primary);
 
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
-        when(libvirtUtilitiesHelper.generatereUUIDName()).thenReturn(destVolumeName);
+        when(libvirtUtilitiesHelper.generateUUIDName()).thenReturn(destVolumeName);
         when(primary.getPhysicalDisk(command.getVolumePath())).thenReturn(disk);
         when(storagePoolMgr.getStoragePoolByURI(secondaryStoragePoolURL)).thenReturn(secondary);
         when(secondary.getType()).thenReturn(StoragePoolType.ManagedNFS);
@@ -4113,7 +4113,7 @@ public class LibvirtComputingResourceTest {
         when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
         when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(primary);
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
-        when(libvirtUtilitiesHelper.generatereUUIDName()).thenReturn(destVolumeName);
+        when(libvirtUtilitiesHelper.generateUUIDName()).thenReturn(destVolumeName);
         when(secondary.getType()).thenReturn(StoragePoolType.ManagedNFS);
         when(secondary.getUuid()).thenReturn("60d979d8-d132-4181-8eca-8dfde50d7df6");
         when(storagePoolMgr.getStoragePoolByURI(secondaryStoragePoolURL + volumeDestPath)).thenReturn(secondary);
@@ -4156,7 +4156,7 @@ public class LibvirtComputingResourceTest {
         when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
         when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(primary);
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
-        when(libvirtUtilitiesHelper.generatereUUIDName()).thenReturn(destVolumeName);
+        when(libvirtUtilitiesHelper.generateUUIDName()).thenReturn(destVolumeName);
         when(secondary.getType()).thenReturn(StoragePoolType.ManagedNFS);
         when(secondary.getUuid()).thenReturn("60d979d8-d132-4181-8eca-8dfde50d7df6");
         when(storagePoolMgr.getStoragePoolByURI(secondaryStoragePoolURL + volumeDestPath)).thenReturn(secondary);
@@ -4230,7 +4230,7 @@ public class LibvirtComputingResourceTest {
                 pool.getUserInfo(), pool.getType())).thenReturn(primary);
 
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
-        when(libvirtUtilitiesHelper.generatereUUIDName()).thenReturn(destVolumeName);
+        when(libvirtUtilitiesHelper.generateUUIDName()).thenReturn(destVolumeName);
         when(secondary.getType()).thenReturn(StoragePoolType.ManagedNFS);
         when(secondary.getUuid()).thenReturn("60d979d8-d132-4181-8eca-8dfde50d7df6");
         when(storagePoolMgr.getStoragePoolByURI(secondaryStoragePoolURL + volumeDestPath)).thenReturn(secondary);
