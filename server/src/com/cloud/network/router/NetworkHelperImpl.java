@@ -331,7 +331,9 @@ public class NetworkHelperImpl implements NetworkHelper {
             }
             if (!skip) {
                 if (state != State.Running) {
-                    router = startVirtualRouter(router, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(), routerDeploymentDefinition.getParams());
+                    final Account caller = CallContext.current().getCallingAccount();
+                    final User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
+                    router = startVirtualRouter(router,callerUser, caller, routerDeploymentDefinition.getParams());
                 }
                 if (router != null) {
                     runningRouters.add(router);
@@ -509,7 +511,9 @@ public class NetworkHelperImpl implements NetworkHelper {
 
             if (startRouter) {
                 try {
-                    router = startVirtualRouter(router, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(), routerDeploymentDefinition.getParams());
+                    final Account caller = CallContext.current().getCallingAccount();
+                    final User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
+                    router = startVirtualRouter(router, callerUser, caller, routerDeploymentDefinition.getParams());
                     break;
                 } catch (final InsufficientCapacityException ex) {
                     if (startRetry < 2 && iter.hasNext()) {
