@@ -2432,3 +2432,61 @@ class TestVPC(cloudstackTestCase):
         self.assertEqual(vpc_networks[0].displaytext,
                          new_display_text,
                          "Updation of VPC display text failed.")
+
+    @attr(tags=["advanced", "intervlan"], required_hardware="false")
+    def test_21_deploy_vm_with_gateway_ip(self):
+        self.services["vpc"]["cidr"] = "192.168.1.0/24"
+        self.debug("creating a VPC network in the account: %s" %
+                   self.account.name)
+        vpc = VPC.create(
+            self.apiclient,
+            self.services["vpc"],
+            vpcofferingid=self.vpc_off.id,
+            zoneid=self.zone.id,
+            account=self.account.name,
+            domainid=self.account.domainid
+        )
+        self.validate_vpc_network(vpc)
+        self.network_offering = NetworkOffering.create(
+            self.apiclient,
+            self.services["network_offering"],
+            conservemode=False
+        )
+        # Enable Network offering
+        self.network_offering.update(self.apiclient, state='Enabled')
+        self.cleanup.append(self.network_offering)
+        #Instead of first ip, assigning last ip in the CIDR as the gateway ip
+        gateway = "192.168.1.2"
+        self.services["network"]["netmask"] = "255.255.255.252"
+        # Split the cidr to retrieve gateway
+        # for eg. cidr = 10.0.0.1/24
+        # Gateway = 10.0.0.1
+
+        # Creating network using the network offering created
+        self.debug("Creating network with network offering: %s" %
+                   self.network_offering.id)
+        network = Network.create(
+            self.apiclient,
+            self.services["network"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            networkofferingid=self.network_offering.id,
+            zoneid=self.zone.id,
+            gateway=gateway,
+            vpcid=vpc.id
+        )
+        self.debug("Created network with ID: %s" % network.id)
+        vm = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            networkids=[str(network.id)]
+        )
+        self.debug("Deployed VM in network: %s" % network.id)
+        self.assertIsNotNone(
+            vm,
+            "Failed to create VM with first ip address in the CIDR as the vm ip"
+        )
+        return
