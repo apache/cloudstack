@@ -173,7 +173,7 @@
                 url: createURL('listNics'),
                 data: {
                     virtualmachineid: instance.id,
-                    nicId: instance.nic[0].id
+                    networkid: network.id
                 },
                 success: function(json) {
                     var nic = json.listnicsresponse.nic[0];
