@@ -147,8 +147,9 @@ public class ApiServlet extends HttpServlet {
 
         // logging the request start and end in management log for easy debugging
         String reqStr = "";
+        String cleanQueryString = StringUtils.cleanString(req.getQueryString());
         if (s_logger.isDebugEnabled()) {
-            reqStr = auditTrailSb.toString() + " " + StringUtils.cleanString(req.getQueryString());
+            reqStr = auditTrailSb.toString() + " " + cleanQueryString;
             s_logger.debug("===START=== " + reqStr);
         }
 
@@ -233,7 +234,7 @@ public class ApiServlet extends HttpServlet {
                 }
             }
 
-            auditTrailSb.append(StringUtils.cleanString(req.getQueryString()));
+            auditTrailSb.append(cleanQueryString);
             final boolean isNew = ((session == null) ? true : session.isNew());
 
             // Initialize an empty context and we will update it after we have verified the request below,

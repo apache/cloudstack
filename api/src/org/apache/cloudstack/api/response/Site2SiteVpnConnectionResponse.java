@@ -58,7 +58,7 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
     private String guestCidrList;
 
     @SerializedName(ApiConstants.IPSEC_PSK)
-    @Param(description = "IPsec Preshared-Key of the customer gateway")
+    @Param(description = "IPsec Preshared-Key of the customer gateway", isSensitive = true)
     //from CustomerGateway
     private String ipsecPsk;
 

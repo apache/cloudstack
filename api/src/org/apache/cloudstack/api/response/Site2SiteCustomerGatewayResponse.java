@@ -51,7 +51,7 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponse implements Co
     private String guestCidrList;
 
     @SerializedName(ApiConstants.IPSEC_PSK)
-    @Param(description = "IPsec preshared-key of customer gateway")
+    @Param(description = "IPsec preshared-key of customer gateway", isSensitive = true)
     private String ipsecPsk;
 
     @SerializedName(ApiConstants.IKE_POLICY)

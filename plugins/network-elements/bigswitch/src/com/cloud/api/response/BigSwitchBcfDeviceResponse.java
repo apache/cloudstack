@@ -54,7 +54,7 @@ public class BigSwitchBcfDeviceResponse extends BaseResponse {
     @SerializedName(ApiConstants.USERNAME) @Param(description="the controller username")
     private String username;
 
-    @SerializedName(ApiConstants.PASSWORD) @Param(description="the controller password")
+    @SerializedName(ApiConstants.PASSWORD) @Param(description="the controller password", isSensitive = true)
     private String password;
 
     @SerializedName(BcfConstants.BIGSWITCH_BCF_DEVICE_NAT)

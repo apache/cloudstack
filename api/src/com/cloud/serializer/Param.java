@@ -37,4 +37,6 @@ public @interface Param {
     String since() default "";
 
     RoleType[] authorized() default {};
+
+    boolean isSensitive() default false;
 }

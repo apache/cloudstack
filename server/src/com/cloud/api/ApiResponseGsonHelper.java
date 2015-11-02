@@ -27,30 +27,40 @@ import com.google.gson.FieldAttributes;
 import com.google.gson.GsonBuilder;
 
 /**
- * The ApiResonseGsonHelper is different from ApiGsonHelper - it registeres one more adapter for String type required for api response encoding
+ * The ApiResonseGsonHelper is different from ApiGsonHelper - it registers one more adapter for String type required for api response encoding
  */
 public class ApiResponseGsonHelper {
     private static final GsonBuilder s_gBuilder;
+    private static final GsonBuilder s_gLogBuilder;
 
     static {
         s_gBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
         s_gBuilder.setVersion(1.3);
         s_gBuilder.registerTypeAdapter(ResponseObject.class, new ResponseObjectTypeAdapter());
         s_gBuilder.registerTypeAdapter(String.class, new EncodedStringTypeAdapter());
-        s_gBuilder.setExclusionStrategies(new ExclStrat());
+        s_gBuilder.setExclusionStrategies(new ApiResponseExclusionStrategy());
+
+        s_gLogBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+        s_gLogBuilder.setVersion(1.3);
+        s_gLogBuilder.registerTypeAdapter(ResponseObject.class, new ResponseObjectTypeAdapter());
+        s_gLogBuilder.registerTypeAdapter(String.class, new EncodedStringTypeAdapter());
+        s_gLogBuilder.setExclusionStrategies(new LogExclusionStrategy());
     }
 
     public static GsonBuilder getBuilder() {
         return s_gBuilder;
     }
 
-    private static class ExclStrat implements ExclusionStrategy {
+    public static GsonBuilder getLogBuilder() {
+        return s_gLogBuilder;
+    }
 
+    private static class ApiResponseExclusionStrategy implements ExclusionStrategy {
         public boolean shouldSkipClass(Class<?> arg0) {
             return false;
         }
-        public boolean shouldSkipField(FieldAttributes f) {
 
+        public boolean shouldSkipField(FieldAttributes f) {
             Param param = f.getAnnotation(Param.class);
             if (param != null) {
                 RoleType[] allowedRoles = param.authorized();
@@ -69,6 +79,21 @@ public class ApiResponseGsonHelper {
                 }
             }
             return false;
+        }
+    }
+
+    private static class LogExclusionStrategy extends ApiResponseExclusionStrategy implements ExclusionStrategy {
+        public boolean shouldSkipClass(Class<?> arg0) {
+            return false;
+        }
+
+        public boolean shouldSkipField(FieldAttributes f) {
+            Param param = f.getAnnotation(Param.class);
+            boolean skip = (param != null && param.isSensitive());
+            if (!skip) {
+                skip = super.shouldSkipField(f);
+            }
+            return skip;
         }
     }
 }
