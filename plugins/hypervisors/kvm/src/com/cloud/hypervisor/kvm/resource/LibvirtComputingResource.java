@@ -3520,4 +3520,40 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
+    protected String rebootVM(Connect conn, String vmName, boolean isAgent) {
+        if (isAgent) {
+            if (!checkGuestAgentSync(conn, vmName))
+                return "This vm does not support guest agent";
+            String execute = "guest-shutdown";
+            HashMap arguments = new HashMap();
+            arguments.put("mode", "reboot");
+            GuestAgentCommand cmd = new GuestAgentCommand(execute, arguments);
+            try {
+                SendToVMAgent(conn, vmName, cmd, false, null, null, null);
+            } catch (Exception ex) {
+                return "Failed to reboot vm via guest agent";
+            }
+            return null;
+        } else {
+            return rebootVM(conn, vmName);
+        }
+    }
+
+    protected String stopVM(Connect conn, String vmName, Boolean forced, boolean isAgent) {
+        if (isAgent) {
+            if (!checkGuestAgentSync(conn, vmName))
+                return "This vm does not support guest agent";
+            String execute = "guest-shutdown";
+            GuestAgentCommand cmd = new GuestAgentCommand(execute, null);
+            try {
+                SendToVMAgent(conn, vmName, cmd, false, null, null, null);
+            } catch (Exception ex) {
+                return "Failed to stop vm via guest agent";
+            }
+            return null;
+        } else {
+            return stopVM(conn, vmName);
+        }
+    }
+
 }
