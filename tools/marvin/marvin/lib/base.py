@@ -1945,14 +1945,17 @@ class ServiceOffering:
         if "isvolatile" in services:
             cmd.isvolatile = services["isvolatile"]
 
+        if "customizediops" in services:
+            cmd.customizediops = services["customizediops"]
+
         if "miniops" in services:
             cmd.miniops = services["miniops"]
 
         if "maxiops" in services:
             cmd.maxiops = services["maxiops"]
 
-        if "customizediops" in services:
-            cmd.customizediops = services["customizediops"]
+        if "hypervisorsnapshotreserve" in services:
+            cmd.hypervisorsnapshotreserve = services["hypervisorsnapshotreserve"]
 
         if "offerha" in services:
             cmd.offerha = services["offerha"]
@@ -2023,6 +2026,9 @@ class DiskOffering:
 
         if "miniops" in services:
             cmd.miniops = services["miniops"]
+
+        if "hypervisorsnapshotreserve" in services:
+            cmd.hypervisorsnapshotreserve = services["hypervisorsnapshotreserve"]
 
         if "provisioningtype" in services:
             cmd.provisioningtype = services["provisioningtype"]
