@@ -209,6 +209,7 @@ public class LibvirtComputingResourceTest {
         final VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, speed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
+        to.setEnableAgent(true);
 
         final LibvirtVMDef vm = lcr.createVMFromSpec(to);
         vm.setHvsType(_hyperVisorType);
@@ -239,6 +240,7 @@ public class LibvirtComputingResourceTest {
         final VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
+        to.setEnableAgent(true);
 
         final LibvirtVMDef vm = lcr.createVMFromSpec(to);
         vm.setHvsType(_hyperVisorType);
@@ -269,6 +271,7 @@ public class LibvirtComputingResourceTest {
         final VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
+        to.setEnableAgent(true);
 
         final LibvirtVMDef vm = lcr.createVMFromSpec(to);
         vm.setHvsType(_hyperVisorType);
@@ -304,6 +307,7 @@ public class LibvirtComputingResourceTest {
                 new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
+        to.setEnableAgent(true);
 
         final LibvirtVMDef vm = lcr.createVMFromSpec(to);
         vm.setHvsType(_hyperVisorType);
