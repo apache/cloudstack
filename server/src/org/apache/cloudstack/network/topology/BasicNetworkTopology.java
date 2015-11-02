@@ -384,8 +384,7 @@ public class BasicNetworkTopology implements NetworkTopology {
                 }
 
                 try {
-                    ruleApplier.accept(getVisitor(), router);
-
+                    result = ruleApplier.accept(getVisitor(), router);
                     connectedRouters.add(router);
                 } catch (final AgentUnavailableException e) {
                     s_logger.warn(msg + router.getInstanceName(), e);
