@@ -401,10 +401,10 @@ public class BigSwitchBcfApi {
             gm.releaseConnection();
         }
         if(returnValue instanceof ControlClusterStatus) {
-            if(hash == HASH_CONFLICT) {
+            if(HASH_CONFLICT.equals(hash)) {
                 isMaster = true;
                 ((ControlClusterStatus) returnValue).setTopologySyncRequested(true);
-            } else if (hash != HASH_IGNORE && !isMaster) {
+            } else if (!HASH_IGNORE.equals(hash) && !isMaster) {
                 isMaster = true;
                 ((ControlClusterStatus) returnValue).setTopologySyncRequested(true);
             }
