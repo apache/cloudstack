@@ -376,7 +376,9 @@
         sectionSelect: {
             preFilter: function(args) {
                 var sectionsToShow = ['networks'];
+                var securityGroupsEnabledFound = false; //Until we found a zone where securitygroupsenabled is true.
 
+                //This call to show VPC and VPN Customer Gateway sections, if zone is advanced.
                 $.ajax({
                     url: createURL('listZones'),
                     data: {
@@ -384,29 +386,40 @@
                     },
                     async: false,
                     success: function(json) {
-                        advZoneObjs = json.listzonesresponse.zone;
+                        advZoneObjs = json.listzonesresponse ? json.listzonesresponse.zone : null;
                         if (advZoneObjs != null && advZoneObjs.length > 0) {
                             sectionsToShow.push('vpc');
                             sectionsToShow.push('vpnCustomerGateway');
+
+                            //At the same time check if any advanced zone has securitygroupsenabled is true.
+                            //If so, show Security Group section.
+                            for (var i = 0; (i < advZoneObjs.length) && !securityGroupsEnabledFound; i++) {
+                                if (advZoneObjs[i].securitygroupsenabled) {
+                                    securityGroupsEnabledFound = true;
+                                    sectionsToShow.push('securityGroups');
+                                }
+                            }
                         }
                     }
                 });
 
-                $.ajax({
-                    url: createURL('listNetworks', {
-                        ignoreProject: true
-                    }),
-                    data: {
-                        supportedServices: 'SecurityGroup',
-                        listAll: true
-                    },
-                    async: false,
-                    success: function(json) {
-                        if (json.listnetworksresponse.network != null && json.listnetworksresponse.network.length > 0) {
-                            sectionsToShow.push('securityGroups');
+                //If we didn't find any advanced zone whose securitygroupsenabled is true.
+                //Search in all Basic zones.
+                if (!securityGroupsEnabledFound) {
+                    $.ajax({
+                        url: createURL('listZones'),
+                        data: {
+                            networktype: 'Basic'
+                        },
+                        async: false,
+                        success: function(json) {
+                            var basicZoneObjs = json.listzonesresponse ? json.listzonesresponse.zone : null;
+                            if (basicZoneObjs != null && basicZoneObjs.length > 0) {
+                                sectionsToShow.push('securityGroups');
+                            }
                         }
-                    }
-                });
+                    });
+                }
 
                 return sectionsToShow;
             },
