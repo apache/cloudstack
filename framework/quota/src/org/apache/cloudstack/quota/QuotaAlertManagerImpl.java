@@ -92,8 +92,6 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
 
     boolean _smtpDebug = false;
 
-    int _pid = -1;
-
     public QuotaAlertManagerImpl() {
         super();
     }
@@ -132,7 +130,6 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Starting Alert Manager");
         }
-        _pid = Integer.parseInt(System.getProperty("pid"));
         return true;
     }
 
