@@ -98,9 +98,9 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
     private static final String ORDER_PODS_BY_AGGREGATE_OVERCOMMIT_CAPACITY =
             "SELECT capacity.pod_id, SUM(used_capacity+reserved_capacity)/SUM(total_capacity * cluster_details.value) FROM `cloud`.`op_host_capacity` capacity INNER JOIN `cloud`.`cluster_details` cluster_details ON (capacity.cluster_id = cluster_details.cluster_id) WHERE data_center_id=? AND capacity_type = ?  AND cluster_details.name = ? GROUP BY capacity.pod_id ORDER BY SUM(used_capacity+reserved_capacity)/SUM(total_capacity * cluster_details.value) ASC";
-    private static final String ORDER_HOSTS_BY_FREE_CAPACITY = "SELECT host_id, SUM(total_capacity - (used_capacity+reserved_capacity))/SUM(total_capacity) FROM `cloud`.`op_host_capacity` WHERE "
-                    + " cluster_id = ? AND capacity_type = ? GROUP BY host_id ORDER BY SUM(total_capacity - (used_capacity+reserved_capacity))/SUM(total_capacity) DESC ";
-
+    private static final String ORDER_HOSTS_BY_FREE_CAPACITY_PART1 = "SELECT host_id, SUM(total_capacity - (used_capacity+reserved_capacity))/SUM(total_capacity) FROM `cloud`.`op_host_capacity` WHERE "
+                    + "capacity_type = ? ";
+    private static final String ORDER_HOSTS_BY_FREE_CAPACITY_PART2 = " GROUP BY host_id ORDER BY SUM(total_capacity - (used_capacity+reserved_capacity))/SUM(total_capacity) DESC ";
     private static final String LIST_CAPACITY_BY_RESOURCE_STATE =
             "SELECT capacity.data_center_id, sum(capacity.used_capacity), sum(capacity.reserved_quantity), sum(capacity.total_capacity), capacity_capacity_type "
                     + "FROM `cloud`.`op_host_capacity` capacity INNER JOIN `cloud`.`data_center` dc ON (dc.id = capacity.data_center_id AND dc.removed is NULL)"
@@ -864,12 +864,18 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
          TransactionLegacy txn = TransactionLegacy.currentTxn();
          PreparedStatement pstmt = null;
          List<Long> result = new ArrayList<Long>();
-         StringBuilder sql = new StringBuilder(ORDER_HOSTS_BY_FREE_CAPACITY);
-
+         StringBuilder sql = new StringBuilder(ORDER_HOSTS_BY_FREE_CAPACITY_PART1);
+        if(clusterId != null) {
+            sql.append("AND cluster_id = ?");
+        }
+        sql.append(ORDER_HOSTS_BY_FREE_CAPACITY_PART2);
          try {
              pstmt = txn.prepareAutoCloseStatement(sql.toString());
-             pstmt.setLong(1, clusterId);
-             pstmt.setShort(2, capacityTypeForOrdering);
+             pstmt.setShort(1, capacityTypeForOrdering);
+             if(clusterId != null) {
+                pstmt.setLong(2, clusterId);
+             }
+
              ResultSet rs = pstmt.executeQuery();
              while (rs.next()) {
                  result.add(rs.getLong(1));
