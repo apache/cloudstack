@@ -1284,6 +1284,8 @@
                                         }
                                         if (args.context.volumes[0].hypervisor == "KVM") {
                                             args.$form.find('.form-item[rel=isAgentEnabled]').css('display', 'inline-block');
+                                        } else {
+                                            args.$form.find('.form-item[rel=isAgentEnabled]').hide();
                                         }
                                     },
                                     fields: {
@@ -1396,10 +1398,15 @@
                                         osTypeId: args.data.osTypeId,
                                         isPublic: (args.data.isPublic == "on"),
                                         passwordEnabled: (args.data.isPasswordEnabled == "on"),
-                                        agentenabled: (args.$form.find('.form-item[rel=isAgentEnabled]').css("display") != "none") && (args.data.isAgentEnabled == "on"),
                                         isdynamicallyscalable: (args.data.isdynamicallyscalable == "on")
 
                                     };
+
+                                    if (args.$form.find('.form-item[rel=isAgentEnabled]').css("display") != "none") {
+                                        $.extend(data, {
+                                            agentenabled: (args.data.isAgentEnabled == "on")
+                                        });
+                                    }
 
                                     if (args.$form.find('.form-item[rel=isFeatured]').css("display") != "none") {
                                         $.extend(data, {
@@ -2092,9 +2099,14 @@
                                         osTypeId: args.data.osTypeId,
                                         isPublic: (args.data.isPublic == "on"),
                                         passwordEnabled: (args.data.isPasswordEnabled == "on"),
-                                        agentenabled: (args.$form.find('.form-item[rel=isAgentEnabled]').css("display") != "none") && (args.data.isAgentEnabled == "on"),
                                         isdynamicallyscalable: (args.data.isdynamicallyscalable == "on")
                                     };
+
+                                    if (args.$form.find('.form-item[rel=isAgentEnabled]').css("display") != "none") {
+                                        $.extend(data, {
+                                            agentenabled: (args.data.isAgentEnabled == "on")
+                                        });
+                                    }
 
                                     $.ajax({
                                         url: createURL('createTemplate'),

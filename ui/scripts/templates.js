@@ -505,11 +505,16 @@
                                     format: args.data.format,
                                     isextractable: (args.data.isExtractable == "on"),
                                     passwordEnabled: (args.data.isPasswordEnabled == "on"),
-                                    agentenabled: (args.$form.find('.form-item[rel=isAgentEnabled]').css("display") != "none") && (args.data.isAgentEnabled == "on"),
                                     isdynamicallyscalable: (args.data.isdynamicallyscalable == "on"),
                                     osTypeId: args.data.osTypeId,
                                     hypervisor: args.data.hypervisor
                                 };
+
+                                if (args.$form.find('.form-item[rel=isAgentEnabled]').css("display") != "none") {
+                                    $.extend(data, {
+                                        agentenabled: (args.data.isAgentEnabled == "on")
+                                    });
+                                }
 
                                 if (args.$form.find('.form-item[rel=isPublic]').css("display") != "none") {
                                     $.extend(data, {
@@ -990,9 +995,13 @@
                                         displaytext: args.data.displaytext,
                                         ostypeid: args.data.ostypeid,
                                         passwordenabled: (args.data.passwordenabled == "on"),
-                                        agentenabled: (args.$form.find('.form-item[rel=agentenabled]').css("display") != "none") && (args.data.agentenabled == "on"),
                                         isdynamicallyscalable: (args.data.isdynamicallyscalable == "on")
                                     };
+                                    if (args.data.agentenabled != null) {
+                                        $.extend(data, {
+                                            agentenabled: (args.data.agentenabled == "on")
+                                        });
+                                    }
                                     $.ajax({
                                         url: createURL('updateTemplate'),
                                         data: data,
@@ -1263,7 +1272,7 @@
                                         converter: cloudStack.converters.toBooleanText
                                     },
                                     agentenabled: {
-                                        label: 'Agent Enabled',
+                                        label: 'label.agent.enabled',
                                         isBoolean: true,
                                         isEditable: true,
                                         converter: cloudStack.converters.toBooleanText
