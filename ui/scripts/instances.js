@@ -288,7 +288,23 @@
                         poll: pollAsyncJobResult
                     }
                 },
-                snapshot: vmSnapshotAction({ listView: true })
+                snapshot: vmSnapshotAction({ listView: true }),
+                viewMetrics: {
+                    label: 'label.metrics',
+                    isHeader: true,
+                    addRow: false,
+                    preFilter: function(args) {
+                        return isAdmin();
+                    },
+                    action: {
+                        custom: cloudStack.uiCustom.metricsView({resource: 'vms'})
+                    },
+                    messages: {
+                        notification: function (args) {
+                            return 'label.metrics';
+                        }
+                    }
+                },
             },
 
             dataProvider: function(args) {

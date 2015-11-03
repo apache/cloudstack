@@ -7622,7 +7622,7 @@
                 }
             }
         },
-        show: cloudStack.uiCustom.physicalResources({
+        physicalResourceSection: {
             sections: {
                 physicalResources: {
                     type: 'select',
@@ -7705,7 +7705,23 @@
                                             });
                                         }
                                     }
-                                }
+                                },
+                                viewMetrics: {
+                                    label: 'label.metrics',
+                                    isHeader: true,
+                                    addRow: false,
+                                    preFilter: function(args) {
+                                        return isAdmin();
+                                    },
+                                    action: {
+                                        custom: cloudStack.uiCustom.metricsView({resource: 'zones'})
+                                    },
+                                    messages: {
+                                        notification: function (args) {
+                                            return 'label.metrics';
+                                        }
+                                    }
+                                },
                             },
                             
                             detailView: {
@@ -9390,7 +9406,7 @@
                     }
                 }
             }
-        }),
+        },
         subsections: {
             virtualRouters: {
                 sectionSelect: {
@@ -14371,6 +14387,22 @@
                                     }
                                 });
                             }
+                        },
+                        viewMetrics: {
+                            label: 'label.metrics',
+                            isHeader: true,
+                            addRow: false,
+                            preFilter: function(args) {
+                                return isAdmin();
+                            },
+                            action: {
+                                custom: cloudStack.uiCustom.metricsView({resource: 'clusters'})
+                            },
+                            messages: {
+                                notification: function (args) {
+                                    return 'label.metrics';
+                                }
+                            }
                         }
                     },
                     
@@ -15073,11 +15105,12 @@
                         }
                         
                         if (! args.context.instances) {
-                            array1.push("&zoneid=" + args.context.zones[0].id);
+                            if ("zones" in args.context)
+                                array1.push("&zoneid=" + args.context.zones[0].id);
                             if ("pods" in args.context)
-                            array1.push("&podid=" + args.context.pods[0].id);
+                                array1.push("&podid=" + args.context.pods[0].id);
                             if ("clusters" in args.context)
-                            array1.push("&clusterid=" + args.context.clusters[0].id);
+                               array1.push("&clusterid=" + args.context.clusters[0].id);
                         } else {
                             //Instances menu > Instance detailView > View Hosts
                             array1.push("&id=" + args.context.instances[0].hostid);
@@ -15606,6 +15639,22 @@
                             messages: {
                                 notification: function (args) {
                                     return 'label.add.host';
+                                }
+                            }
+                        },
+                        viewMetrics: {
+                            label: 'label.metrics',
+                            isHeader: true,
+                            addRow: false,
+                            preFilter: function(args) {
+                                return isAdmin();
+                            },
+                            action: {
+                                custom: cloudStack.uiCustom.metricsView({resource: 'hosts'})
+                            },
+                            messages: {
+                                notification: function (args) {
+                                    return 'label.metrics';
                                 }
                             }
                         }
@@ -17412,6 +17461,22 @@
                             messages: {
                                 notification: function (args) {
                                     return 'label.add.primary.storage';
+                                }
+                            }
+                        },
+                        viewMetrics: {
+                            label: 'label.metrics',
+                            isHeader: true,
+                            addRow: false,
+                            preFilter: function(args) {
+                                return isAdmin();
+                            },
+                            action: {
+                                custom: cloudStack.uiCustom.metricsView({resource: 'storagepool'})
+                            },
+                            messages: {
+                                notification: function (args) {
+                                    return 'label.metrics';
                                 }
                             }
                         }
@@ -19649,7 +19714,10 @@
             });
         }
     }
-    
+
+    // Inject cloudStack infra page
+    cloudStack.sections.system.show = cloudStack.uiCustom.physicalResources(cloudStack.sections.system.physicalResourceSection);
+
     function addExternalLoadBalancer(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) {
         var array1 =[];
         array1.push("&physicalnetworkid=" + physicalNetworkObj.id);
