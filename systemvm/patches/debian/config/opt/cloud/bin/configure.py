@@ -95,14 +95,11 @@ class CsAcl(CsDataBag):
             if 'src_port_range' in obj:
                 self.rule['first_port'] = obj['src_port_range'][0]
                 self.rule['last_port'] = obj['src_port_range'][1]
+
             self.rule['allowed'] = True
-
             self.rule['action'] = "ACCEPT"
-
-            # In that case it means we are processing the default egress rule
+                
             if self.rule['type'] == 'all' and not obj['source_cidr_list']:
-                if self.rule['default_egress_policy'] == 'false':
-                    self.rule['action'] = "DROP"
                 self.rule['cidr'] = ['0.0.0.0/0']
             else:
                 self.rule['cidr'] = obj['source_cidr_list']
@@ -155,7 +152,25 @@ class CsAcl(CsDataBag):
                                     " -m %s " % rule['protocol'] +
                                     " --icmp-type %s -j %s" % (icmp_type, self.rule['action'])])
                 else:
-                    fwr = " -A FW_EGRESS_RULES"
+                    fwr = " -I FW_EGRESS_RULES"
+                    #In case we have a default rule (accept all or drop all), we have to evaluate the action again.
+                    if rule['type'] == 'all' and not rule['source_cidr_list']:
+                        fwr = " -A FW_EGRESS_RULES"
+                        # For default egress ALLOW or DENY, the logic is inverted.
+                        # Having default_egress_policy == True, means that the default rule should have ACCEPT,
+                        # otherwise DROP. The rule should be appended, not inserted.
+                        if self.rule['default_egress_policy']:
+                            self.rule['action'] = "ACCEPT"
+                        else:
+                            self.rule['action'] = "DROP"
+                    else:
+                        # For other rules added, if default_egress_policy == True, following rules should be DROP,
+                        # otherwise ACCEPT
+                        if self.rule['default_egress_policy']:
+                            self.rule['action'] = "DROP"
+                        else:
+                            self.rule['action'] = "ACCEPT"
+
                     if rule['protocol'] != "all":
                         fwr += " -s %s " % cidr + \
                                " -p %s " % rule['protocol'] + \
@@ -230,7 +245,7 @@ class CsAcl(CsDataBag):
                     self.protocol = rule['protocol']
                 self.action = "DROP"
                 self.dport = ""
-                if 'allowed' in rule.keys() and rule['allowed'] and rule['allowed']:
+                if 'allowed' in rule.keys() and rule['allowed']:
                     self.action = "ACCEPT"
                 if 'first_port' in rule.keys():
                     self.dport = "-m %s --dport %s" % (self.protocol, rule['first_port'])

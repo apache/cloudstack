@@ -51,14 +51,13 @@ from marvin.lib.common import (get_zone,
 import time
 import logging
 
-def check_router_command(virtual_machine, public_ip, ssh_command, check_string, retries=5):
+def check_router_command(virtual_machine, public_ip, ssh_command, check_string, test_case, retries=5):
     result = 'failed'
     try:
         ssh = virtual_machine.get_ssh_client(ipaddress=public_ip, retries=retries)
         result = str(ssh.execute(ssh_command))
     except Exception as e:
-        logging.debug("Failed to SSH into the Virtual Machine: %s" % e)
-        return 0
+        test_case.fail("Failed to SSH into the Virtual Machine: %s" % e)
 
     logging.debug("Result from SSH into the Virtual Machine: %s" % result)
     return result.count(check_string)
@@ -121,6 +120,20 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
                                             conservemode=True
                                             )
         cls.network_offering_egress_false.update(cls.api_client, state='Enabled')
+
+        cls.services["egress_80"] = {
+                                    "startport": 80,
+                                    "endport": 80,
+                                    "protocol": "TCP",
+                                    "cidrlist": ["0.0.0.0/0"]
+                                    }
+
+        cls.services["egress_53"] = {
+                                    "startport": 53,
+                                    "endport": 53,
+                                    "protocol": "UDP",
+                                    "cidrlist": ["0.0.0.0/0"]
+                                    }
 
         cls._cleanup = [
                         cls.service_offering,
@@ -226,19 +239,6 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
                     "Length of the list router should be 2 (Backup & master)"
                     )
 
-        self.logger.debug("Associating public IP for network: %s" % network.name)
-        public_ip = PublicIPAddress.create(
-                                self.apiclient,
-                                accountid=self.account.name,
-                                zoneid=self.zone.id,
-                                domainid=self.account.domainid,
-                                networkid=network.id
-                                )
-        self.logger.debug("Associated %s with network %s" % (
-                                        public_ip.ipaddress.ipaddress,
-                                        network.id
-                                        ))
-
         public_ips = list_publicIP(
             self.apiclient,
             account=self.account.name,
@@ -246,18 +246,18 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
             zoneid=self.zone.id
         )
 
+        public_ip = public_ips[0]
+
         self.assertEqual(
             isinstance(public_ips, list),
             True,
             "Check for list public IPs response return valid data"
         )
 
-        public_ip_1 = public_ips[0]
-
         self.logger.debug("Creating Firewall rule for VM ID: %s" % virtual_machine.id)
         FireWallRule.create(
             self.apiclient,
-            ipaddressid=public_ip_1.id,
+            ipaddressid=public_ip.id,
             protocol=self.services["natrule"]["protocol"],
             cidrlist=['0.0.0.0/0'],
             startport=self.services["natrule"]["publicport"],
@@ -269,7 +269,7 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
             self.apiclient,
             virtual_machine,
             self.services["natrule"],
-            public_ip_1.id
+            public_ip.id
         )
 
         self.cleanup.insert(0, network)
@@ -279,7 +279,7 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
         expected = 1
         ssh_command = "ping -c 3 8.8.8.8"
         check_string = "3 packets received"
-        result = check_router_command(virtual_machine, public_ip.ipaddress.ipaddress, ssh_command, check_string)
+        result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
         self.assertEqual(
                          result,
@@ -290,7 +290,7 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
         expected = 1
         ssh_command = "wget -t 1 -T 5 www.google.com"
         check_string = "HTTP request sent, awaiting response... 200 OK"
-        result = check_router_command(virtual_machine, public_ip.ipaddress.ipaddress, ssh_command, check_string)
+        result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
         self.assertEqual(
                          result,
@@ -307,10 +307,10 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
                                  cidrlist=self.services["egress_80"]["cidrlist"]
                                  )
 
-        expected = 1
+        expected = 0
         ssh_command = "wget -t 1 -T 1 www.google.com"
-        check_string = "Giving up."
-        result = check_router_command(virtual_machine, public_ip.ipaddress.ipaddress, ssh_command, check_string)
+        check_string = "HTTP request sent, awaiting response... 200 OK"
+        result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
         self.assertEqual(
                          result,
@@ -395,19 +395,6 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
                     "Length of the list router should be 2 (Backup & master)"
                     )
 
-        self.logger.debug("Associating public IP for network: %s" % network.name)
-        public_ip = PublicIPAddress.create(
-                                self.apiclient,
-                                accountid=self.account.name,
-                                zoneid=self.zone.id,
-                                domainid=self.account.domainid,
-                                networkid=network.id
-                                )
-        self.logger.debug("Associated %s with network %s" % (
-                                        public_ip.ipaddress.ipaddress,
-                                        network.id
-                                        ))
-
         public_ips = list_publicIP(
             self.apiclient,
             account=self.account.name,
@@ -421,12 +408,12 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
             "Check for list public IPs response return valid data"
         )
 
-        public_ip_1 = public_ips[0]
+        public_ip = public_ips[0]
 
         self.logger.debug("Creating Firewall rule for VM ID: %s" % virtual_machine.id)
         FireWallRule.create(
             self.apiclient,
-            ipaddressid=public_ip_1.id,
+            ipaddressid=public_ip.id,
             protocol=self.services["natrule"]["protocol"],
             cidrlist=['0.0.0.0/0'],
             startport=self.services["natrule"]["publicport"],
@@ -438,7 +425,7 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
             self.apiclient,
             virtual_machine,
             self.services["natrule"],
-            public_ip_1.id
+            public_ip.id
         )
 
         self.cleanup.insert(0, network)
@@ -447,7 +434,7 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
         expected = 0
         ssh_command = "ping -c 3 8.8.8.8"
         check_string = "3 packets received"
-        result = check_router_command(virtual_machine, public_ip.ipaddress.ipaddress, ssh_command, check_string)
+        result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
         self.assertEqual(
                          result,
@@ -455,10 +442,10 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
                          "Ping to outside world from VM should NOT be successful"
                          )
 
-        expected = 1
+        expected = 0
         ssh_command = "wget -t 1 -T 1 www.google.com"
-        check_string = "Giving up."
-        result = check_router_command(virtual_machine, public_ip.ipaddress.ipaddress, ssh_command, check_string)
+        check_string = "HTTP request sent, awaiting response... 200 OK"
+        result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
         self.assertEqual(
                          result,
@@ -475,10 +462,19 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
                                  cidrlist=self.services["egress_80"]["cidrlist"]
                                  )
 
+        EgressFireWallRule.create(
+                                 self.apiclient,
+                                 networkid=network.id,
+                                 protocol=self.services["egress_53"]["protocol"],
+                                 startport=self.services["egress_53"]["startport"],
+                                 endport=self.services["egress_53"]["endport"],
+                                 cidrlist=self.services["egress_53"]["cidrlist"]
+                                 )
+
         expected = 1
         ssh_command = "wget -t 1 -T 5 www.google.com"
         check_string = "HTTP request sent, awaiting response... 200 OK"
-        result = check_router_command(virtual_machine, public_ip.ipaddress.ipaddress, ssh_command, check_string)
+        result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
         self.assertEqual(
                          result,
@@ -545,6 +541,13 @@ class TestIsolatedNetworks(cloudstackTestCase):
                                                        conservemode=True)
 
         cls.network_offering_egress_false.update(cls.api_client, state='Enabled')
+
+        cls.services["egress_80"] = {
+                                    "startport": 80,
+                                    "endport": 80,
+                                    "protocol": "TCP",
+                                    "cidrlist": ["0.0.0.0/0"]
+                                    }
 
         cls._cleanup = [
             cls.network_offering_egress_true,
@@ -680,7 +683,7 @@ class TestIsolatedNetworks(cloudstackTestCase):
         expected = 1
         ssh_command = "ping -c 3 8.8.8.8"
         check_string = "3 packets received"
-        result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string)
+        result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
         self.assertEqual(
                          result,
@@ -691,7 +694,7 @@ class TestIsolatedNetworks(cloudstackTestCase):
         expected = 1
         ssh_command = "wget -t 1 -T 5 www.google.com"
         check_string = "HTTP request sent, awaiting response... 200 OK"
-        result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string)
+        result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
         self.assertEqual(
                          result,
@@ -708,10 +711,10 @@ class TestIsolatedNetworks(cloudstackTestCase):
                                  cidrlist=self.services["egress_80"]["cidrlist"]
                                  )
 
-        expected = 1
+        expected = 0
         ssh_command = "wget -t 1 -T 1 www.google.com"
-        check_string = "Giving up."
-        result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string)
+        check_string = "HTTP request sent, awaiting response... 200 OK"
+        result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
         self.assertEqual(
                          result,
@@ -825,7 +828,7 @@ class TestIsolatedNetworks(cloudstackTestCase):
         expected = 0
         ssh_command = "ping -c 3 8.8.8.8"
         check_string = "3 packets received"
-        result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string)
+        result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
         self.assertEqual(
                          result,
@@ -833,10 +836,10 @@ class TestIsolatedNetworks(cloudstackTestCase):
                          "Ping to outside world from VM should NOT be successful"
                          )
 
-        expected = 1
+        expected = 0
         ssh_command = "wget -t 1 -T 1 www.google.com"
-        check_string = "Giving up."
-        result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string)
+        check_string = "HTTP request sent, awaiting response... 200 OK"
+        result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
         self.assertEqual(
                          result,
@@ -856,7 +859,7 @@ class TestIsolatedNetworks(cloudstackTestCase):
         expected = 1
         ssh_command = "wget -t 1 -T 5 www.google.com"
         check_string = "HTTP request sent, awaiting response... 200 OK"
-        result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string)
+        result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
         self.assertEqual(
                          result,
