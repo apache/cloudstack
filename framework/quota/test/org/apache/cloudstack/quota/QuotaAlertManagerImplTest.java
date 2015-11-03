@@ -47,7 +47,6 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -105,39 +104,6 @@ public class QuotaAlertManagerImplTest extends TestCase {
     }
 
     @Test
-    public void testSendMonthlyStatement() {
-        AccountVO accountVO = new AccountVO();
-        accountVO.setId(2L);
-        accountVO.setDomainId(1L);
-        Mockito.when(accountDao.findById(Mockito.anyLong())).thenReturn(accountVO);
-
-        QuotaAccountVO acc = new QuotaAccountVO(2L);
-        acc.setQuotaBalance(new BigDecimal(404));
-        acc.setLastStatementDate(null);
-        List<QuotaAccountVO> accounts = new ArrayList<>();
-        accounts.add(acc);
-        Mockito.when(quotaAcc.listAllQuotaAccount()).thenReturn(accounts);
-
-        Mockito.when(quotaUsage.findTotalQuotaUsage(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyInt(),
-                Mockito.any(Date.class), Mockito.any(Date.class))).thenReturn(new BigDecimal(100));
-
-        // Don't test sendQuotaAlert yet
-        Mockito.doNothing().when(quotaAlertManager).sendQuotaAlert(Mockito.any(QuotaAlertManagerImpl.DeferredQuotaEmail.class));
-
-        // call real method on send monthly statement
-        Mockito.doCallRealMethod().when(quotaAlertManager).sendMonthlyStatement(Mockito.any(Date.class));
-
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(new Date());
-        cal.set(Calendar.DATE, 1); // simulate sending statement on 1st of the month
-        Date nowDate = cal.getTime();
-
-        assertTrue(nowDate.getDate() < 6);
-        quotaAlertManager.sendMonthlyStatement(nowDate);
-        Mockito.verify(quotaAlertManager, Mockito.times(accounts.size())).sendQuotaAlert(Mockito.any(QuotaAlertManagerImpl.DeferredQuotaEmail.class));
-    }
-
-    @Test
     public void testCheckAndSendQuotaAlertEmails() {
         AccountVO accountVO = new AccountVO();
         accountVO.setId(2L);
@@ -173,7 +139,6 @@ public class QuotaAlertManagerImplTest extends TestCase {
         Mockito.verify(quotaAlertManager, Mockito.times(1)).sendQuotaAlert(Mockito.any(QuotaAlertManagerImpl.DeferredQuotaEmail.class));
     }
 
-
     @Test
     public void testSendQuotaAlert() throws UnsupportedEncodingException, MessagingException {
         Mockito.doCallRealMethod().when(quotaAlertManager).sendQuotaAlert(Mockito.any(QuotaAlertManagerImpl.DeferredQuotaEmail.class));
@@ -192,7 +157,8 @@ public class QuotaAlertManagerImplTest extends TestCase {
         quotaAccount.setQuotaAlertDate(null);
         quotaAccount.setQuotaEnforce(0);
 
-        QuotaAlertManagerImpl.DeferredQuotaEmail email = new QuotaAlertManagerImpl.DeferredQuotaEmail(account, quotaAccount, new BigDecimal(100), QuotaConfig.QuotaEmailTemplateTypes.QUOTA_LOW);
+        QuotaAlertManagerImpl.DeferredQuotaEmail email = new QuotaAlertManagerImpl.DeferredQuotaEmail(account, quotaAccount, new BigDecimal(100),
+                QuotaConfig.QuotaEmailTemplateTypes.QUOTA_LOW);
 
         QuotaEmailTemplatesVO quotaEmailTemplatesVO = new QuotaEmailTemplatesVO();
         quotaEmailTemplatesVO.setTemplateSubject("Low quota");

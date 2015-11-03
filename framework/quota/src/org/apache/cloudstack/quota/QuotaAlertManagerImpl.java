@@ -57,7 +57,6 @@ import javax.naming.ConfigurationException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -68,9 +67,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 @Local(value = QuotaAlertManager.class)
 public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertManager {
-    private static final Logger s_logger = Logger.getLogger(QuotaAlertManagerImpl.class.getName());
-
-    final private static int s_LAST_STATEMENT_SENT_DAYS = 6;
+    private static final Logger s_logger = Logger.getLogger(QuotaAlertManagerImpl.class);
 
     @Inject
     private AccountDao _accountDao;
@@ -142,51 +139,6 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
     }
 
     @Override
-    public void sendMonthlyStatement(Date now) {
-        Calendar aCalendar = Calendar.getInstance();
-        aCalendar.add(Calendar.MONTH, -1);
-        aCalendar.set(Calendar.DATE, 1);
-        aCalendar.set(Calendar.HOUR, 0);
-        aCalendar.set(Calendar.MINUTE, 0);
-        aCalendar.set(Calendar.SECOND, 0);
-        Date firstDateOfPreviousMonth = aCalendar.getTime();
-        aCalendar.set(Calendar.DATE, aCalendar.getActualMaximum(Calendar.DAY_OF_MONTH) + 1);
-        Date lastDateOfPreviousMonth = aCalendar.getTime(); // actually the first day of this month
-
-        List<DeferredQuotaEmail> deferredQuotaEmailList = new ArrayList<DeferredQuotaEmail>();
-        for (final QuotaAccountVO quotaAccount : _quotaAcc.listAllQuotaAccount()) {
-            if (quotaAccount.getQuotaBalance() == null) {
-                continue; // no quota usage for this account ever, ignore
-            }
-            Date lastStatementDate = quotaAccount.getLastStatementDate();
-            if (now.getDate() < s_LAST_STATEMENT_SENT_DAYS) {
-                AccountVO account = _accountDao.findById(quotaAccount.getId());
-                if (lastStatementDate == null || getDifferenceDays(lastStatementDate, new Date()) >= s_LAST_STATEMENT_SENT_DAYS + 1) {
-                    BigDecimal quotaUsage = _quotaUsage.findTotalQuotaUsage(account.getAccountId(), account.getDomainId(), null, firstDateOfPreviousMonth, lastDateOfPreviousMonth);
-                    s_logger.info("For account=" + quotaAccount.getId() + ", quota used = " + quotaUsage);
-                    // send statement
-                    deferredQuotaEmailList.add(new DeferredQuotaEmail(account, quotaAccount, quotaUsage, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_STATEMENT));
-                } else {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("For " + quotaAccount.getId() + " the statement has been sent recently");
-
-                    }
-                }
-            } else if (lastStatementDate != null) {
-                s_logger.info("For " + quotaAccount.getId() + " it is already more than " + getDifferenceDays(lastStatementDate, new Date())
-                        + " days, will send statement in next cycle");
-            }
-        }
-
-        for (DeferredQuotaEmail emailToBeSent : deferredQuotaEmailList) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Attempting to send quota STATEMENT email to users of account: " + emailToBeSent.getAccount().getAccountName());
-            }
-            sendQuotaAlert(emailToBeSent);
-        }
-    }
-
-    @Override
     public void checkAndSendQuotaAlertEmails() {
         s_logger.info("Running checkAndSendQuotaAlertEmails");
         List<DeferredQuotaEmail> deferredQuotaEmailList = new ArrayList<DeferredQuotaEmail>();
@@ -203,7 +155,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Check id " + account.getId() + " bal=" + accountBalance + " alertDate" + alertDate + " current date" + new Date());
                 }
-                if (accountBalance.compareTo(zeroBalance) <= 0) {
+                if (accountBalance.compareTo(zeroBalance) < 0) {
                     if (_lockAccountEnforcement && (lockable == 1)) {
                         if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                             s_logger.info("Locking account " + account.getAccountName() + " due to quota exhasuted.");
@@ -213,7 +165,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
                     if (alertDate == null || (balanceDate.after(alertDate) && getDifferenceDays(alertDate, new Date()) > 1)) {
                         deferredQuotaEmailList.add(new DeferredQuotaEmail(account, quotaAccount, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_EMPTY));
                     }
-                } else if (accountBalance.compareTo(thresholdBalance) <= 0) {
+                } else if (accountBalance.compareTo(thresholdBalance) < 0) {
                     if (alertDate == null || (balanceDate.after(alertDate) && getDifferenceDays(alertDate, new Date()) > 1)) {
                         deferredQuotaEmailList.add(new DeferredQuotaEmail(account, quotaAccount, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_LOW));
                     }

@@ -36,6 +36,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.quota.QuotaAlertManager;
 import org.apache.cloudstack.quota.QuotaManager;
+import org.apache.cloudstack.quota.QuotaStatement;
 import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -149,6 +150,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private QuotaManager _quotaManager;
     @Inject
     private QuotaAlertManager _alertManager;
+    @Inject
+    private QuotaStatement _quotaStatement;
 
     private String _version = null;
     private final Calendar _jobExecTime = Calendar.getInstance();
@@ -393,9 +396,13 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 }
                 try {
                     _alertManager.checkAndSendQuotaAlertEmails();
-                    _alertManager.sendMonthlyStatement(new Date());
                 } catch (Exception e) {
                     s_logger.error("Exception received while sending alerts", e);
+                }
+                try {
+                    _quotaStatement.sendStatement();
+                } catch (Exception e) {
+                    s_logger.error("Exception received while sending statements", e);
                 }
             }
         } else {

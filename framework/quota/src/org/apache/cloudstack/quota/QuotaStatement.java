@@ -18,9 +18,6 @@ package org.apache.cloudstack.quota;
 
 import com.cloud.utils.component.Manager;
 
-import org.apache.cloudstack.quota.QuotaAlertManagerImpl.DeferredQuotaEmail;
-
-public interface QuotaAlertManager extends Manager {
-    void checkAndSendQuotaAlertEmails();
-    void sendQuotaAlert(DeferredQuotaEmail emailToBeSent);
+public interface QuotaStatement extends Manager {
+    void sendStatement();
 }

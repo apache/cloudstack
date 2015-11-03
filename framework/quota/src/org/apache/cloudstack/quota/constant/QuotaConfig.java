@@ -21,16 +21,20 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface QuotaConfig {
 
-    public static final ConfigKey<Boolean> QuotaPluginEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "quota.enable.service", "false", "Indicates whether Quota plugin is enabled or not",
-            true);
+    public static final ConfigKey<Boolean> QuotaPluginEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "quota.enable.service", "false",
+            "Indicates whether Quota plugin is enabled or not", true);
 
     public static final ConfigKey<String> QuotaEnableEnforcement = new ConfigKey<String>("Advanced", String.class, "quota.enable.enforcement", "false",
             "Enable the usage quota enforcement, i.e. on true when exceeding quota the respective account will be locked.", true);
 
-    public static final ConfigKey<String> QuotaCurrencySymbol = new ConfigKey<String>("Advanced", String.class, "quota.currency.symbol", "R", "The symbol for the currency in use to measure usage.",
-            true);
+    public static final ConfigKey<String> QuotaCurrencySymbol = new ConfigKey<String>("Advanced", String.class, "quota.currency.symbol", "R",
+            "The symbol for the currency in use to measure usage.", true);
 
-    public static final ConfigKey<String> QuotaSmtpHost = new ConfigKey<String>("Advanced", String.class, "quota.usage.smtp.host", "", "Quota SMTP host for quota related emails", true);
+    public static final ConfigKey<Integer> QuotaStatementPeriod = new ConfigKey<Integer>("Advanced", Integer.class, "quota.statement.period", "1",
+            "This variables define the statement generation interval. Values correspond to bimonthly=0, monthly=1, quarterly=2, half-yearly=3 and yearly=4.", true);
+
+    public static final ConfigKey<String> QuotaSmtpHost = new ConfigKey<String>("Advanced", String.class, "quota.usage.smtp.host", "", "Quota SMTP host for quota related emails",
+            true);
 
     public static final ConfigKey<String> QuotaSmtpTimeout = new ConfigKey<String>("Advanced", String.class, "quota.usage.smtp.connection.timeout", "60",
             "Quota SMTP server connection timeout duration", true);

@@ -39,7 +39,7 @@ public class QuotaAccountVO implements InternalIdentity {
     private Long accountId = null;
 
     @Column(name = "quota_enforce")
-    private Integer quotaEnforce = null;
+    private Integer quotaEnforce = 0;
 
     @Column(name = "quota_balance")
     private BigDecimal quotaBalance;

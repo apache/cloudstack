@@ -29,5 +29,6 @@
     
 	<bean id="QuotaManager" class="org.apache.cloudstack.quota.QuotaManagerImpl" />
     <bean id="QuotaAlertManager" class="org.apache.cloudstack.quota.QuotaAlertManagerImpl" />
+	<bean id="QuotaStatement" class="org.apache.cloudstack.quota.QuotaStatementImpl" />
 
 </beans>
