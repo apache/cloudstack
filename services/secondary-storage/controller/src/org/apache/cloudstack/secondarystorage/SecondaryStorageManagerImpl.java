@@ -93,6 +93,7 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.rules.RulesManager;
+import com.cloud.network.StorageNetworkManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -180,6 +181,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     @Inject
     protected SecondaryStorageVmDao _secStorageVmDao;
+    @Inject
+    protected StorageNetworkManager _sNwMgr;
     @Inject
     private DataCenterDao _dcDao;
     @Inject
@@ -548,9 +551,12 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             defaultNetwork = defaultNetworks.get(0);
         }
 
-        List<? extends NetworkOffering> offerings =
-            _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork, NetworkOffering.SystemManagementNetwork,
-                NetworkOffering.SystemStorageNetwork);
+        List<? extends NetworkOffering> offerings = null;
+        if (_sNwMgr.isStorageIpRangeAvailable(dataCenterId)) {
+            offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork, NetworkOffering.SystemManagementNetwork, NetworkOffering.SystemStorageNetwork);
+        } else {
+            offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork, NetworkOffering.SystemManagementNetwork);
+        }
         LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(offerings.size() + 1);
         NicProfile defaultNic = new NicProfile();
         defaultNic.setDefaultNic(true);
