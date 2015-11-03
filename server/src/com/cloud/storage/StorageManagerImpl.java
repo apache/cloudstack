@@ -301,6 +301,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     boolean _templateCleanupEnabled = true;
     int _storageCleanupInterval;
     int _storagePoolAcquisitionWaitSeconds = 1800; // 30 minutes
+    int _storageCleanupDelay;
     int _downloadUrlCleanupInterval;
     int _downloadUrlExpirationInterval;
     // protected BigDecimal _overProvisioningFactor = new BigDecimal(1);
@@ -470,9 +471,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         String time = configs.get("storage.cleanup.interval");
         _storageCleanupInterval = NumbersUtil.parseInt(time, 86400);
+        time = configs.get("storage.cleanup.delay");
+        _storageCleanupDelay = NumbersUtil.parseInt(time, _storageCleanupInterval);
 
-        s_logger.info("Storage cleanup enabled: " + _storageCleanupEnabled + ", interval: " + _storageCleanupInterval + ", template cleanup enabled: " +
-                _templateCleanupEnabled);
+        s_logger.info("Storage cleanup enabled: " + _storageCleanupEnabled + ", interval: " + _storageCleanupInterval + ", delay: " + _storageCleanupDelay  +
+                ", template cleanup enabled: " + _templateCleanupEnabled);
 
         String cleanupInterval = configs.get("extract.url.cleanup.interval");
         _downloadUrlCleanupInterval = NumbersUtil.parseInt(cleanupInterval, 7200);
@@ -1111,7 +1114,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
                     cleanupSecondaryStorage(recurring);
 
-                    List<VolumeVO> vols = _volsDao.listVolumesToBeDestroyed();
+                    List<VolumeVO> vols = _volsDao.listVolumesToBeDestroyed(new Date(System.currentTimeMillis() - ((long) _storageCleanupDelay << 10)));
                     for (VolumeVO vol : vols) {
                         try {
                             volService.expungeVolumeAsync(volFactory.getVolume(vol.getId()));
