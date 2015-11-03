@@ -37,15 +37,36 @@
 
   <profiles>
     <profile>
-      <id>tomcat8</id>
+      <id>embed</id>
+      <activation>
+	<activeByDefault>true</activeByDefault>
+      </activation>
+      <dependencies>
+	<!-- Apache Portable Runtime implementation of SSL protocol, which is compatible with broken MS RDP SSL suport.
+	     NOTE: tomcat-native package with /usr/lib/libtcnative-1.so library is necessary for APR to work. -->
+	<dependency>
+	  <groupId>org.apache.tomcat.embed</groupId>
+	  <artifactId>tomcat-embed-core</artifactId>
+	  <version>${cs.tomcat.version}</version>
+	</dependency>
+      </dependencies>
+    </profile>
+
+    <profile>
+      <id>noembed</id>
       <activation>
 	<property>
-          <name>tomcat8</name>
+	  <name>noembed</name>
 	</property>
       </activation>
-      <properties>
-        <cs.tomcat.version>8.0.28</cs.tomcat.version>
-      </properties>
+      <dependencies>
+	<dependency>
+	  <groupId>org.apache.tomcat.embed</groupId>
+	  <artifactId>tomcat-embed-core</artifactId>
+	  <version>${cs.tomcat.version}</version>
+	  <scope>provided</scope>
+	</dependency>
+      </dependencies>
     </profile>
   </profiles>
 
@@ -79,13 +100,6 @@
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-utils</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <!-- Apache Portable Runtime implementation of SSL protocol, which is compatible with broken MS RDP SSL suport.
-    NOTE: tomcat-native package with /usr/lib/libtcnative-1.so library is necessary for APR to work. -->
-    <dependency>
-      <groupId>org.apache.tomcat.embed</groupId>
-      <artifactId>tomcat-embed-core</artifactId>
-      <version>${cs.tomcat.version}</version>
     </dependency>
     <!-- Another implementation of SSL protocol. Does not work with broken MS RDP SSL too. -->
     <dependency>
