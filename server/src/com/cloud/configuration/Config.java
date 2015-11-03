@@ -672,6 +672,7 @@ public enum Config {
             "86400",
             "The interval (in seconds) to wait before running the storage cleanup thread.",
             null),
+    StorageCleanupDelay("Advanced", StorageManager.class, Integer.class, "storage.cleanup.delay", "86400", "Determines how long (in seconds) to wait before actually expunging destroyed volumes. The default value = the default value of storage.cleanup.interval.", null),
     StorageCleanupEnabled("Advanced", StorageManager.class, Boolean.class, "storage.cleanup.enabled", "true", "Enables/disables the storage cleanup thread.", null),
     UpdateWait("Advanced", AgentManager.class, Integer.class, "update.wait", "600", "Time to wait (in seconds) before alerting on a updating agent", null),
     XapiWait("Advanced", AgentManager.class, Integer.class, "xapiwait", "60", "Time (in seconds) to wait for XAPI to return", null),
