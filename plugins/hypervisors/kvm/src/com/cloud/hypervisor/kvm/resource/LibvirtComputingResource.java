@@ -646,7 +646,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find kvmheartbeat.sh");
         }
 
-
         _sendToVmAgentPath = Script.findScript(kvmScriptsDir, "send_to_vm_agent.py");
         if (_sendToVmAgentPath == null) {
             throw new ConfigurationException("Unable to find the send_to_vm_agent.py");
@@ -3445,17 +3444,23 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * @param data, the data sent to vm (to vm path file)
      * @return
      */
-    private boolean sent_data_to_vm_agent(String agentPath, String data) {
+    private boolean sent_data_to_vm_agent(String agentPath, String data, Boolean isSystemVm) {
         Script cmd = new Script(_sendToVmAgentPath, _timeout, s_logger);
         cmd.add("-p", agentPath);
         cmd.add("-d", data);
+        if (isSystemVm) {
+            cmd.add("-s");
+        }
         String result = cmd.execute();
         if (result != null)
             return false;
         return true;
     }
 
-    public <A extends GuestAgentAnswer> A SendToVMAgent(Connect conn, String vmName, GuestAgentCommand cmd, Boolean readOnly, Class<?> answerClass, String data, Integer timeout) {
+    public <A extends GuestAgentAnswer> A SendToVMAgent(Connect conn, String vmName, GuestAgentCommand cmd, Boolean readOnly, Class<?> answerClass, String data, Integer timeout, Boolean isSystemVm) {
+        s_logger.debug("Sending command/data to vm: " + vmName + " via guest agent: " +
+                       (cmd != null? ("command is " + cmd.getCommand() + ", arguments are " + cmd.getArguments() + ", readonly: " + readOnly + (answerClass != null ? ", answer class: " + answerClass.getName(): "")): "") +
+                       (data != null? ("data is " + data + ", encoded: " + isSystemVm): ""));
         LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
         Domain dm = null;
         String dataPath = null;
@@ -3485,7 +3490,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (cmd == null && data != null) {
             if (dataPath == null)
                 throw new CloudRuntimeException("Cannot find the data channel on host to VM: " + vmName);
-            sent_data_to_vm_agent(dataPath, data);
+            sent_data_to_vm_agent(dataPath, data, isSystemVm);
         } else if (cmd != null && data == null) {
             if (commandPath == null)
                 throw new CloudRuntimeException("Cannot find the command channel on host to VM: " + vmName);
@@ -3503,7 +3508,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         GuestAgentCommand cmd = new GuestAgentCommand(execute, arguments);
         GuestAgentIntegerAnswer answer = null;
         try {
-            answer = (GuestAgentIntegerAnswer) SendToVMAgent(conn, vmName, cmd, null, GuestAgentIntegerAnswer.class, null, null);
+            answer = (GuestAgentIntegerAnswer) SendToVMAgent(conn, vmName, cmd, null, GuestAgentIntegerAnswer.class, null, null, false);
         } catch (Exception ex) {
             s_logger.warn("Failed to send guest-sync command to guest agent");
             return false;
@@ -3529,7 +3534,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             arguments.put("mode", "reboot");
             GuestAgentCommand cmd = new GuestAgentCommand(execute, arguments);
             try {
-                SendToVMAgent(conn, vmName, cmd, false, null, null, null);
+                SendToVMAgent(conn, vmName, cmd, false, null, null, null, false);
             } catch (Exception ex) {
                 return "Failed to reboot vm via guest agent";
             }
@@ -3546,7 +3551,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             String execute = "guest-shutdown";
             GuestAgentCommand cmd = new GuestAgentCommand(execute, null);
             try {
-                SendToVMAgent(conn, vmName, cmd, false, null, null, null);
+                SendToVMAgent(conn, vmName, cmd, false, null, null, null, false);
             } catch (Exception ex) {
                 return "Failed to stop vm via guest agent";
             }

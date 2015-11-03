@@ -58,6 +58,7 @@ if __name__ == '__main__':
     parser.add_option('-p', '--path', dest='path', help='the path of VM agent file on host')
     parser.add_option('-d', '--data', dest='data', help='the content of command or data')
     parser.add_option('-r', '--readonly', action='store_true', dest='readonly', default=False, help='true if the command is read only, false if not')
+    parser.add_option('-s', '--systemvm', action='store_true', dest='systemvm', default=False, help='true if the data is send to systemvm, false if not')
     parser.add_option('-t', '--timeout', dest='timeout', type=int, help='the timeout config of command')
     (options, args) = parser.parse_args()
     if options.command & (options.name != None) & (options.data != None):
@@ -74,7 +75,16 @@ if __name__ == '__main__':
     elif (options.command == False) & (options.path != None) & (options.data != None):
        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
        s.connect(options.path)
-       s.send(options.data)
+       if (options.systemvm):
+           pubkeyfile = "/root/.ssh/id_rsa.pub.cloud"
+           file = open("%s" % pubkeyfile, "r")
+           key = file.readline()
+           file.close()
+           message = "pubkey:%s\ncmdline:%s" % (key,options.data.replace("%"," "))
+           #logging.warning("Sending: \n%s" % message)
+           s.send(message)
+       else:
+           s.send(options.data)
        s.send("\n")
        s.close()
        sys.exit(0)

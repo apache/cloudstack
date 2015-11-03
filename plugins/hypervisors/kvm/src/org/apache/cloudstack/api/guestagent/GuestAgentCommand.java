@@ -10,4 +10,12 @@ public class GuestAgentCommand {
         this.execute = execute;
         this.arguments = arguments;
     }
+
+    public String getCommand() {
+        return execute;
+    }
+
+    public HashMap getArguments() {
+        return arguments;
+    }
 }
