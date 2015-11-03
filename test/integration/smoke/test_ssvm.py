@@ -490,7 +490,7 @@ class TestSSVMs(cloudstackTestCase):
                 self.apiclient.connection.user,
                 self.apiclient.connection.passwd,
                 ssvm.privateip,
-                "cat /var/cache/cloud/cmdline | xargs | sed \"s/ /\\n/g\" | grep eth0ip= | sed \"s/\=/ /g\" | awk '{print $2}'",
+                "cat /var/cache/cloud/cmdline | xargs | sed \"s/ /\\n/g\" | grep eth1ip= | sed \"s/\=/ /g\" | awk '{print $2}'",
                 hypervisor=self.hypervisor
             )
         else:
@@ -625,7 +625,7 @@ class TestSSVMs(cloudstackTestCase):
                 self.apiclient.connection.user,
                 self.apiclient.connection.passwd,
                 cpvm.privateip,
-                "cat /var/cache/cloud/cmdline | xargs | sed \"s/ /\\n/g\" | grep eth0ip= | sed \"s/\=/ /g\" | awk '{print $2}'",
+                "cat /var/cache/cloud/cmdline | xargs | sed \"s/ /\\n/g\" | grep eth1ip= | sed \"s/\=/ /g\" | awk '{print $2}'",
                 hypervisor=self.hypervisor
             )
         else:
