@@ -715,6 +715,12 @@ test_data = {
         "publicport": 22,
         "protocol": "TCP"
     },
+   "egress_80": {
+        "startport": 80,
+        "endport": 80,
+        "protocol": "TCP",
+        "cidrlist": ["0.0.0.0/0"]
+    },
     "lbrule": {
         "name": "SSH",
         "alg": "roundrobin",
