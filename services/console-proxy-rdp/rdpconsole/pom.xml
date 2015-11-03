@@ -33,12 +33,16 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <cs.tomcat.version>7.0.30</cs.tomcat.version>
   </properties>
 
   <profiles>
     <profile>
       <id>tomcat8</id>
+      <activation>
+	<property>
+          <name>tomcat8</name>
+	</property>
+      </activation>
       <properties>
         <cs.tomcat.version>8.0.28</cs.tomcat.version>
       </properties>

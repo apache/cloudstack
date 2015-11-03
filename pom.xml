@@ -117,6 +117,7 @@
     <cs.opensaml.version>2.6.1</cs.opensaml.version>
     <cs.xml-apis.version>1.4.01</cs.xml-apis.version>
     <cs.joda-time.version>2.8.1</cs.joda-time.version>
+    <cs.tomcat.version>7.0.30</cs.tomcat.version>
   </properties>
 
   <distributionManagement>
@@ -1056,6 +1057,39 @@
     </plugins>
   </reporting>
   <profiles>
+    <profile>
+      <id>tomcat8</id>
+      <activation>
+	<property>
+	  <name>tomcat8</name>
+	</property>
+      </activation>
+
+      <properties>
+	<cs.tomcat.version>8.0.28</cs.tomcat.version>
+      </properties>
+
+      <dependencies>
+	<dependency>
+	  <groupId>org.mortbay.jetty</groupId>
+	  <artifactId>servlet-api</artifactId>
+	  <version>2.5-20081211</version>
+	  <scope>provided</scope>
+	</dependency>
+
+	<dependency>
+	  <groupId>javax.servlet</groupId>
+	  <artifactId>servlet-api</artifactId>
+	  <scope>provided</scope>
+	</dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>awsapi</id>
+      <modules>
+        <module>awsapi</module>
+      </modules>
+    </profile>
     <profile>
       <id>systemvm</id>
       <activation>
