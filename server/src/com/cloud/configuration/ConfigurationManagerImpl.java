@@ -2618,6 +2618,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
 
             vlanOwner = _accountMgr.getAccount(project.getProjectAccountId());
+            if (vlanOwner == null) {
+                throw new InvalidParameterValueException("Please specify a valid projectId");
+            }
         }
 
         Domain domain = null;
@@ -3329,6 +3332,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 throw new InvalidParameterValueException("Unable to find project by id " + projectId);
             }
             vlanOwner = _accountMgr.getAccount(project.getProjectAccountId());
+            if (vlanOwner == null) {
+                throw new InvalidParameterValueException("Please specify a valid projectId");
+            }
         }
 
         Domain domain = null;
