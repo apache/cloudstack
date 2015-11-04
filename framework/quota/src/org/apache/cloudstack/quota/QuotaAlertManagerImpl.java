@@ -165,7 +165,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
                         s_logger.info("Sending alert " + account.getAccountName() + " due to quota < 0.");
                         deferredQuotaEmailList.add(new DeferredQuotaEmail(account, quotaAccount, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_EMPTY));
                     }
-                } else if (accountBalance.compareTo(thresholdBalance) <= 0) {
+                } else if (accountBalance.compareTo(thresholdBalance) < 0) {
                     if (alertDate == null || (balanceDate.after(alertDate) && getDifferenceDays(alertDate, new Date()) > 1)) {
                         s_logger.info("Sending alert " + account.getAccountName() + " due to quota below threshold.");
                         deferredQuotaEmailList.add(new DeferredQuotaEmail(account, quotaAccount, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_LOW));

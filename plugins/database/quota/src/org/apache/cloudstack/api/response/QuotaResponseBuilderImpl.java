@@ -98,6 +98,12 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     }
 
     @Override
+    public List<QuotaSummaryResponse> createQuotaSummaryResponse() {
+        List<QuotaSummaryResponse> result = new ArrayList<QuotaSummaryResponse>();
+        return result;
+    }
+
+    @Override
     public QuotaBalanceResponse createQuotaBalanceResponse(List<QuotaBalanceVO> quotaBalance, Date startDate, Date endDate) {
         if (quotaBalance == null || quotaBalance.isEmpty()) {
             new InvalidParameterValueException("The request period does not contain balance entries.");
@@ -115,7 +121,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
             QuotaBalanceVO entry = it.next();
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("createQuotaBalanceResponse: Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
+                s_logger.debug(
+                        "createQuotaBalanceResponse: Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
             }
             if (entry.getCreditsId() > 0) {
                 if (consecutive) {
