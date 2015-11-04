@@ -2682,6 +2682,7 @@
                                         $.ajax({
                                             url: createURL("listVpnGateways"),
                                             data: {
+                                                listAll: true,
                                                 id: args.context.vpnGateway[0].id
                                             },
                                             async: true,
@@ -2804,6 +2805,7 @@
                                     $.ajax({
                                         url: createURL('listVpnGateways'),
                                         data: {
+                                            listAll: true,
                                             vpcid: args.context.vpc[0].id
                                         },
                                         async: false,
@@ -4187,6 +4189,7 @@
                             url: createURL('listVpnGateways'),
                             async: false,
                             data: {
+                                listAll: true,
                                 'vpcid': args.context.vpc[0].id
                             },
                             success: function(json) {
