@@ -140,7 +140,6 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
 
     @Override
     public void checkAndSendQuotaAlertEmails() {
-        s_logger.info("Running checkAndSendQuotaAlertEmails");
         List<DeferredQuotaEmail> deferredQuotaEmailList = new ArrayList<DeferredQuotaEmail>();
         final BigDecimal zeroBalance = new BigDecimal(0);
         for (final QuotaAccountVO quotaAccount : _quotaAcc.listAllQuotaAccount()) {
@@ -153,20 +152,22 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
             if (accountBalance != null) {
                 AccountVO account = _accountDao.findById(quotaAccount.getId());
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Check id " + account.getId() + " bal=" + accountBalance + " alertDate" + alertDate + " current date" + new Date());
+                    s_logger.debug("checkAndSendQuotaAlertEmails: Check id=" + account.getId() + " bal=" + accountBalance + ", alertDate=" + alertDate + ", lockable=" + lockable);
                 }
                 if (accountBalance.compareTo(zeroBalance) < 0) {
                     if (_lockAccountEnforcement && (lockable == 1)) {
                         if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-                            s_logger.info("Locking account " + account.getAccountName() + " due to quota exhasuted.");
+                            s_logger.info("Locking account " + account.getAccountName() + " due to quota < 0.");
                             lockAccount(account.getId());
                         }
                     }
                     if (alertDate == null || (balanceDate.after(alertDate) && getDifferenceDays(alertDate, new Date()) > 1)) {
+                        s_logger.info("Sending alert " + account.getAccountName() + " due to quota < 0.");
                         deferredQuotaEmailList.add(new DeferredQuotaEmail(account, quotaAccount, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_EMPTY));
                     }
-                } else if (accountBalance.compareTo(thresholdBalance) < 0) {
+                } else if (accountBalance.compareTo(thresholdBalance) <= 0) {
                     if (alertDate == null || (balanceDate.after(alertDate) && getDifferenceDays(alertDate, new Date()) > 1)) {
+                        s_logger.info("Sending alert " + account.getAccountName() + " due to quota below threshold.");
                         deferredQuotaEmailList.add(new DeferredQuotaEmail(account, quotaAccount, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_LOW));
                     }
                 }
@@ -175,7 +176,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
 
         for (DeferredQuotaEmail emailToBeSent : deferredQuotaEmailList) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Attempting to send quota alert email to users of account: " + emailToBeSent.getAccount().getAccountName());
+                s_logger.debug("checkAndSendQuotaAlertEmails: Attempting to send quota alert email to users of account: " + emailToBeSent.getAccount().getAccountName());
             }
             sendQuotaAlert(emailToBeSent);
         }

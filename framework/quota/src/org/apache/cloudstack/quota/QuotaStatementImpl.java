@@ -151,7 +151,7 @@ public class QuotaStatementImpl extends ManagerBase implements QuotaStatement {
         switch (period) {
         case BIMONTHLY:
             if (day_of_month < s_LAST_STATEMENT_SENT_DAYS) {
-                Calendar aCalendar = Calendar.getInstance();
+                Calendar aCalendar = (Calendar)today.clone();
                 aCalendar.add(Calendar.MONTH, 0);
                 aCalendar.set(Calendar.DATE, 1);
                 aCalendar.set(Calendar.HOUR, 0);
@@ -162,7 +162,7 @@ public class QuotaStatementImpl extends ManagerBase implements QuotaStatement {
                 lastDateOfPreviousPeriod = (Calendar)aCalendar.clone();
                 return new Calendar[] {firstDateOfPreviousPeriod, lastDateOfPreviousPeriod};
             } else if (day_of_month > 15 && (day_of_month - 15) < s_LAST_STATEMENT_SENT_DAYS) {
-                Calendar aCalendar = Calendar.getInstance();
+                Calendar aCalendar = (Calendar)today.clone();
                 aCalendar.add(Calendar.MONTH, -1);
                 aCalendar.set(Calendar.DATE, 16);
                 aCalendar.set(Calendar.HOUR, 0);
@@ -176,7 +176,7 @@ public class QuotaStatementImpl extends ManagerBase implements QuotaStatement {
             return null;
         case MONTHLY:
             if (day_of_month < s_LAST_STATEMENT_SENT_DAYS) {
-                Calendar aCalendar = Calendar.getInstance();
+                Calendar aCalendar = (Calendar)today.clone();
                 aCalendar.add(Calendar.MONTH, -1);
                 aCalendar.set(Calendar.DATE, 1);
                 aCalendar.set(Calendar.HOUR, 0);
@@ -190,16 +190,16 @@ public class QuotaStatementImpl extends ManagerBase implements QuotaStatement {
             return null;
         case QUATERLY:
             // statements are sent in Jan=1, Apr 4, Jul 7, Oct 10
-            if (month_of_year == 1 || month_of_year == 4 || month_of_year == 7 || month_of_year == 10) {
+            if (month_of_year == Calendar.JANUARY || month_of_year == Calendar.APRIL || month_of_year == Calendar.JULY || month_of_year == Calendar.OCTOBER) {
                 if (day_of_month < s_LAST_STATEMENT_SENT_DAYS) {
-                    Calendar aCalendar = Calendar.getInstance();
+                    Calendar aCalendar = (Calendar)today.clone();
                     aCalendar.add(Calendar.MONTH, -3);
                     aCalendar.set(Calendar.DATE, 1);
                     aCalendar.set(Calendar.HOUR, 0);
                     aCalendar.set(Calendar.MINUTE, 0);
                     aCalendar.set(Calendar.SECOND, 0);
                     firstDateOfPreviousPeriod = (Calendar)aCalendar.clone();
-                    aCalendar.add(Calendar.MONTH, -1);
+                    aCalendar.add(Calendar.MONTH, 2);
                     aCalendar.set(Calendar.DATE, aCalendar.getActualMaximum(Calendar.DAY_OF_MONTH) + 1);
                     lastDateOfPreviousPeriod = (Calendar)aCalendar.clone();
                     return new Calendar[] {firstDateOfPreviousPeriod, lastDateOfPreviousPeriod};
@@ -208,16 +208,16 @@ public class QuotaStatementImpl extends ManagerBase implements QuotaStatement {
             return null;
         case HALFYEARLY:
             // statements are sent in Jan=1, Jul 7,
-            if (month_of_year == 1 || month_of_year == 7) {
+            if (month_of_year == Calendar.JANUARY || month_of_year == Calendar.JULY) {
                 if (day_of_month < s_LAST_STATEMENT_SENT_DAYS) {
-                    Calendar aCalendar = Calendar.getInstance();
+                    Calendar aCalendar = (Calendar)today.clone();
                     aCalendar.add(Calendar.MONTH, -6);
                     aCalendar.set(Calendar.DATE, 1);
                     aCalendar.set(Calendar.HOUR, 0);
                     aCalendar.set(Calendar.MINUTE, 0);
                     aCalendar.set(Calendar.SECOND, 0);
                     firstDateOfPreviousPeriod = (Calendar)aCalendar.clone();
-                    aCalendar.add(Calendar.MONTH, -1);
+                    aCalendar.add(Calendar.MONTH, 5);
                     aCalendar.set(Calendar.DATE, aCalendar.getActualMaximum(Calendar.DAY_OF_MONTH) + 1);
                     lastDateOfPreviousPeriod = (Calendar)aCalendar.clone();
                     return new Calendar[] {firstDateOfPreviousPeriod, lastDateOfPreviousPeriod};
@@ -226,16 +226,16 @@ public class QuotaStatementImpl extends ManagerBase implements QuotaStatement {
             return null;
         case YEARLY:
             // statements are sent in Jan=1
-            if (month_of_year == 1) {
+            if (month_of_year == Calendar.JANUARY ) {
                 if (day_of_month < s_LAST_STATEMENT_SENT_DAYS) {
-                    Calendar aCalendar = Calendar.getInstance();
+                    Calendar aCalendar = (Calendar)today.clone();
                     aCalendar.add(Calendar.MONTH, -12);
                     aCalendar.set(Calendar.DATE, 1);
                     aCalendar.set(Calendar.HOUR, 0);
                     aCalendar.set(Calendar.MINUTE, 0);
                     aCalendar.set(Calendar.SECOND, 0);
                     firstDateOfPreviousPeriod = (Calendar)aCalendar.clone();
-                    aCalendar.add(Calendar.MONTH, -1);
+                    aCalendar.add(Calendar.MONTH, 11);
                     aCalendar.set(Calendar.DATE, aCalendar.getActualMaximum(Calendar.DAY_OF_MONTH) + 1);
                     lastDateOfPreviousPeriod = (Calendar)aCalendar.clone();
                     return new Calendar[] {firstDateOfPreviousPeriod, lastDateOfPreviousPeriod};

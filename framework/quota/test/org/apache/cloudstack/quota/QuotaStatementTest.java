@@ -87,7 +87,7 @@ public class QuotaStatementTest extends TestCase {
     }
 
     @Test
-    public void testStatementPeriod() {
+    public void testStatementPeriodBIMONTHLY() {
         Calendar date = Calendar.getInstance();
 
         //BIMONTHLY - first statement of month
@@ -104,6 +104,7 @@ public class QuotaStatementTest extends TestCase {
         assertTrue(period[1].toString(), period[1].get(Calendar.DATE) == 15);
 
         //BIMONTHLY - second statement of month
+        date = Calendar.getInstance();
         date.set(Calendar.DATE, QuotaStatementImpl.s_LAST_STATEMENT_SENT_DAYS + 16);
         period = quotaStatement.statementTime(date, STATEMENT_PERIODS.BIMONTHLY);
         assertTrue(period == null);
@@ -122,9 +123,17 @@ public class QuotaStatementTest extends TestCase {
 
         assertTrue(period[1].toString(), period[1].get(Calendar.DATE) == aCalendar.get(Calendar.DATE));
 
+    }
+
+    @Test
+    public void testStatementPeriodMONTHLY() {
+        Calendar date = Calendar.getInstance();
+        Calendar aCalendar = Calendar.getInstance();
+
         //MONTHLY
+        date = Calendar.getInstance();
         date.set(Calendar.DATE, QuotaStatementImpl.s_LAST_STATEMENT_SENT_DAYS + 1);
-        period = quotaStatement.statementTime(date, STATEMENT_PERIODS.MONTHLY);
+        Calendar period[] = quotaStatement.statementTime(date, STATEMENT_PERIODS.MONTHLY);
         assertTrue(period == null);
 
         //1 of this month
@@ -140,6 +149,78 @@ public class QuotaStatementTest extends TestCase {
         aCalendar.set(Calendar.DATE, aCalendar.getActualMaximum(Calendar.DAY_OF_MONTH) + 1);
 
         assertTrue(period[1].toString(), period[1].get(Calendar.DATE) == aCalendar.get(Calendar.DATE));
+
+    }
+
+    @Test
+    public void testStatementPeriodQUATERLY() {
+        Calendar date = Calendar.getInstance();
+        Calendar aCalendar = Calendar.getInstance();
+
+        //QUATERLY
+        date = Calendar.getInstance();
+        date.set(Calendar.MONTH, Calendar.JANUARY); // 1 Jan
+        date.set(Calendar.DATE, 1);
+        Calendar period[] = quotaStatement.statementTime(date, STATEMENT_PERIODS.QUATERLY);
+        assertTrue(period != null);
+        assertTrue("period[0].before(period[1])" + period[0].toString(), period[0].before(period[1]));
+        assertTrue("period[0].get(Calendar.DATE) == 1" + period[0].toString(), period[0].get(Calendar.DATE) == 1);
+        assertTrue("period[0].get(Calendar.MONTH) == Calendar.OCTOBER" + period[0].toString(), period[0].get(Calendar.MONTH) == Calendar.OCTOBER); //october
+
+        //get last day of the previous month
+        aCalendar = Calendar.getInstance();
+        aCalendar.set(Calendar.MONTH, Calendar.DECEMBER);
+        aCalendar.set(Calendar.DATE, aCalendar.getActualMaximum(Calendar.DAY_OF_MONTH) + 1);
+        assertTrue(" period[1].get(Calendar.DATE) == aCalendar.get(Calendar.DATE)" + period[1].toString(), period[1].get(Calendar.DATE) == aCalendar.get(Calendar.DATE));
+        assertTrue("period[1].get(Calendar.MONTH) == aCalendar.get(Calendar.MONTH)" + period[1].toString(), period[1].get(Calendar.MONTH) == aCalendar.get(Calendar.MONTH));
+
+    }
+
+    @Test
+    public void testStatementPeriodHALFYEARLY() {
+        Calendar date = Calendar.getInstance();
+        Calendar aCalendar = Calendar.getInstance();
+
+        //QUATERLY
+        date = Calendar.getInstance();
+        date.set(Calendar.MONTH, Calendar.JANUARY); // 1 Jan
+        date.set(Calendar.DATE, 1);
+        Calendar period[] = quotaStatement.statementTime(date, STATEMENT_PERIODS.HALFYEARLY);
+        assertTrue(period != null);
+        assertTrue("period[0].before(period[1])" + period[0].toString(), period[0].before(period[1]));
+        assertTrue("period[0].get(Calendar.DATE) == 1" + period[0].toString(), period[0].get(Calendar.DATE) == 1);
+        assertTrue("period[0].get(Calendar.MONTH) == Calendar.JULY" + period[0].toString(), period[0].get(Calendar.MONTH) == Calendar.JULY); //july
+
+        //get last day of the previous month
+        aCalendar = Calendar.getInstance();
+        aCalendar.set(Calendar.MONTH, Calendar.DECEMBER);
+        aCalendar.set(Calendar.DATE, aCalendar.getActualMaximum(Calendar.DAY_OF_MONTH) + 1);
+        assertTrue(" period[1].get(Calendar.DATE) == aCalendar.get(Calendar.DATE)" + period[1].toString(), period[1].get(Calendar.DATE) == aCalendar.get(Calendar.DATE));
+        assertTrue("period[1].get(Calendar.MONTH) == aCalendar.get(Calendar.MONTH)" + period[1].toString(), period[1].get(Calendar.MONTH) == aCalendar.get(Calendar.MONTH));
+
+    }
+
+    @Test
+    public void testStatementPeriodYEARLY() {
+        Calendar date = Calendar.getInstance();
+        Calendar aCalendar = Calendar.getInstance();
+
+        //QUATERLY
+        date = Calendar.getInstance();
+        date.set(Calendar.MONTH, Calendar.JANUARY); // 1 Jan
+        date.set(Calendar.DATE, 1);
+        Calendar period[] = quotaStatement.statementTime(date, STATEMENT_PERIODS.YEARLY);
+        assertTrue("period != null", period != null);
+        assertTrue("period[0].before(period[1])" + period[0].toString(), period[0].before(period[1]));
+        assertTrue("period[0].get(Calendar.DATE) == 1" + period[0].toString(), period[0].get(Calendar.DATE) == 1);
+        assertTrue("period[0].get(Calendar.MONTH) == Calendar.JANUARY" + period[0].toString(), period[0].get(Calendar.MONTH) == Calendar.JANUARY); //january
+
+        //get last day of the previous month
+        aCalendar = Calendar.getInstance();
+        aCalendar.set(Calendar.MONTH, Calendar.DECEMBER);
+        aCalendar.set(Calendar.DATE, aCalendar.getActualMaximum(Calendar.DAY_OF_MONTH) + 1);
+        assertTrue(" period[1].get(Calendar.DATE) == aCalendar.get(Calendar.DATE)" + period[1].toString(), period[1].get(Calendar.DATE) == aCalendar.get(Calendar.DATE));
+        assertTrue("period[1].get(Calendar.MONTH) == aCalendar.get(Calendar.MONTH)" + period[1].toString(), period[1].get(Calendar.MONTH) == aCalendar.get(Calendar.MONTH));
 
     }
 
