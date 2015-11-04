@@ -89,7 +89,7 @@ public class Filter {
         if (_orderBy == null) {
             _orderBy = order.insert(0, " ORDER BY ").toString();
         } else {
-            _orderBy = order.insert(0, _orderBy).toString();
+            _orderBy = order.insert(0, _orderBy + ", ").toString();
         }
     }
 

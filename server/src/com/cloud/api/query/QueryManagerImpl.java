@@ -3106,6 +3106,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService, Confi
         Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
         isAscending = (isAscending == null ? Boolean.TRUE : isAscending);
         Filter searchFilter = new Filter(TemplateJoinVO.class, "sortKey", isAscending, startIndex, pageSize);
+        searchFilter.addOrderBy(TemplateJoinVO.class, "tempZonePair", isAscending);
 
         SearchBuilder<TemplateJoinVO> sb = _templateJoinDao.createSearchBuilder();
         sb.select(null, Func.DISTINCT, sb.entity().getTempZonePair()); // select distinct (templateId, zoneId) pair

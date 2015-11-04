@@ -383,6 +383,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
         isAscending = (isAscending == null ? Boolean.TRUE : isAscending);
         Filter searchFilter = new Filter(TemplateJoinVO.class, "sortKey", isAscending, null, null);
+        searchFilter.addOrderBy(TemplateJoinVO.class, "tempZonePair", isAscending);
         List<TemplateJoinVO> uvList = new ArrayList<TemplateJoinVO>();
         // query details by batches
         int curr_index = 0;
