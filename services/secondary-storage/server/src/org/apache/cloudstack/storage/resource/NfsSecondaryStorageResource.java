@@ -2216,6 +2216,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
 
         // extract the nfs options
+        _nfsOptions = "";
         for (String key : params.keySet()) {
             if (key.startsWith("nfsoption-")) {
                 if (!_nfsOptions.equals("")) {
