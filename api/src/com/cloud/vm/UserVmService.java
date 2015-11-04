@@ -34,6 +34,7 @@ import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
 import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateDefaultNicForVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateVmNicIpCmd;
 import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
@@ -128,6 +129,13 @@ public interface UserVmService {
      * @return the vm object if successful, null otherwise
      */
     UserVm updateDefaultNicForVirtualMachine(UpdateDefaultNicForVMCmd cmd);
+
+    /**
+     * Updated the ip address on the given NIC to the virtual machine
+     * @param cmd the command object that defines the ip address and the given nic
+     * @return the vm object if successful, null otherwise
+     */
+    UserVm updateNicIpForVirtualMachine(UpdateVmNicIpCmd cmd);
 
     UserVm recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException;
 

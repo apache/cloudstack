@@ -2364,6 +2364,103 @@
                                 }
                             },
 
+                            updateIpaddr: {
+                                label: 'label.change.ipaddress',
+                                messages: {
+                                    confirm: function() {
+                                        return 'message.change.ipaddress';
+                                    },
+                                    notification: function(args) {
+                                        return 'label.change.ipaddress';
+                                    }
+                                },
+                                createForm: {
+                                    title: 'label.change.ipaddress',
+                                    desc: 'message.change.ipaddress',
+                                    preFilter: function(args) {
+                                        if (args.context.nics != null && args.context.nics[0].type == 'Isolated') {
+                                            args.$form.find('.form-item[rel=ipaddress1]').css('display', 'inline-block'); //shown text
+                                            args.$form.find('.form-item[rel=ipaddress2]').hide();
+                                        } else if (args.context.nics != null && args.context.nics[0].type == 'Shared') {
+                                            args.$form.find('.form-item[rel=ipaddress2]').css('display', 'inline-block'); //shown list
+                                            args.$form.find('.form-item[rel=ipaddress1]').hide();
+                                        }
+                                    },
+                                    fields: {
+                                        ipaddress1: {
+                                            label: 'label.ip.address'
+                                        },
+                                        ipaddress2: {
+                                            label: 'label.ip.address',
+                                            select: function(args) {
+                                                if (args.context.nics != null && args.context.nics[0].type == 'Shared') {
+                                                    $.ajax({
+                                                        url: createURL('listPublicIpAddresses'),
+                                                        data: {
+                                                            allocatedonly: false,
+                                                            networkid: args.context.nics[0].networkid,
+                                                            forvirtualnetwork: false
+                                                        },
+                                                        success: function(json) {
+                                                            var ips = json.listpublicipaddressesresponse.publicipaddress;
+                                                            var items = [{
+                                                                id: -1,
+                                                                description: ''
+                                                            }];
+                                                            $(ips).each(function() {
+                                                                if (this.state == "Free") {
+                                                                    items.push({
+                                                                        id: this.ipaddress,
+                                                                        description: this.ipaddress
+                                                                    });
+                                                                }
+                                                            });
+                                                            args.response.success({
+                                                                data: items
+                                                            });
+                                                        }
+                                                    });
+                                                } else {
+                                                    args.response.success({
+                                                        data: null
+                                                    });
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                action: function(args) {
+                                    var dataObj = {
+                                        nicId: args.context.nics[0].id
+                                    };
+
+                                    if (args.data.ipaddress1) {
+                                        dataObj.ipaddress = args.data.ipaddress1;
+                                    } else if (args.data.ipaddress2 != -1) {
+                                        dataObj.ipaddress = args.data.ipaddress2;
+                                    }
+
+                                    $.ajax({
+                                        url: createURL('updateVmNicIp'),
+                                        data: dataObj,
+                                        success: function(json) {
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: json.updatevmnicipresponse.jobid,
+                                                    getUpdatedItem: function(json) {
+                                                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+
                             // Remove NIC/Network from VM
                             remove: {
                                 label: 'label.action.delete.nic',
@@ -2463,9 +2560,9 @@
                                     args.response.success({
                                         actionFilter: function(args) {
                                             if (args.context.item.isdefault) {
-                                                return [];
+                                                return ['updateIpaddr'];
                                             } else {
-                                                return ['remove', 'makeDefault'];
+                                                return ['remove', 'makeDefault', 'updateIpaddr'];
                                             }
                                         },
                                         data: $.map(json.listvirtualmachinesresponse.virtualmachine[0].nic, function(nic, index) {
