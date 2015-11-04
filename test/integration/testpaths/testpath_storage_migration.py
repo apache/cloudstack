@@ -248,6 +248,13 @@ class TestStorageMigration(cloudstackTestCase):
                 DomainName=cls.account.domain
             )
             # Create Service offering
+            cls.service_offering = ServiceOffering.create(
+                cls.apiclient,
+                cls.testdata["service_offering"]
+            )
+
+            cls._cleanup.append(cls.service_offering)
+
             cls.service_offering_zone1 = ServiceOffering.create(
                 cls.apiclient,
                 cls.testdata["service_offering"],
