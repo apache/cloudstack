@@ -32,7 +32,7 @@ CODENAME=""
 if [ -f /etc/redhat-release ] ; then
 	DIST=`cat /etc/redhat-release | awk '{print $1}'`
 	CODENAME=`cat /etc/redhat-release | sed s/.*\(// | sed s/\)//`
-	REV=`cat /etc/redhat-release | awk '{print $3}'`
+	REV=`cat /etc/redhat-release | awk '{print $3,$4}' | grep -o "[0-9.]*"`
 elif [ -f /etc/lsb-release ] ; then
 	DIST=`cat /etc/lsb-release | grep DISTRIB_ID | tr "\n" ' '| sed s/.*=//`
 	REV=`cat /etc/lsb-release | grep DISTRIB_RELEASE | tr "\n" ' '| sed s/.*=//`
