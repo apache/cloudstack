@@ -186,7 +186,7 @@ public class StringUtils {
     private static final Pattern REGEX_PASSWORD_QUERYSTRING = Pattern.compile("(&|%26)?[^(&|%26)]*((p|P)assword|accesskey|secretkey)(=|%3D).*?(?=(%26|[&'\"]|$))");
 
     // removes a password/accesskey/ property from a response json object
-    private static final Pattern REGEX_PASSWORD_JSON = Pattern.compile("\"((p|P)assword|accesskey|secretkey)\":\\s?\".*?\",?");
+    private static final Pattern REGEX_PASSWORD_JSON = Pattern.compile("\"((p|P)assword|privatekey|accesskey|secretkey)\":\\s?\".*?\",?");
 
     private static final Pattern REGEX_PASSWORD_DETAILS = Pattern.compile("(&|%26)?details(\\[|%5B)\\d*(\\]|%5D)\\.key(=|%3D)((p|P)assword|accesskey|secretkey)(?=(%26|[&'\"]))");
 
