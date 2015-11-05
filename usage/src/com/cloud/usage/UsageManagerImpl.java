@@ -395,14 +395,14 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     s_logger.error("Exception received while calculating quota", e);
                 }
                 try {
-                    _alertManager.checkAndSendQuotaAlertEmails();
-                } catch (Exception e) {
-                    s_logger.error("Exception received while sending alerts", e);
-                }
-                try {
                     _quotaStatement.sendStatement();
                 } catch (Exception e) {
                     s_logger.error("Exception received while sending statements", e);
+                }
+                try {
+                    _alertManager.checkAndSendQuotaAlertEmails();
+                } catch (Exception e) {
+                    s_logger.error("Exception received while sending alerts", e);
                 }
             }
         } else {

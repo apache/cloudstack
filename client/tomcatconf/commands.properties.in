@@ -787,6 +787,7 @@ addGloboDnsHost=1
 quotaStatement=15
 quotaBalance=15
 quotaSummary=1
+quotaUpdate=1
 quotaTariffList=15
 quotaTariffUpdate=1
 quotaCredits=1
