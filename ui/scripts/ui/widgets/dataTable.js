@@ -177,14 +177,19 @@
             var sortData = [];
             var numericDataCount = 0;
             $elems.each(function() {
-                var text = $(this).html();
+                var text = $(this);
                 if (hasAllRowsSameValue) {
-                    if (firstElem !== text) {
+                    if (firstElem !== text.html()) {
                         hasAllRowsSameValue = false;
                     }
                 }
+                if (text.children()) {
+                    text = text.children().html();
+                } else {
+                    text = text.html();
+                }
                 if (isNumeric(text) || !text) {
-                    numericDataCount++;
+                    numericDataCount += 1;
                 }
                 sortData.push($(this));
             });
