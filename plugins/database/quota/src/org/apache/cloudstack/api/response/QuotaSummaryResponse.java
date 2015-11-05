@@ -36,13 +36,21 @@ public class QuotaSummaryResponse extends BaseResponse {
     @Param(description = "account name")
     private String accountName;
 
-    @SerializedName("domain")
+    @SerializedName("domainid")
     @Param(description = "domain id")
     private Long domainId;
+
+    @SerializedName("domain")
+    @Param(description = "domain name")
+    private String domainName;
 
     @SerializedName("balance")
     @Param(description = "account balance")
     private BigDecimal balance;
+
+    @SerializedName("state")
+    @Param(description = "account state")
+    private Boolean state;
 
     @SerializedName("quota")
     @Param(description = "quota usage of this period")
@@ -88,8 +96,24 @@ public class QuotaSummaryResponse extends BaseResponse {
         this.domainId = domainId;
     }
 
+    public String getDomainName() {
+        return domainName;
+    }
+
+    public void setDomainName(String domainName) {
+        this.domainName = domainName;
+    }
+
     public BigDecimal getQuotaUsage() {
         return quotaUsage;
+    }
+
+    public Boolean getState() {
+        return state;
+    }
+
+    public void setState(Boolean state) {
+        this.state = state;
     }
 
     public void setQuotaUsage(BigDecimal startQuota) {
@@ -100,8 +124,8 @@ public class QuotaSummaryResponse extends BaseResponse {
         return balance;
     }
 
-    public void setBalance(BigDecimal endQuota) {
-        this.balance = endQuota.setScale(2, RoundingMode.HALF_EVEN);
+    public void setBalance(BigDecimal balance) {
+        this.balance = balance.setScale(2, RoundingMode.HALF_EVEN);
     }
 
     public Date getStartDate() {

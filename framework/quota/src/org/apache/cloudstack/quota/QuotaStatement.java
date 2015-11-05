@@ -16,8 +16,11 @@
 //under the License.
 package org.apache.cloudstack.quota;
 
+import java.util.Calendar;
+
 import com.cloud.utils.component.Manager;
 
 public interface QuotaStatement extends Manager {
     void sendStatement();
+    Calendar[] getCurrentStatementTime();
 }

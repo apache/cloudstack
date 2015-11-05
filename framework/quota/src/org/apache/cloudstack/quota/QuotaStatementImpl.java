@@ -143,6 +143,122 @@ public class QuotaStatementImpl extends ManagerBase implements QuotaStatement {
         }
     }
 
+    @Override
+    public Calendar[] getCurrentStatementTime() {
+        final Calendar today = Calendar.getInstance();
+        int day_of_month = today.get(Calendar.DAY_OF_MONTH);
+        int month_of_year = today.get(Calendar.MONTH);
+
+        Calendar firstDateOfCurrentPeriod, lastDateOfCurrentPeriod;
+        Calendar aCalendar = (Calendar)today.clone();
+        aCalendar.add(Calendar.DATE, 1);
+        aCalendar.set(Calendar.HOUR, 0);
+        aCalendar.set(Calendar.MINUTE, 0);
+        aCalendar.set(Calendar.SECOND, 0);
+        lastDateOfCurrentPeriod = aCalendar;
+
+        switch (_period) {
+        case BIMONTHLY:
+            if (day_of_month < 16) {
+                aCalendar = (Calendar)today.clone();
+                aCalendar.add(Calendar.MONTH, 0);
+                aCalendar.set(Calendar.DATE, 1);
+                aCalendar.set(Calendar.HOUR, 0);
+                aCalendar.set(Calendar.MINUTE, 0);
+                aCalendar.set(Calendar.SECOND, 0);
+                firstDateOfCurrentPeriod = aCalendar;
+                return new Calendar[] {firstDateOfCurrentPeriod, lastDateOfCurrentPeriod};
+            } else {
+                aCalendar = (Calendar)today.clone();
+                aCalendar.set(Calendar.DATE, 16);
+                aCalendar.set(Calendar.HOUR, 0);
+                aCalendar.set(Calendar.MINUTE, 0);
+                aCalendar.set(Calendar.SECOND, 0);
+                firstDateOfCurrentPeriod = aCalendar;
+                return new Calendar[] {firstDateOfCurrentPeriod, lastDateOfCurrentPeriod};
+            }
+        case MONTHLY:
+            aCalendar = (Calendar)today.clone();
+            aCalendar.set(Calendar.DATE, 1);
+            aCalendar.set(Calendar.HOUR, 0);
+            aCalendar.set(Calendar.MINUTE, 0);
+            aCalendar.set(Calendar.SECOND, 0);
+            firstDateOfCurrentPeriod = aCalendar;
+            return new Calendar[] {firstDateOfCurrentPeriod, lastDateOfCurrentPeriod};
+        case QUATERLY:
+            if (month_of_year < Calendar.APRIL) {
+                aCalendar = (Calendar)today.clone();
+                aCalendar.set(Calendar.MONTH, Calendar.JANUARY);
+                aCalendar.set(Calendar.DATE, 1);
+                aCalendar.set(Calendar.HOUR, 0);
+                aCalendar.set(Calendar.MINUTE, 0);
+                aCalendar.set(Calendar.SECOND, 0);
+                firstDateOfCurrentPeriod = aCalendar;
+                return new Calendar[] {firstDateOfCurrentPeriod, lastDateOfCurrentPeriod};
+            } else if (month_of_year < Calendar.JULY) {
+                aCalendar = (Calendar)today.clone();
+                aCalendar.set(Calendar.MONTH, Calendar.APRIL);
+                aCalendar.set(Calendar.DATE, 1);
+                aCalendar.set(Calendar.HOUR, 0);
+                aCalendar.set(Calendar.MINUTE, 0);
+                aCalendar.set(Calendar.SECOND, 0);
+                firstDateOfCurrentPeriod = aCalendar;
+                return new Calendar[] {firstDateOfCurrentPeriod, lastDateOfCurrentPeriod};
+            } else if (month_of_year < Calendar.OCTOBER) {
+                aCalendar = (Calendar)today.clone();
+                aCalendar.set(Calendar.MONTH, Calendar.JULY);
+                aCalendar.set(Calendar.DATE, 1);
+                aCalendar.set(Calendar.HOUR, 0);
+                aCalendar.set(Calendar.MINUTE, 0);
+                aCalendar.set(Calendar.SECOND, 0);
+                firstDateOfCurrentPeriod = aCalendar;
+                return new Calendar[] {firstDateOfCurrentPeriod, lastDateOfCurrentPeriod};
+            } else {
+                aCalendar = (Calendar)today.clone();
+                aCalendar.set(Calendar.MONTH, Calendar.OCTOBER);
+                aCalendar.set(Calendar.DATE, 1);
+                aCalendar.set(Calendar.HOUR, 0);
+                aCalendar.set(Calendar.MINUTE, 0);
+                aCalendar.set(Calendar.SECOND, 0);
+                firstDateOfCurrentPeriod = aCalendar;
+                return new Calendar[] {firstDateOfCurrentPeriod, lastDateOfCurrentPeriod};
+            }
+        case HALFYEARLY:
+            // statements are sent in Jan=1, Jul 7,
+            if (month_of_year < Calendar.JULY) {
+                aCalendar = (Calendar)today.clone();
+                aCalendar.set(Calendar.MONTH, Calendar.JANUARY);
+                aCalendar.set(Calendar.DATE, 1);
+                aCalendar.set(Calendar.HOUR, 0);
+                aCalendar.set(Calendar.MINUTE, 0);
+                aCalendar.set(Calendar.SECOND, 0);
+                firstDateOfCurrentPeriod = aCalendar;
+                return new Calendar[] {firstDateOfCurrentPeriod, lastDateOfCurrentPeriod};
+            } else {
+                aCalendar = (Calendar)today.clone();
+                aCalendar.set(Calendar.MONTH, Calendar.JULY);
+                aCalendar.set(Calendar.DATE, 1);
+                aCalendar.set(Calendar.HOUR, 0);
+                aCalendar.set(Calendar.MINUTE, 0);
+                aCalendar.set(Calendar.SECOND, 0);
+                firstDateOfCurrentPeriod = aCalendar;
+                return new Calendar[] {firstDateOfCurrentPeriod, lastDateOfCurrentPeriod};
+            }
+        case YEARLY:
+            aCalendar = (Calendar)today.clone();
+            aCalendar.add(Calendar.MONTH, Calendar.JANUARY);
+            aCalendar.set(Calendar.DATE, 1);
+            aCalendar.set(Calendar.HOUR, 0);
+            aCalendar.set(Calendar.MINUTE, 0);
+            aCalendar.set(Calendar.SECOND, 0);
+            firstDateOfCurrentPeriod = aCalendar;
+            return new Calendar[] {firstDateOfCurrentPeriod, lastDateOfCurrentPeriod};
+        default:
+            break;
+        }
+        return null;
+    }
+
     public Calendar[] statementTime(final Calendar today, final STATEMENT_PERIODS period) {
         //check if it is statement time
         int day_of_month = today.get(Calendar.DAY_OF_MONTH);
@@ -226,7 +342,7 @@ public class QuotaStatementImpl extends ManagerBase implements QuotaStatement {
             return null;
         case YEARLY:
             // statements are sent in Jan=1
-            if (month_of_year == Calendar.JANUARY ) {
+            if (month_of_year == Calendar.JANUARY) {
                 if (day_of_month < s_LAST_STATEMENT_SENT_DAYS) {
                     Calendar aCalendar = (Calendar)today.clone();
                     aCalendar.add(Calendar.MONTH, -12);
