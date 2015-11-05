@@ -219,6 +219,7 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
             nicResponse.setGateway(vr.getGateway());
             nicResponse.setNetmask(vr.getNetmask());
             nicResponse.setNetworkid(vr.getNetworkUuid());
+            nicResponse.setNetworkName(vr.getNetworkName());
             nicResponse.setMacAddress(vr.getMacAddress());
             nicResponse.setIp6Address(vr.getIp6Address());
             nicResponse.setIp6Gateway(vr.getIp6Gateway());
