@@ -124,4 +124,4 @@ class cloudManagementConfig(serviceCfgBase):
         if self.syscfg.svo.enableService("cloudstack-management"):
             return True
         else:
-            raise CloudRuntimeException("Failed to configure %s, please see the /var/log/cloudstack/setupManagement.log for detail"%self.serviceName)
+            raise CloudRuntimeException("Failed to configure %s, please see the /var/log/cloudstack/management/setupManagement.log for detail"%self.serviceName)

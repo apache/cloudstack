@@ -54,7 +54,7 @@ class serviceCfgBase(object):
         except:
             logging.debug(formatExceptionInfo())
             if self.syscfg.env.mode == "Server":
-                raise CloudRuntimeException("Configure %s failed, Please check the /var/log/cloudstack/setupManagement.log for detail"%self.serviceName)
+                raise CloudRuntimeException("Configure %s failed, Please check the /var/log/cloudstack/management/setupManagement.log for detail"%self.serviceName)
             else:
                 raise CloudRuntimeException("Configure %s failed, Please check the /var/log/cloudstack/agent/setup.log for detail"%self.serviceName)
 
