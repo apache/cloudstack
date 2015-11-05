@@ -146,7 +146,7 @@ table thead th.sorted.asc {
 
 table tbody td,
 table th {
-  padding: 10px 5px 8px;
+  padding: 10px 5px 6px;
   border-right: 1px solid #BFBFBF;
   color: #282828;
   clear: none;
@@ -1393,7 +1393,7 @@ div.list-view td.state span {
   -webkit-text-shadow: 0px 1px 1px #FFFFFF;
   -o-text-shadow: 0px 1px 1px #FFFFFF;
   text-shadow: 0px 1px 1px #FFFFFF;
-  background: url(../images/sprites.png) 1px -536px;
+  background: url(../images/sprites.png) 1px -526px;
 }
 
 div.list-view td.state.on span {
@@ -1407,7 +1407,69 @@ div.list-view td.state.off span {
   background-image: url(../images/sprites.png);
   background-repeat: no-repeat;
   color: #B90606;
-  background-position: 1px -496px;
+  background-position: 1px -492px;
+}
+
+div.list-view td.state.warning span {
+  background-image: url(../images/sprites.png);
+  background-repeat: no-repeat;
+  color: #B90606;
+  background-position: 1px -558px;
+}
+
+div.list-view td.state.transition span {
+  background-image: url(../images/sprites.png);
+  background-repeat: no-repeat;
+  color: #B90606;
+  background-position: 1px -432px;
+}
+
+.horizontal-overflow tbody td, .horizontal-overflow thead th {
+  min-width: 40px;
+  padding: 10px 10px 5px 0px;
+}
+
+.horizontal-overflow th.quick-view {
+  padding-left: 5px;
+}
+
+.groupable-header {
+  background: url(../images/bg-table-head.png);
+  border-left: 1px solid #C6C3C3;
+  border-right: 1px solid #C6C3C3;
+}
+
+.groupable-header-columns th {
+  border: none;
+}
+
+table.horizontal-overflow td.state {
+  width: 55px;
+  min-width: 55px;
+  max-width: 55px;
+}
+
+table.no-split td.first {
+  min-width: 150px;
+}
+
+.groupable-header-border {
+  border-left: 1px solid #C6C3C3;
+  border-right: 1px solid #C6C3C3;
+}
+
+td.alert-notification-threshold {
+  color: #E87900;
+  background-color: rgba(255, 231, 175, 0.75);
+}
+
+td.alert-disable-threshold {
+  color: #F50000;
+  background-color: rgba(255, 190, 190, 0.75);
+}
+
+span.compact {
+  height: 16px;
 }
 
 /** Quick view tooltip*/
