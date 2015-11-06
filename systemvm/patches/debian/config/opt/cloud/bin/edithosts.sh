@@ -110,10 +110,10 @@ logger -t cloud "edithosts: update $mac $ipv4 $ipv6 $host to hosts"
 [ ! -f $DHCP_LEASES ] && touch $DHCP_LEASES
 
 #delete any previous entries from the dhcp hosts file
-sed -i  /$mac/d $DHCP_HOSTS
+sed -i  /^$mac,/d $DHCP_HOSTS
 if [ $ipv4 ]
 then
-  sed -i  /$ipv4,/d $DHCP_HOSTS
+  sed -i  /,$ipv4,/d $DHCP_HOSTS
 fi
 if [ $ipv6 ]
 then
@@ -121,7 +121,7 @@ then
   sed -i  /$ipv6],/d $DHCP_HOSTS
 fi
 # don't want to do this in the future, we can have same VM with multiple nics/entries
-sed -i  /$host,/d $DHCP_HOSTS
+sed -i  /,$host,/d $DHCP_HOSTS
 
 #put in the new entry
 if [ $ipv4 ]
@@ -143,15 +143,15 @@ then
   #delete leases to supplied mac and ip addresses
   if [ $ipv4 ]
   then
-    sed -i  /$mac/d $DHCP_LEASES
-    sed -i  /"$ipv4 "/d $DHCP_LEASES
+    sed -i  /\b$mac\b/d $DHCP_LEASES
+    sed -i  /\b$ipv4\b/d $DHCP_LEASES
   fi
   if [ $ipv6 ]
   then
-    sed -i  /$duid/d $DHCP_LEASES
-    sed -i  /"$ipv6 "/d $DHCP_LEASES
+    sed -i  /\b$duid\b/d $DHCP_LEASES
+    sed -i  /\b$ipv6\b/d $DHCP_LEASES
   fi
-  sed -i  /"$host "/d $DHCP_LEASES
+  sed -i  /\b$host\b/d $DHCP_LEASES
 
   #put in the new entry
   if [ $ipv4 ]
@@ -167,11 +167,11 @@ fi
 #edit hosts file as well
 if [ $ipv4 ]
 then
-  sed -i  /"$ipv4 "/d $HOSTS
+  sed -i  /\b$ipv4\b/d $HOSTS
 fi
 if [ $ipv6 ]
 then
-  sed -i  /"$ipv6 "/d $HOSTS
+  sed -i  /\b$ipv6\b/d $HOSTS
 fi
 sed -i  /" $host$"/d $HOSTS
 if [ $ipv4 ]
@@ -201,7 +201,7 @@ then
   fi
   [ "$routes" != "" ] && echo "$tag,121,$routes" >> $DHCP_OPTS
   #delete entry we just put in because we need a tag
-  sed -i  /$ipv4,/d $DHCP_HOSTS
+  sed -i  /,$ipv4,/d $DHCP_HOSTS
   #put it back with a tag
   echo "$mac,set:$tag,$ipv4,$host,infinite" >>$DHCP_HOSTS
 fi
