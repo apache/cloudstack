@@ -1990,7 +1990,11 @@
 
         // Infinite scrolling event
         $listView.bind('scroll', function(event) {
-            if (args.listView && args.listView.disableInfiniteScrolling) return false;
+            var listView = args.listView;
+            if (!listView && args.sections && args.sections.hasOwnProperty(args.activeSection)) {
+                listView = args.sections[args.activeSection].listView;
+            }
+            if (listView && listView.disableInfiniteScrolling) return false;
             if ($listView.find('tr.last, td.loading:visible').size()) return false;
 
             clearTimeout(infScrollTimer);
