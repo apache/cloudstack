@@ -81,8 +81,8 @@ if [ ! -e $authorized ]; then
     chmod 600 $authorized
 fi
 
-cat $authorized|grep -v "$publickey"|tee $authorized > /dev/null
-echo "$publickey" >> $authorized
+sed -i "/ cloudstack@apache.org$/d" $authorized
+echo "$publickey cloudstack@apache.org" >> $authorized
 
 which restorecon && restorecon -R -v $sshdir
 
