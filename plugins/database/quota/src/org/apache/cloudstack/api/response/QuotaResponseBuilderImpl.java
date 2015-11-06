@@ -131,7 +131,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             qr.setBalance(curBalance);
             qr.setQuotaUsage(quotaUsage);
             qr.setState(account.getState().compareTo(State.enabled) == 0);
-
+            qr.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
+            qr.setObjectName("summary");
             result.add(qr);
         }
         return result;
