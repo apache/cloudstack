@@ -7710,9 +7710,6 @@
                                     label: 'label.metrics',
                                     isHeader: true,
                                     addRow: false,
-                                    preFilter: function(args) {
-                                        return isAdmin();
-                                    },
                                     action: {
                                         custom: cloudStack.uiCustom.metricsView({resource: 'zones'})
                                     },
@@ -14392,9 +14389,6 @@
                             label: 'label.metrics',
                             isHeader: true,
                             addRow: false,
-                            preFilter: function(args) {
-                                return isAdmin();
-                            },
                             action: {
                                 custom: cloudStack.uiCustom.metricsView({resource: 'clusters'})
                             },
@@ -15646,9 +15640,6 @@
                             label: 'label.metrics',
                             isHeader: true,
                             addRow: false,
-                            preFilter: function(args) {
-                                return isAdmin();
-                            },
                             action: {
                                 custom: cloudStack.uiCustom.metricsView({resource: 'hosts'})
                             },
@@ -17468,9 +17459,6 @@
                             label: 'label.metrics',
                             isHeader: true,
                             addRow: false,
-                            preFilter: function(args) {
-                                return isAdmin();
-                            },
                             action: {
                                 custom: cloudStack.uiCustom.metricsView({resource: 'storagepool'})
                             },
