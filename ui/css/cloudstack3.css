@@ -46,7 +46,7 @@ div.toolbar,
 
 /*+}*/
 body {
-  min-width: 1024px;
+  min-width: 1224px;
   font-family: sans-serif;
   overflow: auto;
   background: #EDE8E8;
@@ -61,7 +61,7 @@ body.install-wizard {
 }
 
 #main-area {
-  width: 1024px;
+  width: 1224px;
   height: 729px;
   margin: auto;
   border: 1px solid #D4D4D4;
@@ -96,8 +96,8 @@ a:hover {
 
 /*Table*/
 table {
-  width: 740px;
-  max-width: 777px;
+  width: 940px;
+  max-width: 977px;
   margin: 15px 15px 12px 12px;
   font-size: 13px;
   text-align: left;
@@ -480,8 +480,8 @@ body.login {
 }
 
 .login .logo {
-  width: 250px;
-  height: 31px;
+  width: 290px;
+  height: 40px;
   float: left;
   margin: 72px 0 0 209px;
   background: url(../images/logo-login.png) no-repeat 0 0;
@@ -1297,7 +1297,7 @@ div.panel div.list-view {
 }
 
 .detail-view div.list-view {
-  width: 730px;
+  width: 930px;
   border: 1px solid #DAD4D4;
   margin: 41px auto auto !important;
   height: 536px !important;
@@ -1305,12 +1305,12 @@ div.panel div.list-view {
 }
 
 div.panel div.list-view div.data-table table {
-  width: 755px;
+  width: 955px;
   margin-top: 44px;
 }
 
 .detail-view div.list-view div.data-table table {
-  width: 703px !important;
+  width: 903px !important;
 }
 
 .detail-view div.list-view div.data-table table td {
@@ -1321,7 +1321,7 @@ div.panel div.list-view div.fixed-header {
   position: absolute;
   top: 29px;
   left: 12px;
-  width: 760px;
+  width: 960px;
   height: 47px;
   display: table;
   background-color: #F7F7F7;
@@ -1330,9 +1330,9 @@ div.panel div.list-view div.fixed-header {
 }
 
 .detail-view div.list-view div.fixed-header {
-  width: 703px !important;
+  width: 903px !important;
   top: 49px !important;
-  left: 32px !important;
+  left: 29px !important;
   background: #FFFFFF;
 }
 
@@ -1354,7 +1354,7 @@ div.panel div.list-view div.fixed-header table {
   position: relative;
   left: 0px;
   top: 18px;
-  width: 755px;
+  width: 955px;
   /*+box-shadow:0px 4px 10px #DFE1E3;*/
   -moz-box-shadow: 0px 4px 10px #DFE1E3;
   -webkit-box-shadow: 0px 4px 10px #DFE1E3;
@@ -1890,7 +1890,7 @@ span.compact {
 }
 
 .detail-group table {
-  width: 96%;
+  width: 98%;
   font-size: 12px;
   border-bottom: 1px solid #DFDFDF;
   filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#f7f7f7', endColorstr='#eaeaea',GradientType=0 );
@@ -2435,7 +2435,7 @@ div.detail-group.actions td {
 }
 
 #header.nologo div.logo {
-  width: 1024px;
+  width: 1224px;
   height: 47px;
   margin: auto;
   background: url(../images/logo.png) no-repeat 0 center;
@@ -2446,7 +2446,7 @@ div.detail-group.actions td {
 }
 
 #header div.controls {
-  width: 1026px;
+  width: 1226px;
   height: 48px;
   position: relative;
   margin: 27px auto 0;
@@ -2554,7 +2554,7 @@ div.detail-group.actions td {
   margin: 0;
   position: absolute;
   top: -47px;
-  left: 890px;
+  left: 1090px;
   cursor: default !important;
   display: inline-block;
   float: left;
@@ -2944,9 +2944,9 @@ div.detail-group.actions td {
 
 /*Browser*/
 #browser {
-  width: 794px;
+  width: 994px;
   height: 100%;
-  max-width: 794px;
+  max-width: 994px;
   position: relative;
   float: left;
   overflow: hidden;
@@ -3068,7 +3068,7 @@ div.detail-group.actions td {
 }
 
 .detail-view .ui-tabs-panel div.toolbar {
-  width: 768px;
+  width: 968px;
   background: transparent;
   border: none;
   margin-top: 8px;
@@ -3234,7 +3234,7 @@ div.toolbar div.button.main-action span.icon {
 
 div.toolbar div.button.refresh {
   float: right;
-  margin: 0 15px 0 0;
+  margin: 0 20px 0 0;
 }
 
 div.toolbar div.button.refresh span {
@@ -4357,7 +4357,7 @@ textarea {
 }
 
 .dashboard.admin .dashboard-container.sub {
-  width: 368px;
+  width: 468px;
 }
 
 .dashboard.admin .dashboard-container.sub .button.view-all,
@@ -4415,7 +4415,7 @@ textarea {
 
 /**** Head*/
 .dashboard.admin .dashboard-container.head {
-  width: 766px;
+  width: 966px;
   height: 331px;
   margin: 9px 0 0;
   float: left;
@@ -4475,7 +4475,7 @@ textarea {
 
 /**** Charts / stats*/
 .dashboard.admin .zone-stats {
-  width: 774px;
+  width: 974px;
   height: 316px;
   overflow: auto;
   overflow-x: hidden;
@@ -4486,7 +4486,7 @@ textarea {
 }
 
 .dashboard.admin .zone-stats ul {
-  width: 796px;
+  width: 996px;
   /*+placement:shift -2px 11px;*/
   position: relative;
   left: -2px;
@@ -4494,7 +4494,7 @@ textarea {
 }
 
 .dashboard.admin .zone-stats ul li {
-  width: 388px;
+  width: 488px;
   font-size: 14px;
   height: 79px;
   float: left;
@@ -4514,7 +4514,7 @@ textarea {
 }
 
 .dashboard.admin .zone-stats ul li .label {
-  width: 111px;
+  width: 161px;
   float: left;
   font-weight: 100;
   border-bottom: 1px solid #E2E2E2;
@@ -4685,7 +4685,7 @@ textarea {
 }
 
 .dashboard.admin .dashboard-container.sub.alerts ul {
-  width: 368px;
+  width: 468px;
   height: 234px;
   overflow: auto;
   overflow-x: hidden;
@@ -5145,7 +5145,7 @@ textarea {
 }
 
 .system-chart.dashboard.admin .dashboard-container {
-  width: 740px;
+  width: 930px;
   border: none;
 }
 
@@ -5166,7 +5166,7 @@ textarea {
 }
 
 .system-chart.dashboard.admin .dashboard-container .stats .chart {
-  width: 136px;
+  width: 300px;
 }
 
 /** Compute*/
@@ -5183,7 +5183,7 @@ textarea {
 }
 
 .system-chart.compute ul.resources li.zone {
-  left: 96px;
+  left: 196px;
 }
 
 .system-chart.compute ul.resources li.zone .label {
@@ -5195,32 +5195,32 @@ textarea {
 }
 
 .system-chart.compute ul.resources li.pods {
-  left: 199px;
+  left: 299px;
   top: 112px;
 }
 
 .system-chart.compute ul.resources li.clusters {
-  left: 296px;
+  left: 396px;
   top: 189px;
 }
 
 .system-chart.compute ul.resources li.hosts {
-  left: 407px;
+  left: 507px;
   top: 265px;
 }
 
 .system-chart.compute ul.resources li.primaryStorage {
-  left: 407px;
+  left: 507px;
   top: 375px;
 }
 
 .system-chart.compute ul.resources li.secondaryStorage {
-  left: 199px;
+  left: 299px;
   top: 497px;
 }
 
 .system-chart.compute ul.resources li.ucs {
-  left: 199px;
+  left: 299px;
   top: 406px;
 }
 
@@ -8135,6 +8135,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
 .detail-view .multi-edit select {
   width: 93%;
   font-size: 10px;
+  min-width: 80px;
 }
 
 .multi-edit input {
@@ -9073,7 +9074,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
 .network-chart li.firewall {
   /*+placement:shift 282px 188px;*/
   position: relative;
-  left: 282px;
+  left: 356px;
   top: 188px;
   position: absolute;
 }
@@ -9081,7 +9082,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
 .network-chart li.loadBalancing {
   /*+placement:shift 167px 342px;*/
   position: relative;
-  left: 167px;
+  left: 237px;
   top: 342px;
   position: absolute;
 }
@@ -9089,7 +9090,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
 .network-chart li.portForwarding {
   /*+placement:shift 401px 342px;*/
   position: relative;
-  left: 401px;
+  left: 480px;
   top: 342px;
   position: absolute;
 }
@@ -9166,7 +9167,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
 /*System Dashboard*/
 .system-dashboard {
   height: 258px;
-  width: 762px;
+  width: 962px;
   display: block;
   /*+border-radius:3px;*/
   -moz-border-radius: 3px;
@@ -9264,7 +9265,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   position: relative;
   left: 18px;
   top: 110px;
-  width: 78%;
+  width: 83%;
   position: absolute;
   text-align: center;
   padding: 8px 0;
@@ -9279,7 +9280,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
 
 .system-dashboard .status_box li {
   height: 178px;
-  width: 178px;
+  width: 228px;
   padding: 0;
   margin: 0 0 0 8px;
   /*+border-radius:3px;*/
@@ -9303,7 +9304,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   padding: 65px 80px 5px;
   /*+placement:shift 31px 19px;*/
   position: relative;
-  left: 31px;
+  left: 51px;
   top: 19px;
   position: absolute;
   /*+opacity:56%;*/
@@ -9340,7 +9341,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   /*+placement:shift 13px 5px;*/
   position: relative;
   left: 13px;
-  top: 5px;
+  top: 13px;
   font-weight: 100;
 }
 

@@ -164,6 +164,9 @@
                     label: 'label.display.name',
                     truncate: true
                 },
+                ipaddress: {
+                    label: 'label.ip.address'
+                },
                 zonename: {
                     label: 'label.zone.name'
                 },
@@ -293,9 +296,6 @@
                     label: 'label.metrics',
                     isHeader: true,
                     addRow: false,
-                    preFilter: function(args) {
-                        return isAdmin();
-                    },
                     action: {
                         custom: cloudStack.uiCustom.metricsView({resource: 'vms'})
                     },
@@ -371,6 +371,13 @@
                     data: data,
                     success: function(json) {
                         var items = json.listvirtualmachinesresponse.virtualmachine;
+                        if (items) {
+                            $.each(items, function(idx, vm) {
+                                if (vm.nic && vm.nic.length > 0 && vm.nic[0].ipaddress) {
+                                    items[idx].ipaddress = vm.nic[0].ipaddress;
+                                }
+                            });
+                        }
                         args.response.success({
                             data: items
                         });

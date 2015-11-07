@@ -159,7 +159,7 @@
                                             items[idx].clusters += parseInt(json.listclustersresponse.count);
                                             $.each(json.listclustersresponse.cluster, function(i, cluster) {
                                                 if (cluster.allocationstate == 'Enabled' && cluster.managedstate == 'Managed') {
-                                                    items[idx].clustersUp++;
+                                                    items[idx].clustersUp += 1;
                                                 }
                                                 $.ajax({
                                                     url: createURL('listHosts'),
@@ -550,6 +550,9 @@
                     },
                     compact: true
                 },
+                instances: {
+                    label: 'label.instances'
+                },
                 cpuused: {
                     label: 'label.metrics.cpu.usage',
                     collapsible: true,
@@ -702,6 +705,28 @@
 
                                 items[idx].cputotal = items[idx].cputotal + ' Ghz (x' + cpuOverCommit + ')';
                                 items[idx].memtotal = items[idx].memtotal + ' (x' + memOverCommit + ')';
+
+                                items[idx].instances = 0;
+                                items[idx].instancesUp = 0;
+                                $.ajax({
+                                    url: createURL('listVirtualMachines'),
+                                    data: {hostid: host.id, listAll: true},
+                                    success: function(json) {
+                                        if (json && json.listvirtualmachinesresponse && json.listvirtualmachinesresponse.virtualmachine) {
+                                            var vms = json.listvirtualmachinesresponse.virtualmachine;
+                                            if (vms) {
+                                                $.each(vms, function(_, vm) {
+                                                    items[idx].instances += 1;
+                                                    if (vm.state == 'Running') {
+                                                        items[idx].instancesUp += 1;
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    },
+                                    async: false
+                                });
+                                items[idx].instances = items[idx].instancesUp + ' / ' + items[idx].instances;
                             });
                         }
                         args.response.success({
@@ -746,6 +771,12 @@
                         'Shutdowned': 'warning',
                     },
                     compact: true
+                },
+                ipaddress: {
+                    label: 'label.ip.address'
+                },
+                zonename: {
+                    label: 'label.zone'
                 },
                 cpuused: {
                     label: 'label.metrics.cpu.usage',
@@ -823,6 +854,9 @@
                                 items[idx].diskread = (parseFloat(vm.diskkbsread)/(1024.0)).toFixed(2) + ' MB';
                                 items[idx].diskwrite = (parseFloat(vm.diskkbswrite)/(1024.0)).toFixed(2) + ' MB';
                                 items[idx].diskiopstotal = parseFloat(vm.diskioread) + parseFloat(vm.diskiowrite);
+                                if (vm.nic && vm.nic.length > 0 && vm.nic[0].ipaddress) {
+                                    items[idx].ipaddress = vm.nic[0].ipaddress;
+                                }
 
                                 var keys = [{'cpuused': 'cpuusedavg'},
                                             {'networkkbsread': 'networkread'},
