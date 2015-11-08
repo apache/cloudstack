@@ -1372,6 +1372,10 @@
                                     description: "SharedMountPoint"
                                 });
                                 items.push({
+                                    id: "rbd",
+                                    description: "RBD"
+                                });
+                                items.push({
                                     id: "clvm",
                                     description: "CLVM"
                                 });
@@ -1444,6 +1448,10 @@
                                     id: "SharedMountPoint",
                                     description: "SharedMountPoint"
                                 });
+                                items.push({
+                                    id: "rbd",
+                                    description: "RBD"
+                                });
                                 args.response.success({
                                     data: items
                                 });
@@ -1489,9 +1497,15 @@
 
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=rbdmonitor]').hide();
+                                    $form.find('[rel=rbdpool]').hide();
+                                    $form.find('[rel=rbdid]').hide();
+                                    $form.find('[rel=rbdsecret]').hide();
+
                                     $form.find('[rel=glustervolume]').hide();
                                 } else if (protocol == "SMB") { //"SMB" show almost the same fields as "nfs" does, except 3 more SMB-specific fields.
-                                       $form.find('[rel=server]').css('display', 'block');
+                                    $form.find('[rel=server]').css('display', 'block');
                                     $form.find('[rel=server]').find(".value").find("input").val("");
 
                                     $form.find('[rel=path]').css('display', 'block');
@@ -1507,6 +1521,11 @@
 
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=rbdmonitor]').hide();
+                                    $form.find('[rel=rbdpool]').hide();
+                                    $form.find('[rel=rbdid]').hide();
+                                    $form.find('[rel=rbdsecret]').hide();
 
                                     $form.find('[rel=glustervolume]').hide();
                                 } else if (protocol == "ocfs2") { //ocfs2 is the same as nfs, except no server field.
@@ -1526,6 +1545,11 @@
 
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=rbdmonitor]').hide();
+                                    $form.find('[rel=rbdpool]').hide();
+                                    $form.find('[rel=rbdid]').hide();
+                                    $form.find('[rel=rbdsecret]').hide();
 
                                     $form.find('[rel=glustervolume]').hide();
                                 } else if (protocol == "PreSetup") {
@@ -1547,6 +1571,11 @@
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
 
+                                    $form.find('[rel=rbdmonitor]').hide();
+                                    $form.find('[rel=rbdpool]').hide();
+                                    $form.find('[rel=rbdid]').hide();
+                                    $form.find('[rel=rbdsecret]').hide();
+
                                     $form.find('[rel=glustervolume]').hide();
                                 } else if (protocol == "iscsi") {
                                     $form.find('[rel=server]').css('display', 'block');
@@ -1565,6 +1594,11 @@
 
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=rbdmonitor]').hide();
+                                    $form.find('[rel=rbdpool]').hide();
+                                    $form.find('[rel=rbdid]').hide();
+                                    $form.find('[rel=rbdsecret]').hide();
 
                                     $form.find('[rel=glustervolume]').hide();
                                 } else if ($(this).val() == "clvm") {
@@ -1585,6 +1619,11 @@
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
 
+                                    $form.find('[rel=rbdmonitor]').hide();
+                                    $form.find('[rel=rbdpool]').hide();
+                                    $form.find('[rel=rbdid]').hide();
+                                    $form.find('[rel=rbdsecret]').hide();
+
                                     $form.find('[rel=glustervolume]').hide();
                                 } else if (protocol == "vmfs") {
                                     $form.find('[rel=server]').css('display', 'block');
@@ -1603,6 +1642,11 @@
 
                                     $form.find('[rel=vCenterDataCenter]').css('display', 'block');
                                     $form.find('[rel=vCenterDataStore]').css('display', 'block');
+
+                                    $form.find('[rel=rbdmonitor]').hide();
+                                    $form.find('[rel=rbdpool]').hide();
+                                    $form.find('[rel=rbdid]').hide();
+                                    $form.find('[rel=rbdsecret]').hide();
 
                                     $form.find('[rel=glustervolume]').hide();
                                 } else if (protocol == "SharedMountPoint") { //"SharedMountPoint" show the same fields as "nfs" does.
@@ -1623,6 +1667,11 @@
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
 
+                                    $form.find('[rel=rbdmonitor]').hide();
+                                    $form.find('[rel=rbdpool]').hide();
+                                    $form.find('[rel=rbdid]').hide();
+                                    $form.find('[rel=rbdsecret]').hide();
+
                                     $form.find('[rel=glustervolume]').hide();
                                 } else if (protocol == "gluster") {
                                     $form.find('[rel=server]').css('display', 'block');
@@ -1642,7 +1691,38 @@
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
 
+                                    $form.find('[rel=rbdmonitor]').hide();
+                                    $form.find('[rel=rbdpool]').hide();
+                                    $form.find('[rel=rbdid]').hide();
+                                    $form.find('[rel=rbdsecret]').hide();
+
                                     $form.find('[rel=glustervolume]').css('display', 'block');
+                                } else if (protocol == "rbd") {
+                                    $form.find('[rel=rbdmonitor]').css('display', 'inline-block');
+                                    $form.find('[rel=rbdmonitor]').find(".name").find("label").text("RADOS Monitor:");
+
+                                    $form.find('[rel=rbdpool]').css('display', 'inline-block');
+                                    $form.find('[rel=rbdpool]').find(".name").find("label").text("RADOS Pool:");
+
+                                    $form.find('[rel=rbdid]').css('display', 'inline-block');
+                                    $form.find('[rel=rbdid]').find(".name").find("label").text("RADOS User:");
+
+                                    $form.find('[rel=rbdsecret]').css('display', 'inline-block');
+                                    $form.find('[rel=rbdsecret]').find(".name").find("label").text("RADOS Secret:");
+
+                                    $form.find('[rel=server]').hide();
+                                    $form.find('[rel=iqn]').hide();
+                                    $form.find('[rel=lun]').hide();
+                                    $form.find('[rel=volumegroup]').hide();
+                                    $form.find('[rel=path]').hide();
+                                    $form.find('[rel=vCenterDataCenter]').hide();
+                                    $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=smbUsername]').hide();
+                                    $form.find('[rel=smbPassword]').hide();
+                                    $form.find('[rel=smbDomain]').hide();
+
+                                    $form.find('[rel=glustervolume]').hide();
                                 } else {
                                     $form.find('[rel=server]').css('display', 'block');
                                     $form.find('[rel=server]').find(".value").find("input").val("");
@@ -1658,6 +1738,11 @@
 
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=rbdmonitor]').hide();
+                                    $form.find('[rel=rbdpool]').hide();
+                                    $form.find('[rel=rbdid]').hide();
+                                    $form.find('[rel=rbdsecret]').hide();
 
                                     $form.find('[rel=glustervolume]').hide();
                                 }
@@ -1754,6 +1839,40 @@
                         label: 'label.gluster.volume',
                         validation: {
                             required: true
+                        },
+                        isHidden: true
+                    },
+
+                    // RBD
+                    rbdmonitor: {
+                        label: 'label.rbd.monitor',
+                        docID: 'helpPrimaryStorageRBDMonitor',
+                        validation: {
+                            required: true
+                        },
+                        isHidden: true
+                    },
+                    rbdpool: {
+                        label: 'label.rbd.pool',
+                        docID: 'helpPrimaryStorageRBDPool',
+                        validation: {
+                            required: true
+                        },
+                        isHidden: true
+                    },
+                    rbdid: {
+                        label: 'label.rbd.id',
+                        docID: 'helpPrimaryStorageRBDId',
+                        validation: {
+                            required: false
+                        },
+                        isHidden: true
+                    },
+                    rbdsecret: {
+                        label: 'label.rbd.secret',
+                        docID: 'helpPrimaryStorageRBDSecret',
+                        validation: {
+                            required: false
                         },
                         isHidden: true
                     },
@@ -4398,6 +4517,12 @@
                         if (vg.substring(0, 1) != "/")
                             vg = "/" + vg;
                         url = clvmURL(vg);
+                    } else if (args.data.primaryStorage.protocol == "rbd") {
+                        var rbdmonitor = args.data.primaryStorage.rbdmonitor;
+                        var rbdpool = args.data.primaryStorage.rbdpool;
+                        var rbdid = args.data.primaryStorage.rbdid;
+                        var rbdsecret = args.data.primaryStorage.rbdsecret;
+                        url = rbdURL(rbdmonitor, rbdpool, rbdid, rbdsecret);
                     } else if (args.data.primaryStorage.protocol == "vmfs") {
                         var path = args.data.primaryStorage.vCenterDataCenter;
                         if (path.substring(0, 1) != "/")
