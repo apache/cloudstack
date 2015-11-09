@@ -225,60 +225,64 @@
                         $.ajax({
                             url: createURL('listZones'),
                             data: {
+                                listAll: true,
                                 page: 1,
                                 pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                             },
                             success: function (json) {
-                                dataFns.podCount($.extend(data, {
-                                    zoneCount: json.listzonesresponse.count ? json.listzonesresponse.count: 0,
-                                    zones: json.listzonesresponse.zone
-                                }));
+                                args.response.success({
+                                    data: {
+                                        zoneCount: json.listzonesresponse.count ? json.listzonesresponse.count: 0,
+                                        zones: json.listzonesresponse.zone
+                                    }
+                                });
                             }
                         });
+                        dataFns.podCount();
                     },
 
                     podCount: function (data) {
                         $.ajax({
                             url: createURL('listPods'),
                             data: {
+                                listAll: true,
                                 page: 1,
                                 pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                             },
                             success: function (json) {
-                                dataFns.clusterCount($.extend(data, {
-                                    podCount: json.listpodsresponse.count ? json.listpodsresponse.count: 0
-                                }));
+                                args.response.success({
+                                    data: {
+                                        podCount: json.listpodsresponse.count ? json.listpodsresponse.count: 0
+                                    }
+                                });
                             }
                         });
+                        dataFns.clusterCount();
                     },
 
                     clusterCount: function (data) {
                         $.ajax({
                             url: createURL('listClusters'),
                             data: {
+                                listAll: true,
                                 page: 1,
                                 pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                             },
                             success: function (json) {
-                                dataFns.hostCount($.extend(data, {
-                                    clusterCount: json.listclustersresponse.count ? json.listclustersresponse.count: 0
-                                }));
-
-                                //comment the 4 lines above and uncomment the following 4 lines if listHosts API still responds slowly.
-
-                                /*
-                                dataFns.primaryStorageCount($.extend(data, {
-                                clusterCount: json.listclustersresponse.count ?
-                                json.listclustersresponse.count : 0
-                                }));
-                                 */
+                                args.response.success({
+                                    data: {
+                                        clusterCount: json.listclustersresponse.count ? json.listclustersresponse.count: 0
+                                    }
+                                });
                             }
                         });
+                        dataFns.hostCount();
                     },
 
                     hostCount: function (data) {
                         var data2 = {
                             type: 'routing',
+                            listAll: true,
                             page: 1,
                             pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                         };
@@ -286,15 +290,19 @@
                             url: createURL('listHosts'),
                             data: data2,
                             success: function (json) {
-                                dataFns.primaryStorageCount($.extend(data, {
-                                    hostCount: json.listhostsresponse.count ? json.listhostsresponse.count: 0
-                                }));
+                                args.response.success({
+                                    data: {
+                                        hostCount: json.listhostsresponse.count ? json.listhostsresponse.count: 0
+                                    }
+                                });
                             }
                         });
+                        dataFns.primaryStorageCount();
                     },
 
                     primaryStorageCount: function (data) {
                         var data2 = {
+                            listAll: true,
                             page: 1,
                             pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                         };
@@ -302,15 +310,20 @@
                             url: createURL('listStoragePools'),
                             data: data2,
                             success: function (json) {
-                                dataFns.secondaryStorageCount($.extend(data, {
-                                    primaryStorageCount: json.liststoragepoolsresponse.count ? json.liststoragepoolsresponse.count: 0
-                                }));
+                                args.response.success({
+                                    data: {
+                                        primaryStorageCount: json.liststoragepoolsresponse.count ? json.liststoragepoolsresponse.count: 0
+                                    }
+                                });
                             }
                         });
+                        dataFns.secondaryStorageCount();
                     },
 
                     secondaryStorageCount: function (data) {
                         var data2 = {
+                            type: 'SecondaryStorage',
+                            listAll: true,
                             page: 1,
                             pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                         };
@@ -318,26 +331,33 @@
                             url: createURL('listImageStores'),
                             data: data2,
                             success: function (json) {
-                                dataFns.systemVmCount($.extend(data, {
-                                    secondaryStorageCount: json.listimagestoresresponse.imagestore ? json.listimagestoresresponse.count: 0
-                                }));
+                                args.response.success({
+                                    data: {
+                                        secondaryStorageCount: json.listimagestoresresponse.imagestore ? json.listimagestoresresponse.count: 0
+                                    }
+                                });
                             }
                         });
+                        dataFns.systemVmCount();
                     },
 
                     systemVmCount: function (data) {
                         $.ajax({
                             url: createURL('listSystemVms'),
                             data: {
+                                listAll: true,
                                 page: 1,
                                 pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                             },
                             success: function (json) {
-                                dataFns.virtualRouterCount($.extend(data, {
-                                    systemVmCount: json.listsystemvmsresponse.count ? json.listsystemvmsresponse.count: 0
-                                }));
+                                args.response.success({
+                                    data: {
+                                        systemVmCount: json.listsystemvmsresponse.count ? json.listsystemvmsresponse.count: 0
+                                    }
+                                });
                             }
                         });
+                        dataFns.virtualRouterCount();
                     },
 
                     virtualRouterCount: function (data) {
@@ -375,20 +395,22 @@
                                     });
                                 }
 
-                                        dataFns.capacity($.extend(data, {
-                                            virtualRouterCount: (total1 + total2)
-                                        }));
+                                        args.response.success({
+                                            data: {
+                                                virtualRouterCount: (total1 + total2)
+                                            }
+                                        });
                                     }
                                 });
+                                dataFns.capacity();
                     },
 
                     capacity: function (data) {
-                        if (data.zoneCount) {
-                            $.ajax({
-                                url: createURL('listCapacity'),
-                                success: function (json) {
-                                    var capacities = json.listcapacityresponse.capacity;
-
+                        $.ajax({
+                            url: createURL('listCapacity'),
+                            success: function (json) {
+                                var capacities = json.listcapacityresponse.capacity;
+                                if(capacities) {
                                     var capacityTotal = function (id, converter) {
                                         var capacity = $.grep(capacities, function (capacity) {
                                             return capacity.type == id;
@@ -403,90 +425,117 @@
                                         return total;
                                     };
 
-                                    dataFns.socketInfo($.extend(data, {
-                                        cpuCapacityTotal: capacityTotal(1, cloudStack.converters.convertHz),
-                                        memCapacityTotal: capacityTotal(0, cloudStack.converters.convertBytes),
-                                        storageCapacityTotal: capacityTotal(2, cloudStack.converters.convertBytes)
-                                    }));
+                                    args.response.success({
+                                        data: {
+                                           cpuCapacityTotal: capacityTotal(1, cloudStack.converters.convertHz),
+                                           memCapacityTotal: capacityTotal(0, cloudStack.converters.convertBytes),
+                                           storageCapacityTotal: capacityTotal(2, cloudStack.converters.convertBytes)
+                                        }
+                                    });
+
+                                } else {
+
+                                    args.response.success({
+                                        data: {
+                                            cpuCapacityTotal: cloudStack.converters.convertHz(0),
+                                            memCapacityTotal: cloudStack.converters.convertBytes(0),
+                                            storageCapacityTotal: cloudStack.converters.convertBytes(0)
+                                        }
+                                    });
+
                                 }
-                            });
-                        } else {
-                            dataFns.socketInfo($.extend(data, {
-                                cpuCapacityTotal: cloudStack.converters.convertHz(0),
-                                memCapacityTotal: cloudStack.converters.convertBytes(0),
-                                storageCapacityTotal: cloudStack.converters.convertBytes(0)
-                            }));
-                        }
+                            }
+                        });
+
+                       dataFns.socketInfo();
                     },
 
                     socketInfo: function (data) {
                         var socketCount = 0;
-                        $.ajax({
-                            url: createURL('listHypervisors'),
-                            async: false,
-                            success: function (json) {
-                                args.response.success({
-                                    data: $(json.listhypervisorsresponse.hypervisor).map(function (index, hypervisor) {
-                                        var totalHostCount = 0;
-                                        var currentPage = 1;
-                                        var returnedHostCount = 0;
-                                        var returnedHostCpusocketsSum = 0;
 
-                                        var callListHostsWithPage = function() {
-                                            $.ajax({
-                                                url: createURL('listHosts'),
-                                                async: false,
-                                                data: {
-                                                    type: 'routing',
-                                                    hypervisor: hypervisor.name,
-                                                    page: currentPage,
-                                                    pagesize: pageSize //global variable
-                                                },
-                                                success: function (json) {
-                                                    if (json.listhostsresponse.count == undefined) {
-                                                        return;
-                                                    }
+                        function listHostFunction(hypervisor, pageSizeValue) {
+                            var deferred = $.Deferred();
+                            var totalHostCount = 0;
+                            var returnedHostCount = 0;
+                            var returnedHostCpusocketsSum = 0;
 
-                                                        totalHostCount = json.listhostsresponse.count;
-                                                    returnedHostCount += json.listhostsresponse.host.length;
-
-                                                    var items = json.listhostsresponse.host;
-                                                    for (var i = 0; i < items.length; i++) {
-                                                        if (items[i].cpusockets != undefined && isNaN(items[i].cpusockets) == false) {
-                                                            returnedHostCpusocketsSum += items[i].cpusockets;
-                                                        }
-                                                    }
-
-                                                    if (returnedHostCount < totalHostCount) {
-                                                        currentPage++;
-                                                        callListHostsWithPage();
-                                                    }
-                                                }
-                                            });
+                            var callListHostsWithPage = function(page) {
+                                $.ajax({
+                                    url: createURL('listHosts'),
+                                    data: {
+                                        type: 'routing',
+                                        hypervisor: hypervisor,
+                                        page: page,
+                                        details: 'min',
+                                        pagesize: pageSizeValue
+                                    },
+                                    success: function (json) {
+                                        if (json.listhostsresponse.count == undefined) {
+                                            deferred.resolve();
+                                            return;
                                         }
 
-                                        callListHostsWithPage();
+                                        totalHostCount = json.listhostsresponse.count;
+                                        returnedHostCount += json.listhostsresponse.host.length;
 
-                                        socketCount += returnedHostCpusocketsSum;
-                                    })
+                                        var items = json.listhostsresponse.host;
+                                        for (var i = 0; i < items.length; i++) {
+                                            if (items[i].cpusockets != undefined && isNaN(items[i].cpusockets) == false) {
+                                                returnedHostCpusocketsSum += items[i].cpusockets;
+                                            }
+                                        }
+
+                                        if (returnedHostCount < totalHostCount) {
+                                            callListHostsWithPage(++page);
+                                        } else {
+                                            socketCount += returnedHostCpusocketsSum;
+                                            deferred.resolve();
+                                        }
+                                    }
+                                });
+                            }
+
+                            callListHostsWithPage(1);
+
+                            return deferred;
+
+                        }
+
+                        $.ajax({
+                            url: createURL('listConfigurations'),
+                            data: {
+                                name : 'default.page.size'
+                            },
+                            success: function (json) {
+                                pageSizeValue = json.listconfigurationsresponse.configuration[0].value;
+                                if(!pageSizeValue) {
+                                    return;
+                                }
+                                $.ajax({
+                                    url: createURL('listHypervisors'),
+                                    success: function (json) {
+                                        var deferredArray = [];
+
+                                        $(json.listhypervisorsresponse.hypervisor).map(function (index, hypervisor) {
+                                             deferredArray.push(listHostFunction(hypervisor.name, pageSizeValue));
+                                        });
+
+                                        $.when.apply(null, deferredArray).then(function(){
+                                            args.response.success({
+                                                data: {
+                                                  socketCount: socketCount
+                                                }
+                                            });
+                                        });
+                                    }
                                 });
                             }
                         });
 
-                        complete($.extend(data, {
-                            socketCount: socketCount
-                        }));
                     }
                 };
 
-                var complete = function (data) {
-                    args.response.success({
-                        data: data
-                    });
-                };
-
-                dataFns.zoneCount({
-                });
+                dataFns.zoneCount();
             }
         },
 
