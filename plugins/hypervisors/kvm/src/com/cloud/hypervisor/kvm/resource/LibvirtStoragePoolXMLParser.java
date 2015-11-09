@@ -63,10 +63,10 @@ public class LibvirtStoragePoolXMLParser {
                 if (auth != null) {
                     String authUsername = auth.getAttribute("username");
                     String authType = auth.getAttribute("type");
-                    return new LibvirtStoragePoolDef(LibvirtStoragePoolDef.poolType.valueOf(type.toUpperCase()), poolName, uuid, host, port, pool, authUsername,
-                            LibvirtStoragePoolDef.authType.valueOf(authType.toUpperCase()), uuid);
+                    return new LibvirtStoragePoolDef(LibvirtStoragePoolDef.PoolType.valueOf(type.toUpperCase()), poolName, uuid, host, port, pool, authUsername,
+                            LibvirtStoragePoolDef.AuthenticationType.valueOf(authType.toUpperCase()), uuid);
                 } else {
-                    return new LibvirtStoragePoolDef(LibvirtStoragePoolDef.poolType.valueOf(type.toUpperCase()), poolName, uuid, host, port, pool, "");
+                    return new LibvirtStoragePoolDef(LibvirtStoragePoolDef.PoolType.valueOf(type.toUpperCase()), poolName, uuid, host, port, pool, "");
                 }
                 /* Gluster is a sub-type of LibvirtStoragePoolDef.poolType.NETFS, need to check format */
             } else if (format != null && format.equalsIgnoreCase("glusterfs")) {
@@ -83,7 +83,7 @@ public class LibvirtStoragePoolXMLParser {
                 if (portValue != null && !portValue.isEmpty())
                     port = Integer.parseInt(portValue);
 
-                return new LibvirtStoragePoolDef(LibvirtStoragePoolDef.poolType.valueOf(format.toUpperCase()),
+                return new LibvirtStoragePoolDef(LibvirtStoragePoolDef.PoolType.valueOf(format.toUpperCase()),
                         poolName, uuid, host, port, path, targetPath);
             } else {
                 String path = getAttrValue("dir", "path", source);
@@ -91,7 +91,7 @@ public class LibvirtStoragePoolXMLParser {
                 Element target = (Element)rootElement.getElementsByTagName("target").item(0);
                 String targetPath = getTagValue("path", target);
 
-                return new LibvirtStoragePoolDef(LibvirtStoragePoolDef.poolType.valueOf(type.toUpperCase()), poolName, uuid, host, path, targetPath);
+                return new LibvirtStoragePoolDef(LibvirtStoragePoolDef.PoolType.valueOf(type.toUpperCase()), poolName, uuid, host, path, targetPath);
             }
         } catch (ParserConfigurationException e) {
             s_logger.debug(e.toString());

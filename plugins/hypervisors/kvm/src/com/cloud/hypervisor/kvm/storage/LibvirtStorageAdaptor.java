@@ -50,13 +50,13 @@ import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.hypervisor.kvm.resource.LibvirtSecretDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtSecretDef.usage;
+import com.cloud.hypervisor.kvm.resource.LibvirtSecretDef.Usage;
 import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolDef.authType;
-import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolDef.poolType;
+import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolDef.AuthenticationType;
+import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolDef.PoolType;
 import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolXMLParser;
 import com.cloud.hypervisor.kvm.resource.LibvirtStorageVolumeDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtStorageVolumeDef.volFormat;
+import com.cloud.hypervisor.kvm.resource.LibvirtStorageVolumeDef.VolumeFormat;
 import com.cloud.hypervisor.kvm.resource.LibvirtStorageVolumeXMLParser;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -122,7 +122,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         return vol;
     }
 
-    public StorageVol createVolume(Connect conn, StoragePool pool, String uuid, long size, volFormat format) throws LibvirtException {
+    public StorageVol createVolume(Connect conn, StoragePool pool, String uuid, long size, VolumeFormat format) throws LibvirtException {
         LibvirtStorageVolumeDef volDef = new LibvirtStorageVolumeDef(UUID.randomUUID().toString(), size, format, null, null);
         s_logger.debug(volDef.toString());
 
@@ -139,7 +139,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
-    private StoragePool createNetfsStoragePool(poolType fsType, Connect conn, String uuid, String host, String path) throws LibvirtException {
+    private StoragePool createNetfsStoragePool(PoolType fsType, Connect conn, String uuid, String host, String path) throws LibvirtException {
         String targetPath = _mountPoint + File.separator + uuid;
         LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(fsType, uuid, uuid, host, path, targetPath);
         _storageLayer.mkdir(targetPath);
@@ -193,7 +193,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             s_logger.error(mountPoint + " does not exists. Check local.storage.path in agent.properties.");
             return null;
         }
-        LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(poolType.DIR, uuid, uuid, host, path, path);
+        LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(PoolType.DIR, uuid, uuid, host, path, path);
         StoragePool sp = null;
         try {
             s_logger.debug(spd.toString());
@@ -224,7 +224,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         String volgroupName = path;
         volgroupName = volgroupName.replaceFirst("/", "");
 
-        LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(poolType.LOGICAL, volgroupName, uuid, host, volgroupPath, volgroupPath);
+        LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(PoolType.LOGICAL, volgroupName, uuid, host, volgroupPath, volgroupPath);
         StoragePool sp = null;
         try {
             s_logger.debug(spd.toString());
@@ -258,7 +258,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
         String[] userInfoTemp = userInfo.split(":");
         if (userInfoTemp.length == 2) {
-            LibvirtSecretDef sd = new LibvirtSecretDef(usage.CEPH, uuid);
+            LibvirtSecretDef sd = new LibvirtSecretDef(Usage.CEPH, uuid);
 
             sd.setCephName(userInfoTemp[0] + "@" + host + ":" + port + "/" + path);
 
@@ -278,9 +278,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 }
                 return null;
             }
-            spd = new LibvirtStoragePoolDef(poolType.RBD, uuid, uuid, host, port, path, userInfoTemp[0], authType.CEPH, uuid);
+            spd = new LibvirtStoragePoolDef(PoolType.RBD, uuid, uuid, host, port, path, userInfoTemp[0], AuthenticationType.CEPH, uuid);
         } else {
-            spd = new LibvirtStoragePoolDef(poolType.RBD, uuid, uuid, host, port, path, "");
+            spd = new LibvirtStoragePoolDef(PoolType.RBD, uuid, uuid, host, port, path, "");
         }
 
         try {
@@ -368,15 +368,15 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 throw new CloudRuntimeException("Unable to parse the storage pool definition for storage pool " + uuid);
             }
             StoragePoolType type = null;
-            if (spd.getPoolType() == LibvirtStoragePoolDef.poolType.NETFS) {
+            if (spd.getPoolType() == LibvirtStoragePoolDef.PoolType.NETFS) {
                 type = StoragePoolType.NetworkFilesystem;
-            } else if (spd.getPoolType() == LibvirtStoragePoolDef.poolType.DIR) {
+            } else if (spd.getPoolType() == LibvirtStoragePoolDef.PoolType.DIR) {
                 type = StoragePoolType.Filesystem;
-            } else if (spd.getPoolType() == LibvirtStoragePoolDef.poolType.RBD) {
+            } else if (spd.getPoolType() == LibvirtStoragePoolDef.PoolType.RBD) {
                 type = StoragePoolType.RBD;
-            } else if (spd.getPoolType() == LibvirtStoragePoolDef.poolType.LOGICAL) {
+            } else if (spd.getPoolType() == LibvirtStoragePoolDef.PoolType.LOGICAL) {
                 type = StoragePoolType.CLVM;
-            } else if (spd.getPoolType() == LibvirtStoragePoolDef.poolType.GLUSTERFS) {
+            } else if (spd.getPoolType() == LibvirtStoragePoolDef.PoolType.GLUSTERFS) {
                 type = StoragePoolType.Gluster;
             }
 
@@ -462,9 +462,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 } else {
                     disk.setFormat(pool.getDefaultFormat());
                 }
-            } else if (voldef.getFormat() == LibvirtStorageVolumeDef.volFormat.QCOW2) {
+            } else if (voldef.getFormat() == LibvirtStorageVolumeDef.VolumeFormat.QCOW2) {
                 disk.setFormat(PhysicalDiskFormat.QCOW2);
-            } else if (voldef.getFormat() == LibvirtStorageVolumeDef.volFormat.RAW) {
+            } else if (voldef.getFormat() == LibvirtStorageVolumeDef.VolumeFormat.RAW) {
                 disk.setFormat(PhysicalDiskFormat.RAW);
             }
             return disk;
@@ -542,7 +542,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
             if (type == StoragePoolType.NetworkFilesystem) {
                 try {
-                    sp = createNetfsStoragePool(poolType.NETFS, conn, name, host, path);
+                    sp = createNetfsStoragePool(PoolType.NETFS, conn, name, host, path);
                 } catch (LibvirtException e) {
                     s_logger.error("Failed to create netfs mount: " + host + ":" + path , e);
                     s_logger.error(e.getStackTrace());
@@ -550,7 +550,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 }
             } else if (type == StoragePoolType.Gluster) {
                 try {
-                    sp = createNetfsStoragePool(poolType.GLUSTERFS, conn, name, host, path);
+                    sp = createNetfsStoragePool(PoolType.GLUSTERFS, conn, name, host, path);
                 } catch (LibvirtException e) {
                     s_logger.error("Failed to create glusterfs mount: " + host + ":" + path , e);
                     s_logger.error(e.getStackTrace());
@@ -684,7 +684,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size) {
         LibvirtStoragePool libvirtPool = (LibvirtStoragePool) pool;
         StoragePool virtPool = libvirtPool.getPool();
-        LibvirtStorageVolumeDef.volFormat libvirtformat = LibvirtStorageVolumeDef.volFormat.getFormat(format);
+        LibvirtStorageVolumeDef.VolumeFormat libvirtformat = LibvirtStorageVolumeDef.VolumeFormat.getFormat(format);
 
         String volPath = null;
         String volName = null;

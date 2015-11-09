@@ -20,13 +20,13 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import junit.framework.TestCase;
-import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolDef.poolType;
-import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolDef.authType;
+import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolDef.PoolType;
+import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolDef.AuthenticationType;
 
 public class LibvirtStoragePoolDefTest extends TestCase {
 
     public void testSetGetStoragePool() {
-        poolType type = poolType.NETFS;
+        PoolType type = PoolType.NETFS;
         String name = "myNFSPool";
         String uuid = "d7846cb0-f610-4a5b-8d38-ee6e8d63f37b";
         String host = "127.0.0.1";
@@ -45,7 +45,7 @@ public class LibvirtStoragePoolDefTest extends TestCase {
     }
 
     public void testNfsStoragePool() {
-        poolType type = poolType.NETFS;
+        PoolType type = PoolType.NETFS;
         String name = "myNFSPool";
         String uuid = "89a605bc-d470-4637-b3df-27388be452f5";
         String host = "127.0.0.1";
@@ -62,14 +62,14 @@ public class LibvirtStoragePoolDefTest extends TestCase {
     }
 
     public void testRbdStoragePool() {
-        poolType type = poolType.RBD;
+        PoolType type = PoolType.RBD;
         String name = "myRBDPool";
         String uuid = "921ef8b2-955a-4c18-a697-66bb9adf6131";
         String host = "127.0.0.1";
         String dir  = "cloudstackrbdpool";
         String authUsername = "admin";
         String secretUuid = "08c2fa02-50d0-4a78-8903-b742d3f34934";
-        authType auth = authType.CEPH;
+        AuthenticationType auth = AuthenticationType.CEPH;
         int port = 6789;
 
         LibvirtStoragePoolDef pool = new LibvirtStoragePoolDef(type, name, uuid, host, port, dir, authUsername, auth, secretUuid);

@@ -32,7 +32,7 @@ import org.libvirt.StorageVol;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolDef.poolType;
+import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolDef.PoolType;
 import com.cloud.hypervisor.kvm.resource.LibvirtStorageVolumeDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtStorageVolumeXMLParser;
 import com.cloud.storage.Storage.ImageFormat;
@@ -105,7 +105,7 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
             }
 
             targetPath = "/mnt" + volumeUuid;
-            spd = new LibvirtStoragePoolDef(poolType.NETFS, volumeUuid, details.get(DiskTO.UUID), pool.getSourceHost(), details.get(DiskTO.MOUNT_POINT), targetPath);
+            spd = new LibvirtStoragePoolDef(PoolType.NETFS, volumeUuid, details.get(DiskTO.UUID), pool.getSourceHost(), details.get(DiskTO.MOUNT_POINT), targetPath);
             _storageLayer.mkdir(targetPath);
 
             s_logger.debug(spd.toString());
@@ -178,14 +178,14 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
             throw new CloudRuntimeException(e1.toString());
         }
 
-        LibvirtStorageVolumeDef.volFormat libvirtformat = null;
+        LibvirtStorageVolumeDef.VolumeFormat libvirtformat = null;
         long volCapacity = 0;
         // check whether the volume is present on the given pool
         StorageVol vol = getVolume(virtPool, volumeUuid);
         try {
             if (vol == null) {
 
-                libvirtformat = LibvirtStorageVolumeDef.volFormat.QCOW2;
+                libvirtformat = LibvirtStorageVolumeDef.VolumeFormat.QCOW2;
 
                 StoragePoolInfo poolinfo = virtPool.getInfo();
                 volCapacity = poolinfo.available;
