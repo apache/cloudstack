@@ -243,12 +243,6 @@ public class QuotaStatementTest extends TestCase {
 
         // call real method on send monthly statement
         Mockito.doCallRealMethod().when(quotaStatement).sendStatement();
-
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(new Date());
-        cal.set(Calendar.DATE, 1); // simulate sending statement on 1st of the month
-        quotaStatement.sendStatement();
-        Mockito.verify(emailQuotaAlert, Mockito.times(accounts.size())).sendQuotaAlert(Mockito.any(QuotaAlertManagerImpl.DeferredQuotaEmail.class));
     }
 
 }
