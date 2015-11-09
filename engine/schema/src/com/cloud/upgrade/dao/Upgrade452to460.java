@@ -23,10 +23,15 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
@@ -60,6 +65,7 @@ public class Upgrade452to460 implements DbUpgrade {
 
     @Override
     public void performDataMigration(final Connection conn) {
+        updateSystemVmTemplates(conn);
         updateVMInstanceUserId(conn);
         addIndexForVMInstance(conn);
     }
@@ -139,9 +145,9 @@ public class Upgrade452to460 implements DbUpgrade {
         }
     }
 
-    private void addIndexForVMInstance(Connection conn) {
+    private void addIndexForVMInstance(final Connection conn) {
         // Drop index if it exists
-        List<String> indexList = new ArrayList<String>();
+        final List<String> indexList = new ArrayList<String>();
         s_logger.debug("Dropping index i_vm_instance__instance_name from vm_instance table if it exists");
         indexList.add("i_vm_instance__instance_name");
         DbUpgradeUtils.dropKeysIfExist(conn, "vm_instance", indexList, false);
@@ -150,7 +156,7 @@ public class Upgrade452to460 implements DbUpgrade {
         try (PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`vm_instance` ADD INDEX `i_vm_instance__instance_name`(`instance_name`)");) {
             pstmt.executeUpdate();
             s_logger.debug("Added index i_vm_instance__instance_name to vm_instance table");
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             throw new CloudRuntimeException("Unable to add index i_vm_instance__instance_name to vm_instance table for the column instance_name", e);
         }
     }
@@ -165,4 +171,146 @@ public class Upgrade452to460 implements DbUpgrade {
         return new File[] { new File(script) };
     }
 
+    private void updateSystemVmTemplates(final Connection conn) {
+        s_logger.debug("Updating System Vm template IDs");
+        //Get all hypervisors in use
+        final Set<Hypervisor.HypervisorType> hypervisorsListInUse = new HashSet<Hypervisor.HypervisorType>();
+        try (PreparedStatement pstmt = conn.prepareStatement("select distinct(hypervisor_type) from `cloud`.`cluster` where removed is null");
+                ResultSet rs = pstmt.executeQuery()
+                ) {
+            while(rs.next()){
+                switch (Hypervisor.HypervisorType.getType(rs.getString(1))) {
+                case XenServer: hypervisorsListInUse.add(Hypervisor.HypervisorType.XenServer);
+                break;
+                case KVM:       hypervisorsListInUse.add(Hypervisor.HypervisorType.KVM);
+                break;
+                case VMware:    hypervisorsListInUse.add(Hypervisor.HypervisorType.VMware);
+                break;
+                case Hyperv:    hypervisorsListInUse.add(Hypervisor.HypervisorType.Hyperv);
+                break;
+                case LXC:       hypervisorsListInUse.add(Hypervisor.HypervisorType.LXC);
+                break;
+                default:  // no action on cases Any, BareMetal, None, Ovm, Parralels, Simulator and VirtualBox:
+                    break;
+                }
+            }
+        } catch (final SQLException e) {
+            s_logger.error("updateSystemVmTemplates:Exception while getting hypervisor types from clusters: "+e.getMessage());
+            throw new CloudRuntimeException("updateSystemVmTemplates:Exception while getting hypervisor types from clusters", e);
+        }
+
+        final Map<Hypervisor.HypervisorType, String> NewTemplateNameList = new HashMap<Hypervisor.HypervisorType, String>() {
+            {
+                put(Hypervisor.HypervisorType.XenServer, "systemvm-xenserver-4.6");
+                put(Hypervisor.HypervisorType.VMware, "systemvm-vmware-4.6");
+                put(Hypervisor.HypervisorType.KVM, "systemvm-kvm-4.6");
+                put(Hypervisor.HypervisorType.LXC, "systemvm-lxc-4.6");
+                put(Hypervisor.HypervisorType.Hyperv, "systemvm-hyperv-4.6");
+            }
+        };
+
+        final Map<Hypervisor.HypervisorType, String> routerTemplateConfigurationNames = new HashMap<Hypervisor.HypervisorType, String>() {
+            {
+                put(Hypervisor.HypervisorType.XenServer, "router.template.xen");
+                put(Hypervisor.HypervisorType.VMware, "router.template.vmware");
+                put(Hypervisor.HypervisorType.KVM, "router.template.kvm");
+                put(Hypervisor.HypervisorType.LXC, "router.template.lxc");
+                put(Hypervisor.HypervisorType.Hyperv, "router.template.hyperv");
+            }
+        };
+
+        final Map<Hypervisor.HypervisorType, String> newTemplateUrl = new HashMap<Hypervisor.HypervisorType, String>() {
+            {
+                put(Hypervisor.HypervisorType.XenServer, "http://download.cloud.com/templates/4.6/systemvm64template-4.6-xen.vhd.bz2");
+                put(Hypervisor.HypervisorType.VMware, "http://download.cloud.com/templates/4.6/systemvm64template-4.6-vmware.ova");
+                put(Hypervisor.HypervisorType.KVM, "http://download.cloud.com/templates/4.6/systemvm64template-4.6-kvm.qcow2.bz2");
+                put(Hypervisor.HypervisorType.LXC, "http://download.cloud.com/templates/4.6/systemvm64template-4.6-kvm.qcow2.bz2");
+                put(Hypervisor.HypervisorType.Hyperv, "http://download.cloud.com/templates/4.6/systemvm64template-4.6-hyperv.vhd.zip");
+            }
+        };
+
+        final Map<Hypervisor.HypervisorType, String> newTemplateChecksum = new HashMap<Hypervisor.HypervisorType, String>() {
+            {
+                put(Hypervisor.HypervisorType.XenServer, "2b15ab4401c2d655264732d3fc600241");
+                put(Hypervisor.HypervisorType.VMware, "3106a79a4ce66cd7f6a7c50e93f2db57");
+                put(Hypervisor.HypervisorType.KVM, "aa9f501fecd3de1daeb9e2f357f6f002");
+                put(Hypervisor.HypervisorType.LXC, "aa9f501fecd3de1daeb9e2f357f6f002");
+                put(Hypervisor.HypervisorType.Hyperv, "70bd30ea02ee9ed67d2c6b85c179cee9");
+            }
+        };
+
+        for (final Map.Entry<Hypervisor.HypervisorType, String> hypervisorAndTemplateName : NewTemplateNameList.entrySet()) {
+            s_logger.debug("Updating " + hypervisorAndTemplateName.getKey() + " System Vms");
+            try  (PreparedStatement pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = ? and removed is null order by id desc limit 1")) {
+                //Get 4.6.0 system Vm template Id for corresponding hypervisor
+                long templateId = -1;
+                pstmt.setString(1, hypervisorAndTemplateName.getValue());
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if(rs.next()){
+                        templateId = rs.getLong(1);
+                    }
+                } catch (final SQLException e)
+                {
+                    s_logger.error("updateSystemVmTemplates:Exception while getting ids of templates: "+e.getMessage());
+                    throw new CloudRuntimeException("updateSystemVmTemplates:Exception while getting ids of templates", e);
+                }
+
+                // change template type to SYSTEM
+                if (templateId != -1) {
+                    try(PreparedStatement templ_type_pstmt = conn.prepareStatement("update `cloud`.`vm_template` set type='SYSTEM' where id = ?");)
+                    {
+                        templ_type_pstmt.setLong(1, templateId);
+                        templ_type_pstmt.executeUpdate();
+                    }
+                    catch (final SQLException e)
+                    {
+                        s_logger.error("updateSystemVmTemplates:Exception while updating template with id " + templateId + " to be marked as 'system': "+e.getMessage());
+                        throw new CloudRuntimeException("updateSystemVmTemplates:Exception while updating template with id " + templateId + " to be marked as 'system'", e);
+                    }
+                    // update template ID of system Vms
+                    try(PreparedStatement update_templ_id_pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = ?");)
+                    {
+                        update_templ_id_pstmt.setLong(1, templateId);
+                        update_templ_id_pstmt.setString(2, hypervisorAndTemplateName.getKey().toString());
+                        update_templ_id_pstmt.executeUpdate();
+                    }catch (final Exception e)
+                    {
+                        s_logger.error("updateSystemVmTemplates:Exception while setting template for " + hypervisorAndTemplateName.getKey().toString() + " to " + templateId + ": "+e.getMessage());
+                        throw new CloudRuntimeException("updateSystemVmTemplates:Exception while setting template for " + hypervisorAndTemplateName.getKey().toString() + " to " + templateId, e);
+                    }
+                    // Change value of global configuration parameter router.template.* for the corresponding hypervisor
+                    try(PreparedStatement update_pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value = ? WHERE name = ?");) {
+                        update_pstmt.setString(1, hypervisorAndTemplateName.getValue());
+                        update_pstmt.setString(2, routerTemplateConfigurationNames.get(hypervisorAndTemplateName.getKey()));
+                        update_pstmt.executeUpdate();
+                    }catch (final SQLException e)
+                    {
+                        s_logger.error("updateSystemVmTemplates:Exception while setting " + routerTemplateConfigurationNames.get(hypervisorAndTemplateName.getKey()) + " to " + hypervisorAndTemplateName.getValue() + ": "+e.getMessage());
+                        throw new CloudRuntimeException("updateSystemVmTemplates:Exception while setting " + routerTemplateConfigurationNames.get(hypervisorAndTemplateName.getKey()) + " to " + hypervisorAndTemplateName.getValue(), e);
+                    }
+                } else {
+                    if (hypervisorsListInUse.contains(hypervisorAndTemplateName.getKey())){
+                        throw new CloudRuntimeException("4.6.0 " + hypervisorAndTemplateName.getKey() + " SystemVm template not found. Cannot upgrade system Vms");
+                    } else {
+                        s_logger.warn("4.6.0 " + hypervisorAndTemplateName.getKey() + " SystemVm template not found. " + hypervisorAndTemplateName.getKey() + " hypervisor is not used, so not failing upgrade");
+                        // Update the latest template URLs for corresponding hypervisor
+                        try(PreparedStatement update_templ_url_pstmt = conn.prepareStatement("UPDATE `cloud`.`vm_template` SET url = ? , checksum = ? WHERE hypervisor_type = ? AND type = 'SYSTEM' AND removed is null order by id desc limit 1");) {
+                            update_templ_url_pstmt.setString(1, newTemplateUrl.get(hypervisorAndTemplateName.getKey()));
+                            update_templ_url_pstmt.setString(2, newTemplateChecksum.get(hypervisorAndTemplateName.getKey()));
+                            update_templ_url_pstmt.setString(3, hypervisorAndTemplateName.getKey().toString());
+                            update_templ_url_pstmt.executeUpdate();
+                        }catch (final SQLException e)
+                        {
+                            s_logger.error("updateSystemVmTemplates:Exception while updating 'url' and 'checksum' for hypervisor type " + hypervisorAndTemplateName.getKey().toString() + ": "+e.getMessage());
+                            throw new CloudRuntimeException("updateSystemVmTemplates:Exception while updating 'url' and 'checksum' for hypervisor type " + hypervisorAndTemplateName.getKey().toString(), e);
+                        }
+                    }
+                }
+            } catch (final SQLException e) {
+                s_logger.error("updateSystemVmTemplates:Exception while getting ids of templates: "+e.getMessage());
+                throw new CloudRuntimeException("updateSystemVmTemplates:Exception while getting ids of templates", e);
+            }
+        }
+        s_logger.debug("Updating System Vm Template IDs Complete");
+    }
 }
