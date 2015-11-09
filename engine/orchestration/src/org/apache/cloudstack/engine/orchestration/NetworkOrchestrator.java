@@ -97,7 +97,6 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress;
-import com.cloud.network.IpAddress.State;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
@@ -2921,7 +2920,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         List<PublicIp> publicIpsToRelease = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
             for (IPAddressVO userIp : userIps) {
-                userIp.setState(State.Releasing);
+                userIp.setState(IpAddress.State.Releasing);
                 PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
                 publicIpsToRelease.add(publicIp);
             }
