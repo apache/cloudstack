@@ -114,7 +114,7 @@ class Distribution:
                 self.distro = "RHEL6"
             elif version.find("Red Hat Enterprise Linux Server release 7") != -1 or version.find("Scientific Linux release 7") != -1 or version.find("CentOS Linux release 7") != -1 or version.find("CentOS release 7.") != -1:
                 self.distro = "RHEL7"
-            elif version.find("CentOS release") != -1:
+            elif version.find("CentOS") != -1:
                 self.distro = "CentOS"
             else:
                 self.distro = "RHEL5"
