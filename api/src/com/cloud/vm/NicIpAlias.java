@@ -27,7 +27,7 @@ public interface NicIpAlias extends ControlledEntity, Identity, InternalIdentity
     /**
      * @return id in the CloudStack database
      */
-    enum state {
+    enum State {
         active, revoked,
     }
 

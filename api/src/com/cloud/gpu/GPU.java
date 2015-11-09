@@ -24,7 +24,7 @@ public class GPU {
         vgpuType
     }
 
-    public enum vGPUType {
+    public enum GPUType {
         GRID_K100("GRID K100"),
         GRID_K120Q("GRID K120Q"),
         GRID_K140Q("GRID K140Q"),
@@ -36,7 +36,7 @@ public class GPU {
 
         private String type;
 
-        vGPUType(String type) {
+        GPUType(String type) {
             this.type = type;
         }
 

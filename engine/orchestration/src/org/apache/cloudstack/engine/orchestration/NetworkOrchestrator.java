@@ -1756,9 +1756,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         Network network = _networksDao.findById(nic.getNetworkId());
         DhcpServiceProvider dhcpServiceProvider = getDhcpServiceProvider(network);
         try {
-            final NicIpAliasVO ipAlias = _nicIpAliasDao.findByGatewayAndNetworkIdAndState(nic.getIPv4Gateway(), network.getId(), NicIpAlias.state.active);
+            final NicIpAliasVO ipAlias = _nicIpAliasDao.findByGatewayAndNetworkIdAndState(nic.getIPv4Gateway(), network.getId(), NicIpAlias.State.active);
             if (ipAlias != null) {
-                ipAlias.setState(NicIpAlias.state.revoked);
+                ipAlias.setState(NicIpAlias.State.revoked);
                 Transaction.execute(new TransactionCallbackNoReturn() {
                     @Override
                     public void doInTransactionWithoutResult(TransactionStatus status) {

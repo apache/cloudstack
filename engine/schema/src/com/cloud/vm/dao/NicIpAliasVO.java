@@ -45,7 +45,7 @@ public class NicIpAliasVO implements NicIpAlias  {
         this.networkId = networkId;
         this.netmask = netmask;
         this.gateway = gateway;
-        state = NicIpAlias.state.active;
+        state = NicIpAlias.State.active;
         String cidr = NetUtils.getCidrFromGatewayAndNetmask(gateway, netmask);
         String[] cidrPair = cidr.split("\\/");
         String cidrAddress = cidrPair[0];
@@ -99,7 +99,7 @@ public class NicIpAliasVO implements NicIpAlias  {
 
     @Column(name = "state")
     @Enumerated(value = EnumType.STRING)
-    NicIpAlias.state state;
+    NicIpAlias.State state;
 
     @Column(name = "start_ip_of_subnet")
     String startIpOfSubnet;
@@ -220,11 +220,11 @@ public class NicIpAliasVO implements NicIpAlias  {
           this.gateway = gateway;
     }
 
-    public NicIpAlias.state getState() {
+    public NicIpAlias.State getState() {
         return state;
     }
 
-    public void setState(NicIpAlias.state state) {
+    public void setState(NicIpAlias.State state) {
         this.state = state;
     }
 

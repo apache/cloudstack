@@ -263,7 +263,7 @@ public class CommandSetupHelper {
 
     public void configDnsMasq(final VirtualRouter router, final Network network, final Commands cmds) {
         final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
-        final List<NicIpAliasVO> ipAliasVOList = _nicIpAliasDao.listByNetworkIdAndState(network.getId(), NicIpAlias.state.active);
+        final List<NicIpAliasVO> ipAliasVOList = _nicIpAliasDao.listByNetworkIdAndState(network.getId(), NicIpAlias.State.active);
         final List<DhcpTO> ipList = new ArrayList<DhcpTO>();
 
         final NicVO router_guest_nic = _nicDao.findByNtwkIdAndInstanceId(network.getId(), router.getId());

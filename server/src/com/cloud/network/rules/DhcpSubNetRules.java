@@ -94,7 +94,7 @@ public class DhcpSubNetRules extends RuleApplier {
         // networks.
         if (!NetUtils.sameSubnet(domrGuestNic.getIPv4Address(), _nic.getIPv4Address(), _nic.getIPv4Netmask())) {
             final NicIpAliasDao nicIpAliasDao = visitor.getVirtualNetworkApplianceFactory().getNicIpAliasDao();
-            final List<NicIpAliasVO> aliasIps = nicIpAliasDao.listByNetworkIdAndState(domrGuestNic.getNetworkId(), NicIpAlias.state.active);
+            final List<NicIpAliasVO> aliasIps = nicIpAliasDao.listByNetworkIdAndState(domrGuestNic.getNetworkId(), NicIpAlias.State.active);
             boolean ipInVmsubnet = false;
             for (final NicIpAliasVO alias : aliasIps) {
                 // check if any of the alias ips belongs to the Vm's subnet.
