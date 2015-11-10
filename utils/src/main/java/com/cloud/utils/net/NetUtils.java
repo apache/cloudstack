@@ -775,7 +775,7 @@ public class NetUtils {
     }
 
     public static String getCidrSubNet(final String ip, final long cidrSize) {
-        final long numericNetmask = 0xffffffff >> MAX_CIDR - cidrSize << MAX_CIDR - cidrSize;
+        final long numericNetmask = ((long)0xffffffff) >> MAX_CIDR - cidrSize << MAX_CIDR - cidrSize;
         final String netmask = NetUtils.long2Ip(numericNetmask);
         return getSubNet(ip, netmask);
     }
