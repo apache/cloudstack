@@ -20,6 +20,9 @@
 package com.cloud.utils;
 
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -48,14 +51,19 @@ public class PasswordGenerator {
                 password.append(generateAlphaNumeric(r));
             }
         } else {
-            // Generate random 3-character string with a lowercase character,
-            // uppercase character, and a digit
-            password.append(generateLowercaseChar(r)).append(generateUppercaseChar(r)).append(generateDigit(r));
+            List<Character> passwordChars = new ArrayList<Character>();
+            passwordChars.add(generateLowercaseChar(r));
+            passwordChars.add(generateUppercaseChar(r));
+            passwordChars.add(generateDigit(r));
 
-            // Generate a random n-character string with only lowercase
-            // characters
-            for (int i = 0; i < num - 3; i++) {
-                password.append(generateLowercaseChar(r));
+            for (int i = passwordChars.size(); i < num; i++) {
+                passwordChars.add(generateAlphaNumeric(r));
+            }
+
+            Collections.shuffle(passwordChars, new SecureRandom());
+
+            for (char c : passwordChars) {
+                password.append(c);
             }
         }
 
@@ -87,4 +95,5 @@ public class PasswordGenerator {
         return psk.toString();
 
     }
+
 }
