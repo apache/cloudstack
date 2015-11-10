@@ -112,8 +112,12 @@ public class Ovm3HypervisorGuru extends HypervisorGuruBase implements Hypervisor
                 if (srcStore instanceof NfsTO && destStore instanceof NfsTO) {
                     HostVO host = hostDao.findById(hostId);
                     EndPoint ep = endPointSelector.selectHypervisorHost(new ZoneScope(host.getDataCenterId()));
-                    host = hostDao.findById(ep.getId());
-                    hostDao.loadDetails(host);
+                    if (ep != null) {
+                        host = hostDao.findById(ep.getId());
+                        if(host != null) {
+                            hostDao.loadDetails(host);
+                        }
+                    }
                 }
             }
         }
