@@ -12506,17 +12506,13 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .downloadVolume .icon,
 .downloadTemplate .icon,
-.downloadISO .icon,
-.replaceacllist .icon,
-.replaceACL .icon {
+.downloadISO .icon {
   background-position: -35px -125px;
 }
 
 .downloadVolume:hover .icon,
 .downloadTemplate:hover .icon,
-.downloadISO:hover .icon,
-.replaceacllist:hover .icon,
-.replaceACL:hover .icon {
+.downloadISO:hover .icon {
   background-position: -35px -707px;
 }
 
@@ -12831,10 +12827,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -228px -646px;
 }
 
+.replaceacllist .icon,
+.replaceACL .icon,
 .changeAffinity .icon {
   background-position: -264px -2px;
 }
 
+.replaceacllist:hover .icon,
+.replaceACL:hover .icon,
 .changeAffinity:hover .icon {
   background-position: -263px -583px;
 }

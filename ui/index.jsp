@@ -586,7 +586,7 @@
 
                                     <!-- userdata -->
                                     <div class="select">
-                                        <div class="select">
+                                        <div class="name">
                                             <span><fmt:message key="label.add.userdata"/> (<fmt:message key="label.optional"/>)</span>
                                         </div>
                                         <div class="value">
