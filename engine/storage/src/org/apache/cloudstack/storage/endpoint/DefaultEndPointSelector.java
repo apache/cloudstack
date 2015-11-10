@@ -402,7 +402,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
                 PreparedStatement pstmt = txn.prepareStatement(sql);
                 ResultSet rs = pstmt.executeQuery();
             ) {
-            while (rs.next()) {
+            if (rs.next()) {
                 long id = rs.getLong(1);
                 host = hostDao.findById(id);
             }
@@ -412,7 +412,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
         }
 
         if (host == null) {
-            return null;
+            throw new NoSuchEndPointException("no host found in scope " + scope.getScopeId());
         }
 
         return RemoteHostEndPoint.getHypervisorHostEndPoint(host);
