@@ -249,16 +249,16 @@ cp -r client/target/cloud-client-ui-%{_maventag}/* ${RPM_BUILD_ROOT}%{_datadir}/
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/scripts
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/vms
 
-for name in catalina.properties db.properties log4j-cloud.xml web.xml \
-            server.xml commons-logging.properties environment.properties java.security.ciphers tomcat-users.xml
+for name in db.properties log4j-cloud.xml server7-nonssl.xml server7-ssl.xml \
+            commons-logging.properties catalina.policy catalina.properties classpath.conf \
+            tomcat-users.xml web.xml environment.properties java.security.ciphers
 do
-  cp packaging/centos7/tomcat7/$name \
+  mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/$name \
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
-  rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/$name
 done
 
-#ln -s %{_sysconfdir}/%{name}/management/log4j-cloud.xml \
-#    ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/log4j-cloud.xml
+ln -s %{_sysconfdir}/%{name}/management/log4j-cloud.xml \
+    ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/log4j-cloud.xml
 
 mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/context.xml \
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost/client
@@ -438,10 +438,13 @@ fi
 %config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/management/db.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j-cloud.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/Catalina/localhost/client/context.xml
+%config(noreplace) %{_sysconfdir}/%{name}/management/catalina.policy
 %config(noreplace) %{_sysconfdir}/%{name}/management/catalina.properties
+%config(noreplace) %{_sysconfdir}/%{name}/management/classpath.conf
+%config(noreplace) %{_sysconfdir}/%{name}/management/server7-nonssl.xml
+%config(noreplace) %{_sysconfdir}/%{name}/management/server7-ssl.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat-users.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/web.xml
-%config(noreplace) %{_sysconfdir}/%{name}/management/server.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/environment.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/java.security.ciphers
 %config(noreplace) %{_sysconfdir}/%{name}/management/commons-logging.properties
