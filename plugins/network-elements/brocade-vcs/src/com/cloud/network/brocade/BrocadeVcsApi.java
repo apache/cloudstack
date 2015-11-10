@@ -23,7 +23,6 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.Charset;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -60,6 +59,7 @@ import com.cloud.network.schema.portprofile.VlanProfile.Switchport.Trunk.Allowed
 import com.cloud.network.schema.portprofile.VlanProfile.SwitchportBasic;
 import com.cloud.network.schema.portprofile.VlanProfile.SwitchportBasic.Basic;
 import com.cloud.network.schema.showvcs.Output;
+import com.cloud.utils.StringUtils;
 
 public class BrocadeVcsApi {
     private static final Logger s_logger = Logger.getLogger(BrocadeVcsApi.class);
@@ -461,7 +461,7 @@ public class BrocadeVcsApi {
             throw new BrocadeVcsApiException("Failed to retreive status : " + errorMessage);
         }
 
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), Charset.forName("UTF-8")))) {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), StringUtils.getPreferredCharset()))) {
             sb = new StringBuffer();
 
             while (((readLine = br.readLine()) != null)) {
@@ -531,7 +531,7 @@ public class BrocadeVcsApi {
 
         if ("text/html".equals(response.getEntity().getContentType().getValue())) {
 
-            try (BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), Charset.forName("UTF-8")))) {
+            try (BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), StringUtils.getPreferredCharset()))) {
 
                 StringBuffer result = new StringBuffer();
                 String line = "";
