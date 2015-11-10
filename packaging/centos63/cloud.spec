@@ -50,7 +50,7 @@ BuildRequires: jpackage-utils
 BuildRequires: gcc
 BuildRequires: glibc-devel
 BuildRequires: /usr/bin/mkisofs
-BuildRequires: MySQL-python
+BuildRequires: mysql-connector-python
 #BuildRequires: maven => 3.0.0
 
 %description
@@ -79,7 +79,7 @@ Requires: /sbin/service
 Requires: /sbin/chkconfig
 Requires: /usr/bin/ssh-keygen
 Requires: mkisofs
-Requires: MySQL-python
+Requires: mysql-connector-python
 Requires: python-paramiko
 Requires: ipmitool
 Requires: %{name}-common = %{_ver}

@@ -24,7 +24,7 @@ import glob
 from random import choice
 import string
 from optparse import OptionParser
-import MySQLdb
+import mysql.connector
 import paramiko
 from threading import Thread
 
@@ -59,7 +59,7 @@ parser.add_option("-a", "--all", action="store_true", dest="all", default=False,
 def e(msg): parser.error(msg)
 
 def getknownhosts(host,username,password):
-	conn = MySQLdb.connect(host=host,user=username,passwd=password)
+	conn = mysql.connector.connect(host=host, user=username, password=password)
 	cur = conn.cursor()
 	cur.execute("SELECT h.private_ip_address,d.value FROM cloud.host h inner join cloud.host_details d on (h.id = d.host_id) where d.name = 'username' and setup = 1")
 	usernames = dict(cur.fetchall())
