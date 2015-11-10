@@ -382,7 +382,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
     }
 
     @Override
-    public EndPoint selectHypervisorHost(Scope scope) {
+    public EndPoint selectHypervisorHost(Scope scope) throws NoSuchEndPointException {
         StringBuilder sbuilder = new StringBuilder();
         sbuilder.append(findOneHypervisorHostInScope);
         if (scope.getScopeType() == ScopeType.ZONE) {
@@ -408,6 +408,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
             }
         } catch (SQLException e) {
             s_logger.warn("can't find endpoint", e);
+            throw new NoSuchEndPointException(e);
         }
 
         if (host == null) {

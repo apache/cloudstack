@@ -111,12 +111,12 @@ public class Ovm3HypervisorGuru extends HypervisorGuruBase implements Hypervisor
                 DataStoreTO destStore = destData.getDataStore();
                 if (srcStore instanceof NfsTO && destStore instanceof NfsTO) {
                     HostVO host = hostDao.findById(hostId);
-                    EndPoint ep = endPointSelector.selectHypervisorHost(new ZoneScope(host.getDataCenterId()));
-                    if (ep != null) {
+                    try {
+                        EndPoint ep = endPointSelector.selectHypervisorHost(new ZoneScope(host.getDataCenterId()));
                         host = hostDao.findById(ep.getId());
-                        if(host != null) {
-                            hostDao.loadDetails(host);
-                        }
+                        hostDao.loadDetails(host);
+                    } catch (EndPointSelector.NoSuchEndPointException e) {
+                        LOGGER.error("no endpoint found for zone " + host.getDataCenterId());
                     }
                 }
             }
