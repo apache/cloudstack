@@ -20,7 +20,6 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
-import com.cloud.user.Account.State;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
@@ -130,7 +129,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             qr.setDomainName(domain.getName());
             qr.setBalance(curBalance);
             qr.setQuotaUsage(quotaUsage);
-            qr.setState(account.getState().compareTo(State.enabled) == 0);
+            qr.setState(account.getState());
             qr.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
             qr.setObjectName("summary");
             result.add(qr);

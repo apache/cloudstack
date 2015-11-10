@@ -52,8 +52,9 @@
                           state: {
                               label: 'label.quota.state',
                               indicator: {
-                                  'Enabled': 'on',
-                                  'Disabled': 'off',
+                                  'enabled': 'on',
+                                  'disabled': 'off',
+                                  'locked': 'off',
                               }
                           },
                       },
@@ -78,12 +79,6 @@
                                   $.each(items, function(idx, item) {
                                       items[idx].quota = items[idx].currency + ' ' + items[idx].quota;
                                       items[idx].balance = items[idx].currency + ' ' + items[idx].balance;
-                                      // FIXME: state is boolean, this needs to be string?
-                                      if (items[idx].state) {
-                                          items[idx].state = 'Enabled';
-                                      } else {
-                                          items[idx].state = 'Disabled';
-                                      }
                                   });
                                   args.response.success({
                                       data: items

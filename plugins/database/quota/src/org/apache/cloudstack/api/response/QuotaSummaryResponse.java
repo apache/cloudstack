@@ -25,6 +25,7 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
+import com.cloud.user.Account.State;
 
 public class QuotaSummaryResponse extends BaseResponse {
 
@@ -50,7 +51,7 @@ public class QuotaSummaryResponse extends BaseResponse {
 
     @SerializedName("state")
     @Param(description = "account state")
-    private Boolean state;
+    private State state;
 
     @SerializedName("quota")
     @Param(description = "quota usage of this period")
@@ -108,11 +109,11 @@ public class QuotaSummaryResponse extends BaseResponse {
         return quotaUsage;
     }
 
-    public Boolean getState() {
+    public State getState() {
         return state;
     }
 
-    public void setState(Boolean state) {
+    public void setState(State state) {
         this.state = state;
     }
 
