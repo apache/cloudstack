@@ -45,7 +45,7 @@ ip_to_dev() {
   local ip=$1
 
   for dev in $DEV_LIST; do
-    ip addr show dev $dev | grep inet | grep $ip &>> /dev/null
+    ip addr show dev $dev | grep inet | grep -w $ip &>> /dev/null
     [ $? -eq 0 ] && echo $dev && return 0
   done
   return 1
