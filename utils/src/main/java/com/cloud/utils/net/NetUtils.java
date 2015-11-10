@@ -921,7 +921,7 @@ public class NetUtils {
     }
 
     public static String getCidrNetmask(final long cidrSize) {
-        final long numericNetmask = 0xffffffff >> MAX_CIDR - cidrSize << MAX_CIDR - cidrSize;
+        final long numericNetmask = (long)0xffffffff >> MAX_CIDR - cidrSize << MAX_CIDR - cidrSize;
         return long2Ip(numericNetmask);
     }
 

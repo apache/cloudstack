@@ -420,6 +420,13 @@ public class NetUtilsTest {
     }
 
     @Test
+    public void testGetCidrNetMask() {
+        final String cidr = "10.10.0.0/16";
+        String netmask = NetUtils.getCidrNetmask("10.10.10.10/16");
+        assertTrue(cidr + " does not generate valid netmask " + netmask,NetUtils.isValidNetmask(netmask));
+    }
+
+    @Test
     public void testGetCidrSubNet() {
         final String cidr = "10.10.0.0/16";
         String subnet = NetUtils.getCidrSubNet("10.10.10.10/16");
@@ -430,6 +437,6 @@ public class NetUtilsTest {
     public void testGetCidrSubNetWithWidth() {
         final String cidr = "10.10.0.0/16";
         String subnet = NetUtils.getCidrSubNet("10.10.10.10", 16);
-        assertTrue(NetUtils.isIpWithtInCidrRange(subnet, cidr));
+        assertTrue(cidr + " does not contain " + subnet,NetUtils.isIpWithtInCidrRange(subnet, cidr));
     }
 }
