@@ -38,6 +38,7 @@ import java.util.TreeSet;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.googlecode.ipv6.IPv6Address;
 
 public class NetUtilsTest {
@@ -438,5 +439,34 @@ public class NetUtilsTest {
         final String cidr = "10.10.0.0/16";
         String subnet = NetUtils.getCidrSubNet("10.10.10.10", 16);
         assertTrue(cidr + " does not contain " + subnet,NetUtils.isIpWithtInCidrRange(subnet, cidr));
+    }
+
+    @Test
+    public void testIsValidCidrSize() {
+        final String cidrsize = "16";
+        long netbits = NetUtils.getCidrSizeFromString(cidrsize);
+        assertTrue(" does not compute " + cidrsize,netbits == 16);
+    }
+
+    @Test(expected=CloudRuntimeException.class)
+    public void testIsInvalidCidrSize() {
+        final String cidrsize = "33";
+        long netbits = NetUtils.getCidrSizeFromString(cidrsize);
+        assertTrue(" does not compute " + cidrsize,netbits == 16);
+    }
+
+    @Test(expected=CloudRuntimeException.class)
+    public void testIsInvalidCidrString() {
+        final String cidrsize = "ggg";
+        long netbits = NetUtils.getCidrSizeFromString(cidrsize);
+        assertTrue(" does not compute " + cidrsize,netbits == 16);
+    }
+
+    @Test
+    public void testCidrToLongArray() {
+        final String cidr = "10.192.10.10/10";
+        Long[] netbits = NetUtils.cidrToLong(cidr);
+        assertEquals("unexpected cidrsize " + netbits[1],10l, netbits[1].longValue());
+        assertEquals("(un)expected <" + 0x0ac00000L + "> netaddress " + netbits[0].longValue(),netbits[0].longValue(),0x0ac00000l);
     }
 }

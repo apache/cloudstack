@@ -870,29 +870,42 @@ public class NetUtils {
 
     public static Long[] cidrToLong(final String cidr) {
         if (cidr == null || cidr.isEmpty()) {
-            return null;
+            throw new CloudRuntimeException("empty cidr can not be converted to longs");
         }
         final String[] cidrPair = cidr.split("\\/");
         if (cidrPair.length != 2) {
-            return null;
+            throw new CloudRuntimeException("cidr is not formatted correctly: "+ cidr);
         }
         final String cidrAddress = cidrPair[0];
         final String cidrSize = cidrPair[1];
         if (!isValidIp(cidrAddress)) {
-            return null;
+            throw new CloudRuntimeException("cidr is not bvalid in ip space" + cidr);
         }
-        int cidrSizeNum = -1;
-
-        try {
-            cidrSizeNum = Integer.parseInt(cidrSize);
-        } catch (final Exception e) {
-            return null;
-        }
-        final long numericNetmask = 0xffffffff >> MAX_CIDR - cidrSizeNum << MAX_CIDR - cidrSizeNum;
+        long cidrSizeNum = getCidrSizeFromString(cidrSize);
+        final long numericNetmask = (long)0xffffffff >> MAX_CIDR - cidrSizeNum << MAX_CIDR - cidrSizeNum;
         final long ipAddr = ip2Long(cidrAddress);
         final Long[] cidrlong = {ipAddr & numericNetmask, (long)cidrSizeNum};
         return cidrlong;
 
+    }
+
+    /**
+     * @param cidrSize
+     * @return
+     * @throws CloudRuntimeException
+     */
+    static long getCidrSizeFromString(final String cidrSize) throws CloudRuntimeException {
+        long cidrSizeNum = -1;
+
+        try {
+            cidrSizeNum = Integer.parseInt(cidrSize);
+        } catch (final NumberFormatException e) {
+            throw new CloudRuntimeException("cidrsize is not a valid int: " + cidrSize, e);
+        }
+        if(cidrSizeNum > 32 || cidrSizeNum < 0) {// assuming IPv4
+            throw new CloudRuntimeException("cidr size out of range: " + cidrSizeNum);
+        }
+        return cidrSizeNum;
     }
 
     public static String getCidrSubNet(final String cidr) {
@@ -908,13 +921,7 @@ public class NetUtils {
         if (!isValidIp(cidrAddress)) {
             return null;
         }
-        long cidrSizeNum = -1;
-
-        try {
-            cidrSizeNum = Integer.parseInt(cidrSize);
-        } catch (final NumberFormatException e) {
-            throw new CloudRuntimeException("cidrsize is not valid", e);
-        }
+        long cidrSizeNum = getCidrSizeFromString(cidrSize);
         final long numericNetmask = (long)0xffffffff >> MAX_CIDR - cidrSizeNum << MAX_CIDR - cidrSizeNum;
         final String netmask = NetUtils.long2Ip(numericNetmask);
         return getSubNet(cidrAddress, netmask);
