@@ -47,6 +47,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.utils.IteratorUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.googlecode.ipv6.IPv6Address;
 import com.googlecode.ipv6.IPv6AddressRange;
@@ -907,14 +908,14 @@ public class NetUtils {
         if (!isValidIp(cidrAddress)) {
             return null;
         }
-        int cidrSizeNum = -1;
+        long cidrSizeNum = -1;
 
         try {
             cidrSizeNum = Integer.parseInt(cidrSize);
-        } catch (final Exception e) {
-            return null;
+        } catch (final NumberFormatException e) {
+            throw new CloudRuntimeException("cidrsize is not valid", e);
         }
-        final long numericNetmask = 0xffffffff >> MAX_CIDR - cidrSizeNum << MAX_CIDR - cidrSizeNum;
+        final long numericNetmask = (long)0xffffffff >> MAX_CIDR - cidrSizeNum << MAX_CIDR - cidrSizeNum;
         final String netmask = NetUtils.long2Ip(numericNetmask);
         return getSubNet(cidrAddress, netmask);
     }

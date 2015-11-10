@@ -418,8 +418,16 @@ public class NetUtilsTest {
 
         assertTrue("It should pass! 31 bit prefix.", is31PrefixCidr);
     }
+
     @Test
     public void testGetCidrSubNet() {
+        final String cidr = "10.10.0.0/16";
+        String subnet = NetUtils.getCidrSubNet("10.10.10.10/16");
+        assertTrue(cidr + " does not contain " + subnet,NetUtils.isIpWithtInCidrRange(subnet, cidr));
+    }
+
+    @Test
+    public void testGetCidrSubNetWithWidth() {
         final String cidr = "10.10.0.0/16";
         String subnet = NetUtils.getCidrSubNet("10.10.10.10", 16);
         assertTrue(NetUtils.isIpWithtInCidrRange(subnet, cidr));
