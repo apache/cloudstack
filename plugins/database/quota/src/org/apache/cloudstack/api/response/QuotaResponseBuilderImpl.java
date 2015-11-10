@@ -194,7 +194,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Override
     public QuotaStatementResponse createQuotaStatementResponse(final List<QuotaUsageVO> quotaUsage) {
-        if (quotaUsage == null || quotaUsage.isEmpty()) {
+        if (quotaUsage == null) {
             throw new InvalidParameterValueException("There is no usage data found for period mentioned.");
         }
 
@@ -397,7 +397,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Override
     public QuotaBalanceResponse createQuotaLastBalanceResponse(List<QuotaBalanceVO> quotaBalance, Date startDate) {
-        if (quotaBalance == null || quotaBalance.isEmpty()) {
+        if (quotaBalance == null) {
             throw new InvalidParameterValueException("There are no balance entries on or before the requested date.");
         }
         if (startDate == null) {
