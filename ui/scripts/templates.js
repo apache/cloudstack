@@ -233,6 +233,12 @@
 
                                                     $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
                                                 }
+
+                                                if ($(this).val() == "KVM") {
+                                                    $form.find('.form-item[rel=isAgentEnabled').css('display', 'inline-block');
+                                                } else {
+                                                    $form.find('.form-item[rel=isAgentEnabled]').hide();
+                                                }
                                             });
 
                                             args.$select.trigger('change');
@@ -454,6 +460,13 @@
                                         isBoolean: true
                                     },
 
+                                    isAgentEnabled: {
+                                        label: "label.agent.enabled",
+                                        docID: 'helpRegisterTemplateAgent',
+                                        isBoolean: true,
+                                        isHidden: true
+                                    },
+
                                     isPublic: {
                                         label: "label.public",
                                         docID: 'helpRegisterTemplatePublic',
@@ -496,6 +509,12 @@
                                     osTypeId: args.data.osTypeId,
                                     hypervisor: args.data.hypervisor
                                 };
+
+                                if (args.$form.find('.form-item[rel=isAgentEnabled]').css("display") != "none") {
+                                    $.extend(data, {
+                                        agentenabled: (args.data.isAgentEnabled == "on")
+                                    });
+                                }
 
                                 if (args.$form.find('.form-item[rel=isPublic]').css("display") != "none") {
                                     $.extend(data, {
@@ -978,6 +997,11 @@
                                         passwordenabled: (args.data.passwordenabled == "on"),
                                         isdynamicallyscalable: (args.data.isdynamicallyscalable == "on")
                                     };
+                                    if (args.data.agentenabled != null) {
+                                        $.extend(data, {
+                                            agentenabled: (args.data.agentenabled == "on")
+                                        });
+                                    }
                                     $.ajax({
                                         url: createURL('updateTemplate'),
                                         data: data,
@@ -1165,6 +1189,10 @@
                                         hiddenFields.push('xenserverToolsVersion61plus');
                                     }
 
+                                    if ('templates' in args.context && args.context.templates[0].hypervisor != 'KVM') {
+                                        hiddenFields.push('agentenabled');
+                                    }
+
                                     if ('templates' in args.context && args.context.templates[0].ostypeid != undefined) {
                                         var ostypeObjs;
                                         $.ajax({
@@ -1239,6 +1267,12 @@
                                     },
                                     passwordenabled: {
                                         label: 'label.password.enabled',
+                                        isBoolean: true,
+                                        isEditable: true,
+                                        converter: cloudStack.converters.toBooleanText
+                                    },
+                                    agentenabled: {
+                                        label: 'label.agent.enabled',
                                         isBoolean: true,
                                         isEditable: true,
                                         converter: cloudStack.converters.toBooleanText

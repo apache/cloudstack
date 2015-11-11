@@ -114,7 +114,8 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
                     }
                 }
                 for (int count = 0; count < 30; count++) {
-                    libvirtComputingResource.passCmdLine(vmName, vmSpec.getBootArgs());
+                    //libvirtComputingResource.passCmdLine(vmName, vmSpec.getBootArgs());
+                    libvirtComputingResource.SendToVMAgent(conn, vmName, null, null, null, vmSpec.getBootArgs() != null ? vmSpec.getBootArgs().replaceAll(" ", "%"):"", 5 * 1000, true);
                     //check router is up?
                     final VirtualRoutingResource virtRouterResource = libvirtComputingResource.getVirtRouterResource();
                     final boolean result = virtRouterResource.connect(controlIp, 1, 5000);

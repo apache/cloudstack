@@ -1018,6 +1018,7 @@ under the License.
 'label.gslb': '<fmt:message key="label.gslb" />',
 'label.portable.ip': '<fmt:message key="label.portable.ip" />',
 'label.internallbvm': '<fmt:message key="label.internallbvm" />',
+'label.agent.enabled': '<fmt:message key="label.agent.enabled" />',
 'label.agent.state': '<fmt:message key="label.agent.state" />',
 'label.duration.in.sec': '<fmt:message key="label.duration.in.sec" />',
 'state.detached': '<fmt:message key="state.detached" />',

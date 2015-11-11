@@ -187,6 +187,9 @@ public class TemplateResponse extends BaseResponse implements ControlledViewEnti
     @Param(description = "true if template contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
     private Boolean isDynamicallyScalable;
 
+    @SerializedName(ApiConstants.AGENT_ENABLED) @Param(description="true if template supports guest agent, false otherwise")
+    private Boolean agentEnabled;
+
     public TemplateResponse() {
         //  zones = new LinkedHashSet<TemplateZoneResponse>();
         tags = new LinkedHashSet<ResourceTagResponse>();
@@ -356,6 +359,10 @@ public class TemplateResponse extends BaseResponse implements ControlledViewEnti
 
     public void setDynamicallyScalable(boolean isDynamicallyScalable) {
         this.isDynamicallyScalable = isDynamicallyScalable;
+    }
+
+    public void setAgentEnabled(boolean agentEnabled) {
+        this.agentEnabled = agentEnabled;
     }
 
     public String getZoneId() {

@@ -130,6 +130,9 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "create template for the project")
     private Long projectId;
 
+    @Parameter(name = ApiConstants.AGENT_ENABLED, type = CommandType.BOOLEAN, description = "true if the template supports guest agent")
+    protected Boolean isAgentEnabled;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -200,6 +203,9 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
         return isDynamicallyScalable == null ? false : isDynamicallyScalable;
     }
 
+    public Boolean isAgentEnabled() {
+        return isAgentEnabled == null ? false : isAgentEnabled;
+    }
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////

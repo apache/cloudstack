@@ -46,6 +46,9 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.api.guestagent.GuestAgentAnswer;
+import org.apache.cloudstack.api.guestagent.GuestAgentAnswer.GuestAgentIntegerAnswer;
+import org.apache.cloudstack.api.guestagent.GuestAgentCommand;
 import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
 import org.apache.cloudstack.utils.linux.CPUStat;
 import org.apache.cloudstack.utils.linux.MemStat;
@@ -91,6 +94,7 @@ import com.cloud.dc.Vlan;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ClockDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ConsoleDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.CpuModeDef;
@@ -110,7 +114,6 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.GuestNetType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SerialDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.TermPolicy;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VideoDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VirtioSerialDef;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtRequestWrapper;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
@@ -141,6 +144,8 @@ import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 /**
  * LibvirtComputingResource execute requests on the computing/routing host using
@@ -180,6 +185,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String _ovsPvlanDhcpHostPath;
     private String _ovsPvlanVmPath;
     private String _routerProxyPath;
+    private String _sendToVmAgentPath;
+    private Gson gson;
     private String _ovsTunnelPath;
     private String _host;
     private String _dcId;
@@ -637,6 +644,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         _heartBeatPath = Script.findScript(kvmScriptsDir, "kvmheartbeat.sh");
         if (_heartBeatPath == null) {
             throw new ConfigurationException("Unable to find kvmheartbeat.sh");
+        }
+
+        _sendToVmAgentPath = Script.findScript(kvmScriptsDir, "send_to_vm_agent.py");
+        if (_sendToVmAgentPath == null) {
+            throw new ConfigurationException("Unable to find the send_to_vm_agent.py");
         }
 
         _createvmPath = Script.findScript(storageScriptsDir, "createvm.sh");
@@ -1304,6 +1316,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } catch (final LibvirtException e) {
             s_logger.trace("Ignoring libvirt error.", e);
         }
+
+        gson = new GsonBuilder().serializeNulls().create();
 
         return true;
     }
@@ -1981,9 +1995,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final SerialDef serial = new SerialDef("pty", null, (short)0);
         devices.addDevice(serial);
 
+        /* Add a VirtIO channel for SystemVMs for communication and provisioning */
         if (vmTO.getType() != VirtualMachine.Type.User) {
-            final VirtioSerialDef vserial = new VirtioSerialDef(vmTO.getName(), null);
-            devices.addDevice(vserial);
+            devices.addDevice(new ChannelDef(vmTO.getName() + ".vport", ChannelDef.ChannelType.UNIX,
+                                             "/var/lib/libvirt/qemu/" + vmTO.getName() + ".agent"));
+        }
+        if (vmTO.getType() != VirtualMachine.Type.User || vmTO.isEnableAgent()) {
+            /* Add a VirtIO channel for the Qemu Guest Agent tools */
+            devices.addDevice(new ChannelDef("org.qemu.guest_agent.0", ChannelDef.ChannelType.UNIX,
+                                             "/var/lib/libvirt/qemu/" + vmTO.getName() + ".org.qemu.guest_agent.0"));
         }
 
         final VideoDef videoCard = new VideoDef(_videoHw, _videoRam);
@@ -3388,4 +3408,157 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
         return device;
     }
+
+    /**
+     * @param vmName, vm name
+     * @param command, the command sent to vm
+     * @param readOnly, if the command will modify the vm, the default value is false
+     * @param answerClass, the type of response from guest agent, set to null if no response.
+     * @param timeout, the timeout (seconds) of the command
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    private <A extends GuestAgentAnswer> A sent_command_to_vm_agent(String vmName, GuestAgentCommand command, Boolean readOnly, Class<?> answerClass, Integer timeout) {
+        Script cmd= new Script(_sendToVmAgentPath, _timeout, s_logger);
+        OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
+        cmd.add("-c");
+        cmd.add("-n", vmName);
+        cmd.add("-d", gson.toJson(command));
+        if (readOnly != null && readOnly)
+            cmd.add("-r");
+        if (timeout != null)
+            cmd.add("-t", String.valueOf(timeout));
+        String result = cmd.execute(parser);
+        if (result != null) {
+            s_logger.warn("Unable to execute command on vm via guest agent: " + result);
+            return null;
+        }
+        if (answerClass == null)
+            return null;
+        else
+            return (A) gson.fromJson(parser.getLine(), answerClass);
+    }
+
+    /**
+     * @param agentPath, the vm path file on the host
+     * @param data, the data sent to vm (to vm path file)
+     * @return
+     */
+    private boolean sent_data_to_vm_agent(String agentPath, String data, Boolean isSystemVm) {
+        Script cmd = new Script(_sendToVmAgentPath, _timeout, s_logger);
+        cmd.add("-p", agentPath);
+        cmd.add("-d", data);
+        if (isSystemVm) {
+            cmd.add("-s");
+        }
+        String result = cmd.execute();
+        if (result != null)
+            return false;
+        return true;
+    }
+
+    public <A extends GuestAgentAnswer> A SendToVMAgent(Connect conn, String vmName, GuestAgentCommand cmd, Boolean readOnly, Class<?> answerClass, String data, Integer timeout, Boolean isSystemVm) {
+        s_logger.debug("Sending command/data to vm: " + vmName + " via guest agent: " +
+                       (cmd != null? ("command is " + cmd.getCommand() + ", arguments are " + cmd.getArguments() + ", readonly: " + readOnly + (answerClass != null ? ", answer class: " + answerClass.getName(): "")): "") +
+                       (data != null? ("data is " + data + ", encoded: " + isSystemVm): ""));
+        LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
+        Domain dm = null;
+        String dataPath = null;
+        String commandPath = null;
+        try {
+            dm = conn.domainLookupByName(vmName);
+            String xmlDesc = dm.getXMLDesc(0);
+            parser.parseDomainXML(xmlDesc);
+            for (ChannelDef channel: parser.getChannels()) {
+                if (channel.getPath() != null && channel.getPath().equals("org.qemu.guest_agent.0")) {
+                    commandPath = channel.getPath();
+                } else if (channel.getPath() != null && channel.getPath().endsWith(".agent")) {
+                    dataPath = channel.getPath();
+                }
+            }
+        } catch (LibvirtException e) {
+            s_logger.trace("Ignoring libvirt error.", e);
+        } finally {
+            try {
+                if (dm != null) {
+                    dm.free();
+                }
+            } catch (LibvirtException l) {
+                s_logger.trace("Ignoring libvirt error.", l);
+            }
+        }
+        if (cmd == null && data != null) {
+            if (dataPath == null)
+                throw new CloudRuntimeException("Cannot find the data channel on host to VM: " + vmName);
+            sent_data_to_vm_agent(dataPath, data, isSystemVm);
+        } else if (cmd != null && data == null) {
+            if (commandPath == null)
+                throw new CloudRuntimeException("Cannot find the command channel on host to VM: " + vmName);
+            return sent_command_to_vm_agent(vmName, cmd, readOnly, answerClass, timeout);
+        } else
+            throw new CloudRuntimeException("Cannot send command or data to VM: " + vmName);
+        return null;
+    }
+
+    public boolean checkGuestAgentSync(Connect conn, String vmName) {
+        String execute = "guest-sync";
+        HashMap arguments = new HashMap();
+        int id = (int)(Math.random() * 1000000) + 1;
+        arguments.put("id", id);
+        GuestAgentCommand cmd = new GuestAgentCommand(execute, arguments);
+        GuestAgentIntegerAnswer answer = null;
+        try {
+            answer = (GuestAgentIntegerAnswer) SendToVMAgent(conn, vmName, cmd, null, GuestAgentIntegerAnswer.class, null, null, false);
+        } catch (Exception ex) {
+            s_logger.warn("Failed to send guest-sync command to guest agent");
+            return false;
+        }
+        if (answer == null) {
+            s_logger.warn("answer from guest agent is null");
+            return false;
+        } else if (answer.getAnswer() != id) {
+            s_logger.warn("answer from guest agent is different from input value");
+            return false;
+        } else {
+            s_logger.debug("id = " + id + " , answer from guest agent : " + answer.getAnswer());
+            return true;
+        }
+    }
+
+    protected String rebootVM(Connect conn, String vmName, boolean isAgent) {
+        if (isAgent) {
+            if (!checkGuestAgentSync(conn, vmName))
+                return "This vm does not support guest agent";
+            String execute = "guest-shutdown";
+            HashMap arguments = new HashMap();
+            arguments.put("mode", "reboot");
+            GuestAgentCommand cmd = new GuestAgentCommand(execute, arguments);
+            try {
+                SendToVMAgent(conn, vmName, cmd, false, null, null, null, false);
+            } catch (Exception ex) {
+                return "Failed to reboot vm via guest agent";
+            }
+            return null;
+        } else {
+            return rebootVM(conn, vmName);
+        }
+    }
+
+    protected String stopVM(Connect conn, String vmName, Boolean forced, boolean isAgent) {
+        if (isAgent) {
+            if (!checkGuestAgentSync(conn, vmName))
+                return "This vm does not support guest agent";
+            String execute = "guest-shutdown";
+            GuestAgentCommand cmd = new GuestAgentCommand(execute, null);
+            try {
+                SendToVMAgent(conn, vmName, cmd, false, null, null, null, false);
+            } catch (Exception ex) {
+                return "Failed to stop vm via guest agent";
+            }
+            return null;
+        } else {
+            return stopVM(conn, vmName);
+        }
+    }
+
 }

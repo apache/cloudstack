@@ -389,6 +389,8 @@ packages() {
   chroot . apt-get --no-install-recommends -q -y --force-yes install ipcalc
   #irqbalance from wheezy-backports
   chroot . apt-get --no-install-recommends -q -y --force-yes -t wheezy-backports install irqbalance
+  #qemu guest agent
+  chroot . apt-get --no-install-recommends -q -y --force-yes install qemu-guest-agent
 
   echo "***** getting jre 7 *********"
   chroot .  apt-get --no-install-recommends -q -y install openjdk-7-jre-headless

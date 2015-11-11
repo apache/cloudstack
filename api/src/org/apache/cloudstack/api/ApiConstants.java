@@ -597,6 +597,8 @@ public class ApiConstants {
     public static final String ENTITY_ID = "entityid";
     public static final String ACCESS_TYPE = "accesstype";
 
+    public static final String AGENT_ENABLED = "agentenabled";
+    public static final String AGENT = "agent";
     public static final String RESOURCE_DETAILS = "resourcedetails";
     public static final String EXPUNGE = "expunge";
     public static final String FOR_DISPLAY = "fordisplay";
