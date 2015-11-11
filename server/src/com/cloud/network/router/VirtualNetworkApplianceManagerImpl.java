@@ -1015,7 +1015,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                     RedundantState state = RedundantState.UNKNOWN;
                     if (answer != null && answer.getResult()) {
                         state = answer.getState();
-                    } else {
+                    } else if (answer != null) {
                         s_logger.info("Agent response doesn't seem to be correct ==> " + answer.getResult());
                     }
                     router.setRedundantState(state);
