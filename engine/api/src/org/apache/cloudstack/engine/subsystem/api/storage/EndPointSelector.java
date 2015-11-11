@@ -20,8 +20,6 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import java.util.List;
 
-import org.apache.cloudstack.CloudstackInternalException;
-
 public interface EndPointSelector {
     EndPoint select(DataObject srcData, DataObject destData);
 
@@ -37,42 +35,8 @@ public interface EndPointSelector {
 
     EndPoint select(Scope scope, Long storeId);
 
-    EndPoint selectHypervisorHost(Scope scope) throws NoSuchEndPointException;
+    EndPoint selectHypervisorHost(Scope scope);
 
     EndPoint select(DataStore store, String downloadUrl);
-
-    public class NoSuchEndPointException extends CloudstackInternalException {
-
-        /**
-         *
-         */
-        private static final long serialVersionUID = 1L;
-        EndPoint _ep;
-
-        public NoSuchEndPointException() {
-            // TODO Auto-generated constructor stub
-        }
-
-        public NoSuchEndPointException(String message) {
-            super(message);
-            // TODO Auto-generated constructor stub
-        }
-
-        public NoSuchEndPointException(Throwable cause) {
-            super(cause);
-            // TODO Auto-generated constructor stub
-        }
-
-        public NoSuchEndPointException(String message, Throwable cause) {
-            super(message, cause);
-            // TODO Auto-generated constructor stub
-        }
-
-        public NoSuchEndPointException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-            super(message, cause, enableSuppression, writableStackTrace);
-            // TODO Auto-generated constructor stub
-        }
-
-    }
 
 }
