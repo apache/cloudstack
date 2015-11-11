@@ -776,9 +776,17 @@ public class NetUtils {
     }
 
     public static String getCidrSubNet(final String ip, final long cidrSize) {
-        final long numericNetmask = ((long)0xffffffff) >> MAX_CIDR - cidrSize << MAX_CIDR - cidrSize;
+        final long numericNetmask = netMaskFromCidr(cidrSize);
         final String netmask = NetUtils.long2Ip(numericNetmask);
         return getSubNet(ip, netmask);
+    }
+
+    /**
+     * @param cidrSize
+     * @return
+     */
+    static long netMaskFromCidr(final long cidrSize) {
+        return ((long)0xffffffff) >> MAX_CIDR - cidrSize << MAX_CIDR - cidrSize;
     }
 
     public static String ipAndNetMaskToCidr(final String ip, final String netmask) {
@@ -882,7 +890,7 @@ public class NetUtils {
             throw new CloudRuntimeException("cidr is not bvalid in ip space" + cidr);
         }
         long cidrSizeNum = getCidrSizeFromString(cidrSize);
-        final long numericNetmask = (long)0xffffffff >> MAX_CIDR - cidrSizeNum << MAX_CIDR - cidrSizeNum;
+        final long numericNetmask = netMaskFromCidr(cidrSizeNum);
         final long ipAddr = ip2Long(cidrAddress);
         final Long[] cidrlong = {ipAddr & numericNetmask, (long)cidrSizeNum};
         return cidrlong;
@@ -922,13 +930,13 @@ public class NetUtils {
             return null;
         }
         long cidrSizeNum = getCidrSizeFromString(cidrSize);
-        final long numericNetmask = (long)0xffffffff >> MAX_CIDR - cidrSizeNum << MAX_CIDR - cidrSizeNum;
+        final long numericNetmask = netMaskFromCidr(cidrSizeNum);
         final String netmask = NetUtils.long2Ip(numericNetmask);
         return getSubNet(cidrAddress, netmask);
     }
 
     public static String getCidrNetmask(final long cidrSize) {
-        final long numericNetmask = (long)0xffffffff >> MAX_CIDR - cidrSize << MAX_CIDR - cidrSize;
+        final long numericNetmask = netMaskFromCidr(cidrSize);
         return long2Ip(numericNetmask);
     }
 
