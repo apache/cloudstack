@@ -28,9 +28,12 @@ if [ "$1" = configure ]; then
 
     rm -fr /var/cache/cloudstack/management/work/*
 
+    mkdir -p /var/log/cloudstack/awsapi
+
     for i in /var/cache/cloudstack/management \
         /var/cache/cloudstack/management/work \
         /var/cache/cloudstack/management/temp \
+        /var/log/cloudstack/management \
         /var/lib/cloudstack/management \
         /etc/cloudstack/management
     do
@@ -57,7 +60,20 @@ if [ "$1" = configure ]; then
 
     chmod 0640 /etc/cloudstack/management/db.properties
     chgrp cloud /etc/cloudstack/management/db.properties
-    invoke-rc.d tomcat6 stop || true
+
+    TOMCATVER=$(if [ -d /usr/share/tomcat8/ ]; then echo "tomcat8"; else echo "tomcat6"; fi)
+
+    service ${TOMCATVER} stop || true
+
+    # set up tomcat symlinks depending on what version is installed.
+    rm -f /usr/share/cloudstack-management/conf/server.xml
+    rm -f /usr/share/cloudstack-management/bin
+    rm -f /usr/share/cloudstack-management/lib
+    rm -f /etc/init.d/cloudstack-management
+    ln -s server-${TOMCATVER}-nonssl.xml /usr/share/cloudstack-management/conf/server.xml
+    ln -s /usr/share/${TOMCATVER}/bin /usr/share/cloudstack-management/bin
+    ln -s /usr/share/${TOMCATVER}/lib /usr/share/cloudstack-management/lib
+    ln -s /etc/init.d/cloudstack-management-${TOMCATVER} /etc/init.d/cloudstack-management
 fi
 
 #DEBHELPER#

@@ -20,7 +20,9 @@ SYSTEMJARS="@SYSTEMJARS@"
 SCP=$(build-classpath $SYSTEMJARS 2>/dev/null) ; if [ $? != 0 ] ; then export SCP="@SYSTEMCLASSPATH@" ; fi
 MCP="@MSCLASSPATH@"
 DCP="@DEPSCLASSPATH@"
-CLASSPATH=$SCP:$DCP:$MCP:@MSCONF@:@SETUPDATADIR@
+TOMCATVER=$(if [ -d /usr/share/tomcat8/ ]; then echo "tomcat8"; else echo "tomcat6"; fi)
+TOMCATJARS="/usr/share/${TOMCATVER}/bin/bootstrap.jar:/usr/share/${TOMCATVER}/bin/tomcat-juli.jar"
+CLASSPATH=$SCP:$DCP:$TOMCATJARS:$MCP:@MSCONF@:@SETUPDATADIR@
 for jarfile in "@PREMIUMJAVADIR@"/* ; do
 	if [ ! -e "$jarfile" ] ; then continue ; fi
 	CLASSPATH=$jarfile:$CLASSPATH

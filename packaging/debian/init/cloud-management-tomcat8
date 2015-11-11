@@ -181,8 +181,8 @@ case "$1" in
 		# fix storage issues on nfs mounts
 		umask 000
 		$DAEMON -user "$TOMCAT8_USER" -cp "$JSVC_CLASSPATH" \
-		    -outfile SYSLOG -errfile SYSLOG \
-		    -pidfile "$CATALINA_PID" $JAVA_OPTS "$BOOTSTRAP_CLASS"
+			-outfile SYSLOG -errfile SYSLOG \
+			-pidfile "$CATALINA_PID" $JAVA_OPTS "$BOOTSTRAP_CLASS"
 
 		sleep 5
         	if start-stop-daemon --test --start --pidfile "$CATALINA_PID" \
