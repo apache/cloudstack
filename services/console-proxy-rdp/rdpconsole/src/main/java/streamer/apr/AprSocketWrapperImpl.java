@@ -53,7 +53,7 @@ public class AprSocketWrapperImpl extends PipelineImpl implements SocketWrapper 
         try {
             Library.initialize(null);
             SSL.initialize(null);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             throw new RuntimeException("Cannot load Tomcat Native Library (Apache Portable Runtime).", e);
         }
     }

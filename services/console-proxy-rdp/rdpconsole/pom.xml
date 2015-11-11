@@ -33,7 +33,17 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <cs.tomcat.version>7.0.30</cs.tomcat.version>
   </properties>
+
+  <profiles>
+    <profile>
+      <id>tomcat8</id>
+      <properties>
+        <cs.tomcat.version>8.0.28</cs.tomcat.version>
+      </properties>
+    </profile>
+  </profiles>
 
   <!-- not parenting to the maven-default pom, as we want this in services -->
   <build>
@@ -71,7 +81,7 @@
     <dependency>
       <groupId>org.apache.tomcat.embed</groupId>
       <artifactId>tomcat-embed-core</artifactId>
-      <version>8.0.15</version>
+      <version>${cs.tomcat.version}</version>
     </dependency>
     <!-- Another implementation of SSL protocol. Does not work with broken MS RDP SSL too. -->
     <dependency>
