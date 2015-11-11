@@ -27,7 +27,7 @@
 set -e
 
 PACKAGE_DIR=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)
-CONTAINER_TAG="cloudstack/package-debian"
+CONTAINER_TAG="cloudstack/package-debian8"
 OUT_DIR="debian/out"
 
 # Must run this from source root since we are using it in the build.
@@ -42,7 +42,7 @@ rm -f ${OUT_DIR}/*
 DOCKER_VOLUMES="-v ${SOURCE_ROOT}:/build/cloudstack"
 DOCKER_RUN="tools/package-docker/build-packages.sh"
 
-if [ -z "${DEBIAN7_DOCKER_PACKAGE_DEBUG}" ] ; then
+if [ -z "${DEBIAN8_PACKAGE_DEBUG}" ] ; then
     docker run --rm ${DOCKER_VOLUMES} "${CONTAINER_TAG}" "${DOCKER_RUN}" $*
 else
     echo "Would run this in container:"

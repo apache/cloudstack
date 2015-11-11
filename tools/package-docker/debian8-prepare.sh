@@ -26,8 +26,8 @@
 set -e
 
 PACKAGE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-CONTAINER_TAG="cloudstack/package-debian"
+CONTAINER_TAG="cloudstack/package-debian8"
 
 cd "${PACKAGE_DIR}"
 
-docker build -t "${CONTAINER_TAG}" -f Dockerfile.debian7 .
+docker build -t "${CONTAINER_TAG}" -f Dockerfile.debian8 .

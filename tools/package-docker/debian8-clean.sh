@@ -16,12 +16,12 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-# Clean up after debian7-package.sh
+# Clean up after debian8-package.sh
 #
 set -e
 
 PACKAGE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-CONTAINER_TAG="cloudstack/package-debian"
+CONTAINER_TAG="cloudstack/package-debian8"
 
 # Must run this from source root since we are using it in the build.
 cd "${PACKAGE_DIR}/../.."

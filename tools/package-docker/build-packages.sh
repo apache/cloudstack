@@ -41,6 +41,7 @@ while [ -n "$1" ] ; do
     shift
 done
 
+export ACS_BUILD_OPTS="-Dtomcat8 -Dnoembed"
 
 REL_VERSION_STR="Release revision ${VERSION}"
 
