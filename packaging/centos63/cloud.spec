@@ -7,7 +7,7 @@
 # with the License.  You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -91,12 +91,12 @@ Provides:  cloud-client
 Group:     System Environment/Libraries
 %description management
 The CloudStack management server is the central point of coordination,
-management, and intelligence in CloudStack.  
+management, and intelligence in CloudStack.
 
 %package common
 Summary: Apache CloudStack common files and scripts
 Requires: python
-Obsoletes: cloud-test < 4.1.0 
+Obsoletes: cloud-test < 4.1.0
 Obsoletes: cloud-scripts < 4.1.0
 Obsoletes: cloud-utils < 4.1.0
 Obsoletes: cloud-core < 4.1.0
@@ -157,7 +157,7 @@ Requires: jakarta-commons-daemon
 Requires: jakarta-commons-daemon-jsvc
 Group: System Environment/Libraries
 Obsoletes: cloud-usage < 4.1.0
-Provides: cloud-usage 
+Provides: cloud-usage
 %description usage
 The CloudStack usage calculation service
 
@@ -195,7 +195,7 @@ echo $(git rev-parse HEAD) > build/gitrev.txt
 
 if [ "%{_ossnoss}" == "NOREDIST" -o "%{_ossnoss}" == "noredist" ] ; then
    echo "Executing mvn packaging with non-redistributable libraries"
-   if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then 
+   if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then
       echo "Executing mvn noredist packaging with simulator ..."
       mvn -Psystemvm -Dnoredist -Dsimulator clean package
    else
@@ -203,14 +203,14 @@ if [ "%{_ossnoss}" == "NOREDIST" -o "%{_ossnoss}" == "noredist" ] ; then
       mvn -Psystemvm -Dnoredist clean package
    fi
 else
-   if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then 
+   if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then
       echo "Executing mvn default packaging simulator ..."
       mvn -Psystemvm -Dsimulator clean package
    else
       echo "Executing mvn default packaging without simulator ..."
       mvn -Psystemvm clean package
    fi
-fi 
+fi
 
 %install
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
@@ -241,7 +241,7 @@ python -m py_compile ${RPM_BUILD_ROOT}%{python_sitearch}/cloud_utils.py
 python -m compileall ${RPM_BUILD_ROOT}%{python_sitearch}/cloudutils
 cp build/gitrev.txt ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
 cp packaging/centos63/cloudstack-sccs ${RPM_BUILD_ROOT}/usr/bin
- 
+
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts/network/cisco
 cp -r plugins/network-elements/cisco-vnmc/scripts/network/cisco/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts/network/cisco
 
@@ -285,6 +285,13 @@ for name in db.properties log4j-cloud.xml tomcat6-nonssl.conf tomcat6-ssl.conf s
   mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/$name \
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
 done
+
+if [ -f "${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/server-tomcat7-nonssl.xml" ]; then
+    mv ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/server-tomcat7-nonssl.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/server-nonssl.xml
+fi
+if [ -f "${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/server-tomcat7-ssl.xml" ]; then
+    mv ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/server-tomcat7-ssl.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/server-ssl.xml
+fi
 
 ln -s %{_sysconfdir}/%{name}/management/log4j-cloud.xml \
     ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/log4j-cloud.xml
@@ -402,13 +409,13 @@ if [ "$1" == "1" ] ; then
 fi
 
 if [ ! -f %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util ] ; then
-    echo Please download vhd-util from http://download.cloud.com.s3.amazonaws.com/tools/vhd-util and put it in 
+    echo Please download vhd-util from http://download.cloud.com.s3.amazonaws.com/tools/vhd-util and put it in
     echo %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/
 fi
 
 # change cloud user's home to 4.1+ version if needed. Would do this via 'usermod', but it
 # requires that cloud user not be in use, so RPM could not be installed while management is running
-if getent passwd cloud | grep -q /var/lib/cloud; then 
+if getent passwd cloud | grep -q /var/lib/cloud; then
     sed -i 's/\/var\/lib\/cloud\/management/\/var\/cloudstack\/management/g' /etc/passwd
 fi
 
@@ -416,7 +423,7 @@ fi
 if [ -f "%{_sysconfdir}/cloud.rpmsave/management/db.properties" ]; then
     mv %{_sysconfdir}/%{name}/management/db.properties %{_sysconfdir}/%{name}/management/db.properties.rpmnew
     cp -p %{_sysconfdir}/cloud.rpmsave/management/db.properties %{_sysconfdir}/%{name}/management
-    if [ -f "%{_sysconfdir}/cloud.rpmsave/management/key" ]; then    
+    if [ -f "%{_sysconfdir}/cloud.rpmsave/management/key" ]; then
         cp -p %{_sysconfdir}/cloud.rpmsave/management/key %{_sysconfdir}/%{name}/management
     fi
     # make sure we only do this on the first install of this RPM, don't want to overwrite on a reinstall
