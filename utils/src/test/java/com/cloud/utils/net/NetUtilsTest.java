@@ -469,4 +469,12 @@ public class NetUtilsTest {
         assertEquals("unexpected cidrsize " + netbits[1],10l, netbits[1].longValue());
         assertEquals("(un)expected <" + 0x0ac00000L + "> netaddress " + netbits[0].longValue(),netbits[0].longValue(),0x0ac00000l);
     }
+
+    @Test
+    public void testNetmaskFromCidr() {
+        long mask = NetUtils.netMaskFromCidr(1l);
+        assertEquals("mask not right: " + mask, 0x80000000, mask);
+        mask = NetUtils.netMaskFromCidr(32l);
+        assertEquals("mask not right: " + mask, 0xffffffff, mask);
+    }
 }
