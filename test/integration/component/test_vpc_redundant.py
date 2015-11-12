@@ -23,6 +23,7 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (stopRouter,
                              startRouter,
                              destroyRouter,
+                             rebootRouter,
                              Account,
                              VpcOffering,
                              VPC,
@@ -356,12 +357,25 @@ class TestVPCRedundancy(cloudstackTestCase):
         cmd.id = router.id
         self.apiclient.stopRouter(cmd)
 
+    def reboot_router(self, router):
+        self.logger.debug('Rebooting router %s' % router.id)
+        cmd = rebootRouter.rebootRouterCmd()
+        cmd.id = router.id
+        self.apiclient.rebootRouter(cmd)
+
     def stop_router_by_type(self, type):
         self.check_master_status(2)
         self.logger.debug('Stopping %s router' % type)
         for router in self.routers:
             if router.redundantstate == type:
                 self.stop_router(router)
+
+    def reboot_router_by_type(self, type):
+        self.check_master_status(2)
+        self.logger.debug('Rebooting %s router' % type)
+        for router in self.routers:
+            if router.redundantstate == type:
+                self.reboot_router(router)
 
     def destroy_routers(self):
         self.logger.debug('Destroying routers')
@@ -537,6 +551,24 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.check_master_status(2)
         self.add_nat_rules()
         self.do_default_routes_test()
+    
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
+    def test_03_create_redundant_VPC_1tier_2VMs_2IPs_2PF_ACL_reboot_routers(self):
+        """ Create a redundant VPC with two networks with two VMs in each network """
+        self.logger.debug("Starting test_01_create_redundant_VPC_2tiers_4VMs_4IPs_4PF_ACL")
+        self.query_routers()
+        self.networks.append(self.create_network(self.services["network_offering"], "10.1.1.1"))
+        self.check_master_status(2)
+        self.add_nat_rules()
+        self.do_vpc_test(False)
+        
+        self.reboot_router_by_type("MASTER")
+        self.check_master_status(2)
+        self.do_vpc_test(False)
+
+        self.reboot_router_by_type("MASTER")
+        self.check_master_status(2)
+        self.do_vpc_test(False)
 
     def delete_nat_rules(self):
         for o in self.networks:
