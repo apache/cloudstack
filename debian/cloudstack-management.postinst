@@ -31,8 +31,8 @@ if [ "$1" = configure ]; then
     for i in /var/cache/cloudstack/management \
         /var/cache/cloudstack/management/work \
         /var/cache/cloudstack/management/temp \
-        /var/log/cloudstack/management \
-        /var/lib/cloudstack/management
+        /var/lib/cloudstack/management \
+        /etc/cloudstack/management
     do
         chmod 0770 $i
         chgrp cloud $i
