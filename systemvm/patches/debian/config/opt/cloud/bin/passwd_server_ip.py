@@ -113,6 +113,7 @@ class PasswordRequestHandler(BaseHTTPRequestHandler):
         if requestType == 'send_my_password':
             password = getPassword(clientAddress)
             if not password:
+                self.wfile.write('saved_password')
                 syslog.syslog('serve_password: requested password not found for %s' % clientAddress)
             else:
                 self.wfile.write(password)
