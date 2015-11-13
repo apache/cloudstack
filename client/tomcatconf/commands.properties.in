@@ -282,12 +282,9 @@ listCapacity=3
 addSwift=1
 listSwifts=1
 
-#### s3 commands
-addS3=1
-listS3s=1
-
 #### image store commands
 addImageStore=1
+addImageStoreS3=1
 listImageStores=1
 deleteImageStore=1
 createSecondaryStagingStore=1

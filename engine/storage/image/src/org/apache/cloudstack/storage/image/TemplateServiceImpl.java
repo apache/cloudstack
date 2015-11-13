@@ -196,7 +196,7 @@ public class TemplateServiceImpl implements TemplateService {
 
     @Override
     public void downloadBootstrapSysTemplate(DataStore store) {
-        Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
+        Set<VMTemplateVO> toBeDownloaded = new HashSet();
 
         List<VMTemplateVO> rtngTmplts = _templateDao.listAllSystemVMTemplates();
 

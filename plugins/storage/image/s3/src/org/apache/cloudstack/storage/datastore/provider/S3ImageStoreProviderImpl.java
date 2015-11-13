@@ -44,13 +44,14 @@ import com.cloud.utils.component.ComponentContext;
 @Component
 public class S3ImageStoreProviderImpl implements ImageStoreProvider {
 
-    private final String providerName = DataStoreProvider.S3_IMAGE;
-    protected ImageStoreLifeCycle lifeCycle;
-    protected ImageStoreDriver driver;
     @Inject
     ImageStoreProviderManager storeMgr;
     @Inject
     ImageStoreHelper helper;
+
+    private final String providerName = DataStoreProvider.S3_IMAGE;
+    protected ImageStoreLifeCycle lifeCycle;
+    protected ImageStoreDriver driver;
 
     @Override
     public DataStoreLifeCycle getDataStoreLifeCycle() {

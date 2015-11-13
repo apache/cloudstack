@@ -162,6 +162,16 @@ under the License.
       <appender-ref ref="APISERVER"/>
    </logger>
 
+   <!-- Limit the com.amazonaws category to INFO as its DEBUG is verbose -->
+   <category name="com.amazonaws">
+      <priority value="INFO"/>
+   </category>
+
+   <!-- Limit the httpclient.wire category to INFO as its DEBUG is verbose -->
+   <category name="httpclient.wire">
+      <priority value="INFO"/>
+   </category>
+
    <!-- ============================== -->
    <!-- Add or remove these logger for SNMP, this logger is for SNMP alerts plugin -->
    <!-- ============================== -->

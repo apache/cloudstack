@@ -47,10 +47,10 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 
-import com.cloud.agent.api.storage.Proxy;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
+import com.cloud.utils.net.Proxy;
 
 /**
  * Download a template file using HTTP

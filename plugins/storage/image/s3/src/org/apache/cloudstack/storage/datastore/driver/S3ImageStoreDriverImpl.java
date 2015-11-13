@@ -39,7 +39,7 @@ import com.cloud.agent.api.to.S3TO;
 import com.cloud.configuration.Config;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.S3Utils;
+import com.cloud.utils.storage.S3.S3Utils;
 
 public class S3ImageStoreDriverImpl extends BaseImageStoreDriverImpl {
     private static final Logger s_logger = Logger.getLogger(S3ImageStoreDriverImpl.class);
@@ -58,7 +58,9 @@ public class S3ImageStoreDriverImpl extends BaseImageStoreDriverImpl {
                         imgStore.getUuid(),
                         details.get(ApiConstants.S3_ACCESS_KEY),
                         details.get(ApiConstants.S3_SECRET_KEY),
-                        details.get(ApiConstants.S3_END_POINT), details.get(ApiConstants.S3_BUCKET_NAME),
+                        details.get(ApiConstants.S3_END_POINT),
+                        details.get(ApiConstants.S3_BUCKET_NAME),
+                        details.get(ApiConstants.S3_SIGNER),
                         details.get(ApiConstants.S3_HTTPS_FLAG) == null ? false : Boolean.parseBoolean(details.get(ApiConstants.S3_HTTPS_FLAG)),
                         details.get(ApiConstants.S3_CONNECTION_TIMEOUT) == null ? null : Integer.valueOf(details.get(ApiConstants.S3_CONNECTION_TIMEOUT)),
                         details.get(ApiConstants.S3_MAX_ERROR_RETRY) == null ? null : Integer.valueOf(details.get(ApiConstants.S3_MAX_ERROR_RETRY)),
@@ -74,27 +76,29 @@ public class S3ImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         try {
             return Long.parseLong(_configDao.getValue(Config.S3MaxSingleUploadSize.toString())) * 1024L * 1024L * 1024L;
         } catch (NumberFormatException e) {
-            // use default 5GB
-            return 5L * 1024L * 1024L * 1024L;
+            // use default 1TB
+            return 1024L * 1024L * 1024L * 1024L;
         }
     }
 
     @Override
-    public String createEntityExtractUrl(DataStore store, String installPath, ImageFormat format, DataObject dataObject) {
-        // for S3, no need to do anything, just return template url for
-        // extract template. but we need to set object acl as public_read to
-        // make the url accessible
+    public String createEntityExtractUrl(DataStore store, String key, ImageFormat format, DataObject dataObject) {
+        /**
+         * Generate a pre-signed URL for the given object.
+         */
         S3TO s3 = (S3TO)getStoreTO(store);
-        String key = installPath;
 
-        s_logger.info("Generating pre-signed s3 entity extraction URL.");
+        if(s_logger.isDebugEnabled()) {
+            s_logger.debug("Generating pre-signed s3 entity extraction URL for object: " + key);
+        }
         Date expiration = new Date();
         long milliSeconds = expiration.getTime();
 
-        // get extract url expiration interval set in global configuration (in seconds)
+        // Get extract url expiration interval set in global configuration (in seconds)
         String urlExpirationInterval = _configDao.getValue(Config.ExtractURLExpirationInterval.toString());
-        int expirationInterval = NumbersUtil.parseInt(urlExpirationInterval, 14400);
-        milliSeconds += 1000 * expirationInterval; // expired after configured interval (in milliseconds)
+
+        // Expired after configured interval (in milliseconds), default 14400 seconds
+        milliSeconds += 1000 * NumbersUtil.parseInt(urlExpirationInterval, 14400);
         expiration.setTime(milliSeconds);
 
         URL s3url = S3Utils.generatePresignedUrl(s3, s3.getBucketName(), key, expiration);
@@ -103,5 +107,4 @@ public class S3ImageStoreDriverImpl extends BaseImageStoreDriverImpl {
 
         return s3url.toString();
     }
-
 }

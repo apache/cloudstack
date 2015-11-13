@@ -21,9 +21,9 @@ import java.util.Date;
 import com.cloud.agent.api.LogLevel;
 import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.storage.DataStoreRole;
-import com.cloud.utils.S3Utils;
+import com.cloud.utils.storage.S3.ClientOptions;
 
-public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
+public final class S3TO implements ClientOptions, DataStoreTO {
 
     private Long id;
     private String uuid;
@@ -33,6 +33,7 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
     private String secretKey;
     private String endPoint;
     private String bucketName;
+    private String signer;
     private Boolean httpsFlag;
     private Boolean useTCPKeepAlive;
     private Integer connectionTimeout;
@@ -44,17 +45,9 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
     private long maxSingleUploadSizeInBytes;
     private static final String pathSeparator = "/";
 
-    public S3TO() {
-
-        super();
-
-    }
-
     public S3TO(final Long id, final String uuid, final String accessKey, final String secretKey, final String endPoint, final String bucketName,
-            final Boolean httpsFlag, final Integer connectionTimeout, final Integer maxErrorRetry, final Integer socketTimeout, final Date created,
-            final boolean enableRRS, final long maxUploadSize, final Integer connectionTtl, final Boolean useTCPKeepAlive) {
-
-        super();
+            final String signer, final Boolean httpsFlag, final Integer connectionTimeout, final Integer maxErrorRetry, final Integer socketTimeout,
+            final Date created, final boolean enableRRS, final long maxUploadSize, final Integer connectionTtl, final Boolean useTCPKeepAlive) {
 
         this.id = id;
         this.uuid = uuid;
@@ -62,6 +55,7 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
         this.secretKey = secretKey;
         this.endPoint = endPoint;
         this.bucketName = bucketName;
+        this.signer = signer;
         this.httpsFlag = httpsFlag;
         this.connectionTimeout = connectionTimeout;
         this.maxErrorRetry = maxErrorRetry;
@@ -71,98 +65,6 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
         this.maxSingleUploadSizeInBytes = maxUploadSize;
         this.connectionTtl = connectionTtl;
         this.useTCPKeepAlive = useTCPKeepAlive;
-
-    }
-
-    @Override
-    public boolean equals(final Object thatObject) {
-
-        if (this == thatObject) {
-            return true;
-        }
-        if (thatObject == null || getClass() != thatObject.getClass()) {
-            return false;
-        }
-
-        final S3TO thatS3TO = (S3TO)thatObject;
-
-        if (httpsFlag != null ? !httpsFlag.equals(thatS3TO.httpsFlag) : thatS3TO.httpsFlag != null) {
-            return false;
-        }
-
-        if (accessKey != null ? !accessKey.equals(thatS3TO.accessKey) : thatS3TO.accessKey != null) {
-            return false;
-        }
-
-        if (connectionTimeout != null ? !connectionTimeout.equals(thatS3TO.connectionTimeout) : thatS3TO.connectionTimeout != null) {
-            return false;
-        }
-
-        if (endPoint != null ? !endPoint.equals(thatS3TO.endPoint) : thatS3TO.endPoint != null) {
-            return false;
-        }
-
-        if (id != null ? !id.equals(thatS3TO.id) : thatS3TO.id != null) {
-            return false;
-        }
-
-        if (uuid != null ? !uuid.equals(thatS3TO.uuid) : thatS3TO.uuid != null) {
-            return false;
-        }
-
-        if (maxErrorRetry != null ? !maxErrorRetry.equals(thatS3TO.maxErrorRetry) : thatS3TO.maxErrorRetry != null) {
-            return false;
-        }
-
-        if (secretKey != null ? !secretKey.equals(thatS3TO.secretKey) : thatS3TO.secretKey != null) {
-            return false;
-        }
-
-        if (socketTimeout != null ? !socketTimeout.equals(thatS3TO.socketTimeout) : thatS3TO.socketTimeout != null) {
-            return false;
-        }
-
-        if (connectionTtl != null ? !connectionTtl.equals(thatS3TO.connectionTtl) : thatS3TO.connectionTtl != null) {
-            return false;
-        }
-
-        if (useTCPKeepAlive != null ? !useTCPKeepAlive.equals(thatS3TO.useTCPKeepAlive) : thatS3TO.useTCPKeepAlive != null) {
-            return false;
-        }
-
-        if (bucketName != null ? !bucketName.equals(thatS3TO.bucketName) : thatS3TO.bucketName != null) {
-            return false;
-        }
-
-        if (created != null ? !created.equals(thatS3TO.created) : thatS3TO.created != null) {
-            return false;
-        }
-
-        if (enableRRS != thatS3TO.enableRRS) {
-            return false;
-        }
-
-        return true;
-
-    }
-
-    @Override
-    public int hashCode() {
-
-        int result = id != null ? id.hashCode() : 0;
-
-        result = 31 * result + (accessKey != null ? accessKey.hashCode() : 0);
-        result = 31 * result + (secretKey != null ? secretKey.hashCode() : 0);
-        result = 31 * result + (endPoint != null ? endPoint.hashCode() : 0);
-        result = 31 * result + (bucketName != null ? bucketName.hashCode() : 0);
-        result = 31 * result + (httpsFlag ? 1 : 0);
-        result = 31 * result + (connectionTimeout != null ? connectionTimeout.hashCode() : 0);
-        result = 31 * result + (maxErrorRetry != null ? maxErrorRetry.hashCode() : 0);
-        result = 31 * result + (socketTimeout != null ? socketTimeout.hashCode() : 0);
-        result = 31 * result + (connectionTtl != null ? connectionTtl.hashCode() : 0);
-        result = 31 * result + (useTCPKeepAlive ? 1 : 0);
-
-        return result;
 
     }
 
@@ -221,6 +123,15 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
 
     public void setBucketName(final String bucketName) {
         this.bucketName = bucketName;
+    }
+
+    @Override
+    public String getSigner() {
+        return this.signer;
+    }
+
+    public void setSigner(final String signer) {
+        this.signer = signer;
     }
 
     @Override
@@ -326,5 +237,101 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
     @Override
     public String getPathSeparator() {
         return pathSeparator;
+    }
+
+    @Override
+    public boolean equals(final Object thatObject) {
+
+        if (this == thatObject) {
+            return true;
+        }
+        if (thatObject == null || getClass() != thatObject.getClass()) {
+            return false;
+        }
+
+        final S3TO thatS3TO = (S3TO)thatObject;
+
+        if (httpsFlag != null ? !httpsFlag.equals(thatS3TO.httpsFlag) : thatS3TO.httpsFlag != null) {
+            return false;
+        }
+
+        if (accessKey != null ? !accessKey.equals(thatS3TO.accessKey) : thatS3TO.accessKey != null) {
+            return false;
+        }
+
+        if (connectionTimeout != null ? !connectionTimeout.equals(thatS3TO.connectionTimeout) : thatS3TO.connectionTimeout != null) {
+            return false;
+        }
+
+        if (endPoint != null ? !endPoint.equals(thatS3TO.endPoint) : thatS3TO.endPoint != null) {
+            return false;
+        }
+
+        if (id != null ? !id.equals(thatS3TO.id) : thatS3TO.id != null) {
+            return false;
+        }
+
+        if (uuid != null ? !uuid.equals(thatS3TO.uuid) : thatS3TO.uuid != null) {
+            return false;
+        }
+
+        if (maxErrorRetry != null ? !maxErrorRetry.equals(thatS3TO.maxErrorRetry) : thatS3TO.maxErrorRetry != null) {
+            return false;
+        }
+
+        if (secretKey != null ? !secretKey.equals(thatS3TO.secretKey) : thatS3TO.secretKey != null) {
+            return false;
+        }
+
+        if (socketTimeout != null ? !socketTimeout.equals(thatS3TO.socketTimeout) : thatS3TO.socketTimeout != null) {
+            return false;
+        }
+
+        if (connectionTtl != null ? !connectionTtl.equals(thatS3TO.connectionTtl) : thatS3TO.connectionTtl != null) {
+            return false;
+        }
+
+        if (useTCPKeepAlive != null ? !useTCPKeepAlive.equals(thatS3TO.useTCPKeepAlive) : thatS3TO.useTCPKeepAlive != null) {
+            return false;
+        }
+
+        if (bucketName != null ? !bucketName.equals(thatS3TO.bucketName) : thatS3TO.bucketName != null) {
+            return false;
+        }
+
+        if (signer != null ? !signer.equals(thatS3TO.signer) : thatS3TO.signer != null) {
+            return false;
+        }
+
+        if (created != null ? !created.equals(thatS3TO.created) : thatS3TO.created != null) {
+            return false;
+        }
+
+        if (enableRRS != thatS3TO.enableRRS) {
+            return false;
+        }
+
+        return true;
+
+    }
+
+    @Override
+    public int hashCode() {
+
+        int result = id != null ? id.hashCode() : 0;
+
+        result = 31 * result + (accessKey != null ? accessKey.hashCode() : 0);
+        result = 31 * result + (secretKey != null ? secretKey.hashCode() : 0);
+        result = 31 * result + (endPoint != null ? endPoint.hashCode() : 0);
+        result = 31 * result + (bucketName != null ? bucketName.hashCode() : 0);
+        result = 31 * result + (signer != null ? signer.hashCode() : 0);
+        result = 31 * result + (httpsFlag ? 1 : 0);
+        result = 31 * result + (connectionTimeout != null ? connectionTimeout.hashCode() : 0);
+        result = 31 * result + (maxErrorRetry != null ? maxErrorRetry.hashCode() : 0);
+        result = 31 * result + (socketTimeout != null ? socketTimeout.hashCode() : 0);
+        result = 31 * result + (connectionTtl != null ? connectionTtl.hashCode() : 0);
+        result = 31 * result + (useTCPKeepAlive ? 1 : 0);
+
+        return result;
     }
 }

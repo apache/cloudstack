@@ -28,7 +28,6 @@ import com.cloud.host.Host;
 import com.cloud.utils.component.Manager;
 
 /**
- *
  * ServerResource is a generic container to execute commands sent
  */
 public interface ServerResource extends Manager {
@@ -70,4 +69,5 @@ public interface ServerResource extends Manager {
     IAgentControl getAgentControl();
 
     void setAgentControl(IAgentControl agentControl);
+
 }

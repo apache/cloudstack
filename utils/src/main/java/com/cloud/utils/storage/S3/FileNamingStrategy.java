@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,15 +15,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.storage.resource;
+//
 
-import com.cloud.resource.ServerResource;
+package com.cloud.utils.storage.S3;
 
-/**
- * SecondaryStorageServerResource is a generic container to execute commands sent
- */
-public interface SecondaryStorageResource extends ServerResource {
+public interface FileNamingStrategy {
 
-    String getRootDir(String cmd);
-
+    String determineFileName(String key);
 }
