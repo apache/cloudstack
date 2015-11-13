@@ -5825,7 +5825,7 @@
       </arg>
       <arg>
         <name>startvm</name>
-        <description>true if network offering supports specifying ip ranges; defaulted to true if not specified</description>
+        <description>true if start vm after creating; defaulted to true if not specified</description>
         <required>false</required>
         <dataType>boolean</dataType>
       </arg>
@@ -66538,6 +66538,12 @@
         <description>name of this customer gateway</description>
         <required>false</required>
         <dataType>string</dataType>
+      </arg>
+      <arg>
+        <name>projectid</name>
+        <description>create site-to-site VPN customer gateway for the project</description>
+        <required>false</required>
+        <dataType>uuid</dataType>
       </arg>
     </request>
     <response>

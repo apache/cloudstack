@@ -159,6 +159,12 @@ Changes in commands arguments:
 
 			Changed parameters: lbruleid (old version - required, new version - optional) 
 
+	createVpnCustomerGateway
+
+		Request:
+
+			New parameters: projectid (optional) 
+
 	listDiskOfferings
 
 		Request:
