@@ -360,7 +360,8 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                     _storagePoolWorkDao.update(work.getId(), work);
                 }
 
-                // if the instance is of type ssvm, call the ssvm manager
+                // if the instance is of type domain router vm, call the network
+                // manager
                 if (vmInstance.getType().equals(VirtualMachine.Type.DomainRouter)) {
                     DomainRouterVO domR = _domrDao.findById(vmInstance.getId());
                     vmMgr.advanceStart(domR.getUuid(), null, null);
