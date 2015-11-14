@@ -541,7 +541,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
             serverpath = serverpath.replace("//", "/");
             final Set<SR> srs = SR.getAll(conn);
             for (final SR sr : srs) {
-                if (!SRType.NFS.equals(sr.getType(conn))) {
+                if (!SRType.NFS.isRepresentedByString(sr.getType(conn))) {
                     continue;
                 }
 
@@ -689,7 +689,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
     }
 
     protected boolean IsISCSI(final String type) {
-        return SRType.LVMOHBA.equals(type) || SRType.LVMOISCSI.equals(type) || SRType.LVM.equals(type);
+        return SRType.LVMOHBA.isRepresentedByString(type) || SRType.LVMOISCSI.isRepresentedByString(type) || SRType.LVM.isRepresentedByString(type);
     }
 
     private String copy_vhd_from_secondarystorage(final Connection conn, final String mountpoint, final String sruuid, final int wait) {

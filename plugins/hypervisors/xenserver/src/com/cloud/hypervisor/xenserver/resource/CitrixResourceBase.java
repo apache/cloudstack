@@ -182,7 +182,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             setStringRepresentation(super.toString().toLowerCase());
         }
 
-        public boolean equals(final String type) {
+        public boolean isRepresentedByString(final String type) {
             return stringRepresentation.equalsIgnoreCase(type);
         }
 
@@ -440,7 +440,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 LOGGER.debug("Checking " + srr.nameLabel + " or SR " + srr.uuid + " on " + _host);
             }
             if (srr.shared) {
-                if (SRType.NFS.equals(srr.type)) {
+                if (SRType.NFS.isRepresentedByString(srr.type)) {
                     final Map<String, String> smConfig = srr.smConfig;
                     if (!smConfig.containsKey("nosubdir")) {
                         smConfig.put("nosubdir", "true");
@@ -637,7 +637,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (srRec.shared) {
                 continue;
             }
-            if (SRType.NFS.equals(type) || SRType.ISO.equals(type) && srRec.nameDescription.contains("template")) {
+            if (SRType.NFS.isRepresentedByString(type) || SRType.ISO.isRepresentedByString(type) && srRec.nameDescription.contains("template")) {
                 try {
                     pbd.unplug(conn);
                     pbd.destroy(conn);
@@ -964,7 +964,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 final Set<SR> srs = SR.getByNameLabel(conn, name);
                 for (final SR sr : srs) {
                     final SR.Record record = sr.getRecord(conn);
-                    if (SRType.NFS.equals(record.type) && record.contentType.equals("user") && !record.shared) {
+                    if (SRType.NFS.isRepresentedByString(record.type) && record.contentType.equals("user") && !record.shared) {
                         removeSRSync(conn, sr);
                     }
                 }
@@ -2247,7 +2247,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
                 final Set<SR> srs = SR.getByNameLabel(conn, srNameLabel);
                 for (final SR sr : srs) {
-                    if (!SRType.LVMOISCSI.equals(sr.getType(conn))) {
+                    if (!SRType.LVMOISCSI.isRepresentedByString(sr.getType(conn))) {
                         continue;
                     }
                     final Set<PBD> pbds = sr.getPBDs(conn);
@@ -2446,7 +2446,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (map != null && !map.isEmpty()) {
                 for (final Map.Entry<SR, SR.Record> entry : map.entrySet()) {
                     final SR.Record srRec = entry.getValue();
-                    if (SRType.FILE.equals(srRec.type) || SRType.EXT.equals(srRec.type)) {
+                    if (SRType.FILE.isRepresentedByString(srRec.type) || SRType.EXT.isRepresentedByString(srRec.type)) {
                         final Set<PBD> pbds = srRec.PBDs;
                         if (pbds == null) {
                             continue;
@@ -2481,7 +2481,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (map != null && !map.isEmpty()) {
                 for (final Map.Entry<SR, SR.Record> entry : map.entrySet()) {
                     final SR.Record srRec = entry.getValue();
-                    if (SRType.LVM.equals(srRec.type)) {
+                    if (SRType.LVM.isRepresentedByString(srRec.type)) {
                         final Set<PBD> pbds = srRec.PBDs;
                         if (pbds == null) {
                             continue;
@@ -2774,7 +2774,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             final Set<SR> srs = SR.getAll(conn);
             if (srs != null && !srs.isEmpty()) {
                 for (final SR sr : srs) {
-                    if (!SRType.NFS.equals(sr.getType(conn))) {
+                    if (!SRType.NFS.isRepresentedByString(sr.getType(conn))) {
                         continue;
                     }
 
@@ -3555,7 +3555,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     public boolean IsISCSI(final String type) {
-        return SRType.LVMOHBA.equals(type) || SRType.LVMOISCSI.equals(type) || SRType.LVM.equals(type);
+        return SRType.LVMOHBA.isRepresentedByString(type) || SRType.LVMOISCSI.isRepresentedByString(type) || SRType.LVM.isRepresentedByString(type);
     }
 
     public boolean isNetworkSetupByName(final String nameTag) throws XenAPIException, XmlRpcException {
@@ -4444,7 +4444,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     public String setupHeartbeatSr(final Connection conn, final SR sr, final boolean force) throws XenAPIException, XmlRpcException {
         final SR.Record srRec = sr.getRecord(conn);
         final String srUuid = srRec.uuid;
-        if (!srRec.shared || !SRType.LVMOHBA.equals(srRec.type) && !SRType.LVMOISCSI.equals(srRec.type) && !SRType.NFS.equals(srRec.type)) {
+        if (!srRec.shared || !SRType.LVMOHBA.isRepresentedByString(srRec.type) && !SRType.LVMOISCSI.isRepresentedByString(srRec.type) && !SRType.NFS.isRepresentedByString(srRec.type)) {
             return srUuid;
         }
         String result = null;
