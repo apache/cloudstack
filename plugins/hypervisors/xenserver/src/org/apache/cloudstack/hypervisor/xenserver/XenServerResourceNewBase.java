@@ -231,7 +231,7 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
         }
 
         public HashMap<String, Pair<String, VirtualMachine.State>> getChanges() {
-            synchronized (_cluster.intern()) {
+            synchronized (data.getCluster().intern()) {
                 if (_changes.size() == 0) {
                     return null;
                 }

@@ -107,11 +107,11 @@ public class XenServer56Resource extends CitrixResourceBase {
         final com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(_host.getIp(), 22);
         try {
             sshConnection.connect(null, 60000, 60000);
-            if (!sshConnection.authenticateWithPassword(_username, _password.peek())) {
+            if (!sshConnection.authenticateWithPassword(data.getUsername(), data.getPasswords().peek())) {
                 throw new CloudRuntimeException("Unable to authenticate");
             }
 
-            final String shcmd = "/opt/cloud/bin/check_heartbeat.sh " + hostuuid + " " + Integer.toString(_heartbeatInterval * 2);
+            final String shcmd = "/opt/cloud/bin/check_heartbeat.sh " + hostuuid + " " + Integer.toString(data.getHeartbeatInterval() * 2);
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, shcmd)) {
                 s_logger.debug("Heart beat is gone so dead.");
                 return false;
