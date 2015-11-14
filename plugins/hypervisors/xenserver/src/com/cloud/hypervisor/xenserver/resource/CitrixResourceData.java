@@ -1,59 +1,42 @@
 package com.cloud.hypervisor.xenserver.resource;
 
+import java.util.LinkedList;
 import java.util.Queue;
 
-public class CitrixResourceBaseData {
-    private boolean bridgeFirewall;
+public class CitrixResourceData {
+    private boolean bridgeFirewall = false;
     private String cluster;
-    private String consolidationFunction;
+    private String consolidationFunction = "AVERAGE";
     private long dcId;
     private String guestNetworkName;
-    private int heartbeatInterval;
-    private int heartbeatTimeout;
+    private int heartbeatInterval = 60;
+    private int heartbeatTimeout =  120;
     private String instance;
-    private boolean ovs;
+    private boolean ovs = false;
     private String linkLocalPrivateNetworkName;
-    private int maxNics;
-    private int maxWeight;
+    private int maxNics = 7;
+    private int maxWeight = 256;
     private int migrateWait;
     private String name;
-    private Queue<String> passwords;
+    private Queue<String> passwords = new LinkedList<String>();
     private String pod;
-    private int pollingIntervalInSeconds;
+    private int pollingIntervalInSeconds = 60;
     private String privateNetworkName;
     private String publicNetworkName;
-    private int retry;
+    private int retry = 100;
     private boolean securityGroupEnabled;
-    private int sleep;
+    private int sleep = 10000;
     private String storageNetworkName1;
     private String storageNetworkName2;
     private String username;
-    private String configDriveIsoPath;
-    private String configDriveSRName;
-    private String attachIsoDeviceNumber;
+    private String configDriveIsoPath = "/opt/xensource/packages/configdrive_iso/";
+    private String configDriveSRName = "ConfigDriveISOs";
+    private String attachIsoDeviceNumber = "3";
     private int wait;
-    private long xsMemoryUsed;
-    private double xsVirtualizationFactor;
+    private long xsMemoryUsed = 128 * 1024 * 1024L;
+    private double xsVirtualizationFactor = 63.0 / 64.0;
 
-    public CitrixResourceBaseData(boolean canBridgeFirewall, String consolidationFunction, int heartbeatInterval, int heartbeatTimeout, boolean isOvs, int maxNics,
-            int maxWeight, Queue<String> passwords, int pollingIntervalInSeconds, int retry, int sleep, String configDriveIsoPath, String configDriveSRName,
-            String attachIsoDeviceNumber, long xsMemoryUsed, double xsVirtualizationFactor) {
-        this.bridgeFirewall = canBridgeFirewall;
-        this.consolidationFunction = consolidationFunction;
-        this.heartbeatInterval = heartbeatInterval;
-        this.heartbeatTimeout = heartbeatTimeout;
-        this.ovs = isOvs;
-        this.maxNics = maxNics;
-        this.maxWeight = maxWeight;
-        this.passwords = passwords;
-        this.pollingIntervalInSeconds = pollingIntervalInSeconds;
-        this.retry = retry;
-        this.sleep = sleep;
-        this.configDriveIsoPath = configDriveIsoPath;
-        this.configDriveSRName = configDriveSRName;
-        this.attachIsoDeviceNumber = attachIsoDeviceNumber;
-        this.xsMemoryUsed = xsMemoryUsed;
-        this.xsVirtualizationFactor = xsVirtualizationFactor;
+    public CitrixResourceData() {
     }
 
     public boolean isBridgeFirewall() {
