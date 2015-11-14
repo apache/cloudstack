@@ -50,7 +50,7 @@ public class XenServer56Resource extends CitrixResourceBase {
             final String bridge = networkr.bridge.trim();
             for (final PIF pif : networkr.PIFs) {
                 final PIF.Record pifr = pif.getRecord(conn);
-                if (!pifr.host.getUuid(conn).equalsIgnoreCase(_host.getUuid())) {
+                if (!pifr.host.getUuid(conn).equalsIgnoreCase(getXenServerHost().getUuid())) {
                     continue;
                 }
 
@@ -63,13 +63,13 @@ public class XenServer56Resource extends CitrixResourceBase {
                     }
                     try {
                         vlan.destroy(conn);
-                        final Host host = Host.getByUuid(conn, _host.getUuid());
+                        final Host host = Host.getByUuid(conn, getXenServerHost().getUuid());
                         host.forgetDataSourceArchives(conn, "pif_" + bridge + "_tx");
                         host.forgetDataSourceArchives(conn, "pif_" + bridge + "_rx");
                         host.forgetDataSourceArchives(conn, "pif_" + device + "." + vlannum + "_tx");
                         host.forgetDataSourceArchives(conn, "pif_" + device + "." + vlannum + "_rx");
                     } catch (final XenAPIException e) {
-                        s_logger.trace("Catch " + e.getClass().getName() + ": failed to destory VLAN " + device + " on host " + _host.getUuid() + " due to " + e.toString());
+                        s_logger.trace("Catch " + e.getClass().getName() + ": failed to destory VLAN " + device + " on host " + getXenServerHost().getUuid() + " due to " + e.toString());
                     }
                 }
                 return;
@@ -104,14 +104,14 @@ public class XenServer56Resource extends CitrixResourceBase {
     }
 
     public Boolean checkHeartbeat(final String hostuuid) {
-        final com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(_host.getIp(), 22);
+        final com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(getXenServerHost().getIp(), 22);
         try {
             sshConnection.connect(null, 60000, 60000);
-            if (!sshConnection.authenticateWithPassword(data.getUsername(), data.getPasswords().peek())) {
+            if (!sshConnection.authenticateWithPassword(getData().getUsername(), getData().getPasswords().peek())) {
                 throw new CloudRuntimeException("Unable to authenticate");
             }
 
-            final String shcmd = "/opt/cloud/bin/check_heartbeat.sh " + hostuuid + " " + Integer.toString(data.getHeartbeatInterval() * 2);
+            final String shcmd = "/opt/cloud/bin/check_heartbeat.sh " + hostuuid + " " + Integer.toString(getData().getHeartbeatInterval() * 2);
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, shcmd)) {
                 s_logger.debug("Heart beat is gone so dead.");
                 return false;

@@ -55,10 +55,10 @@ public class Xenserver625Resource extends XenServerResourceNewBase {
 
     @Override
     public boolean setupServer(final Connection conn,final Host host) {
-        final com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(_host.getIp(), 22);
+        final com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(getXenServerHost().getIp(), 22);
         try {
             sshConnection.connect(null, 60000, 60000);
-            if (!sshConnection.authenticateWithPassword(data.getUsername(), data.getPasswords().peek())) {
+            if (!sshConnection.authenticateWithPassword(getData().getUsername(), getData().getPasswords().peek())) {
                 throw new CloudRuntimeException("Unable to authenticate");
             }
 

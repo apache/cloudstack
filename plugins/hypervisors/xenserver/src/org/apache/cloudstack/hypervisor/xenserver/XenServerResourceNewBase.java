@@ -71,11 +71,11 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
         final Connection conn = getConnection();
         Pool pool;
         try {
-            pool = Pool.getByUuid(conn, _host.getPool());
+            pool = Pool.getByUuid(conn, getXenServerHost().getPool());
             final Pool.Record poolr = pool.getRecord(conn);
 
             final Host.Record masterRecord = poolr.master.getRecord(conn);
-            if (_host.getUuid().equals(masterRecord.uuid)) {
+            if (getXenServerHost().getUuid().equals(masterRecord.uuid)) {
                 _listener = new VmEventListener(true);
 
                 //
@@ -163,7 +163,7 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
 
         @Override
         public void run() {
-            setName("XS-Listener-" + _host.getIp());
+            setName("XS-Listener-" + getXenServerHost().getIp());
             while (!_stop) {
                 try {
                     final Connection conn = getConnection();
@@ -221,7 +221,7 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
                     throw new CloudRuntimeException("Unable to start a listener thread to listen to VM events", e);
                 }
                 _token = results.token;
-                s_logger.debug("Starting the event listener thread for " + _host.getUuid());
+                s_logger.debug("Starting the event listener thread for " + getXenServerHost().getUuid());
                 super.start();
             }
         }
@@ -231,7 +231,7 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
         }
 
         public HashMap<String, Pair<String, VirtualMachine.State>> getChanges() {
-            synchronized (data.getCluster().intern()) {
+            synchronized (getData().getCluster().intern()) {
                 if (_changes.size() == 0) {
                     return null;
                 }

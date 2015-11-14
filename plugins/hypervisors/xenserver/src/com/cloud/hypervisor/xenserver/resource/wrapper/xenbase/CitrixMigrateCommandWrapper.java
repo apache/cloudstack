@@ -71,7 +71,7 @@ public final class CitrixMigrateCommandWrapper extends CommandWrapper<MigrateCom
                     if (vbdRec.type.equals(Types.VbdType.CD) && !vbdRec.empty) {
                         vbd.eject(conn);
                         // for config drive vbd destroy the vbd.
-                        if (!vbdRec.userdevice.equals(citrixResourceBase.data.getAttachIsoDeviceNumber())) {
+                        if (!vbdRec.userdevice.equals(citrixResourceBase.getData().getAttachIsoDeviceNumber())) {
                             if (vbdRec.currentlyAttached) {
                                 vbd.destroy(conn);
                             }

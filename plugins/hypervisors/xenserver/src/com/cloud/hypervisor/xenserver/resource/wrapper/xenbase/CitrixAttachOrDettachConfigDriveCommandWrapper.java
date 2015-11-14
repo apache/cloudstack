@@ -69,7 +69,7 @@ public final class CitrixAttachOrDettachConfigDriveCommandWrapper extends Comman
                         for (VBD vbd : vbds) {
                             VBD.Record vbdRec = vbd.getRecord(conn);
 
-                            if (vbdRec.type.equals(Types.VbdType.CD) && !vbdRec.empty && !vbdRec.userdevice.equals(citrixResourceBase.data.getAttachIsoDeviceNumber())) {
+                            if (vbdRec.type.equals(Types.VbdType.CD) && !vbdRec.empty && !vbdRec.userdevice.equals(citrixResourceBase.getData().getAttachIsoDeviceNumber())) {
                                 if (vbdRec.currentlyAttached) {
                                     vbd.eject(conn);
                                 }
