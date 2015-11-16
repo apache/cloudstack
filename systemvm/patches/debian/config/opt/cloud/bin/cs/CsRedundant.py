@@ -86,6 +86,29 @@ class CsRedundant(object):
             self._redundant_off()
             return
 
+        interfaces = [interface for interface in self.address.get_ips() if interface.is_guest()]
+        isDeviceReady = False
+        dev = ''
+        for interface in interfaces:
+            if dev == interface.get_device():
+                continue
+            dev = interface.get_device()
+            logging.info("Wait for devices to be configured so we can start keepalived")
+            devConfigured = CsDevice(dev, self.config).waitfordevice()
+            if devConfigured:
+                command = "ip link show %s | grep 'state UP'" % dev
+                devUp = CsHelper.execute(command)
+                if devUp:
+                    logging.info("Device %s is present, let's start keepalive now." % dev)
+                    isDeviceReady = True
+        
+        if not isDeviceReady:
+            logging.info("Guest network not configured yet, let's stop router redundancy for now.")
+            CsHelper.service("conntrackd", "stop")
+            CsHelper.service("keepalived", "stop")
+            return
+
+
         CsHelper.mkdir(self.CS_RAMDISK_DIR, 0755, False)
         CsHelper.mount_tmpfs(self.CS_RAMDISK_DIR)
         CsHelper.mkdir(self.CS_ROUTER_DIR, 0755, False)
@@ -129,17 +152,16 @@ class CsRedundant(object):
         CsHelper.copy(conntrackd_template_conf, conntrackd_temp_bkp)
         
         conntrackd_tmpl = CsFile(conntrackd_template_conf)
-        if guest is not None:
-            conntrackd_tmpl.section("Multicast {", "}", [
-                          "IPv4_address 225.0.0.50\n",
-                          "Group 3780\n",
-                          "IPv4_interface %s\n" % guest.get_ip(),
-                          "Interface %s\n" % guest.get_device(),
-                          "SndSocketBuffer 1249280\n",
-                          "RcvSocketBuffer 1249280\n",
-                          "Checksum on\n"])
-            conntrackd_tmpl.section("Address Ignore {", "}", self._collect_ignore_ips())
-            conntrackd_tmpl.commit()
+        conntrackd_tmpl.section("Multicast {", "}", [
+                      "IPv4_address 225.0.0.50\n",
+                      "Group 3780\n",
+                      "IPv4_interface %s\n" % guest.get_ip(),
+                      "Interface %s\n" % guest.get_device(),
+                      "SndSocketBuffer 1249280\n",
+                      "RcvSocketBuffer 1249280\n",
+                      "Checksum on\n"])
+        conntrackd_tmpl.section("Address Ignore {", "}", self._collect_ignore_ips())
+        conntrackd_tmpl.commit()
 
         conntrackd_conf = CsFile(self.CONNTRACKD_CONF)
 
@@ -163,22 +185,6 @@ class CsRedundant(object):
         heartbeat_cron.add(
             "* * * * * root sleep 30; $SHELL %s/check_heartbeat.sh 2>&1 > /dev/null" % self.CS_ROUTER_DIR, -1)
         heartbeat_cron.commit()
-
-        # Configure KeepaliveD cron job - runs at every reboot
-        keepalived_cron = CsFile("/etc/cron.d/keepalived")
-        keepalived_cron.add("SHELL=/bin/bash", 0)
-        keepalived_cron.add(
-            "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin", 1)
-        keepalived_cron.add("@reboot root service keepalived start", -1)
-        keepalived_cron.commit()
-
-        # Configure ConntrackD cron job - runs at every reboot
-        conntrackd_cron = CsFile("/etc/cron.d/conntrackd")
-        conntrackd_cron.add("SHELL=/bin/bash", 0)
-        conntrackd_cron.add(
-            "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin", 1)
-        conntrackd_cron.add("@reboot root service conntrackd start", -1)
-        conntrackd_cron.commit()
 
         proc = CsProcess(['/usr/sbin/keepalived'])
         if not proc.find() or keepalived_conf.is_changed():
