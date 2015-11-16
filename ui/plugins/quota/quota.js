@@ -16,23 +16,24 @@
 // under the License.
 
 (function (cloudStack) {
+	var now = new Date();
     cloudStack.plugins.quota = function(plugin) {
         plugin.ui.addSection({
           id: 'quota',
           title: 'Quota',
           showOnNavigation: true,
           preFilter: function(args) {
-              return true;
+              return true; 
           },
           sectionSelect: {
               label: 'label.select-view'
           },
           sections: {
-              statement: {
+              summary: {
                   type: 'select',
-                  title: 'label.quota.statement',
+                  title: 'label.quota.summary',
                   listView: {
-                      label: 'label.quota.statement',
+                      label: 'label.quota.summary',
                       fields: {
                           account: {
                               label: 'label.account',
@@ -64,7 +65,8 @@
                               pagesize: pageSize
                           };
 
-                          // FIXME: add logic in mgmt server to filter by account
+                          // FIXME: add logic in mgmt server to filter by
+							// account
                           if (args.filterBy.search.value) {
                               data.account = args.filterBy.search.value;
                           }
@@ -85,13 +87,18 @@
                                   });
                               },
                               error: function(data) {
-                                  cloudStack.dialog.notice({
-                                      message: parseXMLHttpResponse(data)
-                                  });
+                                  
                               }
                           });
                       },
                       detailView: {
+                          viewAll: [{
+                              path: 'quota.quotastatement',
+                              label: 'label.quota.statement.quota'
+                          },{
+                              path: 'quota.balancestatement',
+                              label: 'label.quota.statement.balance'
+                          }],
                           actions: {
                               addCredits: {
                                   label: 'label.quota.add.credits',
@@ -100,66 +107,364 @@
                                           return 'label.quota.add.credits';
                                       }
                                   },
+                                  // http://192.168.217.11:8096/?command=quotaCredits&account=batman&domainid=4&value=10&min_balance=30&quota_enforce=true
                                   action: function(args) {
-                                      // FIX add code to show add credits form and fix css to show an icon
-                                  }
-                              },
+                                      var data = {
+                                                  account: args.context.statement[0].account,
+                                                  domainid: args.context.statement[0].domainid,
+                                                  value: 0,
+                                                  min_balance: 0,
+                                                  quota_enforce: false
+                                              };
 
-                              quotaStatementByDates: {
-                                  label: 'label.quota.statement.bydates',
-                                  messages: {
-                                      notification: function(args) {
-                                          return 'label.quota.statement.bydates';
-                                      }
-                                  },
-                                  action: function(args) {
-                                      // FIX add code to show form start/end date with datepicker injected, fix css
-                                  }
-                              }
-
-                          },
-
-                          tabs: {
-                              details: {
-                                  title: 'label.details',
-                                  fields: [{
-                                      name: {
-                                          label: 'label.quota.statement.balance'
-                                      }
-                                  }, {
-                                      balance: {
-                                          label: 'label.quota.statement.balance',
-                                      },
-                                      startdate: {
-                                          label: 'label.quota.statement.date',
-                                      },
-                                  }],
-
-                                  dataProvider: function(args) {
-                                      console.log('staetment view');
-                                      console.log(args);
-                                      $.ajax({
-                                          url: createURL('quotaBalance'),
-                                          data: {
-                                              domainid: args.context.statement[0].domainid,
-                                              account: args.context.statement[0].account
+                                        var creditForm = cloudStack.dialog.createForm({
+                                          form: {
+                                              title: 'label.quota.add.credits',
+                                              fields: {
+                                                  value: {
+                                                      label: 'label.quota.credits',
+                                                      validation: {
+                                                          required: true
+                                                      }
+                                                  },
+                                                  min_balance: {
+                                                      label: 'label.quota.min_balance',
+                                                      validation: {
+                                                          required: true
+                                                      }
+                                                  },
+                                                  quota_enforce: {
+                                                      label: 'label.quota.quota_enforce',
+                                                      isBoolean: true,
+                                                      isChecked: false
+                                                  },
+                                              }
                                           },
-                                          success: function(json) {
-                                              var item = json.quotabalanceresponse.balance;
-                                              item.name = args.context.statement[0].account;
-                                              item.balance = item.currency + ' ' + item.startquota;
-                                              args.response.success({
-                                                  data: item
+                                          after: function(argsLocal) {
+                                              data.value = argsLocal.data.value;
+                                              data.min_balance = argsLocal.data.min_balance;
+                                              data.quota_enforce = argsLocal.data.quota_enforce;
+                                              $.ajax({
+                                                  url: createURL('quotaCredits'),
+                                                  data: data,
+                                                  type: "POST",
+                                                  success: function(json) {
+                                                      args.response.success({
+                                                          data: json.quotacreditsresponse.totalquota
+                                                      });
+                                                  },
+                                                  error: function(data) {
+                                                      cloudStack.dialog.notice({
+                                                          message: parseXMLHttpResponse(data)
+                                                      });
+                                                  }
                                               });
-                                          }
-                                      });
-                                  }
-                              }
-                          }
+                                           }
+                                       });
+                                  } // function
+                              }, // add credits
+                          },
+                          tabs: {
+                             details: {
+                                    title: 'label.details',
+                                    fields: [{
+                                        id: {
+                                            label: 'label.quota.statement.balance'
+                                        }
+                                    }, {
+                                        startdate: {
+                                            label: 'label.quota.date',
+                                        },
+                                        startquota: {
+                                            label: 'label.quota.value',
+                                        }
+                                    }],
+                                    dataProvider: function(args) {
+                                        console.log(args);
+                                        $.ajax({
+                                            url: createURL('quotaBalance'),
+                                            data: {
+                                                domainid: args.context.summary[0].domainid,
+                                                account: args.context.summary[0].account
+                                            },
+                                            success: function(json) {
+                                            	console.log(json);
+                                            	/*
+                                            	 * <quotabalanceresponse cloud-stack-version="4.5.2">
+                                                    <balance>
+                                                        <startquota>10.00</startquota>
+                                                        <endquota>-215.07</endquota>
+                                                        <credits>
+                                                        <credits>10.00</credits>
+                                                        <updated_on>2015-10-13T20:38:14+0530</updated_on>
+                                                        </credits>
+                                                        <startdate>2015-10-01T00:00:00+0530</startdate>
+                                                        <enddate>2015-10-23T00:00:00+0530</enddate>
+                                                        <currency>R$</currency>
+                                                        </balance>
+                                                    </quotabalanceresponse>
+                                            	 */
+                                                var item = json.quotabalanceresponse.balance;
+                                                item.startdate = now.toJSON().slice(0,10);
+                                                args.response.success({
+                                                    data: item
+                                                });
+                                            }
+                                        });
+                                    }
+                                },
+                                
+                          }// end tab
                       }
 
                   }
               },
+            
+           
+
+
+          quotastatement:{
+                  id: 'statementbalance',
+                  title: 'label.quota.statement',
+                  preFilter: function(args) {
+                      return false; 
+                  },
+                  listView: {
+                      label: 'label.quota.statement.quota',
+                      disableInfiniteScrolling: true,
+                      fields: {
+                            name: {
+                                label: 'label.quota.type.name'
+                            },
+                            unit: {
+                                label: 'label.quota.type.unit'
+                            },
+                            quota: {
+                                label: 'label.quota.usage'
+                            }
+                      },
+                      actions: {
+                              add: {
+                                    label: 'label.quota.dates',
+                                    createForm: {
+                                          title: 'label.quota.dates',
+                                          fields: {
+                                            startDate: {
+                                                label: 'label.quota.startdate',
+                                                validation: {
+                                                    required: true
+                                                }
+                                            },
+                                            endDate: {
+                                                label: 'label.quota.enddate',
+                                                validation: {
+                                                    required: true
+                                                }
+                                            }
+                                        }
+                                      },
+                                    action: function(args) {
+                                            var data = {
+                                                 domainid: args.context.statement[0].domainid,
+                                                 account: args.context.statement[0].account,
+                                                 startDate: args.context.statement[0].startdate.slice(0,10),
+                                                 endDate: now.toJSON().slice(0,10)
+                                            };
+                                            $.ajax({
+                                                url: createURL('quotaStatement'),
+                                                data: {
+                                                    domainid: args.context.statement[0].domainid,
+                                                    account: args.context.statement[0].account,
+                                                    startDate: args.context.statement[0].startdate.slice(0,10),
+                                                    endDate: now.toJSON().slice(0,10)
+                                                },
+                                                //<quotastatementresponse cloud-stack-version="4.5.2"><statement> <quotausage> <type>1</type> <accountid>77</accountid> <domain>35</domain> <name>RUNNING_VM</name>
+                                                //<unit>Compute-Month</unit> <quota>450.15</quota> <startdate>2015-10-13T23:31:15+0530</startdate><enddate>2015-10-13T23:46:47+0530</enddate></quotausage>
+                                                success: function(json) {
+                                                    console.log('quota statement'); /* {type: 1, accountid: 77,// domain:// 35,// name:// "RUNNING_VM",// unit: "Compute-Month",*/
+                                                    var usages = json.quotastatementresponse.statement.quotausage;
+                                                    var usages = json.quotastatementresponse.statement.quotausage;
+                                                    usages.push({
+                                                            name: 'TOTAL',
+                                                            unit:'',
+                                                            quota: json.quotastatementresponse.statement.totalquota
+                                                        });
+                                                    args.response.success({
+                                                        data: usages
+                                                    });
+                                                }
+                                            });
+                                        },
+                                        notification: {
+                                            poll: pollAsyncJobResult
+                                        }
+                                  }
+                           },
+    
+                      dataProvider: function(args) {
+                          console.log(args); /* // args.context = accountid: 77, account: "shapeblue-users", domainid: 35, domain: "sb-domain", balance: "R$ -323.06" */
+                          $.ajax({
+                              url: createURL('quotaStatement'),
+                              data: {
+                                  domainid: args.context.summary[0].domainid,
+                                  account: args.context.summary[0].account,
+                                  startDate: args.context.summary[0].startdate.slice(0,10),
+                                  endDate: now.toJSON().slice(0,10)
+                              },
+                              //<quotastatementresponse cloud-stack-version="4.5.2"><statement> <quotausage> <type>1</type> <accountid>77</accountid> <domain>35</domain> <name>RUNNING_VM</name>
+                              //<unit>Compute-Month</unit> <quota>450.15</quota> <startdate>2015-10-13T23:31:15+0530</startdate><enddate>2015-10-13T23:46:47+0530</enddate></quotausage>
+                              success: function(json) {
+                                  console.log(json); /*// {type:// 1,// accountid:// 77,// domain:// 35,// name:// "RUNNING_VM",// unit:// "Compute-Month", */
+                                  var usages = json.quotastatementresponse.statement.quotausage;
+                                  usages.push({
+                                          name: 'TOTAL',
+                                          unit:'',
+                                          quota: json.quotastatementresponse.statement.totalquota
+                                      });
+                                  args.response.success({
+                                      data: usages
+                                  });
+                              }
+                          });
+                      }
+                  } // end list view
+              }, // end statement
+            
+    
+
+
+
+          balancestatement:{
+                  id: 'balancestatement',
+                  title: 'label.quota.statement.balance',
+                  listView: {
+                      label: 'label.quota.statement.balance',
+                      disableInfiniteScrolling: true,
+                      /*<balance><startquota>10.00</startquota><endquota>-215.07</endquota><credits><credits>10.00</credits><updated_on>2015-10-13T20:38:14+0530</updated_on></credits>
+                      * <startdate>2015-10-01T00:00:00+0530</startdate><enddate>2015-10-23T00:00:00+0530</enddate><currency>R$</currency></balance>*/
+                      fields: {
+                            date: {
+                                label: 'label.quota.date'
+                            },
+                            quota: {
+                                label: 'label.quota.value'
+                            },
+                            credit: {
+                                label: 'label.quota.credit'
+                            }
+                      },
+                        
+                      actions: {
+                              add: {
+                                    label: 'label.quota.dates',
+                                    createForm: {
+                                          title: 'label.quota.dates',
+                                          fields: {
+                                            startDate: {
+                                                label: 'label.quota.startdate',
+                                                validation: {
+                                                    required: true
+                                                }
+                                            },
+                                            endDate: {
+                                                label: 'label.quota.enddate',
+                                                validation: {
+                                                    required: true
+                                                }
+                                            }
+                                        }
+                                      },
+                                    action: function(args) {
+                                            var data = {
+                                                 domainid: args.context.statement[0].domainid,
+                                                 account: args.context.statement[0].account,
+                                                 startDate: args.context.statement[0].startdate.slice(0,10),
+                                                 endDate: now.toJSON().slice(0,10)
+                                            };
+                                            $.ajax({
+                                                url: createURL('quotaBalance'),
+                                                data: {
+                                                    domainid: args.context.summary[0].domainid,
+                                                    account: args.context.summary[0].account,
+                                                    startDate: args.context.summary[0].startdate.slice(0,10),
+                                                    endDate: now.toJSON().slice(0,10)
+                                                },
+                                                success: function(json) {
+                                                    console.log('quota balance');
+                                                    console.log(json);/*balance: startquota: 0, endquota: 50, credits: [{credits: 50, updated_on: "2015-11-12T16:18:11+0530"}], startdate: "2015-11-01T00:00:00+0530", enddate: "2015-11-17T00:00:00+0530",*/
+                                                    var bal = json.quotabalanceresponse.balance;
+                                                    var array=[{
+                                                                 date: bal.startdate.slice(0,10),
+                                                                 quota: bal.startquota,
+                                                                 credit: ''
+                                                    }];
+                                                    //now add all credits
+                                                    for (var i = 0; i < bal.credits.length; i++) {
+                                                          array.push({
+                                                              date: bal.credits[i].updated_on.slice(0,10),
+                                                              quota: '',
+                                                              credit: bal.credits[i].credits
+                                                          });
+                                                      }
+                                                    array.push({
+                                                              date: bal.enddate.slice(0,10),
+                                                              quota: bal.endquota,
+                                                              credit: ''
+                                                          });
+                                                    args.response.success({
+                                                        data: array
+                                                    });
+                                                }
+                                            });
+                                        },
+                                        notification: {
+                                            poll: pollAsyncJobResult
+                                        }
+                                  }
+                           },
+    
+                      dataProvider: function(args) {
+                          console.log(args);
+                          $.ajax({
+                              url: createURL('quotaBalance'),
+                              data: {
+                                  domainid: args.context.summary[0].domainid,
+                                  account: args.context.summary[0].account,
+                                  startDate: args.context.summary[0].startdate.slice(0,10),
+                                  endDate: now.toJSON().slice(0,10)
+                              },
+                              success: function(json) {
+                                  console.log('quota balance');
+                                  console.log(json);/*balance: startquota: 0, endquota: 50, credits: [{credits: 50, updated_on: "2015-11-12T16:18:11+0530"}], startdate: "2015-11-01T00:00:00+0530", enddate: "2015-11-17T00:00:00+0530",*/
+                                  var bal = json.quotabalanceresponse.balance;
+                                  var array=[{
+                                               date: bal.startdate.slice(0,10),
+                                               quota: bal.startquota,
+                                               credit: ''
+                                  }];
+                                  //now add all credits
+                                  for (var i = 0; i < bal.credits.length; i++) {
+                                        array.push({
+                                            date: bal.credits[i].updated_on.slice(0,10),
+                                            quota: '',
+                                            credit: bal.credits[i].credits
+                                        });
+                                    }
+                                  array.push({
+                                            date: bal.enddate.slice(0,10),
+                                            quota: bal.endquota,
+                                            credit: ''
+                                        });
+                                  args.response.success({
+                                      data: array
+                                  });
+                              }
+                          });
+                      }
+                  } // end list view
+              }, // end statement
+            
+
 
               tariff: {
                   type: 'select',
@@ -203,7 +508,9 @@
                                                   args.response.success({
                                                       data: json.quotatariffupdateresponse.quotatariff
                                                   });
-                                                  // Refresh listings on chosen date to reflect new tariff
+                                                  // Refresh listings on
+													// chosen date to reflect
+													// new tariff
                                                   $($.find('div.search-bar input')).val(data.startDate);
                                                   $('#basic_search').click();
                                               },
