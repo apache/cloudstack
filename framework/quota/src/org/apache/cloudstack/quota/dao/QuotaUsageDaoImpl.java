@@ -54,6 +54,7 @@ public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implem
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaUsageVO>>() {
             @Override
             public List<QuotaUsageVO> doInTransaction(final TransactionStatus status) {
+                List<QuotaUsageVO> quv;
                 if ((startDate != null) && (endDate != null) && startDate.before(endDate)) {
                     QueryBuilder<QuotaUsageVO> qb = QueryBuilder.create(QuotaUsageVO.class);
                     if (accountId != null) {
@@ -67,10 +68,22 @@ public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implem
                     }
                     qb.and(qb.entity().getStartDate(), SearchCriteria.Op.BETWEEN, startDate, endDate);
                     qb.and(qb.entity().getEndDate(), SearchCriteria.Op.BETWEEN, startDate, endDate);
-                    return listBy(qb.create());
+                    quv = listBy(qb.create());
                 } else {
-                    return new ArrayList<QuotaUsageVO>();
+                    quv = new ArrayList<QuotaUsageVO>();
                 }
+                if (quv.isEmpty()){
+                    //add a dummy entry
+                    QuotaUsageVO qu = new  QuotaUsageVO();
+                    qu.setAccountId(accountId);
+                    qu.setDomainId(domainId);
+                    qu.setStartDate(startDate);
+                    qu.setEndDate(endDate);
+                    qu.setQuotaUsed(new BigDecimal(0));
+                    qu.setUsageType(-1);
+                    quv.add(qu);
+                }
+                return quv;
             }
         });
     }
