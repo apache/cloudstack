@@ -130,6 +130,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             qr.setBalance(curBalance);
             qr.setQuotaUsage(quotaUsage);
             qr.setState(account.getState());
+            qr.setStartDate(period[0].getTime());
+            qr.setEndDate(period[1].getTime());
             qr.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
             qr.setObjectName("summary");
             result.add(qr);
@@ -194,7 +196,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Override
     public QuotaStatementResponse createQuotaStatementResponse(final List<QuotaUsageVO> quotaUsage) {
-        if (quotaUsage == null) {
+        if (quotaUsage == null || quotaUsage.isEmpty()) {
             throw new InvalidParameterValueException("There is no usage data found for period mentioned.");
         }
 
