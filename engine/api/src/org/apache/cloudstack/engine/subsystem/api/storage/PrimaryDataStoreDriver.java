@@ -23,27 +23,38 @@ import org.apache.cloudstack.storage.command.CommandResult;
 
 import com.cloud.host.Host;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.Volume;
 
 public interface PrimaryDataStoreDriver extends DataStoreDriver {
-    ChapInfo getChapInfo(VolumeInfo volumeInfo);
+    ChapInfo getChapInfo(DataObject dataObject);
 
     boolean grantAccess(DataObject dataObject, Host host, DataStore dataStore);
 
     void revokeAccess(DataObject dataObject, Host host, DataStore dataStore);
 
-    // intended for managed storage (cloud.storage_pool.managed = true)
-    // if not managed, return volume.getSize()
-    long getVolumeSizeIncludingHypervisorSnapshotReserve(Volume volume, StoragePool storagePool);
+    /**
+     * intended for managed storage (cloud.storage_pool.managed = true)
+     * if not managed, return volume.getSize()
+     */
+    long getDataObjectSizeIncludingHypervisorSnapshotReserve(DataObject dataObject, StoragePool storagePool);
 
-    // intended for managed storage (cloud.storage_pool.managed = true)
-    // if managed storage, return the total number of bytes currently in use for the storage pool in question
-    // if not managed storage, return 0
+    /**
+     * intended for zone-wide primary storage that is capable of storing a template once and using it in multiple clusters
+     * if not this kind of storage, return 0
+     */
+    long getBytesRequiredForTemplate(TemplateInfo templateInfo, StoragePool storagePool);
+
+    /**
+     * intended for managed storage (cloud.storage_pool.managed = true)
+     * if managed storage, return the total number of bytes currently in use for the storage pool in question
+     * if not managed storage, return 0
+     */
     long getUsedBytes(StoragePool storagePool);
 
-    // intended for managed storage (cloud.storage_pool.managed = true)
-    // if managed storage, return the total number of IOPS currently in use for the storage pool in question
-    // if not managed storage, return 0
+    /**
+     * intended for managed storage (cloud.storage_pool.managed = true)
+     * if managed storage, return the total number of IOPS currently in use for the storage pool in question
+     * if not managed storage, return 0
+     */
     long getUsedIops(StoragePool storagePool);
 
     void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback);

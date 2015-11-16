@@ -14,11 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command.user.solidfire;
-
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.Volume;
-import com.cloud.user.Account;
+package org.apache.cloudstack.api.command.admin.solidfire;
 
 import javax.inject.Inject;
 
@@ -27,22 +23,19 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.ApiSolidFireVolumeIscsiNameResponse;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.solidfire.ApiSolidFireService;
+import org.apache.cloudstack.api.response.solidfire.ApiPathForVolumeResponse;
+import org.apache.cloudstack.util.solidfire.SolidFireIntegrationTestUtil;
 
-@APICommand(name = "getSolidFireVolumeIscsiName", responseObject = ApiSolidFireVolumeIscsiNameResponse.class, description = "Get SolidFire Volume's Iscsi Name",
+@APICommand(name = "getPathForVolume", responseObject = ApiPathForVolumeResponse.class, description = "Get the path associated with the provided volume UUID",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-
-public class GetSolidFireVolumeIscsiNameCmd extends BaseCmd {
-    private static final Logger s_logger = Logger.getLogger(GetSolidFireVolumeIscsiNameCmd.class.getName());
-    private static final String s_name = "getsolidfirevolumeiscsinameresponse";
+public class GetPathForVolumeCmd extends BaseCmd {
+    private static final Logger LOGGER = Logger.getLogger(GetPathForVolumeCmd.class.getName());
+    private static final String NAME = "getpathforvolumeresponse";
 
     @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.STRING, description = "CloudStack Volume UUID", required = true)
-    private String volumeUuid;
+    private String _volumeUuid;
 
-    @Inject private ApiSolidFireService _apiSolidFireService;
-    @Inject private VolumeDao _volumeDao;
+    @Inject private SolidFireIntegrationTestUtil _util;
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -50,29 +43,25 @@ public class GetSolidFireVolumeIscsiNameCmd extends BaseCmd {
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return NAME;
     }
 
     @Override
     public long getEntityOwnerId() {
-        Account account = CallContext.current().getCallingAccount();
-
-        if (account != null) {
-            return account.getId();
-        }
-
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+        return _util.getAccountIdForVolumeUuid(_volumeUuid);
     }
 
     @Override
     public void execute() {
-        Volume volume = _volumeDao.findByUuid(volumeUuid);
+        LOGGER.info("'GetPathForVolumeIdCmd.execute' method invoked");
 
-        ApiSolidFireVolumeIscsiNameResponse response = _apiSolidFireService.getSolidFireVolumeIscsiName(volume);
+        String pathForVolume = _util.getPathForVolumeUuid(_volumeUuid);
+
+        ApiPathForVolumeResponse response = new ApiPathForVolumeResponse(pathForVolume);
 
         response.setResponseName(getCommandName());
-        response.setObjectName("apisolidfirevolumeiscsiname");
+        response.setObjectName("apipathforvolume");
 
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 }

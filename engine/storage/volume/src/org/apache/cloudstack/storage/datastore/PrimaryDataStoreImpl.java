@@ -26,6 +26,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
@@ -65,6 +66,7 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.storage.encoding.EncodingType;
 
+@SuppressWarnings("serial")
 public class PrimaryDataStoreImpl implements PrimaryDataStore {
     private static final Logger s_logger = Logger.getLogger(PrimaryDataStoreImpl.class);
 
@@ -239,10 +241,34 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
         return pdsv.isManaged();
     }
 
+    private boolean canCloneVolume() {
+        return Boolean.valueOf(getDriver().getCapabilities().get(DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_VOLUME.toString()));
+    }
+
+    /**
+     * The parameter createEntryInTempSpoolRef in the overloaded create(DataObject, boolean) method only applies to managed storage. We pass
+     * in "true" here.
+     *
+     * In the case of managed storage that can create a volume from a volume (clone), if the DataObject passed in is a TemplateInfo,
+     * we do want to create an entry in the cloud.template_spool_ref table (so that multiple uses of the template can be leveraged from
+     * the one copy on managed storage).
+     *
+     * In cases where UUID resigning is not available, then the code calling "create" should invoke the overloaded "create" method whose second
+     * parameter is a boolean. This code can pass in "false" so that an entry in the cloud.template_spool_ref table is not created (no template to share
+     * on the primary storage).
+     */
     @Override
-    public DataObject create(DataObject obj) {
+    public DataObject create(DataObject dataObject) {
+        return create(dataObject, true);
+    }
+
+    /**
+     * Please read the comment for the create(DataObject) method if you are planning on passing in "false" for createEntryInTempSpoolRef.
+     */
+    @Override
+    public DataObject create(DataObject obj, boolean createEntryInTempSpoolRef) {
         // create template on primary storage
-        if (obj.getType() == DataObjectType.TEMPLATE && !isManaged()) {
+        if (obj.getType() == DataObjectType.TEMPLATE && (!isManaged() || (createEntryInTempSpoolRef && canCloneVolume()))) {
             try {
                 String templateIdPoolIdString = "templateId:" + obj.getId() + "poolId:" + getId();
                 VMTemplateStoragePoolVO templateStoragePoolRef;

@@ -52,24 +52,24 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SolidFireSharedHostListener implements HypervisorHostListener {
-    private static final Logger s_logger = Logger.getLogger(SolidFireSharedHostListener.class);
+    private static final Logger LOGGER = Logger.getLogger(SolidFireSharedHostListener.class);
 
-    @Inject private AgentManager _agentMgr;
-    @Inject private AlertManager _alertMgr;
-    @Inject private ClusterDao _clusterDao;
-    @Inject private ClusterDetailsDao _clusterDetailsDao;
-    @Inject private DataStoreManager _dataStoreMgr;
-    @Inject private HostDao _hostDao;
-    @Inject private PrimaryDataStoreDao _storagePoolDao;
-    @Inject private StoragePoolHostDao _storagePoolHostDao;
-    @Inject private StoragePoolDetailsDao _storagePoolDetailsDao;
+    @Inject private AgentManager agentMgr;
+    @Inject private AlertManager alertMgr;
+    @Inject private ClusterDao clusterDao;
+    @Inject private ClusterDetailsDao clusterDetailsDao;
+    @Inject private DataStoreManager dataStoreMgr;
+    @Inject private HostDao hostDao;
+    @Inject private PrimaryDataStoreDao storagePoolDao;
+    @Inject private StoragePoolHostDao storagePoolHostDao;
+    @Inject private StoragePoolDetailsDao storagePoolDetailsDao;
 
     @Override
     public boolean hostAdded(long hostId) {
-        HostVO host = _hostDao.findById(hostId);
+        HostVO host = hostDao.findById(hostId);
 
         SolidFireUtil.hostAddedToOrRemovedFromCluster(hostId, host.getClusterId(), true, SolidFireUtil.SHARED_PROVIDER_NAME,
-                _clusterDao, _clusterDetailsDao, _storagePoolDao, _storagePoolDetailsDao, _hostDao);
+                clusterDao, clusterDetailsDao, storagePoolDao, storagePoolDetailsDao, hostDao);
 
         handleVMware(hostId, true);
 
@@ -78,37 +78,37 @@ public class SolidFireSharedHostListener implements HypervisorHostListener {
 
     @Override
     public boolean hostConnect(long hostId, long storagePoolId) {
-        StoragePool storagePool = (StoragePool)_dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
+        StoragePool storagePool = (StoragePool) dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, storagePool);
 
         ModifyStoragePoolAnswer answer = sendModifyStoragePoolCommand(cmd, storagePool, hostId);
 
-        StoragePoolHostVO storagePoolHost = _storagePoolHostDao.findByPoolHost(storagePoolId, hostId);
+        StoragePoolHostVO storagePoolHost = storagePoolHostDao.findByPoolHost(storagePoolId, hostId);
 
         if (storagePoolHost != null) {
             storagePoolHost.setLocalPath(answer.getPoolInfo().getLocalPath().replaceAll("//", "/"));
         } else {
             storagePoolHost = new StoragePoolHostVO(storagePoolId, hostId, answer.getPoolInfo().getLocalPath().replaceAll("//", "/"));
 
-            _storagePoolHostDao.persist(storagePoolHost);
+            storagePoolHostDao.persist(storagePoolHost);
         }
 
-        StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
+        StoragePoolVO storagePoolVO = storagePoolDao.findById(storagePoolId);
 
         storagePoolVO.setCapacityBytes(answer.getPoolInfo().getCapacityBytes());
         storagePoolVO.setUsedBytes(answer.getPoolInfo().getCapacityBytes() - answer.getPoolInfo().getAvailableBytes());
 
-        _storagePoolDao.update(storagePoolId, storagePoolVO);
+        storagePoolDao.update(storagePoolId, storagePoolVO);
 
         return true;
     }
 
     @Override
     public boolean hostDisconnected(long hostId, long storagePoolId) {
-        StoragePoolHostVO storagePoolHost = _storagePoolHostDao.findByPoolHost(storagePoolId, hostId);
+        StoragePoolHostVO storagePoolHost = storagePoolHostDao.findByPoolHost(storagePoolId, hostId);
 
         if (storagePoolHost != null) {
-            _storagePoolHostDao.deleteStoragePoolHostDetails(hostId, storagePoolId);
+            storagePoolHostDao.deleteStoragePoolHostDetails(hostId, storagePoolId);
         }
 
         return true;
@@ -124,16 +124,16 @@ public class SolidFireSharedHostListener implements HypervisorHostListener {
     @Override
     public boolean hostRemoved(long hostId, long clusterId) {
         SolidFireUtil.hostAddedToOrRemovedFromCluster(hostId, clusterId, false, SolidFireUtil.SHARED_PROVIDER_NAME,
-                _clusterDao, _clusterDetailsDao, _storagePoolDao, _storagePoolDetailsDao, _hostDao);
+                clusterDao, clusterDetailsDao, storagePoolDao, storagePoolDetailsDao, hostDao);
 
         return true;
     }
 
     private void handleVMware(long hostId, boolean add) {
-        HostVO host = _hostDao.findById(hostId);
+        HostVO host = hostDao.findById(hostId);
 
         if (HypervisorType.VMware.equals(host.getHypervisorType())) {
-            List<StoragePoolVO> storagePools = _storagePoolDao.findPoolsByProvider(SolidFireUtil.SHARED_PROVIDER_NAME);
+            List<StoragePoolVO> storagePools = storagePoolDao.findPoolsByProvider(SolidFireUtil.SHARED_PROVIDER_NAME);
 
             if (storagePools != null && storagePools.size() > 0) {
                 List<Map<String, String>> targets = new ArrayList<>();
@@ -142,15 +142,15 @@ public class SolidFireSharedHostListener implements HypervisorHostListener {
                     if (storagePool.getClusterId().equals(host.getClusterId())) {
                         long storagePoolId = storagePool.getId();
 
-                        StoragePoolDetailVO storagePoolDetail = _storagePoolDetailsDao.findDetail(storagePoolId, SolidFireUtil.IQN);
+                        StoragePoolDetailVO storagePoolDetail = storagePoolDetailsDao.findDetail(storagePoolId, SolidFireUtil.IQN);
 
                         String iqn = storagePoolDetail.getValue();
 
-                        storagePoolDetail = _storagePoolDetailsDao.findDetail(storagePoolId, SolidFireUtil.STORAGE_VIP);
+                        storagePoolDetail = storagePoolDetailsDao.findDetail(storagePoolId, SolidFireUtil.STORAGE_VIP);
 
                         String sVip = storagePoolDetail.getValue();
 
-                        storagePoolDetail = _storagePoolDetailsDao.findDetail(storagePoolId, SolidFireUtil.STORAGE_PORT);
+                        storagePoolDetail = storagePoolDetailsDao.findDetail(storagePoolId, SolidFireUtil.STORAGE_PORT);
 
                         String sPort = storagePoolDetail.getValue();
 
@@ -177,7 +177,7 @@ public class SolidFireSharedHostListener implements HypervisorHostListener {
     }
 
     private void sendModifyTargetsCommand(ModifyTargetsCommand cmd, long hostId) {
-        Answer answer = _agentMgr.easySend(hostId, cmd);
+        Answer answer = agentMgr.easySend(hostId, cmd);
 
         if (answer == null) {
             throw new CloudRuntimeException("Unable to get an answer to the modify targets command");
@@ -186,16 +186,16 @@ public class SolidFireSharedHostListener implements HypervisorHostListener {
         if (!answer.getResult()) {
             String msg = "Unable to modify targets on the following host: " + hostId;
 
-            HostVO host = _hostDao.findById(hostId);
+            HostVO host = hostDao.findById(hostId);
 
-            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), msg, msg);
+            alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), msg, msg);
 
             throw new CloudRuntimeException(msg);
         }
     }
 
     private ModifyStoragePoolAnswer sendModifyStoragePoolCommand(ModifyStoragePoolCommand cmd, StoragePool storagePool, long hostId) {
-        Answer answer = _agentMgr.easySend(hostId, cmd);
+        Answer answer = agentMgr.easySend(hostId, cmd);
 
         if (answer == null) {
             throw new CloudRuntimeException("Unable to get an answer to the modify storage pool command for storage pool: " + storagePool.getId());
@@ -204,7 +204,7 @@ public class SolidFireSharedHostListener implements HypervisorHostListener {
         if (!answer.getResult()) {
             String msg = "Unable to attach storage pool " + storagePool.getId() + " to the host " + hostId;
 
-            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, storagePool.getDataCenterId(), storagePool.getPodId(), msg, msg);
+            alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, storagePool.getDataCenterId(), storagePool.getPodId(), msg, msg);
 
             throw new CloudRuntimeException(msg);
         }
@@ -212,7 +212,7 @@ public class SolidFireSharedHostListener implements HypervisorHostListener {
         assert (answer instanceof ModifyStoragePoolAnswer) : "ModifyStoragePoolAnswer not returned from ModifyStoragePoolCommand; Storage pool = " +
             storagePool.getId() + "; Host = " + hostId;
 
-        s_logger.info("Connection established between storage pool " + storagePool + " and host " + hostId);
+        LOGGER.info("Connection established between storage pool " + storagePool + " and host " + hostId);
 
         return (ModifyStoragePoolAnswer)answer;
     }

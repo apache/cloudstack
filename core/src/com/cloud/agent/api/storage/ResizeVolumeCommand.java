@@ -25,22 +25,34 @@ import com.cloud.agent.api.to.StorageFilerTO;
 public class ResizeVolumeCommand extends Command {
     private String path;
     private StorageFilerTO pool;
-    private String vmInstance;
-    private Long newSize;
     private Long currentSize;
+    private Long newSize;
     private boolean shrinkOk;
+    private String vmInstance;
+
+    /* For managed storage */
+    private boolean managed;
+    private String iScsiName;
 
     protected ResizeVolumeCommand() {
-
     }
 
     public ResizeVolumeCommand(String path, StorageFilerTO pool, Long currentSize, Long newSize, boolean shrinkOk, String vmInstance) {
         this.path = path;
         this.pool = pool;
-        this.vmInstance = vmInstance;
         this.currentSize = currentSize;
         this.newSize = newSize;
         this.shrinkOk = shrinkOk;
+        this.vmInstance = vmInstance;
+        this.managed = false;
+    }
+
+    public ResizeVolumeCommand(String path, StorageFilerTO pool, Long currentSize, Long newSize, boolean shrinkOk, String vmInstance,
+                               boolean isManaged, String iScsiName) {
+        this(path, pool, currentSize, newSize, shrinkOk, vmInstance);
+
+        this.iScsiName = iScsiName;
+        this.managed = isManaged;
     }
 
     public String getPath() {
@@ -55,21 +67,19 @@ public class ResizeVolumeCommand extends Command {
         return pool;
     }
 
-    public long getNewSize() {
-        return newSize;
-    }
+    public long getCurrentSize() { return currentSize; }
 
-    public long getCurrentSize() {
-        return currentSize;
-    }
+    public long getNewSize() { return newSize; }
 
-    public boolean getShrinkOk() {
-        return shrinkOk;
-    }
+    public boolean getShrinkOk() { return shrinkOk; }
 
     public String getInstanceName() {
         return vmInstance;
     }
+
+    public boolean isManaged() { return managed; }
+
+    public String get_iScsiName() {return iScsiName; }
 
     /**
      * {@inheritDoc}
@@ -78,5 +88,4 @@ public class ResizeVolumeCommand extends Command {
     public boolean executeInSequence() {
         return false;
     }
-
 }

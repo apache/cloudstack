@@ -47,6 +47,8 @@ import org.apache.cloudstack.storage.command.DettachAnswer;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
+import org.apache.cloudstack.storage.command.ResignatureAnswer;
+import org.apache.cloudstack.storage.command.ResignatureCommand;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
@@ -145,6 +147,13 @@ public class KVMStorageProcessor implements StorageProcessor {
         s_logger.info("'SnapshotAndCopyAnswer snapshotAndCopy(SnapshotAndCopyCommand)' not currently used for KVMStorageProcessor");
 
         return new SnapshotAndCopyAnswer();
+    }
+
+    @Override
+    public ResignatureAnswer resignature(final ResignatureCommand cmd) {
+        s_logger.info("'ResignatureAnswer resignature(ResignatureCommand)' not currently used for KVMStorageProcessor");
+
+        return new ResignatureAnswer();
     }
 
     @Override

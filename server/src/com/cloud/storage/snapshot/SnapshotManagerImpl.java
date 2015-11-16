@@ -35,6 +35,7 @@ import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
 import org.apache.cloudstack.api.command.user.snapshot.UpdateSnapshotPolicyCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
@@ -1013,9 +1014,14 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
             try {
                 postCreateSnapshot(volume.getId(), snapshotId, payload.getSnapshotPolicyId());
-                SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, DataStoreRole.Image);
+
+                DataStoreRole dataStoreRole = getDataStoreRole(snapshot, _snapshotStoreDao, dataStoreMgr);
+
+                SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, dataStoreRole);
+
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(),
                     null, null, snapshotStoreRef.getPhysicalSize(), volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
+
                 // Correct the resource count of snapshot in case of delta snapshots.
                 _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.secondary_storage, new Long(volume.getSize() - snapshotStoreRef.getPhysicalSize()));
             } catch (Exception e) {
@@ -1028,6 +1034,30 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             throw new CloudRuntimeException("Failed to create snapshot", e);
         }
         return snapshot;
+    }
+
+    private static DataStoreRole getDataStoreRole(Snapshot snapshot, SnapshotDataStoreDao snapshotStoreDao, DataStoreManager dataStoreMgr) {
+        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Primary);
+
+        if (snapshotStore == null) {
+            return DataStoreRole.Image;
+        }
+
+        long storagePoolId = snapshotStore.getDataStoreId();
+        DataStore dataStore = dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
+
+        Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();
+
+        if (mapCapabilities != null) {
+            String value = mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
+            Boolean supportsStorageSystemSnapshots = new Boolean(value);
+
+            if (supportsStorageSystemSnapshots) {
+                return DataStoreRole.Primary;
+            }
+        }
+
+        return DataStoreRole.Image;
     }
 
     @Override

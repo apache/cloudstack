@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.response;
+package org.apache.cloudstack.api.response.solidfire;
 
 import com.cloud.serializer.Param;
 
@@ -22,16 +22,22 @@ import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.BaseResponse;
 
-public class ApiSolidFireAccountIdResponse extends BaseResponse {
-    @SerializedName("solidFireAccountId")
-    @Param(description = "SolidFire Account ID")
-    private long solidFireAccountId;
+public class ApiVolumeSnapshotDetailsResponse extends BaseResponse {
+    @SerializedName("volumeSnapshotId")
+    @Param(description = "CloudStack Volume Snapshot ID")
+    private long volumeSnapshotId;
 
-    public ApiSolidFireAccountIdResponse(long sfAccountId) {
-        solidFireAccountId = sfAccountId;
-    }
+    @SerializedName("snapshotDetailsName")
+    @Param(description = "Snapshot Details Name")
+    private String volumeSnapshotDetailsName;
 
-    public long getSolidFireAccountId() {
-        return solidFireAccountId;
+    @SerializedName("snapshotDetailsValue")
+    @Param(description = "Snapshot Details Value")
+    private String volumeSnapshotDetailsValue;
+
+    public ApiVolumeSnapshotDetailsResponse(long volumeSnapshotId, String volumeSnapshotDetailsName, String volumeSnapshotDetailsValue) {
+        this.volumeSnapshotId = volumeSnapshotId;
+        this.volumeSnapshotDetailsName = volumeSnapshotDetailsName;
+        this.volumeSnapshotDetailsValue = volumeSnapshotDetailsValue;
     }
 }

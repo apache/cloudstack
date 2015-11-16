@@ -23,6 +23,7 @@ import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.info.RunningHostCountInfo;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.db.GenericDao;
@@ -88,6 +89,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<HostVO> findByClusterId(Long clusterId);
 
     List<HostVO> listByDataCenterId(long id);
+
+    List<HostVO> listByDataCenterIdAndHypervisorType(long zoneId, Hypervisor.HypervisorType hypervisorType);
 
     List<Long> listAllHosts(long zoneId);
 

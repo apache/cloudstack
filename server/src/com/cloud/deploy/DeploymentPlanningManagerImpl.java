@@ -1234,7 +1234,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                                 requestVolumes = new ArrayList<Volume>();
                             requestVolumes.add(vol);
 
-                            if (!_storageMgr.storagePoolHasEnoughSpace(requestVolumes, potentialSPool))
+                            if (!_storageMgr.storagePoolHasEnoughIops(requestVolumes, potentialSPool) ||
+                                !_storageMgr.storagePoolHasEnoughSpace(requestVolumes, potentialSPool, potentialHost.getClusterId()))
                                 continue;
                             volumeAllocationMap.put(potentialSPool, requestVolumes);
                         }

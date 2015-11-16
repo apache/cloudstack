@@ -62,6 +62,8 @@ import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
+import org.apache.cloudstack.storage.command.ResignatureAnswer;
+import org.apache.cloudstack.storage.command.ResignatureCommand;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
@@ -142,6 +144,13 @@ public class VmwareStorageProcessor implements StorageProcessor {
         s_logger.info("'SnapshotAndCopyAnswer snapshotAndCopy(SnapshotAndCopyCommand)' not currently used for VmwareStorageProcessor");
 
         return new SnapshotAndCopyAnswer();
+    }
+
+    @Override
+    public ResignatureAnswer resignature(ResignatureCommand cmd) {
+        s_logger.info("'ResignatureAnswer resignature(ResignatureCommand)' not currently used for VmwareStorageProcessor");
+
+        return new ResignatureAnswer();
     }
 
     private String getOVFFilePath(String srcOVAFileName) {

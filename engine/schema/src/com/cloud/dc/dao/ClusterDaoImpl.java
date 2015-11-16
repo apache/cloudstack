@@ -30,6 +30,9 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
 import com.cloud.utils.db.GenericDaoBase;
@@ -57,7 +60,11 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     private static final String GET_POD_CLUSTER_MAP_PREFIX = "SELECT pod_id, id FROM cloud.cluster WHERE cluster.id IN( ";
     private static final String GET_POD_CLUSTER_MAP_SUFFIX = " )";
     @Inject
-    protected HostPodDao _hostPodDao;
+    private HostDao hostDao;
+    @Inject
+    private HostDetailsDao hostDetailsDao;
+    @Inject
+    protected HostPodDao hostPodDao;
 
     public ClusterDaoImpl() {
         super();
@@ -214,7 +221,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     @Override
     public List<Long> listClustersWithDisabledPods(long zoneId) {
 
-        GenericSearchBuilder<HostPodVO, Long> disabledPodIdSearch = _hostPodDao.createSearchBuilder(Long.class);
+        GenericSearchBuilder<HostPodVO, Long> disabledPodIdSearch = hostPodDao.createSearchBuilder(Long.class);
         disabledPodIdSearch.selectFields(disabledPodIdSearch.entity().getId());
         disabledPodIdSearch.and("dataCenterId", disabledPodIdSearch.entity().getDataCenterId(), Op.EQ);
         disabledPodIdSearch.and("allocationState", disabledPodIdSearch.entity().getAllocationState(), Op.EQ);
@@ -259,5 +266,36 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         SearchCriteria<Long> sc = ClusterIdSearch.create();
         sc.setParameters("dataCenterId", zoneId);
         return customSearch(sc, null);
+    }
+
+    @Override
+    public boolean computeWhetherClusterSupportsResigning(long clusterId) {
+        ClusterVO cluster = findById(clusterId);
+
+        if (cluster == null || cluster.getAllocationState() != Grouping.AllocationState.Enabled) {
+            return false;
+        }
+
+        List<HostVO> hosts = hostDao.findByClusterId(clusterId);
+
+        if (hosts == null) {
+            return false;
+        }
+
+        Map<Long, String> mapSupportsResign = hostDetailsDao.findDetails("supportsResign");
+
+        for (HostVO host : hosts) {
+            if (host == null) {
+                return false;
+            }
+
+            String value = mapSupportsResign.get(host.getId());
+
+            if (Boolean.parseBoolean(value) == false) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

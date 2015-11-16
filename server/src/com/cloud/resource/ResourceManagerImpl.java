@@ -1733,6 +1733,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             _hostDao.update(host.getId(), host);
         }
 
+        if (startup instanceof StartupRoutingCommand) {
+            final StartupRoutingCommand ssCmd = (StartupRoutingCommand)startup;
+
+            updateHostDetails(host, ssCmd);
+        }
+
         try {
             resourceStateTransitTo(host, ResourceState.Event.InternalCreated, _nodeId);
             /* Agent goes to Connecting status */
@@ -1748,6 +1754,24 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         return host;
+    }
+
+    private void updateHostDetails(HostVO host, StartupRoutingCommand startupRoutingCmd) {
+        final String name = "supportsResign";
+        final String value = String.valueOf(startupRoutingCmd.getSupportsClonedVolumes());
+
+        DetailVO hostDetail = _hostDetailsDao.findDetail(host.getId(), name);
+
+        if (hostDetail != null) {
+            hostDetail.setValue(value);
+
+            _hostDetailsDao.update(hostDetail.getId(), hostDetail);
+        }
+        else {
+            hostDetail = new DetailVO(host.getId(), name, value);
+
+            _hostDetailsDao.persist(hostDetail);
+        }
     }
 
     private boolean isFirstHostInCluster(final HostVO host) {

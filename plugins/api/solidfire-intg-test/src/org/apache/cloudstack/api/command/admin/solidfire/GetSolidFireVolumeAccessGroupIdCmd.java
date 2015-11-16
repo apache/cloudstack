@@ -14,12 +14,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command.user.solidfire;
+package org.apache.cloudstack.api.command.admin.solidfire;
 
-import com.cloud.storage.Volume;
 import com.cloud.user.Account;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.StoragePool;
 
 import javax.inject.Inject;
 
@@ -29,25 +26,24 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.ApiSolidFireVolumeSizeResponse;
+import org.apache.cloudstack.api.response.solidfire.ApiSolidFireVolumeAccessGroupIdResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.solidfire.ApiSolidFireService;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.solidfire.SolidFireIntegrationTestManager;
+import org.apache.cloudstack.util.solidfire.SolidFireIntegrationTestUtil;
 
-@APICommand(name = "getSolidFireVolumeSize", responseObject = ApiSolidFireVolumeSizeResponse.class, description = "Get the SF volume size including Hypervisor Snapshot Reserve",
+@APICommand(name = "getSolidFireVolumeAccessGroupId", responseObject = ApiSolidFireVolumeAccessGroupIdResponse.class, description = "Get the SF Volume Access Group ID",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class GetSolidFireVolumeSizeCmd extends BaseCmd {
-    private static final Logger s_logger = Logger.getLogger(GetSolidFireVolumeSizeCmd.class.getName());
-    private static final String s_name = "getsolidfirevolumesizeresponse";
+public class GetSolidFireVolumeAccessGroupIdCmd extends BaseCmd {
+    private static final Logger LOGGER = Logger.getLogger(GetSolidFireVolumeAccessGroupIdCmd.class.getName());
+    private static final String NAME = "getsolidfirevolumeaccessgroupidresponse";
 
-    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.STRING, description = "Volume UUID", required = true)
-    private String volumeUuid;
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.STRING, description = "Cluster UUID", required = true)
+    private String clusterUuid;
     @Parameter(name = ApiConstants.STORAGE_ID, type = CommandType.STRING, description = "Storage Pool UUID", required = true)
     private String storagePoolUuid;
 
-    @Inject private ApiSolidFireService _apiSolidFireService;
-    @Inject private VolumeDao _volumeDao;
-    @Inject private PrimaryDataStoreDao _storagePoolDao;
+    @Inject private SolidFireIntegrationTestManager manager;
+    @Inject private SolidFireIntegrationTestUtil util;
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -55,7 +51,7 @@ public class GetSolidFireVolumeSizeCmd extends BaseCmd {
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return NAME;
     }
 
     @Override
@@ -71,13 +67,14 @@ public class GetSolidFireVolumeSizeCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        Volume volume = _volumeDao.findByUuid(volumeUuid);
-        StoragePool storagePool = _storagePoolDao.findByUuid(storagePoolUuid);
+        LOGGER.info("'GetSolidFireVolumeAccessGroupIdCmd.execute' method invoked");
 
-        ApiSolidFireVolumeSizeResponse response = _apiSolidFireService.getSolidFireVolumeSize(volume, storagePool);
+        long sfVagId = manager.getSolidFireVolumeAccessGroupId(clusterUuid, storagePoolUuid);
+
+        ApiSolidFireVolumeAccessGroupIdResponse response = new ApiSolidFireVolumeAccessGroupIdResponse(sfVagId);
 
         response.setResponseName(getCommandName());
-        response.setObjectName("apisolidfirevolumesize");
+        response.setObjectName("apisolidfirevolumeaccessgroupid");
 
         this.setResponseObject(response);
     }
