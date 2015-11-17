@@ -155,7 +155,7 @@ public class VolumeHostVO implements InternalIdentity, DataObjectInStore {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

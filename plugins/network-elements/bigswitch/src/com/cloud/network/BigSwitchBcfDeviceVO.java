@@ -91,7 +91,7 @@ public class BigSwitchBcfDeviceVO implements InternalIdentity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

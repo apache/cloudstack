@@ -25,18 +25,18 @@ public class UserDataCommand extends NetworkElementCommand {
     String vmIpAddress;
     String routerPrivateIpAddress;
     String vmName;
-    boolean executeInSequence = false;
+    Boolean executeInSequence = false;
 
     protected UserDataCommand() {
 
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return executeInSequence;
     }
 
-    public UserDataCommand(String userData, String vmIpAddress, String routerPrivateIpAddress, String vmName, boolean executeInSequence) {
+    public UserDataCommand(String userData, String vmIpAddress, String routerPrivateIpAddress, String vmName, Boolean executeInSequence) {
         this.userData = userData;
         this.vmIpAddress = vmIpAddress;
         this.routerPrivateIpAddress = routerPrivateIpAddress;

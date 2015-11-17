@@ -156,7 +156,7 @@ public class VMSnapshotVO implements VMSnapshot {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

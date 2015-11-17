@@ -29,7 +29,7 @@ public class PrepareKickstartPxeServerCommand extends Command {
     private String initrd;
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 

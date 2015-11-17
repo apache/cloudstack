@@ -233,7 +233,7 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

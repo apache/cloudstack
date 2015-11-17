@@ -25,19 +25,19 @@ import com.cloud.storage.StoragePool;
 
 public class CopyVolumeCommand extends Command {
 
-    long volumeId;
+    Long volumeId;
     String volumePath;
     StorageFilerTO pool;
     String secondaryStorageURL;
-    boolean toSecondaryStorage;
+    Boolean toSecondaryStorage;
     String vmName;
-    boolean executeInSequence = false;
+    Boolean executeInSequence = false;
 
     public CopyVolumeCommand() {
     }
 
-    public CopyVolumeCommand(long volumeId, String volumePath, StoragePool pool, String secondaryStorageURL, boolean toSecondaryStorage, int wait,
-            boolean executeInSequence) {
+    public CopyVolumeCommand(Long volumeId, String volumePath, StoragePool pool, String secondaryStorageURL, Boolean toSecondaryStorage, Integer wait,
+            Boolean executeInSequence) {
         this.volumeId = volumeId;
         this.volumePath = volumePath;
         this.pool = new StorageFilerTO(pool);
@@ -48,7 +48,7 @@ public class CopyVolumeCommand extends Command {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return executeInSequence;
     }
 
@@ -56,7 +56,7 @@ public class CopyVolumeCommand extends Command {
         return volumePath;
     }
 
-    public long getVolumeId() {
+    public Long getVolumeId() {
         return volumeId;
     }
 
@@ -68,7 +68,7 @@ public class CopyVolumeCommand extends Command {
         return secondaryStorageURL;
     }
 
-    public boolean toSecondaryStorage() {
+    public Boolean toSecondaryStorage() {
         return toSecondaryStorage;
     }
 

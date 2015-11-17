@@ -66,7 +66,7 @@ public class SecurityGroupWorkVO implements SecurityGroupWork, InternalIdentity 
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

@@ -27,6 +27,7 @@ import com.cloud.network.rules.StaticNatRule;
  */
 
 public class StaticNatRuleTO extends FirewallRuleTO {
+    private static final long serialVersionUID = 1L;
     String dstIp;
 
     protected StaticNatRuleTO() {
@@ -63,14 +64,14 @@ public class StaticNatRuleTO extends FirewallRuleTO {
         this.dstIp = dstIp;
     }
 
-    public StaticNatRuleTO(long id, String srcIp, Integer srcPortStart, Integer srcPortEnd, String dstIp, Integer dstPortStart, Integer dstPortEnd, String protocol,
-            boolean revoked, boolean alreadyAdded) {
+    public StaticNatRuleTO(Long id, String srcIp, Integer srcPortStart, Integer srcPortEnd, String dstIp, Integer dstPortStart, Integer dstPortEnd, String protocol,
+            Boolean revoked, Boolean alreadyAdded) {
         super(id, srcIp, protocol, srcPortStart, srcPortEnd, revoked, alreadyAdded, FirewallRule.Purpose.StaticNat, null, 0, 0);
         this.dstIp = dstIp;
     }
 
-    public StaticNatRuleTO(long id, String srcVlanTag, String srcIp, Integer srcPortStart, Integer srcPortEnd, String dstIp, Integer dstPortStart, Integer dstPortEnd,
-            String protocol, boolean revoked, boolean alreadyAdded) {
+    public StaticNatRuleTO(Long id, String srcVlanTag, String srcIp, Integer srcPortStart, Integer srcPortEnd, String dstIp, Integer dstPortStart, Integer dstPortEnd,
+            String protocol, Boolean revoked, Boolean alreadyAdded) {
         super(id, srcVlanTag, srcIp, protocol, srcPortStart, srcPortEnd, revoked, alreadyAdded, FirewallRule.Purpose.StaticNat, null, 0, 0);
         this.dstIp = dstIp;
     }

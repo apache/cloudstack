@@ -273,7 +273,7 @@ public class IPAddressVO implements IpAddress {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

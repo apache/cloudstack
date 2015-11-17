@@ -27,24 +27,25 @@ import com.cloud.network.vpc.NetworkACLItem.TrafficType;
 import com.cloud.utils.net.NetUtils;
 
 public class NetworkACLTO implements InternalIdentity {
-    long id;
+    private static final long serialVersionUID = 2L;
+    Long id = 0l;
     String vlanTag;
     String protocol;
-    int[] portRange;
-    boolean revoked;
-    boolean alreadyAdded;
+    Integer[] portRange;
+    Boolean revoked = false;
+    Boolean alreadyAdded = false;
     private List<String> cidrList;
     private Integer icmpType;
     private Integer icmpCode;
     private TrafficType trafficType;
     String action;
-    int number;
+    Integer number = 0;
 
     protected NetworkACLTO() {
     }
 
-    public NetworkACLTO(long id, String vlanTag, String protocol, Integer portStart, Integer portEnd, boolean revoked, boolean alreadyAdded, List<String> cidrList,
-            Integer icmpType, Integer icmpCode, TrafficType trafficType, boolean allow, int number) {
+    public NetworkACLTO(Long id, String vlanTag, String protocol, Integer portStart, Integer portEnd, Boolean revoked, Boolean alreadyAdded, List<String> cidrList,
+            Integer icmpType, Integer icmpCode, TrafficType trafficType, Boolean allow, Integer number) {
         this.vlanTag = vlanTag;
         this.protocol = protocol;
 
@@ -55,10 +56,10 @@ public class NetworkACLTO implements InternalIdentity {
                 range.add(portEnd);
             }
 
-            portRange = new int[range.size()];
+            portRange = new Integer[range.size()];
             int i = 0;
             for (Integer port : range) {
-                portRange[i] = port.intValue();
+                portRange[i] = port;
                 i++;
             }
         }
@@ -96,7 +97,7 @@ public class NetworkACLTO implements InternalIdentity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
@@ -108,7 +109,7 @@ public class NetworkACLTO implements InternalIdentity {
         return protocol;
     }
 
-    public int[] getSrcPortRange() {
+    public Integer[] getSrcPortRange() {
         return portRange;
     }
 
@@ -127,7 +128,7 @@ public class NetworkACLTO implements InternalIdentity {
             return NetUtils.portRangeToString(portRange);
     }
 
-    public boolean revoked() {
+    public Boolean revoked() {
         return revoked;
     }
 
@@ -135,7 +136,7 @@ public class NetworkACLTO implements InternalIdentity {
         return cidrList;
     }
 
-    public boolean isAlreadyAdded() {
+    public Boolean isAlreadyAdded() {
         return alreadyAdded;
     }
 
@@ -147,7 +148,7 @@ public class NetworkACLTO implements InternalIdentity {
         return action;
     }
 
-    public int getNumber() {
+    public Integer getNumber() {
         return number;
     }
 }

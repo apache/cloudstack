@@ -87,7 +87,7 @@ public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection, Interna
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

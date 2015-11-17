@@ -209,7 +209,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         if (jobId != null)
             uj = jobs.get(jobId);
         if (uj == null) {
-            return new UploadAnswer(null, 0, "Cannot find job", com.cloud.storage.UploadVO.Status.UNKNOWN, "", "", 0);
+            return new UploadAnswer(null, 0, "Cannot find job", com.cloud.storage.UploadVO.Status.UNKNOWN, "", "", 0l);
         }
         TemplateUploader td = uj.getTemplateUploader();
         switch (cmd.getRequest()) {

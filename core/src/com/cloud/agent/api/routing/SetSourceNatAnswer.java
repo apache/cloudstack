@@ -25,7 +25,7 @@ public class SetSourceNatAnswer extends Answer {
     public SetSourceNatAnswer() {
     }
 
-    public SetSourceNatAnswer(SetSourceNatCommand cmd, boolean success, String result) {
+    public SetSourceNatAnswer(SetSourceNatCommand cmd, Boolean success, String result) {
         super(cmd, success, result);
     }
 }

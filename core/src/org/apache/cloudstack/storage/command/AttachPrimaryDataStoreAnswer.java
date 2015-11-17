@@ -24,8 +24,8 @@ import com.cloud.agent.api.Command;
 
 public class AttachPrimaryDataStoreAnswer extends Answer {
     private String uuid;
-    private long capacity;
-    private long avail;
+    private Long capacity;
+    private Long avail;
 
     public AttachPrimaryDataStoreAnswer(Command cmd) {
         super(cmd);
@@ -39,19 +39,19 @@ public class AttachPrimaryDataStoreAnswer extends Answer {
         return uuid;
     }
 
-    public void setCapacity(long capacity) {
+    public void setCapacity(Long capacity) {
         this.capacity = capacity;
     }
 
-    public long getCapacity() {
+    public Long getCapacity() {
         return capacity;
     }
 
-    public void setAvailable(long avail) {
+    public void setAvailable(Long avail) {
         this.avail = avail;
     }
 
-    public long getAvailable() {
+    public Long getAvailable() {
         return avail;
     }
 }

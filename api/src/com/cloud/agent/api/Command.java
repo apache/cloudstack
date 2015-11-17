@@ -36,13 +36,13 @@ public abstract class Command {
     // allow command to carry over hypervisor or other environment related context info
     @LogLevel(Log4jLevel.Trace)
     protected Map<String, String> contextMap = new HashMap<String, String>();
-    private int wait;  //in second
+    private Integer wait;  //in second
 
     protected Command() {
         this.wait = 0;
     }
 
-    public int getWait() {
+    public Integer getWait() {
         return wait;
     }
 
@@ -60,7 +60,7 @@ public abstract class Command {
      *         When this is set to true, the commands are executed by a single
      *         thread on the agent.
      */
-    public abstract boolean executeInSequence();
+    public abstract Boolean executeInSequence();
 
     public void setContextParam(String name, String value) {
         contextMap.put(name, value);

@@ -92,7 +92,7 @@ public class ImageStoreVO implements ImageStore {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return this.id;
     }
 

@@ -23,7 +23,7 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 
 public class BumpUpPriorityCommand extends NetworkElementCommand {
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 

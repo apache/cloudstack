@@ -24,10 +24,10 @@ package com.cloud.agent.api.routing;
 public class SiteLoadBalancerConfig {
 
     // true if the site details are local to the zone receiving 'GlobalLoadBalancerConfigCommand'
-    boolean local;
+    Boolean local;
 
     // true if the site needs to be removed from GSLB service
-    boolean revoked;
+    Boolean revoked;
 
     // service type of the 'site load balanced' service
     String serviceType;
@@ -45,12 +45,12 @@ public class SiteLoadBalancerConfig {
     String gslbProviderPublicIp;
 
     // zone id in which site is located
-    long dataCenterId;
+    Long dataCenterId;
 
     // wight corresponding to this site
-    long weight = 1;
+    Long weight = 1l;
 
-    public SiteLoadBalancerConfig(boolean revoked, String serviceType, String servicePublicIp, String servicePort, long dataCenterId) {
+    public SiteLoadBalancerConfig(Boolean revoked, String serviceType, String servicePublicIp, String servicePort, Long dataCenterId) {
         this.revoked = revoked;
         this.serviceType = serviceType;
         this.servicePublicIp = servicePublicIp;
@@ -58,8 +58,8 @@ public class SiteLoadBalancerConfig {
         this.dataCenterId = dataCenterId;
     }
 
-    public SiteLoadBalancerConfig(String gslbProviderPublicIP, String gslbProviderPrivateIp, boolean local, boolean revoked, String serviceType, String servicePublicIp,
-            String port, long dataCenterId) {
+    public SiteLoadBalancerConfig(String gslbProviderPublicIP, String gslbProviderPrivateIp, Boolean local, Boolean revoked, String serviceType, String servicePublicIp,
+            String port, Long dataCenterId) {
         this(revoked, serviceType, servicePublicIp, port, dataCenterId);
         this.gslbProviderPrivateIp = gslbProviderPrivateIp;
         this.gslbProviderPublicIp = gslbProviderPublicIP;
@@ -102,7 +102,7 @@ public class SiteLoadBalancerConfig {
         return gslbProviderPublicIp;
     }
 
-    public long getDataCenterId() {
+    public Long getDataCenterId() {
         return dataCenterId;
     }
 
@@ -110,24 +110,24 @@ public class SiteLoadBalancerConfig {
         this.gslbProviderPublicIp = publicIp;
     }
 
-    public boolean isLocal() {
+    public Boolean isLocal() {
         return local;
     }
 
-    public void setLocal(boolean local) {
+    public void setLocal(Boolean local) {
         this.local = local;
     }
 
-    public boolean forRevoke() {
+    public Boolean forRevoke() {
         return revoked;
     }
 
-    public void setWeight(long weight) {
+    public void setWeight(Long weight) {
         assert (weight >= 1 && weight <= 100);
         this.weight = weight;
     }
 
-    public long getWeight() {
+    public Long getWeight() {
         return weight;
     }
 

@@ -133,7 +133,7 @@ public class DummySecondaryStorageResource extends ServerResourceBase implements
 
     protected GetStorageStatsAnswer execute(GetStorageStatsCommand cmd) {
         long size = 1024 * 1024 * 1024 * 100L;
-        return new GetStorageStatsAnswer(cmd, 0, size);
+        return new GetStorageStatsAnswer(cmd, 0l, size);
     }
 
     @Override

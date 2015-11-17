@@ -22,18 +22,18 @@ package com.cloud.agent.api;
 import com.cloud.host.Status.Event;
 
 public class ChangeAgentCommand extends Command {
-    long agentId;
+    Long agentId;
     Event event;
 
     protected ChangeAgentCommand() {
     }
 
-    public ChangeAgentCommand(long agentId, Event event) {
+    public ChangeAgentCommand(Long agentId, Event event) {
         this.agentId = agentId;
         this.event = event;
     }
 
-    public long getAgentId() {
+    public Long getAgentId() {
         return agentId;
     }
 
@@ -42,7 +42,7 @@ public class ChangeAgentCommand extends Command {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 

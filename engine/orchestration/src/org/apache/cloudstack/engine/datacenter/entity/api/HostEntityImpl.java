@@ -99,7 +99,7 @@ public class HostEntityImpl implements HostEntity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return hostVO.getId();
     }
 

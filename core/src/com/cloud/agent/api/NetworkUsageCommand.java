@@ -26,7 +26,7 @@ public class NetworkUsageCommand extends Command {
     private String privateIP;
     private String domRName;
     private String option;
-    boolean forVpc = false;
+    Boolean forVpc = false;
     private String gatewayIP;
     private String vpcCIDR;
 
@@ -34,7 +34,7 @@ public class NetworkUsageCommand extends Command {
 
     }
 
-    public NetworkUsageCommand(String privateIP, String domRName, boolean forVpc, String gatewayIP) {
+    public NetworkUsageCommand(String privateIP, String domRName, Boolean forVpc, String gatewayIP) {
         this.privateIP = privateIP;
         this.domRName = domRName;
         this.forVpc = forVpc;
@@ -42,14 +42,14 @@ public class NetworkUsageCommand extends Command {
         this.option = "get";
     }
 
-    public NetworkUsageCommand(String privateIP, String domRName, String option, boolean forVpc) {
+    public NetworkUsageCommand(String privateIP, String domRName, String option, Boolean forVpc) {
         this.privateIP = privateIP;
         this.domRName = domRName;
         this.option = option;
         this.forVpc = forVpc;
     }
 
-    public NetworkUsageCommand(String privateIP, String domRName, boolean forVpc, String gatewayIP, String vpcCIDR) {
+    public NetworkUsageCommand(String privateIP, String domRName, Boolean forVpc, String gatewayIP, String vpcCIDR) {
         this.privateIP = privateIP;
         this.domRName = domRName;
         this.forVpc = forVpc;
@@ -58,7 +58,7 @@ public class NetworkUsageCommand extends Command {
         this.vpcCIDR = vpcCIDR;
     }
 
-    public NetworkUsageCommand(String privateIP, String domRName, String option, boolean forVpc, String gatewayIP) {
+    public NetworkUsageCommand(String privateIP, String domRName, String option, Boolean forVpc, String gatewayIP) {
         this.privateIP = privateIP;
         this.domRName = domRName;
         this.forVpc = forVpc;
@@ -78,7 +78,7 @@ public class NetworkUsageCommand extends Command {
         return option;
     }
 
-    public boolean isForVpc() {
+    public Boolean isForVpc() {
         return forVpc;
     }
 
@@ -91,7 +91,7 @@ public class NetworkUsageCommand extends Command {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 }

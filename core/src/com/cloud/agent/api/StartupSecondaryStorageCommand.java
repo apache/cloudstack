@@ -29,7 +29,7 @@ public class StartupSecondaryStorageCommand extends StartupCommand {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 }

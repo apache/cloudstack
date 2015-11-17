@@ -35,9 +35,9 @@ public class SnapshotEntityImpl implements SnapshotEntity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         // TODO Auto-generated method stub
-        return 0;
+        return 0l;
     }
 
     @Override

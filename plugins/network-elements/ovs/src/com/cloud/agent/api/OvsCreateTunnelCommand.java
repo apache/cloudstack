@@ -31,7 +31,7 @@ public class OvsCreateTunnelCommand extends Command {
     String fromIp;
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 

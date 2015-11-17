@@ -74,7 +74,7 @@ public class AffinityGroupVO implements AffinityGroup {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

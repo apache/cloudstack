@@ -23,16 +23,16 @@ import com.cloud.agent.api.Command;
 
 public class CheckSshCommand extends Command {
     String ip;
-    int port;
-    int interval;
-    int retries;
+    Integer port;
+    Integer interval;
+    Integer retries;
     String name;
 
     protected CheckSshCommand() {
         super();
     }
 
-    public CheckSshCommand(String instanceName, String ip, int port) {
+    public CheckSshCommand(String instanceName, String ip, Integer port) {
         super();
         this.ip = ip;
         this.port = port;
@@ -49,20 +49,20 @@ public class CheckSshCommand extends Command {
         return ip;
     }
 
-    public int getPort() {
+    public Integer getPort() {
         return port;
     }
 
-    public int getInterval() {
+    public Integer getInterval() {
         return interval;
     }
 
-    public int getRetries() {
+    public Integer getRetries() {
         return retries;
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 }

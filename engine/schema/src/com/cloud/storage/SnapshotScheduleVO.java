@@ -72,7 +72,7 @@ public class SnapshotScheduleVO implements SnapshotSchedule {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

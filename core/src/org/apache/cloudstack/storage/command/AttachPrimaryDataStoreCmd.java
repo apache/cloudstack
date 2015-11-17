@@ -22,7 +22,7 @@ package org.apache.cloudstack.storage.command;
 
 public final class AttachPrimaryDataStoreCmd extends StorageSubSystemCommand {
     @Override
-    public void setExecuteInSequence(final boolean inSeq) {
+    public void setExecuteInSequence(final Boolean inSeq) {
 
     }
 
@@ -38,7 +38,7 @@ public final class AttachPrimaryDataStoreCmd extends StorageSubSystemCommand {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 }

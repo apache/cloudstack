@@ -25,13 +25,13 @@ public class AbstractUploadCommand extends StorageCommand {
 
     private String url;
     private ImageFormat format;
-    private long accountId;
+    private Long accountId;
     private String name;
 
     protected AbstractUploadCommand() {
     }
 
-    protected AbstractUploadCommand(String name, String url, ImageFormat format, long accountId) {
+    protected AbstractUploadCommand(String name, String url, ImageFormat format, Long accountId) {
         this.url = url;
         this.format = format;
         this.accountId = accountId;
@@ -54,12 +54,12 @@ public class AbstractUploadCommand extends StorageCommand {
         return format;
     }
 
-    public long getAccountId() {
+    public Long getAccountId() {
         return accountId;
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 

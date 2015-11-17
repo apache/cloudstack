@@ -33,7 +33,7 @@ public class GetGPUStatsAnswer extends Answer {
         this.groupDetails = groupDetails;
     }
 
-    public GetGPUStatsAnswer(final GetGPUStatsCommand cmd, final boolean success, final String details) {
+    public GetGPUStatsAnswer(final GetGPUStatsCommand cmd, final Boolean success, final String details) {
         super(cmd, success, details);
     }
 

@@ -32,7 +32,7 @@ public interface PhysicalNetworkServiceProvider extends InternalIdentity {
     }
 
     @Override
-    long getId();
+    Long getId();
 
     State getState();
 

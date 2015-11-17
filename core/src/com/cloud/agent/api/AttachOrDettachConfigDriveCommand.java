@@ -26,9 +26,9 @@ public class AttachOrDettachConfigDriveCommand extends Command {
     String vmName;
     List<String[]> vmData;
     String configDriveLabel;
-    boolean isAttach = false;
+    Boolean isAttach = false;
 
-    public AttachOrDettachConfigDriveCommand(String vmName, List<String[]> vmData, String label, boolean attach) {
+    public AttachOrDettachConfigDriveCommand(String vmName, List<String[]> vmData, String label, Boolean attach) {
         this.vmName = vmName;
         this.vmData = vmData;
         this.configDriveLabel = label;
@@ -36,7 +36,7 @@ public class AttachOrDettachConfigDriveCommand extends Command {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 
@@ -48,7 +48,7 @@ public class AttachOrDettachConfigDriveCommand extends Command {
         return vmData;
     }
 
-    public boolean isAttach() {
+    public Boolean isAttach() {
         return isAttach;
     }
 

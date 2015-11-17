@@ -24,7 +24,7 @@ import com.cloud.agent.api.to.DiskTO;
 public final class AttachCommand extends StorageSubSystemCommand {
     private DiskTO disk;
     private String vmName;
-    private boolean inSeq;
+    private Boolean inSeq;
 
     public AttachCommand(final DiskTO disk, final String vmName) {
         super();
@@ -33,7 +33,7 @@ public final class AttachCommand extends StorageSubSystemCommand {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 
@@ -54,7 +54,7 @@ public final class AttachCommand extends StorageSubSystemCommand {
     }
 
     @Override
-    public void setExecuteInSequence(final boolean inSeq) {
+    public void setExecuteInSequence(final Boolean inSeq) {
         this.inSeq = inSeq;
     }
 }

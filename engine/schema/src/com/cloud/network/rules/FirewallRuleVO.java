@@ -133,7 +133,7 @@ public class FirewallRuleVO implements FirewallRule {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

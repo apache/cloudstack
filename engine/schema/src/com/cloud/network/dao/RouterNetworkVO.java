@@ -69,7 +69,7 @@ public class RouterNetworkVO implements InternalIdentity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 }

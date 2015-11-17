@@ -23,16 +23,16 @@ public class GetVmIpAddressCommand extends Command {
 
     String vmName;
     String vmNetworkCidr;
-    boolean windows = false;
+    Boolean windows = false;
 
-    public GetVmIpAddressCommand(String vmName, String vmNetworkCidr, boolean windows) {
+    public GetVmIpAddressCommand(String vmName, String vmNetworkCidr, Boolean windows) {
         this.vmName = vmName;
         this.windows = windows;
         this.vmNetworkCidr = vmNetworkCidr;
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 
@@ -40,7 +40,7 @@ public class GetVmIpAddressCommand extends Command {
         return vmName;
     }
 
-    public boolean isWindows(){
+    public Boolean isWindows(){
         return windows;
     }
 

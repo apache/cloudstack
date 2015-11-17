@@ -96,7 +96,7 @@ public class AffinityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

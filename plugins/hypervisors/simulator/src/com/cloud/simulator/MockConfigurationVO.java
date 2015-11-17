@@ -68,7 +68,7 @@ public class MockConfigurationVO implements InternalIdentity {
     private Date removed;
 
     @Override
-    public long getId() {
+    public Long getId() {
         return this.id;
     }
 

@@ -26,20 +26,20 @@ import com.cloud.storage.Volume;
 
 public class MigrateVolumeCommand extends Command {
 
-    long volumeId;
+    Long volumeId;
     String volumePath;
     StorageFilerTO pool;
     String attachedVmName;
     Volume.Type volumeType;
 
-    public MigrateVolumeCommand(long volumeId, String volumePath, StoragePool pool, int timeout) {
+    public MigrateVolumeCommand(Long volumeId, String volumePath, StoragePool pool, Integer timeout) {
         this.volumeId = volumeId;
         this.volumePath = volumePath;
         this.pool = new StorageFilerTO(pool);
         this.setWait(timeout);
     }
 
-    public MigrateVolumeCommand(long volumeId, String volumePath, StoragePool pool, String attachedVmName, Volume.Type volumeType, int timeout) {
+    public MigrateVolumeCommand(Long volumeId, String volumePath, StoragePool pool, String attachedVmName, Volume.Type volumeType, Integer timeout) {
         this.volumeId = volumeId;
         this.volumePath = volumePath;
         this.pool = new StorageFilerTO(pool);
@@ -49,7 +49,7 @@ public class MigrateVolumeCommand extends Command {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 
@@ -57,7 +57,7 @@ public class MigrateVolumeCommand extends Command {
         return volumePath;
     }
 
-    public long getVolumeId() {
+    public Long getVolumeId() {
         return volumeId;
     }
 

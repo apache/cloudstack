@@ -36,7 +36,7 @@ public class DeleteStoragePoolCommand extends Command {
 
     private StorageFilerTO _pool;
     private String _localPath;
-    private boolean _removeDatastore;
+    private Boolean _removeDatastore;
     private Map<String, String> _details;
 
     public DeleteStoragePoolCommand() {
@@ -64,11 +64,11 @@ public class DeleteStoragePoolCommand extends Command {
         return _localPath;
     }
 
-    public void setRemoveDatastore(boolean removeDatastore) {
+    public void setRemoveDatastore(Boolean removeDatastore) {
         _removeDatastore = removeDatastore;
     }
 
-    public boolean getRemoveDatastore() {
+    public Boolean getRemoveDatastore() {
         return _removeDatastore;
     }
 
@@ -81,7 +81,7 @@ public class DeleteStoragePoolCommand extends Command {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 }

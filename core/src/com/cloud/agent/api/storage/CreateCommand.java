@@ -25,11 +25,11 @@ import com.cloud.storage.StoragePool;
 import com.cloud.vm.DiskProfile;
 
 public class CreateCommand extends Command {
-    private long volId;
+    private Long volId;
     private StorageFilerTO pool;
     private DiskProfile diskCharacteristics;
     private String templateUrl;
-    boolean executeInSequence = false;
+    Boolean executeInSequence = false;
 
     protected CreateCommand() {
         super();
@@ -44,7 +44,7 @@ public class CreateCommand extends Command {
      * @param vol
      * @param vm
      */
-    public CreateCommand(DiskProfile diskCharacteristics, String templateUrl, StorageFilerTO pool, boolean executeInSequence) {
+    public CreateCommand(DiskProfile diskCharacteristics, String templateUrl, StorageFilerTO pool, Boolean executeInSequence) {
         this(diskCharacteristics, pool, executeInSequence);
         this.templateUrl = templateUrl;
         this.executeInSequence = executeInSequence;
@@ -58,7 +58,7 @@ public class CreateCommand extends Command {
      * @param vol
      * @param vm
      */
-    public CreateCommand(DiskProfile diskCharacteristics, StorageFilerTO pool, boolean executeInSequence) {
+    public CreateCommand(DiskProfile diskCharacteristics, StorageFilerTO pool, Boolean executeInSequence) {
         this.volId = diskCharacteristics.getVolumeId();
         this.diskCharacteristics = diskCharacteristics;
         this.pool = pool;
@@ -66,17 +66,17 @@ public class CreateCommand extends Command {
         this.executeInSequence = executeInSequence;
     }
 
-    public CreateCommand(DiskProfile diskCharacteristics, String templateUrl, StoragePool pool, boolean executeInSequence) {
+    public CreateCommand(DiskProfile diskCharacteristics, String templateUrl, StoragePool pool, Boolean executeInSequence) {
         this(diskCharacteristics, templateUrl, new StorageFilerTO(pool), executeInSequence);
     }
 
-    public CreateCommand(DiskProfile diskCharacteristics, StoragePool pool, boolean executeInSequence) {
+    public CreateCommand(DiskProfile diskCharacteristics, StoragePool pool, Boolean executeInSequence) {
         this(diskCharacteristics, new StorageFilerTO(pool), executeInSequence);
         this.executeInSequence = executeInSequence;
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return executeInSequence;
     }
 
@@ -92,7 +92,7 @@ public class CreateCommand extends Command {
         return diskCharacteristics;
     }
 
-    public long getVolumeId() {
+    public Long getVolumeId() {
         return volId;
     }
 

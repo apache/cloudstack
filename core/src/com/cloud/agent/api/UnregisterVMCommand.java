@@ -21,14 +21,14 @@ package com.cloud.agent.api;
 
 public class UnregisterVMCommand extends Command {
     String vmName;
-    boolean cleanupVmFiles = false;
+    Boolean cleanupVmFiles = false;
 
     public UnregisterVMCommand(String vmName) {
         this.vmName = vmName;
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 
@@ -36,11 +36,11 @@ public class UnregisterVMCommand extends Command {
         return vmName;
     }
 
-    public void setCleanupVmFiles(boolean cleanupVmFiles) {
+    public void setCleanupVmFiles(Boolean cleanupVmFiles) {
         this.cleanupVmFiles = cleanupVmFiles;
     }
 
-    public boolean getCleanupVmFiles() {
+    public Boolean getCleanupVmFiles() {
         return this.cleanupVmFiles;
     }
 }

@@ -23,19 +23,19 @@ import com.cloud.host.HostStats;
 
 public class HostStatsEntry implements HostStats {
 
-    long hostId;
+    Long hostId;
     String entityType;
-    double cpuUtilization;
-    double networkReadKBs;
-    double networkWriteKBs;
-    double totalMemoryKBs;
-    double freeMemoryKBs;
+    Double cpuUtilization;
+    Double networkReadKBs;
+    Double networkWriteKBs;
+    Double totalMemoryKBs;
+    Double freeMemoryKBs;
 
     public HostStatsEntry() {
     }
 
-    public HostStatsEntry(long hostId, double cpuUtilization, double networkReadKBs, double networkWriteKBs, String entityType, double totalMemoryKBs,
-            double freeMemoryKBs, double xapiMemoryUsageKBs, double averageLoad) {
+    public HostStatsEntry(Long hostId, Double cpuUtilization, Double networkReadKBs, Double networkWriteKBs, String entityType, Double totalMemoryKBs,
+            Double freeMemoryKBs, Double xapiMemoryUsageKBs, Double averageLoad) {
         this.hostId = hostId;
         this.entityType = entityType;
         this.cpuUtilization = cpuUtilization;
@@ -46,20 +46,20 @@ public class HostStatsEntry implements HostStats {
     }
 
     @Override
-    public double getNetworkReadKBs() {
+    public Double getNetworkReadKBs() {
         return networkReadKBs;
     }
 
-    public void setNetworkReadKBs(double networkReadKBs) {
+    public void setNetworkReadKBs(Double networkReadKBs) {
         this.networkReadKBs = networkReadKBs;
     }
 
     @Override
-    public double getNetworkWriteKBs() {
+    public Double getNetworkWriteKBs() {
         return networkWriteKBs;
     }
 
-    public void setNetworkWriteKBs(double networkWriteKBs) {
+    public void setNetworkWriteKBs(Double networkWriteKBs) {
         this.networkWriteKBs = networkWriteKBs;
     }
 
@@ -73,34 +73,34 @@ public class HostStatsEntry implements HostStats {
     }
 
     @Override
-    public double getTotalMemoryKBs() {
+    public Double getTotalMemoryKBs() {
         return this.totalMemoryKBs;
     }
 
-    public void setTotalMemoryKBs(double totalMemoryKBs) {
+    public void setTotalMemoryKBs(Double totalMemoryKBs) {
         this.totalMemoryKBs = totalMemoryKBs;
     }
 
     @Override
-    public double getFreeMemoryKBs() {
+    public Double getFreeMemoryKBs() {
         return this.freeMemoryKBs;
     }
 
-    public void setFreeMemoryKBs(double freeMemoryKBs) {
+    public void setFreeMemoryKBs(Double freeMemoryKBs) {
         this.freeMemoryKBs = freeMemoryKBs;
     }
 
     @Override
-    public double getCpuUtilization() {
+    public Double getCpuUtilization() {
         return this.cpuUtilization;
     }
 
-    public void setCpuUtilization(double cpuUtilization) {
+    public void setCpuUtilization(Double cpuUtilization) {
         this.cpuUtilization = cpuUtilization;
     }
 
     @Override
-    public double getUsedMemory() {
+    public Double getUsedMemory() {
         return (totalMemoryKBs - freeMemoryKBs) * 1024;
     }
 
@@ -109,7 +109,7 @@ public class HostStatsEntry implements HostStats {
         return this;
     }
 
-    public void setHostId(long hostId) {
+    public void setHostId(Long hostId) {
         this.hostId = hostId;
     }
 }

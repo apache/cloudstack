@@ -124,7 +124,7 @@ public class LBHealthCheckPolicyVO implements HealthCheckPolicy {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

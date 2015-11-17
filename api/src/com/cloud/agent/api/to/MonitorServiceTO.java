@@ -19,18 +19,19 @@ package com.cloud.agent.api.to;
 import org.apache.cloudstack.api.InternalIdentity;
 
 public class MonitorServiceTO implements InternalIdentity {
-    long id;
+    private static final long serialVersionUID = 2L;
+    Long id = 0l;
     String service;
     String processname;
     String serviceName;
     String servicePath;
     String pidFile;
-    boolean isDefault;
+    Boolean isDefault = false;
 
     protected MonitorServiceTO() {
     }
 
-    public MonitorServiceTO(String service, String processname, String serviceName, String servicepath, String pidFile, boolean isDefault) {
+    public MonitorServiceTO(String service, String processname, String serviceName, String servicepath, String pidFile, Boolean isDefault) {
         this.service = service;
         this.processname = processname;
         this.serviceName = serviceName;
@@ -39,7 +40,7 @@ public class MonitorServiceTO implements InternalIdentity {
         this.isDefault = isDefault;
     }
 
-    public boolean isDefault() {
+    public Boolean isDefault() {
         return isDefault;
     }
 
@@ -48,7 +49,7 @@ public class MonitorServiceTO implements InternalIdentity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

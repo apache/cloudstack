@@ -27,7 +27,7 @@ public class AgentControlAnswer extends Answer {
         super(command);
     }
 
-    public AgentControlAnswer(Command command, boolean success, String details) {
+    public AgentControlAnswer(Command command, Boolean success, String details) {
         super(command, success, details);
     }
 }

@@ -20,12 +20,12 @@ import com.cloud.network.Networks.TrafficType;
 
 public class IpAddressTO {
 
-    private long accountId;
+    private Long accountId = 0l;
     private String publicIp;
-    private boolean sourceNat;
-    private boolean add;
-    private boolean oneToOneNat;
-    private boolean firstIP;
+    private Boolean sourceNat = false;
+    private Boolean add = false;
+    private Boolean oneToOneNat = false;
+    private Boolean firstIP = false;
     private String broadcastUri;
     private String vlanGateway;
     private String vlanNetmask;
@@ -33,11 +33,11 @@ public class IpAddressTO {
     private Integer networkRate;
     private TrafficType trafficType;
     private String networkName;
-    private Integer nicDevId;
-    private boolean newNic;
+    private Integer nicDevId = 0;
+    private Boolean newNic = false;
 
-    public IpAddressTO(long accountId, String ipAddress, boolean add, boolean firstIP, boolean sourceNat, String broadcastUri, String vlanGateway, String vlanNetmask,
-            String vifMacAddress, Integer networkRate, boolean isOneToOneNat) {
+    public IpAddressTO(Long accountId, String ipAddress, Boolean add, Boolean firstIP, Boolean sourceNat, String broadcastUri, String vlanGateway, String vlanNetmask,
+            String vifMacAddress, Integer networkRate, Boolean isOneToOneNat) {
         this.accountId = accountId;
         this.publicIp = ipAddress;
         this.add = add;
@@ -54,7 +54,7 @@ public class IpAddressTO {
     protected IpAddressTO() {
     }
 
-    public long getAccountId() {
+    public Long getAccountId() {
         return accountId;
     }
 
@@ -78,23 +78,23 @@ public class IpAddressTO {
         this.trafficType = trafficType;
     }
 
-    public boolean isAdd() {
+    public Boolean isAdd() {
         return add;
     }
 
-    public boolean isOneToOneNat() {
+    public Boolean isOneToOneNat() {
         return this.oneToOneNat;
     }
 
-    public boolean isFirstIP() {
+    public Boolean isFirstIP() {
         return firstIP;
     }
 
-    public void setSourceNat(boolean sourceNat) {
+    public void setSourceNat(Boolean sourceNat) {
         this.sourceNat = sourceNat;
     }
 
-    public boolean isSourceNat() {
+    public Boolean isSourceNat() {
         return sourceNat;
     }
 
@@ -126,11 +126,11 @@ public class IpAddressTO {
         this.nicDevId = nicDevId;
     }
 
-    public boolean isNewNic() {
+    public Boolean isNewNic() {
         return newNic;
     }
 
-    public void setNewNic(boolean newNic) {
+    public void setNewNic(Boolean newNic) {
         this.newNic = newNic;
     }
 }

@@ -288,7 +288,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             OvmHost.Details hostDetails = OvmHost.getDetails(_conn);
 
             cmd.setName(hostDetails.name);
-            cmd.setSpeed(hostDetails.cpuSpeed);
+            cmd.setSpeed(new Long(hostDetails.cpuSpeed));
             cmd.setCpus(hostDetails.cpuNum);
             cmd.setMemory(hostDetails.freeMemory);
             cmd.setDom0MinMemory(hostDetails.dom0Memory);
@@ -680,7 +680,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             Double txBytes = Double.parseDouble(res.get("txBytes"));
             Double totalMemory = Double.parseDouble(res.get("totalMemory"));
             Double freeMemory = Double.parseDouble(res.get("freeMemory"));
-            HostStatsEntry hostStats = new HostStatsEntry(cmd.getHostId(), cpuUtil, rxBytes, txBytes, "host", totalMemory, freeMemory, 0, 0);
+            HostStatsEntry hostStats = new HostStatsEntry(cmd.getHostId(), cpuUtil, rxBytes, txBytes, "host", totalMemory, freeMemory, 0.0, 0.0);
             return new GetHostStatsAnswer(cmd, hostStats);
         } catch (Exception e) {
             s_logger.debug("Get host stats of " + cmd.getHostName() + " failed", e);
@@ -785,10 +785,10 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         _vmNetworkStats.put(vmName, oldNetworkStat);
 
         VmStatsEntry e = new VmStatsEntry();
-        e.setCPUUtilization(cpuUtil);
+        e.setCPUUtilization(Double.valueOf(cpuUtil));
         e.setNumCPUs(nvcpus);
-        e.setNetworkReadKBs(rx);
-        e.setNetworkWriteKBs(tx);
+        e.setNetworkReadKBs((new Long(rx)).doubleValue());
+        e.setNetworkWriteKBs((new Long(tx)).doubleValue());
         e.setEntityType("vm");
         return e;
     }

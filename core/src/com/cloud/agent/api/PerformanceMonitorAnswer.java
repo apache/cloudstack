@@ -24,7 +24,7 @@ public class PerformanceMonitorAnswer extends Answer {
     }
 
     public PerformanceMonitorAnswer(PerformanceMonitorCommand cmd,
-            boolean result, String details) {
+            Boolean result, String details) {
         super(cmd, result, details);
     }
 }

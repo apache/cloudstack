@@ -91,7 +91,7 @@ public class EventVO implements Event {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

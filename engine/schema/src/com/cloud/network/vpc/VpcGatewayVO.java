@@ -132,7 +132,7 @@ public class VpcGatewayVO implements VpcGateway {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

@@ -62,7 +62,7 @@ public class ResourceCountVO implements ResourceCount {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

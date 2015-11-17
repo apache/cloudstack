@@ -24,14 +24,14 @@ import com.cloud.host.HostEnvironment;
 public class SetupCommand extends Command {
 
     HostEnvironment env;
-    boolean multipath;
-    boolean needSetup;
+    Boolean multipath;
+    Boolean needSetup;
 
-    public boolean needSetup() {
+    public Boolean needSetup() {
         return needSetup;
     }
 
-    public void setNeedSetup(boolean setup) {
+    public void setNeedSetup(Boolean setup) {
         this.needSetup = setup;
     }
 
@@ -52,12 +52,12 @@ public class SetupCommand extends Command {
         this.multipath = true;
     }
 
-    public boolean useMultipath() {
+    public Boolean useMultipath() {
         return multipath;
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 }

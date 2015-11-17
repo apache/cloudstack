@@ -24,20 +24,20 @@ import com.cloud.agent.api.Command;
 
 public class ConsoleProxyLoadAnswer extends Answer {
 
-    private long proxyVmId;
+    private Long proxyVmId;
     private String proxyVmName;
 
     protected ConsoleProxyLoadAnswer() {
     }
 
-    public ConsoleProxyLoadAnswer(Command command, long proxyVmId, String proxyVmName, boolean success, String details) {
+    public ConsoleProxyLoadAnswer(Command command, Long proxyVmId, String proxyVmName, Boolean success, String details) {
         super(command, success, details);
 
         this.proxyVmId = proxyVmId;
         this.proxyVmName = proxyVmName;
     }
 
-    public long getProxyVmId() {
+    public Long getProxyVmId() {
         return proxyVmId;
     }
 

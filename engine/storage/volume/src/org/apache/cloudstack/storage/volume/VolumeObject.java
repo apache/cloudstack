@@ -249,7 +249,7 @@ public class VolumeObject implements VolumeInfo {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return volumeVO.getId();
     }
 

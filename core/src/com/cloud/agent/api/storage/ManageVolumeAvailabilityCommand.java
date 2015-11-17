@@ -23,25 +23,25 @@ import com.cloud.agent.api.Command;
 
 public class ManageVolumeAvailabilityCommand extends Command {
 
-    boolean attach;
+    Boolean attach;
     String primaryStorageSRUuid;
     String volumeUuid;
 
     public ManageVolumeAvailabilityCommand() {
     }
 
-    public ManageVolumeAvailabilityCommand(boolean attach, String primaryStorageSRUuid, String volumeUuid) {
+    public ManageVolumeAvailabilityCommand(Boolean attach, String primaryStorageSRUuid, String volumeUuid) {
         this.attach = attach;
         this.primaryStorageSRUuid = primaryStorageSRUuid;
         this.volumeUuid = volumeUuid;
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 
-    public boolean getAttach() {
+    public Boolean getAttach() {
         return attach;
     }
 

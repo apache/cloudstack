@@ -26,12 +26,12 @@ public class ManageSnapshotAnswer extends Answer {
     public ManageSnapshotAnswer() {
     }
 
-    public ManageSnapshotAnswer(Command cmd, boolean success, String result) {
+    public ManageSnapshotAnswer(Command cmd, Boolean success, String result) {
         super(cmd, success, result);
     }
 
     // For XenServer
-    public ManageSnapshotAnswer(ManageSnapshotCommand cmd, long snapshotId, String snapshotPath, boolean success, String result) {
+    public ManageSnapshotAnswer(ManageSnapshotCommand cmd, Long snapshotId, String snapshotPath, Boolean success, String result) {
         super(cmd, success, result);
         _snapshotPath = snapshotPath;
     }

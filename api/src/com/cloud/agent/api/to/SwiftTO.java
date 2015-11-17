@@ -20,7 +20,7 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.SwiftUtil;
 
 public class SwiftTO implements DataStoreTO, SwiftUtil.SwiftClientCfg {
-    Long id;
+    Long id = 0l;
     String url;
     String account;
 

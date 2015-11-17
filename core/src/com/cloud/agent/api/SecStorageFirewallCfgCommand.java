@@ -25,12 +25,12 @@ import java.util.List;
 public class SecStorageFirewallCfgCommand extends Command {
 
     public static class PortConfig {
-        boolean add;
+        Boolean add;
         String sourceIp;
         String port;
         String intf;
 
-        public PortConfig(String sourceIp, String port, boolean add, String intf) {
+        public PortConfig(String sourceIp, String port, Boolean add, String intf) {
             this.add = add;
             this.sourceIp = sourceIp;
             this.port = port;
@@ -41,7 +41,7 @@ public class SecStorageFirewallCfgCommand extends Command {
 
         }
 
-        public boolean isAdd() {
+        public Boolean isAdd() {
             return add;
         }
 
@@ -59,28 +59,28 @@ public class SecStorageFirewallCfgCommand extends Command {
     }
 
     private List<PortConfig> portConfigs = new ArrayList<PortConfig>();
-    private boolean isAppendAIp = false;
+    private Boolean isAppendAIp = false;
 
     public SecStorageFirewallCfgCommand() {
 
     }
 
-    public SecStorageFirewallCfgCommand(boolean isAppend) {
+    public SecStorageFirewallCfgCommand(Boolean isAppend) {
         this.isAppendAIp = isAppend;
     }
 
-    public void addPortConfig(String sourceIp, String port, boolean add, String intf) {
+    public void addPortConfig(String sourceIp, String port, Boolean add, String intf) {
         PortConfig pc = new PortConfig(sourceIp, port, add, intf);
         this.portConfigs.add(pc);
 
     }
 
-    public boolean getIsAppendAIp() {
+    public Boolean getIsAppendAIp() {
         return isAppendAIp;
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 

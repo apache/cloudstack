@@ -28,7 +28,7 @@ public class UpgradeDiskAnswer extends Answer {
         super();
     }
 
-    public UpgradeDiskAnswer(Command cmd, boolean success, String details) {
+    public UpgradeDiskAnswer(Command cmd, Boolean success, String details) {
         super(cmd, success, details);
     }
 }

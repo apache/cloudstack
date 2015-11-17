@@ -38,7 +38,7 @@ public interface Project extends PartOf, Identity, InternalIdentity {
     long getDomainId();
 
     @Override
-    long getId();
+    Long getId();
 
     Date getCreated();
 

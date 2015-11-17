@@ -23,7 +23,8 @@ import com.cloud.network.Networks.TrafficType;
 import java.net.URI;
 
 public class NetworkProfile implements Network {
-    private final long id;
+    private static final long serialVersionUID = 2L;
+    private final Long id;
     private final String uuid;
     private final long dataCenterId;
     private final long ownerId;
@@ -50,13 +51,10 @@ public class NetworkProfile implements Network {
     private final Network.GuestType guestType;
     private Long physicalNetworkId;
     private final ACLType aclType;
-    private final boolean restartRequired;
-    private final boolean specifyIpRanges;
     private final Long vpcId;
     private final boolean displayNetwork;
     private Long networkAclId;
     private final String guruName;
-    private boolean strechedL2Subnet;
 
     public NetworkProfile(Network network) {
         id = network.getId();
@@ -83,13 +81,10 @@ public class NetworkProfile implements Network {
         guestType = network.getGuestType();
         physicalNetworkId = network.getPhysicalNetworkId();
         aclType = network.getAclType();
-        restartRequired = network.isRestartRequired();
-        specifyIpRanges = network.getSpecifyIpRanges();
         vpcId = network.getVpcId();
         displayNetwork = network.getDisplayNetwork();
         networkAclId = network.getNetworkACLId();
         guruName = network.getGuruName();
-        strechedL2Subnet = network.isStrechedL2Network();
         isRedundant = network.isRedundant();
     }
 
@@ -124,7 +119,7 @@ public class NetworkProfile implements Network {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

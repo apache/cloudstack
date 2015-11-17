@@ -202,7 +202,7 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

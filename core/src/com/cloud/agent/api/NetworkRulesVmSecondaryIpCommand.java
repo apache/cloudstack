@@ -34,7 +34,7 @@ public class NetworkRulesVmSecondaryIpCommand extends Command {
         this.type = type;
     }
 
-    public NetworkRulesVmSecondaryIpCommand(String vmName, String vmMac, String secondaryIp, boolean action) {
+    public NetworkRulesVmSecondaryIpCommand(String vmName, String vmMac, String secondaryIp, Boolean action) {
         this.vmName = vmName;
         this.vmMac = vmMac;
         this.vmSecIp = secondaryIp;
@@ -66,7 +66,7 @@ public class NetworkRulesVmSecondaryIpCommand extends Command {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 }

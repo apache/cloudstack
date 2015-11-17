@@ -100,7 +100,7 @@ public class ProjectVO implements Project, Identity, InternalIdentity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

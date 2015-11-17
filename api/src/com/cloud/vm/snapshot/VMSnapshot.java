@@ -71,7 +71,7 @@ public interface VMSnapshot extends ControlledEntity, Identity, InternalIdentity
     }
 
     @Override
-    long getId();
+    Long getId();
 
     public String getName();
 

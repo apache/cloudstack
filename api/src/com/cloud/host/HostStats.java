@@ -19,22 +19,19 @@ package com.cloud.host;
 public interface HostStats {
 
     // host related stats
-    public double getCpuUtilization();
+    public Double getCpuUtilization();
 
-    public double getNetworkWriteKBs();
+    public Double getNetworkWriteKBs();
 
-    public double getTotalMemoryKBs();
+    public Double getTotalMemoryKBs();
 
-    public double getFreeMemoryKBs();
+    public Double getFreeMemoryKBs();
 
-    public double getNetworkReadKBs();
+    public Double getNetworkReadKBs();
 
     public String getEntityType();
 
-    public double getUsedMemory();
+    public Double getUsedMemory();
 
     public HostStats getHostStats();
-
-    // public double getAverageLoad();
-    // public double getXapiMemoryUsageKBs();
 }

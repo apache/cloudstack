@@ -37,14 +37,14 @@ public class SecurityGroupRuleAnswer extends Answer {
         this.vmId = cmd.getVmId();
     }
 
-    public SecurityGroupRuleAnswer(SecurityGroupRulesCmd cmd, boolean result, String detail) {
+    public SecurityGroupRuleAnswer(SecurityGroupRulesCmd cmd, Boolean result, String detail) {
         super(cmd, result, detail);
         this.logSequenceNumber = cmd.getSeqNum();
         this.vmId = cmd.getVmId();
         reason = FailureReason.PROGRAMMING_FAILED;
     }
 
-    public SecurityGroupRuleAnswer(SecurityGroupRulesCmd cmd, boolean result, String detail, FailureReason r) {
+    public SecurityGroupRuleAnswer(SecurityGroupRulesCmd cmd, Boolean result, String detail, FailureReason r) {
         super(cmd, result, detail);
         this.logSequenceNumber = cmd.getSeqNum();
         this.vmId = cmd.getVmId();

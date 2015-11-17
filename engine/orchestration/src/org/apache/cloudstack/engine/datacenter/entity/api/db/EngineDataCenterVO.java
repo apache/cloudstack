@@ -50,7 +50,7 @@ public class EngineDataCenterVO implements EngineDataCenter, Identity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private long id;
+    private Long id;
 
     @Column(name = "name")
     private String name = null;
@@ -322,7 +322,7 @@ public class EngineDataCenterVO implements EngineDataCenter, Identity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

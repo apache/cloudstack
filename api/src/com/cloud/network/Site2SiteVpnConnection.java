@@ -28,7 +28,7 @@ public interface Site2SiteVpnConnection extends ControlledEntity, InternalIdenti
     }
 
     @Override
-    public long getId();
+    public Long getId();
 
     public String getUuid();
 

@@ -27,13 +27,13 @@ public class PingRoutingCommand extends PingCommand {
 
     Map<String, HostVmStateReportEntry> _hostVmStateReport;
 
-    boolean _gatewayAccessible = true;
-    boolean _vnetAccessible = true;
+    Boolean _gatewayAccessible = true;
+    Boolean _vnetAccessible = true;
 
     protected PingRoutingCommand() {
     }
 
-    public PingRoutingCommand(Host.Type type, long id, Map<String, HostVmStateReportEntry> hostVmStateReport) {
+    public PingRoutingCommand(Host.Type type, Long id, Map<String, HostVmStateReportEntry> hostVmStateReport) {
         super(type, id);
         this._hostVmStateReport = hostVmStateReport;
     }
@@ -42,19 +42,19 @@ public class PingRoutingCommand extends PingCommand {
         return this._hostVmStateReport;
     }
 
-    public boolean isGatewayAccessible() {
+    public Boolean isGatewayAccessible() {
         return _gatewayAccessible;
     }
 
-    public void setGatewayAccessible(boolean gatewayAccessible) {
+    public void setGatewayAccessible(Boolean gatewayAccessible) {
         _gatewayAccessible = gatewayAccessible;
     }
 
-    public boolean isVnetAccessible() {
+    public Boolean isVnetAccessible() {
         return _vnetAccessible;
     }
 
-    public void setVnetAccessible(boolean vnetAccessible) {
+    public void setVnetAccessible(Boolean vnetAccessible) {
         _vnetAccessible = vnetAccessible;
     }
 }

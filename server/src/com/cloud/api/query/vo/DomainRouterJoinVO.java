@@ -250,7 +250,7 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

@@ -29,7 +29,7 @@ public class SetStaticRouteAnswer extends Answer {
     protected SetStaticRouteAnswer() {
     }
 
-    public SetStaticRouteAnswer(SetStaticRouteCommand cmd, boolean success, String[] results) {
+    public SetStaticRouteAnswer(SetStaticRouteCommand cmd, Boolean success, String[] results) {
         super(cmd, success, null);
         if (results != null) {
             assert (cmd.getStaticRoutes().length == results.length) : "Static routes and their results should be the same length";

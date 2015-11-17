@@ -27,7 +27,7 @@ public class SetNetworkACLAnswer extends Answer {
     protected SetNetworkACLAnswer() {
     }
 
-    public SetNetworkACLAnswer(SetNetworkACLCommand cmd, boolean success, String[] results) {
+    public SetNetworkACLAnswer(SetNetworkACLCommand cmd, Boolean success, String[] results) {
         super(cmd, success, null);
         assert (cmd.getRules().length == results.length) : "ACLs and their results should be the same length";
         this.results = results;

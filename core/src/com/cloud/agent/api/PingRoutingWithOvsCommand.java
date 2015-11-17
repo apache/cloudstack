@@ -32,7 +32,7 @@ public class PingRoutingWithOvsCommand extends PingRoutingCommand {
         super();
     }
 
-    public PingRoutingWithOvsCommand(Host.Type type, long id, Map<String, HostVmStateReportEntry> hostVmStateReport,
+    public PingRoutingWithOvsCommand(Host.Type type, Long id, Map<String, HostVmStateReportEntry> hostVmStateReport,
             List<Pair<String, Long>> ovsStates) {
         super(type, id, hostVmStateReport);
 

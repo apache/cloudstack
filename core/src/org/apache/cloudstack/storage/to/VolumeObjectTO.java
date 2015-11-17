@@ -38,11 +38,11 @@ public class VolumeObjectTO implements DataTO {
     private String path;
     private Long volumeId;
     private String vmName;
-    private long accountId;
+    private Long accountId;
     private String chainInfo;
     private Storage.ImageFormat format;
     private Storage.ProvisioningType provisioningType;
-    private long id;
+    private Long id;
 
     private Long deviceId;
     private Long bytesReadRate;
@@ -135,7 +135,7 @@ public class VolumeObjectTO implements DataTO {
         this.name = name;
     }
 
-    public void setSize(long size) {
+    public void setSize(Long size) {
         this.size = size;
     }
 
@@ -151,11 +151,11 @@ public class VolumeObjectTO implements DataTO {
         this.volumeId = volumeId;
     }
 
-    public long getAccountId() {
+    public Long getAccountId() {
         return accountId;
     }
 
-    public void setAccountId(long accountId) {
+    public void setAccountId(Long accountId) {
         this.accountId = accountId;
     }
 
@@ -176,11 +176,11 @@ public class VolumeObjectTO implements DataTO {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

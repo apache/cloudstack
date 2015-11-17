@@ -1722,7 +1722,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             cmd.setCaps(caps.toString());
 
-            cmd.setSpeed(_host.getSpeed());
+            cmd.setSpeed(new Long(_host.getSpeed()));
             cmd.setCpuSockets(_host.getCpuSockets());
             cmd.setCpus(_host.getCpus());
 
@@ -2139,7 +2139,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     public HostStatsEntry getHostStats(final Connection conn, final GetHostStatsCommand cmd, final String hostGuid, final long hostId) {
 
-        final HostStatsEntry hostStats = new HostStatsEntry(hostId, 0, 0, 0, "host", 0, 0, 0, 0);
+        final HostStatsEntry hostStats = new HostStatsEntry(hostId, 0.0, 0.0, 0.0, "host", 0.0, 0.0, 0.0, 0.0);
         final Object[] rrdData = getRRDData(conn, 1); // call rrd method with 1
         // for host
 
@@ -3277,7 +3277,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         final HashMap<String, VmStatsEntry> vmResponseMap = new HashMap<String, VmStatsEntry>();
 
         for (final String vmUUID : vmUUIDs) {
-            vmResponseMap.put(vmUUID, new VmStatsEntry(0, 0, 0, 0, "vm"));
+            vmResponseMap.put(vmUUID, new VmStatsEntry(0.0, 0.0, 0.0, 0, "vm"));
         }
 
         final Object[] rrdData = getRRDData(conn, 2); // call rrddata with 2 for

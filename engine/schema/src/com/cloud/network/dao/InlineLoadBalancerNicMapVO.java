@@ -48,7 +48,7 @@ public class InlineLoadBalancerNicMapVO implements InternalIdentity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

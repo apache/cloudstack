@@ -90,7 +90,7 @@ public class VMReservationVO implements Identity, InternalIdentity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

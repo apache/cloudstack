@@ -98,7 +98,7 @@ public class ResourceTagJoinVO extends BaseViewVO implements ControlledViewEntit
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

@@ -269,13 +269,13 @@ public class Ovm3VmSupport {
         if (oldVmStats == null) {
             LOGGER.debug("No old stats retrieved stats from " + vmName);
             stats.setNumCPUs(1);
-            stats.setNetworkReadKBs(0);
-            stats.setNetworkWriteKBs(0);
-            stats.setDiskReadKBs(0);
-            stats.setDiskWriteKBs(0);
-            stats.setDiskReadIOs(0);
-            stats.setDiskWriteIOs(0);
-            stats.setCPUUtilization(0);
+            stats.setNetworkReadKBs(0.0);
+            stats.setNetworkWriteKBs(0.0);
+            stats.setDiskReadKBs(0.0);
+            stats.setDiskWriteKBs(0.0);
+            stats.setDiskReadIOs(0.0);
+            stats.setDiskWriteIOs(0.0);
+            stats.setCPUUtilization(0.0);
             stats.setEntityType("vm");
         } else {
             LOGGER.debug("Retrieved new stats from " + vmName);

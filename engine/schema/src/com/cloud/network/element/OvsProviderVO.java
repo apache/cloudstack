@@ -68,7 +68,7 @@ public class OvsProviderVO implements OvsProvider {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

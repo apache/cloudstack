@@ -63,7 +63,7 @@ public class MockVolumeVO implements InternalIdentity {
     private VMTemplateStorageResourceAssoc.Status status;
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

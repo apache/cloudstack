@@ -22,7 +22,7 @@ public class OvsFetchInterfaceCommand extends Command {
     String label;
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 

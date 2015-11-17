@@ -29,7 +29,7 @@ public class PingStorageCommand extends PingCommand {
     protected PingStorageCommand() {
     }
 
-    public PingStorageCommand(Host.Type type, long id, Map<String, Boolean> changes) {
+    public PingStorageCommand(Host.Type type, Long id, Map<String, Boolean> changes) {
         super(type, id);
         this.changes = changes;
     }

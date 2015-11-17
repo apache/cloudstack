@@ -178,7 +178,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 String cpuUsed = null;
                 HostStats hostStats = ApiDBUtils.getHostStatistics(host.getId());
                 if (hostStats != null) {
-                    float cpuUtil = (float)hostStats.getCpuUtilization();
+                    double cpuUtil = hostStats.getCpuUtilization();
                     cpuUsed = decimalFormat.format(cpuUtil) + "%";
                     hostResponse.setCpuUsed(cpuUsed);
                     hostResponse.setMemoryUsed((new Double(hostStats.getUsedMemory())).longValue());
@@ -324,7 +324,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 String cpuUsed = null;
                 HostStats hostStats = ApiDBUtils.getHostStatistics(host.getId());
                 if (hostStats != null) {
-                    float cpuUtil = (float)hostStats.getCpuUtilization();
+                    double cpuUtil = hostStats.getCpuUtilization();
                     cpuUsed = decimalFormat.format(cpuUtil) + "%";
                     hostResponse.setCpuUsed(cpuUsed);
                     hostResponse.setMemoryUsed((new Double(hostStats.getUsedMemory())).longValue());

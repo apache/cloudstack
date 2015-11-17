@@ -32,7 +32,7 @@ public interface NicIpAlias extends ControlledEntity, Identity, InternalIdentity
     }
 
     @Override
-    long getId();
+    Long getId();
 
     long getNicId();
 

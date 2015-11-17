@@ -350,7 +350,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 
     @Override
     public StartupCommand[] initialize() {
-        StartupRoutingCommand cmd = new StartupRoutingCommand(0, 0, 0, 0, null, Hypervisor.HypervisorType.BareMetal,
+        StartupRoutingCommand cmd = new StartupRoutingCommand(0, 0l, 0l, 0l, null, Hypervisor.HypervisorType.BareMetal,
             new HashMap<String, String>());
 
         cmd.setDataCenter(_zone);

@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 public class StoragePoolWorkVO implements InternalIdentity {
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

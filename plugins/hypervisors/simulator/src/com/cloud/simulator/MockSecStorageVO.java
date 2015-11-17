@@ -47,7 +47,7 @@ public class MockSecStorageVO implements InternalIdentity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return this.id;
     }
 

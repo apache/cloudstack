@@ -23,7 +23,7 @@ import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataTO;
 
 public interface DataObject {
-    long getId();
+    Long getId();
 
     String getUri();
 

@@ -112,7 +112,7 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

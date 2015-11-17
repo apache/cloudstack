@@ -205,18 +205,18 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
             if (vmStats != null) {
                 userVmResponse.setCpuUsed(new DecimalFormat("#.##").format(vmStats.getCPUUtilization()) + "%");
 
-                userVmResponse.setNetworkKbsRead((long)vmStats.getNetworkReadKBs());
+                userVmResponse.setNetworkKbsRead(vmStats.getNetworkReadKBs().longValue());
 
-                userVmResponse.setNetworkKbsWrite((long)vmStats.getNetworkWriteKBs());
+                userVmResponse.setNetworkKbsWrite(vmStats.getNetworkWriteKBs().longValue());
 
                 if ((userVm.getHypervisorType() != null) && (userVm.getHypervisorType().equals(HypervisorType.KVM) || userVm.getHypervisorType().equals(HypervisorType.XenServer))) { // support KVM and XenServer only util 2013.06.25
-                    userVmResponse.setDiskKbsRead((long)vmStats.getDiskReadKBs());
+                    userVmResponse.setDiskKbsRead(vmStats.getDiskReadKBs().longValue());
 
-                    userVmResponse.setDiskKbsWrite((long)vmStats.getDiskWriteKBs());
+                    userVmResponse.setDiskKbsWrite(vmStats.getDiskWriteKBs().longValue());
 
-                    userVmResponse.setDiskIORead((long)vmStats.getDiskReadIOs());
+                    userVmResponse.setDiskIORead(vmStats.getDiskReadIOs().longValue());
 
-                    userVmResponse.setDiskIOWrite((long)vmStats.getDiskWriteIOs());
+                    userVmResponse.setDiskIOWrite(vmStats.getDiskWriteIOs().longValue());
                 }
             }
         }

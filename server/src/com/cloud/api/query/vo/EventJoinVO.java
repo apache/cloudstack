@@ -114,7 +114,7 @@ public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

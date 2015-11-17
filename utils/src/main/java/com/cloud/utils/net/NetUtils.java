@@ -1029,6 +1029,9 @@ public class NetUtils {
     public static String portRangeToString(final int portRange[]) {
         return Integer.toString(portRange[0]) + ":" + Integer.toString(portRange[1]);
     }
+    public static String portRangeToString(final Integer portRange[]) {
+        return portRange[0].toString() + ":" + portRange[1].toString();
+    }
 
     public static boolean verifyDomainNameLabel(final String hostName, final boolean isHostName) {
         // must be between 1 and 63 characters long and may contain only the ASCII letters 'a' through 'z' (in a

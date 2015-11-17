@@ -197,7 +197,7 @@ public abstract class AgentHookBase implements AgentHook {
             random.nextBytes(randomBytes);
             String storePassword = Base64.encodeBase64String(randomBytes);
 
-            byte[] ksBits = null;
+            Byte[] ksBits = null;
             String consoleProxyUrlDomain = _configDao.getValue(Config.ConsoleProxyUrlDomain.key());
             if (consoleProxyUrlDomain == null || consoleProxyUrlDomain.isEmpty()) {
                 s_logger.debug("SSL is disabled for console proxy based on global config, skip loading certificates");

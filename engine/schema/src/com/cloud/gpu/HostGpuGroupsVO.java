@@ -64,7 +64,7 @@ public class HostGpuGroupsVO implements InternalIdentity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 }

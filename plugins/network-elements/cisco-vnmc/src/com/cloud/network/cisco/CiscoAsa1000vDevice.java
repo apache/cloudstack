@@ -24,7 +24,7 @@ import com.cloud.org.Grouping;
 public interface CiscoAsa1000vDevice extends Grouping, InternalIdentity, Identity {
 
     @Override
-    long getId();
+    Long getId();
 
     @Override
     String getUuid();

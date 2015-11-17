@@ -88,7 +88,7 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return vmEntityVO.getId();
     }
 

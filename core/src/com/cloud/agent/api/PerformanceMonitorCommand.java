@@ -29,13 +29,13 @@ public class PerformanceMonitorCommand extends Command {
     public PerformanceMonitorCommand() {
     }
 
-    public PerformanceMonitorCommand(Map<String, String> params, int wait) {
+    public PerformanceMonitorCommand(Map<String, String> params, Integer wait) {
         setWait(wait);
         this.params = params;
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return false;
     }
 

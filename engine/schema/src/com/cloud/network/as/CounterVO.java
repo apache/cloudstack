@@ -93,7 +93,7 @@ public class CounterVO implements Counter, Identity, InternalIdentity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

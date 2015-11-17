@@ -629,7 +629,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
             Vlan vlan = _vlanDao.findById(sourceIp.getVlanId());
 
             StaticNatRuleTO ruleTO =
-                new StaticNatRuleTO(0, vlan.getVlanTag(), sourceIp.getAddress().addr(), -1, -1, rule.getDestIpAddress(), -1, -1, "any", rule.isForRevoke(), false);
+                new StaticNatRuleTO(0l, vlan.getVlanTag(), sourceIp.getAddress().addr(), -1, -1, rule.getDestIpAddress(), -1, -1, "any", rule.isForRevoke(), false);
             staticNatRules.add(ruleTO);
         }
 

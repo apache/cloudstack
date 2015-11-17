@@ -44,7 +44,7 @@ public class CheckOnHostCommandTest {
         };
 
         @Override
-        public long getId() {
+        public Long getId() {
             return 101L;
         };
 
@@ -128,7 +128,7 @@ public class CheckOnHostCommandTest {
         };
 
         @Override
-        public long getDataCenterId() {
+        public Long getDataCenterId() {
             return 17L;
         };
 
@@ -164,7 +164,7 @@ public class CheckOnHostCommandTest {
         };
 
         @Override
-        public long getTotalSize() {
+        public Long getTotalSize() {
             return 100000000000L;
         };
 
@@ -174,7 +174,7 @@ public class CheckOnHostCommandTest {
         };
 
         @Override
-        public long getLastPinged() {
+        public Long getLastPinged() {
             return 1L;
         };
 
@@ -250,7 +250,7 @@ public class CheckOnHostCommandTest {
         };
 
         @Override
-        public boolean isInMaintenanceStates() {
+        public Boolean isInMaintenanceStates() {
             return false;
         };
 

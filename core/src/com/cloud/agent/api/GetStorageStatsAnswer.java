@@ -27,21 +27,21 @@ public class GetStorageStatsAnswer extends Answer implements StorageStats {
     protected GetStorageStatsAnswer() {
     }
 
-    protected long used;
+    protected Long used;
 
-    protected long capacity;
+    protected Long capacity;
 
     @Override
-    public long getByteUsed() {
+    public Long getByteUsed() {
         return used;
     }
 
     @Override
-    public long getCapacityBytes() {
+    public Long getCapacityBytes() {
         return capacity;
     }
 
-    public GetStorageStatsAnswer(GetStorageStatsCommand cmd, long capacity, long used) {
+    public GetStorageStatsAnswer(GetStorageStatsCommand cmd, Long capacity, Long used) {
         super(cmd, true, null);
         this.capacity = capacity;
         this.used = used;

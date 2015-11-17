@@ -24,19 +24,19 @@ public class AttachIsoCommand extends Command {
     private String vmName;
     private String storeUrl;
     private String isoPath;
-    private boolean attach;
+    private Boolean attach;
 
     protected AttachIsoCommand() {
     }
 
-    public AttachIsoCommand(String vmName, String isoPath, boolean attach) {
+    public AttachIsoCommand(String vmName, String isoPath, Boolean attach) {
         this.vmName = vmName;
         this.isoPath = isoPath;
         this.attach = attach;
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 
@@ -48,7 +48,7 @@ public class AttachIsoCommand extends Command {
         return isoPath;
     }
 
-    public boolean isAttach() {
+    public Boolean isAttach() {
         return attach;
     }
 

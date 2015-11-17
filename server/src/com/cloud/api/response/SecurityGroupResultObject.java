@@ -67,7 +67,7 @@ public class SecurityGroupResultObject implements ControlledEntity, InternalIden
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

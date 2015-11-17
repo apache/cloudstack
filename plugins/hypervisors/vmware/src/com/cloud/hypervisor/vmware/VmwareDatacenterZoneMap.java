@@ -23,7 +23,7 @@ import com.cloud.org.Grouping;
 
 public interface VmwareDatacenterZoneMap extends Grouping, InternalIdentity {
     @Override
-    public long getId();
+    public Long getId();
 
     public long getZoneId();
 

@@ -222,7 +222,7 @@ public class TrafficSentinelResource implements ServerResource {
                         String publicIp = st.nextToken();
                         Long bytesSent = new Long(st.nextToken());
                         Long bytesRcvd = new Long(st.nextToken());
-                        long[] bytesSentAndReceived = new long[2];
+                        Long[] bytesSentAndReceived = new Long[2];
                         bytesSentAndReceived[0] = bytesSent;
                         bytesSentAndReceived[1] = bytesRcvd;
                         answer.put(publicIp, bytesSentAndReceived);

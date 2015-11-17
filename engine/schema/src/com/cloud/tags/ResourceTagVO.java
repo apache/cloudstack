@@ -114,7 +114,7 @@ public class ResourceTagVO implements ResourceTag {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

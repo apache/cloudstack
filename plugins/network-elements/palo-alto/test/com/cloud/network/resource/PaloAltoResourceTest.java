@@ -233,7 +233,7 @@ public class PaloAltoResourceTest {
         List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
         List<String> cidrList = new ArrayList<String>();
         cidrList.add("0.0.0.0/0");
-        FirewallRuleTO active = new FirewallRuleTO(8, null, "192.168.80.103", "tcp", 80, 80, false, false, FirewallRule.Purpose.Firewall, cidrList, null, null);
+        FirewallRuleTO active = new FirewallRuleTO(8l, null, "192.168.80.103", "tcp", 80, 80, false, false, FirewallRule.Purpose.Firewall, cidrList, null, null);
         rules.add(active);
 
         SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(rules);
@@ -261,7 +261,7 @@ public class PaloAltoResourceTest {
 
         long vlanId = 3954;
         List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
-        FirewallRuleTO revoked = new FirewallRuleTO(8, null, "192.168.80.103", "tcp", 80, 80, true, false, FirewallRule.Purpose.Firewall, null, null, null);
+        FirewallRuleTO revoked = new FirewallRuleTO(8l, null, "192.168.80.103", "tcp", 80, 80, true, false, FirewallRule.Purpose.Firewall, null, null, null);
         rules.add(revoked);
 
         SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(rules);
@@ -348,7 +348,7 @@ public class PaloAltoResourceTest {
 
         long vlanId = 3954;
         List<StaticNatRuleTO> rules = new ArrayList<StaticNatRuleTO>();
-        StaticNatRuleTO active = new StaticNatRuleTO(0, "192.168.80.103", null, null, "10.3.97.158", null, null, null, false, false);
+        StaticNatRuleTO active = new StaticNatRuleTO(0l, "192.168.80.103", null, null, "10.3.97.158", null, null, null, false, false);
         rules.add(active);
 
         SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rules, null);
@@ -376,7 +376,7 @@ public class PaloAltoResourceTest {
 
         long vlanId = 3954;
         List<StaticNatRuleTO> rules = new ArrayList<StaticNatRuleTO>();
-        StaticNatRuleTO revoked = new StaticNatRuleTO(0, "192.168.80.103", null, null, "10.3.97.158", null, null, null, true, false);
+        StaticNatRuleTO revoked = new StaticNatRuleTO(0l, "192.168.80.103", null, null, "10.3.97.158", null, null, null, true, false);
         rules.add(revoked);
 
         SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rules, null);

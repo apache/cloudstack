@@ -25,7 +25,7 @@ public abstract class AbstractDownloadCommand extends SsCommand {
 
     private String url;
     private ImageFormat format;
-    private long accountId;
+    private Long accountId;
     private String name;
 
     protected AbstractDownloadCommand() {
@@ -63,12 +63,12 @@ public abstract class AbstractDownloadCommand extends SsCommand {
         return format;
     }
 
-    public long getAccountId() {
+    public Long getAccountId() {
         return accountId;
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         return true;
     }
 

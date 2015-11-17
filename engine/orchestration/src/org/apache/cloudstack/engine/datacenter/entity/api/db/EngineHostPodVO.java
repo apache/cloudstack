@@ -44,7 +44,7 @@ import com.cloud.utils.db.StateMachine;
 public class EngineHostPodVO implements EnginePod, Identity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    long id;
+    Long id;
 
     @Column(name = "name")
     private String name = null;
@@ -119,7 +119,7 @@ public class EngineHostPodVO implements EnginePod, Identity {
     }
 
     @Override
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

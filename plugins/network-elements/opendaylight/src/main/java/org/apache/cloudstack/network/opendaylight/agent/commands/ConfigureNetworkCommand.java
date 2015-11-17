@@ -46,7 +46,7 @@ public class ConfigureNetworkCommand extends Command {
     }
 
     @Override
-    public boolean executeInSequence() {
+    public Boolean executeInSequence() {
         // TODO Auto-generated method stub
         return false;
     }

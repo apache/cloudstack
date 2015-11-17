@@ -24,7 +24,7 @@ public interface DataStore {
 
     DataStoreRole getRole();
 
-    long getId();
+    Long getId();
 
     String getUuid();
 
