@@ -353,6 +353,8 @@
                                 $('<option>').val(project.id).html(project.name)
                             );
 
+                            cloudStack.projects.projectSelect.trigger("chosen:updated");
+
                             $loading.remove();
 
                             // Confirmation
