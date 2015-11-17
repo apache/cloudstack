@@ -279,7 +279,7 @@
                 }
 
                 // Align width to main header
-                _medit.refreshItemWidths($multi);
+                //_medit.refreshItemWidths($multi);
 
                 if (data._hideFields &&
                     $.inArray(fieldName, data._hideFields) > -1) {
