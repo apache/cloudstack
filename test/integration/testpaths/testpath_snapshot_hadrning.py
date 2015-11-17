@@ -262,7 +262,6 @@ class TestSnapshotsHardning(cloudstackTestCase):
                 cls.testdata["account"],
                 domainid=cls.domain.id
             )
-            cls._cleanup.append(cls.account)
 
             # Create user api client of the account
             cls.userapiclient = testClient.getUserApiClient(
@@ -327,6 +326,8 @@ class TestSnapshotsHardning(cloudstackTestCase):
                 mode=cls.zone.networktype
             )
             cls._cleanup.append(cls.vm_ha)
+
+            cls._cleanup.append(cls.account)
             cls.root_volume_ha = list_volumes(
                 cls.userapiclient,
                 virtualmachineid=cls.vm_ha.id,
