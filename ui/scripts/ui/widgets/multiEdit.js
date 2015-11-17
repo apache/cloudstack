@@ -278,9 +278,6 @@
                     $td.addClass('blank');
                 }
 
-                // Align width to main header
-                //_medit.refreshItemWidths($multi);
-
                 if (data._hideFields &&
                     $.inArray(fieldName, data._hideFields) > -1) {
                     $td.addClass('disabled');
