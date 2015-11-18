@@ -535,6 +535,7 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.delete_nat_rules()
         self.check_master_status(1)
         self.do_vpc_test(True)
+        self.delete_public_ip()
 
         self.start_routers()
         self.add_nat_rules()
@@ -577,6 +578,14 @@ class TestVPCRedundancy(cloudstackTestCase):
                     vm.get_nat().delete(self.apiclient)
                     vm.set_nat(None)
 
+    def delete_public_ip(self):
+        for o in self.networks:
+            for vm in o.get_vms():
+                if vm.get_ip() is not None:
+                    vm.get_ip().delete(self.apiclient)
+                    vm.set_ip(None)
+                    vm.set_nat(None)
+
     def add_nat_rules(self):
         for o in self.networks:
             for vm in o.get_vms():
@@ -584,7 +593,6 @@ class TestVPCRedundancy(cloudstackTestCase):
                     vm.set_ip(self.acquire_publicip(o.get_net()))
                 if vm.get_nat() is None:
                     vm.set_nat(self.create_natrule(vm.get_vm(), vm.get_ip(), o.get_net()))
-                    time.sleep(5)
 
     def do_vpc_test(self, expectFail):
         retries = 5
