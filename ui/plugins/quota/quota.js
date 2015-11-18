@@ -30,7 +30,6 @@
           sectionSelect: {
               label: 'label.select-view',
               preFilter: function(args) {
-            	  console.log(args);
                   return ['summary', 'tariff', 'emailTemplates']; 
               }
           },
@@ -107,68 +106,74 @@
                               label: 'label.quota.statement.balance'
                           }],
                           actions: {
-                              addCredits: {
-                                  label: 'label.quota.add.credits',
-                                  messages: {
-                                      notification: function(args) {
-                                          return 'label.quota.add.credits';
-                                      }
-                                  },
-                                  action: function(args) {
-                                      var data = {
-                                                  account: args.context.statement[0].account,
-                                                  domainid: args.context.statement[0].domainid,
-                                                  value: 0,
-                                                  min_balance: 0,
-                                                  quota_enforce: false
-                                              };
+                    	  
+                    	  
 
-                                        var creditForm = cloudStack.dialog.createForm({
-                                          form: {
-                                              title: 'label.quota.add.credits',
-                                              fields: {
-                                                  value: {
-                                                      label: 'label.quota.credits',
-                                                      validation: {
-                                                          required: true
-                                                      }
-                                                  },
-                                                  min_balance: {
-                                                      label: 'label.quota.min_balance',
-                                                      validation: {
-                                                          required: true
-                                                      }
-                                                  },
-                                                  quota_enforce: {
-                                                      label: 'label.quota.quota_enforce',
-                                                      isBoolean: true,
-                                                      isChecked: false
-                                                  },
-                                              }
-                                          },
-                                          after: function(argsLocal) {
-                                              data.value = argsLocal.data.value;
-                                              data.min_balance = argsLocal.data.min_balance;
-                                              data.quota_enforce = argsLocal.data.quota_enforce;
-                                              $.ajax({
-                                                  url: createURL('quotaCredits'),
-                                                  data: data,
-                                                  type: "POST",
-                                                  success: function(json) {
-                                                      args.response.success({
-                                                          data: json.quotacreditsresponse.totalquota
-                                                      });
-                                                  },
-                                                  error: function(data) {
-                                                      cloudStack.dialog.notice({
-                                                          message: parseXMLHttpResponse(data)
-                                                      });
-                                                  }
-                                              });
-                                           }
-                                       });
-                                  } // function
-                              }, // add credits
+
+                             add: {
+                                label: 'label.quota.add.credits',
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'label.quota.add.credits';
+                                    },
+                                    notification: function(args) {
+                                        return 'label.quota.add.credits';
+                                    }
+                                },
+
+                                createForm: {
+                                    title: 'label.migrate.volume',
+                                    desc: '',
+                                    fields: {
+                                         value: {
+                                            label: 'label.quota.credits',
+                                            validation: {
+                                                required: true
+                                            }
+                                        },
+                                        min_balance: {
+                                            label: 'label.quota.minbalance',
+                                            validation: {
+                                                required: true
+                                            }
+                                        },
+                                        quota_enforce: {
+                                            label: 'label.quota.enforcequota',
+                                            isBoolean: true,
+                                            isChecked: false
+                                        },
+                                    }
+
+                                },
+
+                                action: function(args) {
+                                    console.log(args);
+                                    $.ajax({
+                                        url: createURL('quotaCredits'),
+                                        data: {
+                                            domainid: args.context.summary[0].domainid,
+                                            account: args.context.summary[0].account,
+                                            value: args.data.value,
+                                            min_balance: args.data.min_balance,
+                                            quota_enforce: args.data.quota_enforce
+                                        },
+                                        async: false,
+                                        type: "POST",
+                                        success: function(json) {
+                                            args.response.success({
+                                                data: json.quotacreditsresponse.totalquota
+                                            });
+                                        }
+                                    });
+                                    $(window).trigger('cloudStack.fullRefresh');
+                                 }
+                            },
+                            
+                            
+                              
+
+
+
                           },
                           tabs: {
                              details: {
@@ -186,7 +191,6 @@
                                         }
                                     }],
                                     dataProvider: function(args) {
-                                        console.log(args);
                                         $.ajax({
                                             url: createURL('quotaBalance'),
                                             dataType: 'json',
@@ -198,6 +202,7 @@
                                             success: function(json) {
                                                 var item = json.quotabalanceresponse.balance;
                                                 item.startdate = now.toJSON().slice(0,10);
+                                                item.startquota = item.currency + ' ' + item.startquota;
                                                 args.response.success({
                                                     data: item
                                                 });
@@ -261,7 +266,6 @@
                                         }
                                       },
                                      action: function(args) {
-                                	    console.log(args); 
                                 	    newstartdate= args.data.startdate.slice(0,10);
                                 	    newenddate= args.data.enddate.slice(0,10);
                                 	    $(window).trigger('cloudStack.fullRefresh');
@@ -294,10 +298,14 @@
                               success: function(json) {
                                   console.log(json);
                                   var usages = json.quotastatementresponse.statement.quotausage;
+                                  var currency = json.quotastatementresponse.statement.currency;
+                                  $.each(usages, function(idx, item) {
+                                	  usages[idx].quota = currency + ' ' + usages[idx].quota;
+                                  });
                                   usages.push({
                                         name: 'TOTAL',
                                         unit:'',
-                                        quota: json.quotastatementresponse.statement.totalquota
+                                        quota: currency + ' ' + json.quotastatementresponse.statement.totalquota
                                     });
                                   
                                   usages.unshift({
@@ -400,9 +408,10 @@
                                   console.log('quota balance');
                                   console.log(json);
                                   var bal = json.quotabalanceresponse.balance;
+                                  var currency = bal.currency;
                                   var array=[{
                                                date: bal.startdate.slice(0,10),
-                                               quota: bal.startquota,
+                                               quota: currency + ' ' + bal.startquota,
                                                credit: ''
                                   }];
                                   //now add all credits
@@ -410,12 +419,12 @@
                                         array.push({
                                             date: bal.credits[i].updated_on.slice(0,10),
                                             quota: '',
-                                            credit: bal.credits[i].credits
+                                            credit:  currency + ' ' + bal.credits[i].credits
                                         });
                                     }
                                   array.push({
                                             date: bal.enddate.slice(0,10),
-                                            quota: bal.endquota,
+                                            quota:  currency + ' ' + bal.endquota,
                                             credit: ''
                                         });
                                   args.response.success({
