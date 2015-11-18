@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 
 import javax.annotation.PostConstruct;
@@ -83,7 +85,10 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
             throws ConcurrentOperationException, InsufficientCapacityException {
 
         final TreeSet<String> publicVlans = new TreeSet<String>();
-        publicVlans.add(vpcRouterDeploymentDefinition.getSourceNatIP().getVlanTag());
+        if (vpcRouterDeploymentDefinition.isPublicNetwork()) {
+            publicVlans.add(vpcRouterDeploymentDefinition.getSourceNatIP()
+                                                         .getVlanTag());
+        }
 
         //1) allocate nic for control and source nat public ip
         final LinkedHashMap<Network, List<? extends NicProfile>> networks = configureDefaultNics(vpcRouterDeploymentDefinition);
@@ -115,42 +120,50 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
         final List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVpc(vpcId, false);
         final List<NicProfile> publicNics = new ArrayList<NicProfile>();
         Network publicNetwork = null;
-        for (final IPAddressVO ip : ips) {
-            final PublicIp publicIp = PublicIp.createFromAddrAndVlan(ip, _vlanDao.findById(ip.getVlanId()));
-            if ((ip.getState() == IpAddress.State.Allocated || ip.getState() == IpAddress.State.Allocating) && vpcMgr.isIpAllocatedToVpc(ip) &&
-                    !publicVlans.contains(publicIp.getVlanTag())) {
-                s_logger.debug("Allocating nic for router in vlan " + publicIp.getVlanTag());
-                final NicProfile publicNic = new NicProfile();
-                publicNic.setDefaultNic(false);
-                publicNic.setIPv4Address(publicIp.getAddress().addr());
-                publicNic.setIPv4Gateway(publicIp.getGateway());
-                publicNic.setIPv4Netmask(publicIp.getNetmask());
-                publicNic.setMacAddress(publicIp.getMacAddress());
-                publicNic.setBroadcastType(BroadcastDomainType.Vlan);
-                publicNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(publicIp.getVlanTag()));
-                publicNic.setIsolationUri(IsolationType.Vlan.toUri(publicIp.getVlanTag()));
-                final NetworkOffering publicOffering = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemPublicNetwork).get(0);
-                if (publicNetwork == null) {
-                    final List<? extends Network> publicNetworks = _networkMgr.setupNetwork(s_systemAccount, publicOffering, vpcRouterDeploymentDefinition.getPlan(), null, null, false);
-                    publicNetwork = publicNetworks.get(0);
-                }
-                publicNics.add(publicNic);
-                publicVlans.add(publicIp.getVlanTag());
-            }
-        }
-        if (publicNetwork != null) {
-            if (networks.get(publicNetwork) != null) {
-                @SuppressWarnings("unchecked")
-                final
-                List<NicProfile> publicNicProfiles = (List<NicProfile>)networks.get(publicNetwork);
-                publicNicProfiles.addAll(publicNics);
-                networks.put(publicNetwork, publicNicProfiles);
-            } else {
-                networks.put(publicNetwork, publicNics);
-            }
-        }
+        final Map<Network.Service, Set<Network.Provider>> vpcOffSvcProvidersMap = vpcMgr.getVpcOffSvcProvidersMap(vpcRouterDeploymentDefinition.getVpc().getVpcOfferingId());
+
+        boolean vpcIsStaticNatProvider = vpcOffSvcProvidersMap.get(Network.Service.StaticNat) != null &&
+                vpcOffSvcProvidersMap.get(Network.Service.StaticNat).contains(Network.Provider.VPCVirtualRouter);
 
         final ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(vpcRouterDeploymentDefinition.getServiceOfferingId());
+
+        for (final IPAddressVO ip : ips) {
+            if (vpcIsStaticNatProvider || !ip.isOneToOneNat()) {
+                final PublicIp publicIp = PublicIp.createFromAddrAndVlan(ip, _vlanDao.findById(ip.getVlanId()));
+                if ((ip.getState() == IpAddress.State.Allocated  || ip.getState() == IpAddress.State.Allocating)
+                        && vpcMgr.isIpAllocatedToVpc(ip)
+                        && !publicVlans.contains(publicIp.getVlanTag())) {
+                    s_logger.debug("Allocating nic for router in vlan " + publicIp.getVlanTag());
+                    final NicProfile publicNic = new NicProfile();
+                    publicNic.setDefaultNic(false);
+                    publicNic.setIPv4Address(publicIp.getAddress()
+                                                     .addr());
+                    publicNic.setIPv4Gateway(publicIp.getGateway());
+                    publicNic.setIPv4Netmask(publicIp.getNetmask());
+                    publicNic.setMacAddress(publicIp.getMacAddress());
+                    publicNic.setBroadcastType(BroadcastDomainType.Vlan);
+                    publicNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(publicIp.getVlanTag()));
+                    publicNic.setIsolationUri(IsolationType.Vlan.toUri(publicIp.getVlanTag()));
+                    final NetworkOffering publicOffering = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemPublicNetwork)
+                                                                        .get(0);
+                    if (publicNetwork == null) {
+                        final List<? extends Network> publicNetworks = _networkMgr.setupNetwork(s_systemAccount, publicOffering, vpcRouterDeploymentDefinition.getPlan(), null, null, false);
+                        publicNetwork = publicNetworks.get(0);
+                    }
+                    publicNics.add(publicNic);
+                    publicVlans.add(publicIp.getVlanTag());
+                }
+            }
+            if (publicNetwork != null) {
+                if (networks.get(publicNetwork) != null) {
+                    @SuppressWarnings("unchecked") final List<NicProfile> publicNicProfiles = (List<NicProfile>)networks.get(publicNetwork);
+                    publicNicProfiles.addAll(publicNics);
+                    networks.put(publicNetwork, publicNicProfiles);
+                } else {
+                    networks.put(publicNetwork, publicNics);
+                }
+            }
+        }
 
         _itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, vpcRouterDeploymentDefinition.getPlan(), hType);
     }
