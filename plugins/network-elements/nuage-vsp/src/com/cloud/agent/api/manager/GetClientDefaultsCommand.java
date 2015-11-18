@@ -17,18 +17,22 @@
 // under the License.
 //
 
-package com.cloud.agent.api.guru;
+package com.cloud.agent.api.manager;
 
-import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 
-public class TrashNetworkVspAnswer extends Answer {
+/**
+ * The super class implementations for equals and hashCode are acceptable because this class does not track any state
+ * in addition to the super class.
+ */
+public class GetClientDefaultsCommand extends Command {
 
-    public TrashNetworkVspAnswer(Command command, Exception e) {
-        super(command, e);
+    public GetClientDefaultsCommand() {
+        super();
     }
 
-    public TrashNetworkVspAnswer(TrashNetworkVspCommand cmd, boolean success, String details) {
-        super(cmd, success, details);
+    @Override
+    public boolean executeInSequence() {
+        return false;
     }
 }

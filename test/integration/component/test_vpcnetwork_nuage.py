@@ -14,33 +14,33 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
-""" P1 tests for NuageVsp network Plugin
+""" Tests for NuageNetwork VPC
 """
-# Import Local Modules
-from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase
+#Import Local Modules
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.lib.utils import (cleanup_resources)
 from marvin.cloudstackAPI import (listPhysicalNetworks,
                                   listNetworkServiceProviders,
                                   addNetworkServiceProvider,
-                                  deleteNetworkServiceProvider,
-                                  deleteNuageVspDevice,
                                   updateNetworkServiceProvider,
                                   addNuageVspDevice,
                                   destroyVirtualMachine)
-from marvin.lib.utils import (cleanup_resources)
-from marvin.lib.base import (Account,
-                             VirtualMachine,
+from marvin.lib.base import (VirtualMachine,
                              ServiceOffering,
+                             Account,
                              NetworkOffering,
-                             Network)
-from marvin.lib.common import (get_domain,
-                               get_zone,
-                               get_template)
+                             Network,
+                             VPC,
+                             VpcOffering,
+                             NetworkACL,
+                             NetworkACLList)
+from marvin.lib.common import (get_zone,
+                               get_domain,
+                               get_template,
+                               wait_for_cleanup,
+                               list_networks)
 
-import logging
-import unittest
-
+from nose.plugins.attrib import attr
 
 class Services:
 
@@ -48,7 +48,6 @@ class Services:
     """
 
     def __init__(self):
-        print "in __init__"
         self.services = {
             "account": {
                 "email": "cloudstack@cloudmonkey.com",
@@ -56,13 +55,13 @@ class Services:
                 "lastname": "bob",
                 "username": "admin",
                 "password": "password",
-            },
+                },
             "service_offering": {
                 "name": "Tiny Instance",
                 "displaytext": "Tiny Instance",
                 "cpunumber": 1,
                 "cpuspeed": 100,    # in MHz
-                                    "memory": 128,       # In MBs
+                "memory": 128,       # In MBs
             },
             "virtual_machine": {
                 "displayname": "TestVM",
@@ -73,8 +72,10 @@ class Services:
                 "privateport": 22,
                 "publicport": 22,
                 "protocol": 'TCP',
-            },
+                },
             "nuage_vsp_device": {
+                #"hostname": '192.168.0.7',
+                #"hostname": '10.31.43.226',
                 "hostname": '172.31.222.162',
                 "username": 'cloudstackuser1',
                 "password": 'cloudstackuser1',
@@ -83,30 +84,35 @@ class Services:
                 "retrycount": '4',
                 "retryinterval": '60'
             },
-            # services supported by Nuage for isolated networks.
-            "network_offering": {
-                "name": 'nuage_marvin',
-                "displaytext": 'nuage_marvin',
+            # services supported by Nuage for VPC networks.
+            "vpc_network_offering": {
+                "name": 'nuage_vpc_marvin',
+                "displaytext": 'nuage_vpc_marvin',
                 "guestiptype": 'Isolated',
-                "supportedservices":
-                'Dhcp,SourceNat,Connectivity,StaticNat,UserData,Firewall',
+                "supportedservices": 'UserData,Dhcp,SourceNat,StaticNat,NetworkACL,Connectivity',
                 "traffictype": 'GUEST',
-                "availability": 'Optional',
+                "useVpc": 'on',
                 "serviceProviderList": {
-                    "UserData": 'VirtualRouter',
-                    "Dhcp": 'NuageVsp',
-                    "Connectivity": 'NuageVsp',
-                    "StaticNat": 'NuageVsp',
-                    "SourceNat": 'NuageVsp',
-                    "Firewall": 'NuageVsp'
+                    "Dhcp": "NuageVsp",
+                    "SourceNat": "NuageVsp",
+                    "StaticNat": "NuageVsp",
+                    "NetworkACL": "NuageVsp",
+                    "UserData": "VpcVirtualRouter",
+                    "Connectivity": "NuageVsp"
                 },
                 "serviceCapabilityList": {
-                    "SourceNat": {"SupportedSourceNatTypes": "perzone"},
+                    "SourceNat": {"SupportedSourceNatTypes": "perzone"}
                 }
             },
-            "network": {
-                "name": "nuage",
-                "displaytext": "nuage",
+            "vpc": {
+                "name": "vpc-networkacl-nuage",
+                "displaytext": "vpc-networkacl-nuage",
+                "cidr": '10.1.0.0/16'
+            },
+            "vpcnetwork": {
+                "name": "nuagevpcnetwork",
+                "displaytext": "nuagevpcnetwork",
+                "netmask": '255.255.255.128'
             },
             "ostype": 'CentOS 5.5 (64-bit)',
             "sleep": 60,
@@ -114,13 +120,12 @@ class Services:
         }
 
 
-class TestNuageVsp(cloudstackTestCase):
+class TestVpcNetworkNuage(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        print "In setup class"
         cls._cleanup = []
-        cls.testClient = super(TestNuageVsp, cls).getClsTestClient()
+        cls.testClient = super(TestVpcNetworkNuage, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
         cls.services = Services().services
@@ -152,7 +157,7 @@ class TestNuageVsp(cloudstackTestCase):
                 resp)
             if not isinstance(nw_service_providers, list):
                 # create network service provider and add nuage vsp device
-                resp_add_nsp =\
+                resp_add_nsp = \
                     addNetworkServiceProvider.addNetworkServiceProviderCmd()
                 resp_add_nsp.name = 'NuageVsp'
                 resp_add_nsp.physicalnetworkid = physical_network.id
@@ -169,14 +174,14 @@ class TestNuageVsp(cloudstackTestCase):
                 resp_add_device.hostname = cls.nuage_services["hostname"]
                 resp_add_device.port = cls.nuage_services["port"]
                 resp_add_device.apiversion = cls.nuage_services[
-                   "apiversion"]
+                    "apiversion"]
                 resp_add_device.retrycount = cls.nuage_services[
                     "retrycount"]
                 resp_add_device.retryinterval = cls.nuage_services[
                     "retryinterval"]
                 cls.nuage = cls.api_client.addNuageVspDevice(
                     resp_add_device)
-                #Enable NuageVsp NSP 
+                #Enable NuageVsp NSP
                 cls.debug("NuageVsp NSP ID : %s" % nw_service_providers[0].id)
                 resp_up_nsp = \
                     updateNetworkServiceProvider.updateNetworkServiceProviderCmd()
@@ -186,8 +191,8 @@ class TestNuageVsp(cloudstackTestCase):
 
             cls.network_offering = NetworkOffering.create(
                 cls.api_client,
-                cls.services["network_offering"],
-                conservemode=True
+                cls.services["vpc_network_offering"],
+                conservemode=False
             )
             cls._cleanup.append(cls.network_offering)
 
@@ -204,6 +209,62 @@ class TestNuageVsp(cloudstackTestCase):
             raise unittest.SkipTest("Unable to add VSP device")
         return
 
+    @attr(tags=["advanced"])
+    def test_vpcnetwork_nuage(self):
+        """Test network VPC for Nuage"""
+
+        # 1) Create VPC with Nuage VPC offering
+        vpcOffering = VpcOffering.list(self.apiclient,name="Nuage VSP VPC offering")
+        self.assert_(vpcOffering is not None and len(vpcOffering)>0, "Nuage VPC offering not found")
+        vpc = VPC.create(
+                apiclient=self.apiclient,
+                services=self.services["vpc"],
+                networkDomain="vpc.networkacl",
+                vpcofferingid=vpcOffering[0].id,
+                zoneid=self.zone.id,
+                account=self.account.name,
+                domainid=self.account.domainid
+        )
+        self.assert_(vpc is not None, "VPC creation failed")
+
+        # 2) Create ACL
+        aclgroup = NetworkACLList.create(apiclient=self.apiclient, services={}, name="acl", description="acl", vpcid=vpc.id)
+        self.assertIsNotNone(aclgroup, "Failed to create NetworkACL list")
+        self.debug("Created a network ACL list %s" % aclgroup.name)
+
+        # 3) Create ACL Item
+        aclitem = NetworkACL.create(apiclient=self.apiclient, services={},
+            protocol="TCP", number="10", action="Deny", aclid=aclgroup.id, cidrlist=["0.0.0.0/0"])
+        self.assertIsNotNone(aclitem, "Network failed to aclItem")
+        self.debug("Added a network ACL %s to ACL list %s" % (aclitem.id, aclgroup.name))
+
+        # 4) Create network with ACL
+        nwNuage = Network.create(
+            self.apiclient,
+            self.services["vpcnetwork"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            networkofferingid=self.network_offering.id,
+            zoneid=self.zone.id,
+            vpcid=vpc.id,
+            aclid=aclgroup.id,
+            gateway='10.1.0.1'
+        )
+        self.debug("Network %s created in VPC %s" %(nwNuage.id, vpc.id))
+
+        # 5) Deploy a vm
+        vm = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            networkids=[str(nwNuage.id)]
+        )
+        self.assert_(vm is not None, "VM failed to deploy")
+        self.assert_(vm.state == 'Running', "VM is not running")
+        self.debug("VM %s deployed in VPC %s" %(vm.id, vpc.id))
+
     @classmethod
     def tearDownClass(cls):
         try:
@@ -211,7 +272,6 @@ class TestNuageVsp(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
-
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -225,7 +285,6 @@ class TestNuageVsp(cloudstackTestCase):
         self.cleanup = [self.account]
         return
 
-
     def tearDown(self):
         try:
             self.debug("Cleaning up the resources")
@@ -233,102 +292,4 @@ class TestNuageVsp(cloudstackTestCase):
             self.debug("Cleanup complete!")
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
-
-    @attr(tags=["advanced"])
-    def test_network_vsp(self):
-        """Test nuage Network and VM Creation
-        """
-
-        self.debug("Creating network with network offering: %s" %
-                   self.network_offering.id)
-        self.network = Network.create(
-            self.apiclient,
-            self.services["network"],
-            accountid=self.account.name,
-            domainid=self.account.domainid,
-            networkofferingid=self.network_offering.id,
-            zoneid=self.zone.id,
-            gateway = "10.1.1.1",
-            netmask = '255.255.255.0'
-        )
-        self.debug("Created network with ID: %s" % self.network.id)
-
-        self.debug("Deploying VM in account: %s" % self.account.name)
-
-        virtual_machine_1 = VirtualMachine.create(
-            self.apiclient,
-            self.services["virtual_machine"],
-            accountid=self.account.name,
-            domainid=self.account.domainid,
-            serviceofferingid=self.service_offering.id,
-            networkids=[str(self.network.id)]
-        )
-        self.debug("Deployed VM in network: %s" % self.network.id)
-        list_vm_response = VirtualMachine.list(
-            self.apiclient,
-            id=virtual_machine_1.id
-        )
-
-        self.debug(
-            "Verify listVirtualMachines response for virtual machine: %s"
-            % virtual_machine_1.id
-        )
-
-        self.assertEqual(
-            isinstance(list_vm_response, list),
-            True,
-            "Check list response returns a valid list"
-        )
-        vm_response = list_vm_response[0]
-
-        self.assertEqual(
-            vm_response.state,
-            "Running",
-            "VM state should be running after deployment"
-        )
-
-        self.debug("Deploying another VM in account: %s" %
-                   self.account.name)
-
-        virtual_machine_2 = VirtualMachine.create(
-            self.apiclient,
-            self.services["virtual_machine"],
-            accountid=self.account.name,
-            domainid=self.account.domainid,
-            serviceofferingid=self.service_offering.id,
-            networkids=[str(self.network.id)]
-        )
-        self.debug("Deployed VM in network: %s" % self.network.id)
-        list_vm_response = VirtualMachine.list(
-            self.apiclient,
-            id=virtual_machine_2.id
-        )
-
-        self.debug(
-            "Verify listVirtualMachines response for virtual machine: %s"
-            % virtual_machine_2.id
-        )
-
-        self.assertEqual(
-            isinstance(list_vm_response, list),
-            True,
-            "Check list response returns a valid list"
-        )
-        vm_response = list_vm_response[0]
-
-        self.assertEqual(
-            vm_response.state,
-            "Running",
-            "VM state should be running after deployment"
-        )
-
-        VirtualMachine.delete(virtual_machine_1, self.apiclient, expunge=True)
-
-        # # Deleting a single VM
-        VirtualMachine.delete(virtual_machine_2, self.apiclient, expunge=True)
-
-        # Delete Network
-        Network.delete(self.network, self.apiclient)
-
         return

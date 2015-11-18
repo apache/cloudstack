@@ -99,6 +99,14 @@ public class VpcOfferingVO implements VpcOffering {
         this.redundantRouter = redundantRouter;
     }
 
+    public VpcOfferingVO(String name, String displayText, boolean isDefault, Long serviceOfferingId,
+                         boolean supportsDistributedRouter, boolean offersRegionLevelVPC) {
+        this(name, displayText, serviceOfferingId);
+        this.isDefault = isDefault;
+        this.supportsDistributedRouter = supportsDistributedRouter;
+        this.offersRegionLevelVPC = offersRegionLevelVPC;
+    }
+
     @Override
     public long getId() {
         return id;

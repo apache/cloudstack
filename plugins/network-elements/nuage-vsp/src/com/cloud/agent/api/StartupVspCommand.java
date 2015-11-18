@@ -21,9 +21,14 @@ package com.cloud.agent.api;
 
 import com.cloud.host.Host;
 
+/**
+ * The super class implementations for equals and hashCode are acceptable because this class does not track any state
+ * in addition to the super class.
+ */
 public class StartupVspCommand extends StartupCommand {
 
     public StartupVspCommand() {
         super(Host.Type.L2Networking);
     }
+
 }

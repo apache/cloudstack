@@ -19,20 +19,18 @@
 
 package com.cloud.network.sync;
 
-import java.util.List;
-
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.sync.SyncVspAnswer;
+import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.sync.SyncVspCommand;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.NuageVspDeviceVO;
 import com.cloud.network.dao.NuageVspDao;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
+import java.util.List;
 
 @Component
 public class NuageVspSyncImpl implements NuageVspSync {
@@ -52,20 +50,15 @@ public class NuageVspSyncImpl implements NuageVspSync {
         //entities
         List<NuageVspDeviceVO> nuageVspDevices = _nuageVspDao.listAll();
         for (NuageVspDeviceVO nuageVspDevice : nuageVspDevices) {
-
-            try {
-                HostVO nuageVspHost = _hostDao.findById(nuageVspDevice.getHostId());
-                _hostDao.loadDetails(nuageVspHost);
-                SyncVspCommand cmd = new SyncVspCommand(nuageVspEntity);
-                SyncVspAnswer answer = (SyncVspAnswer)_agentMgr.easySend(nuageVspHost.getId(), cmd);
-                if (answer == null || !answer.getResult()) {
-                    s_logger.error("SyncNuageVspCommand for Nuage VSP Host " + nuageVspHost.getUuid() + " failed");
-                    if ((null != answer) && (null != answer.getDetails())) {
-                        s_logger.error(answer.getDetails());
-                    }
+            HostVO nuageVspHost = _hostDao.findById(nuageVspDevice.getHostId());
+            _hostDao.loadDetails(nuageVspHost);
+            SyncVspCommand cmd = new SyncVspCommand(nuageVspEntity);
+            Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmd);
+            if (answer == null || !answer.getResult()) {
+                s_logger.error("SyncNuageVspCommand for Nuage VSP Host " + nuageVspHost.getUuid() + " failed");
+                if ((null != answer) && (null != answer.getDetails())) {
+                    s_logger.error(answer.getDetails());
                 }
-            } catch (Exception e) {
-                s_logger.warn("Failed to clean up " + nuageVspEntity + " in Vsp " + e.getMessage());
             }
         }
     }

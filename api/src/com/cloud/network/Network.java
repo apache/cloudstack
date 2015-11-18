@@ -134,7 +134,6 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Provider Opendaylight = new Provider("Opendaylight", false);
         // add Nuage Vsp Providers
         public static final Provider NuageVsp = new Provider("NuageVsp", false);
-        public static final Provider NuageVspVpc = new Provider("NuageVspVpc", false);
         public static final Provider BrocadeVcs = new Provider("BrocadeVcs", false);
         // add GloboDns provider
         public static final Provider GloboDns = new Provider("GloboDns", true);

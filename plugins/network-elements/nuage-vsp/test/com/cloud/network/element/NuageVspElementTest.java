@@ -19,35 +19,10 @@
 
 package com.cloud.network.element;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-
-import javax.naming.ConfigurationException;
-
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.element.ApplyAclRuleVspAnswer;
-import com.cloud.agent.api.element.ApplyStaticNatVspAnswer;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.CloudException;
@@ -64,11 +39,20 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.NuageVspDeviceVO;
+import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NuageVspDao;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.manager.NuageVspManager;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -76,6 +60,31 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.user.Account;
 import com.cloud.vm.ReservationContext;
+import com.google.common.collect.Lists;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+
+import javax.naming.ConfigurationException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
+import static com.cloud.network.manager.NuageVspManager.NuageVspIsolatedNetworkDomainTemplateName;
+import static com.cloud.network.manager.NuageVspManager.NuageVspSharedNetworkDomainTemplateName;
+import static com.cloud.network.manager.NuageVspManager.NuageVspVpcDomainTemplateName;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class NuageVspElementTest {
 
@@ -90,8 +99,13 @@ public class NuageVspElementTest {
     DomainDao domainDao = mock(DomainDao.class);
     NetworkOfferingDao ntwkOfferingDao = mock(NetworkOfferingDao.class);
     NetworkOfferingServiceMapDao ntwkOfferingSrvcDao = mock(NetworkOfferingServiceMapDao.class);
+    ConfigurationDao configDao = mock(ConfigurationDao.class);
+    NuageVspManager nuageVspManager = mock(NuageVspManager.class);
+    FirewallRulesDao firewallRulesDao = mock(FirewallRulesDao.class);
+    IPAddressDao ipAddressDao = mock(IPAddressDao.class);
+    PhysicalNetworkDao physNetDao = mock(PhysicalNetworkDao.class);
 
-    Answer<Object> genericAnswer = new Answer<Object>() {
+    org.mockito.stubbing.Answer<Object> genericAnswer = new org.mockito.stubbing.Answer<Object>() {
         public Object answer(InvocationOnMock invocation) {
             return null;
         }
@@ -108,15 +122,23 @@ public class NuageVspElementTest {
         element._ntwkOfferingSrvcDao = ntwkOfferingSrvcDao;
         element._domainDao = domainDao;
         element._ntwkOfferingDao = ntwkOfferingDao;
+        element._configDao = configDao;
+        element._nuageVspManager = nuageVspManager;
+        element._firewallRulesDao = firewallRulesDao;
+        element._ipAddressDao = ipAddressDao;
+        element._physicalNetworkDao = physNetDao;
 
         // Standard responses
         when(networkModel.isProviderForNetwork(Provider.NuageVsp, NETWORK_ID)).thenReturn(true);
+        when(configDao.getValue(NuageVspIsolatedNetworkDomainTemplateName.key())).thenReturn("IsolatedDomainTemplate");
+        when(configDao.getValue(NuageVspVpcDomainTemplateName.key())).thenReturn("VpcDomainTemplate");
+        when(configDao.getValue(NuageVspSharedNetworkDomainTemplateName.key())).thenReturn("SharedDomainTemplate");
 
         element.configure("NuageVspTestElement", Collections.<String, Object> emptyMap());
     }
 
     @Test
-    public void testCcanHandle() {
+    public void testCanHandle() {
         final Network net = mock(Network.class);
         when(net.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Vsp);
         when(net.getId()).thenReturn(NETWORK_ID);
@@ -150,7 +172,10 @@ public class NuageVspElementTest {
         final Network network = mock(Network.class);
         when(network.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Vsp);
         when(network.getId()).thenReturn(NETWORK_ID);
+        when(network.getVpcId()).thenReturn(null);
         when(network.getBroadcastUri()).thenReturn(new URI(""));
+        when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
+        when(network.getDomainId()).thenReturn(NETWORK_ID);
         when(networkModel.isProviderForNetwork(Provider.NuageVsp, NETWORK_ID)).thenReturn(true);
         when(ntwkSrvcDao.canProviderSupportServiceInNetwork(NETWORK_ID, Service.Connectivity, Provider.NuageVsp)).thenReturn(true);
 
@@ -161,13 +186,26 @@ public class NuageVspElementTest {
 
         DeployDestination deployDest = mock(DeployDestination.class);
 
-        final Domain dom = mock(Domain.class);
+        final DomainVO dom = mock(DomainVO.class);
         when(dom.getName()).thenReturn("domain");
+        when(domainDao.findById(NETWORK_ID)).thenReturn(dom);
         final Account acc = mock(Account.class);
         when(acc.getAccountName()).thenReturn("accountname");
         final ReservationContext context = mock(ReservationContext.class);
         when(context.getDomain()).thenReturn(dom);
         when(context.getAccount()).thenReturn(acc);
+
+        final HostVO host = mock(HostVO.class);
+        when(host.getId()).thenReturn(NETWORK_ID);
+        final NuageVspDeviceVO nuageVspDevice = mock(NuageVspDeviceVO.class);
+        when(nuageVspDevice.getHostId()).thenReturn(NETWORK_ID);
+        when(nuageVspDao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NuageVspDeviceVO[] {nuageVspDevice}));
+        when(hostDao.findById(NETWORK_ID)).thenReturn(host);
+
+        when(firewallRulesDao.listByNetworkPurposeTrafficType(NETWORK_ID, FirewallRule.Purpose.Firewall, FirewallRule.TrafficType.Ingress)).thenReturn(new ArrayList<FirewallRuleVO>());
+        when(firewallRulesDao.listByNetworkPurposeTrafficType(NETWORK_ID, FirewallRule.Purpose.Firewall, FirewallRule.TrafficType.Egress)).thenReturn(new ArrayList<FirewallRuleVO>());
+        when(ipAddressDao.listStaticNatPublicIps(NETWORK_ID)).thenReturn(new ArrayList<IPAddressVO>());
+        when(nuageVspManager.getDnsDetails(network)).thenReturn(new ArrayList<String>());
 
         assertTrue(element.implement(network, offering, deployDest, context));
     }
@@ -215,7 +253,7 @@ public class NuageVspElementTest {
         when(hostDao.findById(NETWORK_ID)).thenReturn(host);
 
         when(domainDao.findById(NETWORK_ID)).thenReturn(mock(DomainVO.class));
-        final ApplyStaticNatVspAnswer answer = mock(ApplyStaticNatVspAnswer.class);
+        final Answer answer = mock(Answer.class);
         when(answer.getResult()).thenReturn(true);
         when(agentManager.easySend(eq(NETWORK_ID), (Command)any())).thenReturn(answer);
         assertTrue(element.applyStaticNats(network, new ArrayList<StaticNat>()));
@@ -244,7 +282,7 @@ public class NuageVspElementTest {
 
         when(domainDao.findById(NETWORK_ID)).thenReturn(mock(DomainVO.class));
 
-        final ApplyAclRuleVspAnswer answer = mock(ApplyAclRuleVspAnswer.class);
+        final Answer answer = mock(Answer.class);
         when(answer.getResult()).thenReturn(true);
         when(agentManager.easySend(eq(NETWORK_ID), (Command)any())).thenReturn(answer);
         assertTrue(element.applyFWRules(network, new ArrayList<FirewallRule>()));
@@ -272,9 +310,44 @@ public class NuageVspElementTest {
         when(hostDao.findById(NETWORK_ID)).thenReturn(host);
 
         when(domainDao.findById(NETWORK_ID)).thenReturn(mock(DomainVO.class));
-        final ApplyAclRuleVspAnswer answer = mock(ApplyAclRuleVspAnswer.class);
+        final Answer answer = mock(Answer.class);
         when(answer.getResult()).thenReturn(true);
         when(agentManager.easySend(eq(NETWORK_ID), (Command)any())).thenReturn(answer);
         assertTrue(element.applyNetworkACLs(network, new ArrayList<NetworkACLItem>()));
+    }
+
+    @Test
+    public void testShutdownVpc() throws Exception {
+        final Vpc vpc = mock(Vpc.class);
+        when(vpc.getUuid()).thenReturn("aaaaaa");
+        when(vpc.getState()).thenReturn(Vpc.State.Inactive);
+        when(vpc.getDomainId()).thenReturn(NETWORK_ID);
+        when(vpc.getZoneId()).thenReturn(NETWORK_ID);
+
+        final DomainVO dom = mock(DomainVO.class);
+        when(dom.getName()).thenReturn("domain");
+        when(domainDao.findById(NETWORK_ID)).thenReturn(dom);
+        final Account acc = mock(Account.class);
+        when(acc.getAccountName()).thenReturn("accountname");
+        final ReservationContext context = mock(ReservationContext.class);
+        when(context.getDomain()).thenReturn(dom);
+        when(context.getAccount()).thenReturn(acc);
+
+        PhysicalNetworkVO physNet = mock(PhysicalNetworkVO.class);
+        when(physNet.getIsolationMethods()).thenReturn(Lists.newArrayList(PhysicalNetwork.IsolationMethod.VSP.name()));
+        when(physNet.getId()).thenReturn(NETWORK_ID);
+        when(physNetDao.listByZone(NETWORK_ID)).thenReturn(Lists.newArrayList(physNet));
+
+        final HostVO host = mock(HostVO.class);
+        when(host.getId()).thenReturn(NETWORK_ID);
+        final NuageVspDeviceVO nuageVspDevice = mock(NuageVspDeviceVO.class);
+        when(nuageVspDevice.getHostId()).thenReturn(NETWORK_ID);
+        when(nuageVspDao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NuageVspDeviceVO[] {nuageVspDevice}));
+        when(hostDao.findById(NETWORK_ID)).thenReturn(host);
+
+        final Answer answer = mock(Answer.class);
+        when(answer.getResult()).thenReturn(true);
+        when(agentManager.easySend(eq(NETWORK_ID), (Command)any())).thenReturn(answer);
+        assertTrue(element.shutdownVpc(vpc, context));
     }
 }

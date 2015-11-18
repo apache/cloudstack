@@ -20,10 +20,9 @@
 package com.cloud.api.response;
 
 import com.cloud.api.commands.VspConstants;
-import org.apache.cloudstack.api.BaseResponse;
-
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+import org.apache.cloudstack.api.BaseResponse;
 
 public class NuageVspResourceResponse extends BaseResponse {
     @SerializedName(VspConstants.NUAGE_VSP_API_RESOURCE_INFO)

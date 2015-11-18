@@ -434,6 +434,7 @@ public class EventTypes {
 
     // external network mapping events
     public static final String EVENT_EXTERNAL_VSP_VSD_ADD = "PHYSICAL.NUAGE.VSD.ADD";
+    public static final String EVENT_EXTERNAL_VSP_VSD_UPDATE = "PHYSICAL.NUAGE.VSD.UPDATE";
     public static final String EVENT_EXTERNAL_VSP_VSD_DELETE = "PHYSICAL.NUAGE.VSD.DELETE";
     // AutoScale
     public static final String EVENT_COUNTER_CREATE = "COUNTER.CREATE";

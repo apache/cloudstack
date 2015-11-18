@@ -459,6 +459,14 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     }
 
     @Override
+    public IPAddressVO findByVmIdAndNetworkId(long networkId, long vmId) {
+        SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("associatedWithVmId", vmId);
+        return findOneBy(sc);
+    }
+
+    @Override
     public void lockRange(long vlandbId) {
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("vlan", vlandbId);

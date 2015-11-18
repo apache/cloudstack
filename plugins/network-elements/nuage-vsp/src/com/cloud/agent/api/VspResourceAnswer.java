@@ -21,7 +21,7 @@ package com.cloud.agent.api;
 
 public class VspResourceAnswer extends Answer {
 
-    String _resourceInfo;
+    private String _resourceInfo;
 
     public VspResourceAnswer(Command cmd, String resourceInfo, String details) {
         super(cmd, true, details);
@@ -38,5 +38,23 @@ public class VspResourceAnswer extends Answer {
 
     public String getResourceInfo() {
         return this._resourceInfo;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        VspResourceAnswer that = (VspResourceAnswer) o;
+
+        if (_resourceInfo != null ? !_resourceInfo.equals(that._resourceInfo) : that._resourceInfo != null)
+            return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return _resourceInfo != null ? _resourceInfo.hashCode() : 0;
     }
 }

@@ -17,18 +17,8 @@
 // under the License.
 //
 
-package com.cloud.agent.api.element;
+package com.cloud.agent.api;
 
-import com.cloud.agent.api.Answer;
-
-public class ApplyAclRuleVspAnswer extends Answer {
-
-    public ApplyAclRuleVspAnswer(ApplyAclRuleVspCommand cmd, boolean success, String details) {
-        super(cmd, success, details);
-    }
-
-    public ApplyAclRuleVspAnswer(ApplyAclRuleVspCommand cmd, Exception e) {
-        super(cmd, e);
-    }
-
+public interface CmdBuilder<T> {
+    T build();
 }

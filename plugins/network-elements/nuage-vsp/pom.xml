@@ -28,6 +28,13 @@
     <version>4.7.0-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>${cs.lang3.version}</version>
+    </dependency>
+  </dependencies>
   <build>
     <plugins>
       <plugin>

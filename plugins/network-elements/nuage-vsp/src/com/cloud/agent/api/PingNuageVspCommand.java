@@ -17,38 +17,40 @@
 // under the License.
 //
 
-package com.cloud.agent.api.guru;
+package com.cloud.agent.api;
 
-import com.cloud.agent.api.Command;
+import com.cloud.host.Host;
 
-public class ReleaseVmVspCommand extends Command {
+public class PingNuageVspCommand extends PingCommand {
 
-    String _networkUuid;
-    String _vmUuid;
-    String _vmInstanceName;
+    private final boolean shouldAudit;
 
-    public ReleaseVmVspCommand(String networkUuid, String vmUuid, String vmInstanceName) {
-        super();
-        this._networkUuid = networkUuid;
-        this._vmUuid = vmUuid;
-        this._vmInstanceName = vmInstanceName;
+    public PingNuageVspCommand(Host.Type type, long id, boolean shouldAudit) {
+        super(type, id);
+        this.shouldAudit = shouldAudit;
     }
 
-    public String getNetworkUuid() {
-        return _networkUuid;
-    }
-
-    public String getVmUuid() {
-        return _vmUuid;
-    }
-
-    public String getVmInstanceName() {
-        return _vmInstanceName;
+    public boolean shouldAudit() {
+        return shouldAudit;
     }
 
     @Override
-    public boolean executeInSequence() {
-        return false;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof PingNuageVspCommand)) return false;
+        if (!super.equals(o)) return false;
+
+        PingNuageVspCommand that = (PingNuageVspCommand) o;
+
+        if (shouldAudit != that.shouldAudit) return false;
+
+        return true;
     }
 
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (shouldAudit ? 1 : 0);
+        return result;
+    }
 }

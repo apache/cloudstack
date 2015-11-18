@@ -17,28 +17,26 @@
 // under the License.
 //
 
-package com.cloud.agent.api.guru;
+package net.nuage.vsp.acs.client;
 
-import java.util.List;
+import org.apache.commons.lang3.tuple.Pair;
+
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
+public interface NuageVspManagerClient {
 
-public class ReserveVmInterfaceVspAnswer extends Answer {
+    Pair<Boolean, String> auditNuageVspCmsId(String nuageVspCmsId, boolean auditOnly) throws ExecutionException;
 
-    public List<Map<String, String>> _interfaceDetails;
+    String registerNuageVspCmsId() throws ExecutionException;
 
-    public ReserveVmInterfaceVspAnswer(Command cmd, List<Map<String, String>> interfaceDetails, String details) {
-        super(cmd, true, details);
-        this._interfaceDetails = interfaceDetails;
-    }
+    boolean unregisterNuageVspCmsId(String nuageVspCmsId) throws ExecutionException;
 
-    public ReserveVmInterfaceVspAnswer(Command cmd, Exception e) {
-        super(cmd, e);
-    }
+    boolean isSupportedApiVersion(String version);
 
-    public List<Map<String, String>> getInterfaceDetails() {
-        return this._interfaceDetails;
-    }
+    Map<String, Object> getClientDefaults() throws ExecutionException;
+
+    boolean syncDomainWithNuageVsp(String domainUuid, String domainName, String domainPath, boolean add, boolean remove) throws ExecutionException;
+
+    <C extends NuageVspApiClient> void setNuageVspApiClient(NuageVspApiClient nuageVspApiClient);
 }
