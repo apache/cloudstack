@@ -37,6 +37,7 @@ import com.cloud.agent.api.StartupNiciraNvpCommand;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.network.nicira.ControlClusterStatus;
+import com.cloud.network.nicira.ControlClusterStatus.ClusterRoleConfig;
 import com.cloud.network.nicira.DestinationNatRule;
 import com.cloud.network.nicira.Match;
 import com.cloud.network.nicira.NatRule;
@@ -47,6 +48,7 @@ import com.cloud.network.utils.CommandRetryUtility;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.rest.CloudstackRESTException;
 import com.cloud.utils.rest.HttpClientHelper;
+import com.cloud.utils.nicira.nvp.plugin.NiciraNvpApiVersion;
 
 public class NiciraNvpResource implements ServerResource {
 
@@ -172,6 +174,7 @@ public class NiciraNvpResource implements ServerResource {
     public PingCommand getCurrentStatus(final long id) {
         try {
             final ControlClusterStatus ccs = niciraNvpApi.getControlClusterStatus();
+            getApiProviderMajorityVersion(ccs);
             if (!"stable".equals(ccs.getClusterStatus())) {
                 s_logger.error("ControlCluster state is not stable: " + ccs.getClusterStatus());
                 return null;
@@ -181,6 +184,24 @@ public class NiciraNvpResource implements ServerResource {
             return null;
         }
         return new PingCommand(Host.Type.L2Networking, id);
+    }
+
+    private void getApiProviderMajorityVersion(ControlClusterStatus ccs) {
+        ClusterRoleConfig[] configuredRoles = ccs.getConfiguredRoles();
+        if (configuredRoles != null){
+            String apiProviderMajorityVersion = searchApiProvider(configuredRoles);
+            NiciraNvpApiVersion.setNiciraApiVersion(apiProviderMajorityVersion);
+            NiciraNvpApiVersion.logNiciraApiVersion();
+        }
+    }
+
+    private String searchApiProvider(ClusterRoleConfig[] configuredRoles) {
+        for (int i = 0; i < configuredRoles.length; i++) {
+            if (configuredRoles[i].getRole() != null && configuredRoles[i].getRole().equals("api_provider")){
+                return configuredRoles[i].getMajorityVersion();
+            }
+        }
+        return null;
     }
 
     @Override

@@ -131,7 +131,7 @@ public class VirtualDiskManagerMO extends BaseMO {
 
     public void moveVirtualDisk(String srcName, ManagedObjectReference morSrcDc, String destName, ManagedObjectReference morDestDc, boolean force) throws Exception {
 
-        ManagedObjectReference morTask = _context.getService().moveVirtualDiskTask(_mor, srcName, morSrcDc, destName, morDestDc, force);
+        ManagedObjectReference morTask = _context.getService().moveVirtualDiskTask(_mor, srcName, morSrcDc, destName, morDestDc, force, null);
 
         boolean result = _context.getVimClient().waitForTask(morTask);
         if (!result)

@@ -46,6 +46,7 @@ import com.vmware.vim25.HostNetworkInfo;
 import com.vmware.vim25.HostNetworkPolicy;
 import com.vmware.vim25.HostNetworkSecurityPolicy;
 import com.vmware.vim25.HostNetworkTrafficShapingPolicy;
+import com.vmware.vim25.HostOpaqueNetworkInfo;
 import com.vmware.vim25.HostPortGroup;
 import com.vmware.vim25.HostPortGroupSpec;
 import com.vmware.vim25.HostRuntimeInfo;
@@ -62,7 +63,6 @@ import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualNicManagerNetConfig;
-
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.utils.Pair;
@@ -355,6 +355,23 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
         }
 
         return null;
+    }
+
+    public boolean hasOpaqueNSXNetwork() throws Exception{
+        HostNetworkInfo netInfo = getHostNetworkInfo();
+        List<HostOpaqueNetworkInfo> opaqueNetworks = netInfo.getOpaqueNetwork();
+        if (opaqueNetworks != null){
+            for (HostOpaqueNetworkInfo opaqueNetwork : opaqueNetworks){
+                if (opaqueNetwork.getOpaqueNetworkId() != null && opaqueNetwork.getOpaqueNetworkId().equals("br-int")
+                        && opaqueNetwork.getOpaqueNetworkType() != null && opaqueNetwork.getOpaqueNetworkType().equals("nsx.network")){
+                    return true;
+                }
+            }
+            throw new Exception("NSX API VERSION >= 4.2 BUT br-int (nsx.network) NOT FOUND");
+        }
+        else {
+            throw new Exception("NSX API VERSION >= 4.2 BUT br-int (nsx.network) NOT FOUND");
+        }
     }
 
     public boolean hasPortGroup(HostVirtualSwitch vSwitch, String portGroupName) throws Exception {

@@ -32,3 +32,6 @@ mvn install:install-file -Dfile=manageontap.jar   -DgroupId=com.cloud.com.netapp
 # From https://my.vmware.com/group/vmware/get-download?downloadGroup=VSP510-WEBSDK-510
 # Version: 5.1, Release-date: 2012-09-10, Build: 774886
 mvn install:install-file -Dfile=vim25_51.jar        -DgroupId=com.cloud.com.vmware -DartifactId=vmware-vim25    -Dversion=5.1   -Dpackaging=jar
+
+# From https://my.vmware.com/group/vmware/get-download?downloadGroup=WEBSDK550
+mvn install:install-file -Dfile=vim25_55.jar        -DgroupId=com.cloud.com.vmware -DartifactId=vmware-vim25    -Dversion=5.5   -Dpackaging=jar
