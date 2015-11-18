@@ -129,6 +129,7 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -852,12 +853,13 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         argsBuf.append(" -i ").append(cmd.getPublicInterface());
 
         try {
+            final String command = String.format("%s%s %s", "/opt/cloud/bin/", VRScripts.VPN_L2TP, argsBuf.toString());
 
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Executing /opt/cloud/bin/vpn_lt2p.sh ");
+                s_logger.debug("Executing " + command);
             }
 
-            final Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/vpn_l2tp.sh " + argsBuf.toString());
+            final Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, command);
 
             if (!result.first()) {
                 s_logger.error("RemoteAccessVpnCfg command on domR failed, message: " + result.second());
@@ -940,10 +942,12 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         }
         args += " -a " + sb.toString();
 
+        final String command = String.format("%s%s %s", "/opt/cloud/bin/", VRScripts.VPC_STATIC_ROUTE, args);
+
         // Send over the command for execution, via ssh, to the VR.
         try {
             final Pair<Boolean, String> result =
-                    SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/vpc_staticroute.sh " + args);
+                    SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, command);
 
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Executing script on domain router " + controlIp + ": /opt/cloud/bin/vpc_staticroute.sh " + args);
@@ -966,15 +970,18 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
     }
 
     protected CheckS2SVpnConnectionsAnswer execute(final CheckS2SVpnConnectionsCommand cmd) {
+        final StringBuilder cmdline = new StringBuilder();
+        cmdline.append("/opt/cloud/bin/");
+        cmdline.append(VRScripts.S2SVPN_CHECK);
+
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Executing resource CheckS2SVpnConnectionsCommand: " + s_gson.toJson(cmd));
-            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /opt/cloud/bin/checkbatchs2svpn.sh ");
+            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + cmdline.toString());
         }
 
         Pair<Boolean, String> result;
         try {
             final String controlIp = getRouterSshControlIp(cmd);
-            final StringBuilder cmdline = new StringBuilder("/opt/cloud/bin/checkbatchs2svpn.sh ");
             for (final String ip : cmd.getVpnIps()) {
                 cmdline.append(" ");
                 cmdline.append(ip);
@@ -1048,7 +1055,8 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
         Pair<Boolean, String> result;
         try {
-            result = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/ipsectunnel.sh " + args);
+            final String command = String.format("%s%s %s", "/opt/cloud/bin/", VRScripts.S2SVPN_IPSEC, args);
+            result = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, command);
 
             if (!result.first()) {
                 s_logger.error("Setup site2site VPN " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " failed, message: " + result.second());
@@ -1085,7 +1093,9 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             args += " -c ";
             args += "eth" + ethDeviceNum;
 
-            final Pair<Boolean, String> result = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/vpc_snat.sh " + args);
+            final String command = String.format("%s%s %s", "/opt/cloud/bin/", VRScripts.VPC_SOURCE_NAT, args);
+
+            final Pair<Boolean, String> result = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, command);
 
             if (!result.first()) {
                 final String msg = "SetupGuestNetworkCommand on domain router " + routerIp + " failed. message: " + result.second();
@@ -1146,16 +1156,18 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
     }
 
     protected Answer execute(final CheckRouterCommand cmd) {
+        final String command = String.format("%s%s", "/opt/cloud/bin/", VRScripts.RVR_CHECK);
+
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Executing resource CheckRouterCommand: " + s_gson.toJson(cmd));
-            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /opt/cloud/bin/checkrouter.sh ");
+            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + command);
         }
 
         Pair<Boolean, String> result;
         try {
 
             final String controlIp = getRouterSshControlIp(cmd);
-            result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/checkrouter.sh ");
+            result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, command);
 
             if (!result.first()) {
                 s_logger.error("check router command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " failed, message: " + result.second());
@@ -1367,11 +1379,13 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
                     return new Answer(cmd, false, "LoadBalancerConfigCommand failed due to uanble to copy haproxy configuration file");
                 }
 
+                final String command = String.format("%s%s %s", "/root/", VRScripts.LB, args);
+
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Run command on domain router " + routerIp + ",  /root/loadbalancer.sh " + args);
+                    s_logger.debug("Run command on domain router " + routerIp + command);
                 }
 
-                result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/root/loadbalancer.sh " + args);
+                result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, command);
 
                 if (!result.first()) {
                     final String msg = "LoadBalancerConfigCommand on domain router " + routerIp + " failed. message: " + result.second();
@@ -1406,19 +1420,16 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         final String vmIpAddress = cmd.getVmIpAddress();
 
         // Run save_password_to_domr.sh
-        String args = " -v " + vmIpAddress;
+        final String command = String.format("%s%s %s %s %s %s", "/opt/cloud/bin/", VRScripts.PASSWORD, "-v", vmIpAddress, "-p", password);
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Run command on domain router " + controlIp + ", /opt/cloud/bin/savepassword.sh " + args + " -p " +
-                    StringUtils.getMaskedPasswordForDisplay(cmd.getPassword()));
+            final String debugCommand = String.format("%s%s %s %s %s %s", "/opt/cloud/bin/", VRScripts.PASSWORD, "-v", vmIpAddress, "-p", StringUtils.getMaskedPasswordForDisplay(cmd.getPassword()));
+            s_logger.debug("Run command on domain router " + controlIp + debugCommand);
         }
-
-        args += " -p " + password;
 
         try {
 
-            final Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/savepassword.sh " +
-                    args);
+            final Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, command);
 
             if (!result.first()) {
                 s_logger.error("savepassword command on domain router " + controlIp + " failed, message: " + result.second());
@@ -1518,11 +1529,10 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         s_logger.debug("VM data JSON IS:" + json);
 
         json = Base64.encodeBase64String(json.getBytes(Charset.forName("UTF-8")));
-
-        final String args = "-d " + json;
+        final String command = String.format("%s%s %s %s", "/opt/cloud/bin/", VRScripts.VMDATA, "-d", json);
 
         try {
-            final Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/vmdata.py " + args);
+            final Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, command);
             if (!result.first()) {
                 s_logger.error("vm_data command on domain router " + controlIp + " failed. messge: " + result.second());
                 return new Answer(cmd, false, "VmDataCommand failed due to " + result.second());
@@ -1573,13 +1583,15 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             args += " -N";
         }
 
+        final String command = String.format("%s%s %s", "/root/", VRScripts.DHCP, args);
+
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /root/edithosts.sh " + args);
+            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + command);
         }
 
         try {
             final String controlIp = getRouterSshControlIp(cmd);
-            final Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/root/edithosts.sh " + args);
+            final Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, command);
 
             if (!result.first()) {
                 s_logger.error("dhcp_entry command on domR " + controlIp + " failed, message: " + result.second());
@@ -1665,7 +1677,9 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         }
 
         try {
-            final Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/root/dnsmasq.sh " + args);
+            final String command = String.format("%s%s %s", "/root/", VRScripts.DHCP, args);
+
+            final Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, command);
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Run command on domain router " + routerIp + ",  /root/dnsmasq.sh");
             }
@@ -1997,12 +2011,14 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             args += " -n ";
         }
 
+        final String command = String.format("%s%s %s","/opt/cloud/bin/", VRScripts.IPASSOC ,args);
+
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Run command on domain router " + privateIpAddress + ", /opt/cloud/bin/ipassoc.sh " + args);
+            s_logger.debug("Run command on domain router " + privateIpAddress + command);
         }
 
         final Pair<Boolean, String> result =
-                SshHelper.sshExecute(privateIpAddress, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/ipassoc.sh " + args);
+                SshHelper.sshExecute(privateIpAddress, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, command);
 
         if (!result.first()) {
             s_logger.error("ipassoc command on domain router " + privateIpAddress + " failed. message: " + result.second());
@@ -2015,15 +2031,17 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
     }
 
     protected Answer execute(final GetDomRVersionCmd cmd) {
+        final String command = String.format("%s%s", "/opt/cloud/bin/", VRScripts.VERSION);
+
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Executing resource GetDomRVersionCmd: " + s_gson.toJson(cmd));
-            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /opt/cloud/bin/get_template_version.sh ");
+            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + command);
         }
 
         Pair<Boolean, String> result;
         try {
             final String controlIp = getRouterSshControlIp(cmd);
-            result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/get_template_version.sh ");
+            result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, command);
 
             if (!result.first()) {
                 s_logger.error("GetDomRVersionCmd on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " failed, message: " + result.second());
@@ -2108,13 +2126,12 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
         final String controlIp = getRouterSshControlIp(cmd);
         final String config = cmd.getConfiguration();
+        final String args = String.format(" %s %s", "-c", config);
 
-        String args = "";
-
-        args += " -c " + config;
+        final String command = String.format("%s%s %s", "/opt/cloud/bin/", VRScripts.MONITOR_SERVICE, args);
 
         try {
-            final Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/monitor_service.sh " + args);
+            final Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, command);
 
             if (!result.first()) {
                 final String msg=  "monitor_service.sh failed on domain router " + controlIp + " failed " + result.second();
