@@ -131,6 +131,8 @@ public class QuotaStatementCmd extends BaseCmd {
         List<QuotaUsageVO> quotaUsage = _responseBuilder.getQuotaUsage(this);
 
         QuotaStatementResponse response = _responseBuilder.createQuotaStatementResponse(quotaUsage);
+        response.setStartDate(startDate);
+        response.setEndDate(endDate);
 
         response.setResponseName(getCommandName());
         setResponseObject(response);

@@ -56,6 +56,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -214,6 +215,12 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             quotaUsage.add(dummy);
         }
 
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(
+                    "createQuotaStatementResponse Type=" + quotaUsage.get(0).getUsageType() + " usage=" + quotaUsage.get(0).getQuotaUsed().setScale(2, RoundingMode.HALF_EVEN)
+                            + " rec.id=" + quotaUsage.get(0).getUsageItemId() + " SD=" + quotaUsage.get(0).getStartDate() + " ED=" + quotaUsage.get(0).getEndDate());
+        }
+
         Collections.sort(quotaUsage, new Comparator<QuotaUsageVO>() {
             public int compare(QuotaUsageVO o1, QuotaUsageVO o2) {
                 if (o1.getUsageType() == o2.getUsageType())
@@ -233,17 +240,12 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             s_logger.debug("createQuotaStatementResponse record count=" + quotaUsage.size());
         }
         for (final QuotaUsageVO quotaRecord : quotaUsage) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("createQuotaStatementResponse Type=" + quotaRecord.getUsageType() + " usage=" + usage + " name" + quotaRecord.getUsageItemId());
-            }
             if (type != quotaRecord.getUsageType()) {
                 if (type != -1) {
                     lineitem = new QuotaStatementItemResponse(type);
                     lineitem.setQuotaUsed(usage);
                     lineitem.setAccountId(prev.getAccountId());
                     lineitem.setDomainId(prev.getDomainId());
-                    lineitem.setStartDate(prev.getStartDate());
-                    lineitem.setEndDate(prev.getEndDate());
                     lineitem.setUsageUnit(quotaTariffMap.get(type).getQuotaUnit());
                     lineitem.setUsageName(quotaTariffMap.get(type).getQuotaName());
                     lineitem.setObjectName("quotausage");

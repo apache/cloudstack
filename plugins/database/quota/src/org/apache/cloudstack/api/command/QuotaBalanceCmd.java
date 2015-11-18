@@ -123,7 +123,7 @@ public class QuotaBalanceCmd extends BaseCmd {
         if (getEndDate() == null) {
             response = _responseBuilder.createQuotaLastBalanceResponse(quotaUsage, getStartDate());
         } else {
-            response = _responseBuilder.createQuotaBalanceResponse(quotaUsage, getStartDate(), getEndDate());
+            response = _responseBuilder.createQuotaBalanceResponse(quotaUsage, getStartDate(), endDate);
         }
         response.setResponseName(getCommandName());
         setResponseObject(response);
