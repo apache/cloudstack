@@ -59,7 +59,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineName;
+import com.cloud.vm.VirtualMachineNameService;
 import com.cloud.vm.dao.UserVmDao;
 import com.google.gson.Gson;
 
@@ -77,6 +77,8 @@ public class ServiceManagerImpl implements ServiceManager {
     NetworkModel _networkModel;
     @Inject
     AccountService _accountService;
+    @Inject
+    VirtualMachineNameService _vmNameService;
     @Inject
     ContrailManager _manager;
 
@@ -109,7 +111,8 @@ public class ServiceManagerImpl implements ServiceManager {
         networks.put(linklocal, new ArrayList<NicProfile>());
         networks.put((NetworkVO)left, new ArrayList<NicProfile>());
         networks.put((NetworkVO)right, new ArrayList<NicProfile>());
-        String instanceName = VirtualMachineName.getVmName(id, owner.getId(), "SRV");
+
+        String instanceName = _vmNameService.getVmName(id, owner.getId(), "SRV");
 
         long userId = CallContext.current().getCallingUserId();
         if (CallContext.current().getCallingAccount().getId() != owner.getId()) {

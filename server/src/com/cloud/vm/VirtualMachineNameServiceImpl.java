@@ -1,4 +1,4 @@
-// Licensed to the Apache Software Foundation (ASF) under one
+// Licensed to the Apacohe Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -18,13 +18,10 @@ package com.cloud.vm;
 
 import java.util.Formatter;
 
-/**
- * VM Name.
- */
-public class VirtualMachineName {
+public class VirtualMachineNameServiceImpl implements VirtualMachineNameService {
     public static final String SEPARATOR = "-";
 
-    public static boolean isValidCloudStackVmName(String name, String instance) {
+    public boolean isValidCloudStackVmName(String name, String instance) {
         String[] parts = name.split(SEPARATOR);
         if (parts.length <= 1) {
             return false;
@@ -37,18 +34,18 @@ public class VirtualMachineName {
         return true;
     }
 
-    public static String getVnetName(long vnetId) {
+    public String getVnetName(long vnetId) {
         StringBuilder vnet = new StringBuilder();
         Formatter formatter = new Formatter(vnet);
         formatter.format("%04x", vnetId);
         return vnet.toString();
     }
 
-    public static boolean isValidVmName(String vmName) {
+    public boolean isValidVmName(String vmName) {
         return isValidVmName(vmName, null);
     }
 
-    public static boolean isValidVmName(String vmName, String instance) {
+    public boolean isValidVmName(String vmName, String instance) {
         String[] tokens = vmName.split(SEPARATOR);
 
         if (tokens.length <= 1) {
@@ -62,65 +59,65 @@ public class VirtualMachineName {
         return true;
     }
 
-    public static String getVmName(long vmId, long userId, String instance) {
+    public String getVmName(long vmId, long userId, String instance) {
         StringBuilder vmName = new StringBuilder("i");
         vmName.append(SEPARATOR).append(userId).append(SEPARATOR).append(vmId);
         vmName.append(SEPARATOR).append(instance);
         return vmName.toString();
     }
 
-    public static long getVmId(String vmName) {
+    public long getVmId(String vmName) {
         int begin = vmName.indexOf(SEPARATOR);
         begin = vmName.indexOf(SEPARATOR, begin + SEPARATOR.length());
         int end = vmName.indexOf(SEPARATOR, begin + SEPARATOR.length());
         return Long.parseLong(vmName.substring(begin + 1, end));
     }
 
-    public static long getRouterId(String routerName) {
+    public long getRouterId(String routerName) {
         int begin = routerName.indexOf(SEPARATOR);
         int end = routerName.indexOf(SEPARATOR, begin + SEPARATOR.length());
         return Long.parseLong(routerName.substring(begin + 1, end));
     }
 
-    public static long getConsoleProxyId(String vmName) {
+    public long getConsoleProxyId(String vmName) {
         int begin = vmName.indexOf(SEPARATOR);
         int end = vmName.indexOf(SEPARATOR, begin + SEPARATOR.length());
         return Long.parseLong(vmName.substring(begin + 1, end));
     }
 
-    public static long getSystemVmId(String vmName) {
+    public long getSystemVmId(String vmName) {
         int begin = vmName.indexOf(SEPARATOR);
         int end = vmName.indexOf(SEPARATOR, begin + SEPARATOR.length());
         return Long.parseLong(vmName.substring(begin + 1, end));
     }
 
-    public static String getRouterName(long routerId, String instance) {
+    public String getRouterName(long routerId, String instance) {
         StringBuilder builder = new StringBuilder("r");
         builder.append(SEPARATOR).append(routerId).append(SEPARATOR).append(instance);
         return builder.toString();
     }
 
-    public static String getConsoleProxyName(long vmId, String instance) {
+    public String getConsoleProxyName(long vmId, String instance) {
         StringBuilder builder = new StringBuilder("v");
         builder.append(SEPARATOR).append(vmId).append(SEPARATOR).append(instance);
         return builder.toString();
     }
 
-    public static String getSystemVmName(long vmId, String instance, String prefix) {
+    public String getSystemVmName(long vmId, String instance, String prefix) {
         StringBuilder builder = new StringBuilder(prefix);
         builder.append(SEPARATOR).append(vmId).append(SEPARATOR).append(instance);
         return builder.toString();
     }
 
-    public static String attachVnet(String name, String vnet) {
+    public String attachVnet(String name, String vnet) {
         return name + SEPARATOR + vnet;
     }
 
-    public static boolean isValidRouterName(String name) {
+    public boolean isValidRouterName(String name) {
         return isValidRouterName(name, null);
     }
 
-    public static boolean isValidRouterName(String name, String instance) {
+    public boolean isValidRouterName(String name, String instance) {
         String[] tokens = name.split(SEPARATOR);
         if (tokens.length != 3 && tokens.length != 4) {
             return false;
@@ -139,11 +136,11 @@ public class VirtualMachineName {
         return instance == null || tokens[2].equals(instance);
     }
 
-    public static boolean isValidConsoleProxyName(String name) {
+    public boolean isValidConsoleProxyName(String name) {
         return isValidConsoleProxyName(name, null);
     }
 
-    public static boolean isValidConsoleProxyName(String name, String instance) {
+    public boolean isValidConsoleProxyName(String name, String instance) {
         String[] tokens = name.split(SEPARATOR);
         if (tokens.length != 3) {
             return false;
@@ -162,11 +159,11 @@ public class VirtualMachineName {
         return instance == null || tokens[2].equals(instance);
     }
 
-    public static boolean isValidSecStorageVmName(String name, String instance) {
+    public boolean isValidSecStorageVmName(String name, String instance) {
         return isValidSystemVmName(name, instance, "s");
     }
 
-    public static boolean isValidSystemVmName(String name, String instance, String prefix) {
+    public boolean isValidSystemVmName(String name, String instance, String prefix) {
         String[] tokens = name.split(SEPARATOR);
         if (tokens.length != 3) {
             return false;

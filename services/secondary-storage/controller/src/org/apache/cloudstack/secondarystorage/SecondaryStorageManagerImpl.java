@@ -138,7 +138,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineName;
+import com.cloud.vm.VirtualMachineNameService;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
@@ -210,6 +210,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     private AccountService _accountMgr;
     @Inject
     private VirtualMachineManager _itMgr;
+    @Inject
+    private VirtualMachineNameService _vmNameService;
     @Inject
     protected VMInstanceDao _vmDao;
     @Inject
@@ -527,7 +529,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         }
 
         long id = _secStorageVmDao.getNextInSequence(Long.class, "id");
-        String name = VirtualMachineName.getSystemVmName(id, _instance, "s").intern();
+        String name = _vmNameService.getSystemVmName(id, _instance, "s").intern();
         Account systemAcct = _accountMgr.getSystemAccount();
 
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);

@@ -114,7 +114,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineName;
+import com.cloud.vm.VirtualMachineNameService;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -134,6 +134,8 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
     IpAddressManager _ipAddrMgr;
     @Inject
     VirtualMachineManager _itMgr;
+    @Inject
+    VirtualMachineNameService _vmNameService;
     @Inject
     DomainRouterDao _internalLbVmDao;
     @Inject
@@ -780,7 +782,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
                 }
 
                 internalLbVm =
-                        new DomainRouterVO(id, routerOffering.getId(), internalLbProviderId, VirtualMachineName.getSystemVmName(id, _instance, InternalLbVmNamePrefix),
+                        new DomainRouterVO(id, routerOffering.getId(), internalLbProviderId, _vmNameService.getSystemVmName(id, _instance, InternalLbVmNamePrefix),
                                 template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), userId, false, RedundantState.UNKNOWN, false, false, VirtualMachine.Type.InternalLoadBalancerVm, vpcId);
                 internalLbVm.setRole(Role.INTERNAL_LB_VM);
                 internalLbVm = _internalLbVmDao.persist(internalLbVm);

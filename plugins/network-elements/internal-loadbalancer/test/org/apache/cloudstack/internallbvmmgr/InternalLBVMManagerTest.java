@@ -69,6 +69,7 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineNameService;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
@@ -87,6 +88,7 @@ public class InternalLBVMManagerTest extends TestCase {
     InternalLoadBalancerVMManager _lbVmMgr;
 
     //Mocked interfaces
+    VirtualMachineNameService _vmName;
     @Inject
     AccountManager _accountMgr;
     @Inject

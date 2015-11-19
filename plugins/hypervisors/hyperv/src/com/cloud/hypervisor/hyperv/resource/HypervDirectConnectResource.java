@@ -155,7 +155,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
-import com.cloud.vm.VirtualMachineName;
+import com.cloud.vm.VirtualMachineNameService;
 
 
 /**
@@ -191,6 +191,8 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
     private static HypervManager s_hypervMgr;
     @Inject
     HypervManager _hypervMgr;
+    @Inject
+    VirtualMachineNameService _vmNameService;
     protected VirtualRoutingResource _vrResource;
 
     @PostConstruct
@@ -2144,7 +2146,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             s_logger.debug("Ping command port succeeded for vm " + vmName);
         }
 
-        if (VirtualMachineName.isValidRouterName(vmName)) {
+        if (_vmNameService.isValidRouterName(vmName)) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Execute network usage setup command on " + vmName);
             }

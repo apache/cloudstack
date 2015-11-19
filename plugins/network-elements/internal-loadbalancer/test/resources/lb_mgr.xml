@@ -36,7 +36,7 @@
         </list>
     </property>
   </bean>
-
+  
     <bean id="InternalLoadBalancerVMManager" class="org.apache.cloudstack.network.lb.InternalLoadBalancerVMManagerImpl">
         <property name="name" value="InternalLoadBalancerVMManager"/>
     </bean>

@@ -94,7 +94,7 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineName;
+import com.cloud.vm.VirtualMachineNameService;
 import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
@@ -145,6 +145,8 @@ public class NetworkHelperImpl implements NetworkHelper {
     protected ServiceOfferingDao _serviceOfferingDao;
     @Inject
     protected VirtualMachineManager _itMgr;
+    @Inject
+    protected VirtualMachineNameService _vmNameService;
     @Inject
     protected IpAddressManager _ipAddrMgr;
 
@@ -493,7 +495,7 @@ public class NetworkHelperImpl implements NetworkHelper {
                     }
                 }
 
-                router = new DomainRouterVO(id, routerOffering.getId(), routerDeploymentDefinition.getVirtualProvider().getId(), VirtualMachineName.getRouterName(id,
+                router = new DomainRouterVO(id, routerOffering.getId(), routerDeploymentDefinition.getVirtualProvider().getId(), _vmNameService.getRouterName(id,
                         s_vmInstanceName), template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(),
                         userId, routerDeploymentDefinition.isRedundant(), RedundantState.UNKNOWN, offerHA, false, vpcId);
 

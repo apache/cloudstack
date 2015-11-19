@@ -50,6 +50,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineNameService;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
@@ -69,6 +70,11 @@ public class LbChildTestConfiguration {
         @Bean
         public VirtualMachineManager virtualMachineManager() {
             return Mockito.mock(VirtualMachineManager.class);
+        }
+
+        @Bean
+        public VirtualMachineNameService virtualMachineNameService() {
+            return Mockito.mock(VirtualMachineNameService.class);
         }
 
         @Bean
