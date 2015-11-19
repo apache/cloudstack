@@ -19,6 +19,7 @@
 	var now = new Date();
 	var newstartdate;
 	var newenddate;
+	var currency;
     cloudStack.plugins.quota = function(plugin) {
         plugin.ui.addSection({
           id: 'quota',
@@ -49,6 +50,14 @@
                           },
                           balance: {
                               label: 'label.quota.balance',
+                              limitcolor: true,
+                              limits: {
+                          	    upperlimit: 'upperlimit',
+                          	    lowerlimit: 'lowerlimit'
+                          	 },
+                          	 converter: function(args){
+                          		 return currency + args.toString();
+                          	 }
                           },
                           quota: {
                               label: 'label.quota.totalusage',
@@ -72,6 +81,7 @@
 
                           // FIXME: add logic in mgmt server to filter by account
                           if (args.filterBy.search.value) {
+                        	  console.log(args.filterBy.search.value);
                               data.account = args.filterBy.search.value;
                           }
 
@@ -83,8 +93,11 @@
                               success: function(json) {
                                   var items = json.quotasummaryresponse.summary;
                                   $.each(items, function(idx, item) {
+                                	  currency = items[idx].currency;
                                       items[idx].quota = items[idx].currency + ' ' + items[idx].quota;
-                                      items[idx].balance = items[idx].currency + ' ' + items[idx].balance;
+                                      //items[idx].balance = items[idx].currency + ' ' + items[idx].balance;
+                                      items[idx].lowerlimit = -1;
+                                      items[idx].upperlimit = 0;
                                   });
                                   args.response.success({
                                       data: items
@@ -106,9 +119,6 @@
                               label: 'label.quota.statement.balance'
                           }],
                           actions: {
-                    	  
-                    	  
-
 
                              add: {
                                 label: 'label.quota.add.credits',
@@ -122,7 +132,7 @@
                                 },
 
                                 createForm: {
-                                    title: 'label.migrate.volume',
+                                    title: 'label.quota.credits',
                                     desc: '',
                                     fields: {
                                          value: {

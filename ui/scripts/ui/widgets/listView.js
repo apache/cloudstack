@@ -1255,6 +1255,20 @@
                         }
                     }
                 }
+                
+                
+                if (field.limitcolor && field.limits) {
+                    if ((field.limits.lowerlimit in dataItem) && (field.limits.upperlimit in dataItem)) {
+                        var upperlimit = parseFloat(dataItem[field.limits.upperlimit]);
+                        var lowerlimit = parseFloat(dataItem[field.limits.lowerlimit ]);
+                        var value = parseFloat(content);
+                        if (value <= lowerlimit) {
+                            $td.addClass('alert-disable-threshold');
+                        } else if (value <= upperlimit) {
+                            $td.addClass('alert-notification-threshold');
+                        }
+                    }
+                }
 
                 if (field.id == true) id = field.id;
                 if ($td.index()) $td.addClass('reduced-hide');
