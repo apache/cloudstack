@@ -218,6 +218,11 @@ public class AccountManagerImplTest {
     @Mock
     private UserAuthenticator userAuthenticator;
 
+    //Maintain a list of old fields in the usage utils class... This
+    //is because of weirdness of how it uses static fields and an init
+    //method.
+    private Map<String, Object> oldFields = new HashMap<>();
+
     @Before
     public void setup() throws NoSuchFieldException, SecurityException,
             IllegalArgumentException, IllegalAccessException {
@@ -377,10 +382,15 @@ public class AccountManagerImplTest {
         usageUtilsFields.put("accountDao", "_accountDao");
         usageUtilsFields.put("dcDao", "_dcDao");
         usageUtilsFields.put("configDao", "_configDao");
+
         for (String fieldName : usageUtilsFields.keySet()) {
             try {
                 Field f = UsageEventUtils.class.getDeclaredField(fieldName);
                 f.setAccessible(true);
+                //Remember the old fields for cleanup later (see cleanupUsageUtils)
+                Field staticField = UsageEventUtils.class.getDeclaredField("s_" + fieldName);
+                staticField.setAccessible(true);
+                oldFields.put(f.getName(), staticField.get(null));
                 f.set(utils,
                         this.getClass()
                                 .getDeclaredField(
@@ -405,6 +415,33 @@ public class AccountManagerImplTest {
         }
 
         return utils;
+    }
+
+    public void cleanupUsageUtils() {
+        UsageEventUtils utils = new UsageEventUtils();
+
+        for (String fieldName : oldFields.keySet()) {
+            try {
+                Field f = UsageEventUtils.class.getDeclaredField(fieldName);
+                f.setAccessible(true);
+                f.set(utils, oldFields.get(fieldName));
+            } catch (IllegalArgumentException | IllegalAccessException
+                    | NoSuchFieldException | SecurityException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+
+        }
+        try {
+            Method method = UsageEventUtils.class.getDeclaredMethod("init");
+            method.setAccessible(true);
+            method.invoke(utils);
+        } catch (SecurityException | NoSuchMethodException
+                | IllegalAccessException | IllegalArgumentException
+                | InvocationTargetException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     public List<UsageEventVO> deleteUserAccountRootVolumeUsageEvents(boolean vmDestroyedPrior) {
@@ -453,6 +490,7 @@ public class AccountManagerImplTest {
         UsageEventUtils utils = setupUsageUtils();
         List<UsageEventVO> emittedEvents = deleteUserAccountRootVolumeUsageEvents(true);
         Assert.assertEquals(0, emittedEvents.size());
+        cleanupUsageUtils();
     }
 
     @Test
@@ -460,5 +498,6 @@ public class AccountManagerImplTest {
         UsageEventUtils utils = setupUsageUtils();
         List<UsageEventVO> emittedEvents = deleteUserAccountRootVolumeUsageEvents(false);
         Assert.assertEquals(1, emittedEvents.size());
+        cleanupUsageUtils();
     }
 }
