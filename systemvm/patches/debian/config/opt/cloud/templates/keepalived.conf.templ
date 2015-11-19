@@ -26,7 +26,7 @@ vrrp_script heartbeat {
 
 vrrp_instance inside_network {
     state EQUAL
-    interface eth0
+    interface eth2
     virtual_router_id 51
     nopreempt
 
@@ -37,7 +37,7 @@ vrrp_instance inside_network {
     }
 
     virtual_ipaddress {
-        [ROUTER_IP] brd [BOARDCAST] dev eth0
+        [ROUTER_IP] brd [BOARDCAST] dev eth2
     }
 
     track_script {

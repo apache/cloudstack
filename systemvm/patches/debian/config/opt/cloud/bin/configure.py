@@ -906,9 +906,6 @@ def main(argv):
     fwd = CsForwardingRules("forwardingrules", config)
     fwd.process()
 
-    red = CsRedundant(config)
-    red.set()
-
     logging.debug("Configuring s2s vpn")
     vpns = CsSite2SiteVpn("site2sitevpn", config)
     vpns.process()
@@ -938,6 +935,9 @@ def main(argv):
     logging.debug("Configuring iptables rules .....")
     nf = CsNetfilters()
     nf.compare(config.get_fw())
+    
+    red = CsRedundant(config)
+    red.set()
 
     logging.debug("Configuring iptables rules done ...saving rules")
 
