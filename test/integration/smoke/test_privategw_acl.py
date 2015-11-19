@@ -87,6 +87,27 @@ class Services:
                     "NetworkACL": 'VpcVirtualRouter'
                 },
             },
+            "redundsnt_vpc_offering": {
+                "name": 'Redundant VPC off',
+                "displaytext": 'Redundant VPC off',
+                "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat',
+                "serviceProviderList": {
+                    "Vpn": 'VpcVirtualRouter',
+                    "Dhcp": 'VpcVirtualRouter',
+                    "Dns": 'VpcVirtualRouter',
+                    "SourceNat": 'VpcVirtualRouter',
+                    "PortForwarding": 'VpcVirtualRouter',
+                    "Lb": 'VpcVirtualRouter',
+                    "UserData": 'VpcVirtualRouter',
+                    "StaticNat": 'VpcVirtualRouter',
+                    "NetworkACL": 'VpcVirtualRouter'
+                },
+                "serviceCapabilityList": {
+                    "SourceNat": {
+                        "RedundantRouter": 'true'
+                    }
+                },
+            },
             "vpc_offering": {
                 "name": "VPC off",
                 "displaytext": "VPC off",
@@ -116,7 +137,7 @@ class Services:
             "timeout": 10,
         }
 
-class TestPrivateGwACL(cloudstackTestCase):
+class TestPrivateGWACL(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -128,10 +149,12 @@ class TestPrivateGwACL(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
             cls.services["ostype"])
+
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
 
@@ -140,7 +163,7 @@ class TestPrivateGwACL(cloudstackTestCase):
             cls.services["service_offering"])
         cls._cleanup = [cls.service_offering]
 
-        cls.logger = logging.getLogger('TestPrivateGwACL')
+        cls.logger = logging.getLogger('TestPrivateGWACL')
         cls.stream_handler = logging.StreamHandler()
         cls.logger.setLevel(logging.DEBUG)
         cls.logger.addHandler(cls.stream_handler)
@@ -163,6 +186,17 @@ class TestPrivateGwACL(cloudstackTestCase):
             admin=True,
             domainid=self.domain.id)
 
+        return
+
+    def tearDown(self):
+        try:
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    @attr(tags=["advanced"], required_hardware="true")
+    def test_01_vpc_privategw_acl(self):
         self.logger.debug("Creating a VPC offering..")
         self.vpc_off = VpcOffering.create(
             self.apiclient,
@@ -182,28 +216,46 @@ class TestPrivateGwACL(cloudstackTestCase):
             domainid=self.account.domainid)
         
         self.cleanup = [self.vpc, self.vpc_off, self.account]
-        return
-
-    def tearDown(self):
-        try:
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
-
-    @attr(tags=["advanced"], required_hardware="false")
-    def test_privategw_acl(self):
-        self.createACL()
+        
+        self.createACL(self.vpc)
         self.createACLItem()
-        self.createNetwork()
-        self.createPvtGw()
+        self.createNetwork(self.vpc)
+        self.createPvtGw(self.vpc)
         self.replaceacl()
 
-    def createACL(self):
+    @attr(tags=["advanced"], required_hardware="true")
+    def test_02_rvpc_privategw_acl(self):
+        self.logger.debug("Creating a Redundant VPC offering..")
+        self.rvpc_off = VpcOffering.create(
+            self.apiclient,
+            self.services["redundant_vpc_offering"])
+
+        self.logger.debug("Enabling the Redundant VPC offering created")
+        self.rvpc_off.update(self.apiclient, state='Enabled')
+
+        self.logger.debug("Creating a VPC network in the account: %s" % self.account.name)
+        self.services["vpc"]["cidr"] = '10.1.1.1/16'
+        self.rvpc = VPC.create(
+            self.apiclient,
+            self.services["vpc"],
+            vpcofferingid=self.rvpc_off.id,
+            zoneid=self.zone.id,
+            account=self.account.name,
+            domainid=self.account.domainid)
+        
+        self.cleanup = [self.rvpc, self.rvpc_off, self.account]
+        
+        self.createACL(self.rvpc)
+        self.createACLItem()
+        self.createNetwork(self.rvpc)
+        self.createPvtGw(self.rvpc)
+        self.replaceacl()
+
+    def createACL(self, vpc):
         createAclCmd = createNetworkACLList.createNetworkACLListCmd()
         createAclCmd.name = "acl1"
         createAclCmd.description = "new acl"
-        createAclCmd.vpcid = self.vpc.id
+        createAclCmd.vpcid = vpc.id
         createAclResponse = self.apiclient.createNetworkACLList(createAclCmd)
 
         self.aclId = createAclResponse.id
@@ -221,7 +273,7 @@ class TestPrivateGwACL(cloudstackTestCase):
 
         self.assertIsNotNone(createAclItemResponse.id, "Failed to create ACL item.")
 
-    def createNetwork(self):
+    def createNetwork(self, vpc):
         try:
             self.logger.debug('Create NetworkOffering')
             net_offerring = self.services["network_offering"]
@@ -246,7 +298,7 @@ class TestPrivateGwACL(cloudstackTestCase):
                 networkofferingid=nw_off.id,
                 zoneid=self.zone.id,
                 gateway="10.1.1.1",
-                vpcid=self.vpc.id
+                vpcid=vpc.id
             )
 
             self.logger.debug("Created network with ID: %s" % obj_network.id)
@@ -258,14 +310,14 @@ class TestPrivateGwACL(cloudstackTestCase):
         self.cleanup.insert(0, nw_off)
         self.cleanup.insert(0, obj_network)
 
-    def createPvtGw(self):
+    def createPvtGw(self, vpc):
         createPrivateGatewayCmd = createPrivateGateway.createPrivateGatewayCmd()
-        createPrivateGatewayCmd.physicalnetworkid = 200
+        createPrivateGatewayCmd.physicalnetworkid = get_physical_networks(self.apiclient, self.zone.id)
         createPrivateGatewayCmd.gateway = "10.147.30.1"
         createPrivateGatewayCmd.netmask = "255.255.255.0"
         createPrivateGatewayCmd.ipaddress = "10.147.30.200"
         createPrivateGatewayCmd.vlan = "30"
-        createPrivateGatewayCmd.vpcid = self.vpc.id
+        createPrivateGatewayCmd.vpcid = vpc.id
         createPrivateGatewayCmd.sourcenatsupported = "true"
         createPrivateGatewayCmd.aclid = self.aclId
 
