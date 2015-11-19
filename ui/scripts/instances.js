@@ -170,6 +170,9 @@
                     label: 'label.display.name',
                     truncate: true
                 },
+                ipaddress: {
+                    label: 'label.ip.address'
+                },
                 zonename: {
                     label: 'label.zone.name'
                 },
@@ -294,7 +297,20 @@
                         poll: pollAsyncJobResult
                     }
                 },
-                snapshot: vmSnapshotAction({ listView: true })
+                snapshot: vmSnapshotAction({ listView: true }),
+                viewMetrics: {
+                    label: 'label.metrics',
+                    isHeader: true,
+                    addRow: false,
+                    action: {
+                        custom: cloudStack.uiCustom.metricsView({resource: 'vms'})
+                    },
+                    messages: {
+                        notification: function (args) {
+                            return 'label.metrics';
+                        }
+                    }
+                },
             },
 
             dataProvider: function(args) {
@@ -381,6 +397,11 @@
                     data: data,
                     success: function(json) {
                         var items = json.listvirtualmachinesresponse.virtualmachine;
+                        $.each(items, function(idx, vm) {
+                            if (vm.nic && vm.nic.length > 0 && vm.nic[0].ipaddress) {
+                                items[idx].ipaddress = vm.nic[0].ipaddress;
+                            }
+                        });
                         args.response.success({
                             data: items
                         });

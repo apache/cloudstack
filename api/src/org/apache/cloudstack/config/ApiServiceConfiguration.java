@@ -26,6 +26,8 @@ public class ApiServiceConfiguration implements Configurable {
     public static final ConfigKey<String> ManagementHostIPAdr = new ConfigKey<String>("Advanced", String.class, "host", "localhost", "The ip address of management server", true);
     public static final ConfigKey<String> ApiServletPath = new ConfigKey<String>("Advanced", String.class, "endpointe.url", "http://localhost:8080/client/api",
             "API end point. Can be used by CS components/services deployed remotely, for sending CS API requests", true);
+    public static final ConfigKey<Long> DefaultUIPageSize = new ConfigKey<Long>("Advanced", Long.class, "default.ui.page.size", "20",
+            "The default pagesize to be used by UI and other clients when making list* API calls", true, ConfigKey.Scope.Global);
 
     @Override
     public String getConfigComponentName() {
@@ -34,7 +36,7 @@ public class ApiServiceConfiguration implements Configurable {
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ManagementHostIPAdr, ApiServletPath};
+        return new ConfigKey<?>[] {ManagementHostIPAdr, ApiServletPath, DefaultUIPageSize};
     }
 
 }

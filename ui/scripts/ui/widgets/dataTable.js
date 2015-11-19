@@ -141,48 +141,99 @@
          * @param columnIndex Index of column (starting at 0) to sort by
          */
         var sortTable = function(columnIndex) {
-            return false;
             var direction = 'asc';
 
-            if ($table.find('thead th').hasClass('sorted ' + direction)) {
+            if ($table.find('thead tr:last th').hasClass('sorted ' + direction)) {
                 direction = 'desc';
             }
 
-            $table.find('thead th').removeClass('sorted desc asc');
-            $($table.find('thead th')[columnIndex]).addClass('sorted').addClass(direction);
+            $table.find('thead tr:last th').removeClass('sorted desc asc');
+            $($table.find('thead tr:last th')[columnIndex]).addClass('sorted').addClass(direction);
 
             var $elems = $table.find('tbody td').filter(function() {
                 return $(this).index() == columnIndex;
             });
 
-            var sortData = [];
-            $elems.each(function() {
-                sortData.push($(this).html());
-                sortData.sort();
+            if ($elems.length < 2) {
+                return;
+            }
 
-                if (direction == 'asc') {
-                    sortData.reverse();
+            var stringComparator = function(a,b) {
+                return a.html().localeCompare(b.html());
+            };
+            var numericComparator = function(a,b) {
+                return parseFloat(a.children().html()) < parseFloat(b.children().html()) ? 1 : -1;
+            };
+            var stateComparator = function(a,b) {
+                return a.attr('title').localeCompare(b.attr('title'));
+            };
+            var isNumeric = function(obj) {
+                return !$.isArray(obj) && !isNaN(parseFloat(obj)) && isFinite(parseFloat(obj));
+            }
+
+            var comparator = stringComparator;
+            var hasAllRowsSameValue = true;
+            var firstElem = $($elems[0]).html();
+            var sortData = [];
+            var numericDataCount = 0;
+            $elems.each(function() {
+                var text = $(this);
+                if (hasAllRowsSameValue) {
+                    if (firstElem !== text.html()) {
+                        hasAllRowsSameValue = false;
+                    }
                 }
+                if (text.children()) {
+                    text = text.children().html();
+                } else {
+                    text = text.html();
+                }
+                if (isNumeric(text) || !text) {
+                    numericDataCount += 1;
+                }
+                sortData.push($(this));
             });
 
-            $(sortData).each(function() {
-                var sortKey = this;
-                var $targetCell = $elems.filter(function() {
-                    return $(this).html() == sortKey;
-                });
-                var $targetContainer = $targetCell.parent();
+            if ($($elems[0]).hasClass('state')) {
+                comparator = stateComparator;
+            } else {
+                if (hasAllRowsSameValue) {
+                    return;
+                }
+                if (columnIndex != 0 && numericDataCount > ($elems.length / 4)) {
+                    comparator = numericComparator;
+                }
+            }
 
-                $targetContainer.remove().appendTo($table.find('tbody'));
+            sortData.sort(comparator);
+
+            if (direction == 'asc') {
+                sortData.reverse();
+            }
+
+            var elements = [];
+            $(sortData).each(function() {
+                elements.push($(this).parent().clone(true));
+            });
+
+            var $tbody = $table.find('tbody');
+            $tbody.empty();
+            $(elements).each(function() {
+                $(this).appendTo($tbody);
             });
 
             computeEvenOddRows();
         };
 
         var resizeHeaders = function() {
-            var $thead = $table.closest('div.data-table').find('thead');
+            var $thead = $table.hasClass('no-split') ? $table.find('thead') : $table.closest('div.data-table').find('thead');
             var $tbody = $table.find('tbody');
             var $ths = $thead.find('th');
             var $tds = $tbody.find('tr:first td');
+
+            if ($table.hasClass('no-split')) {
+                $tbody.width($thead.width());
+            }
 
             if ($ths.size() > $tds.size()) {
                 $ths.width(
@@ -193,6 +244,10 @@
 
             $ths.each(function() {
                 var $th = $(this);
+
+                if ($th.hasClass('collapsible-column')) {
+                    return true;
+                }
 
                 var $td = $tds.filter(function() {
                     return $(this).index() == $th.index();
@@ -238,9 +293,12 @@
                 $table.find('tbody').closest('table').addClass('body');
             }
 
-            $table.find('th:not(:has(input))').bind('mousemove mouseout', hoverResizableEvent);
-            $table.find('th:not(:has(input))').bind('mousedown mousemove mouseup mouseout', resizeDragEvent);
-            $table.find('th:not(:has(input))').bind('click', function(event) {
+            if (!$table.hasClass('horizontal-overflow')) {
+                $table.find('th:not(:has(input))').bind('mousemove mouseout', hoverResizableEvent);
+                $table.find('th:not(:has(input))').bind('mousedown mousemove mouseup mouseout', resizeDragEvent);
+            }
+
+            $table.find('thead tr:last th:not(:has(input)):not(.collapsible-column):not(.quick-view)').unbind('click').bind('click', function(event) {
                 if ($(this).hasClass('resizable')) {
                     return false;
                 }
