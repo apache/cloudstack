@@ -1433,9 +1433,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (vm == null) {
             throw new InvalidParameterValueException("There is no vm with the nic");
         }
-        if (vm.getState() != State.Stopped) {
-            throw new InvalidParameterValueException("The vm is not Stopped, please stop it before update Vm nic Ip");
-        }
 
         if (!_networkModel.listNetworkOfferingServices(nicVO.getNetworkId()).isEmpty() && vm.getState() != State.Stopped) {
             InvalidParameterValueException ex = new InvalidParameterValueException(
@@ -1482,8 +1479,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     Transaction.execute(new TransactionCallbackNoReturn() {
                         @Override
                         public void doInTransactionWithoutResult(TransactionStatus status) {
-                    _ipAddrMgr.markIpAsUnavailable(ip.getId());
-                    _ipAddressDao.unassignIpAddress(ip.getId());
+                            _ipAddrMgr.markIpAsUnavailable(ip.getId());
+                            _ipAddressDao.unassignIpAddress(ip.getId());
                         }
                     });
                 }
