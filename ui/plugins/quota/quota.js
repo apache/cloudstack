@@ -82,7 +82,7 @@
                           // FIXME: add logic in mgmt server to filter by account
                           if (args.filterBy.search.value) {
                         	  console.log(args.filterBy.search.value);
-                              data.account = args.filterBy.search.value;
+                              data.search = args.filterBy.search.value;
                           }
 
                           $.ajax({
@@ -92,15 +92,18 @@
                               async: true,
                               success: function(json) {
                                   var items = json.quotasummaryresponse.summary;
-                                  $.each(items, function(idx, item) {
-                                	  currency = items[idx].currency;
-                                      items[idx].quota = items[idx].currency + ' ' + items[idx].quota;
-                                      //items[idx].balance = items[idx].currency + ' ' + items[idx].balance;
-                                      items[idx].lowerlimit = -1;
-                                      items[idx].upperlimit = 0;
-                                  });
+                                  var array=[];
+                                  for (var i = 0; i < items.length; i++) {
+                                	  if (typeof data.search != 'undefine' && items[i].account.search(data.search) < 0 && items[i].domain.search(data.search) < 0) continue;
+                                	  currency = items[i].currency;
+                                      items[i].quota = currency + ' ' + items[i].quota;
+                                      items[i].lowerlimit = -1;
+                                      items[i].upperlimit = 0;
+                                	  array.push(items[i]);
+                                  }
+                                  
                                   args.response.success({
-                                      data: items
+                                      data: array
                                   });
                               },
                               error: function(data) {
