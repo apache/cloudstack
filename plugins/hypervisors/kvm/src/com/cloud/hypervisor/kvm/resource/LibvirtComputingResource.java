@@ -85,6 +85,7 @@ import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.dc.Vlan;
@@ -614,7 +615,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         _clusterId = (String)params.get("cluster");
 
-        _updateHostPasswdPath = Script.findScript(hypervisorScriptsDir, "update_host_passwd.sh");
+        _updateHostPasswdPath = Script.findScript(hypervisorScriptsDir, VRScripts.UPDATE_HOST_PASSWD);
         if (_updateHostPasswdPath == null) {
             throw new ConfigurationException("Unable to find update_host_passwd.sh");
         }
@@ -968,11 +969,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected void configureDiskActivityChecks(final Map<String, Object> params) {
         _diskActivityCheckEnabled = Boolean.parseBoolean((String)params.get("vm.diskactivity.checkenabled"));
         if (_diskActivityCheckEnabled) {
-            int timeout = NumbersUtil.parseInt((String)params.get("vm.diskactivity.checktimeout_s"), 0);
+            final int timeout = NumbersUtil.parseInt((String)params.get("vm.diskactivity.checktimeout_s"), 0);
             if (timeout > 0) {
                 _diskActivityCheckTimeoutSeconds = timeout;
             }
-            long inactiveTime = NumbersUtil.parseLong((String)params.get("vm.diskactivity.inactivetime_ms"), 0L);
+            final long inactiveTime = NumbersUtil.parseLong((String)params.get("vm.diskactivity.inactivetime_ms"), 0L);
             if (inactiveTime > 0) {
                 _diskActivityInactiveThresholdMilliseconds = inactiveTime;
             }
@@ -1187,8 +1188,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * @return
      */
     boolean isInterface(final String fname) {
-        StringBuffer commonPattern = new StringBuffer();
-        for (String ifNamePrefix : _ifNamePrefixes) {
+        final StringBuffer commonPattern = new StringBuffer();
+        for (final String ifNamePrefix : _ifNamePrefixes) {
             commonPattern.append("|(").append(ifNamePrefix).append(".*)");
         }
         if(fname.matches(commonPattern.toString())) {
@@ -2076,7 +2077,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 s_logger.debug("Checking physical disk file at path " + volPath + " for disk activity to ensure vm is not running elsewhere");
                 try {
                     HypervisorUtils.checkVolumeFileForActivity(volPath, _diskActivityCheckTimeoutSeconds, _diskActivityInactiveThresholdMilliseconds, _diskActivityCheckFileSizeMin);
-                } catch (IOException ex) {
+                } catch (final IOException ex) {
                     throw new CloudRuntimeException("Unable to check physical disk file for activity", ex);
                 }
                 s_logger.debug("Disk activity check cleared");
