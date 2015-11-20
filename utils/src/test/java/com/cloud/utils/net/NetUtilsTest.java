@@ -39,6 +39,7 @@ import org.apache.log4j.Logger;
 import org.junit.Test;
 
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils.SupersetOrSubset;
 import com.googlecode.ipv6.IPv6Address;
 
 public class NetUtilsTest {
@@ -476,5 +477,35 @@ public class NetUtilsTest {
         assertEquals("mask not right: " + mask, 0x80000000, mask);
         mask = NetUtils.netMaskFromCidr(32l);
         assertEquals("mask not right: " + mask, 0xffffffff, mask);
+    }
+
+    @Test
+    public void testIsCidrsNotEmptyWithNullCidrs() {
+        assertEquals(false, NetUtils.areCidrsNotEmpty(null, null));
+    }
+
+    @Test
+    public void testIsCidrsNotEmptyWithEmptyCidrs() {
+        assertEquals(false, NetUtils.areCidrsNotEmpty("", "  "));
+    }
+
+    @Test
+    public void testIsCidrsNotEmpty() {
+        assertEquals(true, NetUtils.areCidrsNotEmpty("10.10.0.0/16", "10.1.2.3/16"));
+    }
+
+    @Test
+    public void testIsNetowrkASubsetOrSupersetOfNetworkBWithEmptyValues() {
+        assertEquals(SupersetOrSubset.errorInCidrFormat, NetUtils.isNetowrkASubsetOrSupersetOfNetworkB("", null));
+    }
+
+    @Test
+    public void testIsNetworkAWithinNetworkBWithEmptyValues() {
+        assertEquals(false, NetUtils.isNetworkAWithinNetworkB("", null));
+    }
+
+    @Test
+    public void testIsNetworksOverlapWithEmptyValues() {
+        assertEquals(false, NetUtils.isNetworksOverlap("", null));
     }
 }
