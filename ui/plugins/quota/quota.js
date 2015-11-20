@@ -265,6 +265,7 @@
                                             startdate: {
                                                 label: 'label.quota.startdate',
                                                 isDatepicker: true,
+                                                maxDate: '+0d',
                                                 validation: {
                                                     required: true
                                                 }
@@ -272,6 +273,8 @@
                                             enddate: {
                                                 label: 'label.quota.enddate',
                                                 isDatepicker: true,
+                                                dependsOn: 'startdate',
+                                                maxDate: '+0d',
                                                 validation: {
                                                     required: true
                                                 }
@@ -309,7 +312,6 @@
                             	   }
                               },
                               success: function(json) {
-                                  console.log(json);
                                   var usages = json.quotastatementresponse.statement.quotausage;
                                   var currency = json.quotastatementresponse.statement.currency;
                                   $.each(usages, function(idx, item) {
@@ -371,6 +373,7 @@
                                             startdate: {
                                                 label: 'label.quota.startdate',
                                                 isDatepicker: true,
+                                                maxDate: '+0d',
                                                 validation: {
                                                     required: true
                                                 }
@@ -378,6 +381,8 @@
                                             enddate: {
                                                 label: 'label.quota.enddate',
                                                 isDatepicker: true,
+                                                dependsOn: 'startdate',
+                                                maxDate: '+0d',
                                                 validation: {
                                                     required: true
                                                 }
@@ -394,7 +399,6 @@
                            },
     
                       dataProvider: function(args) {
-                          console.log(args);
                           $.ajax({
                               url: createURL('quotaBalance'),
                               dataType: 'json',
@@ -418,8 +422,6 @@
                                   }
                               },
                               success: function(json) {
-                                  console.log('quota balance');
-                                  console.log(json);
                                   var bal = json.quotabalanceresponse.balance;
                                   var currency = bal.currency;
                                   var array=[{
