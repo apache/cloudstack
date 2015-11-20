@@ -45,33 +45,21 @@ public class VRScripts {
     // New scripts for use with chef
     public static final String UPDATE_CONFIG = "update_config.py";
 
+    // Script still in use - mostly by HyperV
     public static final String S2SVPN_CHECK = "checkbatchs2svpn.sh";
     public static final String S2SVPN_IPSEC = "ipsectunnel.sh";
     public static final String DHCP = "edithosts.sh";
     public static final String DNSMASQ_CONFIG = "dnsmasq.sh";
-    public static final String FIREWALL_EGRESS = "firewall_egress.sh";
-    public static final String FIREWALL_INGRESS = "firewall_ingress.sh";
-    public static final String FIREWALL_NAT = "firewall_nat.sh";
-    public static final String IPALIAS_CREATE = "createipAlias.sh";
-    public static final String IPALIAS_DELETE = "deleteipAlias.sh";
     public static final String IPASSOC = "ipassoc.sh";
     public static final String LB = "loadbalancer.sh";
     public static final String MONITOR_SERVICE = "monitor_service.sh";
-    public static final String ROUTER_ALERTS = "getRouterAlerts.sh";
     public static final String PASSWORD = "savepassword.sh";
+    public static final String ROUTER_ALERTS = "getRouterAlerts.sh";
     public static final String RVR_CHECK = "checkrouter.sh";
-    public static final String RVR_BUMPUP_PRI = "bumpup_priority.sh";
     public static final String VMDATA = "vmdata.py";
+    public static final String RVR_BUMPUP_PRI = "bumpup_priority.sh";
     public static final String VERSION = "get_template_version.sh";
-    public static final String VPC_ACL = "vpc_acl.sh";
-    public static final String VPC_GUEST_NETWORK = "vpc_guestnw.sh";
-    public static final String VPC_IPASSOC = "vpc_ipassoc.sh";
-    public static final String VPC_LB = "vpc_loadbalancer.sh";
-    public static final String VPC_PRIVATEGW = "vpc_privateGateway.sh";
-    public static final String VPC_PRIVATEGW_ACL = "vpc_privategw_acl.sh";
-    public static final String VPC_PORTFORWARDING = "vpc_portforwarding.sh";
     public static final String VPC_SOURCE_NAT = "vpc_snat.sh";
-    public static final String VPC_STATIC_NAT = "vpc_staticnat.sh";
     public static final String VPC_STATIC_ROUTE = "vpc_staticroute.sh";
     public static final String VPN_L2TP = "vpn_l2tp.sh";
     public static final String UPDATE_HOST_PASSWD = "update_host_passwd.sh";

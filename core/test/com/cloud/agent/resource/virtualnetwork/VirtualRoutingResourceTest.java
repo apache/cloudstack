@@ -24,8 +24,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -83,9 +81,6 @@ import com.cloud.network.vpc.NetworkACLItem.TrafficType;
 import com.cloud.network.vpc.VpcGateway;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.net.NetUtils;
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -154,18 +149,14 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
 
     private void verifyFile(final NetworkElementCommand cmd, final String path, final String filename, final String content) {
         if (cmd instanceof AggregationControlCommand) {
-            verifyFile((AggregationControlCommand)cmd, path, filename, content);
+            verifyFile(cmd, path, filename, content);
         } else if (cmd instanceof LoadBalancerConfigCommand) {
             verifyFile((LoadBalancerConfigCommand)cmd, path, filename, content);
         }
     }
 
     protected void verifyCommand(final NetworkElementCommand cmd, final String script, final String args) {
-        if (cmd instanceof SetPortForwardingRulesVpcCommand) {
-            verifyArgs((SetPortForwardingRulesVpcCommand) cmd, script, args);
-        } else if (cmd instanceof SetPortForwardingRulesCommand) {
-            verifyArgs((SetPortForwardingRulesCommand) cmd, script, args);
-        } else if (cmd instanceof SetStaticRouteCommand) {
+        if (cmd instanceof SetStaticRouteCommand) {
             verifyArgs((SetStaticRouteCommand) cmd, script, args);
         } else if (cmd instanceof SetStaticNatRulesCommand) {
             verifyArgs((SetStaticNatRulesCommand) cmd, script, args);
@@ -175,18 +166,10 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
             verifyArgs((SavePasswordCommand)cmd, script, args);
         } else if (cmd instanceof DhcpEntryCommand) {
             verifyArgs((DhcpEntryCommand)cmd, script, args);
-        } else if (cmd instanceof CreateIpAliasCommand) {
-            verifyArgs((CreateIpAliasCommand)cmd, script, args);
         } else if (cmd instanceof DnsMasqConfigCommand) {
             verifyArgs((DnsMasqConfigCommand)cmd, script, args);
-        } else if (cmd instanceof DeleteIpAliasCommand) {
-            verifyArgs((DeleteIpAliasCommand)cmd, script, args);
         } else if (cmd instanceof VmDataCommand) {
             verifyArgs((VmDataCommand)cmd, script, args);
-        } else if (cmd instanceof SetFirewallRulesCommand) {
-            verifyArgs((SetFirewallRulesCommand)cmd, script, args);
-        } else if (cmd instanceof BumpUpPriorityCommand) {
-            verifyArgs((BumpUpPriorityCommand)cmd, script, args);
         } else if (cmd instanceof RemoteAccessVpnCfgCommand) {
             verifyArgs((RemoteAccessVpnCfgCommand)cmd, script, args);
         } else if (cmd instanceof VpnUsersCfgCommand) {
@@ -229,11 +212,6 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         assertTrue(answer.getResult());
     }
 
-    private void verifyArgs(final BumpUpPriorityCommand cmd, final String script, final String args) {
-        assertEquals(script, VRScripts.RVR_BUMPUP_PRI);
-        assertEquals(args, null);
-    }
-
     @Test
     public void testSetPortForwardingRulesVpcCommand() {
         final SetPortForwardingRulesVpcCommand cmd = generateSetPortForwardingRulesVpcCommand();
@@ -257,21 +235,6 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         return cmd;
     }
 
-    private void verifyArgs(final SetPortForwardingRulesVpcCommand cmd, final String script, final String args) {
-        assertTrue(script.equals(VRScripts.VPC_PORTFORWARDING));
-        _count ++;
-        switch (_count) {
-        case 1:
-            assertEquals(args, "-A -P tcp -l 64.1.1.10 -p 22:80 -r 10.10.1.10 -d 22-80");
-            break;
-        case 2:
-            assertEquals(args, "-D -P udp -l 64.1.1.11 -p 8080:8080 -r 10.10.1.11 -d 8080-8080");
-            break;
-        default:
-            fail("Failed to recongize the match!");
-        }
-    }
-
     @Test
     public void testSetPortForwardingRulesCommand() {
         final SetPortForwardingRulesCommand cmd = generateSetPortForwardingRulesCommand();
@@ -292,21 +255,6 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTERNAME);
         assertEquals(cmd.getAnswersCount(), 2);
         return cmd;
-    }
-
-    private void verifyArgs(final SetPortForwardingRulesCommand cmd, final String script, final String args) {
-        assertTrue(script.equals(VRScripts.FIREWALL_NAT));
-        _count ++;
-        switch (_count) {
-        case 1:
-            assertEquals(args, "-A -P tcp -l 64.1.1.10 -p 22:80 -r 10.10.1.10 -d 22:80");
-            break;
-        case 2:
-            assertEquals(args, "-D -P udp -l 64.1.1.11 -p 8080:8080 -r 10.10.1.11 -d 8080:8080");
-            break;
-        default:
-            fail("Failed to recongize the match!");
-        }
     }
 
     @Test
@@ -382,22 +330,6 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
             case 1:
                 assertEquals(VRScripts.UPDATE_CONFIG, script);
                 assertEquals(VRScripts.IP_ASSOCIATION_CONFIG, args);
-                break;
-            case 2:
-                assertEquals(script, VRScripts.VPC_PRIVATEGW);
-                assertEquals(args, " -A  -l 64.1.1.10 -c eth2");
-                break;
-            case 3:
-                assertEquals(script, VRScripts.VPC_IPASSOC);
-                assertEquals(args, " -D  -l 64.1.1.11 -c eth2 -g 64.1.1.1 -m 24 -n 64.1.1.0");
-                break;
-            case 4:
-                assertEquals(script, VRScripts.VPC_PRIVATEGW);
-                assertEquals(args, " -D  -l 64.1.1.11 -c eth2");
-                break;
-            case 5:
-                assertEquals(script, VRScripts.VPC_IPASSOC);
-                assertEquals(args, " -A  -l 65.1.1.11 -c eth2 -g 65.1.1.1 -m 24 -n 65.1.1.0");
                 break;
             default:
                 fail("Failed to recongize the match!");
@@ -676,17 +608,6 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         return cmd;
     }
 
-    private void verifyArgs(final SetFirewallRulesCommand cmd, final String script, final String args) {
-        assertEquals(script, VRScripts.FIREWALL_INGRESS);
-
-        //Since the arguments are generated with a Set
-        //one can not make a bet on the order
-        assertTrue(args.startsWith(" -F -a "));
-        assertTrue(args.contains("64.10.10.10:ICMP:0:0:10.10.1.1/24-10.10.1.2/24:"));
-        assertTrue(args.contains("64.10.10.10:reverted:0:0:0:"));
-        assertTrue(args.contains("64.10.10.10:TCP:22:80:10.10.1.1/24-10.10.1.2/24:"));
-    }
-
     @Test
     public void testVmDataCommand() {
         final Answer answer = _resource.executeRequest(generateVmDataCommand());
@@ -804,11 +725,6 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         return cmd;
     }
 
-    private void verifyArgs(final CreateIpAliasCommand cmd, final String script, final String args) {
-        assertEquals(script, VRScripts.IPALIAS_CREATE);
-        assertEquals(args, "1:169.254.3.10:255.255.255.0-2:169.254.3.11:255.255.255.0-3:169.254.3.12:255.255.255.0-");
-    }
-
     @Test
     public void testDeleteIpAliasCommand() {
         final Answer answer = _resource.executeRequest(generateDeleteIpAliasCommand());
@@ -823,11 +739,6 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         final DeleteIpAliasCommand cmd = new DeleteIpAliasCommand("169.254.10.1", aliases, aliases);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTERNAME);
         return cmd;
-    }
-
-    private void verifyArgs(final DeleteIpAliasCommand cmd, final String script, final String args) {
-        assertEquals(script, VRScripts.IPALIAS_DELETE);
-        assertEquals(args, "1:169.254.3.10:255.255.255.0-2:169.254.3.11:255.255.255.0-3:169.254.3.12:255.255.255.0-- 1:169.254.3.10:255.255.255.0-2:169.254.3.11:255.255.255.0-3:169.254.3.12:255.255.255.0-");
     }
 
     @Test
@@ -951,10 +862,6 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
             assertEquals(script, VRScripts.LB);
             assertEquals(args, " -i 10.1.10.2 -f " + _file + " -a 64.10.1.10:80:, -s 10.1.10.2:8081:0/0:,,");
             break;
-        case 4:
-            assertEquals(script, VRScripts.VPC_LB);
-            assertEquals(args, " -i 10.1.10.2 -f " + _file + " -a 64.10.1.10:80:, -s 10.1.10.2:8081:0/0:,,");
-            break;
         default:
             fail();
         }
@@ -1009,122 +916,4 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         assertTrue(args.startsWith("-c /var/cache/cloud/VR-"));
         assertTrue(args.endsWith(".cfg"));
     }
-
-    protected void verifyFile(final AggregationControlCommand cmd, final String path, final String filename, final String content) {
-        assertEquals(path, "/var/cache/cloud/");
-        assertTrue(filename.startsWith("VR-"));
-        assertTrue(filename.endsWith(".cfg"));
-        final Collection<String> filteredScripts = Collections2.transform(Collections2.filter (
-                Arrays.asList(content.split("</?script>")), new Predicate<String>() {
-
-                    @Override
-                    public boolean apply(final String str) {
-                        return str.trim().startsWith("/opt/cloud");
-                    }
-                }), new Function<String, String>() {
-
-            @Override
-            public String apply(final String str) {
-                return str.trim();
-            }
-        });
-        final String[] scripts = filteredScripts.toArray(new String[filteredScripts
-                                                                    .size()]);
-
-        assertEquals(
-                "/opt/cloud/bin/ipassoc.sh -A -s -f -l 64.1.1.10/24 -c eth2 -g 64.1.1.1",
-                scripts[0]);
-
-        assertEquals(
-                "/opt/cloud/bin/ipassoc.sh -D -l 64.1.1.11/24 -c eth2 -g 64.1.1.1",
-                scripts[1]);
-
-        assertEquals(
-                "/opt/cloud/bin/ipassoc.sh -A -l 65.1.1.11/24 -c eth2 -g 65.1.1.1",
-                scripts[2]);
-        assertEquals(
-                "/opt/cloud/bin/vpc_ipassoc.sh  -A  -l 64.1.1.10 -c eth2 -g 64.1.1.1 -m 24 -n 64.1.1.0",
-                scripts[3]);
-        assertEquals(
-                "/opt/cloud/bin/vpc_privateGateway.sh  -A  -l 64.1.1.10 -c eth2",
-                scripts[4]);
-        assertEquals(
-                "/opt/cloud/bin/vpc_ipassoc.sh  -D  -l 64.1.1.11 -c eth2 -g 64.1.1.1 -m 24 -n 64.1.1.0",
-                scripts[5]);
-        assertEquals(
-                "/opt/cloud/bin/vpc_privateGateway.sh  -D  -l 64.1.1.11 -c eth2",
-                scripts[6]);
-        assertEquals(
-                "/opt/cloud/bin/vpc_ipassoc.sh  -A  -l 65.1.1.11 -c eth2 -g 65.1.1.1 -m 24 -n 65.1.1.0",
-                scripts[7]);
-        //the list generated by SetFirewallCmd is actually generated through a Set
-        //therefore we can not bet on the order of the parameters
-        assertTrue(
-                scripts[8].matches("/opt/cloud/bin/firewall_ingress.sh  -F -a .*"));
-        assertTrue(
-                scripts[8].contains("64.10.10.10:ICMP:0:0:10.10.1.1/24-10.10.1.2/24:"));
-        assertTrue(
-                scripts[8].contains("64.10.10.10:TCP:22:80:10.10.1.1/24-10.10.1.2/24:"));
-        assertTrue(
-                scripts[8].contains("64.10.10.10:reverted:0:0:0:"));
-
-        assertEquals(
-                "/opt/cloud/bin/firewall_nat.sh -A -P tcp -l 64.1.1.10 -p 22:80 -r 10.10.1.10 -d 22:80",
-                scripts[9]);
-        assertEquals(
-                "/opt/cloud/bin/firewall_nat.sh -D -P udp -l 64.1.1.11 -p 8080:8080 -r 10.10.1.11 -d 8080:8080",
-                scripts[10]);
-        assertEquals(
-                "/opt/cloud/bin/vpc_portforwarding.sh -A -P tcp -l 64.1.1.10 -p 22:80 -r 10.10.1.10 -d 22-80",
-                scripts[11]);
-        assertEquals(
-                "/opt/cloud/bin/vpc_portforwarding.sh -D -P udp -l 64.1.1.11 -p 8080:8080 -r 10.10.1.11 -d 8080-8080",
-                scripts[12]);
-        assertEquals(
-                "/opt/cloud/bin/createIpAlias.sh 1:169.254.3.10:255.255.255.0-2:169.254.3.11:255.255.255.0-3:169.254.3.12:255.255.255.0-",
-                scripts[13]);
-        assertEquals(
-                "/opt/cloud/bin/deleteIpAlias.sh 1:169.254.3.10:255.255.255.0-2:169.254.3.11:255.255.255.0-3:169.254.3.12:255.255.255.0-- 1:169.254.3.10:255.255.255.0-2:169.254.3.11:255.255.255.0-3:169.254.3.12:255.255.255.0-",
-                scripts[14]);
-        assertEquals(
-                "/opt/cloud/bin/dnsmasq.sh 10.1.20.2:10.1.20.1:255.255.255.0:10.1.20.5-10.1.21.2:10.1.21.1:255.255.255.0:10.1.21.5-",
-                scripts[15]);
-        assertEquals(
-                "/opt/cloud/bin/vpn_l2tp.sh -r 10.10.1.10-10.10.1.20 -p sharedkey -s 124.10.10.10 -l 10.10.1.1 -c  -C 10.1.1.1/24 -i eth2",
-                scripts[16]);
-        assertEquals(
-                "/opt/cloud/bin/vpn_l2tp.sh -d  -s 124.10.10.10 -C 10.1.1.1/24 -i eth2",
-                scripts[17]);
-        assertEquals(
-                "/opt/cloud/bin/vpn_l2tp.sh -r 10.10.1.10-10.10.1.20 -p sharedkey -s 124.10.10.10 -l 10.10.1.1 -c  -C 10.1.1.1/24 -i eth1",
-                scripts[18]);
-        assertEquals(
-                "/opt/cloud/bin/firewall_nat.sh -A -P tcp -l 64.1.1.10 -p 22:80 -r 10.10.1.10 -d 22:80",
-                scripts[19]);
-        assertEquals(
-                "/opt/cloud/bin/firewall_nat.sh -D -P udp -l 64.1.1.11 -p 8080:8080 -r 10.10.1.11 -d 8080:8080",
-                scripts[20]);
-        assertEquals(
-                "/opt/cloud/bin/vpc_portforwarding.sh -A -P tcp -l 64.1.1.10 -p 22:80 -r 10.10.1.10 -d 22-80",
-                scripts[21]);
-        assertEquals(
-                "/opt/cloud/bin/vpc_portforwarding.sh -D -P udp -l 64.1.1.11 -p 8080:8080 -r 10.10.1.11 -d 8080-8080",
-                scripts[22]);
-        assertEquals(
-                "/opt/cloud/bin/edithosts.sh  -m 12:34:56:78:90:AB -4 10.1.10.2 -h vm1",
-                scripts[23]);
-        assertEquals(
-                "/opt/cloud/bin/edithosts.sh  -m 12:34:56:78:90:AB -h vm1 -6 2001:db8:0:0:0:ff00:42:8329 -u 00:03:00:01:12:34:56:78:90:AB",
-                scripts[24]);
-        assertEquals(
-                "/opt/cloud/bin/edithosts.sh  -m 12:34:56:78:90:AB -4 10.1.10.2 -h vm1 -6 2001:db8:0:0:0:ff00:42:8329 -u 00:03:00:01:12:34:56:78:90:AB",
-                scripts[25]);
-        assertEquals("/opt/cloud/bin/savepassword.sh -v 10.1.10.4 -p 123pass",
-                scripts[26]);
-        assertEquals(
-                "/opt/cloud/bin/vmdata.py -d eyIxMC4xLjEwLjQiOltbInVzZXJkYXRhIiwidXNlci1kYXRhIiwidXNlci1kYXRhIl0sWyJtZXRhZGF0YSIsInNlcnZpY2Utb2ZmZXJpbmciLCJzZXJ2aWNlT2ZmZXJpbmciXSxbIm1ldGFkYXRhIiwiYXZhaWxhYmlsaXR5LXpvbmUiLCJ6b25lTmFtZSJdLFsibWV0YWRhdGEiLCJsb2NhbC1pcHY0IiwiMTAuMS4xMC40Il0sWyJtZXRhZGF0YSIsImxvY2FsLWhvc3RuYW1lIiwidGVzdC12bSJdLFsibWV0YWRhdGEiLCJwdWJsaWMtaXB2NCIsIjExMC4xLjEwLjQiXSxbIm1ldGFkYXRhIiwicHVibGljLWhvc3RuYW1lIiwiaG9zdG5hbWUiXSxbIm1ldGFkYXRhIiwiaW5zdGFuY2UtaWQiLCJpLTQtVk0iXSxbIm1ldGFkYXRhIiwidm0taWQiLCI0Il0sWyJtZXRhZGF0YSIsInB1YmxpYy1rZXlzIiwicHVibGlja2V5Il0sWyJtZXRhZGF0YSIsImNsb3VkLWlkZW50aWZpZXIiLCJDbG91ZFN0YWNrLXt0ZXN0fSJdXX0=",
-                scripts[27]);
-    }
-
 }
-

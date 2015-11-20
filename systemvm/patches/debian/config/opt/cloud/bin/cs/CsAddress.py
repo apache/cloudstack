@@ -228,10 +228,10 @@ class CsDevice:
                 continue
             self.devlist.append(vals[0])
 
-    def waitfordevice(self):
+    def waitfordevice(self, timeout=15):
         """ Wait up to 15 seconds for a device to become available """
         count = 0
-        while count < 15:
+        while count < timeout:
             if self.dev in self.devlist:
                 return True
             time.sleep(1)
@@ -497,6 +497,9 @@ class CsIP:
         self.fw.append(["", "", "-A NETWORK_STATS -i eth2 -o eth0 -p tcp"])
         self.fw.append(["", "", "-A NETWORK_STATS ! -i eth0 -o eth2 -p tcp"])
         self.fw.append(["", "", "-A NETWORK_STATS -i eth2 ! -o eth0 -p tcp"])
+
+        self.fw.append(["filter", "", "-A INPUT -d 224.0.0.18/32 -j ACCEPT"])
+        self.fw.append(["filter", "", "-A INPUT -d 225.0.0.50/32 -j ACCEPT"])
 
         self.fw.append(["filter", "", "-A INPUT -p icmp -j ACCEPT"])
         self.fw.append(["filter", "", "-A INPUT -i eth0 -p tcp -m tcp --dport 3922 -m state --state NEW,ESTABLISHED -j ACCEPT"])
