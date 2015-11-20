@@ -1013,10 +1013,12 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                         s_logger.warn("Unable to update router " + router.getHostName() + "'s status");
                     }
                     RedundantState state = RedundantState.UNKNOWN;
-                    if (answer != null && answer.getResult()) {
-                        state = answer.getState();
-                    } else {
-                        s_logger.info("Agent response doesn't seem to be correct ==> " + answer.getResult());
+                    if (answer != null) {
+                        if (answer.getResult()) {
+                            state = answer.getState();
+                        } else {
+                            s_logger.info("Agent response doesn't seem to be correct ==> " + answer.getResult());
+                        }
                     }
                     router.setRedundantState(state);
                     updated = true;
