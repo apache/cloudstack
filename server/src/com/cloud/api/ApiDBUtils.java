@@ -289,7 +289,6 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
@@ -1275,10 +1274,14 @@ public class ApiDBUtils {
         return s_networkModel.getDedicatedNetworkDomain(networkId);
     }
 
-    public static float getCpuOverprovisioningFactor() {
-        String opFactor = s_configDao.getValue(CapacityManager.CpuOverprovisioningFactorCK);
-        float cpuOverprovisioningFactor = NumbersUtil.parseFloat(opFactor, 1);
-        return cpuOverprovisioningFactor;
+    public static float getCpuOverprovisioningFactor(long clusterId) {
+        float opFactor = CapacityManager.CpuOverprovisioningFactor.valueIn(clusterId);
+        return opFactor;
+    }
+
+    public static float getMemOverprovisioningFactor(long clusterId) {
+        float opFactor = CapacityManager.MemOverprovisioningFactor.valueIn(clusterId);
+        return opFactor;
     }
 
     public static boolean isExtractionDisabled() {
