@@ -40,6 +40,7 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.commons.validator.routines.InetAddressValidator;
@@ -838,13 +839,13 @@ public class NetUtils {
     }
 
     public static SupersetOrSubset isNetowrkASubsetOrSupersetOfNetworkB(final String cidrA, final String cidrB) {
+        if (!areCidrsNotEmpty(cidrA, cidrB)) {
+            return SupersetOrSubset.errorInCidrFormat;
+        }
         final Long[] cidrALong = cidrToLong(cidrA);
         final Long[] cidrBLong = cidrToLong(cidrB);
         long shift = 0;
-        if (cidrALong == null || cidrBLong == null) {
-            //implies error in the cidr format
-            return SupersetOrSubset.errorInCidrFormat;
-        }
+
         if (cidrALong[1] >= cidrBLong[1]) {
             shift = MAX_CIDR - cidrBLong[1];
         } else {
@@ -867,13 +868,18 @@ public class NetUtils {
     }
 
     public static boolean isNetworkAWithinNetworkB(final String cidrA, final String cidrB) {
-        final Long[] cidrALong = cidrToLong(cidrA);
-        final Long[] cidrBLong = cidrToLong(cidrB);
-        if (cidrALong == null || cidrBLong == null) {
+        if (!areCidrsNotEmpty(cidrA, cidrB)) {
             return false;
         }
-        final long shift = MAX_CIDR - cidrBLong[1];
+        Long[] cidrALong = cidrToLong(cidrA);
+        Long[] cidrBLong = cidrToLong(cidrB);
+
+        long shift = MAX_CIDR - cidrBLong[1];
         return cidrALong[0] >> shift == cidrBLong[0] >> shift;
+    }
+
+    static boolean areCidrsNotEmpty(String cidrA, String cidrB) {
+        return StringUtils.isNotEmpty(cidrA) && StringUtils.isNotEmpty(cidrB);
     }
 
     public static Long[] cidrToLong(final String cidr) {
@@ -887,12 +893,12 @@ public class NetUtils {
         final String cidrAddress = cidrPair[0];
         final String cidrSize = cidrPair[1];
         if (!isValidIp(cidrAddress)) {
-            throw new CloudRuntimeException("cidr is not bvalid in ip space" + cidr);
+            throw new CloudRuntimeException("cidr is not valid in ip space" + cidr);
         }
         long cidrSizeNum = getCidrSizeFromString(cidrSize);
         final long numericNetmask = netMaskFromCidr(cidrSizeNum);
         final long ipAddr = ip2Long(cidrAddress);
-        final Long[] cidrlong = {ipAddr & numericNetmask, (long)cidrSizeNum};
+        final Long[] cidrlong = {ipAddr & numericNetmask, cidrSizeNum};
         return cidrlong;
 
     }
@@ -1164,11 +1170,12 @@ public class NetUtils {
     }
 
     public static boolean isNetworksOverlap(final String cidrA, final String cidrB) {
-        final Long[] cidrALong = cidrToLong(cidrA);
-        final Long[] cidrBLong = cidrToLong(cidrB);
-        if (cidrALong == null || cidrBLong == null) {
+        if (!areCidrsNotEmpty(cidrA, cidrB)) {
             return false;
         }
+        Long[] cidrALong = cidrToLong(cidrA);
+        Long[] cidrBLong = cidrToLong(cidrB);
+
         final long shift = MAX_CIDR - (cidrALong[1] > cidrBLong[1] ? cidrBLong[1] : cidrALong[1]);
         return cidrALong[0] >> shift == cidrBLong[0] >> shift;
     }
