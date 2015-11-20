@@ -70,11 +70,11 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.resource.StorageProcessor;
-import com.cloud.utils.S3Utils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.storage.encoding.DecodedDataObject;
 import com.cloud.utils.storage.encoding.DecodedDataStore;
 import com.cloud.utils.storage.encoding.Decoder;
+import com.cloud.utils.storage.S3.ClientOptions;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.PBD;
@@ -1061,7 +1061,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
         try {
 
-            final List<String> parameters = newArrayList(flattenProperties(s3, S3Utils.ClientOptions.class));
+            final List<String> parameters = newArrayList(flattenProperties(s3, ClientOptions.class));
             // https workaround for Introspector bug that does not
             // recognize Boolean accessor methods ...
 

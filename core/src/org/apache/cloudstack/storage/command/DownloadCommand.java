@@ -25,7 +25,7 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 import com.cloud.agent.api.storage.AbstractDownloadCommand;
 import com.cloud.agent.api.storage.PasswordAuth;
-import com.cloud.agent.api.storage.Proxy;
+import com.cloud.utils.net.Proxy;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.storage.Storage.ImageFormat;

@@ -26,6 +26,7 @@ import static org.apache.cloudstack.api.ApiConstants.S3_CONNECTION_TTL;
 import static org.apache.cloudstack.api.ApiConstants.S3_END_POINT;
 import static org.apache.cloudstack.api.ApiConstants.S3_HTTPS_FLAG;
 import static org.apache.cloudstack.api.ApiConstants.S3_MAX_ERROR_RETRY;
+import static org.apache.cloudstack.api.ApiConstants.S3_SIGNER;
 import static org.apache.cloudstack.api.ApiConstants.S3_SECRET_KEY;
 import static org.apache.cloudstack.api.ApiConstants.S3_SOCKET_TIMEOUT;
 import static org.apache.cloudstack.api.ApiConstants.S3_USE_TCP_KEEPALIVE;
@@ -36,6 +37,7 @@ import static org.apache.cloudstack.api.BaseCmd.CommandType.STRING;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.cloud.utils.storage.S3.ClientOptions;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -54,12 +56,12 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.ImageStore;
 
-@APICommand(name = "addS3", description = "Adds S3", responseObject = ImageStoreResponse.class, since = "4.0.0",
+@APICommand(name = "addImageStoreS3", description = "Adds S3 Image Store", responseObject = ImageStoreResponse.class, since = "4.7.0",
         requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
-public final class AddS3Cmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(AddS3Cmd.class.getName());
+public final class AddImageStoreS3CMD extends BaseCmd implements ClientOptions {
+    public static final Logger s_logger = Logger.getLogger(AddImageStoreS3CMD.class.getName());
 
-    private static final String s_name = "adds3response";
+    private static final String s_name = "addImageStoreS3Response";
 
     @Parameter(name = S3_ACCESS_KEY, type = STRING, required = true, description = "S3 access key")
     private String accessKey;
@@ -67,41 +69,49 @@ public final class AddS3Cmd extends BaseCmd {
     @Parameter(name = S3_SECRET_KEY, type = STRING, required = true, description = "S3 secret key")
     private String secretKey;
 
-    @Parameter(name = S3_END_POINT, type = STRING, required = false, description = "S3 host name")
+    @Parameter(name = S3_END_POINT, type = STRING, required = true, description = "S3 endpoint")
     private String endPoint;
 
-    @Parameter(name = S3_BUCKET_NAME, type = STRING, required = true, description = "name of the template storage bucket")
+    @Parameter(name = S3_BUCKET_NAME, type = STRING, required = true, description = "Name of the storage bucket")
     private String bucketName;
 
-    @Parameter(name = S3_HTTPS_FLAG, type = BOOLEAN, required = false, description = "connect to the S3 endpoint via HTTPS?")
+    @Parameter(name = S3_SIGNER, type = STRING, required = false, description = "Signer Algorithm to use, either S3SignerType or AWSS3V4SignerType")
+    private String signer;
+
+    @Parameter(name = S3_HTTPS_FLAG, type = BOOLEAN, required = false, description = "Use HTTPS instead of HTTP")
     private Boolean httpsFlag;
 
-    @Parameter(name = S3_CONNECTION_TIMEOUT, type = INTEGER, required = false, description = "connection timeout (milliseconds)")
+    @Parameter(name = S3_CONNECTION_TIMEOUT, type = INTEGER, required = false, description = "Connection timeout (milliseconds)")
     private Integer connectionTimeout;
 
-    @Parameter(name = S3_MAX_ERROR_RETRY, type = INTEGER, required = false, description = "maximum number of times to retry on error")
+    @Parameter(name = S3_MAX_ERROR_RETRY, type = INTEGER, required = false, description = "Maximum number of times to retry on error")
     private Integer maxErrorRetry;
 
-    @Parameter(name = S3_SOCKET_TIMEOUT, type = INTEGER, required = false, description = "socket timeout (milliseconds)")
+    @Parameter(name = S3_SOCKET_TIMEOUT, type = INTEGER, required = false, description = "Socket timeout (milliseconds)")
     private Integer socketTimeout;
 
-    @Parameter(name = S3_CONNECTION_TTL, type = INTEGER, required = false, description = "connection ttl (milliseconds)")
+    @Parameter(name = S3_CONNECTION_TTL, type = INTEGER, required = false, description = "Connection TTL (milliseconds)")
     private Integer connectionTtl;
 
-    @Parameter(name = S3_USE_TCP_KEEPALIVE, type = BOOLEAN, required = false, description = "whether tcp keepalive is used")
+    @Parameter(name = S3_USE_TCP_KEEPALIVE, type = BOOLEAN, required = false, description = "Whether TCP keep-alive is used")
     private Boolean useTCPKeepAlive;
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException, NetworkRuleConflictException {
 
-        Map<String, String> dm = new HashMap<String, String>();
+        Map<String, String> dm = new HashMap();
+
         dm.put(ApiConstants.S3_ACCESS_KEY, getAccessKey());
         dm.put(ApiConstants.S3_SECRET_KEY, getSecretKey());
         dm.put(ApiConstants.S3_END_POINT, getEndPoint());
         dm.put(ApiConstants.S3_BUCKET_NAME, getBucketName());
-        if (getHttpsFlag() != null) {
-            dm.put(ApiConstants.S3_HTTPS_FLAG, getHttpsFlag().toString());
+
+        if (getSigner() != null && (getSigner().equals(ApiConstants.S3_V3_SIGNER) || getSigner().equals(ApiConstants.S3_V4_SIGNER))) {
+            dm.put(ApiConstants.S3_SIGNER, getSigner());
+        }
+        if (isHttps() != null) {
+            dm.put(ApiConstants.S3_HTTPS_FLAG, isHttps().toString());
         }
         if (getConnectionTimeout() != null) {
             dm.put(ApiConstants.S3_CONNECTION_TIMEOUT, getConnectionTimeout().toString());
@@ -119,22 +129,75 @@ public final class AddS3Cmd extends BaseCmd {
             dm.put(ApiConstants.S3_USE_TCP_KEEPALIVE, getUseTCPKeepAlive().toString());
         }
 
-
         try{
             ImageStore result = _storageService.discoverImageStore(null, null, "S3", null, dm);
-            ImageStoreResponse storeResponse = null;
+            ImageStoreResponse storeResponse;
             if (result != null) {
                 storeResponse = _responseGenerator.createImageStoreResponse(result);
                 storeResponse.setResponseName(getCommandName());
-                storeResponse.setObjectName("secondarystorage");
+                storeResponse.setObjectName("imagestore");
                 setResponseObject(storeResponse);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add S3 secondary storage");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add S3 Image Store.");
             }
         } catch (DiscoveryException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
+    }
+
+    @Override
+    public String getCommandName() {
+        return s_name;
+    }
+
+    @Override
+    public long getEntityOwnerId() {
+        return ACCOUNT_ID_SYSTEM;
+    }
+
+    public String getAccessKey() {
+        return accessKey;
+    }
+
+    public String getSecretKey() {
+        return secretKey;
+    }
+
+    public String getEndPoint() {
+        return endPoint;
+    }
+
+    public String getBucketName() {
+        return bucketName;
+    }
+
+    public String getSigner() {
+        return signer;
+    }
+
+    public Boolean isHttps() {
+        return httpsFlag;
+    }
+
+    public Integer getConnectionTimeout() {
+        return connectionTimeout;
+    }
+
+    public Integer getMaxErrorRetry() {
+        return maxErrorRetry;
+    }
+
+    public Integer getSocketTimeout() {
+        return socketTimeout;
+    }
+
+    public Integer getConnectionTtl() {
+        return connectionTtl;
+    }
+
+    public Boolean getUseTCPKeepAlive() {
+        return useTCPKeepAlive;
     }
 
     @Override
@@ -148,7 +211,7 @@ public final class AddS3Cmd extends BaseCmd {
             return false;
         }
 
-        final AddS3Cmd thatAddS3Cmd = (AddS3Cmd)thatObject;
+        final AddImageStoreS3CMD thatAddS3Cmd = (AddImageStoreS3CMD)thatObject;
 
         if (httpsFlag != null ? !httpsFlag.equals(thatAddS3Cmd.httpsFlag) : thatAddS3Cmd.httpsFlag != null) {
             return false;
@@ -191,7 +254,6 @@ public final class AddS3Cmd extends BaseCmd {
         }
 
         return true;
-
     }
 
     @Override
@@ -201,64 +263,14 @@ public final class AddS3Cmd extends BaseCmd {
         result = 31 * result + (secretKey != null ? secretKey.hashCode() : 0);
         result = 31 * result + (endPoint != null ? endPoint.hashCode() : 0);
         result = 31 * result + (bucketName != null ? bucketName.hashCode() : 0);
-        result = 31 * result + (httpsFlag != null && httpsFlag == true ? 1 : 0);
+        result = 31 * result + (signer != null ? signer.hashCode() : 0);
+        result = 31 * result + (httpsFlag != null && httpsFlag ? 1 : 0);
         result = 31 * result + (connectionTimeout != null ? connectionTimeout.hashCode() : 0);
         result = 31 * result + (maxErrorRetry != null ? maxErrorRetry.hashCode() : 0);
         result = 31 * result + (socketTimeout != null ? socketTimeout.hashCode() : 0);
         result = 31 * result + (connectionTtl != null ? connectionTtl.hashCode() : 0);
-        result = 31 * result + (useTCPKeepAlive != null && useTCPKeepAlive == true ? 1 : 0);
+        result = 31 * result + (useTCPKeepAlive != null && useTCPKeepAlive ? 1 : 0);
 
         return result;
-
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
-    public long getEntityOwnerId() {
-        return ACCOUNT_ID_SYSTEM;
-    }
-
-    public String getAccessKey() {
-        return accessKey;
-    }
-
-    public String getSecretKey() {
-        return secretKey;
-    }
-
-    public String getEndPoint() {
-        return endPoint;
-    }
-
-    public String getBucketName() {
-        return bucketName;
-    }
-
-    public Boolean getHttpsFlag() {
-        return httpsFlag;
-    }
-
-    public Integer getConnectionTimeout() {
-        return connectionTimeout;
-    }
-
-    public Integer getMaxErrorRetry() {
-        return maxErrorRetry;
-    }
-
-    public Integer getSocketTimeout() {
-        return socketTimeout;
-    }
-
-    public Integer getConnectionTtl() {
-        return connectionTtl;
-    }
-
-    public Boolean getUseTCPKeepAlive() {
-        return useTCPKeepAlive;
     }
 }

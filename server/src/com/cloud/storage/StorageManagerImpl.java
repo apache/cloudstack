@@ -1844,7 +1844,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public ImageStore discoverImageStore(String name, String url, String providerName, Long dcId, Map details) throws IllegalArgumentException, DiscoveryException,
+    public ImageStore discoverImageStore(String name, String url, String providerName, Long zoneId, Map details) throws IllegalArgumentException, DiscoveryException,
     InvalidParameterValueException {
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
 
@@ -1857,13 +1857,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         ScopeType scopeType = ScopeType.ZONE;
-        if (dcId == null) {
+        if (zoneId == null) {
             scopeType = ScopeType.REGION;
         }
 
         if (name == null) {
             name = url;
         }
+
         ImageStoreVO imageStore = _imageStoreDao.findByName(name);
         if (imageStore != null) {
             throw new InvalidParameterValueException("The image store with name " + name + " already exists, try creating with another name");
@@ -1884,11 +1885,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         }
 
-        if (dcId != null) {
+        if (zoneId != null) {
             // Check if the zone exists in the system
-            DataCenterVO zone = _dcDao.findById(dcId);
+            DataCenterVO zone = _dcDao.findById(zoneId);
             if (zone == null) {
-                throw new InvalidParameterValueException("Can't find zone by id " + dcId);
+                throw new InvalidParameterValueException("Can't find zone by id " + zoneId);
             }
 
             Account account = CallContext.current().getCallingAccount();
@@ -1901,8 +1902,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         }
 
-        Map<String, Object> params = new HashMap<String, Object>();
-        params.put("zoneId", dcId);
+        Map<String, Object> params = new HashMap();
+        params.put("zoneId", zoneId);
         params.put("url", url);
         params.put("name", name);
         params.put("details", details);
@@ -1911,11 +1912,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         params.put("role", DataStoreRole.Image);
 
         DataStoreLifeCycle lifeCycle = storeProvider.getDataStoreLifeCycle();
+
         DataStore store;
         try {
             store = lifeCycle.initialize(params);
         } catch (Exception e) {
-            s_logger.debug("Failed to add data store: " + e.getMessage(), e);
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug("Failed to add data store: " + e.getMessage(), e);
+            }
             throw new CloudRuntimeException("Failed to add data store: " + e.getMessage(), e);
         }
 
@@ -1927,9 +1931,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             _imageSrv.addSystemVMTemplatesToSecondary(store);
         }
 
-        // associate builtin template with zones associated with this image
-        // store
-        associateCrosszoneTemplatesToZone(dcId);
+        // associate builtin template with zones associated with this image store
+        associateCrosszoneTemplatesToZone(zoneId);
 
         // duplicate cache store records to region wide storage
         if (scopeType == ScopeType.REGION) {

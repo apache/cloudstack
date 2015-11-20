@@ -89,6 +89,16 @@ under the License.
      <priority value="INFO"/>
    </category>
 
+   <!-- Limit the com.amazonaws category to INFO as its DEBUG is verbose -->
+   <category name="com.amazonaws">
+      <priority value="INFO"/>
+   </category>
+
+   <!-- Limit the httpclient.wire category to INFO as its DEBUG is verbose -->
+   <category name="httpclient.wire">
+      <priority value="INFO"/>
+   </category>
+
    <!-- ======================= -->
    <!-- Setup the Root category -->
    <!-- ======================= -->

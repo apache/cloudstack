@@ -14,7 +14,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.agent.api.storage;
+
+package com.cloud.utils.net;
 
 import java.net.URI;
 
@@ -26,10 +27,6 @@ public class Proxy {
     private int _port;
     private String _userName;
     private String _password;
-
-    public Proxy() {
-
-    }
 
     public Proxy(String host, int port, String userName, String password) {
         this._host = host;

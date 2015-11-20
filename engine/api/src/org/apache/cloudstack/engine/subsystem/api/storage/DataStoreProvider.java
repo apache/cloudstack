@@ -23,14 +23,14 @@ import java.util.Set;
 
 public interface DataStoreProvider {
     // constants for provider names
-    static final String NFS_IMAGE = "NFS";
-    static final String S3_IMAGE = "S3";
-    static final String SWIFT_IMAGE = "Swift";
-    static final String SAMPLE_IMAGE = "Sample";
-    static final String SMB = "NFS";
-    static final String DEFAULT_PRIMARY = "DefaultPrimary";
+    String NFS_IMAGE = "NFS";
+    String S3_IMAGE = "S3";
+    String SWIFT_IMAGE = "Swift";
+    String SAMPLE_IMAGE = "Sample";
+    String SMB = "NFS";
+    String DEFAULT_PRIMARY = "DefaultPrimary";
 
-    static enum DataStoreProviderType {
+    enum DataStoreProviderType {
         PRIMARY, IMAGE, ImageCache
     }
 

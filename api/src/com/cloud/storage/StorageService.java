@@ -14,6 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 package com.cloud.storage;
 
 import java.net.UnknownHostException;
@@ -38,14 +39,14 @@ public interface StorageService {
      * Create StoragePool based on uri
      *
      * @param cmd
-     *            the command object that specifies the zone, cluster/pod, URI, details, etc. to use to create the
+     *            The command object that specifies the zone, cluster/pod, URI, details, etc. to use to create the
      *            storage pool.
      * @return
+     *            The StoragePool created.
      * @throws ResourceInUseException
      * @throws IllegalArgumentException
      * @throws UnknownHostException
      * @throws ResourceUnavailableException
-     *             TODO
      */
     StoragePool createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException, ResourceUnavailableException;
 
@@ -63,15 +64,13 @@ public interface StorageService {
     /**
      * Enable maintenance for primary storage
      *
-     * @param cmd
-     *            - the command specifying primaryStorageId
+     * @param primaryStorageId
+     *            - the primaryStorageId
      * @return the primary storage pool
      * @throws ResourceUnavailableException
-     *             TODO
      * @throws InsufficientCapacityException
-     *             TODO
      */
-    public StoragePool preparePrimaryStorageForMaintenance(Long primaryStorageId) throws ResourceUnavailableException, InsufficientCapacityException;
+    StoragePool preparePrimaryStorageForMaintenance(Long primaryStorageId) throws ResourceUnavailableException, InsufficientCapacityException;
 
     /**
      * Complete maintenance for primary storage
@@ -80,19 +79,18 @@ public interface StorageService {
      *            - the command specifying primaryStorageId
      * @return the primary storage pool
      * @throws ResourceUnavailableException
-     *             TODO
      */
-    public StoragePool cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws ResourceUnavailableException;
+    StoragePool cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws ResourceUnavailableException;
 
-    public StoragePool updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException;
+    StoragePool updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException;
 
-    public StoragePool getStoragePool(long id);
+    StoragePool getStoragePool(long id);
 
     boolean deleteImageStore(DeleteImageStoreCmd cmd);
 
     boolean deleteSecondaryStagingStore(DeleteSecondaryStagingStoreCmd cmd);
 
-    public ImageStore discoverImageStore(String name, String url, String providerName, Long dcId, Map details) throws IllegalArgumentException, DiscoveryException,
+    ImageStore discoverImageStore(String name, String url, String providerName, Long zoneId, Map details) throws IllegalArgumentException, DiscoveryException,
             InvalidParameterValueException;
 
 
@@ -107,7 +105,7 @@ public interface StorageService {
      * @throws DiscoveryException
      * @throws InvalidParameterValueException
      */
-    public ImageStore migrateToObjectStore(String name, String url, String providerName, Map details) throws IllegalArgumentException, DiscoveryException,
+    ImageStore migrateToObjectStore(String name, String url, String providerName, Map details) throws IllegalArgumentException, DiscoveryException,
             InvalidParameterValueException;
 
 

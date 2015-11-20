@@ -16,8 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.resource;
 
-import static com.cloud.utils.S3Utils.mputFile;
-import static com.cloud.utils.S3Utils.putFile;
+import static com.cloud.utils.storage.S3.S3Utils.putFile;
 import static com.cloud.utils.StringUtils.join;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -155,8 +154,7 @@ import com.cloud.storage.template.TemplateProp;
 import com.cloud.storage.template.VhdProcessor;
 import com.cloud.storage.template.VmdkProcessor;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.S3Utils;
-import com.cloud.utils.S3Utils.FileNamingStrategy;
+import com.cloud.utils.storage.S3.S3Utils;
 import com.cloud.utils.SwiftUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -386,12 +384,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 }
             }
 
-            File destFile = S3Utils.getFile(s3, s3.getBucketName(), srcData.getPath(), downloadDirectory, new FileNamingStrategy() {
-                @Override
-                public String determineFileName(final String key) {
-                    return substringAfterLast(key, S3Utils.SEPARATOR);
-                }
-            });
+            File destFile = new File(downloadDirectory, substringAfterLast(srcData.getPath(), S3Utils.SEPARATOR));
+
+            S3Utils.getFile(s3, s3.getBucketName(), srcData.getPath(), destFile).waitForCompletion();
+
 
             if (destFile == null) {
                 return new CopyCmdAnswer("Can't find template");
@@ -400,7 +396,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return postProcessing(destFile, downloadPath, destPath, srcData, destData);
         } catch (Exception e) {
 
-            final String errMsg = format("Failed to download" + "due to $2%s", e.getMessage());
+            final String errMsg = format("Failed to download" + "due to $1%s", e.getMessage());
             s_logger.error(errMsg, e);
             return new CopyCmdAnswer(errMsg);
         }
@@ -907,14 +903,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 }
             }
 
-            long srcSize = srcFile.length();
             ImageFormat format = getTemplateFormat(srcFile.getName());
             String key = destData.getPath() + S3Utils.SEPARATOR + srcFile.getName();
-            if (!s3.getSingleUpload(srcSize)) {
-                mputFile(s3, srcFile, bucket, key);
-            } else {
-                putFile(s3, srcFile, bucket, key);
-            }
+
+            putFile(s3, srcFile, bucket, key).waitForCompletion();
 
             DataTO retObj = null;
             if (destData.getObjectType() == DataObjectType.TEMPLATE) {
@@ -1509,7 +1501,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     Map<String, TemplateProp> s3ListTemplate(S3TO s3) {
         String bucket = s3.getBucketName();
         // List the objects in the source directory on S3
-        final List<S3ObjectSummary> objectSummaries = S3Utils.getDirectory(s3, bucket, TEMPLATE_ROOT_DIR);
+        final List<S3ObjectSummary> objectSummaries = S3Utils.listDirectory(s3, bucket, TEMPLATE_ROOT_DIR);
         if (objectSummaries == null) {
             return null;
         }
@@ -1530,7 +1522,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     Map<Long, TemplateProp> s3ListVolume(S3TO s3) {
         String bucket = s3.getBucketName();
         // List the objects in the source directory on S3
-        final List<S3ObjectSummary> objectSummaries = S3Utils.getDirectory(s3, bucket, VOLUME_ROOT_DIR);
+        final List<S3ObjectSummary> objectSummaries = S3Utils.listDirectory(s3, bucket, VOLUME_ROOT_DIR);
         if (objectSummaries == null) {
             return null;
         }

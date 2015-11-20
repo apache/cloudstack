@@ -27,15 +27,15 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.fsm.NoTransitionException;
 
 public interface ObjectInDataStoreManager {
-    public DataObject create(DataObject dataObj, DataStore dataStore);
+    DataObject create(DataObject dataObj, DataStore dataStore);
 
-    public boolean delete(DataObject dataObj);
+    boolean delete(DataObject dataObj);
 
-    public boolean deleteIfNotReady(DataObject dataObj);
+    boolean deleteIfNotReady(DataObject dataObj);
 
-    public DataObject get(DataObject dataObj, DataStore store);
+    DataObject get(DataObject dataObj, DataStore store);
 
-    public boolean update(DataObject vo, Event event) throws NoTransitionException, ConcurrentOperationException;
+    boolean update(DataObject vo, Event event) throws NoTransitionException, ConcurrentOperationException;
 
     DataObjectInStore findObject(long objId, DataObjectType type, long dataStoreId, DataStoreRole role);
 

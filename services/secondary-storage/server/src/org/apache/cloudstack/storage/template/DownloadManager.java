@@ -24,7 +24,7 @@ import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.agent.api.storage.Proxy;
+import com.cloud.utils.net.Proxy;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateHostVO;
