@@ -16,14 +16,12 @@
 // under the License.
 package org.apache.cloudstack.resourcedetail.dao;
 
-import javax.ejb.Local;
 
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 import org.apache.cloudstack.resourcedetail.UserDetailVO;
 import org.springframework.stereotype.Component;
 
 @Component
-@Local(value = {UserDetailsDao.class})
 public class UserDetailsDaoImpl extends ResourceDetailsDaoBase<UserDetailVO> implements UserDetailsDao {
 
     @Override

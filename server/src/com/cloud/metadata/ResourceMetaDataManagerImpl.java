@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -68,7 +67,6 @@ import com.cloud.vm.dao.NicDetailsDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 
 @Component
-@Local(value = {ResourceMetaDataService.class, ResourceMetaDataManager.class})
 public class ResourceMetaDataManagerImpl extends ManagerBase implements ResourceMetaDataService, ResourceMetaDataManager {
     public static final Logger s_logger = Logger.getLogger(ResourceMetaDataManagerImpl.class);
     @Inject

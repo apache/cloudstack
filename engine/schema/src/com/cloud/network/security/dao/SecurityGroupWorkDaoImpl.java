@@ -19,7 +19,6 @@ package com.cloud.network.security.dao;
 import java.util.Date;
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -37,7 +36,6 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value = {SecurityGroupWorkDao.class})
 public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO, Long> implements SecurityGroupWorkDao {
     private static final Logger s_logger = Logger.getLogger(SecurityGroupWorkDaoImpl.class);
 

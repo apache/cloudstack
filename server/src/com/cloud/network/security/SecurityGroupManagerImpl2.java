@@ -24,7 +24,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -48,7 +47,6 @@ import com.cloud.vm.VirtualMachine.State;
  * Same as the base class -- except it uses the abstracted security group work queue
  *
  */
-@Local(value = {SecurityGroupManager.class, SecurityGroupService.class})
 public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
     SecurityGroupWorkQueue _workQueue = new LocalSecurityGroupWorkQueue();
     SecurityGroupWorkTracker _workTracker;

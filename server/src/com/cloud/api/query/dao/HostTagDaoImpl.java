@@ -19,7 +19,6 @@ package com.cloud.api.query.dao;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.response.HostTagResponse;
@@ -33,7 +32,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = {HostTagDao.class})
 public class HostTagDaoImpl extends GenericDaoBase<HostTagVO, Long> implements HostTagDao {
     public static final Logger s_logger = Logger.getLogger(HostTagDaoImpl.class);
 

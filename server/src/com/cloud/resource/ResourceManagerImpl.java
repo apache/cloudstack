@@ -26,7 +26,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -172,7 +171,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
 
 @Component
-@Local({ResourceManager.class, ResourceService.class})
 public class ResourceManagerImpl extends ManagerBase implements ResourceManager, ResourceService, Manager {
     private static final Logger s_logger = Logger.getLogger(ResourceManagerImpl.class);
 

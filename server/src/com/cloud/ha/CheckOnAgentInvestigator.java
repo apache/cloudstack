@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.ha;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -32,7 +31,6 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 
-@Local(value = Investigator.class)
 public class CheckOnAgentInvestigator extends AdapterBase implements Investigator {
     private final static Logger s_logger = Logger.getLogger(CheckOnAgentInvestigator.class);
     @Inject

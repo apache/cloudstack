@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -62,7 +61,6 @@ import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 
-@Local(value = {IAMService.class})
 public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     public static final Logger s_logger = Logger.getLogger(IAMServiceImpl.class);

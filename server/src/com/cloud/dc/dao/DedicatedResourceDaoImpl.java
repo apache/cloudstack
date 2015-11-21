@@ -18,7 +18,6 @@ package com.cloud.dc.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -34,7 +33,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value = {DedicatedResourceDao.class})
 @DB
 public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO, Long> implements DedicatedResourceDao {
     protected final SearchBuilder<DedicatedResourceVO> ZoneSearch;

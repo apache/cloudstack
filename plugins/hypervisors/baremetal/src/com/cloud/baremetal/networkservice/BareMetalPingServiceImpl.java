@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.AddBaremetalPxeCmd;
@@ -68,7 +67,6 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value = BaremetalPxeService.class)
 public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements BaremetalPxeService {
     private static final Logger s_logger = Logger.getLogger(BareMetalPingServiceImpl.class);
     @Inject

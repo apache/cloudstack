@@ -19,7 +19,6 @@ package org.apache.cloudstack.engine.datacenter.entity.api.db.dao;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -30,7 +29,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component(value = "EngineHostTagsDao")
-@Local(value = HostTagsDao.class)
 public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements HostTagsDao {
     protected final SearchBuilder<HostTagVO> HostSearch;
 

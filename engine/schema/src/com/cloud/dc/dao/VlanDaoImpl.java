@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -45,7 +44,6 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value = {VlanDao.class})
 public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao {
 
     private final String FindZoneWideVlans =

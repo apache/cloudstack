@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.acl;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.springframework.stereotype.Component;
@@ -47,7 +46,6 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.AdapterBase;
 
 @Component
-@Local(value = SecurityChecker.class)
 public class DomainChecker extends AdapterBase implements SecurityChecker {
 
     @Inject

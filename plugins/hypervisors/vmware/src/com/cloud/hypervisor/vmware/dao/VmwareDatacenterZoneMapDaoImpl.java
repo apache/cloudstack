@@ -17,7 +17,6 @@
 
 package com.cloud.hypervisor.vmware.dao;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -28,7 +27,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value = VmwareDatacenterZoneMapDao.class)
 public class VmwareDatacenterZoneMapDaoImpl extends GenericDaoBase<VmwareDatacenterZoneMapVO, Long> implements VmwareDatacenterZoneMapDao {
 
     protected final SearchBuilder<VmwareDatacenterZoneMapVO> zoneSearch;

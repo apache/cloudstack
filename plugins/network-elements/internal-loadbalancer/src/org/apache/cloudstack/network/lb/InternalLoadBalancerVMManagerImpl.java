@@ -23,7 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -120,7 +119,6 @@ import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
-@Local(value = {InternalLoadBalancerVMManager.class, InternalLoadBalancerVMService.class})
 public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements InternalLoadBalancerVMManager, InternalLoadBalancerVMService, VirtualMachineGuru {
     private static final Logger s_logger = Logger.getLogger(InternalLoadBalancerVMManagerImpl.class);
     static final private String InternalLbVmNamePrefix = "b";

@@ -30,7 +30,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -90,7 +89,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value = {UsageManager.class})
 public class UsageManagerImpl extends ManagerBase implements UsageManager, Runnable {
     public static final Logger s_logger = Logger.getLogger(UsageManagerImpl.class.getName());
 

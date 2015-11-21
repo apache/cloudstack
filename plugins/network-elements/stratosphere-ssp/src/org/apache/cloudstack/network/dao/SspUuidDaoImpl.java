@@ -18,7 +18,6 @@ package org.apache.cloudstack.network.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
@@ -29,7 +28,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.vm.NicProfile;
 
-@Local(SspUuidDao.class)
 public class SspUuidDaoImpl extends GenericDaoBase<SspUuidVO, Long> implements SspUuidDao {
 
     private static final Logger s_logger = Logger.getLogger(SspUuidDaoImpl.class);

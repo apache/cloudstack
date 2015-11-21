@@ -20,7 +20,6 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
@@ -31,7 +30,6 @@ import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 
-@Local(value = VpcDao.class)
 @DB()
 public class MockVpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao {
     private static final Logger s_logger = Logger.getLogger(MockNetworkOfferingDaoImpl.class);

@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
@@ -57,7 +56,6 @@ import com.cloud.resource.ResourceState.Event;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.fsm.NoTransitionException;
 
-@Local(value = {ResourceManager.class})
 public class MockResourceManagerImpl extends ManagerBase implements ResourceManager {
 
     /* (non-Javadoc)

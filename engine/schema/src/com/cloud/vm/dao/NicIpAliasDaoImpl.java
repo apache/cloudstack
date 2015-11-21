@@ -19,7 +19,6 @@ package com.cloud.vm.dao;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -32,7 +31,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.vm.NicIpAlias;
 
 @Component
-@Local(value = NicIpAliasDao.class)
 public class NicIpAliasDaoImpl extends GenericDaoBase<NicIpAliasVO, Long> implements NicIpAliasDao {
     private final SearchBuilder<NicIpAliasVO> AllFieldsSearch;
     private final GenericSearchBuilder<NicIpAliasVO, String> IpSearch;

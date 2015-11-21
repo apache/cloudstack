@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -67,7 +66,6 @@ import com.cloud.vm.dao.VMInstanceDao;
  * An allocator that tries to find a fit on a computing host.  This allocator does not care whether or not the host supports routing.
  */
 @Component
-@Local(value = {HostAllocator.class})
 public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     private static final Logger s_logger = Logger.getLogger(FirstFitAllocator.class);
     @Inject

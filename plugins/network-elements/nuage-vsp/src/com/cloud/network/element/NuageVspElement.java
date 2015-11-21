@@ -93,7 +93,6 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
 import org.apache.log4j.Logger;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import java.util.ArrayList;
@@ -102,7 +101,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@Local(value = {NetworkElement.class, ConnectivityProvider.class, IpDeployer.class, SourceNatServiceProvider.class, StaticNatServiceProvider.class, FirewallServiceProvider.class,
         DhcpServiceProvider.class, VpcProvider.class, NetworkACLServiceProvider.class})
 public class NuageVspElement extends AdapterBase implements ConnectivityProvider, IpDeployer, SourceNatServiceProvider, StaticNatServiceProvider, FirewallServiceProvider,
         DhcpServiceProvider, ResourceStateAdapter, VpcProvider, NetworkACLServiceProvider {

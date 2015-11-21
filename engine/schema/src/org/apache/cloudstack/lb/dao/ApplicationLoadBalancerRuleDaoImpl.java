@@ -19,7 +19,6 @@ package org.apache.cloudstack.lb.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -37,7 +36,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.net.Ip;
 
 @Component
-@Local(value = {ApplicationLoadBalancerRuleDao.class})
 public class ApplicationLoadBalancerRuleDaoImpl extends GenericDaoBase<ApplicationLoadBalancerRuleVO, Long> implements ApplicationLoadBalancerRuleDao {
     protected final SearchBuilder<ApplicationLoadBalancerRuleVO> AllFieldsSearch;
     final GenericSearchBuilder<ApplicationLoadBalancerRuleVO, String> listIps;

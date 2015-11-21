@@ -26,7 +26,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -108,7 +107,6 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
-@Local(value = {ResourceLimitService.class})
 public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLimitService {
     public static final Logger s_logger = Logger.getLogger(ResourceLimitManagerImpl.class);
 

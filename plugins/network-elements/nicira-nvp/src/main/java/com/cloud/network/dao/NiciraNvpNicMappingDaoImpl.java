@@ -19,7 +19,6 @@
 
 package com.cloud.network.dao;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -30,7 +29,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value = NiciraNvpNicMappingDao.class)
 public class NiciraNvpNicMappingDaoImpl extends GenericDaoBase<NiciraNvpNicMappingVO, Long> implements NiciraNvpNicMappingDao {
 
     protected final SearchBuilder<NiciraNvpNicMappingVO> nicSearch;

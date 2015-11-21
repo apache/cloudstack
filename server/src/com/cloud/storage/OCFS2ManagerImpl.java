@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -53,7 +52,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value = {OCFS2Manager.class})
 public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, ResourceListener {
     private static final Logger s_logger = Logger.getLogger(OCFS2ManagerImpl.class);
 

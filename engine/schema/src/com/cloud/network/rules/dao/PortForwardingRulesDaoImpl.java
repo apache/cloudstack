@@ -18,7 +18,6 @@ package com.cloud.network.rules.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.springframework.stereotype.Component;
@@ -33,7 +32,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value = PortForwardingRulesDao.class)
 public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRuleVO, Long> implements PortForwardingRulesDao {
 
     protected final SearchBuilder<PortForwardingRuleVO> AllFieldsSearch;

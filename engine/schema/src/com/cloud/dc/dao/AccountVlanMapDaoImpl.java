@@ -18,7 +18,6 @@ package com.cloud.dc.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -28,7 +27,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = {AccountVlanMapDao.class})
 public class AccountVlanMapDaoImpl extends GenericDaoBase<AccountVlanMapVO, Long> implements AccountVlanMapDao {
 
     protected SearchBuilder<AccountVlanMapVO> AccountSearch;

@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -40,7 +39,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Component
-@Local(value = HostAllocator.class)
 public class RandomAllocator extends AdapterBase implements HostAllocator {
     private static final Logger s_logger = Logger.getLogger(RandomAllocator.class);
     @Inject

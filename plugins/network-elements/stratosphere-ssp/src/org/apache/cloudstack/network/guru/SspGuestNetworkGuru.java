@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.network.guru;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -35,7 +34,6 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetwork.IsolationMethod;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.guru.GuestNetworkGuru;
-import com.cloud.network.guru.NetworkGuru;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.vm.NicProfile;
@@ -46,7 +44,6 @@ import com.cloud.vm.VirtualMachineProfile;
 /**
  * Stratosphere SDN Platform NetworkGuru
  */
-@Local(value = NetworkGuru.class)
 public class SspGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigrationResponder {
     private static final Logger s_logger = Logger.getLogger(SspGuestNetworkGuru.class);
 

@@ -19,7 +19,6 @@ package org.apache.cloudstack.storage.allocator;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -33,7 +32,6 @@ import com.cloud.storage.StoragePool;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value = StoragePoolAllocator.class)
 public class UseLocalForRootAllocator extends LocalStoragePoolAllocator implements StoragePoolAllocator {
 
     @Inject

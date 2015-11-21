@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.ha;
 
-import javax.ejb.Local;
 
 import com.cloud.host.Host;
 import com.cloud.host.Status;
@@ -24,7 +23,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 
-@Local(value = Investigator.class)
 public class VmwareInvestigator extends AdapterBase implements Investigator {
     protected VmwareInvestigator() {
     }

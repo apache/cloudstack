@@ -18,7 +18,6 @@ package org.apache.cloudstack.ldap.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -31,7 +30,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value = {LdapConfigurationDao.class})
 public class LdapConfigurationDaoImpl extends GenericDaoBase<LdapConfigurationVO, Long> implements LdapConfigurationDao {
     private final SearchBuilder<LdapConfigurationVO> hostnameSearch;
     private final SearchBuilder<LdapConfigurationVO> listAllConfigurationsSearch;

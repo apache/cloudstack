@@ -18,7 +18,6 @@ package com.cloud.gpu.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -30,7 +29,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = HostGpuGroupsDao.class)
 public class HostGpuGroupsDaoImpl extends GenericDaoBase<HostGpuGroupsVO, Long> implements HostGpuGroupsDao {
     private static final Logger s_logger = Logger.getLogger(HostGpuGroupsDaoImpl.class);
 

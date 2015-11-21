@@ -25,7 +25,6 @@ package com.cloud.baremetal.manager;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -41,7 +40,6 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
 
-@Local(value = HypervisorGuru.class)
 public class BareMetalGuru extends HypervisorGuruBase implements HypervisorGuru {
     private static final Logger s_logger = Logger.getLogger(BareMetalGuru.class);
     @Inject

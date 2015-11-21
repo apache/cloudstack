@@ -18,7 +18,6 @@ package com.cloud.hypervisor;
 
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -31,7 +30,6 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value = HypervisorGuru.class)
 public class LXCGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject
     GuestOSDao _guestOsDao;

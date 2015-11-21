@@ -18,7 +18,6 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -31,7 +30,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value = CiscoNexusVSMDeviceDao.class)
 @DB
 public class CiscoNexusVSMDeviceDaoImpl extends GenericDaoBase<CiscoNexusVSMDeviceVO, Long> implements CiscoNexusVSMDeviceDao {
     protected static final Logger s_logger = Logger.getLogger(CiscoNexusVSMDeviceDaoImpl.class);

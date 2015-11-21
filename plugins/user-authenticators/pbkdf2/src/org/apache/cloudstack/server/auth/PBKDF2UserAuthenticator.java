@@ -29,7 +29,6 @@ import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.encoders.Base64;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
@@ -39,7 +38,6 @@ import java.util.Map;
 
 import static java.lang.String.format;
 
-@Local({UserAuthenticator.class})
 public class PBKDF2UserAuthenticator extends DefaultUserAuthenticator {
     public static final Logger s_logger = Logger.getLogger(PBKDF2UserAuthenticator.class);
     private static final int s_saltlen = 64;

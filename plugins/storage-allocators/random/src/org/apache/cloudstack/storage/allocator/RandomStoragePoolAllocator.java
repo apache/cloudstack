@@ -19,11 +19,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.deploy.DeploymentPlan;
@@ -33,7 +31,6 @@ import com.cloud.storage.StoragePool;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value = StoragePoolAllocator.class)
 public class RandomStoragePoolAllocator extends AbstractStoragePoolAllocator {
     private static final Logger s_logger = Logger.getLogger(RandomStoragePoolAllocator.class);
 

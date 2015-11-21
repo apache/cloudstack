@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -125,7 +124,6 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-@Local(value = {NetworkModel.class})
 public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     static final Logger s_logger = Logger.getLogger(NetworkModelImpl.class);
     @Inject

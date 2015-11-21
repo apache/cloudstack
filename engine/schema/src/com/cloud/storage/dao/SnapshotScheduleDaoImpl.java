@@ -19,7 +19,6 @@ package com.cloud.storage.dao;
 import java.util.Date;
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -30,7 +29,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = {SnapshotScheduleDao.class})
 public class SnapshotScheduleDaoImpl extends GenericDaoBase<SnapshotScheduleVO, Long> implements SnapshotScheduleDao {
     protected final SearchBuilder<SnapshotScheduleVO> executableSchedulesSearch;
     protected final SearchBuilder<SnapshotScheduleVO> coincidingSchedulesSearch;

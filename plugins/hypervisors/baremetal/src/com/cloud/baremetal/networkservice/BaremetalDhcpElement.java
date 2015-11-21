@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -44,7 +43,6 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.element.DhcpServiceProvider;
-import com.cloud.network.element.NetworkElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.DB;
@@ -57,7 +55,6 @@ import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 
-@Local(value = NetworkElement.class)
 public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProvider {
     private static final Logger s_logger = Logger.getLogger(BaremetalDhcpElement.class);
     private static final Map<Service, Map<Capability, String>> capabilities;

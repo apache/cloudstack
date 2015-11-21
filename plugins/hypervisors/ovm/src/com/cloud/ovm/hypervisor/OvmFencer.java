@@ -19,7 +19,6 @@ package com.cloud.ovm.hypervisor;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -39,7 +38,6 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 
-@Local(value = FenceBuilder.class)
 public class OvmFencer extends AdapterBase implements FenceBuilder {
     private static final Logger s_logger = Logger.getLogger(OvmFencer.class);
     @Inject

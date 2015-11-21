@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.TableGenerator;
@@ -56,7 +55,6 @@ import com.cloud.utils.net.NetUtils;
  *  }
  **/
 @Component
-@Local(value = {DataCenterDao.class})
 public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implements DataCenterDao {
     private static final Logger s_logger = Logger.getLogger(DataCenterDaoImpl.class);
 

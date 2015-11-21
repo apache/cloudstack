@@ -22,7 +22,6 @@ package com.cloud.storage.template;
 import java.io.File;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -36,7 +35,6 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.script.Script;
 
-@Local(value = Processor.class)
 public class OVAProcessor extends AdapterBase implements Processor {
     private static final Logger s_logger = Logger.getLogger(OVAProcessor.class);
 

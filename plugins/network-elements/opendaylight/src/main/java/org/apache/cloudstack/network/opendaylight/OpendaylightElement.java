@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -46,7 +45,6 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.element.ConnectivityProvider;
-import com.cloud.network.element.NetworkElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
@@ -59,7 +57,6 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Component
-@Local(value = {NetworkElement.class, ConnectivityProvider.class})
 public class OpendaylightElement extends AdapterBase implements ConnectivityProvider, ResourceStateAdapter {
 
     private static final Logger s_logger = Logger.getLogger(OpendaylightElement.class);

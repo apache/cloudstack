@@ -19,7 +19,6 @@ package org.apache.cloudstack.region.gslb;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -28,7 +27,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = {GlobalLoadBalancerRuleDao.class})
 public class GlobalLoadBalancerDaoImpl extends GenericDaoBase<GlobalLoadBalancerRuleVO, Long> implements GlobalLoadBalancerRuleDao {
 
     private final SearchBuilder<GlobalLoadBalancerRuleVO> listByDomainSearch;

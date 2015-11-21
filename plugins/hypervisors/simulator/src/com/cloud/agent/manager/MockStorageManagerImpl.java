@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -102,7 +101,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
 
 @Component
-@Local(value = {MockStorageManager.class})
 public class MockStorageManagerImpl extends ManagerBase implements MockStorageManager {
     private static final Logger s_logger = Logger.getLogger(MockStorageManagerImpl.class);
     @Inject

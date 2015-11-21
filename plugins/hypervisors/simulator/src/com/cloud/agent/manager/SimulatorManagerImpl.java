@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -132,7 +131,6 @@ import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 
 @Component
-@Local(value = {SimulatorManager.class})
 public class SimulatorManagerImpl extends ManagerBase implements SimulatorManager, PluggableService {
     private static final Logger s_logger = Logger.getLogger(SimulatorManagerImpl.class);
     private static final Gson s_gson = GsonHelper.getGson();

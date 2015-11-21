@@ -74,7 +74,6 @@ import com.google.common.base.Strings;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import java.net.URI;
 import java.util.ArrayList;
@@ -85,7 +84,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-@Local(value = NetworkGuru.class)
 public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
     public static final Logger s_logger = Logger.getLogger(NuageVspGuestNetworkGuru.class);
 

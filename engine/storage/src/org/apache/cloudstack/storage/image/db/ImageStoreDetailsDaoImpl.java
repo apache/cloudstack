@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -35,7 +34,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value = ImageStoreDetailsDao.class)
 public class ImageStoreDetailsDaoImpl extends GenericDaoBase<ImageStoreDetailVO, Long> implements ImageStoreDetailsDao {
 
     protected final SearchBuilder<ImageStoreDetailVO> storeSearch;

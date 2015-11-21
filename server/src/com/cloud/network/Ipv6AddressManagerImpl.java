@@ -20,7 +20,6 @@ package com.cloud.network;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -44,7 +43,6 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
-@Local(value = {Ipv6AddressManager.class})
 public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressManager {
     public static final Logger s_logger = Logger.getLogger(Ipv6AddressManagerImpl.class.getName());
 

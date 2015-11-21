@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -92,7 +91,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.PowerState;
 
 @Component
-@Local(value = {MockVmManager.class})
 public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     private static final Logger s_logger = Logger.getLogger(MockVmManagerImpl.class);
 

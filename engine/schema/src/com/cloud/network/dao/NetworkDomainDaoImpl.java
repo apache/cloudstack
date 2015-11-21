@@ -19,7 +19,6 @@ package com.cloud.network.dao;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -30,7 +29,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value = NetworkDomainDao.class)
 @DB()
 public class NetworkDomainDaoImpl extends GenericDaoBase<NetworkDomainVO, Long> implements NetworkDomainDao {
     final SearchBuilder<NetworkDomainVO> AllFieldsSearch;

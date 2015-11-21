@@ -19,7 +19,6 @@ package com.cloud.ha;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -39,7 +38,6 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDao;
 
-@Local(value = {Investigator.class})
 public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
     private static final Logger s_logger = Logger.getLogger(UserVmDomRInvestigator.class);
 

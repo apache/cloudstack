@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -126,9 +125,6 @@ import com.cloud.vm.dao.VMInstanceDao;
  * removes them when the VM is destroyed.
  */
 @Component
-@Local(value = {NetworkElement.class, ConnectivityProvider.class, IpDeployer.class,
-        SourceNatServiceProvider.class, StaticNatServiceProvider.class,
-        NetworkACLServiceProvider.class, FirewallServiceProvider.class})
 public class BigSwitchBcfElement extends AdapterBase implements BigSwitchBcfElementService,
 ConnectivityProvider, IpDeployer, SourceNatServiceProvider, StaticNatServiceProvider,
 NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {

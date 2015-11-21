@@ -21,7 +21,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.response.ResourceTagResponse;
@@ -48,7 +47,6 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 
 @Component
-@Local(value = {SecurityGroupJoinDao.class})
 public class SecurityGroupJoinDaoImpl extends GenericDaoBase<SecurityGroupJoinVO, Long> implements SecurityGroupJoinDao {
     public static final Logger s_logger = Logger.getLogger(SecurityGroupJoinDaoImpl.class);
 

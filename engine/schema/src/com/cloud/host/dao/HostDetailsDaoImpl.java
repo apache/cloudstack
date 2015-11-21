@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -35,7 +34,6 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value = HostDetailsDao.class)
 public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implements HostDetailsDao {
     protected final SearchBuilder<DetailVO> HostSearch;
     protected final SearchBuilder<DetailVO> DetailSearch;

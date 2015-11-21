@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -40,7 +39,6 @@ import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.VirtualMachine.State;
 
 @Component
-@Local(value = {ConsoleProxyDao.class})
 public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> implements ConsoleProxyDao {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyDaoImpl.class);
 

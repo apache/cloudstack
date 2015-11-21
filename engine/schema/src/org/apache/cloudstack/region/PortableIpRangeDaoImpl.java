@@ -18,7 +18,6 @@ package org.apache.cloudstack.region;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -27,7 +26,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = {PortableIpRangeDao.class})
 public class PortableIpRangeDaoImpl extends GenericDaoBase<PortableIpRangeVO, Long> implements PortableIpRangeDao {
 
     private final SearchBuilder<PortableIpRangeVO> listByRegionIDSearch;

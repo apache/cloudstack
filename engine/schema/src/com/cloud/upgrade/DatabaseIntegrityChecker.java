@@ -21,7 +21,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -37,7 +36,6 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value = {SystemIntegrityChecker.class})
 public class DatabaseIntegrityChecker extends AdapterBase implements SystemIntegrityChecker {
     private static final Logger s_logger = Logger.getLogger(DatabaseIntegrityChecker.class);
 

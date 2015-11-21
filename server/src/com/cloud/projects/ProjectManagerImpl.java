@@ -28,7 +28,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.mail.Authenticator;
 import javax.mail.Message.RecipientType;
@@ -93,7 +92,6 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value = {ProjectService.class, ProjectManager.class})
 public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
     public static final Logger s_logger = Logger.getLogger(ProjectManagerImpl.class);
     private EmailInvite _emailInvite;

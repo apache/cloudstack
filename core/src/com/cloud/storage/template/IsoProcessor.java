@@ -22,7 +22,6 @@ package com.cloud.storage.template;
 import java.io.File;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -31,7 +30,6 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.component.AdapterBase;
 
-@Local(value = Processor.class)
 public class IsoProcessor extends AdapterBase implements Processor {
     private static final Logger s_logger = Logger.getLogger(IsoProcessor.class);
 

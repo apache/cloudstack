@@ -22,13 +22,11 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.ConsoleProxy;
 
-@Local(value = {ConsoleProxyAllocator.class})
 public class ConsoleProxyBalanceAllocator extends AdapterBase implements ConsoleProxyAllocator {
 
     @Override

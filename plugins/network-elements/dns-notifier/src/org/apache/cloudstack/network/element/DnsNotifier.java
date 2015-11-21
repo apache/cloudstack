@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import javax.ejb.Local;
 
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
@@ -43,7 +42,6 @@ import com.cloud.vm.VirtualMachineProfile;
  * @author ahuang
  *
  */
-@Local(NetworkElement.class)
 public class DnsNotifier extends AdapterBase implements NetworkElement {
 
     public DnsNotifier() {

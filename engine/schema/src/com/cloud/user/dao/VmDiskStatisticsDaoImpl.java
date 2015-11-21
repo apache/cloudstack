@@ -23,7 +23,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
-import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -36,7 +35,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value = {VmDiskStatisticsDao.class})
 public class VmDiskStatisticsDaoImpl extends GenericDaoBase<VmDiskStatisticsVO, Long> implements VmDiskStatisticsDao {
     private static final Logger s_logger = Logger.getLogger(VmDiskStatisticsDaoImpl.class);
     private static final String ACTIVE_AND_RECENTLY_DELETED_SEARCH =

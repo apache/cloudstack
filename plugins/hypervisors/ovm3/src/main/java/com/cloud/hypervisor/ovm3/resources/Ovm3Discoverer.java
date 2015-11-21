@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -65,7 +64,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SSHCmdHelper;
 
-@Local(value = Discoverer.class)
 public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
         Listener, ResourceStateAdapter {
     private static final Logger LOGGER = Logger.getLogger(Ovm3Discoverer.class);

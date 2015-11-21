@@ -19,7 +19,6 @@
 
 package org.apache.cloudstack.utils.identity;
 
-import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
@@ -29,7 +28,6 @@ import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
 
-@Local(value = {SystemIntegrityChecker.class})
 public class ManagementServerNode extends AdapterBase implements SystemIntegrityChecker {
     private static final Logger s_logger = Logger.getLogger(ManagementServerNode.class);
 

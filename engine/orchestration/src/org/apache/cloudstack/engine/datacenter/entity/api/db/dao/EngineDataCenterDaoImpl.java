@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.TableGenerator;
@@ -53,7 +52,6 @@ import com.cloud.utils.net.NetUtils;
  *  }
  **/
 @Component(value = "EngineDataCenterDao")
-@Local(value = {EngineDataCenterDao.class})
 public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, Long> implements EngineDataCenterDao {
     private static final Logger s_logger = Logger.getLogger(EngineDataCenterDaoImpl.class);
 

@@ -21,7 +21,6 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.mail.Authenticator;
 import javax.mail.Message.RecipientType;
@@ -46,7 +45,6 @@ import com.sun.mail.smtp.SMTPSSLTransport;
 import com.sun.mail.smtp.SMTPTransport;
 
 @Component
-@Local(value = {AlertManager.class})
 public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
     private static final Logger s_logger = Logger.getLogger(UsageAlertManagerImpl.class.getName());
     private static final Logger s_alertsLogger = Logger.getLogger("org.apache.cloudstack.alerts");

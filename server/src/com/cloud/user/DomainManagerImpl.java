@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -76,7 +75,6 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 
 @Component
-@Local(value = {DomainManager.class, DomainService.class})
 public class DomainManagerImpl extends ManagerBase implements DomainManager, DomainService {
     public static final Logger s_logger = Logger.getLogger(DomainManagerImpl.class);
 

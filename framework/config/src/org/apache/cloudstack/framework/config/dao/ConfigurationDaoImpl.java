@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
-import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
@@ -39,7 +38,6 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value = {ConfigurationDao.class})
 public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String> implements ConfigurationDao {
     private static final Logger s_logger = Logger.getLogger(ConfigurationDaoImpl.class);
     private Map<String, String> _configs = null;

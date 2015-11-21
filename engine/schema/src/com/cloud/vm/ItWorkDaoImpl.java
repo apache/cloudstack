@@ -18,7 +18,6 @@ package com.cloud.vm;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -31,7 +30,6 @@ import com.cloud.vm.ItWorkVO.Step;
 import com.cloud.vm.VirtualMachine.State;
 
 @Component
-@Local(value = ItWorkDao.class)
 public class ItWorkDaoImpl extends GenericDaoBase<ItWorkVO, String> implements ItWorkDao {
     protected final SearchBuilder<ItWorkVO> AllFieldsSearch;
     protected final SearchBuilder<ItWorkVO> CleanupSearch;

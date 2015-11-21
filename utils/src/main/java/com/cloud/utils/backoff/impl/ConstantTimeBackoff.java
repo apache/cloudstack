@@ -23,7 +23,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.ejb.Local;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -42,7 +41,6 @@ import com.cloud.utils.component.AdapterBase;
  *    || seconds    | seconds to sleep | integer | 5 ||
  *  }
  **/
-@Local(value = {BackoffAlgorithm.class})
 public class ConstantTimeBackoff extends AdapterBase implements BackoffAlgorithm, ConstantTimeBackoffMBean {
     long _time;
     private final Map<String, Thread> _asleep = new ConcurrentHashMap<String, Thread>();

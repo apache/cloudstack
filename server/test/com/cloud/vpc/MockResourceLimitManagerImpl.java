@@ -19,7 +19,6 @@ package com.cloud.vpc;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.springframework.stereotype.Component;
@@ -34,7 +33,6 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.component.ManagerBase;
 
 @Component
-@Local(value = {ResourceLimitService.class})
 public class MockResourceLimitManagerImpl extends ManagerBase implements ResourceLimitService {
 
     /* (non-Javadoc)

@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -53,7 +52,6 @@ import com.cloud.utils.script.Script;
  * storage servers and make sure everything it can do is
  * correct.
  */
-@Local(value = Discoverer.class)
 public class SecondaryStorageDiscoverer extends DiscovererBase implements Discoverer {
     private static final Logger s_logger = Logger.getLogger(SecondaryStorageDiscoverer.class);
 

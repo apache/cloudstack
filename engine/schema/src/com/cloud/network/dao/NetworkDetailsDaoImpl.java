@@ -16,14 +16,12 @@
 // under the License.
 package com.cloud.network.dao;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
 @Component
-@Local(value = NetworkDetailsDao.class)
 public class NetworkDetailsDaoImpl extends ResourceDetailsDaoBase<NetworkDetailVO> implements NetworkDetailsDao {
 
     @Override

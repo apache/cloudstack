@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -35,7 +34,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.VirtualMachine;
 
 @Component
-@Local(value = {MockVMDao.class})
 public class MockVMDaoImpl extends GenericDaoBase<MockVMVO, Long> implements MockVMDao {
     protected SearchBuilder<MockVMVO> GuidSearch;
     protected SearchBuilder<MockVMVO> vmNameSearch;

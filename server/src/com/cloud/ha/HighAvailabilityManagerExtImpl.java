@@ -20,7 +20,6 @@ import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -31,7 +30,6 @@ import com.cloud.alert.AlertManager;
 import com.cloud.usage.dao.UsageJobDao;
 import com.cloud.utils.db.TransactionLegacy;
 
-@Local(value = {HighAvailabilityManager.class})
 public class HighAvailabilityManagerExtImpl extends HighAvailabilityManagerImpl {
 
     @Inject

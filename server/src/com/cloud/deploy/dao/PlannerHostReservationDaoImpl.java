@@ -19,7 +19,6 @@ package com.cloud.deploy.dao;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
-import javax.ejb.Local;
 
 import com.cloud.deploy.DeploymentPlanner.PlannerResourceUsage;
 import com.cloud.deploy.PlannerHostReservationVO;
@@ -27,7 +26,6 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-@Local(value = {PlannerHostReservationDao.class})
 public class PlannerHostReservationDaoImpl extends GenericDaoBase<PlannerHostReservationVO, Long> implements PlannerHostReservationDao {
 
     private SearchBuilder<PlannerHostReservationVO> _hostIdSearch;

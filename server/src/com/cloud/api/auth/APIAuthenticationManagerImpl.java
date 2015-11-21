@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
@@ -33,7 +32,6 @@ import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 
-@Local(value = APIAuthenticationManager.class)
 @SuppressWarnings("unchecked")
 public class APIAuthenticationManagerImpl extends ManagerBase implements APIAuthenticationManager {
     public static final Logger s_logger = Logger.getLogger(APIAuthenticationManagerImpl.class.getName());

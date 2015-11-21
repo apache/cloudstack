@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -50,7 +49,6 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachine.State;
 
 @Component
-@Local(value = {DomainRouterDao.class})
 @DB
 public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> implements DomainRouterDao {
 

@@ -19,7 +19,6 @@ package com.cloud.network.vpc;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.context.CallContext;
@@ -53,7 +52,6 @@ import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Local(value = {NetworkACLManager.class})
 public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLManager {
     private static final Logger s_logger = Logger.getLogger(NetworkACLManagerImpl.class);
 

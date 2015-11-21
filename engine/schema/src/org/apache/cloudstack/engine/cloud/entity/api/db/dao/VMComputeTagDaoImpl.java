@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -32,7 +31,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value = {VMComputeTagDao.class})
 public class VMComputeTagDaoImpl extends GenericDaoBase<VMComputeTagVO, Long> implements VMComputeTagDao {
 
     protected SearchBuilder<VMComputeTagVO> VmIdSearch;

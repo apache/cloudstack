@@ -21,7 +21,6 @@ package com.cloud.network.guru;
 
 import java.util.List;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.context.CallContext;
@@ -90,7 +89,6 @@ import com.cloud.vm.dao.VMInstanceDao;
  * register them with the controller to be plugged into the corresponding network. It also
  * removes them when the VM is destroyed.
  */
-@Local(value = NetworkGuru.class)
 public class BigSwitchBcfGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigrationResponder {
     private static final Logger s_logger = Logger.getLogger(BigSwitchBcfGuestNetworkGuru.class);
 

@@ -29,7 +29,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -194,7 +193,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
-@Local(value = {TemplateManager.class, TemplateApiService.class})
 public class TemplateManagerImpl extends ManagerBase implements TemplateManager, TemplateApiService, Configurable {
     private final static Logger s_logger = Logger.getLogger(TemplateManagerImpl.class);
 

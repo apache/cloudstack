@@ -19,7 +19,6 @@ package com.cloud.vpc.dao;
 import java.lang.reflect.Field;
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
@@ -34,7 +33,6 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.utils.db.DB;
 
-@Local(value = NetworkOfferingDao.class)
 @DB()
 public class MockNetworkOfferingDaoImpl extends NetworkOfferingDaoImpl implements NetworkOfferingDao {
     private static final Logger s_logger = Logger.getLogger(MockNetworkOfferingDaoImpl.class);

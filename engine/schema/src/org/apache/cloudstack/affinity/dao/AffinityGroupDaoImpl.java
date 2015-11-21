@@ -19,7 +19,6 @@ package org.apache.cloudstack.affinity.dao;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -32,7 +31,6 @@ import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-@Local(value = {AffinityGroupDao.class})
 public class AffinityGroupDaoImpl extends GenericDaoBase<AffinityGroupVO, Long> implements AffinityGroupDao {
     private SearchBuilder<AffinityGroupVO> AccountIdSearch;
     private SearchBuilder<AffinityGroupVO> AccountIdNameSearch;

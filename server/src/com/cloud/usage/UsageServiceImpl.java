@@ -67,7 +67,6 @@ import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import java.util.ArrayList;
@@ -78,7 +77,6 @@ import java.util.Map;
 import java.util.TimeZone;
 
 @Component
-@Local(value = {UsageService.class})
 public class UsageServiceImpl extends ManagerBase implements UsageService, Manager {
     public static final Logger s_logger = Logger.getLogger(UsageServiceImpl.class);
 

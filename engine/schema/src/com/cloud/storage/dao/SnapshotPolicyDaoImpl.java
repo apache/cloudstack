@@ -18,7 +18,6 @@ package com.cloud.storage.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -31,7 +30,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = {SnapshotPolicyDao.class})
 public class SnapshotPolicyDaoImpl extends GenericDaoBase<SnapshotPolicyVO, Long> implements SnapshotPolicyDao {
     private final SearchBuilder<SnapshotPolicyVO> VolumeIdSearch;
     private final SearchBuilder<SnapshotPolicyVO> VolumeIdIntervalSearch;

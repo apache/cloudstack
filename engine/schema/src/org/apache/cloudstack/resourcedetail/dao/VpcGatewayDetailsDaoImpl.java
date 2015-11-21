@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.resourcedetail.dao;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -24,7 +23,6 @@ import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 import org.apache.cloudstack.resourcedetail.VpcGatewayDetailVO;
 
 @Component
-@Local(value = {VpcGatewayDetailsDao.class})
 public class VpcGatewayDetailsDaoImpl extends ResourceDetailsDaoBase<VpcGatewayDetailVO> implements VpcGatewayDetailsDao {
 
     @Override

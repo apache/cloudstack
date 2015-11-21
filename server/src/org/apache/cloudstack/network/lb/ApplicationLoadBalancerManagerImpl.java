@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -79,7 +78,6 @@ import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 
 @Component
-@Local(value = {ApplicationLoadBalancerService.class})
 public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements ApplicationLoadBalancerService {
     private static final Logger s_logger = Logger.getLogger(ApplicationLoadBalancerManagerImpl.class);
 

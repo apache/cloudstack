@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.commons.lang.StringUtils;
@@ -41,7 +40,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.security.CertificateHelper;
 
 @Component
-@Local(value = KeystoreManager.class)
 public class KeystoreManagerImpl extends ManagerBase implements KeystoreManager {
     private static final Logger s_logger = Logger.getLogger(KeystoreManagerImpl.class);
 

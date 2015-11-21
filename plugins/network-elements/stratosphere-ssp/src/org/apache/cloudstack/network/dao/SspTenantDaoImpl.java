@@ -16,14 +16,12 @@
 // under the License.
 package org.apache.cloudstack.network.dao;
 
-import javax.ejb.Local;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
-@Local(SspTenantDao.class)
 public class SspTenantDaoImpl extends GenericDaoBase<SspTenantVO, Long> implements SspTenantDao {
 
     private final SearchBuilder<SspTenantVO> zoneSearch;

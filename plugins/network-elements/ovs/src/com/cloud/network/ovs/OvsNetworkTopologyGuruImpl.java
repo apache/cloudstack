@@ -36,12 +36,10 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import javax.ejb.Local;
 import javax.inject.Inject;
 import org.springframework.stereotype.Component;
 
 @Component
-@Local(value = {OvsNetworkTopologyGuru.class})
 public class OvsNetworkTopologyGuruImpl extends ManagerBase implements OvsNetworkTopologyGuru {
 
     @Inject

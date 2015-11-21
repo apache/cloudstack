@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -62,7 +61,6 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value = {NetappManager.class})
 public class NetappManagerImpl extends ManagerBase implements NetappManager {
     public enum Algorithm {
         roundrobin, leastfull

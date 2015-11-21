@@ -19,7 +19,6 @@ package com.cloud.alert.dao;
 import java.util.Date;
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -32,7 +31,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value = {AlertDao.class})
 public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements AlertDao {
 
     protected final SearchBuilder<AlertVO> AlertSearchByIdsAndType;

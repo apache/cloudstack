@@ -18,7 +18,6 @@
  */
 package org.apache.cloudstack.ldap.dao;
 
-import javax.ejb.Local;
 
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -28,7 +27,6 @@ import org.springframework.stereotype.Component;
 import com.cloud.utils.db.GenericDaoBase;
 
 @Component
-@Local(value = {LdapTrustMapDao.class})
 public class LdapTrustMapDaoImpl extends GenericDaoBase<LdapTrustMapVO, Long> implements LdapTrustMapDao  {
     private final SearchBuilder<LdapTrustMapVO> domainIdSearch;
 

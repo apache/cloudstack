@@ -20,7 +20,6 @@ package com.cloud.vpc;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
@@ -45,7 +44,6 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Component
-@Local(value = {VpcVirtualNetworkApplianceManager.class, VpcVirtualNetworkApplianceService.class})
 public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implements VpcVirtualNetworkApplianceManager, VpcVirtualNetworkApplianceService {
 
     /* (non-Javadoc)

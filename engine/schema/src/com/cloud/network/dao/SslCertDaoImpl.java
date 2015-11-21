@@ -18,13 +18,11 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-@Local(value = {SslCertDao.class})
 public class SslCertDaoImpl extends GenericDaoBase<SslCertVO, Long> implements SslCertDao {
 
     private final SearchBuilder<SslCertVO> listByAccountId;

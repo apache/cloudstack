@@ -20,7 +20,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.Formatter;
 
-import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -32,7 +31,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value = {MockConfigurationDao.class})
 public class MockConfigurationDaoImpl extends GenericDaoBase<MockConfigurationVO, Long> implements MockConfigurationDao {
     final static Logger s_logger = Logger.getLogger(MockConfigurationDaoImpl.class);
     private final SearchBuilder<MockConfigurationVO> _searchByDcIdName;

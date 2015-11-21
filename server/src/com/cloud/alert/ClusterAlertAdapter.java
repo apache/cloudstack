@@ -18,7 +18,6 @@ package com.cloud.alert;
 
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -35,7 +34,6 @@ import com.cloud.utils.events.EventArgs;
 import com.cloud.utils.events.SubscriptionMgr;
 
 @Component
-@Local(value = AlertAdapter.class)
 public class ClusterAlertAdapter extends AdapterBase implements AlertAdapter {
 
     private static final Logger s_logger = Logger.getLogger(ClusterAlertAdapter.class);

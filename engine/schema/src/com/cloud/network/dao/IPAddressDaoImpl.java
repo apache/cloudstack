@@ -22,7 +22,6 @@ import java.util.Date;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDao;
@@ -47,7 +46,6 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.net.Ip;
 
 @Component
-@Local(value = {IPAddressDao.class})
 @DB
 public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implements IPAddressDao {
     private static final Logger s_logger = Logger.getLogger(IPAddressDaoImpl.class);

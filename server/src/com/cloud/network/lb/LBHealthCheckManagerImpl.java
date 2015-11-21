@@ -23,7 +23,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -42,7 +41,6 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 
 @Component
-@Local(value = {LBHealthCheckManager.class})
 public class LBHealthCheckManagerImpl extends ManagerBase implements LBHealthCheckManager, Manager {
     private static final Logger s_logger = Logger.getLogger(LBHealthCheckManagerImpl.class);
 

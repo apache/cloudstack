@@ -24,7 +24,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
-import javax.ejb.Local;
 
 import com.cloud.exception.CloudException;
 import org.apache.log4j.Logger;
@@ -36,7 +35,6 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value = {UsageIPAddressDao.class})
 public class UsageIPAddressDaoImpl extends GenericDaoBase<UsageIPAddressVO, Long> implements UsageIPAddressDao {
     public static final Logger s_logger = Logger.getLogger(UsageIPAddressDaoImpl.class.getName());
 

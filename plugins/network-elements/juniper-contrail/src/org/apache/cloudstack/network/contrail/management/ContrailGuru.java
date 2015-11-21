@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.network.contrail.model.InstanceIpModel;
@@ -72,7 +71,6 @@ import com.cloud.vm.dao.NicDao;
 import net.juniper.contrail.api.types.MacAddressesType;
 import net.juniper.contrail.api.types.VirtualMachineInterface;
 
-@Local(value = {NetworkGuru.class})
 public class ContrailGuru extends AdapterBase implements NetworkGuru {
     @Inject
     NetworkDao _networkDao;

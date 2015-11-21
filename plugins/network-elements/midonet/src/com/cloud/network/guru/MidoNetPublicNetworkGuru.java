@@ -20,7 +20,6 @@ package com.cloud.network.guru;
 
 import java.net.URI;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -55,7 +54,6 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value = NetworkGuru.class)
 public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(MidoNetPublicNetworkGuru.class);
 

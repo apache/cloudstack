@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -53,7 +52,6 @@ import com.cloud.utils.db.SearchCriteria;
 
 
 @Component
-@Local(value = {TemplateJoinDao.class})
 public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> implements TemplateJoinDao {
 
     public static final Logger s_logger = Logger.getLogger(TemplateJoinDaoImpl.class);

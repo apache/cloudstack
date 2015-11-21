@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.Properties;
 
-import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -44,7 +43,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 
 import com.cloud.utils.PropertiesUtil;
 
-@Local(value = EventBus.class)
 public class KafkaEventBus extends ManagerBase implements EventBus {
 
     public static final String DEFAULT_TOPIC = "cloudstack";

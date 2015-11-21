@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -61,7 +60,6 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
 
-@Local(value = Discoverer.class)
 public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, ResourceStateAdapter {
     protected static final Logger s_logger = Logger.getLogger(BareMetalDiscoverer.class);
     @Inject

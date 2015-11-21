@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -40,7 +39,6 @@ import com.cloud.utils.component.PluggableService;
 
 // This is the default API access checker that grab's the user's account
 // based on the account type, access is granted
-@Local(value = APIChecker.class)
 public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIChecker {
 
     protected static final Logger s_logger = Logger.getLogger(StaticRoleBasedAPIAccessChecker.class);

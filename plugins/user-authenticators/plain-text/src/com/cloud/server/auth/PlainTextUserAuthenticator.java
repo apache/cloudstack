@@ -21,11 +21,9 @@ import com.cloud.utils.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import java.util.Map;
 
-@Local(value = {UserAuthenticator.class})
 public class PlainTextUserAuthenticator extends DefaultUserAuthenticator {
     public static final Logger s_logger = Logger.getLogger(PlainTextUserAuthenticator.class);
 

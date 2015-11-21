@@ -19,7 +19,6 @@ package com.cloud.offerings.dao;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
@@ -41,7 +40,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value = NetworkOfferingDao.class)
 @DB()
 public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Long> implements NetworkOfferingDao {
     final SearchBuilder<NetworkOfferingVO> NameSearch;

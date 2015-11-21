@@ -21,7 +21,6 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -38,7 +37,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 @Component
-@Local(value = {DataCenterIpAddressDao.class})
 @DB
 public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddressVO, Long> implements DataCenterIpAddressDao {
     private static final Logger s_logger = Logger.getLogger(DataCenterIpAddressDaoImpl.class);

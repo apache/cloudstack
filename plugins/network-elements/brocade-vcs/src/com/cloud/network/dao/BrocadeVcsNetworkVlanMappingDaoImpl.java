@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network.dao;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -27,7 +26,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value = BrocadeVcsNetworkVlanMappingDao.class)
 public class BrocadeVcsNetworkVlanMappingDaoImpl extends GenericDaoBase<BrocadeVcsNetworkVlanMappingVO, Long> implements BrocadeVcsNetworkVlanMappingDao {
 
     protected final SearchBuilder<BrocadeVcsNetworkVlanMappingVO> networkSearch;

@@ -18,7 +18,6 @@ package com.cloud.agent.manager.authn.impl;
 
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -37,7 +36,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.utils.component.AdapterBase;
 
 @Component
-@Local(value = {AgentAuthorizer.class, StartupCommandProcessor.class})
 public class BasicAgentAuthManager extends AdapterBase implements AgentAuthorizer, StartupCommandProcessor {
     private static final Logger s_logger = Logger.getLogger(BasicAgentAuthManager.class);
     @Inject

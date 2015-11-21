@@ -19,7 +19,6 @@ package com.cloud.baremetal.manager;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -51,7 +50,6 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value = DeploymentPlanner.class)
 public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
     private static final Logger s_logger = Logger.getLogger(BareMetalPlanner.class);
     @Inject

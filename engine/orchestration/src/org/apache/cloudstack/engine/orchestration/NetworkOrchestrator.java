@@ -33,7 +33,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -211,7 +210,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 /**
  * NetworkManagerImpl implements NetworkManager.
  */
-@Local(value = {NetworkOrchestrationService.class})
 public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestrationService, Listener, Configurable {
     static final Logger s_logger = Logger.getLogger(NetworkOrchestrator.class);
 

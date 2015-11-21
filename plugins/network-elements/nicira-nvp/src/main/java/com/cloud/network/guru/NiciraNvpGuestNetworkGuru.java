@@ -23,7 +23,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -67,7 +66,6 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value = NetworkGuru.class)
 public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
     private static final int MAX_NAME_LENGTH = 40;
 

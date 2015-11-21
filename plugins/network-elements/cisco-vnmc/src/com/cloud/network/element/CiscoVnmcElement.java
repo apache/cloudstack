@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
@@ -134,7 +133,6 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value = NetworkElement.class)
 public class CiscoVnmcElement extends AdapterBase implements SourceNatServiceProvider, FirewallServiceProvider, PortForwardingServiceProvider, IpDeployer,
         StaticNatServiceProvider, ResourceStateAdapter, NetworkElement, CiscoVnmcElementService, CiscoAsa1000vService {
     private static final Logger s_logger = Logger.getLogger(CiscoVnmcElement.class);

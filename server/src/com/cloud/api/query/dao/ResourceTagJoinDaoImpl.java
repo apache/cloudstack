@@ -19,7 +19,6 @@ package com.cloud.api.query.dao;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -38,7 +37,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value = {ResourceTagJoinDao.class})
 public class ResourceTagJoinDaoImpl extends GenericDaoBase<ResourceTagJoinVO, Long> implements ResourceTagJoinDao {
     public static final Logger s_logger = Logger.getLogger(ResourceTagJoinDaoImpl.class);
 

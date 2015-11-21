@@ -15,14 +15,12 @@
 // under the License.
 package org.apache.cloudstack.resourcedetail.dao;
 
-import javax.ejb.Local;
 
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 import org.apache.cloudstack.resourcedetail.Site2SiteVpnConnectionDetailVO;
 import org.springframework.stereotype.Component;
 
 @Component
-@Local(value = {Site2SiteVpnConnectionDetailsDao.class})
 public class Site2SiteVpnConnectionDetailsDaoImpl extends ResourceDetailsDaoBase<Site2SiteVpnConnectionDetailVO> implements Site2SiteVpnConnectionDetailsDao {
 
     @Override

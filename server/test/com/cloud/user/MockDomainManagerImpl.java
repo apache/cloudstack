@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.springframework.stereotype.Component;
@@ -36,7 +35,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 
 @Component
-@Local(value = {DomainManager.class, DomainService.class})
 public class MockDomainManagerImpl extends ManagerBase implements DomainManager, DomainService {
 
     @Override

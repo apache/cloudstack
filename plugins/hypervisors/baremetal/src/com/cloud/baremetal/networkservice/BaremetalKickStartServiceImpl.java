@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.AddBaremetalKickStartPxeCmd;
@@ -80,7 +79,6 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
-@Local(value = BaremetalPxeService.class)
 public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase implements BaremetalPxeService {
     private static final Logger s_logger = Logger.getLogger(BaremetalKickStartServiceImpl.class);
     @Inject

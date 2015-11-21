@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.commons.lang.StringUtils;
@@ -65,7 +64,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 @Component
-@Local(value = {NetworkACLService.class})
 public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLService {
     private static final Logger s_logger = Logger.getLogger(NetworkACLServiceImpl.class);
 

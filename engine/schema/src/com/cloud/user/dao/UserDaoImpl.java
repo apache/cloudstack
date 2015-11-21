@@ -18,7 +18,6 @@ package com.cloud.user.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -29,7 +28,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = {UserDao.class})
 @DB
 public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao {
     protected SearchBuilder<UserVO> UsernamePasswordSearch;

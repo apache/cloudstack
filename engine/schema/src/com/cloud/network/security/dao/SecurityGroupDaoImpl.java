@@ -18,7 +18,6 @@ package com.cloud.network.security.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.springframework.stereotype.Component;
@@ -33,7 +32,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value = {SecurityGroupDao.class})
 public class SecurityGroupDaoImpl extends GenericDaoBase<SecurityGroupVO, Long> implements SecurityGroupDao {
     private SearchBuilder<SecurityGroupVO> AccountIdSearch;
     private SearchBuilder<SecurityGroupVO> AccountIdNameSearch;

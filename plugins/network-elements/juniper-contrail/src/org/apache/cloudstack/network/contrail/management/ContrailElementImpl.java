@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.network.contrail.api.command.CreateServiceInstanceCmd;
@@ -67,7 +66,6 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 
 @Component
-@Local(value = {ContrailElement.class, StaticNatServiceProvider.class, IpDeployer.class, SourceNatServiceProvider.class})
 
 public class ContrailElementImpl extends AdapterBase
     implements ContrailElement, StaticNatServiceProvider, IpDeployer, SourceNatServiceProvider, DhcpServiceProvider {

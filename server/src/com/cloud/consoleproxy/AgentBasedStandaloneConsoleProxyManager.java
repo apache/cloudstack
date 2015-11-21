@@ -18,7 +18,6 @@ package com.cloud.consoleproxy;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
@@ -27,7 +26,6 @@ import com.cloud.host.HostVO;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.vm.UserVmVO;
 
-@Local(value = {ConsoleProxyManager.class})
 public class AgentBasedStandaloneConsoleProxyManager extends AgentBasedConsoleProxyManager {
     private static final Logger s_logger = Logger.getLogger(AgentBasedStandaloneConsoleProxyManager.class);
 

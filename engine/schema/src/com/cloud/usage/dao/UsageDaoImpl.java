@@ -30,7 +30,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import javax.ejb.Local;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Types;
@@ -40,7 +39,6 @@ import java.util.List;
 import java.util.TimeZone;
 
 @Component
-@Local(value = {UsageDao.class})
 public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements UsageDao {
     public static final Logger s_logger = Logger.getLogger(UsageDaoImpl.class.getName());
     private static final String DELETE_ALL = "DELETE FROM cloud_usage";

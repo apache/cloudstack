@@ -18,7 +18,6 @@ package com.cloud.ha;
 
 import java.util.List;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -33,7 +32,6 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 
 @Component
-@Local(value = FenceBuilder.class)
 public class RecreatableFencer extends AdapterBase implements FenceBuilder {
     private static final Logger s_logger = Logger.getLogger(RecreatableFencer.class);
     @Inject

@@ -19,7 +19,6 @@ package com.cloud.network.dao;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -31,7 +30,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = {Site2SiteVpnConnectionDao.class})
 public class Site2SiteVpnConnectionDaoImpl extends GenericDaoBase<Site2SiteVpnConnectionVO, Long> implements Site2SiteVpnConnectionDao {
     private static final Logger s_logger = Logger.getLogger(Site2SiteVpnConnectionDaoImpl.class);
 

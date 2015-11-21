@@ -19,7 +19,6 @@ package com.cloud.vm.dao;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -31,7 +30,6 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value = NicSecondaryIpDao.class)
 public class NicSecondaryIpDaoImpl extends GenericDaoBase<NicSecondaryIpVO, Long> implements NicSecondaryIpDao {
     private final SearchBuilder<NicSecondaryIpVO> AllFieldsSearch;
     private final GenericSearchBuilder<NicSecondaryIpVO, String> IpSearch;

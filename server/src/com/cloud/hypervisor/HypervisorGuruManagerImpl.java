@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.PostConstruct;
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -35,7 +34,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 
 @Component
-@Local(value = {HypervisorGuruManager.class})
 public class HypervisorGuruManagerImpl extends ManagerBase implements HypervisorGuruManager {
     public static final Logger s_logger = Logger.getLogger(HypervisorGuruManagerImpl.class.getName());
 

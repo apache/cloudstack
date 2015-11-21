@@ -19,7 +19,6 @@ package com.cloud.network.ovs.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -29,7 +28,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value = {OvsTunnelInterfaceDao.class})
 public class OvsTunnelInterfaceDaoImpl extends GenericDaoBase<OvsTunnelInterfaceVO, Long> implements OvsTunnelInterfaceDao {
 
     protected final SearchBuilder<OvsTunnelInterfaceVO> hostAndLabelSearch;

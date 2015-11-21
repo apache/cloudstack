@@ -21,7 +21,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -59,7 +58,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 
 @Component
-@Local(value = {StorageNetworkManager.class, StorageNetworkService.class})
 public class StorageNetworkManagerImpl extends ManagerBase implements StorageNetworkManager, StorageNetworkService {
     private static final Logger s_logger = Logger.getLogger(StorageNetworkManagerImpl.class);
 
