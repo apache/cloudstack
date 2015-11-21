@@ -1170,14 +1170,15 @@ public class NetUtils {
     }
 
     public static boolean isNetworksOverlap(final String cidrA, final String cidrB) {
-        if (!areCidrsNotEmpty(cidrA, cidrB)) {
-            return false;
+        try {
+            Long[] cidrALong = cidrToLong(cidrA);
+            Long[] cidrBLong = cidrToLong(cidrB);
+            final long shift = MAX_CIDR - (cidrALong[1] > cidrBLong[1] ? cidrBLong[1] : cidrALong[1]);
+            return cidrALong[0] >> shift == cidrBLong[0] >> shift;
+        } catch (CloudRuntimeException e) {
+            s_logger.error(e.getLocalizedMessage(),e);
         }
-        Long[] cidrALong = cidrToLong(cidrA);
-        Long[] cidrBLong = cidrToLong(cidrB);
-
-        final long shift = MAX_CIDR - (cidrALong[1] > cidrBLong[1] ? cidrBLong[1] : cidrALong[1]);
-        return cidrALong[0] >> shift == cidrBLong[0] >> shift;
+        return false;
     }
 
     public static boolean isValidS2SVpnPolicy(final String policys) {
