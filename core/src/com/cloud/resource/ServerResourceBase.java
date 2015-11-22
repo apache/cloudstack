@@ -194,7 +194,7 @@ public abstract class ServerResourceBase implements ServerResource {
             info = NetUtils.getNetworkParams(_publicNic);
             if (info != null) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Parameters for pubic nic: " + info[0] + " - " + info[1] + "-" + info[2]);
+                    s_logger.debug("Parameters for public nic: " + info[0] + " - " + info[1] + "-" + info[2]);
                 }
                 cmd.setPublicIpAddress(info[0]);
                 cmd.setPublicMacAddress(info[1]);
