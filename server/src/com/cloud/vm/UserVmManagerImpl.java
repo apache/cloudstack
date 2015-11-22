@@ -1434,7 +1434,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("There is no vm with the nic");
         }
 
-        if (!_networkModel.listNetworkOfferingServices(nicVO.getNetworkId()).isEmpty() && vm.getState() != State.Stopped) {
+        Network network = _networkDao.findById(nicVO.getNetworkId());
+        if (network == null) {
+            throw new InvalidParameterValueException("There is no network with the nic");
+        }
+        // Don't allow to update vm nic ip if network is not in Implemented/Setup/Allocated state
+        if (!(network.getState() == Network.State.Allocated || network.getState() == Network.State.Implemented || network.getState() == Network.State.Setup)) {
+            throw new InvalidParameterValueException("Network is not in the right state to update vm nic ip. Correct states are: " + Network.State.Allocated + ", " + Network.State.Implemented + ", "
+                    + Network.State.Setup);
+        }
+
+        NetworkOfferingVO offering = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
+        if (offering == null) {
+            throw new InvalidParameterValueException("There is no network offering with the network");
+        }
+        if (!_networkModel.listNetworkOfferingServices(offering.getId()).isEmpty() && vm.getState() != State.Stopped) {
             InvalidParameterValueException ex = new InvalidParameterValueException(
                     "VM is not Stopped, unable to update the vm nic having the specified id");
             ex.addProxyObject(vm.getUuid(), "vmId");
@@ -1447,8 +1461,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // verify ip address
         s_logger.debug("Calling the ip allocation ...");
-        Network network = _networkDao.findById(nicVO.getNetworkId());
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
+        if (dc == null) {
+            throw new InvalidParameterValueException("There is no dc with the nic");
+        }
         if (dc.getNetworkType() == NetworkType.Advanced && network.getGuestType() == Network.GuestType.Isolated) {
             try {
                 ipaddr = _ipAddrMgr.allocateGuestIP(network, ipaddr);
@@ -1457,6 +1473,39 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             if (ipaddr == null) {
                 throw new InvalidParameterValueException("Allocating ip to guest nic " + nicVO.getUuid() + " failed, please choose another ip");
+            }
+
+            if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.StaticNat)) {
+                IPAddressVO oldIP = _ipAddressDao.findByAssociatedVmId(vm.getId());
+                if (oldIP != null) {
+                    oldIP.setVmIp(ipaddr);
+                    _ipAddressDao.persist(oldIP);
+                }
+            }
+            // implementing the network elements and resources as a part of vm nic ip update if network has services and it is in Implemented state
+            if (!_networkModel.listNetworkOfferingServices(offering.getId()).isEmpty() && network.getState() == Network.State.Implemented) {
+                User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
+                ReservationContext context = new ReservationContextImpl(null, null, callerUser, caller);
+                DeployDestination dest = new DeployDestination(_dcDao.findById(network.getDataCenterId()), null, null, null);
+
+                s_logger.debug("Implementing the network " + network + " elements and resources as a part of vm nic ip update");
+                try {
+                    // implement the network elements and rules again
+                    _networkMgr.implementNetworkElementsAndResources(dest, context, network, offering);
+                } catch (Exception ex) {
+                    s_logger.warn("Failed to implement network " + network + " elements and resources as a part of vm nic ip update due to ", ex);
+                    CloudRuntimeException e = new CloudRuntimeException("Failed to implement network (with specified id) elements and resources as a part of vm nic ip update");
+                    e.addProxyObject(network.getUuid(), "networkId");
+                    // restore to old ip address
+                    if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.StaticNat)) {
+                        IPAddressVO oldIP = _ipAddressDao.findByAssociatedVmId(vm.getId());
+                        if (oldIP != null) {
+                            oldIP.setVmIp(nicVO.getIPv4Address());
+                            _ipAddressDao.persist(oldIP);
+                        }
+                    }
+                    throw e;
+                }
             }
         } else if (dc.getNetworkType() == NetworkType.Basic || network.getGuestType()  == Network.GuestType.Shared) {
             //handle the basic networks here
