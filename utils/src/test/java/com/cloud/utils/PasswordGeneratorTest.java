@@ -30,13 +30,36 @@ public class PasswordGeneratorTest {
         Assert.assertTrue(PasswordGenerator.generateRandomPassword(1).length() == 3);
         Assert.assertTrue(PasswordGenerator.generateRandomPassword(5).length() == 5);
         String password = PasswordGenerator.generateRandomPassword(8);
-        // TODO: this might give more help to bruteforcing than desired
-        // the actual behavior is that the first character is a random lowercase
-        // char
-        Assert.assertTrue(Character.isLowerCase(password.charAt(0)));
-        // the second character is a random upper case char
-        Assert.assertTrue(Character.isUpperCase(password.charAt(1)));
-        // and the third is a digit
-        Assert.assertTrue(Character.isDigit(password.charAt(2)));
+
+        Assert.assertTrue(containsDigit(password));
+        Assert.assertTrue(containsLowercase(password));
+        Assert.assertTrue(containsUppercase(password));
+    }
+
+    private boolean containsUppercase(String password) {
+        for (char c : password.toCharArray()) {
+            if (Character.isUpperCase(c)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean containsLowercase(String password) {
+        for (char c : password.toCharArray()) {
+            if (Character.isLowerCase(c)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean containsDigit(String password) {
+        for (char c : password.toCharArray()) {
+            if (Character.isDigit(c)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
