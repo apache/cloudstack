@@ -47,6 +47,7 @@ import org.apache.commons.httpclient.methods.PutMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
@@ -296,7 +297,7 @@ public class BigSwitchBcfApi {
         m.setRequestHeader(CONTENT_TYPE, CONTENT_JSON);
         m.setRequestHeader(ACCEPT, CONTENT_JSON);
         m.setRequestHeader(HTTP_HEADER_INSTANCE_ID, CLOUDSTACK_INSTANCE_ID + "-" + zoneId);
-        if (hash != "" ) {
+        if (StringUtils.isNotEmpty(hash)) {
             m.setRequestHeader(HASH_MATCH, hash);
         }
 
@@ -400,10 +401,10 @@ public class BigSwitchBcfApi {
             gm.releaseConnection();
         }
         if(returnValue instanceof ControlClusterStatus) {
-            if(hash == HASH_CONFLICT) {
+            if(HASH_CONFLICT.equals(hash)) {
                 isMaster = true;
                 ((ControlClusterStatus) returnValue).setTopologySyncRequested(true);
-            } else if (hash != HASH_IGNORE && !isMaster) {
+            } else if (!HASH_IGNORE.equals(hash) && !isMaster) {
                 isMaster = true;
                 ((ControlClusterStatus) returnValue).setTopologySyncRequested(true);
             }
