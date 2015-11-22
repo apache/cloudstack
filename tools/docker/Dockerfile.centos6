@@ -18,14 +18,14 @@
 FROM centos:6
 
 MAINTAINER "Apache CloudStack" <dev@cloudstack.apache.org>
-LABEL Vendor="Apache.org" License="ApacheV2" Version="4.6.0"
+LABEL Vendor="Apache.org" License="ApacheV2" Version="4.7.0"
 
 ENV PKG_URL=http://jenkins.buildacloud.org/job/package-rhel63-master/lastSuccessfulBuild/artifact/dist/rpmbuild/RPMS/x86_64
 
 # install CloudStack
 RUN yum install -y nc wget \
-    ${PKG_URL}/cloudstack-common-4.6.0-SNAPSHOT.el6.x86_64.rpm \
-    ${PKG_URL}/cloudstack-management-4.6.0-SNAPSHOT.el6.x86_64.rpm
+    ${PKG_URL}/cloudstack-common-4.7.0-SNAPSHOT.el6.x86_64.rpm \
+    ${PKG_URL}/cloudstack-management-4.7.0-SNAPSHOT.el6.x86_64.rpm
 
 RUN cd /etc/cloudstack/management; \
     ln -s tomcat6-nonssl.conf tomcat6.conf; \
