@@ -5005,10 +5005,11 @@ public class LibvirtComputingResourceTest {
         LibvirtComputingResource lvcr = new LibvirtComputingResource();
         assertFalse(lvcr.isInterface("bla"));
         assertTrue(lvcr.isInterface("p99p00"));
-        for  (String ifNamePrefix : lvcr._ifNamePrefixes) {
+        for  (String ifNamePattern : lvcr._ifNamePatterns) {
             // excluding regexps as "\\\\d+" won't replace with String.replaceAll(String,String);
-            if (!ifNamePrefix.contains("\\")) {
-                assertTrue(lvcr.isInterface(ifNamePrefix + "0"));
+            if (!ifNamePattern.contains("\\")) {
+                String ifName = ifNamePattern.replaceFirst("\\^", "") + "0";
+                assertTrue("The pattern '" + ifNamePattern + "' is expected to be valid for interface " + ifName,lvcr.isInterface(ifName));
             }
         }
     }
