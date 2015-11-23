@@ -1255,7 +1255,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 volOnCache.delete();
             }
 
-        } catch (Exception e) {
+        } catch (InterruptedException | ExecutionException | NoTransitionException e) {
             s_logger.warn("Failed to expunge volume:", e);
             return false;
         }
