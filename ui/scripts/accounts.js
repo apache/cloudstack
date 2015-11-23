@@ -162,7 +162,7 @@
                                     }
                                 },
                                 error: function(xhr) {
-                                },
+                                } 
                             });
                         }
                     },
