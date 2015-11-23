@@ -162,7 +162,7 @@
                                     }
                                 },
                                 error: function(xhr) {
-                                },
+                                }
                             });
                         }
                     },
@@ -1405,7 +1405,7 @@
                                                             });
                                                         }
                                                     });
-                                                },
+                                                }
                                                 error: function(json) {
                                                     complete({ error: parseXMLHttpResponse(json) });
                                                 }

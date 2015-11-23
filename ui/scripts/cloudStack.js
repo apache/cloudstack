@@ -200,7 +200,7 @@
                         }
                     },
                     error: function(xhr) {
-                    },
+                    }
                 });
 
                 return userValid ? {

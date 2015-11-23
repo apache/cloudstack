@@ -590,7 +590,7 @@
                                             });
                                         }
                                     }
-                                },
+                                }
                             }
                         },
                         action: function(args) {
