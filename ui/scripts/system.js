@@ -7706,19 +7706,6 @@
                                         }
                                     }
                                 },
-                                viewMetrics: {
-                                    label: 'label.metrics',
-                                    isHeader: true,
-                                    addRow: false,
-                                    action: {
-                                        custom: cloudStack.uiCustom.metricsView({resource: 'zones'})
-                                    },
-                                    messages: {
-                                        notification: function (args) {
-                                            return 'label.metrics';
-                                        }
-                                    }
-                                },
                             },
                             
                             detailView: {
@@ -14385,19 +14372,6 @@
                                 });
                             }
                         },
-                        viewMetrics: {
-                            label: 'label.metrics',
-                            isHeader: true,
-                            addRow: false,
-                            action: {
-                                custom: cloudStack.uiCustom.metricsView({resource: 'clusters'})
-                            },
-                            messages: {
-                                notification: function (args) {
-                                    return 'label.metrics';
-                                }
-                            }
-                        }
                     },
                     
                     detailView: {
@@ -15636,19 +15610,6 @@
                                 }
                             }
                         },
-                        viewMetrics: {
-                            label: 'label.metrics',
-                            isHeader: true,
-                            addRow: false,
-                            action: {
-                                custom: cloudStack.uiCustom.metricsView({resource: 'hosts'})
-                            },
-                            messages: {
-                                notification: function (args) {
-                                    return 'label.metrics';
-                                }
-                            }
-                        }
                     },
                     detailView: {
                         name: "Host details",
@@ -17455,19 +17416,6 @@
                                 }
                             }
                         },
-                        viewMetrics: {
-                            label: 'label.metrics',
-                            isHeader: true,
-                            addRow: false,
-                            action: {
-                                custom: cloudStack.uiCustom.metricsView({resource: 'storagepool'})
-                            },
-                            messages: {
-                                notification: function (args) {
-                                    return 'label.metrics';
-                                }
-                            }
-                        }
                     },
                     
                     detailView: {
