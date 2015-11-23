@@ -24,11 +24,11 @@ import com.cloud.serializer.Param;
 
 public class RegisterResponse extends BaseResponse {
     @SerializedName("apikey")
-    @Param(description = "the api key of the registered user")
+    @Param(description = "the api key of the registered user", isSensitive = true)
     private String apiKey;
 
     @SerializedName("secretkey")
-    @Param(description = "the secret key of the registered user")
+    @Param(description = "the secret key of the registered user", isSensitive = true)
     private String secretKey;
 
     public String getApiKey() {

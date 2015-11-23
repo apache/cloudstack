@@ -53,7 +53,7 @@ public class LDAPConfigResponse extends BaseResponse {
     private String bindDN;
 
     @SerializedName(ApiConstants.BIND_PASSWORD)
-    @Param(description = "DN password")
+    @Param(description = "DN password", isSensitive = true)
     private String bindPassword;
 
     public String getHostname() {

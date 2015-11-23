@@ -17,13 +17,12 @@
 package org.apache.cloudstack.api.response;
 
 import com.google.gson.annotations.SerializedName;
-
 import com.cloud.serializer.Param;
 
 public class CreateSSHKeyPairResponse extends SSHKeyPairResponse {
 
     @SerializedName("privatekey")
-    @Param(description = "Private key")
+    @Param(description = "Private key", isSensitive = true)
     private String privateKey;
 
     public CreateSSHKeyPairResponse() {

@@ -42,7 +42,7 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
     private String ipRange;
 
     @SerializedName("presharedkey")
-    @Param(description = "the ipsec preshared key")
+    @Param(description = "the ipsec preshared key", isSensitive = true)
     private String presharedKey;
 
     @SerializedName(ApiConstants.ACCOUNT)

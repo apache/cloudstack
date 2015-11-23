@@ -78,11 +78,11 @@ public class UserResponse extends BaseResponse {
     private String timezone;
 
     @SerializedName("apikey")
-    @Param(description = "the api key of the user")
+    @Param(description = "the api key of the user", isSensitive = true)
     private String apiKey;
 
     @SerializedName("secretkey")
-    @Param(description = "the secret key of the user")
+    @Param(description = "the secret key of the user", isSensitive = true)
     private String secretKey;
 
     @SerializedName("accountid")

@@ -221,7 +221,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     private Set<SecurityGroupResponse> securityGroupList;
 
     @SerializedName(ApiConstants.PASSWORD)
-    @Param(description = "the password (if exists) of the virtual machine")
+    @Param(description = "the password (if exists) of the virtual machine", isSensitive = true)
     private String password;
 
     @SerializedName("nic")

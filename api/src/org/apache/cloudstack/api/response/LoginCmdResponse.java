@@ -63,7 +63,7 @@ public class LoginCmdResponse extends AuthenticationCmdResponse {
     private String registered;
 
     @SerializedName(value = ApiConstants.SESSIONKEY)
-    @Param(description = "Session key that can be passed in subsequent Query command calls")
+    @Param(description = "Session key that can be passed in subsequent Query command calls", isSensitive = true)
     private String sessionKey;
 
     public String getUsername() {

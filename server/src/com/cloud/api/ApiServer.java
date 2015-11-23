@@ -525,14 +525,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     cmdObj.setHttpMethod(paramMap.get(ApiConstants.HTTPMETHOD).toString());
 
                     // This is where the command is either serialized, or directly dispatched
-                    response = queueCommand(cmdObj, paramMap);
-                    if (annotation.responseHasSensitiveInfo())
-                    {
-                        buildAuditTrail(auditTrailSb, command[0],
-                                StringUtils.cleanString(response));
-                    }
-                    else
-                        buildAuditTrail(auditTrailSb, command[0], response);
+                    StringBuilder log = new StringBuilder();
+                    response = queueCommand(cmdObj, paramMap, log);
+                    buildAuditTrail(auditTrailSb, command[0], log.toString());
                 } else {
                     final String errorString = "Unknown API command: " + command[0];
                     s_logger.warn(errorString);
@@ -617,7 +612,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         return ApiResponseSerializer.toSerializedString(response, cmd.getResponseType());
     }
 
-    private String queueCommand(final BaseCmd cmdObj, final Map<String, String> params) throws Exception {
+    private String queueCommand(final BaseCmd cmdObj, final Map<String, String> params, StringBuilder log) throws Exception {
         final CallContext ctx = CallContext.current();
         final Long callerUserId = ctx.getCallingUserId();
         final Account caller = ctx.getCallingAccount();
@@ -717,7 +712,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             }
 
             SerializationContext.current().setUuidTranslation(true);
-            return ApiResponseSerializer.toSerializedString((ResponseObject)cmdObj.getResponseObject(), cmdObj.getResponseType());
+            return ApiResponseSerializer.toSerializedStringWithSecureLogs((ResponseObject)cmdObj.getResponseObject(), cmdObj.getResponseType(), log);
         }
     }
 
