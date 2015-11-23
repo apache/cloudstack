@@ -101,7 +101,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-        DhcpServiceProvider.class, VpcProvider.class, NetworkACLServiceProvider.class})
 public class NuageVspElement extends AdapterBase implements ConnectivityProvider, IpDeployer, SourceNatServiceProvider, StaticNatServiceProvider, FirewallServiceProvider,
         DhcpServiceProvider, ResourceStateAdapter, VpcProvider, NetworkACLServiceProvider {
 
