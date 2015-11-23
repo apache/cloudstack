@@ -24,7 +24,7 @@ class globalEnv:
         self.noStart = False
         #myCloud/Agent/Console
         self.agentMode = None
-        #Tomcat6/Tomcat7
+        #Tomcat6/Tomcat7/Tomcat8
         self.svrConf = None
         #debug
         self.debug = False
