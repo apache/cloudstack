@@ -20,14 +20,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value = DeploymentPlanner.class)
 public class UserConcentratedPodPlanner extends FirstFitPlanner implements DeploymentClusterPlanner {
 
     private static final Logger s_logger = Logger.getLogger(UserConcentratedPodPlanner.class);

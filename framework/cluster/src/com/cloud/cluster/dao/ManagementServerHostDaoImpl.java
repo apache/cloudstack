@@ -24,7 +24,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
-import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
@@ -41,7 +40,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Local(value = {ManagementServerHostDao.class})
 public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServerHostVO, Long> implements ManagementServerHostDao {
     private static final Logger s_logger = Logger.getLogger(ManagementServerHostDaoImpl.class);
 

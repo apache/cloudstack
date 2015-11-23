@@ -18,7 +18,6 @@ package com.cloud.api.query.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.DomainResponse;
@@ -35,7 +34,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={DomainJoinDao.class})
 public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implements DomainJoinDao {
     public static final Logger s_logger = Logger.getLogger(DomainJoinDaoImpl.class);
 

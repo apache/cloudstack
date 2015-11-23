@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -68,7 +67,6 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-@Local(value = DeploymentPlanner.class)
 public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPlanner, Configurable {
     private static final Logger s_logger = Logger.getLogger(FirstFitPlanner.class);
     @Inject

@@ -18,7 +18,6 @@ package com.cloud.alert;
 
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -36,7 +35,6 @@ import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 
 @Component
-@Local(value = AlertAdapter.class)
 public class SecondaryStorageVmAlertAdapter extends AdapterBase implements AlertAdapter {
 
     private static final Logger s_logger = Logger.getLogger(SecondaryStorageVmAlertAdapter.class);

@@ -18,7 +18,6 @@ package com.cloud.api.query.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -33,7 +32,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.InstanceGroup;
 
 @Component
-@Local(value = {InstanceGroupJoinDao.class})
 public class InstanceGroupJoinDaoImpl extends GenericDaoBase<InstanceGroupJoinVO, Long> implements InstanceGroupJoinDao {
     public static final Logger s_logger = Logger.getLogger(InstanceGroupJoinDaoImpl.class);
 

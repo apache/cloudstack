@@ -19,7 +19,6 @@ package com.cloud.network.dao;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -33,7 +32,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = NetworkServiceMapDao.class)
 @DB()
 public class NetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO, Long> implements NetworkServiceMapDao {
     final SearchBuilder<NetworkServiceMapVO> AllFieldsSearch;

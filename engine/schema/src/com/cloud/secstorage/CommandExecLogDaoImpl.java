@@ -18,7 +18,6 @@ package com.cloud.secstorage;
 
 import java.util.Date;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -28,7 +27,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value = {CommandExecLogDao.class})
 public class CommandExecLogDaoImpl extends GenericDaoBase<CommandExecLogVO, Long> implements CommandExecLogDao {
 
     protected final SearchBuilder<CommandExecLogVO> ExpungeSearch;

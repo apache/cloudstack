@@ -18,7 +18,6 @@ package com.cloud.network.vpc.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -34,7 +33,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = VpcServiceMapDao.class)
 @DB()
 public class VpcServiceMapDaoImpl extends GenericDaoBase<VpcServiceMapVO, Long> implements VpcServiceMapDao {
     final SearchBuilder<VpcServiceMapVO> AllFieldsSearch;

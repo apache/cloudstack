@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.service.dao;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -25,7 +24,6 @@ import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 import com.cloud.service.ServiceOfferingDetailsVO;
 
 @Component
-@Local(value = ServiceOfferingDetailsDao.class)
 public class ServiceOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<ServiceOfferingDetailsVO> implements ServiceOfferingDetailsDao {
 
     @Override

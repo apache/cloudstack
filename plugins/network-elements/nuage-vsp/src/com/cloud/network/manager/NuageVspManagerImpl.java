@@ -116,7 +116,6 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import java.util.ArrayList;
@@ -132,7 +131,6 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import static com.cloud.agent.api.sync.SyncNuageVspCmsIdCommand.SyncType;
 
-@Local(value = {NuageVspManager.class})
 public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager, Configurable, StateListener<Status, Status.Event, Host> {
 
     private static final Logger s_logger = Logger.getLogger(NuageVspManagerImpl.class);

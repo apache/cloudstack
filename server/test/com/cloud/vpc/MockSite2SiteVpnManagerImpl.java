@@ -19,7 +19,6 @@ package com.cloud.vpc;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.user.vpn.CreateVpnConnectionCmd;
@@ -48,7 +47,6 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.DomainRouterVO;
 
 @Component
-@Local(value = {Site2SiteVpnManager.class, Site2SiteVpnService.class})
 public class MockSite2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpnManager, Site2SiteVpnService {
 
     /* (non-Javadoc)

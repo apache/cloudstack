@@ -22,12 +22,10 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.springframework.stereotype.Component;
 
-import javax.ejb.Local;
 import java.sql.PreparedStatement;
 
 @DB
 @Component
-@Local(value = {SAMLTokenDao.class})
 public class SAMLTokenDaoImpl extends GenericDaoBase<SAMLTokenVO, Long> implements SAMLTokenDao {
 
     public SAMLTokenDaoImpl() {

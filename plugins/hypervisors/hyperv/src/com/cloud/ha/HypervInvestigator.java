@@ -20,7 +20,6 @@ package com.cloud.ha;
 
 import java.util.List;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -36,7 +35,6 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ResourceManager;
 import com.cloud.utils.component.AdapterBase;
 
-@Local(value=Investigator.class)
 public class HypervInvestigator extends AdapterBase implements Investigator {
     private final static Logger s_logger = Logger.getLogger(HypervInvestigator.class);
     @Inject HostDao _hostDao;

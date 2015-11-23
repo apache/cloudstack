@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.storage.dao;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -24,7 +23,6 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.utils.db.GenericDaoBase;
 
 @Component
-@Local(value = {GuestOSCategoryDao.class})
 public class GuestOSCategoryDaoImpl extends GenericDaoBase<GuestOSCategoryVO, Long> implements GuestOSCategoryDao {
 
     protected GuestOSCategoryDaoImpl() {

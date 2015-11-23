@@ -16,14 +16,12 @@
 // under the License.
 package com.cloud.vpc.dao;
 
-import javax.ejb.Local;
 
 import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 
-@Local(value = VpcOfferingDao.class)
 @DB()
 public class MockVpcOfferingDaoImpl extends GenericDaoBase<VpcOfferingVO, Long> implements VpcOfferingDao {
 

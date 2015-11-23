@@ -18,7 +18,6 @@ package com.cloud.ha;
 
 import java.util.List;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -32,7 +31,6 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.vm.Nic;
 import com.cloud.vm.VirtualMachine;
 
-@Local(value = {Investigator.class})
 public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
     private static final Logger s_logger = Logger.getLogger(ManagementIPSystemVMInvestigator.class);
 

@@ -20,7 +20,6 @@ package org.apache.cloudstack.network.contrail.management;
 import java.io.IOException;
 import java.util.List;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.network.contrail.model.VirtualNetworkModel;
@@ -46,7 +45,6 @@ import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.vm.ReservationContext;
 
 @Component
-@Local(value = {NetworkACLServiceProvider.class, VpcProvider.class, ContrailElementImpl.class})
 public class ContrailVpcElementImpl extends ContrailElementImpl implements NetworkACLServiceProvider, VpcProvider {
     private static final Logger s_logger =
             Logger.getLogger(ContrailElement.class);

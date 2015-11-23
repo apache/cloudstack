@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -92,7 +91,6 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 
 @Component
-@Local(value = {NetworkElement.class})
 public class BrocadeVcsElement extends AdapterBase implements NetworkElement, ResourceStateAdapter, BrocadeVcsElementService {
     private static final Logger s_logger = Logger.getLogger(BrocadeVcsElement.class);
 

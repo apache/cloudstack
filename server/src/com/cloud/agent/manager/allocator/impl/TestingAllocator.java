@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
@@ -34,7 +33,6 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value = {HostAllocator.class})
 public class TestingAllocator extends AdapterBase implements HostAllocator {
     @Inject
     HostDao _hostDao;

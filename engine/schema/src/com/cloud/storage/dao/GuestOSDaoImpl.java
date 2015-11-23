@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.storage.dao;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -26,7 +25,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = {GuestOSDao.class})
 public class GuestOSDaoImpl extends GenericDaoBase<GuestOSVO, Long> implements GuestOSDao {
 
     protected final SearchBuilder<GuestOSVO> Search;

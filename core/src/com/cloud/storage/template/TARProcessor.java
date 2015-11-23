@@ -24,12 +24,10 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.utils.component.AdapterBase;
 import org.apache.log4j.Logger;
 
-import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 import java.io.File;
 import java.util.Map;
 
-@Local(value = Processor.class)
 public class TARProcessor extends AdapterBase implements Processor {
     private static final Logger s_logger = Logger.getLogger(TARProcessor.class);
 

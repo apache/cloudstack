@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -32,7 +31,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component(value = "EngineDcDetailsDao")
-@Local(value = DcDetailsDao.class)
 public class DcDetailsDaoImpl extends GenericDaoBase<DcDetailVO, Long> implements DcDetailsDao {
     protected final SearchBuilder<DcDetailVO> DcSearch;
     protected final SearchBuilder<DcDetailVO> DetailSearch;

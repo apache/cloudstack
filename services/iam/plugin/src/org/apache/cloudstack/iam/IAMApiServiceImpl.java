@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -116,7 +115,6 @@ import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshot;
 
-@Local(value = {IAMApiService.class})
 public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Manager {
 
     public static final Logger s_logger = Logger.getLogger(IAMApiServiceImpl.class);

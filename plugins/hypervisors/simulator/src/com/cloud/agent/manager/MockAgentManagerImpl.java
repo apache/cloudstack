@@ -28,7 +28,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.PatternSyntaxException;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -72,7 +71,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 @Component
-@Local(value = {MockAgentManager.class})
 public class MockAgentManagerImpl extends ManagerBase implements MockAgentManager {
     private static final Logger s_logger = Logger.getLogger(MockAgentManagerImpl.class);
     @Inject

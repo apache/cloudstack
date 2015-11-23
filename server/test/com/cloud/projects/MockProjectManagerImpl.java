@@ -19,7 +19,6 @@ package com.cloud.projects;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -29,7 +28,6 @@ import com.cloud.projects.ProjectAccount.Role;
 import com.cloud.user.Account;
 import com.cloud.utils.component.ManagerBase;
 
-@Local(value = {ProjectManager.class})
 public class MockProjectManagerImpl extends ManagerBase implements ProjectManager {
 
     @Override

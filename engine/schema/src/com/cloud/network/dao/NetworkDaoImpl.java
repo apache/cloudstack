@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Random;
 
 import javax.annotation.PostConstruct;
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.persistence.TableGenerator;
 
@@ -56,7 +55,6 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.net.NetUtils;
 
 @Component
-@Local(value = NetworkDao.class)
 @DB()
 public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements NetworkDao {
     SearchBuilder<NetworkVO> AllFieldsSearch;

@@ -46,12 +46,10 @@ import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import java.util.Date;
 import java.util.List;
 
-@Local(value = TemplateAdapter.class)
 public class BareMetalTemplateAdapter extends TemplateAdapterBase implements TemplateAdapter {
     private final static Logger s_logger = Logger.getLogger(BareMetalTemplateAdapter.class);
     @Inject

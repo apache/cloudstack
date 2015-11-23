@@ -24,7 +24,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.exception.InternalErrorException;
@@ -41,7 +40,6 @@ import com.cloud.utils.component.AdapterBase;
  * into the VHD format.
  *
  */
-@Local(value = Processor.class)
 public class VhdProcessor extends AdapterBase implements Processor {
 
     private static final Logger s_logger = Logger.getLogger(VhdProcessor.class);

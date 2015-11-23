@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -83,7 +82,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 
 @Component
-@Local(value = {ConfigurationManager.class, ConfigurationService.class})
 public class MockConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService {
     @Inject
     NetworkOfferingDaoImpl _ntwkOffDao;

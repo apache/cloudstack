@@ -19,7 +19,6 @@ package org.apache.cloudstack.storage.allocator;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -36,7 +35,6 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value = StoragePoolAllocator.class)
 public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAllocator {
     private static final Logger s_logger = Logger.getLogger(GarbageCollectingStoragePoolAllocator.class);
 

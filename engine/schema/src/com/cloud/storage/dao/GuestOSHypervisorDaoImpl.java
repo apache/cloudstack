@@ -18,7 +18,6 @@ package com.cloud.storage.dao;
 
 import java.util.Date;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -29,7 +28,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = {GuestOSHypervisorDao.class})
 public class GuestOSHypervisorDaoImpl extends GenericDaoBase<GuestOSHypervisorVO, Long> implements GuestOSHypervisorDao {
 
     protected final SearchBuilder<GuestOSHypervisorVO> guestOsSearch;

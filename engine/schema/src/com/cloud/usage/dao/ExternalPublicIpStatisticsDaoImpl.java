@@ -18,7 +18,6 @@ package com.cloud.usage.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -28,7 +27,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = {ExternalPublicIpStatisticsDao.class})
 public class ExternalPublicIpStatisticsDaoImpl extends GenericDaoBase<ExternalPublicIpStatisticsVO, Long> implements ExternalPublicIpStatisticsDao {
 
     private final SearchBuilder<ExternalPublicIpStatisticsVO> AccountZoneSearch;

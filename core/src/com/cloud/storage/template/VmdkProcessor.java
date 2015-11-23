@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -38,7 +37,6 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.component.AdapterBase;
 
-@Local(value = Processor.class)
 public class VmdkProcessor extends AdapterBase implements Processor {
     private static final Logger s_logger = Logger.getLogger(VmdkProcessor.class);
 

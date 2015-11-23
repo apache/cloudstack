@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -60,7 +59,6 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 import org.apache.log4j.Logger;
 
-@Local(value = HypervisorGuru.class)
 public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru, Configurable {
     private final Logger LOGGER = Logger.getLogger(XenServerGuru.class);
     @Inject

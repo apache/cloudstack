@@ -19,7 +19,6 @@ package org.apache.cloudstack.engine.cloud.entity.api.db.dao;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -30,7 +29,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = {VolumeReservationDao.class})
 public class VolumeReservationDaoImpl extends GenericDaoBase<VolumeReservationVO, Long> implements VolumeReservationDao {
 
     protected SearchBuilder<VolumeReservationVO> VmIdSearch;

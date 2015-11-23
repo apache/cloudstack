@@ -20,9 +20,7 @@ package com.cloud.network.dao;
 import com.cloud.utils.db.GenericDaoBase;
 import org.springframework.stereotype.Component;
 
-import javax.ejb.Local;
 
 @Component
-@Local(value=OpRouterMonitorServiceDao.class)
 public class OpRouterMonitorServiceDaoImpl extends GenericDaoBase<OpRouterMonitorServiceVO, Long> implements OpRouterMonitorServiceDao  {
 }

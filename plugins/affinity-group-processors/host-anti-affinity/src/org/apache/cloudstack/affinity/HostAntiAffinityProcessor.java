@@ -19,7 +19,6 @@ package org.apache.cloudstack.affinity;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -44,7 +43,6 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-@Local(value = AffinityGroupProcessor.class)
 public class HostAntiAffinityProcessor extends AffinityProcessorBase implements AffinityGroupProcessor {
 
     private static final Logger s_logger = Logger.getLogger(HostAntiAffinityProcessor.class);

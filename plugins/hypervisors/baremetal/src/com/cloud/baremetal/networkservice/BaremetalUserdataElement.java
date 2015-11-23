@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import com.cloud.dc.DataCenter.NetworkType;
@@ -45,7 +44,6 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value = NetworkElement.class)
 public class BaremetalUserdataElement extends AdapterBase implements NetworkElement, UserDataServiceProvider {
     private static Map<Service, Map<Capability, String>> capabilities;
 

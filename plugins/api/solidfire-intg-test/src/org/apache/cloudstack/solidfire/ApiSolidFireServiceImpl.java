@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -53,7 +52,6 @@ import com.cloud.user.User;
 import com.cloud.utils.component.AdapterBase;
 
 @Component
-@Local(value = APIChecker.class)
 public class ApiSolidFireServiceImpl extends AdapterBase implements APIChecker, ApiSolidFireService {
     // private static final Logger s_logger = Logger.getLogger(ApiSolidFireServiceImpl.class);
 

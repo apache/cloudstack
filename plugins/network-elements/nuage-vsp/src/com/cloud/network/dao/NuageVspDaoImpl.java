@@ -25,11 +25,9 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import org.springframework.stereotype.Component;
 
-import javax.ejb.Local;
 import java.util.List;
 
 @Component
-@Local(value = NuageVspDao.class)
 public class NuageVspDaoImpl extends GenericDaoBase<NuageVspDeviceVO, Long>
         implements NuageVspDao {
 

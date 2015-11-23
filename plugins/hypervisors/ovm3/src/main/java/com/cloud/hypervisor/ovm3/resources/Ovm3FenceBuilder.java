@@ -20,7 +20,6 @@ package com.cloud.hypervisor.ovm3.resources;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -40,7 +39,6 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 
-@Local(value = FenceBuilder.class)
 public class Ovm3FenceBuilder extends AdapterBase implements FenceBuilder {
     Map<String, Object> fenceParams;
     private static final Logger LOGGER = Logger.getLogger(Ovm3FenceBuilder.class);

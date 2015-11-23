@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -67,7 +66,6 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.element.ConnectivityProvider;
-import com.cloud.network.element.NetworkElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ResourceManager;
 import com.cloud.utils.component.AdapterBase;
@@ -88,7 +86,6 @@ import com.cloud.vm.dao.NicDao;
  * but note this is not necessary. The other way is create our own database
  * table for that information.
  */
-@Local(value = {NetworkElement.class, SspManager.class})
 public class SspElement extends AdapterBase implements ConnectivityProvider, SspManager, SspService, NetworkMigrationResponder {
     private static final Logger s_logger = Logger.getLogger(SspElement.class);
     public static final String s_SSP_NAME = "StratosphereSsp";

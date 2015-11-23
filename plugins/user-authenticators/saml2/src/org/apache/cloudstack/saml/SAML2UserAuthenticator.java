@@ -15,7 +15,6 @@
 package org.apache.cloudstack.saml;
 
 import com.cloud.server.auth.DefaultUserAuthenticator;
-import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
@@ -24,11 +23,9 @@ import com.cloud.utils.Pair;
 import org.apache.cxf.common.util.StringUtils;
 import org.apache.log4j.Logger;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import java.util.Map;
 
-@Local(value = {UserAuthenticator.class})
 public class SAML2UserAuthenticator extends DefaultUserAuthenticator {
     public static final Logger s_logger = Logger.getLogger(SAML2UserAuthenticator.class);
 

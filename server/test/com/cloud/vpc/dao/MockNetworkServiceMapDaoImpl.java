@@ -18,7 +18,6 @@ package com.cloud.vpc.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
@@ -27,7 +26,6 @@ import com.cloud.network.dao.NetworkServiceMapVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 
-@Local(value = NetworkServiceMapDao.class)
 @DB()
 public class MockNetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO, Long> implements NetworkServiceMapDao {
 

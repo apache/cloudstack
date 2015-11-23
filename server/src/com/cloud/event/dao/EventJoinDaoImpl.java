@@ -18,7 +18,6 @@ package com.cloud.event.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -35,7 +34,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = {EventJoinDao.class})
 public class EventJoinDaoImpl extends GenericDaoBase<EventJoinVO, Long> implements EventJoinDao {
     public static final Logger s_logger = Logger.getLogger(EventJoinDaoImpl.class);
 

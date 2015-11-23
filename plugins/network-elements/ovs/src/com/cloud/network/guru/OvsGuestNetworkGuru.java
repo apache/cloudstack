@@ -18,7 +18,6 @@ package com.cloud.network.guru;
 
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -54,7 +53,6 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Component
-@Local(value = NetworkGuru.class)
 public class OvsGuestNetworkGuru extends GuestNetworkGuru {
     private static final Logger s_logger = Logger
         .getLogger(OvsGuestNetworkGuru.class);

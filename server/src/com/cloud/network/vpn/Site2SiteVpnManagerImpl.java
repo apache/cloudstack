@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -81,7 +80,6 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
 
 @Component
-@Local(value = {Site2SiteVpnManager.class, Site2SiteVpnService.class})
 public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpnManager {
     private static final Logger s_logger = Logger.getLogger(Site2SiteVpnManagerImpl.class);
 

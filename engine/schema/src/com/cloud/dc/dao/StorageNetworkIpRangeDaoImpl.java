@@ -18,7 +18,6 @@ package com.cloud.dc.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -32,7 +31,6 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value = {StorageNetworkIpRangeDao.class})
 @DB
 public class StorageNetworkIpRangeDaoImpl extends GenericDaoBase<StorageNetworkIpRangeVO, Long> implements StorageNetworkIpRangeDao {
     protected final GenericSearchBuilder<StorageNetworkIpRangeVO, Long> countRanges;

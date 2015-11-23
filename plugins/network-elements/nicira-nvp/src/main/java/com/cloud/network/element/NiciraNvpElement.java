@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -129,8 +128,6 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 
 @Component
-@Local(value = {NetworkElement.class, ConnectivityProvider.class, SourceNatServiceProvider.class, StaticNatServiceProvider.class, PortForwardingServiceProvider.class,
-        IpDeployer.class})
 public class NiciraNvpElement extends AdapterBase implements ConnectivityProvider, SourceNatServiceProvider, PortForwardingServiceProvider, StaticNatServiceProvider,
 NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
 

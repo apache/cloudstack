@@ -21,7 +21,6 @@ import java.sql.ResultSet;
 import java.util.Date;
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -34,7 +33,6 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value = {UsageJobDao.class})
 public class UsageJobDaoImpl extends GenericDaoBase<UsageJobVO, Long> implements UsageJobDao {
     private static final Logger s_logger = Logger.getLogger(UsageJobDaoImpl.class.getName());
 

@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network.dao;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -27,7 +26,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = {Site2SiteVpnGatewayDao.class})
 public class Site2SiteVpnGatewayDaoImpl extends GenericDaoBase<Site2SiteVpnGatewayVO, Long> implements Site2SiteVpnGatewayDao {
     @Inject
     protected IPAddressDao _addrDao;

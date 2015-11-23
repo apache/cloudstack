@@ -18,7 +18,6 @@ package com.cloud.netapp.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -29,7 +28,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = {PoolDao.class})
 public class PoolDaoImpl extends GenericDaoBase<PoolVO, Long> implements PoolDao {
     private static final Logger s_logger = Logger.getLogger(PoolDaoImpl.class);
 

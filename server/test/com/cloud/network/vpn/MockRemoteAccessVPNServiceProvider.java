@@ -19,7 +19,6 @@ package com.cloud.network.vpn;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.exception.ResourceUnavailableException;
@@ -28,7 +27,6 @@ import com.cloud.network.VpnUser;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
 import com.cloud.utils.component.ManagerBase;
 
-@Local(value = RemoteAccessVPNServiceProvider.class)
 public class MockRemoteAccessVPNServiceProvider extends ManagerBase implements RemoteAccessVPNServiceProvider {
 
     @Override

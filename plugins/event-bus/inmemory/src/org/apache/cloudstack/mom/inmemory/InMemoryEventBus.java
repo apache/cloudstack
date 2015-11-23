@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -37,7 +36,6 @@ import org.apache.cloudstack.framework.events.EventTopic;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 
-@Local(value = EventBus.class)
 public class InMemoryEventBus extends ManagerBase implements EventBus {
 
     private static final Logger s_logger = Logger.getLogger(InMemoryEventBus.class);

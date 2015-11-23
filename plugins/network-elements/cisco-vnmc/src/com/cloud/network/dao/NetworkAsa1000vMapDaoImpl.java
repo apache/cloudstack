@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network.dao;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -27,7 +26,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value = NetworkAsa1000vMapDao.class)
 public class NetworkAsa1000vMapDaoImpl extends GenericDaoBase<NetworkAsa1000vMapVO, Long> implements NetworkAsa1000vMapDao {
 
     protected final SearchBuilder<NetworkAsa1000vMapVO> networkSearch;

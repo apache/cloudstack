@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -79,7 +78,6 @@ import com.globo.globodns.cloudstack.commands.SignInCommand;
 import com.globo.globodns.cloudstack.resource.GloboDnsResource;
 
 @Component
-@Local(NetworkElement.class)
 public class GloboDnsElement extends AdapterBase implements ResourceStateAdapter, NetworkElement, GloboDnsElementService, Configurable {
 
     private static final Logger s_logger = Logger.getLogger(GloboDnsElement.class);

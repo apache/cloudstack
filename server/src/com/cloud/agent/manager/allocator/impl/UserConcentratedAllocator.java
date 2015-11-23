@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -58,7 +57,6 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-@Local(value = PodAllocator.class)
 public class UserConcentratedAllocator extends AdapterBase implements PodAllocator {
     private final static Logger s_logger = Logger.getLogger(UserConcentratedAllocator.class);
 

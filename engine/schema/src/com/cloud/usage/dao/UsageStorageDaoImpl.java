@@ -24,7 +24,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
-import javax.ejb.Local;
 
 import com.cloud.exception.CloudException;
 import org.apache.log4j.Logger;
@@ -38,7 +37,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value = {UsageStorageDao.class})
 public class UsageStorageDaoImpl extends GenericDaoBase<UsageStorageVO, Long> implements UsageStorageDao {
     public static final Logger s_logger = Logger.getLogger(UsageStorageDaoImpl.class.getName());
 

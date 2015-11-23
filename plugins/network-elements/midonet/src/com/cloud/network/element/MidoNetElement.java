@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.ws.rs.core.MultivaluedMap;
@@ -87,8 +86,6 @@ import com.cloud.vm.dao.NicDao;
 import com.sun.jersey.core.util.MultivaluedMapImpl;
 
 @Component
-@Local(value = {NetworkElement.class, ConnectivityProvider.class, FirewallServiceProvider.class, SourceNatServiceProvider.class, DhcpServiceProvider.class,
-    StaticNatServiceProvider.class, PortForwardingServiceProvider.class, IpDeployer.class})
 public class MidoNetElement extends AdapterBase implements ConnectivityProvider, DhcpServiceProvider, SourceNatServiceProvider, StaticNatServiceProvider, IpDeployer,
         PortForwardingServiceProvider, FirewallServiceProvider, PluggableService {
 

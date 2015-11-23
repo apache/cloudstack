@@ -19,7 +19,6 @@ package org.apache.cloudstack.region;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -47,7 +46,6 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 
 @Component
-@Local(value = {RegionService.class})
 public class RegionServiceImpl extends ManagerBase implements RegionService, Manager {
     public static final Logger s_logger = Logger.getLogger(RegionServiceImpl.class);
 

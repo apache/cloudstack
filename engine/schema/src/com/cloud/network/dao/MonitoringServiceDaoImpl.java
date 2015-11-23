@@ -19,7 +19,6 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -28,7 +27,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = MonitoringServiceDao.class)
 public class MonitoringServiceDaoImpl extends GenericDaoBase<MonitoringServiceVO, Long> implements MonitoringServiceDao {
     private final SearchBuilder<MonitoringServiceVO> AllFieldsSearch;
 

@@ -17,7 +17,6 @@
 
 package com.cloud.hypervisor.ovm3.resources;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -43,7 +42,6 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value = HypervisorGuru.class)
 public class Ovm3HypervisorGuru extends HypervisorGuruBase implements HypervisorGuru {
     private final Logger LOGGER = Logger.getLogger(Ovm3HypervisorGuru.class);
     @Inject

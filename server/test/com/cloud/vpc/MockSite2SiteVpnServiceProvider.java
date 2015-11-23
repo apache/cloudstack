@@ -19,7 +19,6 @@ package com.cloud.vpc;
 
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.springframework.stereotype.Component;
@@ -30,7 +29,6 @@ import com.cloud.network.element.Site2SiteVpnServiceProvider;
 import com.cloud.utils.component.ManagerBase;
 
 @Component
-@Local({Site2SiteVpnServiceProvider.class})
 public class MockSite2SiteVpnServiceProvider extends ManagerBase implements Site2SiteVpnServiceProvider {
 
     /* (non-Javadoc)

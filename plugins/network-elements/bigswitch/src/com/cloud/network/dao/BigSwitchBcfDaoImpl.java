@@ -21,7 +21,6 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -32,7 +31,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value = BigSwitchBcfDao.class)
 public class BigSwitchBcfDaoImpl extends GenericDaoBase<BigSwitchBcfDeviceVO, Long> implements BigSwitchBcfDao {
 
     protected final SearchBuilder<BigSwitchBcfDeviceVO> physicalNetworkIdSearch;

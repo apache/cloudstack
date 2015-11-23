@@ -28,7 +28,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -81,7 +80,6 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
  * Monitors the progress of upload.
  */
 @Component
-@Local(value = {UploadMonitor.class})
 public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 
     static final Logger s_logger = Logger.getLogger(UploadMonitorImpl.class);

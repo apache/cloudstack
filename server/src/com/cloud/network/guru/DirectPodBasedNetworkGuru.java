@@ -18,7 +18,6 @@ package com.cloud.network.guru;
 
 import java.util.List;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -62,7 +61,6 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value = NetworkGuru.class)
 public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(DirectPodBasedNetworkGuru.class);
 

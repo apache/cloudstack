@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network.vpc.dao;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -29,7 +28,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value = VpcOfferingDao.class)
 @DB()
 public class VpcOfferingDaoImpl extends GenericDaoBase<VpcOfferingVO, Long> implements VpcOfferingDao {
     final SearchBuilder<VpcOfferingVO> AllFieldsSearch;

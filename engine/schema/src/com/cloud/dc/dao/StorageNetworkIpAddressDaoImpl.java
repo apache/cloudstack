@@ -19,7 +19,6 @@ package com.cloud.dc.dao;
 import java.util.Date;
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -34,7 +33,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value = {StorageNetworkIpAddressDao.class})
 @DB
 public class StorageNetworkIpAddressDaoImpl extends GenericDaoBase<StorageNetworkIpAddressVO, Long> implements StorageNetworkIpAddressDao {
     protected final GenericSearchBuilder<StorageNetworkIpAddressVO, Long> countInUserIp;

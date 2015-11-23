@@ -23,11 +23,9 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import org.springframework.stereotype.Component;
 
-import javax.ejb.Local;
 import java.util.List;
 
 @Component
-@Local(value = {UserAccountDao.class})
 public class UserAccountDaoImpl extends GenericDaoBase<UserAccountVO, Long> implements UserAccountDao {
 
     protected final SearchBuilder<UserAccountVO> userAccountSearch;

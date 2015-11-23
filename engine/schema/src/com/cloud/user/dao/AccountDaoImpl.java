@@ -21,7 +21,6 @@ import java.sql.ResultSet;
 import java.util.Date;
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -42,7 +41,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value = {AccountDao.class})
 public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements AccountDao {
     private static final Logger s_logger = Logger.getLogger(AccountDaoImpl.class);
     private static final String FIND_USER_ACCOUNT_BY_API_KEY = "SELECT u.id, u.username, u.account_id, u.secret_key, u.state, "

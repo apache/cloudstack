@@ -37,7 +37,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -68,7 +67,6 @@ import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.net.NetUtils;
 
-@Local(value = {ClusterManager.class})
 public class ClusterManagerImpl extends ManagerBase implements ClusterManager, Configurable {
     private static final Logger s_logger = Logger.getLogger(ClusterManagerImpl.class);
 

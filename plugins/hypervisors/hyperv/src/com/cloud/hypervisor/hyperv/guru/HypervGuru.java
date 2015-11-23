@@ -22,7 +22,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.to.NicTO;
@@ -47,7 +46,6 @@ import com.cloud.vm.VirtualMachineProfile;
 /**
  * Implementation of Hypervisor guru for Hyper-V.
  **/
-@Local(value = HypervisorGuru.class)
 public class HypervGuru extends HypervisorGuruBase implements HypervisorGuru {
 
     @Inject

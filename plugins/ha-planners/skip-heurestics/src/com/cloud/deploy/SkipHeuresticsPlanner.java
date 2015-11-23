@@ -20,12 +20,10 @@ import com.cloud.vm.VirtualMachineProfile;
 import org.apache.log4j.Logger;
 
 
-import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 import java.util.List;
 import java.util.Map;
 
-@Local(value=HAPlanner.class)
 public class SkipHeuresticsPlanner extends FirstFitPlanner implements HAPlanner {
     private static final Logger s_logger = Logger.getLogger(SkipHeuresticsPlanner.class);
 

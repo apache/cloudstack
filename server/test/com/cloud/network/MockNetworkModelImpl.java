@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.dc.Vlan;
@@ -48,7 +47,6 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
 
-@Local(value = {NetworkModel.class})
 public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
 
     /* (non-Javadoc)

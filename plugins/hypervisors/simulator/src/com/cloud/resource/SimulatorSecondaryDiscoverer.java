@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -45,7 +44,6 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.storage.dao.SnapshotDao;
 
-@Local(value = Discoverer.class)
 public class SimulatorSecondaryDiscoverer extends SecondaryStorageDiscoverer implements ResourceStateAdapter, Listener {
     private static final Logger s_logger = Logger.getLogger(SimulatorSecondaryDiscoverer.class);
     @Inject

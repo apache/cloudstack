@@ -23,7 +23,6 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.AdapterBase;
-import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import org.apache.cloudstack.api.command.AuthorizeSAMLSSOCmd;
 import org.apache.cloudstack.api.command.GetServiceProviderMetaDataCmd;
 import org.apache.cloudstack.api.command.ListAndSwitchSAMLAccountCmd;
@@ -62,7 +61,6 @@ import org.opensaml.xml.security.credential.UsageType;
 import org.opensaml.xml.security.keyinfo.KeyInfoHelper;
 import org.springframework.stereotype.Component;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.xml.stream.FactoryConfigurationError;
 import java.io.ByteArrayInputStream;
@@ -91,7 +89,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 @Component
-@Local(value = {SAML2AuthManager.class, PluggableAPIAuthenticator.class})
 public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManager, Configurable {
     private static final Logger s_logger = Logger.getLogger(SAML2AuthManagerImpl.class);
 

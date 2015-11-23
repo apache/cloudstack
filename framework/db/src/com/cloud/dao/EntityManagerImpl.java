@@ -20,7 +20,6 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import net.sf.ehcache.Cache;
@@ -33,7 +32,6 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-@Local(value = EntityManager.class)
 @SuppressWarnings("unchecked")
 public class EntityManagerImpl extends ManagerBase implements EntityManager {
     String _name;

@@ -19,7 +19,6 @@ package com.cloud.network;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.user.firewall.IListFirewallRulesCmd;
@@ -38,7 +37,6 @@ import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 
-@Local(value = {FirewallManager.class, FirewallService.class})
 public class MockFirewallManagerImpl extends ManagerBase implements FirewallManager, FirewallService {
 
     @Override

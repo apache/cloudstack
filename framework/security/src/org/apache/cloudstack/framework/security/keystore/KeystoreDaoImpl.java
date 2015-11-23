@@ -23,13 +23,11 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import org.springframework.stereotype.Component;
 
-import javax.ejb.Local;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
 @Component
-@Local(value = {KeystoreDao.class})
 public class KeystoreDaoImpl extends GenericDaoBase<KeystoreVO, Long> implements KeystoreDao {
     protected final SearchBuilder<KeystoreVO> FindByNameSearch;
     protected final SearchBuilder<KeystoreVO> CertChainSearch;

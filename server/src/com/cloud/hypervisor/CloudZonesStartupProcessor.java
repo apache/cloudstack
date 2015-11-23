@@ -19,7 +19,6 @@ package com.cloud.hypervisor;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -59,7 +58,6 @@ import com.cloud.utils.net.NetUtils;
  *
  */
 @Component
-@Local(value = StartupCommandProcessor.class)
 public class CloudZonesStartupProcessor extends AdapterBase implements StartupCommandProcessor {
     private static final Logger s_logger = Logger.getLogger(CloudZonesStartupProcessor.class);
     @Inject

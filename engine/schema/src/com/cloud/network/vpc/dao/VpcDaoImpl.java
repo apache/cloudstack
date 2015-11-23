@@ -19,7 +19,6 @@ package com.cloud.network.vpc.dao;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.springframework.stereotype.Component;
@@ -40,7 +39,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value = VpcDao.class)
 @DB()
 public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao {
     final GenericSearchBuilder<VpcVO, Integer> CountByOfferingId;

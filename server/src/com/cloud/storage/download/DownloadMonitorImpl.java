@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -65,7 +64,6 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value = {DownloadMonitor.class})
 public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor {
     static final Logger s_logger = Logger.getLogger(DownloadMonitorImpl.class);
 

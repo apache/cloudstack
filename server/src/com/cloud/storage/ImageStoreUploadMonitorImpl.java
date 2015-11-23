@@ -22,7 +22,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -77,7 +76,6 @@ import com.cloud.utils.fsm.StateMachine2;
  * Monitors the progress of upload.
  */
 @Component
-@Local(value = {ImageStoreUploadMonitor.class})
 public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageStoreUploadMonitor, Listener, Configurable {
 
     static final Logger s_logger = Logger.getLogger(ImageStoreUploadMonitorImpl.class);

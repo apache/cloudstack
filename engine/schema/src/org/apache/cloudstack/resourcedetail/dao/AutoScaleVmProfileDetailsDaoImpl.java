@@ -16,14 +16,12 @@
 // under the License.
 package org.apache.cloudstack.resourcedetail.dao;
 
-import javax.ejb.Local;
 
 import org.apache.cloudstack.resourcedetail.AutoScaleVmProfileDetailVO;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 import org.springframework.stereotype.Component;
 
 @Component
-@Local(value = {AutoScaleVmProfileDetailsDao.class})
 public class AutoScaleVmProfileDetailsDaoImpl extends ResourceDetailsDaoBase<AutoScaleVmProfileDetailVO> implements AutoScaleVmProfileDetailsDao {
 
     @Override

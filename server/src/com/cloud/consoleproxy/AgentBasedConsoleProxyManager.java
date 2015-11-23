@@ -18,7 +18,6 @@ package com.cloud.consoleproxy;
 
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -46,7 +45,6 @@ import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-@Local(value = {ConsoleProxyManager.class})
 public class AgentBasedConsoleProxyManager extends ManagerBase implements ConsoleProxyManager {
     private static final Logger s_logger = Logger.getLogger(AgentBasedConsoleProxyManager.class);
 

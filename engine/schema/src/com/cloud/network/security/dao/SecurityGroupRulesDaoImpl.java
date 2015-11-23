@@ -18,7 +18,6 @@ package com.cloud.network.security.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -29,7 +28,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = {SecurityGroupRulesDao.class})
 public class SecurityGroupRulesDaoImpl extends GenericDaoBase<SecurityGroupRulesVO, Long> implements SecurityGroupRulesDao {
     private SearchBuilder<SecurityGroupRulesVO> AccountGroupNameSearch;
     private SearchBuilder<SecurityGroupRulesVO> AccountSearch;

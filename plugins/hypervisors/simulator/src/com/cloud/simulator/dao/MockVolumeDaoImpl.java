@@ -18,7 +18,6 @@ package com.cloud.simulator.dao;
 
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -31,7 +30,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 
 @Component
-@Local(value = {MockVolumeDao.class})
 public class MockVolumeDaoImpl extends GenericDaoBase<MockVolumeVO, Long> implements MockVolumeDao {
     protected final SearchBuilder<MockVolumeVO> idTypeSearch;
     protected final SearchBuilder<MockVolumeVO> pathTypeSearch;

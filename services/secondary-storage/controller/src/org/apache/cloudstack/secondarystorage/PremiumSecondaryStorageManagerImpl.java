@@ -20,7 +20,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -48,7 +47,6 @@ import com.cloud.vm.SystemVmLoadScanner.AfterScanAction;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 
-@Local(value = {SecondaryStorageVmManager.class})
 public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerImpl {
     private static final Logger s_logger = Logger.getLogger(PremiumSecondaryStorageManagerImpl.class);
 

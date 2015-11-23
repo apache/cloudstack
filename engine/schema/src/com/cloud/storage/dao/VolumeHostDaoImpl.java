@@ -19,7 +19,6 @@ package com.cloud.storage.dao;
 import java.util.Date;
 import java.util.List;
 
-import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -36,7 +35,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.UpdateBuilder;
 
 @Component
-@Local(value = {VolumeHostDao.class})
 public class VolumeHostDaoImpl extends GenericDaoBase<VolumeHostVO, Long> implements VolumeHostDao {
     private static final Logger s_logger = Logger.getLogger(VolumeHostDaoImpl.class);
     protected final SearchBuilder<VolumeHostVO> HostVolumeSearch;

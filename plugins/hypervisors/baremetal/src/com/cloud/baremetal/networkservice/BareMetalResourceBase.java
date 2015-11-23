@@ -74,14 +74,12 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 
-import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-@Local(value = ServerResource.class)
 public class BareMetalResourceBase extends ManagerBase implements ServerResource {
     private static final Logger s_logger = Logger.getLogger(BareMetalResourceBase.class);
     protected String _uuid;

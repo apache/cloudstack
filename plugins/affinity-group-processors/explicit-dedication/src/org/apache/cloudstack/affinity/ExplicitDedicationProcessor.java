@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -55,7 +54,6 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-@Local(value = AffinityGroupProcessor.class)
 public class ExplicitDedicationProcessor extends AffinityProcessorBase implements AffinityGroupProcessor {
 
     private static final Logger s_logger = Logger.getLogger(ExplicitDedicationProcessor.class);

@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -45,7 +44,6 @@ import com.cloud.user.User;
 import com.cloud.utils.component.AdapterBase;
 
 @Component
-@Local(value = APIChecker.class)
 public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, ApiRateLimitService {
     private static final Logger s_logger = Logger.getLogger(ApiRateLimitServiceImpl.class);
 

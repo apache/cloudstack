@@ -19,7 +19,6 @@ package com.cloud.network.security.dao;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -38,7 +37,6 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.DB;
 
 @Component
-@Local(value = {SecurityGroupRuleDao.class})
 public class SecurityGroupRuleDaoImpl extends GenericDaoBase<SecurityGroupRuleVO, Long> implements SecurityGroupRuleDao {
 
     @Inject

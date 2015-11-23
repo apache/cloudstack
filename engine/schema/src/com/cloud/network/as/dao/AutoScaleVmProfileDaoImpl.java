@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network.as.dao;
 
-import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
@@ -25,7 +24,6 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = {AutoScaleVmProfileDao.class})
 public class AutoScaleVmProfileDaoImpl extends GenericDaoBase<AutoScaleVmProfileVO, Long> implements AutoScaleVmProfileDao {
 
     @Override
