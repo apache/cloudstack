@@ -331,4 +331,10 @@ public class MockUsageEventDao implements UsageEventDao{
 
     }
 
+    @Override
+    public Pair<List<UsageEventVO>, Integer> searchAndDistinctCount(SearchCriteria<UsageEventVO> sc, Filter filter) {
+        //TODO Auto-generated method stub
+        return null;
+    }
+
 }
