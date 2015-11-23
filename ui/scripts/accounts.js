@@ -162,7 +162,7 @@
                                     }
                                 },
                                 error: function(xhr) {
-                                },
+                                } 
                             });
                         }
                     },
@@ -1337,7 +1337,7 @@
                                             $.ajax({
                                                 url: createURL('listSamlAuthorization'),
                                                 data: {
-                                                    userid: context.users[0].id,
+                                                    userid: context.users[0].id
                                                 },
                                                 success: function(json) {
                                                     var authorization = json.listsamlauthorizationsresponse.samlauthorization[0];
