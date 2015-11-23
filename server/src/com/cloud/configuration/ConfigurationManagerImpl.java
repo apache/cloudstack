@@ -386,6 +386,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add("ovm3.heartbeat.timeout");
         configValuesForValidation.add("incorrect.login.attempts.allowed");
         configValuesForValidation.add("vm.password.length");
+        configValuesForValidation.add("remote.access.vpn.psk.length");
     }
 
     private void weightBasedParametersForValidation() {
@@ -772,6 +773,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 //TODO - better validation for all password pamameters
                 if ("vm.password.length".equalsIgnoreCase(name) && val < 6) {
                     throw new InvalidParameterValueException("Please enter a value greater than 6 for the configuration parameter:" + name);
+                }
+                if ("remote.access.vpn.psk.length".equalsIgnoreCase(name)) {
+                    if (val < 8) {
+                        throw new InvalidParameterValueException("Please enter a value greater than 8 for the configuration parameter:" + name);
+                    }
+                    if (val > 256) {
+                        throw new InvalidParameterValueException("Please enter a value less than 256 for the configuration parameter:" + name);
+                    }
                 }
             } catch (final NumberFormatException e) {
                 s_logger.error("There was an error trying to parse the integer value for:" + name);
