@@ -66,6 +66,18 @@ mvn versions:set -DnewVersion=$version -P vmware -P developer -P systemvm -P sim
 mv deps/XenServerJava/pom.xml.versionsBackup deps/XenServerJava/pom.xml
 perl -pi -e "s/$currentversion/$version/" deps/XenServerJava/pom.xml
 perl -pi -e "s/$currentversion/$version/" tools/apidoc/pom.xml
+
+# Dockerfiles
+perl -pi -e "s/Version=\"[^\"]*\"/Version=\"$version\"/" tools/docker/Dockerfile
+perl -pi -e "s/Version=\"[^\"]*\"/Version=\"$version\"/" tools/docker/Dockerfile.marvin
+# centos6 based dockerfile
+perl -pi -e "s/Version=\"[^\"]*\"/Version=\"$version\"/" tools/docker/Dockerfile.centos6
+perl -pi -e "s/cloudstack-common-(.*).el6.x86_64.rpm/cloudstack-common-${version}.el6.x86_64.rpm/" tools/docker/Dockerfile.centos6
+perl -pi -e "s/cloudstack-management-(.*)el6.x86_64.rpm/cloudstack-management-${version}.el6.x86_64.rpm/" tools/docker/Dockerfile.centos6
+# systemtpl.sh:  system vm template version without -SNAPSHOT
+SYSTEMPVMTPL_VERSION=`echo $version|cut -d- -f1`
+perl -pi -e "s/[0-9].[0-9].[0-9]/${SYSTEMPVMTPL_VERSION}/" tools/docker/systemtpl.sh
+
 git clean -f
 
 echo 'commit changes'
