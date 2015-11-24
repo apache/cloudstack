@@ -88,7 +88,6 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
 
-    RemoteAccessVPNServiceProvider.class})
 public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceManagerImpl implements SourceNatServiceProvider, FirewallServiceProvider,
         PortForwardingServiceProvider, IpDeployer, JuniperSRXFirewallElementService, StaticNatServiceProvider {
 
