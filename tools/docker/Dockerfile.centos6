@@ -18,7 +18,7 @@
 FROM centos:6
 
 MAINTAINER "Apache CloudStack" <dev@cloudstack.apache.org>
-LABEL Vendor="Apache.org" License="ApacheV2" Version="4.7.0"
+LABEL Vendor="Apache.org" License="ApacheV2" Version="4.7.0-SNAPSHOT"
 
 ENV PKG_URL=http://jenkins.buildacloud.org/job/package-rhel63-master/lastSuccessfulBuild/artifact/dist/rpmbuild/RPMS/x86_64
 
