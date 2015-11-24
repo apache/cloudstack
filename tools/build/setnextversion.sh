@@ -74,6 +74,7 @@ perl -pi -e "s/Version=\"[^\"]*\"/Version=\"$version\"/" tools/docker/Dockerfile
 perl -pi -e "s/Version=\"[^\"]*\"/Version=\"$version\"/" tools/docker/Dockerfile.centos6
 perl -pi -e "s/cloudstack-common-(.*).el6.x86_64.rpm/cloudstack-common-${version}.el6.x86_64.rpm/" tools/docker/Dockerfile.centos6
 perl -pi -e "s/cloudstack-management-(.*)el6.x86_64.rpm/cloudstack-management-${version}.el6.x86_64.rpm/" tools/docker/Dockerfile.centos6
+perl -pi -e "s/Marvin-(.*).tar.gz/Marvin-${version}.tar.gz/" tools/docker/Dockerfile.marvin
 # systemtpl.sh:  system vm template version without -SNAPSHOT
 SYSTEMPVMTPL_VERSION=`echo $version|cut -d- -f1`
 perl -pi -e "s/[0-9].[0-9].[0-9]/${SYSTEMPVMTPL_VERSION}/" tools/docker/systemtpl.sh
