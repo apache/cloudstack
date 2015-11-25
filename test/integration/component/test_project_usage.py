@@ -98,7 +98,7 @@ class Services:
                         "iso": {
                                   "displaytext": "Test ISO",
                                   "name": "Test ISO",
-                                  "url": "http://people.apache.org/~tsp/dummy.iso",
+                                  "url": "https://home.apache.org/~talluri/dummy.iso",
                                   # Source URL where ISO is located
                                   "isextractable": True,
                                   "isfeatured": True,
