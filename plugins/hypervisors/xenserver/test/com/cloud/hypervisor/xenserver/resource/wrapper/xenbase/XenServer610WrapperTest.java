@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.gson.Gson;
 import org.apache.xmlrpc.XmlRpcException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -301,13 +302,14 @@ public class XenServer610WrapperTest {
         final Network network1 = Mockito.mock(Network.class);
         final Network network2 = Mockito.mock(Network.class);
 
-        final Map<VolumeTO, Object> volumeToSr = new HashMap<VolumeTO, Object>();
-        volumeToSr.put(volume1, sr1);
-        volumeToSr.put(volume2, sr2);
+        final Map<VolumeTO, String> volumeToSr = new HashMap<VolumeTO, String>();
+        Gson gson = new Gson();
+        volumeToSr.put(volume1, gson.toJson(sr1));
+        volumeToSr.put(volume2, gson.toJson(sr2));
 
-        final Map<NicTO, Object> nicToNetwork = new HashMap<NicTO, Object>();
-        nicToNetwork.put(nic1, network1);
-        nicToNetwork.put(nic2, network2);
+        final Map<NicTO, String> nicToNetwork = new HashMap<NicTO, String>();
+        nicToNetwork.put(nic1, gson.toJson(network1));
+        nicToNetwork.put(nic2, gson.toJson(network2));
 
         final Map<String, String> token = new HashMap<String, String>();
 
@@ -366,11 +368,11 @@ public class XenServer610WrapperTest {
         final VolumeTO volume1 = Mockito.mock(VolumeTO.class);
         final VolumeTO volume2 = Mockito.mock(VolumeTO.class);
 
-        final Map<VolumeTO, Object> volumeToSr = new HashMap<VolumeTO, Object>();
-        volumeToSr.put(volume1, new String("a"));
-        volumeToSr.put(volume2, new String("b"));
+        final Map<VolumeTO, String> volumeToSr = new HashMap<VolumeTO, String>();
+        volumeToSr.put(volume1, "a");
+        volumeToSr.put(volume2, "b");
 
-        final Map<NicTO, Object> nicToNetwork = new HashMap<NicTO, Object>();
+        final Map<NicTO, String> nicToNetwork = new HashMap<NicTO, String>();
         final Map<String, String> token = new HashMap<String, String>();
 
         final MigrateWithStorageSendCommand migrateStorageCommand = new MigrateWithStorageSendCommand(vmSpec, volumeToSr, nicToNetwork, token);
@@ -408,13 +410,14 @@ public class XenServer610WrapperTest {
         final NicTO nic1 = Mockito.mock(NicTO.class);
         final NicTO nic2 = Mockito.mock(NicTO.class);
 
-        final Map<VolumeTO, Object> volumeToSr = new HashMap<VolumeTO, Object>();
-        volumeToSr.put(volume1, sr1);
-        volumeToSr.put(volume2, sr2);
+        Gson gson = new Gson();
+        final Map<VolumeTO, String> volumeToSr = new HashMap<VolumeTO, String>();
+        volumeToSr.put(volume1, gson.toJson(sr1));
+        volumeToSr.put(volume2, gson.toJson(sr2));
 
-        final Map<NicTO, Object> nicToNetwork = new HashMap<NicTO, Object>();
-        nicToNetwork.put(nic1, new String("a"));
-        nicToNetwork.put(nic2, new String("b"));
+        final Map<NicTO, String> nicToNetwork = new HashMap<NicTO, String>();
+        nicToNetwork.put(nic1, "a");
+        nicToNetwork.put(nic2, "b");
 
         final Map<String, String> token = new HashMap<String, String>();
 
