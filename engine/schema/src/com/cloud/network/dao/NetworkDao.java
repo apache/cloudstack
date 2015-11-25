@@ -60,6 +60,8 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long>, StateDao<State,
 
     long countByZoneAndUri(long zoneId, String broadcastUri);
 
+    long countByZoneUriPntwkAndGuestType(long zoneId, long pNtwkId, String broadcastUri, GuestType guestType);
+
     long countByZoneUriAndGuestType(long zoneId, String broadcastUri, GuestType guestType);
 
     List<NetworkVO> listByZone(long zoneId);

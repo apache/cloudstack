@@ -136,6 +136,15 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
     }
 
     /* (non-Javadoc)
+     * @see com.cloud.network.dao.NetworkDao#countByZoneUriAndGuestType(long, java.lang.String, com.cloud.network.Network.GuestType)
+     */
+    @Override
+    public long countByZoneUriPntwkAndGuestType(long zoneId, long pNtwkId, String broadcastUri, GuestType guestType) {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    /* (non-Javadoc)
      * @see com.cloud.network.dao.NetworkDao#listByZone(long)
      */
     @Override
