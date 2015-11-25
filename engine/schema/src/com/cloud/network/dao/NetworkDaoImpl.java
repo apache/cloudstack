@@ -158,6 +158,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         CountByZoneAndURI.and("dataCenterId", CountByZoneAndURI.entity().getDataCenterId(), Op.EQ);
         CountByZoneAndURI.and("broadcastUri", CountByZoneAndURI.entity().getBroadcastUri(), Op.EQ);
         CountByZoneAndURI.and("guestType", CountByZoneAndURI.entity().getGuestType(), Op.EQ);
+        CountByZoneAndURI.and("physical_network_id", CountByZoneAndURI.entity().getPhysicalNetworkId(), Op.EQ);
 
         CountByZoneAndURI.done();
 
@@ -200,12 +201,11 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         SearchBuilder<NetworkAccountVO> join4 = _accountsDao.createSearchBuilder();
         join4.and("account", join4.entity().getAccountId(), Op.EQ);
         join4.and("isOwner", join4.entity().isOwner(), Op.EQ);
-        NetworksRegularUserCanCreateSearch.join("accounts", join4, NetworksRegularUserCanCreateSearch.entity().getId(), join4.entity().getNetworkId(),
-            JoinBuilder.JoinType.INNER);
+        NetworksRegularUserCanCreateSearch.join("accounts", join4, NetworksRegularUserCanCreateSearch.entity().getId(), join4.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
         SearchBuilder<NetworkOfferingVO> join5 = _ntwkOffDao.createSearchBuilder();
         join5.and("specifyVlan", join5.entity().getSpecifyVlan(), Op.EQ);
         NetworksRegularUserCanCreateSearch.join("ntwkOff", join5, NetworksRegularUserCanCreateSearch.entity().getNetworkOfferingId(), join5.entity().getId(),
-            JoinBuilder.JoinType.INNER);
+                JoinBuilder.JoinType.INNER);
         NetworksRegularUserCanCreateSearch.done();
 
         _tgMacAddress = _tgs.get("macAddress");
@@ -231,12 +231,12 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         OfferingAccountNetworkSearch.select(null, Func.DISTINCT, OfferingAccountNetworkSearch.entity().getId());
         SearchBuilder<NetworkOfferingVO> ntwkOfferingJoin = _ntwkOffDao.createSearchBuilder();
         ntwkOfferingJoin.and("isSystem", ntwkOfferingJoin.entity().isSystemOnly(), Op.EQ);
-        OfferingAccountNetworkSearch.join("ntwkOfferingSearch", ntwkOfferingJoin, OfferingAccountNetworkSearch.entity().getNetworkOfferingId(), ntwkOfferingJoin.entity()
-            .getId(), JoinBuilder.JoinType.LEFT);
+        OfferingAccountNetworkSearch.join("ntwkOfferingSearch", ntwkOfferingJoin, OfferingAccountNetworkSearch.entity().getNetworkOfferingId(), ntwkOfferingJoin.entity().getId(),
+                JoinBuilder.JoinType.LEFT);
         SearchBuilder<NetworkAccountVO> ntwkAccountJoin = _accountsDao.createSearchBuilder();
         ntwkAccountJoin.and("accountId", ntwkAccountJoin.entity().getAccountId(), Op.EQ);
         OfferingAccountNetworkSearch.join("ntwkAccountSearch", ntwkAccountJoin, OfferingAccountNetworkSearch.entity().getId(), ntwkAccountJoin.entity().getNetworkId(),
-            JoinBuilder.JoinType.INNER);
+                JoinBuilder.JoinType.INNER);
         OfferingAccountNetworkSearch.and("zoneId", OfferingAccountNetworkSearch.entity().getDataCenterId(), Op.EQ);
         OfferingAccountNetworkSearch.and("type", OfferingAccountNetworkSearch.entity().getGuestType(), Op.EQ);
         OfferingAccountNetworkSearch.done();
@@ -411,6 +411,16 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         sc.setParameters("dataCenterId", zoneId);
         sc.setParameters("broadcastUri", broadcastUri);
         sc.setParameters("guestType", guestType);
+        return customSearch(sc, null).get(0);
+    }
+
+    @Override
+    public long countByZoneUriPntwkAndGuestType(long zoneId, long pNtwkId, String broadcastUri, GuestType guestType) {
+        SearchCriteria<Long> sc = CountByZoneAndURI.create();
+        sc.setParameters("dataCenterId", zoneId);
+        sc.setParameters("broadcastUri", broadcastUri);
+        sc.setParameters("guestType", guestType);
+        sc.setParameters("physical_network_id", pNtwkId);
         return customSearch(sc, null).get(0);
     }
 
