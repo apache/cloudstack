@@ -27,16 +27,16 @@ import javax.inject.Inject;
 import com.cloud.server.ManagementService;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.dao.UserVmDao;
+
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventBus;
 
 import com.cloud.configuration.Config;
 import com.cloud.event.EventCategory;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
+import com.cloud.event.UsageEventEmitter;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
@@ -56,12 +56,13 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
     @Inject protected UserVmDao _userVmDao;
     @Inject protected UserVmManager _userVmMgr;
     @Inject protected ConfigurationDao _configDao;
+    @Inject protected UsageEventEmitter _usageEventEmitter;
     private static final Logger s_logger = Logger.getLogger(UserVmStateListener.class);
 
     protected static EventBus s_eventBus = null;
 
     public UserVmStateListener(UsageEventDao usageEventDao, NetworkDao networkDao, NicDao nicDao, ServiceOfferingDao offeringDao, UserVmDao userVmDao, UserVmManager userVmMgr,
-            ConfigurationDao configDao) {
+            ConfigurationDao configDao, UsageEventEmitter usageEventEmitter) {
         this._usageEventDao = usageEventDao;
         this._networkDao = networkDao;
         this._nicDao = nicDao;
@@ -69,6 +70,7 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
         this._userVmDao = userVmDao;
         this._userVmMgr = userVmMgr;
         this._configDao = configDao;
+        this._usageEventEmitter = usageEventEmitter;
     }
 
     @Override
@@ -101,7 +103,7 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
           List<NicVO> nics = _nicDao.listByVmId(vo.getId());
           for (NicVO nic : nics) {
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vo.getAccountId(), vo.getDataCenterId(), vo.getId(),
+            _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vo.getAccountId(), vo.getDataCenterId(), vo.getId(),
                     Long.toString(nic.getId()), network.getNetworkOfferingId(), null, 0L, vo.getClass().getName(), vo.getUuid(), vo.isDisplay());
           }
         } else if (newState == State.Destroyed || newState == State.Error || newState == State.Expunging) {

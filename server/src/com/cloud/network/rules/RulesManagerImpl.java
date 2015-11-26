@@ -34,7 +34,7 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
+import com.cloud.event.UsageEventEmitter;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -147,6 +147,8 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     LoadBalancerVMMapDao _loadBalancerVMMapDao;
     @Inject
     VpcService _vpcSvc;
+    @Inject
+    UsageEventEmitter _usageEventEmitter;
 
     protected void checkIpAndUserVm(IpAddress ipAddress, UserVm userVm, Account caller, Boolean ignoreVmState) {
         if (ipAddress == null || ipAddress.getAllocatedTime() == null || ipAddress.getAllocatedToAccountId() == null) {
@@ -336,7 +338,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                             throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
                         }
                         CallContext.current().setEventDetails("Rule Id: " + newRule.getId());
-                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_RULE_ADD, newRule.getAccountId(), ipAddressFinal.getDataCenterId(), newRule.getId(), null,
+                        _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_NET_RULE_ADD, newRule.getAccountId(), ipAddressFinal.getDataCenterId(), newRule.getId(), null,
                             PortForwardingRule.class.getName(), newRule.getUuid());
                         return newRule;
                     } catch (Exception e) {
@@ -421,7 +423,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                         throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
                     }
                     CallContext.current().setEventDetails("Rule Id: " + newRule.getId());
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_RULE_ADD, newRule.getAccountId(), 0, newRule.getId(), null, FirewallRule.class.getName(),
+                    _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_NET_RULE_ADD, newRule.getAccountId(), 0, newRule.getId(), null, FirewallRule.class.getName(),
                         newRule.getUuid());
 
                     StaticNatRule staticNatRule = new StaticNatRuleImpl(newRule, dstIp);

@@ -30,6 +30,7 @@ import com.cloud.configuration.Config;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
+
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -64,7 +65,7 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
+import com.cloud.event.UsageEventEmitter;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.org.Grouping;
@@ -115,6 +116,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     DataCenterDao _dcDao;
     @Inject
     MessageBus _messageBus;
+    @Inject UsageEventEmitter _usageEventEmitter;
 
     @Override
     public String getName() {
@@ -341,14 +343,14 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 Scope dsScope = ds.getScope();
                 if (dsScope.getScopeType() == ScopeType.ZONE) {
                     if (dsScope.getScopeId() != null) {
-                        UsageEventUtils.publishUsageEvent(etype, template.getAccountId(), dsScope.getScopeId(), template.getId(), template.getName(), null, null,
+                        _usageEventEmitter.publishUsageEvent(etype, template.getAccountId(), dsScope.getScopeId(), template.getId(), template.getName(), null, null,
                             physicalSize, template.getSize(), VirtualMachineTemplate.class.getName(), template.getUuid());
                     } else {
                         s_logger.warn("Zone scope image store " + ds.getId() + " has a null scope id");
                     }
                 } else if (dsScope.getScopeType() == ScopeType.REGION) {
                     // publish usage event for region-wide image store using a -1 zoneId for 4.2, need to revisit post-4.2
-                    UsageEventUtils.publishUsageEvent(etype, template.getAccountId(), -1, template.getId(), template.getName(), null, null, physicalSize,
+                    _usageEventEmitter.publishUsageEvent(etype, template.getAccountId(), -1, template.getId(), template.getName(), null, null, physicalSize,
                         template.getSize(), VirtualMachineTemplate.class.getName(), template.getUuid());
                 }
                 _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.secondary_storage, template.getSize());
@@ -396,7 +398,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 // publish zone-wide usage event
                 Long sZoneId = ((ImageStoreEntity)imageStore).getDataCenterId();
                 if (sZoneId != null) {
-                    UsageEventUtils.publishUsageEvent(eventType, template.getAccountId(), sZoneId, template.getId(), null, null, null);
+                    _usageEventEmitter.publishUsageEvent(eventType, template.getAccountId(), sZoneId, template.getId(), null, null, null);
                 }
 
                 s_logger.info("Delete template from image store: " + imageStore.getName());
