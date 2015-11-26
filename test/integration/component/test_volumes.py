@@ -88,7 +88,7 @@ class Services:
             {
                 "displaytext": "Test ISO",
                 "name": "testISO",
-                "url": "https://home.apache.org/~talluri/dummy.iso",
+                "url": "http://people.apache.org/~tsp/dummy.iso",
                 # Source URL where ISO is located
                 "ostype": 'CentOS 5.3 (64-bit)',
             },

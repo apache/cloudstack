@@ -744,7 +744,7 @@ test_data = {
     "iso": {
         "displaytext": "Test ISO",
         "name": "ISO",
-        "url": "https://home.apache.org/~talluri/dummy.iso",
+        "url": "http://people.apache.org/~tsp/dummy.iso",
         "bootable": False,
         "ispublic": False,
         "ostype": "Other (64-bit)",
@@ -752,7 +752,7 @@ test_data = {
     "iso1": {
         "displaytext": "Test ISO 1",
         "name": "ISO 1",
-        "url": "https://home.apache.org/~talluri/dummy.iso",
+        "url": "http://people.apache.org/~tsp/dummy.iso",
         "isextractable": True,
         "isfeatured": True,
         "ispublic": True,
@@ -761,7 +761,7 @@ test_data = {
     "iso2": {
         "displaytext": "Test ISO 2",
         "name": "ISO 2",
-        "url": "https://home.apache.org/~talluri/dummy.iso",
+        "url": "http://people.apache.org/~tsp/dummy.iso",
         "isextractable": True,
         "isfeatured": True,
         "ispublic": True,
@@ -786,7 +786,7 @@ test_data = {
         "name": "Centos",
         "passwordenabled": False,
         "ostype": "CentOS 6.3 (64-bit)",
-        "url": "https://home.apache.org/~talluri/centos63.ova",
+        "url": "http://people.apache.org/~sanjeev/centos63.ova",
         "format": "OVA",
         "ispublic": "true"
     },
@@ -804,7 +804,7 @@ test_data = {
         "displaytext": "Windows 7 (64-bit)",
         "name": "Windows 7 (64-bit)",
         "passwordenabled": False,
-        "url": "https://home.apache.org/~talluri/windows7.vhd",
+        "url": "http://people.apache.org/~sanjeev/windows7.vhd",
         "format": "VHD",
         "ostype": "Windows 7 (64-bit)",
         "ispublic": "true",
@@ -836,7 +836,7 @@ test_data = {
         "displaytext": "win2012",
         "name": "win2012",
         "passwordenabled": False,
-        "url": "https://home.apache.org/~talluri/new-test-win.ova",
+        "url": "http://people.apache.org/~sanjeev/new-test-win.ova",
         "format": "OVA",
         "ostype": "Windows 8 (64-bit)",
     },
@@ -844,7 +844,7 @@ test_data = {
         "displaytext": "Rhel60",
         "name": "Rhel60",
         "passwordenabled": False,
-        "url": "https://home.apache.org/~talluri/Rhel6-64bit.ova",
+        "url": "http://people.apache.org/~sanjeev/Rhel6-64bit.ova",
         "format": "OVA",
         "ostype": "Red Hat Enterprise Linux 6.0 (64-bit)"
     },
@@ -852,7 +852,7 @@ test_data = {
         "displaytext": "xs",
         "name": "xs",
         "passwordenabled": False,
-        "url": "https://home.apache.org/~talluri/ttylinux_pv.vhd.bz2",
+        "url": "http://people.apache.org/~sanjeev/ttylinux_pv.vhd.bz2",
         "format": "VHD"
     },
     "security_group": {"name": "custom_Sec_Grp"},
@@ -1064,7 +1064,7 @@ test_data = {
                               "displaytext": "RHEL7 (64-bit)",
                               "name": "RHEL 7 Insta1",
                               "passwordenabled": False,
-                              "url": "https://home.apache.org/~talluri/RHEL764bitwithtools.vhd",
+                              "url": "http://people.apache.org/~sanjeev/RHEL764bitwithtools.vhd",
                               "format": "VHD" ,
                               "ostype": "RHEL 7 (64-bit)",
                               "ispublic": "true",
@@ -1518,7 +1518,7 @@ test_data = {
                               "displaytext": "Windows 8 (64-bit)",
                               "name": "win8withpvxen",
                               "passwordenabled": False,
-                              "url": "https://home.apache.org/~talluri/79211594-1d4a-4dee-ae6c-c5c315ded2be.vhd",
+                              "url": "http://people.apache.org/~sanjeev/79211594-1d4a-4dee-ae6c-c5c315ded2be.vhd",
                               "format": "VHD" ,
                               "ostype": "Windows 8 (64-bit)",
                               "ispublic": "true",
@@ -1547,17 +1547,17 @@ test_data = {
     "browser_upload_volume":{
           "VHD": {
         "diskname": "XenUploadVol",
-        "url": "https://home.apache.org/~talluri/rajani-thin-volume.vhd",
+        "url": "http://people.apache.org/~sanjeev/rajani-thin-volume.vhd",
         "checksum": "09b08b6abb1b903fca7711d3ac8d6598",
                 },
           "OVA": {
         "diskname": "VMwareUploadVol",
-        "url": "https://home.apache.org/~talluri/CentOS5.5(64bit)-vmware-autoscale.ova",
+        "url": "http://people.apache.org/~sanjeev/CentOS5.5(64bit)-vmware-autoscale.ova",
         "checksum": "da997b697feaa2f1f6e0d4785b0cece2",
                 },
           "QCOW2": {
         "diskname": "KVMUploadVol",
-        "url": "https://home.apache.org/~talluri/rajani-thin-volume.qcow2",
+        "url": "http://people.apache.org/~sanjeev/rajani-thin-volume.qcow2",
         "checksum": "02de0576dd3a61ab59c03fd795fc86ac",
                 },
     'browser_resized_disk_offering': {
@@ -1570,7 +1570,7 @@ test_data = {
           "VHD": {
         "templatename": "XenUploadtemplate",
         "displaytext": "XenUploadtemplate",
-        "url": "https://home.apache.org/~talluri/centos56-x86_64.vhd.bz2",
+        "url": "http://people.apache.org/~sanjeev/centos56-x86_64.vhd.bz2",
         "hypervisor":"XenServer",
         "checksum": "09b08b6abb1b903fca7711d3ac8d6598",
         "ostypeid":"74affaea-c658-11e4-ad38-a6d1374244b4"
@@ -1578,7 +1578,7 @@ test_data = {
           "OVA": {
         "templatename": "VMwareUploadtemplate",
         "displaytext": "VMwareUploadtemplate",
-        "url": "https://home.apache.org/~talluri/CentOS5.3-x86_64.ova",
+        "url": "http://people.apache.org/~sanjeev/CentOS5.3-x86_64.ova",
         "checksum": "02de0576dd3a61ab59c03fd795fc86ac",
         "hypervisor":"VMware",
         "ostypeid":"74affaea-c658-11e4-ad38-a6d1374244b4"
@@ -1586,7 +1586,7 @@ test_data = {
           "QCOW2": {
         "templatename": "KVMUploadtemplate",
         "displaytext": "VMwareUploadtemplate",
-        "url": "https://home.apache.org/~talluri/eec2209b-9875-3c8d-92be-c001bd8a0faf.qcow2.bz2",
+        "url": "http://people.apache.org/~sanjeev/eec2209b-9875-3c8d-92be-c001bd8a0faf.qcow2.bz2",
         "checksum": "da997b697feaa2f1f6e0d4785b0cece2",
         "hypervisor":"KVM",
         "ostypeid":"2e02e376-cdf3-11e4-beb3-8aa6272b57ef"
@@ -1661,7 +1661,7 @@ test_data = {
                     "name": "testISO",
                     "bootable": True,
                     "ispublic": False,
-                    "url": "https://home.apache.org/~talluri/CentOS-6.3-x86_64-bin-DVD1.iso",
+                    "url": "http://people.apache.org/~sanjeev/CentOS-6.3-x86_64-bin-DVD1.iso",
                     "ostype": 'CentOS 6.3 (64-bit)',
                     "mode": 'HTTP_DOWNLOAD'
         },
@@ -1676,7 +1676,7 @@ test_data = {
             "isextractable": True,
             "mode": "HTTP_DOWNLOAD",
             "templatefilter": "self",
-            "url": "https://home.apache.org/~talluri/systemvm64template-2014-09-30-4.3-vmware.ova",
+            "url": "http://people.apache.org/~sanjeev/systemvm64template-2014-09-30-4.3-vmware.ova",
             "hypervisor": "vmware",
             "format": "OVA",
             "nicadapter": "vmxnet3",

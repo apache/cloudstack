@@ -829,8 +829,8 @@ class TestAdvancedZoneStoppedVM(cloudstackTestCase):
         # similar steps to get SSH key from web so as to make it ssh enabled
 
         cmds = [
-            "cd /etc/init.d;wget https://home.apache.org/~talluri/ \
-                        cloud-set-guest-password",
+            "cd /etc/init.d;wget http://people.apache.org/~tsp/\
+                    cloud-set-guest-password",
             "chmod +x /etc/init.d/cloud-set-guest-password",
             "chkconfig --add cloud-set-guest-password"]
         for c in cmds:
