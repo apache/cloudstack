@@ -23,6 +23,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.UsageEventEmitter;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Status;
@@ -54,6 +55,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -89,6 +91,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
 import javax.inject.Inject;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -536,6 +539,11 @@ public class TemplateManagerImplTest {
         @Bean
         public TemplateAdapter templateAdapter() {
             return Mockito.mock(TemplateAdapter.class);
+        }
+
+        @Bean
+        public UsageEventEmitter usageEventEmitter() {
+            return Mockito.mock(UsageEventEmitter.class);
         }
 
         public static class Library implements TypeFilter {

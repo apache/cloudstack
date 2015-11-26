@@ -29,6 +29,7 @@ import javax.inject.Inject;
 import com.cloud.offering.DiskOffering;
 import com.cloud.storage.RegisterVolumePayload;
 import com.cloud.utils.Pair;
+
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -76,7 +77,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
+import com.cloud.event.UsageEventEmitter;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.Host;
@@ -134,6 +135,8 @@ public class VolumeServiceImpl implements VolumeService {
     EndPointSelector _epSelector;
     @Inject
     HostDao _hostDao;
+    @Inject
+    UsageEventEmitter _usageEventEmitter;
 
     public VolumeServiceImpl() {
     }
@@ -1270,14 +1273,14 @@ public class VolumeServiceImpl implements VolumeService {
                     Scope dsScope = ds.getScope();
                     if (dsScope.getScopeType() == ScopeType.ZONE) {
                         if (dsScope.getScopeId() != null) {
-                            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_UPLOAD, vo.getAccountId(), dsScope.getScopeId(), vo.getId(), vo.getName(), null,
+                            _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_VOLUME_UPLOAD, vo.getAccountId(), dsScope.getScopeId(), vo.getId(), vo.getName(), null,
                                     null, physicalSize, vo.getSize(), Volume.class.getName(), vo.getUuid());
                         } else {
                             s_logger.warn("Zone scope image store " + ds.getId() + " has a null scope id");
                         }
                     } else if (dsScope.getScopeType() == ScopeType.REGION) {
                         // publish usage event for region-wide image store using a -1 zoneId for 4.2, need to revisit post-4.2
-                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_UPLOAD, vo.getAccountId(), -1, vo.getId(), vo.getName(), null, null, physicalSize,
+                        _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_VOLUME_UPLOAD, vo.getAccountId(), -1, vo.getId(), vo.getName(), null, null, physicalSize,
                                 vo.getSize(), Volume.class.getName(), vo.getUuid());
 
                         _resourceLimitMgr.incrementResourceCount(vo.getAccountId(), ResourceType.secondary_storage, vo.getSize());

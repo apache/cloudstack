@@ -25,7 +25,6 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListApplicationLoadBalancersCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -35,7 +34,7 @@ import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
+import com.cloud.event.UsageEventEmitter;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -99,6 +98,8 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
     IpAddressManager _ipAddrMgr;
     @Inject
     LoadBalancingRulesService _lbService;
+    @Inject
+    UsageEventEmitter _usageEventEmitter;
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_LOAD_BALANCER_CREATE, eventDescription = "creating load balancer")
@@ -186,7 +187,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
                         newRule.getSourcePortStart().intValue() + ", instance port " + newRule.getDefaultPortStart() + " is added successfully.");
                     CallContext.current().setEventDetails("Load balancer Id: " + newRule.getId());
                     Network ntwk = _networkModel.getNetwork(newRule.getNetworkId());
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_LOAD_BALANCER_CREATE, newRule.getAccountId(), ntwk.getDataCenterId(), newRule.getId(), null,
+                    _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_LOAD_BALANCER_CREATE, newRule.getAccountId(), ntwk.getDataCenterId(), newRule.getId(), null,
                         LoadBalancingRule.class.getName(), newRule.getUuid());
 
                     return newRule;

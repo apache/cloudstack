@@ -41,7 +41,6 @@ import javax.naming.ConfigurationException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.QuerySelector;
 import org.apache.cloudstack.acl.RoleType;
@@ -83,7 +82,7 @@ import com.cloud.event.ActionEvent;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.ActionEvents;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
+import com.cloud.event.UsageEventEmitter;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -263,6 +262,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private DedicatedResourceDao _dedicatedDao;
     @Inject
     private GlobalLoadBalancerRuleDao _gslbRuleDao;
+    @Inject
+    private UsageEventEmitter _usageEventEmitter;
 
     List<QuerySelector> _querySelectors;
 
@@ -769,7 +770,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     // the vm delete command is processed
                     List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT);
                     for (VolumeVO volume : volumes) {
-                            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                        _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                                     Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
                     }
 

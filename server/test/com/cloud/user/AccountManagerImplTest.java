@@ -17,11 +17,8 @@
 package com.cloud.user;
 
 import java.lang.reflect.Field;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -47,6 +44,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -60,8 +58,10 @@ import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.event.UsageEventUtils;
+import com.cloud.event.UsageEventEmitter;
+import com.cloud.event.UsageEventEmitterImpl;
 import com.cloud.event.UsageEventVO;
+import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.as.AutoScaleManager;
@@ -99,10 +99,13 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+
 import org.springframework.test.util.ReflectionTestUtils;
+
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import com.google.common.eventbus.EventBus;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AccountManagerImplTest {
@@ -198,17 +201,24 @@ public class AccountManagerImplTest {
     MessageBus _messageBus;
 
     @Mock
+    EventBus _eventBus;
+
+    @Mock
     VMSnapshotManager _vmSnapshotMgr;
     @Mock
     VMSnapshotDao _vmSnapshotDao;
 
-    @Mock
-    MockUsageEventDao _usageEventDao;
+
+    UsageEventDao _usageEventDao = new MockUsageEventDao();
 
     @Mock
     User callingUser;
     @Mock
     Account callingAccount;
+
+
+    @InjectMocks
+    UsageEventEmitter _usageEventEmitter = new UsageEventEmitterImpl();
 
     AccountManagerImpl accountManager;
 
@@ -226,6 +236,12 @@ public class AccountManagerImplTest {
     @Before
     public void setup() throws NoSuchFieldException, SecurityException,
             IllegalArgumentException, IllegalAccessException {
+
+        Field f = UsageEventEmitterImpl.class.getDeclaredField("_usageEventDao");
+        f.setAccessible(true);
+        f.set(_usageEventEmitter, _usageEventDao);
+
+
         accountManager = new AccountManagerImpl();
         for (Field field : AccountManagerImpl.class.getDeclaredFields()) {
             if (field.getAnnotation(Inject.class) != null) {
@@ -242,6 +258,7 @@ public class AccountManagerImplTest {
         ReflectionTestUtils.setField(accountManager, "_userAuthenticators", Arrays.asList(userAuthenticator));
         accountManager.setSecurityCheckers(Arrays.asList(securityChecker));
         CallContext.register(callingUser, callingAccount);
+
     }
 
     @After
@@ -373,76 +390,6 @@ public class AccountManagerImplTest {
         Mockito.verify(userAuthenticator, Mockito.never()).authenticate("test", "", 1L, null);
     }
 
-    public UsageEventUtils setupUsageUtils() {
-        _usageEventDao = new MockUsageEventDao();
-        UsageEventUtils utils = new UsageEventUtils();
-
-        Map<String, String> usageUtilsFields = new HashMap<String, String>();
-        usageUtilsFields.put("usageEventDao", "_usageEventDao");
-        usageUtilsFields.put("accountDao", "_accountDao");
-        usageUtilsFields.put("dcDao", "_dcDao");
-        usageUtilsFields.put("configDao", "_configDao");
-
-        for (String fieldName : usageUtilsFields.keySet()) {
-            try {
-                Field f = UsageEventUtils.class.getDeclaredField(fieldName);
-                f.setAccessible(true);
-                //Remember the old fields for cleanup later (see cleanupUsageUtils)
-                Field staticField = UsageEventUtils.class.getDeclaredField("s_" + fieldName);
-                staticField.setAccessible(true);
-                oldFields.put(f.getName(), staticField.get(null));
-                f.set(utils,
-                        this.getClass()
-                                .getDeclaredField(
-                                        usageUtilsFields.get(fieldName))
-                                .get(this));
-            } catch (IllegalArgumentException | IllegalAccessException
-                    | NoSuchFieldException | SecurityException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-
-        }
-        try {
-            Method method = UsageEventUtils.class.getDeclaredMethod("init");
-            method.setAccessible(true);
-            method.invoke(utils);
-        } catch (SecurityException | NoSuchMethodException
-                | IllegalAccessException | IllegalArgumentException
-                | InvocationTargetException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-
-        return utils;
-    }
-
-    public void cleanupUsageUtils() {
-        UsageEventUtils utils = new UsageEventUtils();
-
-        for (String fieldName : oldFields.keySet()) {
-            try {
-                Field f = UsageEventUtils.class.getDeclaredField(fieldName);
-                f.setAccessible(true);
-                f.set(utils, oldFields.get(fieldName));
-            } catch (IllegalArgumentException | IllegalAccessException
-                    | NoSuchFieldException | SecurityException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-
-        }
-        try {
-            Method method = UsageEventUtils.class.getDeclaredMethod("init");
-            method.setAccessible(true);
-            method.invoke(utils);
-        } catch (SecurityException | NoSuchMethodException
-                | IllegalAccessException | IllegalArgumentException
-                | InvocationTargetException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
 
     public List<UsageEventVO> deleteUserAccountRootVolumeUsageEvents(boolean vmDestroyedPrior) {
         AccountVO account = new AccountVO();
@@ -487,17 +434,13 @@ public class AccountManagerImplTest {
 
     @Test
     public void destroyedVMRootVolumeUsageEvent() {
-        UsageEventUtils utils = setupUsageUtils();
         List<UsageEventVO> emittedEvents = deleteUserAccountRootVolumeUsageEvents(true);
         Assert.assertEquals(0, emittedEvents.size());
-        cleanupUsageUtils();
     }
 
     @Test
     public void runningVMRootVolumeUsageEvent() {
-        UsageEventUtils utils = setupUsageUtils();
         List<UsageEventVO> emittedEvents = deleteUserAccountRootVolumeUsageEvents(false);
         Assert.assertEquals(1, emittedEvents.size());
-        cleanupUsageUtils();
     }
 }

@@ -28,7 +28,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.command.user.firewall.IListFirewallRulesCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -38,7 +37,7 @@ import com.cloud.configuration.Config;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
+import com.cloud.event.UsageEventEmitter;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
@@ -132,6 +131,9 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     NetworkDao _networkDao;
     @Inject
     VpcManager _vpcMgr;
+    @Inject
+    UsageEventEmitter _usageEventEmitter;
+
     List<FirewallServiceProvider> _firewallElements;
 
     List<PortForwardingServiceProvider> _pfElements;
@@ -815,7 +817,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         }
 
         if (generateUsageEvent && needUsageEvent) {
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_RULE_DELETE, rule.getAccountId(), 0, rule.getId(), null, rule.getClass().getName(),
+            _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_NET_RULE_DELETE, rule.getAccountId(), 0, rule.getId(), null, rule.getClass().getName(),
                         rule.getUuid());
         }
             }

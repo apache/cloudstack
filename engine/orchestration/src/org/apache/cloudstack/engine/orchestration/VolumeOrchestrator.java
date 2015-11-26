@@ -31,7 +31,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -77,7 +76,7 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
+import com.cloud.event.UsageEventEmitter;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -178,6 +177,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     ClusterManager clusterManager;
     @Inject
     StorageManager storageMgr;
+    @Inject
+    UsageEventEmitter _usageEventEmitter;
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     protected List<StoragePoolAllocator> _storagePoolAllocators;
@@ -665,7 +666,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         // Save usage event and update resource count for user vm volumes
         if (vm.getType() == VirtualMachine.Type.User) {
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offering.getId(), null, size,
+            _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offering.getId(), null, size,
                     Volume.class.getName(), vol.getUuid(), vol.isDisplayVolume());
 
             _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume, vol.isDisplayVolume());
@@ -735,7 +736,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 offeringId = offering.getId();
             }
 
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offeringId, vol.getTemplateId(), size,
+            _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offeringId, vol.getTemplateId(), size,
                     Volume.class.getName(), vol.getUuid(), vol.isDisplayVolume());
 
             _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume, vol.isDisplayVolume());
@@ -1490,7 +1491,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             }
             // FIXME - All this is boiler plate code and should be done as part of state transition. This shouldn't be part of orchestrator.
             // publish usage event for the volume
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+            _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                     Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
             _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume, volume.isDisplay());
             //FIXME - why recalculate and not decrement

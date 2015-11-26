@@ -42,7 +42,6 @@ import org.springframework.core.type.filter.TypeFilter;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -56,6 +55,7 @@ import com.cloud.agent.api.CreateVMSnapshotAnswer;
 import com.cloud.agent.api.DeleteVMSnapshotAnswer;
 import com.cloud.agent.api.RevertToVMSnapshotAnswer;
 import com.cloud.agent.api.VMSnapshotTO;
+import com.cloud.event.UsageEventEmitter;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.HostVO;
@@ -307,6 +307,11 @@ public class VMSnapshotStrategyTest extends TestCase {
         @Bean
         public HostDao hostDao() {
             return Mockito.mock(HostDao.class);
+        }
+
+        @Bean
+        public UsageEventEmitter usageEventEmitter() {
+            return Mockito.mock(UsageEventEmitter.class);
         }
     }
 }
