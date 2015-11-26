@@ -562,7 +562,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         // the code would be triggered
         s_logger.debug("Cleaning up remote access vpns as a part of public IP id=" + ipId + " release...");
         try {
-            _vpnMgr.destroyRemoteAccessVpnForIp(ipId, caller);
+            _vpnMgr.destroyRemoteAccessVpnForIp(ipId, caller,false);
         } catch (ResourceUnavailableException e) {
             s_logger.warn("Unable to destroy remote access vpn for ip id=" + ipId + " as a part of ip release", e);
             success = false;

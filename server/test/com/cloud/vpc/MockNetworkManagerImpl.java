@@ -247,7 +247,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
      */
     @Override
     public Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser, String domainSuffix,
-        Long networkOfferingId, Boolean changeCidr, String guestVmCidr, Boolean displayNetwork, String newUUID,boolean updateInSequence) {
+        Long networkOfferingId, Boolean changeCidr, String guestVmCidr, Boolean displayNetwork, String newUUID,boolean updateInSequence, boolean forced) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -844,6 +844,16 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     @Override
     public boolean canUpdateInSequence(Network network) {
         return false;
+    }
+
+    @Override
+    public List<String> getServicesNotSupportedInNewOffering(Network network, long newNetworkOfferingId) {
+        return null;
+    }
+
+    @Override
+    public void cleanupConfigForServicesInNetwork(List<String> services, Network network) {
+        return;
     }
 
     @Override
