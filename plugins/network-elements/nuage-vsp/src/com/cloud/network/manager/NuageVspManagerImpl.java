@@ -88,6 +88,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
+import com.cloud.util.NuageVspUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -112,7 +113,6 @@ import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -250,7 +250,7 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
             if (0 == port) {
                 port = 8443;
             }
-            String cmsUserPasswordBase64 = org.apache.commons.codec.binary.StringUtils.newStringUtf8(Base64.encodeBase64(cmd.getPassword().getBytes()));
+            String cmsUserPasswordBase64 = NuageVspUtil.encodePassword(cmd.getPassword());
             String retryCount = String.valueOf(MoreObjects.firstNonNull(cmd.getApiRetryCount(), clientDefaults.get("DEFAULT_API_RETRY_COUNT")));
             String retryInterval = String.valueOf(MoreObjects.firstNonNull(cmd.getApiRetryInterval(), clientDefaults.get("DEFAULT_API_RETRY_INTERVAL")));
             NuageVspResource.Configuration resourceConfiguration = new NuageVspResource.Configuration()
@@ -355,7 +355,7 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
         }
 
         if (!Strings.isNullOrEmpty(command.getPassword())) {
-            String encodedNewPassword = org.apache.commons.codec.binary.StringUtils.newStringUtf8(Base64.encodeBase64(command.getPassword().getBytes()));
+            String encodedNewPassword = NuageVspUtil.encodePassword(command.getPassword());
             if (!encodedNewPassword.equals(resourceConfiguration.cmsUserPassword())) {
                 resourceConfiguration.cmsUserPassword(encodedNewPassword);
                 updateRequired = true;

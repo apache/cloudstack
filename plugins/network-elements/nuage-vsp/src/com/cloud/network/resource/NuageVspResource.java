@@ -50,6 +50,7 @@ import com.cloud.agent.api.sync.SyncNuageVspCmsIdCommand;
 import com.cloud.agent.api.sync.SyncVspCommand;
 import com.cloud.host.Host;
 import com.cloud.resource.ServerResource;
+import com.cloud.util.NuageVspUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -60,7 +61,6 @@ import net.nuage.vsp.acs.client.NuageVspElementClient;
 import net.nuage.vsp.acs.client.NuageVspGuruClient;
 import net.nuage.vsp.acs.client.NuageVspManagerClient;
 import net.nuage.vsp.acs.client.NuageVspSyncClient;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
 
@@ -189,7 +189,7 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
 
         _relativePath = new StringBuffer().append("https://").append(_hostName).append(":").append(port).append(apiRelativePath).toString();
 
-        String cmsUserPass = org.apache.commons.codec.binary.StringUtils.newStringUtf8(Base64.decodeBase64(cmsUserPassBase64));
+        String cmsUserPass = NuageVspUtil.decodePassword(cmsUserPassBase64);
         _cmsUserInfo = new String[] {CMS_USER_ENTEPRISE_NAME, cmsUser, cmsUserPass};
 
         _nuageVspCmsId = (String)params.get(NUAGE_VSP_CMS_ID);
