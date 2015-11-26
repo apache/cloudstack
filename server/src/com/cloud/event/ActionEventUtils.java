@@ -293,8 +293,7 @@ public class ActionEventUtils {
 
         for(Map.Entry<Object, Object> entry : contextMap.entrySet()){
             try{
-                Object key = entry.getKey();
-                Class<?> clz = Class.forName((String)key);
+                Class<?> clz = (Class<?>)entry.getKey();
                 if(clz != null && Identity.class.isAssignableFrom(clz)){
                     String uuid = getEntityUuid(clz, entry.getValue());
                     eventDescription.put(ReflectUtil.getEntityName(clz), uuid);
