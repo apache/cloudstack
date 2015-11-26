@@ -83,6 +83,9 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd {
  description = "an optional field, whether to the display the network to the end user or not.", authorized = {RoleType.Admin})
     private Boolean displayNetwork;
 
+    @Parameter(name= ApiConstants.FORCED, type = CommandType.BOOLEAN, description = "Setting this to true will cause a forced network update,", authorized = {RoleType.Admin})
+    private Boolean forced;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -129,6 +132,12 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd {
             return updateInSequence;
     }
 
+    public boolean getForced(){
+        if(forced==null){
+            return false;
+        }
+        return forced;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -159,7 +168,7 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd {
 
         Network result =
             _networkService.updateGuestNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount, callerUser, getNetworkDomain(), getNetworkOfferingId(),
-                getChangeCidr(), getGuestVmCidr(), getDisplayNetwork(), getCustomId(), getUpdateInSequence());
+                getChangeCidr(), getGuestVmCidr(), getDisplayNetwork(), getCustomId(), getUpdateInSequence(), getForced());
 
         if (result != null) {
             NetworkResponse response = _responseGenerator.createNetworkResponse(ResponseView.Restricted, result);

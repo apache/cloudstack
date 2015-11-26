@@ -39,6 +39,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.router.VirtualRouter;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -2002,7 +2003,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_UPDATE, eventDescription = "updating network", async = true)
     public Network updateGuestNetwork(final long networkId, String name, String displayText, Account callerAccount, User callerUser, String domainSuffix,
-            final Long networkOfferingId, Boolean changeCidr, String guestVmCidr, Boolean displayNetwork, String customId, boolean updateInSequence) {
+            final Long networkOfferingId, Boolean changeCidr, String guestVmCidr, Boolean displayNetwork, String customId, boolean updateInSequence, boolean forced) {
         boolean restartNetwork = false;
 
         // verify input parameters
@@ -2248,14 +2249,39 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         ReservationContext context = new ReservationContextImpl(null, null, callerUser, callerAccount);
         // 1) Shutdown all the elements and cleanup all the rules. Don't allow to shutdown network in intermediate
         // states - Shutdown and Implementing
-        List<DomainRouterVO> routers=null;
         int resourceCount=1;
-        if(updateInSequence && restartNetwork && _networkOfferingDao.findById(network.getNetworkOfferingId()).getRedundantRouter() && networkOfferingId!=null && _networkOfferingDao.findById(networkOfferingId).getRedundantRouter() && network.getVpcId()==null) {
+        if(updateInSequence && restartNetwork && _networkOfferingDao.findById(network.getNetworkOfferingId()).getRedundantRouter()
+                && (networkOfferingId==null || _networkOfferingDao.findById(networkOfferingId).getRedundantRouter()) && network.getVpcId()==null) {
             _networkMgr.canUpdateInSequence(network);
             NetworkDetailVO networkDetail =new NetworkDetailVO(network.getId(),Network.updatingInSequence,"true",true);
             _networkDetailsDao.persist(networkDetail);
             _networkMgr.configureUpdateInSequence(network);
             resourceCount=_networkMgr.getResourceCount(network);
+            //check if routers are in correct state before proceeding with the update
+            List<DomainRouterVO> routers=_routerDao.listByNetworkAndRole(networkId, VirtualRouter.Role.VIRTUAL_ROUTER);
+            for(DomainRouterVO router :routers){
+                if(router.getRedundantState()== VirtualRouter.RedundantState.UNKNOWN){
+                    if(!forced){
+                        throw new CloudRuntimeException("Domain router: "+router.getInstanceName()+" is in unknown state, Cannot update network. set parameter forced to true for forcing an update");
+                    }
+                }
+            }
+        }
+        List<String > servicesNotInNewOffering = null;
+        if(networkOfferingId != null)
+                 servicesNotInNewOffering = _networkMgr.getServicesNotSupportedInNewOffering(network,networkOfferingId);
+        if(!forced && servicesNotInNewOffering != null && !servicesNotInNewOffering.isEmpty()){
+            NetworkOfferingVO newOffering = _networkOfferingDao.findById(networkOfferingId);
+            throw new CloudRuntimeException("The new offering:"+newOffering.getUniqueName()
+                    +" will remove the following services "+servicesNotInNewOffering +"along with all the related configuration currently in use. will not proceed with the network update." +
+                    "set forced parameter to true for forcing an update.");
+        }
+        try{
+            if(servicesNotInNewOffering!=null && !servicesNotInNewOffering.isEmpty()){
+                _networkMgr.cleanupConfigForServicesInNetwork(servicesNotInNewOffering,network);
+            }
+        }catch (Throwable e){
+            s_logger.debug("failed to cleanup config related to unused services error:"+e.getMessage());
         }
 
         boolean validStateToShutdown = (network.getState() == Network.State.Implemented || network.getState() == Network.State.Setup || network.getState() == Network.State.Allocated);

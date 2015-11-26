@@ -227,6 +227,10 @@ public interface NetworkOrchestrationService {
 
     boolean canUpdateInSequence(Network network);
 
+    List<String> getServicesNotSupportedInNewOffering(Network network, long newNetworkOfferingId);
+
+    void cleanupConfigForServicesInNetwork(List<String> services, Network network);
+
     void configureUpdateInSequence(Network network);
 
     int getResourceCount(Network network);

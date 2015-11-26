@@ -697,6 +697,16 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
+    public boolean start() {
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        return true;
+    }
+
+    @Override
     public boolean startRemoteAccessVpn(final RemoteAccessVpn vpn, final VirtualRouter router) throws ResourceUnavailableException {
         if (router.getState() != State.Running) {
             s_logger.warn("Unable to apply remote access VPN configuration, virtual router is not in the right state " + router.getState());
