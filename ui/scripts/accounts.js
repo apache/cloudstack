@@ -1405,7 +1405,7 @@
                                                             });
                                                         }
                                                     });
-                                                }
+                                                },
                                                 error: function(json) {
                                                     complete({ error: parseXMLHttpResponse(json) });
                                                 }
