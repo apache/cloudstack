@@ -167,7 +167,7 @@ class TestVMPasswordEnabled(cloudstackTestCase):
         # chkconfig --add cloud-set-guest-password
 
         cmds = [
-            "cd /etc/init.d;wget https://home.apache.org/~talluri/cloud-set-guest-password",
+            "cd /etc/init.d;wget http://people.apache.org/~tsp/cloud-set-guest-password",
             "chmod +x /etc/init.d/cloud-set-guest-password",
             "chkconfig --add cloud-set-guest-password",
         ]

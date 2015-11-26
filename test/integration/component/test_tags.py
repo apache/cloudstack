@@ -124,7 +124,7 @@ class Services:
             {
                 "displaytext": "Dummy ISO",
                 "name": "Dummy ISO",
-                "url": "https://home.apache.org/~talluri/dummy.iso",
+                "url": "http://people.apache.org/~tsp/dummy.iso",
                 # Source URL where ISO is located
                 "isextractable": True,
                 "isfeatured": True,
