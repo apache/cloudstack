@@ -273,4 +273,6 @@
     </bean>
     <bean id="certServiceImpl" class="org.apache.cloudstack.network.lb.CertServiceImpl" />
     <bean id="imageStoreUploadMonitorImpl" class="com.cloud.storage.ImageStoreUploadMonitorImpl" />
+
+    <bean id="usageEventEmitter" class="com.cloud.event.UsageEventEmitterImpl" />
 </beans>

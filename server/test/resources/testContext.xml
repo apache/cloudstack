@@ -84,4 +84,5 @@
 
   <bean id="apiServlet" class = "com.cloud.api.ApiServlet" />
 
+  <bean id="usageEventEmitter" class = "com.cloud.event.UsageEventEmitterImpl" />
 </beans>

@@ -25,7 +25,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.vpn.ListRemoteAccessVpnsCmd;
 import org.apache.cloudstack.api.command.user.vpn.ListVpnUsersCmd;
@@ -39,7 +38,7 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
+import com.cloud.event.UsageEventEmitter;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -123,6 +122,8 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     UsageEventDao _usageEventDao;
     @Inject
     ConfigurationDao _configDao;
+    @Inject
+    UsageEventEmitter _usageEventEmitter;
     List<RemoteAccessVPNServiceProvider> _vpnServiceProviders;
 
     @Inject
@@ -350,7 +351,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                                 for (VpnUserVO user : vpnUsers) {
                                     // VPN_USER_REMOVE event is already generated for users in Revoke state
                                     if (user.getState() != VpnUser.State.Revoke) {
-                                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VPN_USER_REMOVE, user.getAccountId(), 0, user.getId(), user.getUsername(),
+                                        _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_VPN_USER_REMOVE, user.getAccountId(), 0, user.getId(), user.getUsername(),
                                             user.getClass().getName(), user.getUuid());
                                     }
                                 }
@@ -405,7 +406,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                 }
 
                 VpnUser user = _vpnUsersDao.persist(new VpnUserVO(vpnOwnerId, owner.getDomainId(), username, password));
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VPN_USER_ADD, user.getAccountId(), 0, user.getId(), user.getUsername(), user.getClass().getName(),
+                _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_VPN_USER_ADD, user.getAccountId(), 0, user.getId(), user.getUsername(), user.getClass().getName(),
                     user.getUuid());
 
                 return user;
@@ -427,7 +428,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 user.setState(State.Revoke);
                 _vpnUsersDao.update(user.getId(), user);
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VPN_USER_REMOVE, user.getAccountId(), 0, user.getId(), user.getUsername(), user.getClass().getName(),
+                _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_VPN_USER_REMOVE, user.getAccountId(), 0, user.getId(), user.getUsername(), user.getClass().getName(),
                     user.getUuid());
             }
         });
@@ -489,7 +490,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                         List<VpnUserVO> vpnUsers = _vpnUsersDao.listByAccount(vpn.getAccountId());
                         for (VpnUserVO user : vpnUsers) {
                             if (user.getState() != VpnUser.State.Revoke) {
-                                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VPN_USER_ADD, user.getAccountId(), 0, user.getId(), user.getUsername(),
+                                _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_VPN_USER_ADD, user.getAccountId(), 0, user.getId(), user.getUsername(),
                                     user.getClass().getName(), user.getUuid());
                             }
                         }
@@ -566,7 +567,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                         @Override
                         public void doInTransactionWithoutResult(TransactionStatus status) {
                             _vpnUsersDao.remove(user.getId());
-                            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VPN_USER_REMOVE, user.getAccountId(), 0, user.getId(), user.getUsername(), user.getClass()
+                            _usageEventEmitter.publishUsageEvent(EventTypes.EVENT_VPN_USER_REMOVE, user.getAccountId(), 0, user.getId(), user.getUsername(), user.getClass()
                                 .getName(), user.getUuid());
                         }
                     });

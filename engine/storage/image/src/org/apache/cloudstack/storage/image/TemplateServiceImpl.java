@@ -29,7 +29,7 @@ import javax.inject.Inject;
 
 import com.cloud.configuration.Resource;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
+import com.cloud.event.UsageEventEmitter;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
@@ -146,6 +146,8 @@ public class TemplateServiceImpl implements TemplateService {
     MessageBus _messageBus;
     @Inject
     ImageStoreDetailsUtil imageStoreDetailsUtil;
+    @Inject
+    UsageEventEmitter _usageEventEmitter;
 
     class TemplateOpContext<T> extends AsyncRpcContext<T> {
         final TemplateObject template;
@@ -369,7 +371,7 @@ public class TemplateServiceImpl implements TemplateService {
                                             etype = EventTypes.EVENT_ISO_CREATE;
                                         }
 
-                                        UsageEventUtils.publishUsageEvent(etype, tmplt.getAccountId(), zoneId, tmplt.getId(), tmplt.getName(), null, null,
+                                        _usageEventEmitter.publishUsageEvent(etype, tmplt.getAccountId(), zoneId, tmplt.getId(), tmplt.getName(), null, null,
                                                 tmpltInfo.getPhysicalSize(), tmpltInfo.getSize(), VirtualMachineTemplate.class.getName(), tmplt.getUuid());
                                     }
 
@@ -429,7 +431,7 @@ public class TemplateServiceImpl implements TemplateService {
                                     etype = EventTypes.EVENT_ISO_CREATE;
                                 }
 
-                                UsageEventUtils.publishUsageEvent(etype, tmplt.getAccountId(), zoneId, tmplt.getId(), tmplt.getName(), null, null,
+                                _usageEventEmitter.publishUsageEvent(etype, tmplt.getAccountId(), zoneId, tmplt.getId(), tmplt.getName(), null, null,
                                         tmpltInfo.getPhysicalSize(), tmpltInfo.getSize(), VirtualMachineTemplate.class.getName(), tmplt.getUuid());
                             }
                         } else if (tmplt.getState() == VirtualMachineTemplate.State.NotUploaded || tmplt.getState() == VirtualMachineTemplate.State.UploadInProgress) {
@@ -625,7 +627,7 @@ public class TemplateServiceImpl implements TemplateService {
                 }
                 Scope dsScope = ds.getScope();
                 if (dsScope.getScopeId() != null) {
-                    UsageEventUtils.publishUsageEvent(etype, template.getAccountId(), dsScope.getScopeId(), template.getId(), template.getName(), null, null,
+                    _usageEventEmitter.publishUsageEvent(etype, template.getAccountId(), dsScope.getScopeId(), template.getId(), template.getName(), null, null,
                             physicalSize, template.getSize(), VirtualMachineTemplate.class.getName(), template.getUuid());
                 } else {
                     s_logger.warn("Zone scope image store " + ds.getId() + " has a null scope id");
