@@ -102,7 +102,7 @@ function packaging() {
     echo ". executing rpmbuild"
     cp "$DISTRO/cloud.spec" "$RPMDIR/SPECS"
 
-    (cd "$RPMDIR"; rpmbuild --define "_topdir ${RPMDIR}" "${DEFVER}" "${DEFREL}" ${DEFPRE+"$DEFPRE"} ${DEFOSSNOSS+$DEFOSSNOSS} ${DEFSIM+"$DEFSIM"} -bb SPECS/cloud.spec)
+    (cd "$RPMDIR"; rpmbuild --define "_topdir ${RPMDIR}" "${DEFVER}" "${DEFREL}" ${DEFPRE+"$DEFPRE"} ${DEFOSSNOSS+"$DEFOSSNOSS"} ${DEFSIM+"$DEFSIM"} -bb SPECS/cloud.spec)
     if [ $? -ne 0 ]; then
         echo "RPM Build Failed "
         exit 3
