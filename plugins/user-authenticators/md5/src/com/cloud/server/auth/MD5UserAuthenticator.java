@@ -15,25 +15,28 @@
 
 package com.cloud.server.auth;
 
-import com.cloud.user.UserAccount;
-import com.cloud.user.dao.UserAccountDao;
-import com.cloud.utils.Pair;
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
+
+import javax.inject.Inject;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import com.cloud.user.UserAccount;
+import com.cloud.user.dao.UserAccountDao;
+import com.cloud.utils.Pair;
+import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  * Simple UserAuthenticator that performs a MD5 hash of the password before
  * comparing it against the local database.
  *
  */
-public class MD5UserAuthenticator extends DefaultUserAuthenticator {
+public class MD5UserAuthenticator extends AdapterBase implements UserAuthenticator {
     public static final Logger s_logger = Logger.getLogger(MD5UserAuthenticator.class);
 
     @Inject

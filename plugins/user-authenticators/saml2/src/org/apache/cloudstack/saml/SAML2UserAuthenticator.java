@@ -14,19 +14,22 @@
 //  limitations under the License.
 package org.apache.cloudstack.saml;
 
-import com.cloud.server.auth.DefaultUserAuthenticator;
+import java.util.Map;
+
+import javax.inject.Inject;
+
+import org.apache.cxf.common.util.StringUtils;
+import org.apache.log4j.Logger;
+
+import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
-import org.apache.cxf.common.util.StringUtils;
-import org.apache.log4j.Logger;
+import com.cloud.utils.component.AdapterBase;
 
-import javax.inject.Inject;
-import java.util.Map;
-
-public class SAML2UserAuthenticator extends DefaultUserAuthenticator {
+public class SAML2UserAuthenticator extends AdapterBase implements UserAuthenticator {
     public static final Logger s_logger = Logger.getLogger(SAML2UserAuthenticator.class);
 
     @Inject
