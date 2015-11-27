@@ -1170,17 +1170,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return "";
     }
 
-    String [] _ifNamePrefixes = {
-            "eth",
-            "bond",
-            "vlan",
-            "vx",
-            "em",
-            "ens",
-            "eno",
-            "enp",
-            "team",
-            "enx",
+    String [] _ifNamePatterns = {
+            "^eth",
+            "^bond",
+            "^vlan",
+            "^vx",
+            "^em",
+            "^ens",
+            "^eno",
+            "^enp",
+            "^team",
+            "^enx",
             "^p\\d+p\\d+"
     };
     /**
@@ -1188,9 +1188,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * @return
      */
     boolean isInterface(final String fname) {
-        final StringBuffer commonPattern = new StringBuffer();
-        for (final String ifNamePrefix : _ifNamePrefixes) {
-            commonPattern.append("|(").append(ifNamePrefix).append(".*)");
+        StringBuffer commonPattern = new StringBuffer();
+        for (final String ifNamePattern : _ifNamePatterns) {
+            commonPattern.append("|(").append(ifNamePattern).append(".*)");
         }
         if(fname.matches(commonPattern.toString())) {
             return true;
