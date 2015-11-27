@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -34,13 +35,16 @@ import org.apache.cloudstack.quota.dao.QuotaAccountDao;
 import org.apache.cloudstack.quota.dao.QuotaUsageDao;
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ManagerBase;
 
+@Component
+@Local(value = QuotaStatement.class)
 public class QuotaStatementImpl extends ManagerBase implements QuotaStatement {
-    private static final Logger s_logger = Logger.getLogger(QuotaAlertManagerImpl.class);
+    private static final Logger s_logger = Logger.getLogger(QuotaStatementImpl.class);
 
     @Inject
     private AccountDao _accountDao;
