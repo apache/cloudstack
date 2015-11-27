@@ -22,7 +22,9 @@ package com.cloud.util;
 import com.cloud.network.Network;
 import com.cloud.network.manager.NuageVspManager;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.commons.codec.binary.Base64;
 
 public class NuageVspUtil {
 
@@ -36,5 +38,17 @@ public class NuageVspUtil {
             configKey = NuageVspManager.NuageVspIsolatedNetworkDomainTemplateName.key();
         }
         return configDao.getValue(configKey);
+    }
+
+    public static String encodePassword(String originalPassword) {
+        byte[] passwordBytes = originalPassword.getBytes(StringUtils.getPreferredCharset());
+        byte[] encodedPasswordBytes = Base64.encodeBase64(passwordBytes);
+        return new String(encodedPasswordBytes, StringUtils.getPreferredCharset());
+    }
+
+    public static String decodePassword(String encodedPassword) {
+        byte[] encodedPasswordBytes = encodedPassword.getBytes(StringUtils.getPreferredCharset());
+        byte[] passwordBytes = Base64.decodeBase64(encodedPasswordBytes);
+        return new String(passwordBytes, StringUtils.getPreferredCharset());
     }
 }
