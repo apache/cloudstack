@@ -21,7 +21,6 @@ package org.apache.cloudstack.storage.command;
 
 import java.util.Map;
 
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DiskTO;
 
 public final class AttachCommand extends StorageSubSystemCommand {
