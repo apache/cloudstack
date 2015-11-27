@@ -1195,7 +1195,7 @@ public enum Config {
             String.class,
             "vmware.root.disk.controller",
             "ide",
-            "Specify the default disk controller for root volumes, valid values are scsi, ide",
+            "Specify the default disk controller for root volumes, valid values are scsi, ide, osdefault. Please check documentation for more details on each of these values.",
             null),
     VmwareSystemVmNicDeviceType(
             "Advanced",
