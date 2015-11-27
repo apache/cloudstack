@@ -639,7 +639,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
             affinityGroupName = "DedicatedGrp-domain-" + domainName;
         }
 
-        group = _affinityGroupService.createAffinityGroupInternal(accountName, domainId, affinityGroupName, "ExplicitDedication", "dedicated resources group");
+        group = _affinityGroupService.createAffinityGroup(accountName, null, domainId, affinityGroupName, "ExplicitDedication", "dedicated resources group");
 
         return group;
 
@@ -948,7 +948,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
             List<DedicatedResourceVO> resourcesInGroup = _dedicatedDao.listByAffinityGroupId(resource.getAffinityGroupId());
             if (resourcesInGroup.isEmpty()) {
                 // delete the group
-                _affinityGroupService.deleteAffinityGroup(resource.getAffinityGroupId(), null, null, null);
+                _affinityGroupService.deleteAffinityGroup(resource.getAffinityGroupId(), null, null, null, null);
             }
 
         }

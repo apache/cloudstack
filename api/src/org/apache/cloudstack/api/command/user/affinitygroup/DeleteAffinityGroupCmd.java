@@ -17,8 +17,8 @@
 package org.apache.cloudstack.api.command.user.affinitygroup;
 
 
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -35,7 +35,6 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 
 @APICommand(name = "deleteAffinityGroup", description = "Deletes affinity group", responseObject = SuccessResponse.class, entityType = {AffinityGroup.class},
@@ -67,6 +66,9 @@ public class DeleteAffinityGroupCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the affinity group. Mutually exclusive with ID parameter")
     private String name;
 
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, description = "the project of the affinity group", entityType = ProjectResponse.class)
+    private Long projectId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -79,22 +81,11 @@ public class DeleteAffinityGroupCmd extends BaseAsyncCmd {
         return domainId;
     }
 
+    public Long getProjectId() {
+        return projectId;
+    }
+
     public Long getId() {
-        if (id != null && name != null) {
-            throw new InvalidParameterValueException("name and id parameters are mutually exclusive");
-        }
-
-        if (name != null) {
-            id = _responseGenerator.getAffinityGroupId(name, getEntityOwnerId());
-            if (id == null) {
-                throw new InvalidParameterValueException("Unable to find affinity group by name " + name + " for the account ID=" + getEntityOwnerId());
-            }
-        }
-
-        if (id == null) {
-            throw new InvalidParameterValueException("Either ID or name parameter is required by deleteAffinityGroup command");
-        }
-
         return id;
     }
 
@@ -109,29 +100,22 @@ public class DeleteAffinityGroupCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = CallContext.current().getCallingAccount();
-        if ((account == null) || _accountService.isAdmin(account.getId())) {
-            if ((domainId != null) && (accountName != null)) {
-                Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
-                if (userAccount != null) {
-                    return userAccount.getId();
-                }
-            }
+        Account caller = CallContext.current().getCallingAccount();
+
+        //For domain wide affinity groups (if the affinity group processor type allows it)
+        if(projectId == null && domainId != null && accountName == null && _accountService.isRootAdmin(caller.getId())){
+            return Account.ACCOUNT_ID_SYSTEM;
         }
-
-        if (account != null) {
-            return account.getId();
+        Account owner = _accountService.finalizeOwner(caller, accountName, domainId, projectId);
+        if(owner == null){
+            return caller.getAccountId();
         }
-
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this
-                                          // command to SYSTEM so ERROR events
-                                          // are tracked
-
+        return owner.getAccountId();
     }
 
     @Override
     public void execute() {
-        boolean result = _affinityGroupService.deleteAffinityGroup(id, accountName, domainId, name);
+        boolean result = _affinityGroupService.deleteAffinityGroup(id, accountName, projectId, domainId, name);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);

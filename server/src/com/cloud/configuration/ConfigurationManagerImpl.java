@@ -1484,7 +1484,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         final List<DedicatedResourceVO> resourcesInGroup = _dedicatedDao.listByAffinityGroupId(dr.getAffinityGroupId());
                         if (resourcesInGroup.isEmpty()) {
                             // delete the group
-                            _affinityGroupService.deleteAffinityGroup(dr.getAffinityGroupId(), null, null, null);
+                            _affinityGroupService.deleteAffinityGroup(dr.getAffinityGroupId(), null, null, null, null);
                         }
                     }
                 }
@@ -1702,7 +1702,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         final List<DedicatedResourceVO> resourcesInGroup = _dedicatedDao.listByAffinityGroupId(resource.getAffinityGroupId());
                         if (resourcesInGroup.isEmpty()) {
                             // delete the group
-                            _affinityGroupService.deleteAffinityGroup(resource.getAffinityGroupId(), null, null, null);
+                            _affinityGroupService.deleteAffinityGroup(resource.getAffinityGroupId(), null, null, null, null);
                         }
                     }
                 }
@@ -1800,7 +1800,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        group = _affinityGroupService.createAffinityGroupInternal(accountName, domainId, affinityGroupName, "ExplicitDedication", "dedicated resources group");
+        group = _affinityGroupService.createAffinityGroup(accountName, null, domainId, affinityGroupName, "ExplicitDedication", "dedicated resources group");
 
         return group;
 

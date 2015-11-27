@@ -23,14 +23,14 @@ import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
+import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 
 @APICommand(name = "listAffinityGroups", description = "Lists affinity groups", responseObject = AffinityGroupResponse.class, entityType = {AffinityGroup.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListAffinityGroupsCmd extends BaseListAccountResourcesCmd {
+public class ListAffinityGroupsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListAffinityGroupsCmd.class.getName());
 
     private static final String s_name = "listaffinitygroupsresponse";
@@ -69,6 +69,10 @@ public class ListAffinityGroupsCmd extends BaseListAccountResourcesCmd {
         return id;
     }
 
+    public String getAffinityGroupType() {
+        return affinityGroupType;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -80,13 +84,9 @@ public class ListAffinityGroupsCmd extends BaseListAccountResourcesCmd {
 
     @Override
     public void execute() {
-
-        ListResponse<AffinityGroupResponse> response = _queryService.listAffinityGroups(id, affinityGroupName,
-                affinityGroupType, virtualMachineId, getAccountName(), getDomainId(), isRecursive(),
-                listAll(), getStartIndex(), getPageSizeVal(), getKeyword());
+        ListResponse<AffinityGroupResponse> response = _queryService.searchForAffinityGroups(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);
-
     }
 
     @Override

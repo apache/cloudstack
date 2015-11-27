@@ -4220,7 +4220,7 @@ class AffinityGroup:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, aff_grp, account=None, domainid=None):
+    def create(cls, apiclient, aff_grp, account=None, domainid=None, projectid=None):
         cmd = createAffinityGroup.createAffinityGroupCmd()
         cmd.name = aff_grp['name']
         cmd.displayText = aff_grp['name']
@@ -4229,6 +4229,8 @@ class AffinityGroup:
             cmd.account = account
         if domainid:
             cmd.domainid = domainid
+        if projectid:
+            cmd.projectid = projectid
         return AffinityGroup(apiclient.createAffinityGroup(cmd).__dict__)
 
     def update(self, apiclient):

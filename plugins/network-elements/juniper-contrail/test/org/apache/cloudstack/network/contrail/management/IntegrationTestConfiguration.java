@@ -389,7 +389,7 @@ public class IntegrationTestConfiguration {
                 }
             });
             Mockito.when(
-                mock.createAffinityGroupInternal(Matchers.any(String.class), Matchers.any(Long.class), Matchers.any(String.class), Matchers.any(String.class),
+                mock.createAffinityGroup(Matchers.any(String.class), Matchers.any(Long.class), Matchers.any(Long.class), Matchers.any(String.class), Matchers.any(String.class),
                     Matchers.any(String.class))).thenReturn(gmock);
         } catch (Exception e) {
             e.printStackTrace();
