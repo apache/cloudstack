@@ -165,6 +165,26 @@
                     }
                 });
 
+                // Update global pagesize for list APIs in UI
+                $.ajax({
+                    type: 'GET',
+                    url: createURL('listConfigurations'),
+                    data: {name: 'default.ui.page.size'},
+                    dataType: 'json',
+                    async: false,
+                    success: function(data, textStatus, xhr) {
+                        if (data && data.listconfigurationsresponse && data.listconfigurationsresponse.configuration) {
+                            var config = data.listconfigurationsresponse.configuration[0];
+                            if (config && config.name == 'default.ui.page.size') {
+                                pageSize = parseInt(config.value);
+                            }
+                        }
+                    },
+                    error: function(xhr) { // ignore any errors, fallback to the default
+                    },
+                });
+
+
                 // Populate IDP list
                 $.ajax({
                     type: 'GET',

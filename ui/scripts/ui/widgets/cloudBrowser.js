@@ -321,6 +321,14 @@
             return $panel;
         },
 
+        removeLastPanel: function(args) {
+            $('div.panel:last').stop(); // Prevent destroyed panels from animating
+            this.element.find('div.panel:last').remove();
+            this.element.find('div.panel:last').removeClass('reduced');
+            $('#breadcrumbs').find('ul li:last').remove();
+            $('#breadcrumbs').find('ul div.end').remove();
+        },
+
         /**
          * Clear all panels
          */

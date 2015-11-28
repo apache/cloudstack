@@ -7709,7 +7709,7 @@
                 }
             }
         },
-        show: cloudStack.uiCustom.physicalResources({
+        physicalResourceSection: {
             sections: {
                 physicalResources: {
                     type: 'select',
@@ -7792,7 +7792,7 @@
                                             });
                                         }
                                     }
-                                }
+                                },
                             },
 
                             detailView: {
@@ -9484,7 +9484,7 @@
                     }
                 }
             }
-        }),
+        },
         subsections: {
             virtualRouters: {
                 sectionSelect: {
@@ -15226,11 +15226,12 @@
                         }
 
                         if (! args.context.instances) {
-                            array1.push("&zoneid=" + args.context.zones[0].id);
+                            if ("zones" in args.context)
+                                array1.push("&zoneid=" + args.context.zones[0].id);
                             if ("pods" in args.context)
-                            array1.push("&podid=" + args.context.pods[0].id);
+                                array1.push("&podid=" + args.context.pods[0].id);
                             if ("clusters" in args.context)
-                            array1.push("&clusterid=" + args.context.clusters[0].id);
+                               array1.push("&clusterid=" + args.context.clusters[0].id);
                         } else {
                             //Instances menu > Instance detailView > View Hosts
                             array1.push("&id=" + args.context.instances[0].hostid);
@@ -19882,6 +19883,9 @@
             });
         }
     }
+
+    // Inject cloudStack infra page
+    cloudStack.sections.system.show = cloudStack.uiCustom.physicalResources(cloudStack.sections.system.physicalResourceSection);
 
     function addExternalLoadBalancer(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) {
         var array1 =[];
