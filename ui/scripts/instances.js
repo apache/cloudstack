@@ -879,10 +879,56 @@
                                     return null;
                             }
                         },
+                        createForm: {
+                            title: 'label.reinstall.vm',
+                            desc: 'message.reinstall.vm',
+                            isWarning: true,
+                            fields: {
+                                template: {
+                                    label: 'label.select.a.template',
+                                    select: function(args) {
+                                        var data = {
+                                            templatefilter: 'featured'
+                                        };
+                                        $.ajax({
+                                            url: createURL('listTemplates'),
+                                            data: data,
+                                            async: false,
+                                            success: function(json) {
+                                                var templates = json.listtemplatesresponse.template;
+                                                var items = [{
+                                                    id: -1,
+                                                    description: ''
+                                                }];
+                                                $(templates).each(function() {
+                                                    items.push({
+                                                        id: this.id,
+                                                        description: this.name
+                                                    });
+                                                });
+                                                args.response.success({
+                                                    data: items
+                                                });
+                                            }
+                                        });
+                                    }
+                                }
+                            }
+                        },
 
                         action: function(args) {
+                            var dataObj = {
+                                virtualmachineid: args.context.instances[0].id
+                            };
+                            if (args.data.template != -1) {
+                                $.extend(dataObj, {
+                                    templateid: args.data.template
+                                });
+                            }
+
                             $.ajax({
-                                url: createURL("restoreVirtualMachine&virtualmachineid=" + args.context.instances[0].id),
+                                url: createURL("restoreVirtualMachine"),
+                                data: dataObj,
                                 dataType: "json",
                                 async: true,
                                 success: function(json) {
