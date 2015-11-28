@@ -7805,7 +7805,7 @@
                                             return 'label.metrics';
                                         }
                                     }
-                                },
+                                }
                             },
 
                             detailView: {
