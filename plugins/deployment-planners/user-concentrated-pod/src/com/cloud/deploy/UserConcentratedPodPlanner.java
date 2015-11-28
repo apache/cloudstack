@@ -66,7 +66,7 @@ public class UserConcentratedPodPlanner extends FirstFitPlanner implements Deplo
             s_logger.debug("Reordering cluster list as per pods ordered by user concentration");
         }
 
-        Map<Long, List<Long>> podClusterMap = _clusterDao.getPodClusterIdMap(clusterIds);
+        Map<Long, List<Long>> podClusterMap = clusterDao.getPodClusterIdMap(clusterIds);
 
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Pod To cluster Map is: " + podClusterMap);
@@ -100,7 +100,7 @@ public class UserConcentratedPodPlanner extends FirstFitPlanner implements Deplo
             s_logger.debug("Applying UserConcentratedPod heuristic for account: " + accountId);
         }
 
-        List<Long> prioritizedPods = _vmDao.listPodIdsHavingVmsforAccount(zoneId, accountId);
+        List<Long> prioritizedPods = vmDao.listPodIdsHavingVmsforAccount(zoneId, accountId);
 
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("List of pods to be considered, after applying UserConcentratedPod heuristic: " + prioritizedPods);

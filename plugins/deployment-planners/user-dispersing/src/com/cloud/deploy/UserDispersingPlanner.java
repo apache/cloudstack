@@ -102,9 +102,9 @@ public class UserDispersingPlanner extends FirstFitPlanner implements Deployment
         }
         Pair<List<Long>, Map<Long, Double>> clusterIdsVmCountInfo;
         if (isZone) {
-            clusterIdsVmCountInfo = _vmInstanceDao.listClusterIdsInZoneByVmCount(id, accountId);
+            clusterIdsVmCountInfo = vmInstanceDao.listClusterIdsInZoneByVmCount(id, accountId);
         } else {
-            clusterIdsVmCountInfo = _vmInstanceDao.listClusterIdsInPodByVmCount(id, accountId);
+            clusterIdsVmCountInfo = vmInstanceDao.listClusterIdsInPodByVmCount(id, accountId);
         }
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("List of clusters in ascending order of number of VMs: " + clusterIdsVmCountInfo.first());
@@ -116,7 +116,7 @@ public class UserDispersingPlanner extends FirstFitPlanner implements Deployment
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Applying Userdispersion heuristic to pods for account: " + accountId);
         }
-        Pair<List<Long>, Map<Long, Double>> podIdsVmCountInfo = _vmInstanceDao.listPodIdsInZoneByVmCount(dataCenterId, accountId);
+        Pair<List<Long>, Map<Long, Double>> podIdsVmCountInfo = vmInstanceDao.listPodIdsInZoneByVmCount(dataCenterId, accountId);
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("List of pods in ascending order of number of VMs: " + podIdsVmCountInfo.first());
         }
@@ -146,7 +146,7 @@ public class UserDispersingPlanner extends FirstFitPlanner implements Deployment
         //normalize the vmCountMap
         LinkedHashMap<Long, Double> normalisedVmCountIdMap = new LinkedHashMap<Long, Double>();
 
-        Long totalVmsOfAccount = _vmInstanceDao.countRunningByAccount(accountId);
+        Long totalVmsOfAccount = vmInstanceDao.countRunningByAccount(accountId);
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Total VMs for account: " + totalVmsOfAccount);
         }
@@ -190,7 +190,7 @@ public class UserDispersingPlanner extends FirstFitPlanner implements Deployment
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
 
-        String weight = _configDao.getValue(Config.VmUserDispersionWeight.key());
+        String weight = configDao.getValue(Config.VmUserDispersionWeight.key());
         _userDispersionWeight = NumbersUtil.parseFloat(weight, 1.0f);
 
         return true;

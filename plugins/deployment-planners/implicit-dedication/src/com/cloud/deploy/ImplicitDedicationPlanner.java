@@ -56,7 +56,7 @@ public class ImplicitDedicationPlanner extends FirstFitPlanner implements Deploy
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        capacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(Config.CapacitySkipcountingHours.key()), 3600);
+        capacityReleaseInterval = NumbersUtil.parseInt(configDao.getValue(Config.CapacitySkipcountingHours.key()), 3600);
         return true;
     }
 
@@ -135,8 +135,8 @@ public class ImplicitDedicationPlanner extends FirstFitPlanner implements Deploy
     }
 
     private List<VMInstanceVO> getVmsOnHost(long hostId) {
-        List<VMInstanceVO> vms = _vmInstanceDao.listUpByHostId(hostId);
-        List<VMInstanceVO> vmsByLastHostId = _vmInstanceDao.listByLastHostId(hostId);
+        List<VMInstanceVO> vms = vmInstanceDao.listUpByHostId(hostId);
+        List<VMInstanceVO> vmsByLastHostId = vmInstanceDao.listByLastHostId(hostId);
         if (vmsByLastHostId.size() > 0) {
             // check if any VMs are within skip.counting.hours, if yes we have to consider the host.
             for (VMInstanceVO stoppedVM : vmsByLastHostId) {
@@ -198,7 +198,7 @@ public class ImplicitDedicationPlanner extends FirstFitPlanner implements Deploy
         } else {
             String plannerName = offering.getDeploymentPlanner();
             if (plannerName == null) {
-                plannerName = _globalDeploymentPlanner;
+                plannerName = globalDeploymentPlanner;
             }
 
             if (plannerName != null && this.getName().equals(plannerName)) {

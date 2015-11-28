@@ -51,23 +51,6 @@ public interface DeploymentPlanner extends Adapter {
     DeployDestination plan(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException;
 
     /**
-     * check() is called right before the virtual machine starts to make sure
-     * the host has enough capacity.
-     *
-     * @param vm
-     *            virtual machine in question.
-     * @param plan
-     *            deployment plan used to determined the deploy destination.
-     * @param dest
-     *            destination returned by plan.
-     * @param avoid
-     *            what to avoid.
-     * @return true if it's okay to start; false if not. If false, the exclude list will include what should be
-     *         excluded.
-     */
-    boolean check(VirtualMachineProfile vm, DeploymentPlan plan, DeployDestination dest, ExcludeList exclude);
-
-    /**
      * canHandle is called before plan to determine if the plan can do the allocation. Planers should be exclusive so
      * planner writer must
      * make sure only one planer->canHandle return true in the planner list
@@ -175,7 +158,6 @@ public interface DeploymentPlanner extends Adapter {
             }
             _poolIds.add(poolId);
         }
-
 
         public void addDataCenter(long dataCenterId) {
             if (_dcIds == null) {
