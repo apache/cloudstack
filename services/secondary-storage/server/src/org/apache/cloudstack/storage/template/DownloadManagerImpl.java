@@ -558,7 +558,9 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     ResourceType.TEMPLATE == resourceType ? _storage.getFile(tmpDir + File.separator + TemplateLocation.Filename) : _storage.getFile(tmpDir + File.separator +
                             "volume.properties");
                     if (file.exists()) {
-                        file.delete();
+                        if(! file.delete()) {
+                            s_logger.warn("Deletion of file '" + file.getAbsolutePath() + "' failed.");
+                        }
                     }
 
                     if (!file.createNewFile()) {
