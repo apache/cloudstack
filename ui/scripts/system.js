@@ -7815,7 +7815,7 @@
                                             return 'label.metrics';
                                         }
                                     }
-                                },
+                                }
                             },
 
                             detailView: {
