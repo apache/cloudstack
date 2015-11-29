@@ -1596,9 +1596,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final SearchCriteria<VlanVO> sc = sb.create();
         if (keyword != null) {
             final SearchCriteria<VlanVO> ssc = _vlanDao.createSearchCriteria();
-            ssc.addOr("vlanId", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("vlanTag", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("ipRange", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            sc.addAnd("vlanId", SearchCriteria.Op.SC, ssc);
+            sc.addAnd("vlanTag", SearchCriteria.Op.SC, ssc);
         } else {
             if (id != null) {
                 sc.setParameters("id", id);
