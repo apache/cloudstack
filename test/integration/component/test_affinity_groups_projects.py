@@ -84,7 +84,6 @@ class Services:
                 "type": "host anti-affinity"
              },
           "virtual_machine" : {
-             "hypervisor" : "KVM"
           }
        }
 
