@@ -15,16 +15,19 @@
 
 package com.cloud.server.auth;
 
-import com.cloud.user.UserAccount;
-import com.cloud.user.dao.UserAccountDao;
-import com.cloud.utils.Pair;
+import java.util.Map;
+
+import javax.inject.Inject;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
-import javax.inject.Inject;
-import java.util.Map;
+import com.cloud.user.UserAccount;
+import com.cloud.user.dao.UserAccountDao;
+import com.cloud.utils.Pair;
+import com.cloud.utils.component.AdapterBase;
 
-public class PlainTextUserAuthenticator extends DefaultUserAuthenticator {
+public class PlainTextUserAuthenticator extends AdapterBase implements UserAuthenticator {
     public static final Logger s_logger = Logger.getLogger(PlainTextUserAuthenticator.class);
 
     @Inject

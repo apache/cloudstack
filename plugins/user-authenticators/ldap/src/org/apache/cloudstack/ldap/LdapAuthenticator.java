@@ -16,21 +16,24 @@
 // under the License.
 package org.apache.cloudstack.ldap;
 
-import com.cloud.server.auth.DefaultUserAuthenticator;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.inject.Inject;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.Pair;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import com.cloud.utils.component.AdapterBase;
 
-import javax.inject.Inject;
-import java.util.Map;
-import java.util.UUID;
-
-public class LdapAuthenticator extends DefaultUserAuthenticator {
+public class LdapAuthenticator extends AdapterBase implements UserAuthenticator {
     private static final Logger s_logger = Logger.getLogger(LdapAuthenticator.class.getName());
 
     @Inject

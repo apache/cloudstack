@@ -15,13 +15,16 @@
 
 package org.apache.cloudstack.server.auth;
 
-import com.cloud.server.auth.DefaultUserAuthenticator;
-import com.cloud.server.auth.UserAuthenticator;
-import com.cloud.user.UserAccount;
-import com.cloud.user.dao.UserAccountDao;
-import com.cloud.utils.ConstantTimeComparator;
-import com.cloud.utils.Pair;
-import com.cloud.utils.exception.CloudRuntimeException;
+import static java.lang.String.format;
+
+import java.io.UnsupportedEncodingException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
+import java.util.Map;
+
+import javax.inject.Inject;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.bouncycastle.crypto.PBEParametersGenerator;
@@ -29,16 +32,15 @@ import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.encoders.Base64;
 
-import javax.inject.Inject;
-import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.spec.InvalidKeySpecException;
-import java.util.Map;
+import com.cloud.server.auth.UserAuthenticator;
+import com.cloud.user.UserAccount;
+import com.cloud.user.dao.UserAccountDao;
+import com.cloud.utils.ConstantTimeComparator;
+import com.cloud.utils.Pair;
+import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 
-import static java.lang.String.format;
-
-public class PBKDF2UserAuthenticator extends DefaultUserAuthenticator {
+public class PBKDF2UserAuthenticator extends AdapterBase implements UserAuthenticator {
     public static final Logger s_logger = Logger.getLogger(PBKDF2UserAuthenticator.class);
     private static final int s_saltlen = 64;
     private static final int s_rounds = 100000;
@@ -47,6 +49,7 @@ public class PBKDF2UserAuthenticator extends DefaultUserAuthenticator {
     @Inject
     private UserAccountDao _userAccountDao;
 
+    @Override
     public Pair<Boolean, UserAuthenticator.ActionOnFailedAuthentication> authenticate(String username, String password, Long domainId, Map<String, Object[]> requestParameters) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Retrieving user: " + username);
@@ -100,6 +103,7 @@ public class PBKDF2UserAuthenticator extends DefaultUserAuthenticator {
         }
     }
 
+    @Override
     public String encode(String password)
     {
         try
