@@ -666,6 +666,21 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (owner != null) {
             populateAccount(vlanResponse, owner.getId());
             populateDomain(vlanResponse, owner.getDomainId());
+        } else {
+            Domain domain = ApiDBUtils.getVlanDomain(vlan.getId());
+            if (domain != null) {
+                populateDomain(vlanResponse, domain.getId());
+            } else {
+                Long networkId = vlan.getNetworkId();
+                if (networkId != null) {
+                    Network network = _ntwkModel.getNetwork(networkId);
+                    if (network != null) {
+                        Long accountId = network.getAccountId();
+                        populateAccount(vlanResponse, accountId);
+                        populateDomain(vlanResponse, ApiDBUtils.findAccountById(accountId).getDomainId());
+                    }
+                }
+            }
         }
 
         if (vlan.getPhysicalNetworkId() != null) {

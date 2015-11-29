@@ -50,6 +50,7 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.DomainVlanMapVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
@@ -58,6 +59,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterVnetDao;
+import com.cloud.dc.dao.DomainVlanMapDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
@@ -198,6 +200,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     ConfigurationManager _configMgr;
     @Inject
     AccountVlanMapDao _accountVlanMapDao;
+    @Inject
+    DomainVlanMapDao _domainVlanMapDao;
     @Inject
     NetworkOfferingDao _networkOfferingDao = null;
     @Inject
@@ -682,6 +686,11 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         // Otherwise fetch IP from the system pool
         List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByAccount(owner.getId());
         for (AccountVlanMapVO map : maps) {
+            if (vlanDbIds == null || vlanDbIds.contains(map.getVlanDbId()))
+                dedicatedVlanDbIds.add(map.getVlanDbId());
+        }
+        List<DomainVlanMapVO> domainMaps = _domainVlanMapDao.listDomainVlanMapsByDomain(owner.getDomainId());
+        for (DomainVlanMapVO map : domainMaps) {
             if (vlanDbIds == null || vlanDbIds.contains(map.getVlanDbId()))
                 dedicatedVlanDbIds.add(map.getVlanDbId());
         }

@@ -83,9 +83,14 @@
                         success: function (json) {
                             var domain = json.listdomainsresponse.domain[0];
 
-                            cloudStack.dialog.notice({
-                                message: '<ul><li>' + _l('label.account') + ': ' + data.account + '</li>' + '<li>' + _l('label.domain') + ': ' + domain.path + '</li></ul>'
-                            });
+                            if (data.account != null)
+                                cloudStack.dialog.notice({
+                                    message: '<ul><li>' + _l('label.account') + ': ' + data.account + '</li>' + '<li>' + _l('label.domain') + ': ' + domain.path + '</li></ul>'
+                                });
+                            else
+                                cloudStack.dialog.notice({
+                                    message: '<ul><li>' + _l('label.domain') + ': ' + domain.path + '</li></ul>'
+                                });
                         }
                     });
                 } else {
@@ -743,7 +748,8 @@
                                                 array1.push("&endip=" + args.data.endip);
 
                                                 if (args.data.account) {
-                                                    array1.push("&account=" + args.data.account.account);
+                                                    if (args.data.account.account)
+                                                        array1.push("&account=" + args.data.account.account);
                                                     array1.push("&domainid=" + args.data.account.domainid);
                                                 }
 
@@ -774,7 +780,7 @@
                                         },
                                         actionPreFilter: function (args) {
                                             var actionsToShow =[ 'destroy'];
-                                            if (args.context.multiRule[0].domain == 'ROOT' && args.context.multiRule[0].account.account == 'system')
+                                            if (args.context.multiRule[0].domain == 'ROOT' && args.context.multiRule[0].account != null && args.context.multiRule[0].account.account == 'system')
                                             actionsToShow.push('addAccount'); else
                                             actionsToShow.push('releaseFromAccount');
                                             return actionsToShow;
@@ -865,8 +871,12 @@
                                                         id: args.context.multiRule[0].id,
                                                         zoneid: args.context.multiRule[0].zoneid,
                                                         domainid: args.data.domainid,
-                                                        account: args.data.account
                                                     };
+                                                    if (args.data.account) {
+                                                        $.extend(data, {
+                                                            account: args.data.account
+                                                        });
+                                                    }
                                                     $.ajax({
                                                         url: createURL('dedicatePublicIpRange'),
                                                         data: data,
@@ -898,7 +908,7 @@
                                                         data: $.map(items, function (item) {
                                                             return $.extend(item, {
                                                                 account: {
-                                                                    _buttonLabel: item.account,
+                                                                    _buttonLabel: item.account ? '[' + item.domain + '] ' + item.account: item.domain,
                                                                     account: item.account,
                                                                     domainid: item.domainid
                                                                 }

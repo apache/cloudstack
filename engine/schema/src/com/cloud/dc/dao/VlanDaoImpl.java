@@ -29,6 +29,7 @@ import javax.naming.ConfigurationException;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.AccountVlanMapVO;
+import com.cloud.dc.DomainVlanMapVO;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
@@ -62,11 +63,14 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
     protected SearchBuilder<VlanVO> DedicatedVlanSearch;
 
     protected SearchBuilder<AccountVlanMapVO> AccountVlanMapSearch;
+    protected SearchBuilder<DomainVlanMapVO> DomainVlanMapSearch;
 
     @Inject
     protected PodVlanMapDao _podVlanMapDao;
     @Inject
     protected AccountVlanMapDao _accountVlanMapDao;
+    @Inject
+    protected DomainVlanMapDao _domainVlanMapDao;
     @Inject
     protected IPAddressDao _ipAddressDao;
 
@@ -214,8 +218,12 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         AccountVlanMapSearch.and("accountId", AccountVlanMapSearch.entity().getAccountId(), SearchCriteria.Op.NULL);
         ZoneWideNonDedicatedVlanSearch.join("AccountVlanMapSearch", AccountVlanMapSearch, ZoneWideNonDedicatedVlanSearch.entity().getId(), AccountVlanMapSearch.entity()
             .getVlanDbId(), JoinBuilder.JoinType.LEFTOUTER);
+        DomainVlanMapSearch = _domainVlanMapDao.createSearchBuilder();
+        DomainVlanMapSearch.and("domainId", DomainVlanMapSearch.entity().getDomainId(), SearchCriteria.Op.NULL);
+        ZoneWideNonDedicatedVlanSearch.join("DomainVlanMapSearch", DomainVlanMapSearch, ZoneWideNonDedicatedVlanSearch.entity().getId(), DomainVlanMapSearch.entity().getVlanDbId(), JoinBuilder.JoinType.LEFTOUTER);
         ZoneWideNonDedicatedVlanSearch.done();
         AccountVlanMapSearch.done();
+        DomainVlanMapSearch.done();
 
         DedicatedVlanSearch = createSearchBuilder();
         AccountVlanMapSearch = _accountVlanMapDao.createSearchBuilder();
