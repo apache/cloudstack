@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.gson.Gson;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -54,30 +55,33 @@ public final class XenServer610MigrateWithStorageSendCommandWrapper extends Comm
         final Connection connection = xenServer610Resource.getConnection();
 
         final VirtualMachineTO vmSpec = command.getVirtualMachine();
-        final Map<VolumeTO, Object> volumeToSr = command.getVolumeToSr();
-        final Map<NicTO, Object> nicToNetwork = command.getNicToNetwork();
+        final Map<VolumeTO, String> volumeToSr = command.getVolumeToSr();
+        final Map<NicTO, String> nicToNetwork = command.getNicToNetwork();
         final Map<String, String> token = command.getToken();
         final String vmName = vmSpec.getName();
 
         Task task = null;
         try {
 
+            // In a cluster management server setup, the migrate with storage receive and send
+            // commands and answers may have to be forwarded to another management server. This
+            // happens when the host/resource on which the command has to be executed is owned
+            // by the second management server. The serialization/deserialization of the command
+            // and answers fails as the xapi SR and Network class type isn't understand by the
+            // agent attache. Seriliaze the SR and Network objects here to a string and pass in
+            // the answer object. It'll be deserialzed and object created in migrate with
+            // storage send command execution.
+            Gson gson = new Gson();
             final Map<String, String> other = new HashMap<String, String>();
             other.put("live", "true");
 
             // Create the vdi map which tells what volumes of the vm need to go
             // on which sr on the destination.
             final Map<VDI, SR> vdiMap = new HashMap<VDI, SR>();
-            for (final Map.Entry<VolumeTO, Object> entry : volumeToSr.entrySet()) {
-                final Object srObj = entry.getValue();
-                if (srObj instanceof SR) {
-                    final SR sr = (SR) srObj;
-                    final VolumeTO volume = entry.getKey();
-                    final VDI vdi = xenServer610Resource.getVDIbyUuid(connection, volume.getPath());
-                    vdiMap.put(vdi, sr);
-                } else {
-                    throw new CloudRuntimeException("The object " + srObj + " passed is not of type SR.");
-                }
+            for (final Map.Entry<VolumeTO, String> entry : volumeToSr.entrySet()) {
+                SR sr = gson.fromJson(entry.getValue(), SR.class);
+                VDI vdi = xenServer610Resource.getVDIbyUuid(connection, entry.getKey().getPath());
+                vdiMap.put(vdi, sr);
             }
 
             final Set<VM> vms = VM.getByNameLabel(connection, vmSpec.getName());
@@ -88,16 +92,10 @@ public final class XenServer610MigrateWithStorageSendCommandWrapper extends Comm
 
             // Create the vif map.
             final Map<VIF, Network> vifMap = new HashMap<VIF, Network>();
-            for (final Map.Entry<NicTO, Object> entry : nicToNetwork.entrySet()) {
-                final Object networkObj = entry.getValue();
-                if (networkObj instanceof Network) {
-                    final Network network = (Network) networkObj;
-                    final NicTO nic = entry.getKey();
-                    final VIF vif = xenServer610Resource.getVifByMac(connection, vmToMigrate, nic.getMac());
-                    vifMap.put(vif, network);
-                } else {
-                    throw new CloudRuntimeException("The object " + networkObj + " passed is not of type Network.");
-                }
+            for (final Map.Entry<NicTO, String> entry : nicToNetwork.entrySet()) {
+                Network network = gson.fromJson(entry.getValue(), Network.class);
+                VIF vif = xenServer610Resource.getVifByMac(connection, vmToMigrate, entry.getKey().getMac());
+                vifMap.put(vif, network);
             }
 
             // Check migration with storage is possible.

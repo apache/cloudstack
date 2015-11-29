@@ -27,11 +27,11 @@ import com.cloud.agent.api.to.VolumeTO;
 
 public class MigrateWithStorageSendCommand extends Command {
     VirtualMachineTO vm;
-    Map<VolumeTO, Object> volumeToSr;
-    Map<NicTO, Object> nicToNetwork;
+    Map<VolumeTO, String> volumeToSr;
+    Map<NicTO, String> nicToNetwork;
     Map<String, String> token;
 
-    public MigrateWithStorageSendCommand(VirtualMachineTO vm, Map<VolumeTO, Object> volumeToSr, Map<NicTO, Object> nicToNetwork, Map<String, String> token) {
+    public MigrateWithStorageSendCommand(VirtualMachineTO vm, Map<VolumeTO, String> volumeToSr, Map<NicTO, String> nicToNetwork, Map<String, String> token) {
         this.vm = vm;
         this.volumeToSr = volumeToSr;
         this.nicToNetwork = nicToNetwork;
@@ -42,11 +42,11 @@ public class MigrateWithStorageSendCommand extends Command {
         return vm;
     }
 
-    public Map<VolumeTO, Object> getVolumeToSr() {
+    public Map<VolumeTO, String> getVolumeToSr() {
         return volumeToSr;
     }
 
-    public Map<NicTO, Object> getNicToNetwork() {
+    public Map<NicTO, String> getNicToNetwork() {
         return nicToNetwork;
     }
 

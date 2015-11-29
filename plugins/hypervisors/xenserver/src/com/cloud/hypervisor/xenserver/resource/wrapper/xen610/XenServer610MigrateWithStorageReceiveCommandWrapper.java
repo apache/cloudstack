@@ -22,6 +22,7 @@ package com.cloud.hypervisor.xenserver.resource.wrapper.xen610;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.gson.Gson;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -55,19 +56,28 @@ public final class XenServer610MigrateWithStorageReceiveCommandWrapper extends C
         final Map<VolumeTO, StorageFilerTO> volumeToFiler = command.getVolumeToFiler();
 
         try {
+            // In a cluster management server setup, the migrate with storage receive and send
+            // commands and answers may have to be forwarded to another management server. This
+            // happens when the host/resource on which the command has to be executed is owned
+            // by the second management server. The serialization/deserialization of the command
+            // and answers fails as the xapi SR and Network class type isn't understand by the
+            // agent attache. Seriliaze the SR and Network objects here to a string and pass in
+            // the answer object. It'll be deserialzed and object created in migrate with
+            // storage send command execution.
+            Gson gson = new Gson();
             // Get a map of all the SRs to which the vdis will be migrated.
-            final Map<VolumeTO, Object> volumeToSr = new HashMap<VolumeTO, Object>();
+            final Map<VolumeTO, String> volumeToSr = new HashMap<VolumeTO, String>();
             for (final Map.Entry<VolumeTO, StorageFilerTO> entry : volumeToFiler.entrySet()) {
                 final StorageFilerTO storageFiler = entry.getValue();
                 final SR sr = xenServer610Resource.getStorageRepository(connection, storageFiler.getUuid());
-                volumeToSr.put(entry.getKey(), sr);
+                volumeToSr.put(entry.getKey(), gson.toJson(sr));
             }
 
             // Get the list of networks to which the vifs will attach.
-            final Map<NicTO, Object> nicToNetwork = new HashMap<NicTO, Object>();
+            final Map<NicTO, String> nicToNetwork = new HashMap<NicTO, String>();
             for (final NicTO nicTo : vmSpec.getNics()) {
                 final Network network = xenServer610Resource.getNetwork(connection, nicTo);
-                nicToNetwork.put(nicTo, network);
+                nicToNetwork.put(nicTo, gson.toJson(network));
             }
 
             final XsLocalNetwork nativeNetworkForTraffic = xenServer610Resource.getNativeNetworkForTraffic(connection, TrafficType.Storage, null);
