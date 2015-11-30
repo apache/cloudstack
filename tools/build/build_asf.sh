@@ -127,12 +127,8 @@ mv $tmpfilenm debian/changelog
 git clean -f
 
 #create a RC branch
-RELEASE_BRANCH="RC"`date +%Y%m%dT%H%M`
-if [ "$branch" = "master" ]; then
-  BRANCHNAME=$version-$RELEASE_BRANCH
-else
-  BRANCHNAME=$branch-$RELEASE_BRANCH
-fi
+RC_BRANCH_SUFFIX="RC"`date +%Y%m%dT%H%M`
+BRANCHNAME=$version-$RC_BRANCH_SUFFIX
 git branch $BRANCHNAME
 git checkout $BRANCHNAME
 
