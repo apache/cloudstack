@@ -404,7 +404,7 @@ public class LibvirtVMDef {
 
     public static class DiskDef {
         public enum deviceType {
-            FLOPPY("floppy"), DISK("disk"), CDROM("cdrom");
+            FLOPPY("floppy"), DISK("disk"), CDROM("cdrom"), LUN("lun");
             String _type;
 
             deviceType(String type) {
@@ -509,6 +509,7 @@ public class LibvirtVMDef {
         private Long _iopsReadRate;
         private Long _iopsWriteRate;
         private diskCacheMode _diskCacheMode;
+        private String _serial;
         private boolean qemuDriver = true;
 
         public void setDeviceType(deviceType deviceType) {
@@ -693,6 +694,10 @@ public class LibvirtVMDef {
             this.qemuDriver = qemuDriver;
         }
 
+        public void setSerial(String serial) {
+            this._serial = serial;
+        }
+
         @Override
         public String toString() {
             StringBuilder diskBuilder = new StringBuilder();
@@ -745,6 +750,10 @@ public class LibvirtVMDef {
                 diskBuilder.append(" bus='" + _bus + "'");
             }
             diskBuilder.append("/>\n");
+
+            if (_serial != null && !_serial.isEmpty() && _deviceType != deviceType.LUN) {
+                diskBuilder.append("<serial>" + _serial + "</serial>");
+            }
 
             if ((_deviceType != deviceType.CDROM) &&
                     (s_libvirtVersion >= 9008) &&

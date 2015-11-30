@@ -4004,6 +4004,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
             if (data instanceof VolumeObjectTO) {
                 VolumeObjectTO volumeObjectTO = (VolumeObjectTO)data;
+                disk.setSerial(diskUuidToSerial(volumeObjectTO.getUuid()));
                 if ((volumeObjectTO.getBytesReadRate() != null) && (volumeObjectTO.getBytesReadRate() > 0))
                     disk.setBytesReadRate(volumeObjectTO.getBytesReadRate());
                 if ((volumeObjectTO.getBytesWriteRate() != null) && (volumeObjectTO.getBytesWriteRate() > 0))
@@ -4292,6 +4293,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } else {
             return new StartupCommand[] {cmd};
         }
+    }
+
+    public String diskUuidToSerial(String uuid) {
+        String uuidWithoutHyphen = uuid.replace("-","");
+        return uuidWithoutHyphen.substring(0, Math.min(uuidWithoutHyphen.length(), 20));
     }
 
     private String getIqn() {
