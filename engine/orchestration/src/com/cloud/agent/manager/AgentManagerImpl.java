@@ -1181,15 +1181,16 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             }
 
             final long hostId = attache.getId();
+            final String hostName = attache.getName();
 
             if (s_logger.isDebugEnabled()) {
                 if (cmd instanceof PingRoutingCommand) {
                     logD = false;
-                    s_logger.debug("Ping from " + hostId);
+                    s_logger.debug("Ping from " + hostId + "(" + hostName + ")");
                     s_logger.trace("SeqA " + hostId + "-" + request.getSequence() + ": Processing " + request);
                 } else if (cmd instanceof PingCommand) {
                     logD = false;
-                    s_logger.debug("Ping from " + hostId);
+                    s_logger.debug("Ping from " + hostId + "(" + hostName + ")");
                     s_logger.trace("SeqA " + attache.getId() + "-" + request.getSequence() + ": Processing " + request);
                 } else {
                     s_logger.debug("SeqA " + attache.getId() + "-" + request.getSequence() + ": Processing " + request);
