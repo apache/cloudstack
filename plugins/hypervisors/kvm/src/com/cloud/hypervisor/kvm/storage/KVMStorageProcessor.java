@@ -944,7 +944,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         return null;
     }
 
-    protected synchronized String attachOrDetachDisk(final Connect conn, final boolean attach, final String vmName, final KVMPhysicalDisk attachingDisk, final int devId) throws LibvirtException,
+    protected synchronized String attachOrDetachDisk(final Connect conn, final boolean attach, final String vmName, final KVMPhysicalDisk attachingDisk, final int devId, final String serial) throws LibvirtException,
     InternalErrorException {
         List<DiskDef> disks = null;
         Domain dm = null;
@@ -980,6 +980,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
             } else {
                 diskdef = new DiskDef();
+                diskdef.setSerial(serial);
                 if (attachingPool.getType() == StoragePoolType.RBD) {
                     if(resource.getHypervisorType() == Hypervisor.HypervisorType.LXC){
                         // For LXC, map image to host and then attach to Vm
@@ -1022,6 +1023,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         final VolumeObjectTO vol = (VolumeObjectTO)disk.getData();
         final PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)vol.getDataStore();
         final String vmName = cmd.getVmName();
+        final String serial = resource.diskUuidToSerial(vol.getUuid());
         try {
             final Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
 
@@ -1029,7 +1031,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             final KVMPhysicalDisk phyDisk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), vol.getPath());
 
-            attachOrDetachDisk(conn, true, vmName, phyDisk, disk.getDiskSeq().intValue());
+            attachOrDetachDisk(conn, true, vmName, phyDisk, disk.getDiskSeq().intValue(), serial);
 
             return new AttachAnswer(disk);
         } catch (final LibvirtException e) {
@@ -1048,12 +1050,13 @@ public class KVMStorageProcessor implements StorageProcessor {
         final VolumeObjectTO vol = (VolumeObjectTO)disk.getData();
         final PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)vol.getDataStore();
         final String vmName = cmd.getVmName();
+        final String serial = resource.diskUuidToSerial(vol.getUuid());
         try {
             final Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
 
             final KVMPhysicalDisk phyDisk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), vol.getPath());
 
-            attachOrDetachDisk(conn, false, vmName, phyDisk, disk.getDiskSeq().intValue());
+            attachOrDetachDisk(conn, false, vmName, phyDisk, disk.getDiskSeq().intValue(), serial);
 
             storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), vol.getPath());
 
