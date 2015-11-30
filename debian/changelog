@@ -1,4 +1,10 @@
-cloudstack (4.6.1-SNAPSHOT) unstable; urgency=low
+cloudstack (4.6.1) unstable; urgency=low
+
+  * Update the version to 4.6.1
+
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Mon, 30 Nov 2015 22:58:34 +0100
+
+cloudstack (4.6.1) unstable; urgency=low
 
   [ Remi Bergsma ]
   * Update the version to 4.6.1.snapshot
@@ -11,7 +17,7 @@ cloudstack (4.6.0) unstable; urgency=low
 
  -- the Apache CloudStack project <dev@cloudstack.apache.org>  Tue, 10 Nov 2015 15:45:33 +0100
 
-cloudstack (4.6.0-SNAPSHOT) unstable; urgency=low
+cloudstack (4.6.0) unstable; urgency=low
 
   [ Hugo Trippaers ]
   * Update the version to 4.6.0.snapshot
