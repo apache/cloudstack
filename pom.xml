@@ -45,7 +45,7 @@
     <cs.pool.version>1.6</cs.pool.version>
     <cs.codec.version>1.6</cs.codec.version>
     <cs.configuration.version>1.8</cs.configuration.version>
-    <cs.collections.version>3.2.1</cs.collections.version>
+    <cs.collections.version>3.2.2</cs.collections.version>
     <cs.logging.version>1.1.1</cs.logging.version>
     <cs.discovery.version>0.5</cs.discovery.version>
     <cs.ejb.version>3.0</cs.ejb.version>
