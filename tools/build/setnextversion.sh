@@ -66,6 +66,13 @@ mvn versions:set -DnewVersion=$version -P vmware -P developer -P systemvm -P sim
 mv deps/XenServerJava/pom.xml.versionsBackup deps/XenServerJava/pom.xml
 perl -pi -e "s/$currentversion/$version/" deps/XenServerJava/pom.xml
 perl -pi -e "s/$currentversion/$version/" tools/apidoc/pom.xml
+perl -pi -e "s/$currentversion/$version/" debian/changelog
+perl -pi -e "s/$currentversion/$version/" tools/marvin/setup.py
+perl -pi -e "s/$currentversion/$version/" services/iam/plugin/pom.xml
+perl -pi -e "s/$currentversion/$version/" services/iam/pom.xm
+perl -pi -e "s/$currentversion/$version/" services/iam/server/pom.xml
+perl -pi -e "s/$currentversion/$version/" tools/checkstyle/pom.xml
+perl -pi -e "s/$currentversion/$version/" services/console-proxy/plugin/pom.xml
 git clean -f
 
 echo 'commit changes'

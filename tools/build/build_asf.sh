@@ -101,6 +101,11 @@ perl -pi -e "s/-SNAPSHOT//" build/replace.properties
 perl -pi -e "s/-SNAPSHOT//" services/console-proxy/plugin/pom.xml
 perl -pi -e "s/-SNAPSHOT//" tools/marvin/setup.py
 perl -pi -e "s/-SNAPSHOT//" tools/marvin/marvin/deployAndRun.py
+perl -pi -e "s/-SNAPSHOT//" debian/changelog
+perl -pi -e "s/-SNAPSHOT//" services/iam/plugin/pom.xml
+perl -pi -e "s/-SNAPSHOT//" services/iam/pom.xm
+perl -pi -e "s/-SNAPSHOT//" services/iam/server/pom.xml
+
 case "$currentversion" in 
   *-SNAPSHOT*)
     perl -pi -e 's/-SNAPSHOT//' debian/rules
@@ -122,12 +127,8 @@ mv $tmpfilenm debian/changelog
 git clean -f
 
 #create a RC branch
-RELEASE_BRANCH="RC"`date +%Y%m%dT%H%M`
-if [ "$branch" = "master" ]; then
-  BRANCHNAME=$version-$RELEASE_BRANCH
-else
-  BRANCHNAME=$branch-$RELEASE_BRANCH
-fi
+RC_BRANCH_SUFFIX="RC"`date +%Y%m%dT%H%M`
+BRANCHNAME=$version-$RC_BRANCH_SUFFIX
 git branch $BRANCHNAME
 git checkout $BRANCHNAME
 

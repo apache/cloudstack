@@ -354,9 +354,17 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         try {
             String downloadPath = determineStorageTemplatePath(storagePath, destPath);
             final File downloadDirectory = _storage.getFile(downloadPath);
-            if (!downloadDirectory.mkdirs()) {
-                return new CopyCmdAnswer("Failed to create download directory " + downloadPath);
+
+            if (downloadDirectory.exists()) {
+                s_logger.debug("Directory " + downloadPath + " already exists");
+            } else {
+                if (!downloadDirectory.mkdirs()) {
+                    final String errMsg = "Unable to create directory " + downloadPath + " to copy from Swift to cache.";
+                    s_logger.error(errMsg);
+                    return new CopyCmdAnswer(errMsg);
+                }
             }
+
             File destFile = SwiftUtil.getObject(swiftTO, downloadDirectory, srcData.getPath());
             return postProcessing(destFile, downloadPath, destPath, srcData, destData);
         } catch (Exception e) {
