@@ -101,6 +101,11 @@ perl -pi -e "s/-SNAPSHOT//" build/replace.properties
 perl -pi -e "s/-SNAPSHOT//" services/console-proxy/plugin/pom.xml
 perl -pi -e "s/-SNAPSHOT//" tools/marvin/setup.py
 perl -pi -e "s/-SNAPSHOT//" tools/marvin/marvin/deployAndRun.py
+perl -pi -e "s/-SNAPSHOT//" debian/changelog
+perl -pi -e "s/-SNAPSHOT//" services/iam/plugin/pom.xml
+perl -pi -e "s/-SNAPSHOT//" services/iam/pom.xm
+perl -pi -e "s/-SNAPSHOT//" services/iam/server/pom.xml
+
 case "$currentversion" in 
   *-SNAPSHOT*)
     perl -pi -e 's/-SNAPSHOT//' debian/rules
