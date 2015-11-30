@@ -1079,5 +1079,6 @@ dictionary = {
 'label.root.disk.offering': '<fmt:message key="label.root.disk.offering" />',
 'message.configure.firewall.rules.allow.traffic': '<fmt:message key="message.configure.firewall.rules.allow.traffic" />',
 'message.configure.firewall.rules.block.traffic': '<fmt:message key="message.configure.firewall.rules.block.traffic" />',
+'label.deploy.instance': '<fmt:message key="label.deploy.instance" />'
 };
 </script>
