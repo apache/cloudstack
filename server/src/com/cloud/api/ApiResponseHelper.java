@@ -3467,6 +3467,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDeviceId(String.valueOf(result.getDeviceId()));
 
         response.setIsDefault(result.isDefaultNic());
+
+        if (result instanceof NicVO){
+            if (((NicVO)result).getNsxLogicalSwitchUuid() != null){
+                response.setNsxLogicalSwitch(((NicVO)result).getNsxLogicalSwitchUuid());
+            }
+            if (((NicVO)result).getNsxLogicalSwitchPortUuid() != null){
+                response.setNsxLogicalSwitchPort(((NicVO)result).getNsxLogicalSwitchPortUuid());
+            }
+        }
         return response;
     }
 
