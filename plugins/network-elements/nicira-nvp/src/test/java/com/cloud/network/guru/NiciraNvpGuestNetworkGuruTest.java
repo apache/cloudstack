@@ -129,10 +129,10 @@ public class NiciraNvpGuestNetworkGuruTest {
         when(offering.getTrafficType()).thenReturn(TrafficType.Management);
         assertFalse(guru.canHandle(offering, NetworkType.Advanced, physnet) == true);
 
-        // Not supported: GuestType Shared
+        // Supported: GuestType Shared
         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
         when(offering.getGuestType()).thenReturn(GuestType.Shared);
-        assertFalse(guru.canHandle(offering, NetworkType.Advanced, physnet) == true);
+        assertTrue(guru.canHandle(offering, NetworkType.Advanced, physnet));
 
         // Not supported: Basic networking
         when(offering.getGuestType()).thenReturn(GuestType.Isolated);

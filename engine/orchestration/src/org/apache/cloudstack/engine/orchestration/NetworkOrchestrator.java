@@ -140,6 +140,7 @@ import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
+import com.cloud.network.guru.NetworkGuruAdditionalFunctions;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
@@ -168,6 +169,7 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -670,8 +672,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                                 vpcId, offering.getRedundantRouter());
                         vo.setDisplayNetwork(isDisplayNetworkEnabled == null ? true : isDisplayNetworkEnabled);
                         vo.setStrechedL2Network(offering.getSupportsStrechedL2());
-                        networks.add(_networksDao.persist(vo, vo.getGuestType() == Network.GuestType.Isolated,
-                                finalizeServicesAndProvidersForNetwork(offering, plan.getPhysicalNetworkId())));
+                        NetworkVO networkPersisted = _networksDao.persist(vo, vo.getGuestType() == Network.GuestType.Isolated,
+                                finalizeServicesAndProvidersForNetwork(offering, plan.getPhysicalNetworkId()));
+                        networks.add(networkPersisted);
+
+                        if (predefined instanceof NetworkVO && guru instanceof NetworkGuruAdditionalFunctions){
+                            NetworkGuruAdditionalFunctions functions = (NetworkGuruAdditionalFunctions) guru;
+                            functions.finalizeNetworkDesign(networkPersisted.getId(), ((NetworkVO)predefined).getVlanIdAsUUID());
+                        }
 
                         if (domainId != null && aclType == ACLType.Domain) {
                             _networksDao.addDomainToNetwork(id, domainId, subdomainAccess == null ? true : subdomainAccess);
@@ -1019,6 +1027,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             return implemented;
         } catch (NoTransitionException e) {
             s_logger.error(e.getMessage());
+            return null;
+        } catch (CloudRuntimeException e) {
+            s_logger.error("Caught exception: " + e.getMessage());
             return null;
         } finally {
             if (implemented.first() == null) {
@@ -1911,43 +1922,45 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 throw new InvalidParameterValueException("The VLAN tag " + vlanId + " is already being used for dynamic vlan allocation for the guest network in zone "
                         + zone.getName());
             }
-            String uri = BroadcastDomainType.fromString(vlanId).toString();
-            // For Isolated networks, don't allow to create network with vlan that already exists in the zone
-            if (ntwkOff.getGuestType() == GuestType.Isolated) {
-                if (_networksDao.countByZoneAndUri(zoneId, uri) > 0) {
-                    throw new InvalidParameterValueException("Network with vlan " + vlanId + " already exists in zone " + zoneId);
-                } else {
-                    List<DataCenterVnetVO> dcVnets = _datacenterVnetDao.findVnet(zoneId, vlanId.toString());
-                    //for the network that is created as part of private gateway,
-                    //the vnet is not coming from the data center vnet table, so the list can be empty
-                    if (!dcVnets.isEmpty()) {
-                        DataCenterVnetVO dcVnet = dcVnets.get(0);
-                        // Fail network creation if specified vlan is dedicated to a different account
-                        if (dcVnet.getAccountGuestVlanMapId() != null) {
-                            Long accountGuestVlanMapId = dcVnet.getAccountGuestVlanMapId();
-                            AccountGuestVlanMapVO map = _accountGuestVlanMapDao.findById(accountGuestVlanMapId);
-                            if (map.getAccountId() != owner.getAccountId()) {
-                                throw new InvalidParameterValueException("Vlan " + vlanId + " is dedicated to a different account");
-                            }
-                            // Fail network creation if owner has a dedicated range of vlans but the specified vlan belongs to the system pool
-                        } else {
-                            List<AccountGuestVlanMapVO> maps = _accountGuestVlanMapDao.listAccountGuestVlanMapsByAccount(owner.getAccountId());
-                            if (maps != null && !maps.isEmpty()) {
-                                int vnetsAllocatedToAccount = _datacenterVnetDao.countVnetsAllocatedToAccount(zoneId, owner.getAccountId());
-                                int vnetsDedicatedToAccount = _datacenterVnetDao.countVnetsDedicatedToAccount(zoneId, owner.getAccountId());
-                                if (vnetsAllocatedToAccount < vnetsDedicatedToAccount) {
-                                    throw new InvalidParameterValueException("Specified vlan " + vlanId + " doesn't belong" + " to the vlan range dedicated to the owner "
-                                            + owner.getAccountName());
+            if (! UuidUtils.validateUUID(vlanId)){
+                String uri = BroadcastDomainType.fromString(vlanId).toString();
+                // For Isolated networks, don't allow to create network with vlan that already exists in the zone
+                if (ntwkOff.getGuestType() == GuestType.Isolated) {
+                    if (_networksDao.countByZoneAndUri(zoneId, uri) > 0) {
+                        throw new InvalidParameterValueException("Network with vlan " + vlanId + " already exists in zone " + zoneId);
+                    } else {
+                        List<DataCenterVnetVO> dcVnets = _datacenterVnetDao.findVnet(zoneId, vlanId.toString());
+                        //for the network that is created as part of private gateway,
+                        //the vnet is not coming from the data center vnet table, so the list can be empty
+                        if (!dcVnets.isEmpty()) {
+                            DataCenterVnetVO dcVnet = dcVnets.get(0);
+                            // Fail network creation if specified vlan is dedicated to a different account
+                            if (dcVnet.getAccountGuestVlanMapId() != null) {
+                                Long accountGuestVlanMapId = dcVnet.getAccountGuestVlanMapId();
+                                AccountGuestVlanMapVO map = _accountGuestVlanMapDao.findById(accountGuestVlanMapId);
+                                if (map.getAccountId() != owner.getAccountId()) {
+                                    throw new InvalidParameterValueException("Vlan " + vlanId + " is dedicated to a different account");
+                                }
+                                // Fail network creation if owner has a dedicated range of vlans but the specified vlan belongs to the system pool
+                            } else {
+                                List<AccountGuestVlanMapVO> maps = _accountGuestVlanMapDao.listAccountGuestVlanMapsByAccount(owner.getAccountId());
+                                if (maps != null && !maps.isEmpty()) {
+                                    int vnetsAllocatedToAccount = _datacenterVnetDao.countVnetsAllocatedToAccount(zoneId, owner.getAccountId());
+                                    int vnetsDedicatedToAccount = _datacenterVnetDao.countVnetsDedicatedToAccount(zoneId, owner.getAccountId());
+                                    if (vnetsAllocatedToAccount < vnetsDedicatedToAccount) {
+                                        throw new InvalidParameterValueException("Specified vlan " + vlanId + " doesn't belong" + " to the vlan range dedicated to the owner "
+                                                + owner.getAccountName());
+                                    }
                                 }
                             }
                         }
                     }
-                }
-            } else {
-                // don't allow to creating shared network with given Vlan ID, if there already exists a isolated network or
-                // shared network with same Vlan ID in the zone
-                if (_networksDao.countByZoneUriAndGuestType(zoneId, uri, GuestType.Isolated) > 0 ) {
-                    throw new InvalidParameterValueException("There is a isolated/shared network with vlan id: " + vlanId + " already exists " + "in zone " + zoneId);
+                } else {
+                    // don't allow to creating shared network with given Vlan ID, if there already exists a isolated network or
+                    // shared network with same Vlan ID in the zone
+                    if (_networksDao.countByZoneUriAndGuestType(zoneId, uri, GuestType.Isolated) > 0 ) {
+                        throw new InvalidParameterValueException("There is a isolated/shared network with vlan id: " + vlanId + " already exists " + "in zone " + zoneId);
+                    }
                 }
             }
 
@@ -2038,7 +2051,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
                 if (vlanIdFinal != null) {
                     if (isolatedPvlan == null) {
-                        URI uri = BroadcastDomainType.fromString(vlanIdFinal);
+                        URI uri = null;
+                        if (UuidUtils.validateUUID(vlanIdFinal)){
+                            //Logical router's UUID provided as VLAN_ID
+                            userNetwork.setVlanIdAsUUID(vlanIdFinal); //Set transient field
+                        }
+                        else {
+                            uri = BroadcastDomainType.fromString(vlanIdFinal);
+                        }
                         userNetwork.setBroadcastUri(uri);
                         if (!vlanIdFinal.equalsIgnoreCase(Vlan.UNTAGGED)) {
                             userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
@@ -2647,6 +2667,27 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         } else {
             result = _nicDao.listByVmIdAndNicIdAndNtwkId(vmId, nicId, networkId);
         }
+
+        for (NicVO nic : result) {
+            if (_networkModel.isProviderForNetwork(Provider.NiciraNvp, nic.getNetworkId())) {
+                //For NSX Based networks, add nsxlogicalswitch, nsxlogicalswitchport to each result
+                s_logger.info("Listing NSX logical switch and logical switch por for each nic");
+                NetworkVO network = _networksDao.findById(nic.getNetworkId());
+                NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
+                NetworkGuruAdditionalFunctions guruFunctions = (NetworkGuruAdditionalFunctions) guru;
+
+                Map<String, ? extends Object> nsxParams = guruFunctions.listAdditionalNicParams(nic.getUuid());
+                if (nsxParams != null){
+                    String lswitchUuuid = (nsxParams.containsKey(NetworkGuruAdditionalFunctions.NSX_LSWITCH_UUID))
+                            ? (String) nsxParams.get(NetworkGuruAdditionalFunctions.NSX_LSWITCH_UUID) : null;
+                    String lswitchPortUuuid = (nsxParams.containsKey(NetworkGuruAdditionalFunctions.NSX_LSWITCHPORT_UUID))
+                            ? (String) nsxParams.get(NetworkGuruAdditionalFunctions.NSX_LSWITCHPORT_UUID) : null;
+                    nic.setNsxLogicalSwitchUuid(lswitchUuuid);
+                    nic.setNsxLogicalSwitchPortUuid(lswitchPortUuuid);
+                }
+            }
+        }
+
         return result;
     }
 

@@ -21,7 +21,9 @@ package com.cloud.network.guru;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -30,8 +32,12 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.CreateLogicalSwitchAnswer;
 import com.cloud.agent.api.CreateLogicalSwitchCommand;
+import com.cloud.agent.api.DeleteLogicalRouterPortAnswer;
+import com.cloud.agent.api.DeleteLogicalRouterPortCommand;
 import com.cloud.agent.api.DeleteLogicalSwitchAnswer;
 import com.cloud.agent.api.DeleteLogicalSwitchCommand;
+import com.cloud.agent.api.FindLogicalRouterPortAnswer;
+import com.cloud.agent.api.FindLogicalRouterPortCommand;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.DataCenterDao;
@@ -48,6 +54,8 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
+import com.cloud.network.NiciraNvpNicMappingVO;
+import com.cloud.network.NiciraNvpRouterMappingVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.NiciraNvpDeviceVO;
 import com.cloud.network.PhysicalNetwork;
@@ -55,6 +63,8 @@ import com.cloud.network.PhysicalNetwork.IsolationMethod;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.NiciraNvpDao;
+import com.cloud.network.dao.NiciraNvpNicMappingDao;
+import com.cloud.network.dao.NiciraNvpRouterMappingDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.offering.NetworkOffering;
@@ -66,7 +76,7 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
 
-public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
+public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru implements NetworkGuruAdditionalFunctions{
     private static final int MAX_NAME_LENGTH = 40;
 
     private static final Logger s_logger = Logger.getLogger(NiciraNvpGuestNetworkGuru.class);
@@ -93,6 +103,10 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
     protected HostDetailsDao hostDetailsDao;
     @Inject
     protected NetworkOfferingServiceMapDao ntwkOfferingSrvcDao;
+    @Inject
+    protected NiciraNvpRouterMappingDao niciraNvpRouterMappingDao;
+    @Inject
+    protected NiciraNvpNicMappingDao niciraNvpNicMappingDao;
 
     public NiciraNvpGuestNetworkGuru() {
         super();
@@ -102,13 +116,22 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
     @Override
     protected boolean canHandle(final NetworkOffering offering, final NetworkType networkType, final PhysicalNetwork physicalNetwork) {
         // This guru handles only Guest Isolated network that supports Source nat service
-        if (networkType == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) && offering.getGuestType() == Network.GuestType.Isolated
+        if (networkType == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType())
+                && supportedGuestTypes(offering, Network.GuestType.Isolated, Network.GuestType.Shared)
                 && isMyIsolationMethod(physicalNetwork) && ntwkOfferingSrvcDao.areServicesSupportedByNetworkOffering(offering.getId(), Service.Connectivity)) {
             return true;
         } else {
-            s_logger.trace("We only take care of Guest networks of type   " + GuestType.Isolated + " in zone of type " + NetworkType.Advanced);
             return false;
         }
+    }
+
+    private boolean supportedGuestTypes(NetworkOffering offering, GuestType... types) {
+        for (GuestType guestType : types) {
+            if (offering.getGuestType().equals(guestType)){
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -134,6 +157,9 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
             return null;
         }
         networkObject.setBroadcastDomainType(BroadcastDomainType.Lswitch);
+        if (offering.getGuestType().equals(GuestType.Shared)){
+            networkObject.setState(State.Allocated);
+        }
 
         return networkObject;
     }
@@ -231,7 +257,13 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
         final NiciraNvpDeviceVO niciraNvpDevice = devices.get(0);
         final HostVO niciraNvpHost = hostDao.findById(niciraNvpDevice.getHostId());
 
-        final DeleteLogicalSwitchCommand cmd = new DeleteLogicalSwitchCommand(BroadcastDomainType.getValue(networkObject.getBroadcastUri()));
+        String logicalSwitchUuid = BroadcastDomainType.getValue(networkObject.getBroadcastUri());
+
+        if (offering.getGuestType().equals(GuestType.Shared)){
+            sharedNetworksCleanup(networkObject, logicalSwitchUuid, niciraNvpHost);
+        }
+
+        final DeleteLogicalSwitchCommand cmd = new DeleteLogicalSwitchCommand(logicalSwitchUuid);
         final DeleteLogicalSwitchAnswer answer = (DeleteLogicalSwitchAnswer) agentMgr.easySend(niciraNvpHost.getId(), cmd);
 
         if (answer == null || !answer.getResult()) {
@@ -241,9 +273,65 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
         super.shutdown(profile, offering);
     }
 
+    private void sharedNetworksCleanup(NetworkVO networkObject, String logicalSwitchUuid, HostVO niciraNvpHost) {
+        NiciraNvpRouterMappingVO routermapping = niciraNvpRouterMappingDao.findByNetworkId(networkObject.getId());
+        if (routermapping == null) {
+            // Case 1: Numerical Vlan Provided -> No lrouter used.
+            s_logger.info("Shared Network " + networkObject.getDisplayText() + " didn't use Logical Router");
+        }
+        else {
+            //Case 2: Logical Router's UUID provided as Vlan id -> Remove lrouter port but not lrouter.
+            String lRouterUuid = routermapping.getLogicalRouterUuid();
+            s_logger.debug("Finding Logical Router Port on Logical Router " + lRouterUuid + " with attachment_lswitch_uuid=" + logicalSwitchUuid + " to delete it");
+            final FindLogicalRouterPortCommand cmd = new FindLogicalRouterPortCommand(lRouterUuid, logicalSwitchUuid);
+            final FindLogicalRouterPortAnswer answer = (FindLogicalRouterPortAnswer) agentMgr.easySend(niciraNvpHost.getId(), cmd);
+
+            if (answer != null && answer.getResult()) {
+                String logicalRouterPortUuid = answer.getLogicalRouterPortUuid();
+                s_logger.debug("Found Logical Router Port " + logicalRouterPortUuid + ", deleting it");
+                final DeleteLogicalRouterPortCommand cmdDeletePort = new DeleteLogicalRouterPortCommand(lRouterUuid, logicalRouterPortUuid);
+                final DeleteLogicalRouterPortAnswer answerDelete = (DeleteLogicalRouterPortAnswer) agentMgr.easySend(niciraNvpHost.getId(), cmdDeletePort);
+
+                if (answerDelete != null && answerDelete.getResult()){
+                    s_logger.info("Successfully deleted Logical Router Port " + logicalRouterPortUuid);
+                }
+                else {
+                    s_logger.error("Could not delete Logical Router Port " + logicalRouterPortUuid);
+                }
+            }
+            else {
+                s_logger.error("Find Logical Router Port failed");
+            }
+        }
+    }
+
     @Override
     public boolean trash(final Network network, final NetworkOffering offering) {
+        //Since NVP Plugin supports Shared networks, remove mapping when deleting network implemented or allocated
+        if (network.getGuestType() == GuestType.Shared && niciraNvpRouterMappingDao.existsMappingForNetworkId(network.getId())){
+            NiciraNvpRouterMappingVO mappingVO = niciraNvpRouterMappingDao.findByNetworkId(network.getId());
+            niciraNvpRouterMappingDao.remove(mappingVO.getId());
+        }
         return super.trash(network, offering);
+    }
+
+    @Override
+    public void finalizeNetworkDesign(long networkId, String vlanIdAsUUID) {
+        if (vlanIdAsUUID == null) return;
+        NiciraNvpRouterMappingVO routermapping = new NiciraNvpRouterMappingVO(vlanIdAsUUID, networkId);
+        niciraNvpRouterMappingDao.persist(routermapping);
+    }
+
+    @Override
+    public Map<String, ? extends Object> listAdditionalNicParams(String nicUuid) {
+        NiciraNvpNicMappingVO mapping = niciraNvpNicMappingDao.findByNicUuid(nicUuid);
+        if (mapping != null){
+            Map<String, String> result = new HashMap<String, String>();
+            result.put(NetworkGuruAdditionalFunctions.NSX_LSWITCH_UUID, mapping.getLogicalSwitchUuid());
+            result.put(NetworkGuruAdditionalFunctions.NSX_LSWITCHPORT_UUID, mapping.getLogicalSwitchPortUuid());
+            return result;
+        }
+        return null;
     }
 
 }
