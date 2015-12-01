@@ -114,7 +114,7 @@
                     var $table = $wizard.find('.ldap-account-choice tbody');
                     $("#label_ldap_group_name").live("keypress", function(event) {
                         if ($table.find("#tr-groupname-message").length === 0) {
-                            $("<tr id='tr-groupname-message'>").appendTo($table).append("<td colspan=\"4\">All The users from the given group name will be imported</td>");
+                            $("<tr id='tr-groupname-message'>").appendTo($table).append("<td colspan=\"4\">"+_l('message.ldap.group.import')+"</td>");
                         }
                         $table.find("tr").hide();
                         $table.find("#tr-groupname-message").show();
@@ -323,7 +323,7 @@
                 }
 
                 return $wizard.dialog({
-                    title: ldapStatus ? _l('Add LDAP Account') : _l('label.add.account'),
+                    title: ldapStatus ? _l('label.add.LDAP.account') : _l('label.add.account'),
                     width: ldapStatus ? 800 : 330,
                     height: ldapStatus ? 500 : 500,
                     closeOnEscape: false,

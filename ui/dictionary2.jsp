@@ -1122,6 +1122,7 @@ under the License.
 'label.ssh.key.pairs': '<fmt:message key="label.ssh.key.pairs" />',
 'message.desc.create.ssh.key.pair': '<fmt:message key="message.desc.create.ssh.key.pair" />',
 'message.removed.ssh.key.pair': '<fmt:message key="message.removed.ssh.key.pair" />',
-'message.please.select.ssh.key.pair.use.with.this.vm': '<fmt:message key="message.please.select.ssh.key.pair.use.with.this.vm" />'
+'message.please.select.ssh.key.pair.use.with.this.vm': '<fmt:message key="message.please.select.ssh.key.pair.use.with.this.vm" />',
+'message.ldap.group.import': '<fmt:message key="message.ldap.group.import" />'
 });
 </script>
