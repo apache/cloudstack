@@ -48,6 +48,7 @@ import org.apache.log4j.Logger;
 import com.cloud.utils.IteratorUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.script.Script;
+import com.google.common.base.Optional;
 import com.googlecode.ipv6.IPv6Address;
 import com.googlecode.ipv6.IPv6AddressRange;
 import com.googlecode.ipv6.IPv6Network;
@@ -1263,7 +1264,11 @@ public class NetUtils {
         final String[] ips = ip6Range.split("-");
         final String startIp = ips[0];
         final IPv6Address start = IPv6Address.fromString(startIp);
-        final BigInteger gap = countIp6InRange(ip6Range);
+        final Optional<BigInteger> gapOption = countIp6InRange(ip6Range);
+        if (! gapOption.isPresent()) {
+            return null;
+        }
+        final BigInteger gap =  gapOption.get();
         BigInteger next = new BigInteger(gap.bitLength(), s_rand);
         while (next.compareTo(gap) >= 0) {
             next = new BigInteger(gap.bitLength(), s_rand);
@@ -1302,26 +1307,26 @@ public class NetUtils {
     }
 
     // Can cover 127 bits
-    public static BigInteger countIp6InRange(final String ip6Range) {
+    public static Optional<BigInteger> countIp6InRange(final String ip6Range) {
         if (ip6Range == null) {
-            return null;
+            return Optional.fromNullable(null);
         }
         final String[] ips = ip6Range.split("-");
-        final String startIp = ips[0];
-        String endIp = ips[0];
-        if (ips.length > 1) {
-            endIp = ips[1];
+        if(ips[0].equals("")) {
+            return Optional.fromNullable(null);
         }
+        final String startIp = ips[0];
+        final String endIp = (ips.length > 1) ? ips[1] : ips[0];
         try {
             final BigInteger startInt = convertIPv6AddressToBigInteger(IPv6Address.fromString(startIp));
             final BigInteger endInt = convertIPv6AddressToBigInteger(IPv6Address.fromString(endIp));
             if (endInt != null && startInt != null && startInt.compareTo(endInt) <= 0) {
-                return endInt.subtract(startInt).add(BigInteger.ONE);
+                return Optional.of(endInt.subtract(startInt).add(BigInteger.ONE));
             }
         } catch (final IllegalArgumentException ex) {
             s_logger.error("Failed to convert a string to an IPv6 address", ex);
         }
-        return null;
+        return Optional.fromNullable(null);
     }
 
     public static boolean isIp6InRange(final String ip6, final String ip6Range) {

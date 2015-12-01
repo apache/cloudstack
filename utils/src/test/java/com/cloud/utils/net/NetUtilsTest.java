@@ -38,6 +38,7 @@ import java.util.TreeSet;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 
+import com.google.common.base.Optional;
 import com.googlecode.ipv6.IPv6Address;
 
 public class NetUtilsTest {
@@ -139,22 +140,22 @@ public class NetUtilsTest {
 
     @Test
     public void testCountIp6InRange() {
-        assertEquals(new BigInteger("2"), NetUtils.countIp6InRange("1234:5678::1-1234:5678::2"));
+        assertEquals(Optional.of(new BigInteger("2")), NetUtils.countIp6InRange("1234:5678::1-1234:5678::2"));
     }
 
     @Test
     public void testCountIp6InRangeWithInvalidRange() {
-        assertEquals(null, NetUtils.countIp6InRange("1234:5678::2-1234:5678::0"));
+        assertEquals(Optional.absent(), NetUtils.countIp6InRange("1234:5678::2-1234:5678::0"));
     }
 
     @Test
     public void testCountIp6InRangeWithNullStart() {
-        assertEquals(null, NetUtils.countIp6InRange("-1234:5678::0"));
+        assertEquals(Optional.absent(), NetUtils.countIp6InRange("-1234:5678::0"));
     }
 
     @Test
     public void testCountIp6InRangeWithNoEnd() {
-        assertEquals(new BigInteger("1"), NetUtils.countIp6InRange("1234:5678::2"));
+        assertEquals(Optional.of(new BigInteger("1")), NetUtils.countIp6InRange("1234:5678::2"));
     }
 
     @Test

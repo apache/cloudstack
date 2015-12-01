@@ -627,8 +627,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         }
         long existedCount = _ipv6Dao.countExistedIpsInVlan(vlanId);
         BigInteger existedInt = BigInteger.valueOf(existedCount);
-        BigInteger rangeInt = NetUtils.countIp6InRange(vlan.getIp6Range());
-        return (existedInt.compareTo(rangeInt) < 0);
+        BigInteger rangeInt = NetUtils.countIp6InRange(vlan.getIp6Range()).get();// old behaviour npe on the next line
+        return (existedInt.compareTo(rangeInt) < 0);// new behaviour IllegalState Exception on the previous line
     }
 
     @Override
