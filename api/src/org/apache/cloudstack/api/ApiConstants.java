@@ -498,6 +498,7 @@ public class ApiConstants {
     public static final String NICIRA_NVP_TRANSPORT_ZONE_UUID = "transportzoneuuid";
     public static final String NICIRA_NVP_DEVICE_NAME = "niciradevicename";
     public static final String NICIRA_NVP_GATEWAYSERVICE_UUID = "l3gatewayserviceuuid";
+    public static final String NICIRA_NVP_L2_GATEWAYSERVICE_UUID = "l2gatewayserviceuuid";
     public static final String S3_ACCESS_KEY = "accesskey";
     public static final String S3_SECRET_KEY = "secretkey";
     public static final String S3_END_POINT = "endpoint";

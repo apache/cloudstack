@@ -934,6 +934,7 @@ dictionary = {
 'label.nfs.storage': '<fmt:message key="label.nfs.storage" />',
 'label.nic.adapter.type': '<fmt:message key="label.nic.adapter.type" />',
 'label.nicira.controller.address': '<fmt:message key="label.nicira.controller.address" />',
+'label.nicira.l2gatewayserviceuuid': '<fmt:message key="label.nicira.l2gatewayserviceuuid" />',
 'label.nicira.l3gatewayserviceuuid': '<fmt:message key="label.nicira.l3gatewayserviceuuid" />',
 'label.nicira.transportzoneuuid': '<fmt:message key="label.nicira.transportzoneuuid" />',
 'label.brocade.vcs.address': '<fmt:message key="label.brocade.vcs.address" />',

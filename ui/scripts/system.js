@@ -5774,6 +5774,9 @@
                                         },
                                         l3gatewayserviceuuid: {
                                             label: 'label.nicira.l3gatewayserviceuuid'
+                                        },
+										l2gatewayserviceuuid: {
+                                            label: 'label.nicira.l2gatewayserviceuuid'
                                         }
                                     }
                                 },
@@ -12539,6 +12542,9 @@
                         },
                         l3gatewayserviceuuid: {
                             label: 'label.nicira.l3gatewayserviceuuid'
+                        },
+						l2gatewayserviceuuid: {
+                            label: 'label.nicira.l2gatewayserviceuuid'
                         }
                     },
                     actions: {
@@ -12569,7 +12575,10 @@
                                     },
                                     l3gatewayserviceuuid: {
                                         label: 'label.nicira.l3gatewayserviceuuid'
-                                    }
+                                    },
+									l2gatewayserviceuuid: {
+										label: 'label.nicira.l2gatewayserviceuuid'
+									}
                                 }
                             },
                             action: function (args) {
@@ -12687,7 +12696,10 @@
                                     },
                                     l3gatewayserviceuuid: {
                                         label: 'label.nicira.l3gatewayserviceuuid'
-                                    }
+                                    },
+									l2gatewayserviceuuid: {
+										label: 'label.nicira.l2gatewayserviceuuid'
+									}
                                 }],
                                 dataProvider: function (args) {
                                     $.ajax({
@@ -20323,6 +20335,11 @@
         var l3GatewayServiceUuid = args.data.l3gatewayserviceuuid;
         if (l3GatewayServiceUuid != null && l3GatewayServiceUuid.length > 0) {
             array1.push("&l3gatewayserviceuuid=" + todb(args.data.l3gatewayserviceuuid));
+        }
+		
+		var l2GatewayServiceUuid = args.data.l2gatewayserviceuuid;
+        if (l2GatewayServiceUuid != null && l2GatewayServiceUuid.length > 0) {
+            array1.push("&l2gatewayserviceuuid=" + todb(args.data.l2gatewayserviceuuid));
         }
 
         $.ajax({
