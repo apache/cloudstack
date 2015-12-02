@@ -2841,8 +2841,9 @@ public class JuniperSrxResource implements ServerResource {
                             action = "<permit></permit>";
                         }
 
-                        xml = replaceXmlValue(xml, "action", action);
+                        
                     }
+                    xml = replaceXmlValue(xml, "action", action);
                 } else {
                     xml = replaceXmlValue(xml, "from-zone", fromZone);
                     xml = replaceXmlValue(xml, "to-zone", toZone);
