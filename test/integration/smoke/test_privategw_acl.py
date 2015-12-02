@@ -237,7 +237,7 @@ class TestPrivateGwACL(cloudstackTestCase):
         acl = self.createACL(vpc)
         self.createACLItem(acl.id)
         self.createNetwork(vpc)
-        privateGw = self.createPvtGw(vpc, "10.0.3.99", acl.id, vlan_1)
+        privateGw = self.createPvtGw(vpc, "10.0.3.99", "10.0.3.100", acl.id, vlan_1)
         self.replacePvtGwACL(acl.id, privateGw.id)
 
     @attr(tags=["advanced"], required_hardware="true")
@@ -280,7 +280,7 @@ class TestPrivateGwACL(cloudstackTestCase):
             self.fail("No Physical Networks found!")
 
         vlans = physical_networks[0].vlan.split('-')
-        vlan_1 = int(vlans[0]) + 1
+        vlan_1 = int(vlans[0])
 
         network_1 = self.createNetwork(vpc_1, gateway = '10.0.1.1')
         network_2 = self.createNetwork(vpc_2, gateway = '10.0.2.1')

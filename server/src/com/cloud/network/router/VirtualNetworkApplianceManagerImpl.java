@@ -2417,9 +2417,10 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
             for (final Nic routerNic : routerNics) {
                 final Network network = _networkModel.getNetwork(routerNic.getNetworkId());
                 // Send network usage command for public nic in VPC VR
-                // Send network usage command for isolated guest nic of non VPC VR
-                if (network != null && (forVpc && network.getTrafficType() == TrafficType.Public || !forVpc && network.getTrafficType() == TrafficType.Guest
-                        && network.getGuestType() == Network.GuestType.Isolated)) {
+                // Send network usage command for isolated guest nic of non VPC
+                // VR
+                if (forVpc && network.getTrafficType() == TrafficType.Public || !forVpc && network.getTrafficType() == TrafficType.Guest
+                        && network.getGuestType() == Network.GuestType.Isolated) {
                     final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName(), forVpc, routerNic.getIPv4Address());
                     final String routerType = router.getType().toString();
                     final UserStatisticsVO previousStats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterId(), network.getId(),
