@@ -11,7 +11,7 @@
 # build-arch and build-indep targets  by Bill Allombert 2001
 
 DEBVERS := $(shell dpkg-parsechangelog | sed -n -e 's/^Version: //p')
-VERSION := $(shell echo '$(DEBVERS)' | sed -e 's/^[[:digit:]]*://' -e 's/[~-].*//')
+VERSION := $(shell cat pom.xml | sed '22!d' | cut -d'>' -f2 | cut -d'<' -f1)
 MVNADD := $(shell if echo '$(DEBVERS)' | grep -q snapshot; then echo ; fi )
 PACKAGE = $(shell dh_listpackages|head -n 1|cut -d '-' -f 1)
 SYSCONFDIR = "/etc"
