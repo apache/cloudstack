@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.storage.dao;
 
+import java.util.Date;
 import java.util.List;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -78,6 +79,8 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
     HypervisorType getHypervisorType(long volumeId);
 
     List<VolumeVO> listVolumesToBeDestroyed();
+
+    List<VolumeVO> listVolumesToBeDestroyed(Date date);
 
     ImageFormat getImageFormat(Long volumeId);
 
