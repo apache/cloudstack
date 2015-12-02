@@ -79,6 +79,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
@@ -190,7 +192,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 @Local(value = {StorageManager.class, StorageService.class})
-public class StorageManagerImpl extends ManagerBase implements StorageManager, ClusterManagerListener {
+public class StorageManagerImpl extends ManagerBase implements StorageManager, ClusterManagerListener, Configurable {
     private static final Logger s_logger = Logger.getLogger(StorageManagerImpl.class);
 
     protected String _name;
@@ -297,9 +299,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     protected SearchBuilder<StoragePoolVO> LocalStorageSearch;
 
     ScheduledExecutorService _executor = null;
-    boolean _storageCleanupEnabled;
     boolean _templateCleanupEnabled = true;
-    int _storageCleanupInterval;
     int _storagePoolAcquisitionWaitSeconds = 1800; // 30 minutes
     int _downloadUrlCleanupInterval;
     int _downloadUrlExpirationInterval;
@@ -462,17 +462,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         _agentMgr.registerForHostEvents(new StoragePoolMonitor(this, _storagePoolDao), true, false, true);
 
-        String storageCleanupEnabled = configs.get("storage.cleanup.enabled");
-        _storageCleanupEnabled = (storageCleanupEnabled == null) ? true : Boolean.parseBoolean(storageCleanupEnabled);
-
         String value = _configDao.getValue(Config.StorageTemplateCleanupEnabled.key());
         _templateCleanupEnabled = (value == null ? true : Boolean.parseBoolean(value));
 
-        String time = configs.get("storage.cleanup.interval");
-        _storageCleanupInterval = NumbersUtil.parseInt(time, 86400);
-
-        s_logger.info("Storage cleanup enabled: " + _storageCleanupEnabled + ", interval: " + _storageCleanupInterval + ", template cleanup enabled: " +
-                _templateCleanupEnabled);
+        s_logger.info("Storage cleanup enabled: " + StorageCleanupEnabled.value() + ", interval: " + StorageCleanupInterval.value() + ", delay: " + StorageCleanupDelay.value()  +
+                ", template cleanup enabled: " + _templateCleanupEnabled);
 
         String cleanupInterval = configs.get("extract.url.cleanup.interval");
         _downloadUrlCleanupInterval = NumbersUtil.parseInt(cleanupInterval, 7200);
@@ -525,10 +519,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public boolean start() {
-        if (_storageCleanupEnabled) {
+        if (StorageCleanupEnabled.value()) {
             Random generator = new Random();
-            int initialDelay = generator.nextInt(_storageCleanupInterval);
-            _executor.scheduleWithFixedDelay(new StorageGarbageCollector(), initialDelay, _storageCleanupInterval, TimeUnit.SECONDS);
+            int initialDelay = generator.nextInt(StorageCleanupInterval.value());
+            _executor.scheduleWithFixedDelay(new StorageGarbageCollector(), initialDelay, StorageCleanupInterval.value(), TimeUnit.SECONDS);
         } else {
             s_logger.debug("Storage cleanup is not enabled, so the storage cleanup thread is not being scheduled.");
         }
@@ -540,7 +534,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public boolean stop() {
-        if (_storageCleanupEnabled) {
+        if (StorageCleanupEnabled.value()) {
             _executor.shutdown();
         }
         return true;
@@ -1111,7 +1105,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
                     cleanupSecondaryStorage(recurring);
 
-                    List<VolumeVO> vols = _volsDao.listVolumesToBeDestroyed();
+                    List<VolumeVO> vols = _volsDao.listVolumesToBeDestroyed(new Date(System.currentTimeMillis() - ((long) StorageCleanupDelay.value() << 10)));
                     for (VolumeVO vol : vols) {
                         try {
                             volService.expungeVolumeAsync(volFactory.getVolume(vol.getId()));
@@ -2302,5 +2296,15 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         }
         return 0L;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return StorageManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {StorageCleanupInterval, StorageCleanupDelay, StorageCleanupEnabled};
     }
 }
