@@ -27,6 +27,7 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.user.AccountManager;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -427,6 +428,7 @@ public class ApiDBUtils {
     static ResourceMetaDataService s_resourceDetailsService;
     static HostGpuGroupsDao s_hostGpuGroupsDao;
     static VGPUTypesDao s_vgpuTypesDao;
+    static AccountManager s_accountManager;
 
     @Inject
     private ManagementServer ms;
@@ -555,6 +557,8 @@ public class ApiDBUtils {
     private HighAvailabilityManager haMgr;
     @Inject
     private VpcManager vpcMgr;
+    @Inject
+    private AccountManager accountManager;
     @Inject
     private TaggedResourceService taggedResourceService;
     @Inject
@@ -772,6 +776,7 @@ public class ApiDBUtils {
         s_resourceDetailsService = resourceDetailsService;
         s_hostGpuGroupsDao = hostGpuGroupsDao;
         s_vgpuTypesDao = vgpuTypesDao;
+        s_accountManager = accountManager;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -1695,6 +1700,9 @@ public class ApiDBUtils {
 
     public static UserResponse newUserResponse(UserAccountJoinVO usr, Long domainId) {
         UserResponse response = s_userAccountJoinDao.newUserResponse(usr);
+        if(!s_accountManager.UseSecretKeyInResponse.value()){
+            response.setSecretKey(" ");
+        }
         if (domainId != null && usr.getDomainId() != domainId)
             response.setIsCallerChildDomain(true);
         else

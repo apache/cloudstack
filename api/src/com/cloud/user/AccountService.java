@@ -16,17 +16,20 @@
 // under the License.
 package com.cloud.user;
 
+import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 
 import com.cloud.domain.Domain;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
+
 
 public interface AccountService {
 
@@ -124,6 +127,8 @@ public interface AccountService {
 
     void checkAccess(Account account, DiskOffering dof) throws PermissionDeniedException;
 
+    void checkAccess(User user, ControlledEntity entity);
+
     void checkAccess(Account account, AccessType accessType, boolean sameOwner, String apiName,
             ControlledEntity... entities) throws PermissionDeniedException;
 
@@ -136,4 +141,5 @@ public interface AccountService {
      */
     UserAccount getUserAccountById(Long userId);
 
+    public List<String> getKeys(GetUserKeysCmd cmd);
 }

@@ -332,6 +332,7 @@ updateVolume=1
 ####                                 the userId...every request to the developer API should be
 ####                                 checked against the key
 registerUserKeys=15
+getUserKeys=15
 
 ### async-query command
 queryAsyncJobResult=15
