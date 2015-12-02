@@ -581,7 +581,7 @@ fi
 %{_defaultdocdir}/%{name}-management-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-management-%{version}/NOTICE
 %attr(0644,cloud,cloud) %{_localstatedir}/log/%{name}/management/catalina.out
-%attr(0644,root,root) %{_sysconfdir}/logrotate.d/%{name}-catalina
+%config(noreplace) %{_sysconfdir}/logrotate.d/%{name}-catalina
 
 %files agent
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
