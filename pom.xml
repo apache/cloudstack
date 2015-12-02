@@ -605,6 +605,7 @@
               <exclude>.checkstyle</exclude>
               <exclude>.project</exclude>
               <exclude>.classpath</exclude>
+              <exclude>.pmd*</exclude>
             </excludes>
           </configuration>
         </plugin>
