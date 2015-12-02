@@ -54,8 +54,6 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -111,9 +109,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_AFFINITY_GROUP_CREATE, eventDescription = "Creating Affinity Group", create = true)
-    public AffinityGroup createAffinityGroup(String account, Long domainId, String affinityGroupName, String affinityGroupType, String description) {
-
-        Account caller = CallContext.current().getCallingAccount();
+    public AffinityGroup createAffinityGroup(String account, Long projectId, Long domainId, String affinityGroupName, String affinityGroupType, String description) {
 
         //validate the affinityGroupType
         Map<String, AffinityGroupProcessor> typeProcessorMap = getAffinityTypeToProcessorMap();
@@ -131,12 +127,12 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
             throw new PermissionDeniedException("Cannot create the affinity group");
         }
 
-        return createAffinityGroupInternal(account, domainId, affinityGroupName, affinityGroupType, description);
+        return createAffinityGroupInternal(account, projectId, domainId, affinityGroupName, affinityGroupType, description);
     }
 
     @DB
     @Override
-    public AffinityGroup createAffinityGroupInternal(String account, final Long domainId, final String affinityGroupName, final String affinityGroupType,
+    public AffinityGroup createAffinityGroupInternal(String account, final Long projectId, final Long domainId, final String affinityGroupName, final String affinityGroupType,
         final String description) {
 
         Account caller = CallContext.current().getCallingAccount();
@@ -236,12 +232,11 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
     }
 
     @DB
-    @Override
     @ActionEvent(eventType = EventTypes.EVENT_AFFINITY_GROUP_DELETE, eventDescription = "Deleting affinity group")
-    public boolean deleteAffinityGroup(Long affinityGroupId, String account, Long domainId, String affinityGroupName) {
+    public boolean deleteAffinityGroup(Long affinityGroupId, String account, Long projectId, Long domainId, String affinityGroupName) {
 
         Account caller = CallContext.current().getCallingAccount();
-        Account owner = _accountMgr.finalizeOwner(caller, account, domainId, null);
+        Long accountId = _accountMgr.finalyzeAccountId(account, domainId, projectId, true);
 
         AffinityGroupVO group = null;
         if (affinityGroupId != null) {
@@ -250,7 +245,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
                 throw new InvalidParameterValueException("Unable to find affinity group: " + affinityGroupId + "; failed to delete group.");
             }
         } else if (affinityGroupName != null) {
-            group = _affinityGroupDao.findByAccountAndName(owner.getAccountId(), affinityGroupName);
+            group = _affinityGroupDao.findByAccountAndName(accountId, affinityGroupName);
             if (group == null) {
                 throw new InvalidParameterValueException("Unable to find affinity group: " + affinityGroupName + "; failed to delete group.");
             }
@@ -309,59 +304,6 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
             s_logger.debug("Deleted affinity group id=" + affinityGroupId);
         }
         return true;
-    }
-
-    @Override
-    public Pair<List<? extends AffinityGroup>, Integer> listAffinityGroups(Long affinityGroupId, String affinityGroupName, String affinityGroupType, Long vmId,
-        Long startIndex, Long pageSize) {
-        Filter searchFilter = new Filter(AffinityGroupVO.class, "id", Boolean.TRUE, startIndex, pageSize);
-
-        Account caller = CallContext.current().getCallingAccount();
-
-        Long accountId = caller.getAccountId();
-        Long domainId = caller.getDomainId();
-
-        SearchBuilder<AffinityGroupVMMapVO> vmInstanceSearch = _affinityGroupVMMapDao.createSearchBuilder();
-        vmInstanceSearch.and("instanceId", vmInstanceSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
-
-        SearchBuilder<AffinityGroupVO> groupSearch = _affinityGroupDao.createSearchBuilder();
-
-        SearchCriteria<AffinityGroupVO> sc = groupSearch.create();
-
-        if (accountId != null) {
-            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-        }
-
-        if (domainId != null) {
-            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-        }
-
-        if (affinityGroupId != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, affinityGroupId);
-        }
-
-        if (affinityGroupName != null) {
-            sc.addAnd("name", SearchCriteria.Op.EQ, affinityGroupName);
-        }
-
-        if (affinityGroupType != null) {
-            sc.addAnd("type", SearchCriteria.Op.EQ, affinityGroupType);
-        }
-
-        if (vmId != null) {
-            UserVmVO userVM = _userVmDao.findById(vmId);
-            if (userVM == null) {
-                throw new InvalidParameterValueException("Unable to list affinity groups for virtual machine instance " + vmId + "; instance not found.");
-            }
-            _accountMgr.checkAccess(caller, null, true, userVM);
-            // add join to affinity_groups_vm_map
-            groupSearch.join("vmInstanceSearch", vmInstanceSearch, groupSearch.entity().getId(), vmInstanceSearch.entity().getAffinityGroupId(),
-                JoinBuilder.JoinType.INNER);
-            sc.setJoinParameters("vmInstanceSearch", "instanceId", vmId);
-        }
-
-        Pair<List<AffinityGroupVO>, Integer> result =  _affinityGroupDao.searchAndCount(sc, searchFilter);
-        return new Pair<List<? extends AffinityGroup>, Integer>(result.first(), result.second());
     }
 
     @Override

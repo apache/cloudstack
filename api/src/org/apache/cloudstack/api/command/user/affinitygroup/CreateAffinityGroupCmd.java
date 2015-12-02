@@ -28,11 +28,11 @@ import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.user.Account;
 
 @APICommand(name = "createAffinityGroup", responseObject = AffinityGroupResponse.class, description = "Creates an affinity/anti-affinity group", entityType = {AffinityGroup.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -53,6 +53,12 @@ public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
                description = "domainId of the account owning the affinity group",
                entityType = DomainResponse.class)
     private Long domainId;
+
+    @Parameter(name = ApiConstants.PROJECT_ID,
+               type = CommandType.UUID,
+               entityType = ProjectResponse.class,
+               description = "create affinity group for project")
+    private Long projectId;
 
     @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "optional description of the affinity group")
     private String description;
@@ -90,6 +96,10 @@ public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
         return affinityGroupType;
     }
 
+    public Long getProjectId() {
+        return projectId;
+    }
+
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
@@ -101,23 +111,12 @@ public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = CallContext.current().getCallingAccount();
-        if ((account == null) || _accountService.isAdmin(account.getId())) {
-            if ((domainId != null) && (accountName != null)) {
-                Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
-                if (userAccount != null) {
-                    return userAccount.getId();
-                }
-            }
+        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        if (accountId == null) {
+            return CallContext.current().getCallingAccount().getId();
         }
 
-        if (account != null) {
-            return account.getId();
-        }
-
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this
-                                          // command to SYSTEM so ERROR events
-                                          // are tracked
+        return accountId;
     }
 
     @Override
@@ -134,7 +133,7 @@ public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        AffinityGroup result = _affinityGroupService.createAffinityGroup(accountName, domainId, affinityGroupName, affinityGroupType, description);
+        AffinityGroup result = _affinityGroupService.createAffinityGroup(accountName, projectId, domainId, affinityGroupName, affinityGroupType, description);
         if (result != null) {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());

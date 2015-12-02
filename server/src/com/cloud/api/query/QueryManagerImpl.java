@@ -56,6 +56,7 @@ import org.apache.cloudstack.api.command.admin.volume.ListVolumesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.zone.ListZonesCmdByAdmin;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
+import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
 import org.apache.cloudstack.api.command.user.job.ListAsyncJobsCmd;
@@ -3393,6 +3394,71 @@ public class QueryManagerImpl extends ManagerBase implements QueryService, Confi
                 cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedISO);
     }
 
+    public ListResponse<AffinityGroupResponse> searchForAffinityGroups(ListAffinityGroupsCmd cmd) {
+        Pair<List<AffinityGroupJoinVO>, Integer> result = searchForAffinityGroupsInternal(cmd);
+        ListResponse<AffinityGroupResponse> response = new ListResponse<>();
+        List<AffinityGroupResponse> agResponses = ViewResponseHelper.createAffinityGroupResponses(result.first());
+        response.setResponses(agResponses, result.second());
+        return response;
+    }
+
+    private Pair<List<AffinityGroupJoinVO>,Integer> searchForAffinityGroupsInternal(ListAffinityGroupsCmd cmd) throws PermissionDeniedException,
+            InvalidParameterValueException {
+        Long id = cmd.getId();
+        String affinityGroup = cmd.getAffinityGroupName();
+        Object keyword = cmd.getKeyword();
+        Long instanceId = cmd.getVirtualMachineId();
+
+        Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedAccounts = new ArrayList<>();
+
+
+        if (instanceId != null) {
+            UserVmVO userVM = _userVmDao.findById(instanceId);
+            if (userVM == null) {
+                throw new InvalidParameterValueException("Unable to list affinity groups for virtual machine instance " + instanceId + "; instance not found.");
+            }
+            _accountMgr.checkAccess(caller, null, true, userVM);
+            return listAffinityGroupsByVM(instanceId, cmd.getStartIndex(), cmd.getPageSizeVal());
+        }
+
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(
+                cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts,
+                domainIdRecursiveListProject, cmd.listAll(), false);
+        Long domainId = domainIdRecursiveListProject.first();
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+
+        Filter searchFilter = new Filter(AffinityGroupJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        SearchBuilder<AffinityGroupJoinVO> sb = _affinityGroupJoinDao.createSearchBuilder();
+        _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts,
+                listProjectResourcesCriteria);
+
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+
+        SearchCriteria<AffinityGroupJoinVO> sc = sb.create();
+        _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts,
+                listProjectResourcesCriteria);
+
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+
+        if (affinityGroup != null) {
+            sc.setParameters("name", affinityGroup);
+        }
+
+        if (keyword != null) {
+            SearchCriteria<AffinityGroupJoinVO> ssc = _affinityGroupJoinDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        return _affinityGroupJoinDao.searchAndCount(sc, searchFilter);
+    }
 
     @Override
     public ListResponse<AffinityGroupResponse> listAffinityGroups(Long affinityGroupId, String affinityGroupName,
