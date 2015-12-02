@@ -2412,7 +2412,7 @@ class TestResourceTags(cloudstackTestCase):
         # 1. Create a domain and admin account under the new domain
         # 2. Create  a tag on acquired public IP address using createTags API
         # 3. Delete above created tag using deleteTags API
-        # 4. Perform steps 3&4 using domain-admin
+        # 4. Perform steps 2&3 using domain-admin
 
         self.debug("Creating a sub-domain under: %s" % self.domain.name)
         self.child_domain = Domain.create(
