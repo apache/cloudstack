@@ -20,6 +20,7 @@
 package com.cloud.network.nicira;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
@@ -167,6 +168,47 @@ public class NiciraRestClientTest {
             assertThat(e.getMessage(), not(isEmptyOrNullString()));
             verifyPrivate(client).invoke("execute", HttpRequestMatcher.eq(request), eq(0));
             verifyPrivate(client).invoke("execute", HttpRequestMatcher.eq(loginRequest), eq(401));
+        }
+    }
+
+    @Test
+    public void testExecuteLiveLockWhenControllerAllowsLoginAndFollowsWithUnauthorizedButDoesNotRediect() throws Exception {
+        when(mockResponse.getStatusLine())
+            .thenReturn(HTTP_401_STATUSLINE)
+            .thenReturn(HTTP_200_STATUSLINE)
+            .thenReturn(HTTP_401_STATUSLINE)
+            .thenReturn(HTTP_200_STATUSLINE)
+            .thenReturn(HTTP_401_STATUSLINE)
+            .thenReturn(HTTP_200_STATUSLINE)
+            .thenReturn(HTTP_401_STATUSLINE)
+            .thenReturn(HTTP_200_STATUSLINE)
+            .thenReturn(HTTP_401_STATUSLINE);
+        when(httpClient.execute(eq(HTTP_HOST), HttpRequestMatcher.eq(request), eq(httpClientContext)))
+            .thenReturn(mockResponse)
+            .thenReturn(mockResponse)
+            .thenReturn(mockResponse)
+            .thenReturn(mockResponse)
+            .thenReturn(mockResponse);
+        when(httpClient.execute(eq(HTTP_HOST), HttpRequestMatcher.eq(loginRequest), eq(httpClientContext)))
+            .thenReturn(mockResponse)
+            .thenReturn(mockResponse)
+            .thenReturn(mockResponse)
+            .thenReturn(mockResponse);
+        final NiciraRestClient client = spy(NiciraRestClient.create()
+            .client(httpClient)
+            .clientContext(httpClientContext)
+            .hostname(LOCALHOST)
+            .username(ADMIN)
+            .password(ADMIN_PASSWORD)
+            .loginUrl(LOGIN_PATH)
+            .executionLimit(2)
+            .build());
+
+        try {
+            client.execute(request);
+            fail("Execution count should have been maxed out");
+        } catch (final CloudstackRESTException e) {
+            assertThat(e.getMessage(), containsString("Reached max executions limit of "));
         }
     }
 }
