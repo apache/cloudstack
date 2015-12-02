@@ -43,6 +43,8 @@ public interface QuotaResponseBuilder {
 
     List<QuotaSummaryResponse> createQuotaSummaryResponse();
 
+    List<QuotaSummaryResponse> createQuotaSummaryResponse(String accountName, Long domainId);
+
     QuotaBalanceResponse createQuotaLastBalanceResponse(List<QuotaBalanceVO> quotaBalance, Date startDate);
 
     QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy, Date despositedOn);

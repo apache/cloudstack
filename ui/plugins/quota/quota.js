@@ -31,7 +31,10 @@
           sectionSelect: {
               label: 'label.select-view',
               preFilter: function(args) {
-                  return ['summary', 'tariff', 'emailTemplates']; 
+        	      if (isAdmin())
+        	          return ['summary', 'tariffEdit', 'emailTemplates']; 
+        	      else 
+        	          return  ['summary', 'tariffView'];
               }
           },
           sections: {
@@ -40,6 +43,7 @@
                   title: 'label.quota.summary',
                   listView: {
                       label: 'label.quota.summary',
+                      disableInfiniteScrolling: true,
                       fields: {
                           account: {
                               label: 'label.account',
@@ -128,9 +132,9 @@
                               label: 'label.quota.statement.balance'
                           }],
                           actions: {
-
                              add: {
                                 label: 'label.quota.add.credits',
+                                preFilter: function(args) { return isAdmin(); },
                                 messages: {
                                     confirm: function(args) {
                                         return 'label.quota.add.credits';
@@ -187,12 +191,6 @@
                                     $(window).trigger('cloudStack.fullRefresh');
                                  }
                             },
-                            
-                            
-                              
-
-
-
                           },
                           tabs: {
                              details: {
@@ -279,7 +277,6 @@
                                             enddate: {
                                                 label: 'label.quota.enddate',
                                                 isDatepicker: true,
-                                                minDate: '#startdate',
                                                 maxDate: '+0d',
                                                 validation: {
                                                     required: true
@@ -341,7 +338,9 @@
                                   });
                               },
                               error:function(data) {
-                                  args.response.error(parseXMLHttpResponse(data));
+                            	  cloudStack.dialog.notice({
+                                      message: parseXMLHttpResponse(data)
+                                  });
                               }
                           });
                       }
@@ -387,7 +386,6 @@
                                             enddate: {
                                                 label: 'label.quota.enddate',
                                                 isDatepicker: true,
-                                                dependsOn: 'startdate',
                                                 maxDate: '+0d',
                                                 validation: {
                                                     required: true
@@ -453,7 +451,9 @@
                                   });
                               },
                               error:function(data) {
-                                  args.response.error(parseXMLHttpResponse(data));
+                            	  cloudStack.dialog.notice({
+                                      message: parseXMLHttpResponse(data)
+                                  });
                               }
                           });
                       }
@@ -462,7 +462,7 @@
             
 
 
-              tariff: {
+              tariffEdit: {
                   type: 'select',
                   title: 'label.quota.tariff',
                   listView: {
@@ -472,64 +472,67 @@
                           edit: {
                               label: 'label.change.value',
                               action: function(args) {
-                                   var data = {
-                                        usagetype: args.data.jsonObj.usageType,
-                                   };
-                                  var tariffVal = args.data.tariffValue.split(' ');
-                                  if (tariffVal.length==2){
-                                      data.value = tariffVal[1];
-                                  }
-                                  else {
-                                      data.value = tariffVal[0];
-                                  }
-                                  if (!isNaN(parseFloat(data.value)) && isFinite(data.value)){
-                                      var updateTariffForm = cloudStack.dialog.createForm({
-                                          form: {
-                                              title: 'label.quota.configuration',
-                                              fields: {
-                                                  tariffValue: {
-                                                      label: 'label.quota.value',
-                                                      number: true,
-                                                      validation: {
-                                                          required: true
-                                                      }
-                                                  },
-                                                  effectiveDate: {
-                                                      label: 'label.quota.tariff.effectivedate',
-                                                      isDatepicker: true,
-                                                      dependsOn: 'startdate',
-                                                      minDate: '+1d',
-                                                      validation: {
-                                                          required: true
-                                                      }
-                                                  },
-                                              }
-                                          },
-                                          after: function(argsLocal) {
-                                              data.startDate = argsLocal.data.effectiveDate;
-                                              data.value = argsLocal.data.tariffValue;
-                                              $.ajax({
-                                                  url: createURL('quotaTariffUpdate'),
-                                                  data: data,
-                                                  type: "POST",
-                                                  success: function(json) {
-                                                      // Refresh listings on chosen date to reflect new tariff
-                                                      $($.find('div.search-bar input')).val(data.startDate);
-                                                      $('#basic_search').click();
+            	                  console.log("isAdmin "+ isAdmin());
+                            	  if (isAdmin()){
+                                       var data = {
+                                            usagetype: args.data.jsonObj.usageType,
+                                       };
+                                      var tariffVal = args.data.tariffValue.split(' ');
+                                      if (tariffVal.length==2){
+                                          data.value = tariffVal[1];
+                                      }
+                                      else {
+                                          data.value = tariffVal[0];
+                                      }
+                                      if (!isNaN(parseFloat(data.value)) && isFinite(data.value)){
+                                          var updateTariffForm = cloudStack.dialog.createForm({
+                                              form: {
+                                                  title: 'label.quota.configuration',
+                                                  fields: {
+                                                      tariffValue: {
+                                                          label: 'label.quota.value',
+                                                          number: true,
+                                                          validation: {
+                                                              required: true
+                                                          }
+                                                      },
+                                                      effectiveDate: {
+                                                          label: 'label.quota.tariff.effectivedate',
+                                                          isDatepicker: true,
+                                                          dependsOn: 'startdate',
+                                                          minDate: '+1d',
+                                                          validation: {
+                                                              required: true
+                                                          }
+                                                      },
                                                   }
-                                              });
-                                          }
-                                      });
-                                      updateTariffForm.find('input[name=tariffValue]').val(data.value);
-                                      updateTariffForm.find('input[name=effectiveDate]').focus();
-                                  } 
-                                  else {
-                                	  alert("Bad tariff value, this should be a number " + data.value);
-                                      $(window).trigger('cloudStack.fullRefresh');
-                                  }//bad data.value - NaN
-                              }
-                          }
-                      },
+                                              },
+                                              after: function(argsLocal) {
+                                                  data.startDate = argsLocal.data.effectiveDate;
+                                                  data.value = argsLocal.data.tariffValue;
+                                                  $.ajax({
+                                                      url: createURL('quotaTariffUpdate'),
+                                                      data: data,
+                                                      type: "POST",
+                                                      success: function(json) {
+                                                          // Refresh listings on chosen date to reflect new tariff
+                                                          $($.find('div.search-bar input')).val(data.startDate);
+                                                          $('#basic_search').click();
+                                                      }
+                                                  });
+                                              }
+                                          });
+                                          updateTariffForm.find('input[name=tariffValue]').val(data.value);
+                                          updateTariffForm.find('input[name=effectiveDate]').focus();
+                                      } 
+                                      else {
+                                    	  alert("Bad tariff value, this should be a number " + data.value);
+                                          $(window).trigger('cloudStack.fullRefresh');
+                                      }//bad data.value - NaN
+                                  } // if is ADMIN
+                              } // end action
+                          }//edits
+                      },//actions
                       fields: {
                           usageName: {
                               label: 'label.usage.type',
@@ -542,6 +545,68 @@
                           tariffValue: {
                               label: 'label.quota.tariff.value',
                               editable: true
+                          },
+                          description: {
+                              label: 'label.quota.description',
+                              truncate: true
+                          }
+                      },
+                      dataProvider: function(args) {
+                          var data = {};
+                          if (args.filterBy.search.value) {
+                              data.startdate = args.filterBy.search.value;
+                          }
+                          $.ajax({
+                              url: createURL('quotaTariffList'),
+                              data: data,
+                              dataType: "json",
+                              async: true,
+                              success: function(json) {
+                                  var items = json.quotatarifflistresponse.quotatariff;
+                                  $.each(items, function(idx, item) {
+                                      items[idx].tariffValue =  items[idx].currency + ' ' + items[idx].tariffValue;
+                                  });
+                                  args.response.success({
+                                      data: items
+                                  });
+
+                                  // Hook up date picker
+                                  var input = $($.find('div.search-bar input'));
+                                  input.datepicker({
+                                      defaultDate: new Date(),
+                                      changeMonth: true,
+                                      dateFormat: "yy-mm-dd",
+                                  });
+                                  input.parent().attr('title', _l('label.quota.effectivedate'));
+                              },
+                              error: function(data) {
+                                  cloudStack.dialog.notice({
+                                      message: parseXMLHttpResponse(data)
+                                  });
+                              }
+                          });
+                      }
+                  }
+              },
+              
+              
+              tariffView: {
+                  type: 'select',
+                  title: 'label.quota.tariff',
+                  listView: {
+                      label: 'label.quota.tariff',
+                      disableInfiniteScrolling: true,
+                      fields: {
+                          usageName: {
+                              label: 'label.usage.type',
+                              id: true,
+                              truncate: true
+                          },
+                          usageUnit: {
+                              label: 'label.usage.unit'
+                          },
+                          tariffValue: {
+                              label: 'label.quota.tariff.value',
                           },
                           description: {
                               label: 'label.quota.description',

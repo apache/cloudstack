@@ -198,7 +198,8 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
                     s_logger.debug("getQuotaBalance3: Found records size=" + qbrecords.size());
                 }
                 if (qbrecords.isEmpty()) {
-                    throw new InvalidParameterValueException("Incorrect Date range there are no quota records between these dates start date " + adjustedStartDate + " and end date:" + endDate);
+                    s_logger.info("There are no quota records between these dates start date " + adjustedStartDate + " and end date:" + endDate);
+                    return qbrecords;
                 } else {
                     return qbrecords;
                 }

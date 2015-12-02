@@ -30,11 +30,8 @@ import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.QuotaBalanceResponse;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
-import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.api.response.QuotaStatementItemResponse;
-
-import com.cloud.user.Account;
 
 @APICommand(name = "quotaBalance", responseObject = QuotaStatementItemResponse.class, description = "Create a quota balance statement", since = "4.6.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaBalanceCmd extends BaseCmd {
@@ -43,10 +40,10 @@ public class QuotaBalanceCmd extends BaseCmd {
 
     private static final String s_name = "quotabalanceresponse";
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = true, description = "Optional, Account Id for which statement needs to be generated")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = true, description = "Account Id for which statement needs to be generated")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = true, entityType = DomainResponse.class, description = "Optional, If domain Id is given and the caller is domain admin then the statement is generated for domain.")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = true, entityType = DomainResponse.class, description = "If domain Id is given and the caller is domain admin then the statement is generated for domain.")
     private Long domainId;
 
     @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "End date range for quota query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-03.")
@@ -108,11 +105,7 @@ public class QuotaBalanceCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.getActiveAccountByName(accountName, domainId).getAccountId();
-        if (accountId == null) {
-            return CallContext.current().getCallingAccount().getId();
-        }
-        return Account.ACCOUNT_ID_SYSTEM;
+       return _accountService.getActiveAccountByName(accountName, domainId).getAccountId();
     }
 
     @Override

@@ -35,13 +35,11 @@ import org.apache.cloudstack.quota.QuotaService;
 import org.apache.cloudstack.quota.QuotaStatement;
 import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
-import org.apache.cloudstack.quota.dao.QuotaAccountDao;
 import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
 import org.apache.cloudstack.quota.dao.QuotaCreditsDao;
 import org.apache.cloudstack.quota.dao.QuotaEmailTemplatesDao;
 import org.apache.cloudstack.quota.dao.QuotaTariffDao;
 import org.apache.cloudstack.quota.dao.QuotaUsageDao;
-import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
@@ -94,8 +92,6 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     @Inject
     private RegionManager _regionMgr;
     @Inject
-    private QuotaAccountDao _quotaAcc;
-    @Inject
     private QuotaStatement _statement;
 
     @Override
@@ -113,13 +109,41 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     }
 
     @Override
+    public List<QuotaSummaryResponse> createQuotaSummaryResponse(final String accountName, final Long domainId) {
+        List<QuotaSummaryResponse> result = new ArrayList<QuotaSummaryResponse>();
+        Calendar[] period = _statement.getCurrentStatementTime();
+
+        if (accountName != null && domainId != null) {
+            Account account = _accountDao.findActiveAccount(accountName, domainId);
+            QuotaSummaryResponse qr = new QuotaSummaryResponse();
+            DomainVO domain = _domainDao.findById(account.getDomainId());
+            BigDecimal curBalance = _quotaBalanceDao.lastQuotaBalance(account.getAccountId(), account.getDomainId(), period[1].getTime());
+            BigDecimal quotaUsage = _quotaUsageDao.findTotalQuotaUsage(account.getAccountId(), account.getDomainId(), null, period[0].getTime(), period[1].getTime());
+
+            qr.setAccountId(account.getAccountId());
+            qr.setAccountName(account.getAccountName());
+            qr.setDomainId(account.getDomainId());
+            qr.setDomainName(domain.getName());
+            qr.setBalance(curBalance);
+            qr.setQuotaUsage(quotaUsage);
+            qr.setState(account.getState());
+            qr.setStartDate(period[0].getTime());
+            qr.setEndDate(period[1].getTime());
+            qr.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
+            qr.setObjectName("summary");
+            result.add(qr);
+        }
+
+        return result;
+    }
+
+    @Override
     public List<QuotaSummaryResponse> createQuotaSummaryResponse() {
         List<QuotaSummaryResponse> result = new ArrayList<QuotaSummaryResponse>();
         Calendar[] period = _statement.getCurrentStatementTime();
 
-        for (final QuotaAccountVO quotaAccount : _quotaAcc.listAllQuotaAccount()) {
+        for (final AccountVO account : _accountDao.listAll()) {
             QuotaSummaryResponse qr = new QuotaSummaryResponse();
-            AccountVO account = _accountDao.findById(quotaAccount.getId());
             DomainVO domain = _domainDao.findById(account.getDomainId());
             BigDecimal curBalance = _quotaBalanceDao.lastQuotaBalance(account.getAccountId(), account.getDomainId(), period[1].getTime());
             BigDecimal quotaUsage = _quotaUsageDao.findTotalQuotaUsage(account.getAccountId(), account.getDomainId(), null, period[0].getTime(), period[1].getTime());
@@ -187,6 +211,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             resp.setEndDate(endDate);
             resp.setEndQuota(new BigDecimal(0).add(lastCredits));
         } else {
+            resp.setStartDate(startDate);
+            resp.setEndDate(endDate);
             resp.setStartQuota(new BigDecimal(0));
             resp.setEndQuota(new BigDecimal(0));
         }
