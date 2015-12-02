@@ -17,13 +17,10 @@
 package org.apache.cloudstack.engine.datacenter.entity.api.db.dao;
 
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 
 import javax.inject.Inject;
 import javax.persistence.TableGenerator;
@@ -36,13 +33,9 @@ import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEnti
 import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO;
 
 import com.cloud.host.Host;
-import com.cloud.host.Host.Type;
 import com.cloud.host.HostTagVO;
 import com.cloud.host.Status;
-import com.cloud.info.RunningHostCountInfo;
-import com.cloud.org.Managed;
 import com.cloud.resource.ResourceState;
-import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -62,59 +55,57 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @TableGenerator(name = "host_req_sq", table = "op_host", pkColumnName = "id", valueColumnName = "sequence", allocationSize = 1)
 public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implements EngineHostDao {
     private static final Logger s_logger = Logger.getLogger(EngineHostDaoImpl.class);
-    private static final Logger status_logger = Logger.getLogger(Status.class);
-    private static final Logger state_logger = Logger.getLogger(ResourceState.class);
 
-    protected final SearchBuilder<EngineHostVO> TypePodDcStatusSearch;
+    private final SearchBuilder<EngineHostVO> TypePodDcStatusSearch;
 
-    protected final SearchBuilder<EngineHostVO> IdStatusSearch;
-    protected final SearchBuilder<EngineHostVO> TypeDcSearch;
-    protected final SearchBuilder<EngineHostVO> TypeDcStatusSearch;
-    protected final SearchBuilder<EngineHostVO> TypeClusterStatusSearch;
-    protected final SearchBuilder<EngineHostVO> MsStatusSearch;
-    protected final SearchBuilder<EngineHostVO> DcPrivateIpAddressSearch;
-    protected final SearchBuilder<EngineHostVO> DcStorageIpAddressSearch;
+    private final SearchBuilder<EngineHostVO> IdStatusSearch;
+    private final SearchBuilder<EngineHostVO> TypeDcSearch;
+    private final SearchBuilder<EngineHostVO> TypeDcStatusSearch;
+    private final SearchBuilder<EngineHostVO> TypeClusterStatusSearch;
+    private final SearchBuilder<EngineHostVO> MsStatusSearch;
+    private final SearchBuilder<EngineHostVO> DcPrivateIpAddressSearch;
+    private final SearchBuilder<EngineHostVO> DcStorageIpAddressSearch;
 
-    protected final SearchBuilder<EngineHostVO> GuidSearch;
-    protected final SearchBuilder<EngineHostVO> DcSearch;
-    protected final SearchBuilder<EngineHostVO> PodSearch;
-    protected final SearchBuilder<EngineHostVO> TypeSearch;
-    protected final SearchBuilder<EngineHostVO> StatusSearch;
-    protected final SearchBuilder<EngineHostVO> ResourceStateSearch;
-    protected final SearchBuilder<EngineHostVO> NameLikeSearch;
-    protected final SearchBuilder<EngineHostVO> NameSearch;
-    protected final SearchBuilder<EngineHostVO> SequenceSearch;
-    protected final SearchBuilder<EngineHostVO> DirectlyConnectedSearch;
-    protected final SearchBuilder<EngineHostVO> UnmanagedDirectConnectSearch;
-    protected final SearchBuilder<EngineHostVO> UnmanagedApplianceSearch;
-    protected final SearchBuilder<EngineHostVO> MaintenanceCountSearch;
-    protected final SearchBuilder<EngineHostVO> ClusterStatusSearch;
-    protected final SearchBuilder<EngineHostVO> TypeNameZoneSearch;
-    protected final SearchBuilder<EngineHostVO> AvailHypevisorInZone;
+    private final SearchBuilder<EngineHostVO> GuidSearch;
+    private final SearchBuilder<EngineHostVO> DcSearch;
+    private final SearchBuilder<EngineHostVO> PodSearch;
+    private final SearchBuilder<EngineHostVO> TypeSearch;
+    private final SearchBuilder<EngineHostVO> StatusSearch;
+    private final SearchBuilder<EngineHostVO> ResourceStateSearch;
+    private final SearchBuilder<EngineHostVO> NameLikeSearch;
+    private final SearchBuilder<EngineHostVO> NameSearch;
+    private final SearchBuilder<EngineHostVO> SequenceSearch;
+    private final SearchBuilder<EngineHostVO> DirectlyConnectedSearch;
+    private final SearchBuilder<EngineHostVO> UnmanagedDirectConnectSearch;
+    private final SearchBuilder<EngineHostVO> UnmanagedApplianceSearch;
+    private final SearchBuilder<EngineHostVO> MaintenanceCountSearch;
+    private final SearchBuilder<EngineHostVO> ClusterStatusSearch;
+    private final SearchBuilder<EngineHostVO> TypeNameZoneSearch;
+    private final SearchBuilder<EngineHostVO> AvailHypevisorInZone;
 
-    protected final SearchBuilder<EngineHostVO> DirectConnectSearch;
-    protected final SearchBuilder<EngineHostVO> ManagedDirectConnectSearch;
-    protected final SearchBuilder<EngineHostVO> ManagedRoutingServersSearch;
-    protected final SearchBuilder<EngineHostVO> SecondaryStorageVMSearch;
-    protected SearchBuilder<EngineHostVO> StateChangeSearch;
+    private final SearchBuilder<EngineHostVO> DirectConnectSearch;
+    private final SearchBuilder<EngineHostVO> ManagedDirectConnectSearch;
+    private final SearchBuilder<EngineHostVO> ManagedRoutingServersSearch;
+    private final SearchBuilder<EngineHostVO> SecondaryStorageVMSearch;
+    private SearchBuilder<EngineHostVO> StateChangeSearch;
 
-    protected SearchBuilder<EngineHostVO> UUIDSearch;
+    private SearchBuilder<EngineHostVO> UUIDSearch;
 
-    protected final GenericSearchBuilder<EngineHostVO, Long> HostsInStatusSearch;
-    protected final GenericSearchBuilder<EngineHostVO, Long> CountRoutingByDc;
-    protected final SearchBuilder<EngineHostVO> RoutingSearch;
+    private final GenericSearchBuilder<EngineHostVO, Long> HostsInStatusSearch;
+    private final GenericSearchBuilder<EngineHostVO, Long> CountRoutingByDc;
+    private final SearchBuilder<EngineHostVO> RoutingSearch;
 
-    protected final Attribute _statusAttr;
-    protected final Attribute _resourceStateAttr;
-    protected final Attribute _msIdAttr;
-    protected final Attribute _pingTimeAttr;
+    private final Attribute _statusAttr;
+    private final Attribute _resourceStateAttr;
+    private final Attribute _msIdAttr;
+    private final Attribute _pingTimeAttr;
 
     @Inject
-    protected HostDetailsDao _detailsDao;
+    private HostDetailsDao _detailsDao;
     @Inject
-    protected HostTagsDao _hostTagsDao;
+    private HostTagsDao _hostTagsDao;
     @Inject
-    protected EngineClusterDao _clusterDao;
+    private EngineClusterDao _clusterDao;
 
     public EngineHostDaoImpl() {
 
@@ -317,89 +308,6 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
     }
 
     @Override
-    public long countBy(long clusterId, ResourceState... states) {
-        SearchCriteria<EngineHostVO> sc = MaintenanceCountSearch.create();
-
-        sc.setParameters("resourceState", (Object[])states);
-        sc.setParameters("cluster", clusterId);
-
-        List<EngineHostVO> hosts = listBy(sc);
-        return hosts.size();
-    }
-
-    @Override
-    public EngineHostVO findByGuid(String guid) {
-        SearchCriteria<EngineHostVO> sc = GuidSearch.create("guid", guid);
-        return findOneBy(sc);
-    }
-
-    @Override
-    @DB
-    public List<EngineHostVO> findAndUpdateDirectAgentToLoad(long lastPingSecondsAfter, Long limit, long managementServerId) {
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
-        txn.start();
-        SearchCriteria<EngineHostVO> sc = UnmanagedDirectConnectSearch.create();
-        sc.setParameters("lastPinged", lastPingSecondsAfter);
-        //sc.setParameters("resourceStates", ResourceState.ErrorInMaintenance, ResourceState.Maintenance, ResourceState.PrepareForMaintenance, ResourceState.Disabled);
-        sc.setJoinParameters("ClusterManagedSearch", "managed", Managed.ManagedState.Managed);
-        List<EngineHostVO> hosts = lockRows(sc, new Filter(EngineHostVO.class, "clusterId", true, 0L, limit), true);
-
-        for (EngineHostVO host : hosts) {
-            host.setManagementServerId(managementServerId);
-            update(host.getId(), host);
-        }
-
-        txn.commit();
-
-        return hosts;
-    }
-
-    @Override
-    @DB
-    public List<EngineHostVO> findAndUpdateApplianceToLoad(long lastPingSecondsAfter, long managementServerId) {
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
-
-        txn.start();
-        SearchCriteria<EngineHostVO> sc = UnmanagedApplianceSearch.create();
-        sc.setParameters("lastPinged", lastPingSecondsAfter);
-        sc.setParameters("types", Type.ExternalDhcp, Type.ExternalFirewall, Type.ExternalLoadBalancer, Type.PxeServer, Type.TrafficMonitor, Type.L2Networking);
-        List<EngineHostVO> hosts = lockRows(sc, null, true);
-
-        for (EngineHostVO host : hosts) {
-            host.setManagementServerId(managementServerId);
-            update(host.getId(), host);
-        }
-
-        txn.commit();
-
-        return hosts;
-    }
-
-    @Override
-    public void markHostsAsDisconnected(long msId, long lastPing) {
-        SearchCriteria<EngineHostVO> sc = MsStatusSearch.create();
-        sc.setParameters("ms", msId);
-
-        EngineHostVO host = createForUpdate();
-        host.setLastPinged(lastPing);
-        host.setDisconnectedOn(new Date());
-        UpdateBuilder ub = getUpdateBuilder(host);
-        ub.set(host, "status", Status.Disconnected);
-
-        update(ub, sc, null);
-
-        sc = MsStatusSearch.create();
-        sc.setParameters("ms", msId);
-
-        host = createForUpdate();
-        host.setManagementServerId(null);
-        host.setLastPinged((System.currentTimeMillis() >> 10) - (10 * 60));
-        host.setDisconnectedOn(new Date());
-        ub = getUpdateBuilder(host);
-        update(ub, sc, null);
-    }
-
-    @Override
     public List<EngineHostVO> listByHostTag(Host.Type type, Long clusterId, Long podId, long dcId, String hostTag) {
 
         SearchBuilder<HostTagVO> hostTagSearch = _hostTagsDao.createSearchBuilder();
@@ -433,54 +341,6 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
     }
 
     @Override
-    public List<EngineHostVO> listAllUpAndEnabledNonHAHosts(Type type, Long clusterId, Long podId, long dcId, String haTag) {
-        SearchBuilder<HostTagVO> hostTagSearch = null;
-        if (haTag != null && !haTag.isEmpty()) {
-            hostTagSearch = _hostTagsDao.createSearchBuilder();
-            hostTagSearch.and().op("tag", hostTagSearch.entity().getTag(), SearchCriteria.Op.NEQ);
-            hostTagSearch.or("tagNull", hostTagSearch.entity().getTag(), SearchCriteria.Op.NULL);
-            hostTagSearch.cp();
-        }
-
-        SearchBuilder<EngineHostVO> hostSearch = createSearchBuilder();
-
-        hostSearch.and("type", hostSearch.entity().getType(), SearchCriteria.Op.EQ);
-        hostSearch.and("clusterId", hostSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
-        hostSearch.and("podId", hostSearch.entity().getPodId(), SearchCriteria.Op.EQ);
-        hostSearch.and("zoneId", hostSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        hostSearch.and("status", hostSearch.entity().getStatus(), SearchCriteria.Op.EQ);
-        hostSearch.and("resourceState", hostSearch.entity().getResourceState(), SearchCriteria.Op.EQ);
-
-        if (haTag != null && !haTag.isEmpty()) {
-            hostSearch.join("hostTagSearch", hostTagSearch, hostSearch.entity().getId(), hostTagSearch.entity().getHostId(), JoinBuilder.JoinType.LEFTOUTER);
-        }
-
-        SearchCriteria<EngineHostVO> sc = hostSearch.create();
-
-        if (haTag != null && !haTag.isEmpty()) {
-            sc.setJoinParameters("hostTagSearch", "tag", haTag);
-        }
-
-        if (type != null) {
-            sc.setParameters("type", type);
-        }
-
-        if (clusterId != null) {
-            sc.setParameters("clusterId", clusterId);
-        }
-
-        if (podId != null) {
-            sc.setParameters("podId", podId);
-        }
-
-        sc.setParameters("zoneId", dcId);
-        sc.setParameters("status", Status.Up);
-        sc.setParameters("resourceState", ResourceState.Enabled);
-
-        return listBy(sc);
-    }
-
-    @Override
     public void loadDetails(EngineHostVO host) {
         Map<String, String> details = _detailsDao.findDetails(host.getId());
         host.setDetails(details);
@@ -490,29 +350,6 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
     public void loadHostTags(EngineHostVO host) {
         List<String> hostTags = _hostTagsDao.gethostTags(host.getId());
         host.setHostTags(hostTags);
-    }
-
-    @DB
-    @Override
-    public List<EngineHostVO> findLostHosts(long timeout) {
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
-        List<EngineHostVO> result = new ArrayList<EngineHostVO>();
-        String sql =
-                "select h.id from host h left join  cluster c on h.cluster_id=c.id where h.mgmt_server_id is not null and h.last_ping < ? and h.status in ('Up', 'Updating', 'Disconnected', 'Connecting') and h.type not in ('ExternalFirewall', 'ExternalLoadBalancer', 'TrafficMonitor', 'SecondaryStorage', 'LocalSecondaryStorage', 'L2Networking') and (h.cluster_id is null or c.managed_state = 'Managed') ;";
-        try(PreparedStatement pstmt = txn.prepareStatement(sql);) {
-            pstmt.setLong(1, timeout);
-            try(ResultSet rs = pstmt.executeQuery();) {
-                while (rs.next()) {
-                    long id = rs.getLong(1); //ID column
-                    result.add(findById(id));
-                }
-            }catch (Exception e) {
-                s_logger.warn("Exception: ", e);
-            }
-        } catch (Exception e) {
-            s_logger.warn("Exception: ", e);
-        }
-        return result;
     }
 
     @Override
@@ -580,66 +417,6 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
     }
 
     @Override
-    @DB
-    public List<RunningHostCountInfo> getRunningHostCounts(Date cutTime) {
-        String sql =
-            "select * from (" + "select h.data_center_id, h.type, count(*) as count from host as h INNER JOIN mshost as m ON h.mgmt_server_id=m.msid "
-                + "where h.status='Up' and h.type='SecondaryStorage' and m.last_update > ? " + "group by h.data_center_id, h.type " + "UNION ALL "
-                + "select h.data_center_id, h.type, count(*) as count from host as h INNER JOIN mshost as m ON h.mgmt_server_id=m.msid "
-                + "where h.status='Up' and h.type='Routing' and m.last_update > ? " + "group by h.data_center_id, h.type) as t " + "ORDER by t.data_center_id, t.type";
-
-        ArrayList<RunningHostCountInfo> l = new ArrayList<RunningHostCountInfo>();
-
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
-        ;
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = txn.prepareAutoCloseStatement(sql);
-            String gmtCutTime = DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutTime);
-            pstmt.setString(1, gmtCutTime);
-            pstmt.setString(2, gmtCutTime);
-
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                RunningHostCountInfo info = new RunningHostCountInfo();
-                info.setDcId(rs.getLong(1));
-                info.setHostType(rs.getString(2));
-                info.setCount(rs.getInt(3));
-
-                l.add(info);
-            }
-        } catch (SQLException e) {
-            s_logger.error("sql exception while getting running hosts: " + e.getLocalizedMessage());
-        } catch (Throwable e) {
-            s_logger.info("[ignored]"
-                    + "caught something while getting running hosts: " + e.getLocalizedMessage());
-        }
-        return l;
-    }
-
-    @Override
-    public long getNextSequence(long hostId) {
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("getNextSequence(), hostId: " + hostId);
-        }
-
-        TableGenerator tg = _tgs.get("host_req_sq");
-        assert tg != null : "how can this be wrong!";
-
-        return s_seqFetcher.getNextSequence(Long.class, tg, hostId);
-    }
-
-    /*TODO: this is used by mycloud, check if it needs resource state Enabled */
-    @Override
-    public long countRoutingHostsByDataCenter(long dcId) {
-        SearchCriteria<Long> sc = CountRoutingByDc.create();
-        sc.setParameters("dc", dcId);
-        sc.setParameters("type", Host.Type.Routing);
-        sc.setParameters("status", Status.Up.toString());
-        return customSearch(sc, null).get(0);
-    }
-
-    @Override
     public boolean updateState(State currentState, DataCenterResourceEntity.State.Event event, State nextState, DataCenterResourceEntity hostEntity, Object data) {
         EngineHostVO vo = findById(hostEntity.getId());
         Date oldUpdatedTime = vo.getLastUpdated();
@@ -683,77 +460,8 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
     }
 
     @Override
-    public boolean updateResourceState(ResourceState oldState, ResourceState.Event event, ResourceState newState, Host vo) {
-        EngineHostVO host = (EngineHostVO)vo;
-        SearchBuilder<EngineHostVO> sb = createSearchBuilder();
-        sb.and("resource_state", sb.entity().getResourceState(), SearchCriteria.Op.EQ);
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.done();
-
-        SearchCriteria<EngineHostVO> sc = sb.create();
-
-        sc.setParameters("resource_state", oldState);
-        sc.setParameters("id", host.getId());
-
-        UpdateBuilder ub = getUpdateBuilder(host);
-        ub.set(host, _resourceStateAttr, newState);
-        int result = update(ub, sc, null);
-        assert result <= 1 : "How can this update " + result + " rows? ";
-
-        if (state_logger.isDebugEnabled() && result == 0) {
-            EngineHostVO ho = findById(host.getId());
-            assert ho != null : "How how how? : " + host.getId();
-
-            StringBuilder str = new StringBuilder("Unable to update resource state: [");
-            str.append("m = " + host.getId());
-            str.append("; name = " + host.getName());
-            str.append("; old state = " + oldState);
-            str.append("; event = " + event);
-            str.append("; new state = " + newState + "]");
-            state_logger.debug(str.toString());
-        } else {
-            StringBuilder msg = new StringBuilder("Resource state update: [");
-            msg.append("id = " + host.getId());
-            msg.append("; name = " + host.getName());
-            msg.append("; old state = " + oldState);
-            msg.append("; event = " + event);
-            msg.append("; new state = " + newState + "]");
-            state_logger.debug(msg.toString());
-        }
-
-        return result > 0;
-    }
-
-    @Override
-    public EngineHostVO findByTypeNameAndZoneId(long zoneId, String name, Host.Type type) {
-        SearchCriteria<EngineHostVO> sc = TypeNameZoneSearch.create();
-        sc.setParameters("type", type);
-        sc.setParameters("name", name);
-        sc.setParameters("zoneId", zoneId);
-        return findOneBy(sc);
-    }
-
-    @Override
-    public List<EngineHostVO> findHypervisorHostInCluster(long clusterId) {
-        SearchCriteria<EngineHostVO> sc = TypeClusterStatusSearch.create();
-        sc.setParameters("type", Host.Type.Routing);
-        sc.setParameters("cluster", clusterId);
-        sc.setParameters("status", Status.Up);
-        sc.setParameters("resourceState", ResourceState.Enabled);
-
-        return listBy(sc);
-    }
-
-    @Override
     public List<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> lockRows(
         SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> sc, Filter filter, boolean exclusive) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO lockOneRandomRow(
-        SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> sc, boolean exclusive) {
         // TODO Auto-generated method stub
         return null;
     }
