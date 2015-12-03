@@ -1158,6 +1158,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (newDiskOfferingId != null) {
                 volume.setDiskOfferingId(newDiskOfferingId);
             }
+            if (currentSize != newSize) {
+                volume.setSize(newSize);
+            }
 
             _volsDao.update(volume.getId(), volume);
 
