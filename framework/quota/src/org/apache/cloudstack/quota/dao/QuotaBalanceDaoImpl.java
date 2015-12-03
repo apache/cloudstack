@@ -16,7 +16,6 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.QueryBuilder;
@@ -173,10 +172,11 @@ public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> im
 
     public BigDecimal lastQuotaBalance(final Long accountId, final Long domainId, Date startDate) {
         List<QuotaBalanceVO> quotaBalance = lastQuotaBalanceVO(accountId, domainId, startDate);
-        if (quotaBalance.size() == 0) {
-            new InvalidParameterValueException("There are no balance entries on or before the requested date.");
-        }
         BigDecimal finalBalance = new BigDecimal(0);
+        if (quotaBalance.isEmpty()) {
+            s_logger.info("There are no balance entries on or before the requested date.");
+            return finalBalance;
+        }
         for (QuotaBalanceVO entry : quotaBalance) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("lastQuotaBalance Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
