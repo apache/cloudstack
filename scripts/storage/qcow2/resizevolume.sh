@@ -187,6 +187,22 @@ resizeqcow2() {
   # if this is a shrink operation, fail if commands will shrink the volume and we haven't signed of on shrinking
   failshrink
 
+  #move this back into cloudstack libvirt calls once the libvirt java bindings support block resize
+  #we try to inform hypervisor of new size, but don't fail if we can't
+  if `virsh help 2>/dev/null | grep -q blockresize`
+  then
+    if `virsh domstate $vmname >/dev/null 2>&1`
+    then
+        log "vm $vmname is running, use 'virsh blockresize' to resize the volume"
+        notifyqemu
+        if [ $? -eq 0 ]
+        then
+            log "performed successful resize - currentsize:$currentsize newsize:$newsize path:$path type:$ptype vmname:$vmname live:$liveresize shrink:$shrink"
+            exit 0
+        fi
+    fi
+  fi
+
   output=`qemu-img resize $path $newsize 2>&1`
   retval=$?
 
@@ -195,10 +211,6 @@ resizeqcow2() {
     log "qemu-img resize failed: $output" 1
     exit 1
   fi
-
-  #move this back into cloudstack libvirt calls once the libvirt java bindings support block resize
-  #we try to inform hypervisor of new size, but don't fail if we can't
-  notifyqemu
 
   log "performed successful resize - currentsize:$currentsize newsize:$newsize path:$path type:$ptype vmname:$vmname live:$liveresize shrink:$shrink"
 }
@@ -244,7 +256,7 @@ then
   resizelvm
 elif [ "$ptype" == "QCOW2" ]
 then
-  notifyqemu
+  resizeqcow2
 elif [ "$ptype" == "NOTIFYONLY" ]
 then
   notifyqemu
