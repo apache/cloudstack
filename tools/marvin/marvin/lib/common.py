@@ -259,6 +259,17 @@ def get_zone(apiclient, zone_name=None, zone_id=None):
     '''
     return cmd_out[0]
 
+def get_physical_networks(apiclient, zoneid):
+    '''
+     @name : get_physical_networks
+     @Desc :Returns A list of the Physical Networks in the given Zone
+     @Input : zoneid: The Zone ID
+     @Output : 1. A list containing the Physical Networks
+    '''
+    cmd = listPhysicalNetworks.listPhysicalNetworksCmd()
+    cmd.zoneid = zoneid
+    physical_networks = apiclient.listPhysicalNetworks(cmd)
+    return physical_networks
 
 def get_pod(apiclient, zone_id=None, pod_id=None, pod_name=None):
     '''

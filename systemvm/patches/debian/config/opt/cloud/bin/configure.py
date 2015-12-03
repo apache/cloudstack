@@ -74,6 +74,27 @@ class CsPassword(CsDataBag):
                 logging.debug("Update password server result ==> %s" % result)
 
 
+class CsStaticRoutes(CsDataBag):
+    
+    def process(self):
+        logging.debug("Processing CsStaticRoutes file ==> %s" % self.dbag)
+        for item in self.dbag:
+            if item == "id":
+                continue
+            self.__update(self.dbag[item])
+
+    def __update(self, route):
+        if route['revoke']:
+            command = "route del -net %s gw %s" % (route['network'], route['gateway'])
+            result = CsHelper.execute(command)
+        else:
+            command = "ip route show | grep %s | awk '{print $1, $3}'" % route['network']
+            result = CsHelper.execute(command)
+            if not result:
+                route_command = "route add -net %s gw %s" % (route['network'], route['gateway'])
+                result = CsHelper.execute(route_command)
+
+
 class CsAcl(CsDataBag):
     """
         Deal with Network acls
@@ -932,12 +953,16 @@ def main(argv):
     mon = CsMonitor("monitorservice", config)
     mon.process()
 
-    logging.debug("Configuring iptables rules .....")
+    logging.debug("Configuring iptables rules")
     nf = CsNetfilters()
     nf.compare(config.get_fw())
-    
+
     red = CsRedundant(config)
     red.set()
+
+    logging.debug("Configuring static routes")
+    static_routes = CsStaticRoutes("staticroutes", config)
+    static_routes.process()
 
     logging.debug("Configuring iptables rules done ...saving rules")
 
