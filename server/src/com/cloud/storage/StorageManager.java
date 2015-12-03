@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.agent.api.Answer;
@@ -39,6 +40,13 @@ import com.cloud.utils.Pair;
 import com.cloud.vm.VMInstanceVO;
 
 public interface StorageManager extends StorageService {
+    static final ConfigKey<Integer> StorageCleanupInterval = new ConfigKey<Integer>(Integer.class, "storage.cleanup.interval", "Advanced", "86400",
+            "The interval (in seconds) to wait before running the storage cleanup thread.", false, ConfigKey.Scope.Global, null);
+    static final ConfigKey<Integer> StorageCleanupDelay = new ConfigKey<Integer>(Integer.class, "storage.cleanup.delay", "Advanced", "86400",
+            "Determines how long (in seconds) to wait before actually expunging destroyed volumes. The default value = the default value of storage.cleanup.interval.", false, ConfigKey.Scope.Global, null);
+    static final ConfigKey<Boolean> StorageCleanupEnabled = new ConfigKey<Boolean>(Boolean.class, "storage.cleanup.enabled", "Advanced", "true",
+            "Enables/disables the storage cleanup thread.", false, ConfigKey.Scope.Global, null);
+
     /**
      * Returns a comma separated list of tags for the specified storage pool
      * @param poolId
