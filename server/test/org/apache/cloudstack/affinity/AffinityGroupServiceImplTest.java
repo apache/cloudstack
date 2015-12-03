@@ -35,6 +35,7 @@ import javax.naming.ConfigurationException;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.user.User;
+
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.test.utils.SpringUtils;
@@ -56,9 +57,9 @@ import org.springframework.core.type.filter.TypeFilter;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
+import org.apache.cloudstack.api.command.user.affinitygroup.CreateAffinityGroupCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
@@ -86,7 +87,7 @@ import com.cloud.projects.dao.ProjectDao;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
-public class AffinityApiUnitTest {
+public class AffinityGroupServiceImplTest {
 
     @Inject
     AffinityGroupServiceImpl _affinityService;
@@ -124,7 +125,12 @@ public class AffinityApiUnitTest {
     @Inject
     DedicatedResourceDao _dedicatedDao;
 
-    private static long domainId = 5L;
+    private static final long DOMAIN_ID = 5L;
+    private static final long PROJECT_ID = 10L;
+    private static final String ACCOUNT_NAME = "user";
+    private static final String AFFINITY_GROUP_NAME = "group1";
+
+    private AccountVO acct;
 
     @BeforeClass
     public static void setUpClass() throws ConfigurationException {
@@ -133,16 +139,15 @@ public class AffinityApiUnitTest {
     @Before
     public void setUp() {
         ComponentContext.initComponentsLifeCycle();
-        AccountVO acct = new AccountVO(200L);
+        acct = new AccountVO(200L);
         acct.setType(Account.ACCOUNT_TYPE_NORMAL);
-        acct.setAccountName("user");
-        acct.setDomainId(domainId);
+        acct.setAccountName(ACCOUNT_NAME);
+        acct.setDomainId(DOMAIN_ID);
 
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
 
         CallContext.register(user, acct);
 
-        when(_acctMgr.finalizeOwner((Account)anyObject(), anyString(), anyLong(), anyLong())).thenReturn(acct);
         when(_processor.getType()).thenReturn("mock");
         when(_accountDao.findByIdIncludingRemoved(0L)).thenReturn(acct);
 
@@ -150,7 +155,7 @@ public class AffinityApiUnitTest {
         affinityProcessors.add(_processor);
         _affinityService.setAffinityGroupProcessors(affinityProcessors);
 
-        AffinityGroupVO group = new AffinityGroupVO("group1", "mock", "mock group", domainId, 200L, ControlledEntity.ACLType.Account);
+        AffinityGroupVO group = new AffinityGroupVO(AFFINITY_GROUP_NAME, "mock", "mock group", DOMAIN_ID, 200L, ControlledEntity.ACLType.Account);
         Mockito.when(_affinityGroupDao.persist(Matchers.any(AffinityGroupVO.class))).thenReturn(group);
         Mockito.when(_affinityGroupDao.findById(Matchers.anyLong())).thenReturn(group);
         Mockito.when(_affinityGroupDao.findByAccountAndName(Matchers.anyLong(), Matchers.anyString())).thenReturn(group);
@@ -165,47 +170,84 @@ public class AffinityApiUnitTest {
     }
 
     @Test
+    public void createAffinityGroupFromCmdTest() {
+        when(_acctMgr.finalizeOwner((Account)anyObject(), anyString(), anyLong(), anyLong())).thenReturn(acct);
+        when(_groupDao.isNameInUse(anyLong(), anyLong(), eq(AFFINITY_GROUP_NAME))).thenReturn(false);
+        CreateAffinityGroupCmd mockCreateAffinityGroupCmd = Mockito.mock(CreateAffinityGroupCmd.class);
+        when(mockCreateAffinityGroupCmd.getProjectId()).thenReturn(PROJECT_ID);
+        when(mockCreateAffinityGroupCmd.getAffinityGroupName()).thenReturn(AFFINITY_GROUP_NAME);
+        when(mockCreateAffinityGroupCmd.getAffinityGroupType()).thenReturn("mock");
+        when(mockCreateAffinityGroupCmd.getDescription()).thenReturn("affinity group one");
+        AffinityGroup group = _affinityService.createAffinityGroup(mockCreateAffinityGroupCmd);
+        assertNotNull("Affinity group 'group1' of type 'mock' failed to create ", group);
+    }
+
+    @Test
     public void createAffinityGroupTest() {
-        when(_groupDao.isNameInUse(anyLong(), anyLong(), eq("group1"))).thenReturn(false);
-        AffinityGroup group = _affinityService.createAffinityGroup("user", null, domainId, "group1", "mock", "affinity group one");
+        when(_acctMgr.finalizeOwner((Account)anyObject(), anyString(), anyLong(), anyLong())).thenReturn(acct);
+        when(_groupDao.isNameInUse(anyLong(), anyLong(), eq(AFFINITY_GROUP_NAME))).thenReturn(false);
+        AffinityGroup group = _affinityService.createAffinityGroup(ACCOUNT_NAME, null, DOMAIN_ID, AFFINITY_GROUP_NAME, "mock", "affinity group one");
         assertNotNull("Affinity group 'group1' of type 'mock' failed to create ", group);
 
     }
 
+    @Test
+    public void shouldDeleteDomainLevelAffinityGroup() {
+        AffinityGroupVO mockGroup = Mockito.mock(AffinityGroupVO.class);
+        when(mockGroup.getId()).thenReturn(2L);
+        when(_affinityGroupDao.findById(Matchers.anyLong())).thenReturn(mockGroup);
+        _affinityService.deleteAffinityGroup(2L, null, null, DOMAIN_ID, null);
+        Mockito.verify(_affinityGroupDao).expunge(2L);
+    }
+
+    @Test
+    public void shouldDeleteAffintyGroupById() {
+        AffinityGroupVO mockGroup = Mockito.mock(AffinityGroupVO.class);
+        when(mockGroup.getId()).thenReturn(1L);
+        when(_affinityGroupDao.findById(Matchers.anyLong())).thenReturn(mockGroup);
+        _affinityService.deleteAffinityGroup(1L, ACCOUNT_NAME, null, DOMAIN_ID, null);
+        Mockito.verify(_affinityGroupDao).expunge(1L);
+    }
+
     @Test(expected = InvalidParameterValueException.class)
     public void invalidAffinityTypeTest() {
-        AffinityGroup group = _affinityService.createAffinityGroup("user", null, domainId, "group1", "invalid", "affinity group one");
+        when(_acctMgr.finalizeOwner((Account)anyObject(), anyString(), anyLong(), anyLong())).thenReturn(acct);
+        _affinityService.createAffinityGroup(ACCOUNT_NAME, null, DOMAIN_ID, AFFINITY_GROUP_NAME, "invalid", "affinity group one");
 
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void uniqueAffinityNameTest() {
-        when(_groupDao.isNameInUse(anyLong(), anyLong(), eq("group1"))).thenReturn(true);
-        AffinityGroup group2 = _affinityService.createAffinityGroup("user", null, domainId, "group1", "mock", "affinity group two");
+        when(_acctMgr.finalizeOwner((Account)anyObject(), anyString(), anyLong(), anyLong())).thenReturn(acct);
+        when(_groupDao.isNameInUse(anyLong(), anyLong(), eq(AFFINITY_GROUP_NAME))).thenReturn(true);
+        _affinityService.createAffinityGroup(ACCOUNT_NAME, null, DOMAIN_ID, AFFINITY_GROUP_NAME, "mock", "affinity group two");
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void deleteAffinityGroupInvalidIdTest() throws ResourceInUseException {
+        when(_acctMgr.finalizeOwner((Account)anyObject(), anyString(), anyLong(), anyLong())).thenReturn(acct);
         when(_groupDao.findById(20L)).thenReturn(null);
-        _affinityService.deleteAffinityGroup(20L, "user", null, domainId, "group1");
+        _affinityService.deleteAffinityGroup(20L, ACCOUNT_NAME, null, DOMAIN_ID, AFFINITY_GROUP_NAME);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void deleteAffinityGroupInvalidIdName() throws ResourceInUseException {
-        when(_acctMgr.finalyzeAccountId("user", domainId, null, true)).thenReturn(200L);
-        when(_groupDao.findByAccountAndName(200L, "group1")).thenReturn(null);
-        _affinityService.deleteAffinityGroup(null, "user", null, domainId, "group1");
+        when(_acctMgr.finalizeOwner((Account)anyObject(), anyString(), anyLong(), anyLong())).thenReturn(acct);
+        when(_acctMgr.finalyzeAccountId(ACCOUNT_NAME, DOMAIN_ID, null, true)).thenReturn(200L);
+        when(_groupDao.findByAccountAndName(200L, AFFINITY_GROUP_NAME)).thenReturn(null);
+        _affinityService.deleteAffinityGroup(null, ACCOUNT_NAME, null, DOMAIN_ID, AFFINITY_GROUP_NAME);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void deleteAffinityGroupNullIdName() throws ResourceInUseException {
-        _affinityService.deleteAffinityGroup(null, "user", null, domainId, null);
+        when(_acctMgr.finalizeOwner((Account)anyObject(), anyString(), anyLong(), anyLong())).thenReturn(acct);
+        _affinityService.deleteAffinityGroup(null, ACCOUNT_NAME, null, DOMAIN_ID, null);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void updateAffinityGroupVMRunning() throws ResourceInUseException {
-
-        UserVmVO vm = new UserVmVO(10L, "test", "test", 101L, HypervisorType.Any, 21L, false, false, domainId, 200L, 1, 5L, "", "test", 1L);
+        when(_acctMgr.finalizeOwner((Account)anyObject(), anyString(), anyLong(), anyLong())).thenReturn(acct);
+        UserVmVO vm = new UserVmVO(10L, "test", "test", 101L, HypervisorType.Any, 21L, false, false, DOMAIN_ID, 200L, 1, 5L, "", "test", 1L);
         vm.setState(VirtualMachine.State.Running);
         when(_vmDao.findById(10L)).thenReturn(vm);
 
@@ -216,9 +258,7 @@ public class AffinityApiUnitTest {
     }
 
     @Configuration
-    @ComponentScan(basePackageClasses = {AffinityGroupServiceImpl.class, ActionEventUtils.class},
-                   includeFilters = {@Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)},
-                   useDefaultFilters = false)
+    @ComponentScan(basePackageClasses = {AffinityGroupServiceImpl.class, ActionEventUtils.class}, includeFilters = {@Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)}, useDefaultFilters = false)
     public static class TestConfiguration extends SpringUtils.CloudStackTestConfiguration {
 
         @Bean

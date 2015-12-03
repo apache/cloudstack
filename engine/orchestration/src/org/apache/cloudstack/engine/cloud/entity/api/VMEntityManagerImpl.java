@@ -192,7 +192,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
             try {
                 dest = _dpMgr.planDeployment(vmProfile, plan, exclude, plannerToUse);
             } catch (AffinityConflictException e) {
-                throw new CloudRuntimeException("Unable to create deployment, affinity rules associted to the VM conflict");
+                throw new CloudRuntimeException("Unable to create deployment, affinity rules associated to the VM conflict");
             }
 
             if (dest != null) {
