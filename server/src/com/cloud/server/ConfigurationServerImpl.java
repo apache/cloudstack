@@ -155,6 +155,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
     protected ConfigDepot _configDepot;
     @Inject
     protected ConfigurationManager _configMgr;
+    @Inject
+    protected ManagementService _mgrService;
 
 
     public ConfigurationServerImpl() {
@@ -416,30 +418,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         });
     }
 
-    /*
-    private void updateUuids() {
-        _identityDao.initializeDefaultUuid("disk_offering");
-        _identityDao.initializeDefaultUuid("network_offerings");
-        _identityDao.initializeDefaultUuid("vm_template");
-        _identityDao.initializeDefaultUuid("user");
-        _identityDao.initializeDefaultUuid("domain");
-        _identityDao.initializeDefaultUuid("account");
-        _identityDao.initializeDefaultUuid("guest_os");
-        _identityDao.initializeDefaultUuid("guest_os_category");
-        _identityDao.initializeDefaultUuid("hypervisor_capabilities");
-        _identityDao.initializeDefaultUuid("snapshot_policy");
-        _identityDao.initializeDefaultUuid("security_group");
-        _identityDao.initializeDefaultUuid("security_group_rule");
-        _identityDao.initializeDefaultUuid("physical_network");
-        _identityDao.initializeDefaultUuid("physical_network_traffic_types");
-        _identityDao.initializeDefaultUuid("physical_network_service_providers");
-        _identityDao.initializeDefaultUuid("virtual_router_providers");
-        _identityDao.initializeDefaultUuid("networks");
-        _identityDao.initializeDefaultUuid("user_ip_address");
-        _identityDao.initializeDefaultUuid("counter");
-    }
-     */
-
     private String getMountParent() {
         return getEnvironmentProperty("mount.parent");
     }
@@ -692,7 +670,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         if (already == null) {
             TransactionLegacy txn = TransactionLegacy.currentTxn();
             try {
-                String rpassword = PasswordGenerator.generatePresharedKey(8);
+                String rpassword = _mgrService.generateRandomPassword();
                 String wSql = "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) "
                 + "VALUES ('Secure','DEFAULT', 'management-server','system.vm.password', ?,'randmon password generated each management server starts for system vm')";
                 PreparedStatement stmt = txn.prepareAutoCloseStatement(wSql);

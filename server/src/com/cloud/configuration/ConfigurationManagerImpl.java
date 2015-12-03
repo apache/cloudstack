@@ -773,7 +773,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     throw new InvalidParameterValueException("Please enter a positive value for the configuration parameter:" + name);
                 }
                 //TODO - better validation for all password pamameters
-                if ("vm.password.length".equalsIgnoreCase(name) && val < 6) {
+                if ("vm.password.length".equalsIgnoreCase(name) && val < 10) {
                     throw new InvalidParameterValueException("Please enter a value greater than 6 for the configuration parameter:" + name);
                 }
                 if ("remote.access.vpn.psk.length".equalsIgnoreCase(name)) {

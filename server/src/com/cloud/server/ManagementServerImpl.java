@@ -503,6 +503,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
@@ -670,9 +671,11 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-public class ManagementServerImpl extends ManagerBase implements ManagementServer {
+public class ManagementServerImpl extends ManagerBase implements ManagementServer, Configurable {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
 
+    static final ConfigKey<Integer> vmPasswordLength = new ConfigKey<Integer>("Advanced", Integer.class, "vm.password.length", "10",
+                                                                                      "Specifies the length of a randomly generated password", false);
     @Inject
     public AccountManager _accountMgr;
     @Inject
@@ -904,7 +907,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public String generateRandomPassword() {
-        final Integer passwordLength = Integer.parseInt(_configDao.getValue("vm.password.length"));
+        final Integer passwordLength = vmPasswordLength.value();
         return PasswordGenerator.generateRandomPassword(passwordLength);
     }
 
@@ -3017,6 +3020,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(GetUploadParamsForTemplateCmd.class);
         cmdList.add(GetUploadParamsForVolumeCmd.class);
         return cmdList;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return ManagementServer.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {vmPasswordLength};
     }
 
     protected class EventPurgeTask extends ManagedContextRunnable {

@@ -899,14 +899,6 @@ public enum Config {
             "0",
             "Default disk I/O read rate in requests per second allowed in User vm's disk.",
             null),
-    VmPasswordLength(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "vm.password.length",
-            "6",
-            "Specifies the length of a randomly generated password",
-            null),
     VmDiskThrottlingIopsWriteRate(
             "Advanced",
             ManagementServer.class,
