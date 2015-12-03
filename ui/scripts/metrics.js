@@ -159,7 +159,7 @@
                                             items[idx].clusters += parseInt(json.listclustersresponse.count);
                                             $.each(json.listclustersresponse.cluster, function(i, cluster) {
                                                 if (cluster.allocationstate == 'Enabled' && cluster.managedstate == 'Managed') {
-                                                    items[idx].clustersUp++;
+                                                    items[idx].clustersUp += 1;
                                                 }
                                                 $.ajax({
                                                     url: createURL('listHosts'),
@@ -714,12 +714,14 @@
                                     success: function(json) {
                                         if (json && json.listvirtualmachinesresponse && json.listvirtualmachinesresponse.virtualmachine) {
                                             var vms = json.listvirtualmachinesresponse.virtualmachine;
-                                            $.each(vms, function(idx, vm) {
-                                                items[idx].instances++;
-                                                if (vm.state == 'Running') {
-                                                    items[idx].instancesUp++;
-                                                }
-                                            });
+                                            if (vms) {
+                                                $.each(vms, function(_, vm) {
+                                                    items[idx].instances += 1;
+                                                    if (vm.state == 'Running') {
+                                                        items[idx].instancesUp += 1;
+                                                    }
+                                                });
+                                            }
                                         }
                                     },
                                     async: false
