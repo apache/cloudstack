@@ -233,7 +233,8 @@ class Services:
                     "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-xen.vhd.bz2",
                     "requireshvm": "True",
                 },
-            }
+            },
+            "ostype": 'CentOS 5.3 (64-bit)',
         }
 
 
@@ -250,29 +251,23 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
         testClient = super(TestVpcRemoteAccessVpn, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.services = Services().services
-
+        cls.hypervisor = testClient.getHypervisorInfo()
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
         cls.compute_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["compute_offering"]
         )
-        cls.account = Account.create(
-            cls.apiclient, services=cls.services["account"])
-
-        cls.hypervisor = cls.services["default_hypervisor"]
-        cls.logger.debug("Downloading Template: %s from: %s" % (cls.services["template"][
-                         cls.hypervisor]["name"], cls.services["template"][cls.hypervisor]["url"]))
-        cls.template = Template.register(cls.apiclient, cls.services["template"][
-                                         cls.hypervisor], cls.zone.id, hypervisor=cls.hypervisor, account=cls.account.name, domainid=cls.domain.id)
-        cls.template.download(cls.apiclient)
-
+        cls.account = Account.create(cls.apiclient, services=cls.services["account"])
+        cls.template = get_template(
+            cls.apiclient,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
         if cls.template == FAILED:
             assert False, "get_template() failed to return template with description %s" % cls.services[
                 "compute_offering"]
-
-        cls.services["virtual_machine"][
-            "hypervisor"] = cls.services["default_hypervisor"]
+        cls.services["virtual_machine"]["hypervisor"] = cls.hypervisor
         cls.cleanup = [cls.account]
 
     @attr(tags=["advanced"], required_hardware="true")
@@ -287,10 +282,9 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
             networkOffering) > 0, "No VPC based network offering")
 
         # 1) Create VPC
-        vpcOffering = VpcOffering.list(self.apiclient, isdefault=True)
-        self.assert_(vpcOffering is not None and len(
-            vpcOffering) > 0, "No VPC offerings found")
-
+        vpcOffering = VpcOffering.list(self.apiclient, name="Default VPC offering", isdefault=True)
+        self.assert_(vpcOffering is not None and len(vpcOffering)>0, "No VPC offerings found")
+        vpc = None
         try:
             vpc = VPC.create(
                 apiclient=self.apiclient,
@@ -360,7 +354,7 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
             self.fail(e)
         finally:
             self.logger.debug("Acquired public ip address: OK")
-
+        vpn = None
         try:
             vpn = Vpn.create(self.apiclient,
                              publicipid=ip.id,
@@ -423,29 +417,24 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         testClient = super(TestVpcSite2SiteVpn, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.services = Services().services
-
+        cls.hypervisor = testClient.getHypervisorInfo()
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["compute_offering"]
         )
-
-        cls.account = Account.create(
-            cls.apiclient, services=cls.services["account"])
-        cls.hypervisor = cls.services["default_hypervisor"]
-        cls.logger.debug("Downloading Template: %s from: %s" % (cls.services["template"][
-                         cls.hypervisor]["name"], cls.services["template"][cls.hypervisor]["url"]))
-        cls.template = Template.register(cls.apiclient, cls.services["template"][
-                                         cls.hypervisor], cls.zone.id, hypervisor=cls.hypervisor, account=cls.account.name, domainid=cls.domain.id)
-        cls.template.download(cls.apiclient)
-
+        cls.account = Account.create(cls.apiclient, services=cls.services["account"])
+        cls.template = get_template(
+            cls.apiclient,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
         if cls.template == FAILED:
             assert False, "get_template() failed to return template with description %s" % cls.services[
                 "compute_offering"]
 
-        cls.services["virtual_machine"][
-            "hypervisor"] = cls.services["default_hypervisor"]
+        cls.services["virtual_machine"]["hypervisor"] = cls.hypervisor
         cls.cleanup = [cls.account]
 
     def get_ssh_client(self, virtual_machine, services, retries):
@@ -505,11 +494,11 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
             networkOffering) > 0, "No VPC based network offering")
 
         # 1) Create VPC offering
-        vpcOffering = VpcOffering.list(self.apiclient, isdefault=True)
-        self.assert_(vpcOffering is not None and len(
-            vpcOffering) > 0, "No VPC offerings found")
+        vpcOffering = VpcOffering.list(self.apiclient, name="Default VPC offering", isdefault=True)
+        self.assert_(vpcOffering is not None and len(vpcOffering)>0, "No VPC offerings found")
 
         # Create VPC 1
+        vpc1 = None
         try:
             vpc1 = VPC.create(
                 apiclient=self.apiclient,
@@ -528,6 +517,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         self.logger.debug("VPC1 %s created" % (vpc1.id))
 
         # Create VPC 2
+        vpc2 = None
         try:
             vpc2 = VPC.create(
                 apiclient=self.apiclient,
@@ -549,6 +539,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
             self.apiclient, name="default_allow")[0]
 
         # Create network in VPC 1
+        ntwk1 = None
         try:
             ntwk1 = Network.create(
                 apiclient=self.apiclient,
@@ -568,6 +559,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         self.logger.debug("Network %s created in VPC %s" % (ntwk1.id, vpc1.id))
 
         # Create network in VPC 2
+        ntwk2 = None
         try:
             ntwk2 = Network.create(
                 apiclient=self.apiclient,
@@ -587,6 +579,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         self.logger.debug("Network %s created in VPC %s" % (ntwk2.id, vpc2.id))
 
         # Deploy a vm in network 2
+        vm1 = None
         try:
             vm1 = VirtualMachine.create(self.apiclient, services=self.services["virtual_machine"],
                                         templateid=self.template.id,
@@ -607,6 +600,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         self.logger.debug("VM %s deployed in VPC %s" % (vm1.id, vpc1.id))
 
         # Deploy a vm in network 2
+        vm2 = None
         try:
             vm2 = VirtualMachine.create(self.apiclient, services=self.services["virtual_machine"],
                                         templateid=self.template.id,
@@ -681,6 +675,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
             vpnconn2_response['state'], "Connected", "Failed to connect between VPCs!")
 
         # acquire an extra ip address to use to ssh into vm2
+        vm2.public_ip = None
         try:
             vm2.public_ip = PublicIPAddress.create(
                 apiclient=self.apiclient,
@@ -697,6 +692,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
                 vm2.public_ip is not None, "Failed to aqcuire public ip for vm2")
 
         # Create port forward to be able to ssh into vm2
+        natrule = None
         try:
             natrule = self.create_natrule(
                 vpc2, vm2, 22, 22, vm2.public_ip, ntwk2)
@@ -712,8 +708,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
 
         if ssh_client:
             # run ping test
-            packet_loss = ssh_client.execute(
-                "/bin/ping -c 3 -t 10 " + vm1.nic[0].ipaddress + " |grep packet|cut -d ' ' -f 7| cut -f1 -d'%'")[0]
+            packet_loss = ssh_client.execute("/bin/ping -c 3 -t 10 " + vm1.nic[0].ipaddress + " |grep packet|cut -d ' ' -f 6| cut -f1 -d'%'")[0]
             self.assert_(int(packet_loss) == 0, "Ping did not succeed")
         else:
             self.fail("Failed to setup ssh connection to %s" % vm2.public_ip)
