@@ -108,11 +108,7 @@
     </adapters>
     <adapters key="com.cloud.agent.manager.allocator.StorageAllocator">
       <adapter name="Storage"
-        class="com.cloud.agent.manager.allocator.impl.FirstFitStorageAllocator">
-        <param name="storage.overprovisioning.factor">2</param>
-      </adapter>
-      <adapter name="Storage"
-        class="com.cloud.agent.manager.allocator.impl.RandomStoragePoolAllocator">
+        class="org.apache.cloudstack.storage.allocator.RandomStoragePoolAllocator">
         <param name="storage.overprovisioning.factor">2</param>
       </adapter>
     </adapters>
