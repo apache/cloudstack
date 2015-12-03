@@ -64,7 +64,7 @@ class Services:
                     "type": "host anti-affinity",
                 },
             "virtual_machine" : {
-                "hypervisor" : "KVM",
+                
             },
             "new_domain": {
                 "name": "New Domain",

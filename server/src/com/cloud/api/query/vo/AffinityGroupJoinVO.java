@@ -72,6 +72,15 @@ public class AffinityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     @Column(name = "domain_path")
     private String domainPath = null;
 
+    @Column(name = "project_id")
+    private long projectId;
+
+    @Column(name = "project_uuid")
+    private String projectUuid;
+
+    @Column(name = "project_name")
+    private String projectName;
+
     @Column(name = "vm_id")
     private long vmId;
 
@@ -153,6 +162,20 @@ public class AffinityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
         return domainPath;
     }
 
+    public long getProjectId() {
+        return projectId;
+    }
+
+    @Override
+    public String getProjectUuid() {
+        return projectUuid;
+    }
+
+    @Override
+    public String getProjectName() {
+        return projectName;
+    }
+
     public String getDescription() {
         return description;
     }
@@ -175,18 +198,6 @@ public class AffinityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
 
     public VirtualMachine.State getVmState() {
         return vmState;
-    }
-
-    @Override
-    public String getProjectUuid() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getProjectName() {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     public ControlledEntity.ACLType getAclType() {

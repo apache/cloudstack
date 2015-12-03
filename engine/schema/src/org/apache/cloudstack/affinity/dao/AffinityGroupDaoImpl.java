@@ -22,7 +22,6 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 
@@ -134,7 +133,7 @@ public class AffinityGroupDaoImpl extends GenericDaoBase<AffinityGroupVO, Long> 
     }
 
     @Override
-    public AffinityGroup findDomainLevelGroupByName(Long domainId, String affinityGroupName) {
+    public AffinityGroupVO findDomainLevelGroupByName(Long domainId, String affinityGroupName) {
         SearchCriteria<AffinityGroupVO> sc = DomainLevelNameSearch.create();
         sc.setParameters("aclType", ControlledEntity.ACLType.Domain);
         sc.setParameters("name", affinityGroupName);
@@ -143,7 +142,7 @@ public class AffinityGroupDaoImpl extends GenericDaoBase<AffinityGroupVO, Long> 
     }
 
     @Override
-    public AffinityGroup findByAccountAndType(Long accountId, String type) {
+    public AffinityGroupVO findByAccountAndType(Long accountId, String type) {
         SearchCriteria<AffinityGroupVO> sc = AccountIdTypeSearch.create();
         sc.setParameters("accountId", accountId);
         sc.setParameters("type", type);
@@ -152,7 +151,7 @@ public class AffinityGroupDaoImpl extends GenericDaoBase<AffinityGroupVO, Long> 
     }
 
     @Override
-    public AffinityGroup findDomainLevelGroupByType(Long domainId, String type) {
+    public AffinityGroupVO findDomainLevelGroupByType(Long domainId, String type) {
         SearchCriteria<AffinityGroupVO> sc = DomainLevelTypeSearch.create();
         sc.setParameters("aclType", ControlledEntity.ACLType.Domain);
         sc.setParameters("type", type);

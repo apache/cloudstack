@@ -56,12 +56,20 @@ public class AffinityGroupResponse extends BaseResponse implements ControlledVie
     @Param(description = "the domain name of the affinity group")
     private String domainName;
 
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project ID of the affinity group")
+    private String projectId;
+
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the affinity group")
+    private String projectName;
+
     @SerializedName(ApiConstants.TYPE)
     @Param(description = "the type of the affinity group")
     private String type;
 
     @SerializedName("virtualmachineIds")
-    @Param(description = "virtual machine Ids associated with this affinity group ")
+    @Param(description = "virtual machine IDs associated with this affinity group")
     private List<String> vmIdList;
 
     public AffinityGroupResponse() {
@@ -134,14 +142,12 @@ public class AffinityGroupResponse extends BaseResponse implements ControlledVie
 
     @Override
     public void setProjectId(String projectId) {
-        // TODO Auto-generated method stub
-
+        this.projectId = projectId;
     }
 
     @Override
     public void setProjectName(String projectName) {
-        // TODO Auto-generated method stub
-
+        this.projectName = projectName;
     }
 
     public void setVMIdList(List<String> vmIdList) {

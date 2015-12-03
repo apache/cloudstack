@@ -2404,98 +2404,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
     }
 
-//    @Override
-//    public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long>
-//    permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject,
-//            boolean listAll, boolean forProjectInvitation) {
-//        Long domainId = domainIdRecursiveListProject.first();
-//        if (domainId != null) {
-//            Domain domain = _domainDao.findById(domainId);
-//            if (domain == null) {
-//                throw new InvalidParameterValueException("Unable to find domain by id " + domainId);
-//            }
-//            // check permissions
-//            checkAccess(caller, domain);
-//        }
-//
-//        if (accountName != null) {
-//            if (projectId != null) {
-//                throw new InvalidParameterValueException("Account and projectId can't be specified together");
-//            }
-//
-//            Account userAccount = null;
-//            Domain domain = null;
-//            if (domainId != null) {
-//                userAccount = _accountDao.findActiveAccount(accountName, domainId);
-//                domain = _domainDao.findById(domainId);
-//            } else {
-//                userAccount = _accountDao.findActiveAccount(accountName, caller.getDomainId());
-//                domain = _domainDao.findById(caller.getDomainId());
-//            }
-//
-//            if (userAccount != null) {
-//                checkAccess(caller, null, false, userAccount);
-//                //check permissions
-//                permittedAccounts.add(userAccount.getId());
-//            } else {
-//                throw new InvalidParameterValueException("could not find account " + accountName + " in domain " + domain.getUuid());
-//            }
-//        }
-//
-//        // set project information
-//        if (projectId != null) {
-//            if (!forProjectInvitation) {
-//                if (projectId.longValue() == -1) {
-//                    if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-//                        permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
-//                    } else {
-//                        domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.ListProjectResourcesOnly);
-//                    }
-//                } else {
-//                    Project project = _projectMgr.getProject(projectId);
-//                    if (project == null) {
-//                        throw new InvalidParameterValueException("Unable to find project by id " + projectId);
-//                    }
-//                    if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
-//                        throw new PermissionDeniedException("Account " + caller + " can't access project id=" + projectId);
-//                    }
-//                    permittedAccounts.add(project.getProjectAccountId());
-//                }
-//            }
-//        } else {
-//            if (id == null) {
-//                domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.SkipProjectResources);
-//            }
-//            if (permittedAccounts.isEmpty() && domainId == null) {
-//                if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-//                    permittedAccounts.add(caller.getId());
-//                } else if (!listAll) {
-//                    if (id == null) {
-//                        permittedAccounts.add(caller.getId());
-//                    } else if (!isRootAdmin(caller.getId())) {
-//                        domainIdRecursiveListProject.first(caller.getDomainId());
-//                        domainIdRecursiveListProject.second(true);
-//                    }
-//                } else if (domainId == null) {
-//                    if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-//                        domainIdRecursiveListProject.first(caller.getDomainId());
-//                        domainIdRecursiveListProject.second(true);
-//                    }
-//                }
-//            } else if (domainId != null) {
-//                if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-//                    permittedAccounts.add(caller.getId());
-//                }
-//            }
-//
-//        }
-//    }
-
     //TODO: deprecate this to use the new buildACLSearchParameters with permittedDomains, permittedAccounts, and permittedResources as return
     @Override
-    public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long>
-    permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject,
-            boolean listAll, boolean forProjectInvitation) {
+    public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> permittedAccounts,
+            Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation) {
         Long domainId = domainIdRecursiveListProject.first();
         if (domainId != null) {
             Domain domain = _domainDao.findById(domainId);

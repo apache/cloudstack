@@ -18,7 +18,6 @@ package org.apache.cloudstack.affinity.dao;
 
 import java.util.List;
 
-import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 
 import com.cloud.utils.db.GenericDao;
@@ -34,9 +33,9 @@ public interface AffinityGroupDao extends GenericDao<AffinityGroupVO, Long> {
 
     int removeByAccountId(long accountId);
 
-    AffinityGroup findDomainLevelGroupByName(Long domainId, String affinityGroupName);
+    AffinityGroupVO findDomainLevelGroupByName(Long domainId, String affinityGroupName);
 
-    AffinityGroup findByAccountAndType(Long accountId, String string);
+    AffinityGroupVO findByAccountAndType(Long accountId, String string);
 
-    AffinityGroup findDomainLevelGroupByType(Long domainId, String string);
+    AffinityGroupVO findDomainLevelGroupByType(Long domainId, String string);
 }
