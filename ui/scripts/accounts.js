@@ -1876,10 +1876,14 @@
                                 },
                                 action: function(args) {
                                     var data = {
-                                        domainid: args.context.sshkeypairs[0].domainid,
-                                        account: args.context.sshkeypairs[0].account,
                                         name: args.context.sshkeypairs[0].name
                                     };
+                                    if (!args.context.projects) {
+                                        $.extend(data, {
+                                            domainid: args.context.sshkeypairs[0].domainid,
+                                            account: args.context.sshkeypairs[0].account,
+                                        });
+                                    }
                                     $.ajax({
                                         url: createURL('deleteSSHKeyPair'),
                                         data: data,
