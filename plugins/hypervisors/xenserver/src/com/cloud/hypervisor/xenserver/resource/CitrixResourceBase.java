@@ -2869,7 +2869,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    private List<File> getPatchFiles() {
+    protected List<File> getPatchFiles() {
         String patch = getPatchFilePath();
         String patchfilePath = Script.findScript("", patch);
         if (patchfilePath == null) {

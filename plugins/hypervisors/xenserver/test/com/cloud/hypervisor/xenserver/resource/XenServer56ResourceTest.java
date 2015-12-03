@@ -17,8 +17,14 @@ package com.cloud.hypervisor.xenserver.resource;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
-public class XenServer56ResourcePathTest {
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
+@RunWith(PowerMockRunner.class)
+public class XenServer56ResourceTest extends CitrixResourceBaseTest {
 
     private XenServer56Resource xenServer56Resource = new XenServer56Resource();
 
@@ -28,5 +34,16 @@ public class XenServer56ResourcePathTest {
         String patch = "scripts/vm/hypervisor/xenserver/xenserver56/patch";
 
         Assert.assertEquals(patch, patchFilePath);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    @PrepareForTest(Script.class )
+    public void testGetFiles(){
+        testGetPathFilesExeption(xenServer56Resource);
+    }
+    @Test
+    @PrepareForTest(Script.class )
+    public void testGetFilesListReturned(){
+        testGetPathFilesListReturned(xenServer56Resource);
     }
 }
