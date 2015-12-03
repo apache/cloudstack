@@ -41,7 +41,7 @@ public interface QuotaResponseBuilder {
 
     QuotaBalanceResponse createQuotaBalanceResponse(List<QuotaBalanceVO> quotaUsage, Date startDate, Date endDate);
 
-    List<QuotaSummaryResponse> createQuotaSummaryResponse();
+    List<QuotaSummaryResponse> createQuotaSummaryResponse(Boolean listAll);
 
     List<QuotaSummaryResponse> createQuotaSummaryResponse(String accountName, Long domainId);
 

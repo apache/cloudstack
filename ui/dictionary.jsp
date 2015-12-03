@@ -1027,6 +1027,7 @@ dictionary = {
 'label.quota.totalusage': '<fmt:message key="label.quota.totalusage" />',
 'label.quota.balance': '<fmt:message key="label.quota.balance" />',
 'label.quota.summary': '<fmt:message key="label.quota.summary" />',
+'label.quota.fullsummary': '<fmt:message key="label.quota.fullsummary" />',
 'label.quota.minbalance': '<fmt:message key="label.quota.minbalance" />',
 'label.quota.enforcequota': '<fmt:message key="label.quota.enforcequota" />',
 'label.quota.tariff': '<fmt:message key="label.quota.tariff" />',

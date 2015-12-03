@@ -32,12 +32,15 @@
               label: 'label.select-view',
               preFilter: function(args) {
         	      if (isAdmin())
-        	          return ['summary', 'tariffEdit', 'emailTemplates']; 
+        	          return ['summary', 'fullSummary', 'tariffEdit', 'emailTemplates']; 
         	      else 
         	          return  ['summary', 'tariffView'];
               }
           },
           sections: {
+        	  
+        	  
+
               summary: {
                   type: 'select',
                   title: 'label.quota.summary',
@@ -170,7 +173,7 @@
                                 },
 
                                 action: function(args) {
-                                    console.log(args);
+                                    var enforce=args.data.quota_enforce == 'on' ? true: false;
                                     $.ajax({
                                         url: createURL('quotaCredits'),
                                         data: {
@@ -178,10 +181,9 @@
                                             account: args.context.summary[0].account,
                                             value: args.data.value,
                                             min_balance: args.data.min_balance,
-                                            quota_enforce: args.data.quota_enforce
+                                            quota_enforce: enforce
                                         },
                                         async: false,
-                                        type: "POST",
                                         success: function(json) {
                                             args.response.success({
                                                 data: json.quotacreditsresponse.totalquota
@@ -215,6 +217,207 @@
                                             data: {
                                                 domainid: args.context.summary[0].domainid,
                                                 account: args.context.summary[0].account
+                                            },
+                                            success: function(json) {
+                                                var item = json.quotabalanceresponse.balance;
+                                                item.startdate = now.toJSON().slice(0,10);
+                                                item.startquota = item.currency + ' ' + item.startquota;
+                                                args.response.success({
+                                                    data: item
+                                                });
+                                            } ,
+                                            error:function(data) {
+                                                args.response.error(parseXMLHttpResponse(data));
+                                            }
+                                        });
+                                    }
+                                },
+                                
+                          }// end tab
+                      }
+
+                  }
+              },
+            
+           
+
+
+              fullSummary: {
+                  type: 'select',
+                  title: 'label.quota.fullsummary',
+                  listView: {
+                      label: 'label.quota.fullsummary',
+                      disableInfiniteScrolling: true,
+                      fields: {
+                          account: {
+                              label: 'label.account',
+                              truncate: true
+                          },
+                          domain: {
+                              label: 'label.domain'
+                          },
+                          balance: {
+                              label: 'label.quota.balance',
+                              limitcolor: true,
+                              limits: {
+                          	    upperlimit: 'upperlimit',
+                          	    lowerlimit: 'lowerlimit'
+                          	 },
+                          	 converter: function(args){
+                          		 return currency + args.toString();
+                          	 }
+                          },
+                          quota: {
+                              label: 'label.quota.totalusage',
+                              editable: true,
+                              truncate: true
+                          },
+                          state: {
+                              label: 'label.quota.state',
+                              indicator: {
+                                  'enabled': 'on',
+                                  'disabled': 'off',
+                                  'locked': 'off',
+                              }
+                          },
+                      },
+                      dataProvider: function(args) {
+                          var data = {
+                              page: args.page,
+                              pagesize: pageSize
+                          };
+
+                          // FIXME: add logic in mgmt server to filter by account
+                          if (args.filterBy.search.value) {
+                        	  console.log(args.filterBy.search.value);
+                              data.search = args.filterBy.search.value;
+                          }
+
+                          $.ajax({
+                              url: createURL('quotaSummary&listall=true'),
+                              data: data,
+                              dataType: "json",
+                              async: true,
+                              success: function(json) {
+                                  var items = json.quotasummaryresponse.summary;
+                                  if(items){
+                                      var array=[];
+                                      for (var i = 0; i < items.length; i++) {
+                                    	  if (typeof data.search != 'undefine' && items[i].account.search(data.search) < 0 && items[i].domain.search(data.search) < 0) continue;
+                                    	  currency = items[i].currency;
+                                          items[i].quota = currency + ' ' + items[i].quota;
+                                          items[i].lowerlimit = -1;
+                                          items[i].upperlimit = 0;
+                                    	  array.push(items[i]);
+                                      }
+                                      args.response.success({
+                                          data: array
+                                      });
+                                  }
+                                  else {
+                                      args.response.success({
+                                          data: 0
+                                      });
+                                  }
+                              },
+                              error: function(data) {
+                                  cloudStack.dialog.notice({
+                                      message: parseXMLHttpResponse(data)
+                                  });
+                              }
+                          });
+                      },
+                      detailView: {
+                          viewAll: [{
+                              path: 'quota.quotastatement',
+                              label: 'label.quota.statement.quota'
+                          },{
+                              path: 'quota.balancestatement',
+                              label: 'label.quota.statement.balance'
+                          }],
+                          actions: {
+                             add: {
+                                label: 'label.quota.add.credits',
+                                preFilter: function(args) { return isAdmin(); },
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'label.quota.add.credits';
+                                    },
+                                    notification: function(args) {
+                                        return 'label.quota.add.credits';
+                                    }
+                                },
+
+                                createForm: {
+                                    title: 'label.quota.credits',
+                                    desc: '',
+                                    fields: {
+                                         value: {
+                                            label: 'label.quota.credits',
+                                            validation: {
+                                                required: true
+                                            }
+                                        },
+                                        min_balance: {
+                                            label: 'label.quota.minbalance',
+                                            validation: {
+                                                required: true
+                                            }
+                                        },
+                                        quota_enforce: {
+                                            label: 'label.quota.enforcequota',
+                                            isBoolean: true,
+                                            isChecked: false
+                                        },
+                                    }
+
+                                },
+
+                                action: function(args) {
+                                	 var enforce=args.data.quota_enforce == 'on' ? true: false;
+                                     $.ajax({
+                                         url: createURL('quotaCredits'),
+                                         data: {
+                                             domainid: args.context.fullSummary[0].domainid,
+                                             account: args.context.fullSummary[0].account,
+                                             value: args.data.value,
+                                             min_balance: args.data.min_balance,
+                                             quota_enforce: enforce
+                                         },
+                                        async: false,
+                                        success: function(json) {
+                                            args.response.success({
+                                                data: json.quotacreditsresponse.totalquota
+                                            });
+                                        }
+                                    });
+                                    $(window).trigger('cloudStack.fullRefresh');
+                                 }
+                            },
+                          },
+                          tabs: {
+                             details: {
+                                    title: 'label.details',
+                                    fields: [{
+                                        id: {
+                                            label: 'label.quota.statement.balance'
+                                        }
+                                    }, {
+                                        startdate: {
+                                            label: 'label.quota.date',
+                                        },
+                                        startquota: {
+                                            label: 'label.quota.value',
+                                        }
+                                    }],
+                                    dataProvider: function(args) {
+                                        $.ajax({
+                                            url: createURL('quotaBalance'),
+                                            dataType: 'json',
+                                            async: true,
+                                            data: {
+                                                domainid: args.context.fullSummary[0].domainid,
+                                                account: args.context.fullSummary[0].account
                                             },
                                             success: function(json) {
                                                 var item = json.quotabalanceresponse.balance;

@@ -22,6 +22,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
@@ -44,6 +45,9 @@ public class QuotaSummaryCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = false, entityType = DomainResponse.class, description = "Optional, If domain Id is given and the caller is domain admin then the statement is generated for domain.")
     private Long domainId;
 
+    @Parameter(name = ApiConstants.LIST_ALL, type = CommandType.BOOLEAN, required = false, description = "Optional, to list all accounts irrespective of the quota activity")
+    private Boolean listAll;
+
     @Inject
     QuotaResponseBuilder _responseBuilder;
 
@@ -55,11 +59,11 @@ public class QuotaSummaryCmd extends BaseListCmd {
     public void execute() {
         Account caller = CallContext.current().getCallingAccount();
         List<QuotaSummaryResponse> responses;
-        if (caller.getAccountId() == 2) { //non root admin
+        if (caller.getAccountId() <= 2) { //non root admin or system
             if (getAccountName() != null && getDomainId() != null)
                 responses = _responseBuilder.createQuotaSummaryResponse(caller.getAccountName(), caller.getDomainId());
             else
-                responses = _responseBuilder.createQuotaSummaryResponse();
+                responses = _responseBuilder.createQuotaSummaryResponse(getListAll());
         } else {
             responses = _responseBuilder.createQuotaSummaryResponse(caller.getAccountName(), caller.getDomainId());
         }
@@ -88,6 +92,14 @@ public class QuotaSummaryCmd extends BaseListCmd {
     @Override
     public String getCommandName() {
         return s_name;
+    }
+
+    public Boolean getListAll() {
+        return listAll == null ? false: listAll;
+    }
+
+    public void setListAll(Boolean listAll) {
+        this.listAll = listAll;
     }
 
     @Override
