@@ -679,6 +679,11 @@
                                 for (var i = 0; i < items.length; i++) {
                                     securityGroupArray.push(items[i]);
                                 }
+                                securityGroupArray.sort(function(a, b){
+                                    if(a.name < b.name) return -1;
+                                    if(a.name > b.name) return 1;
+                                    return 0;
+                                })
                             }
                         }
                     });
