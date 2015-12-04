@@ -52,11 +52,13 @@ class TestNiciraContoller(cloudstackTestCase):
             'name':              'NiciraEnabledNetwork',
             'displaytext':       'NiciraEnabledNetwork',
             'guestiptype':       'Isolated',
-            'supportedservices': 'SourceNat,Firewall,PortForwarding,Connectivity',
+            'supportedservices': 'SourceNat,Dhcp,Dns,Firewall,PortForwarding,Connectivity',
             'traffictype':       'GUEST',
             'availability':      'Optional',
             'serviceProviderList': {
                     'SourceNat':      'VirtualRouter',
+                    'Dhcp':           'VirtualRouter',
+                    'Dns':            'VirtualRouter',
                     'Firewall':       'VirtualRouter',
                     'PortForwarding': 'VirtualRouter',
                     'Connectivity':   'NiciraNvp'
@@ -207,18 +209,20 @@ class TestNiciraContoller(cloudstackTestCase):
         else:
             raise Exception("None of the supplied hosts (%s) is a Nicira slave" % hosts)
 
-    @attr(tags = ["advanced", "smoke", "nicira"], required_hardware="true")
-    def test_01_nicira_controller(self):
+
+    def add_nicira_device(self, hostname):
         nicira_device = NiciraNvp.add(
             self.api_client,
             None,
             self.physical_network_id,
-            hostname=self.nicira_master_controller,
+            hostname=hostname,
             username=self.nicira_credentials['username'],
             password=self.nicira_credentials['password'],
             transportzoneuuid=self.transport_zone_uuid)
         self.test_cleanup.append(nicira_device)
 
+
+    def create_guest_network(self):
         network_services = {
             'name'            : 'nicira_enabled_network',
             'displaytext'     : 'nicira_enabled_network',
@@ -232,7 +236,10 @@ class TestNiciraContoller(cloudstackTestCase):
             domainid=self.domain.id,
         )
         self.test_cleanup.append(network)
+        return network
 
+
+    def create_virtual_machine(self, network):
         virtual_machine = VirtualMachine.create(
             self.api_client,
             self.vm_services['small'],
@@ -243,6 +250,24 @@ class TestNiciraContoller(cloudstackTestCase):
             mode=self.vm_services['mode']
         )
         self.test_cleanup.append(virtual_machine)
+        return virtual_machine
+
+
+    def get_routers_for_network(self, network):
+        return list_routers(
+            self.apiclient,
+            account='admin',
+            domainid=self.account.domainid,
+            networkid=network.id
+        )
+
+
+    @attr(tags = ["advanced", "smoke", "nicira"], required_hardware="true")
+    def test_01_nicira_controller(self):
+        self.add_nicira_device(self.nicira_master_controller)
+
+        network         = self.create_guest_network()
+        virtual_machine = self.create_virtual_machine(network)
 
         list_vm_response = VirtualMachine.list(self.api_client, id=virtual_machine.id)
         self.logger.debug("Verify listVirtualMachines response for virtual machine: %s" % virtual_machine.id)
@@ -253,6 +278,7 @@ class TestNiciraContoller(cloudstackTestCase):
         vm_response = list_vm_response[0]
         self.assertEqual(vm_response.id, virtual_machine.id, 'Virtual machine in response does not match request')
         self.assertEqual(vm_response.state, 'Running', 'VM is not in Running state')
+
 
     @attr(tags = ["advanced", "smoke", "nicira"], required_hardware="true")
     def test_02_nicira_controller_redirect(self):
@@ -269,40 +295,10 @@ class TestNiciraContoller(cloudstackTestCase):
         nicira_slave = self.determine_slave_conroller(self.nicira_hosts, self.nicira_master_controller)
         self.logger.debug("Nicira slave controller is: %s " % nicira_slave)
 
-        nicira_device = NiciraNvp.add(
-            self.api_client,
-            None,
-            self.physical_network_id,
-            hostname=nicira_slave,
-            username=self.nicira_credentials['username'],
-            password=self.nicira_credentials['password'],
-            transportzoneuuid=self.transport_zone_uuid)
-        self.test_cleanup.append(nicira_device)
+        self.add_nicira_device(nicira_slave)
 
-        network_services = {
-            'name'            : 'nicira_enabled_network',
-            'displaytext'     : 'nicira_enabled_network',
-            'zoneid'          : self.zone.id,
-            'networkoffering' : self.network_offering.id
-        }
-        network = Network.create(
-            self.api_client,
-            network_services,
-            accountid='admin',
-            domainid=self.domain.id,
-        )
-        self.test_cleanup.append(network)
-
-        virtual_machine = VirtualMachine.create(
-            self.api_client,
-            self.vm_services['small'],
-            accountid='admin',
-            domainid=self.domain.id,
-            serviceofferingid=self.service_offering.id,
-            networkids=[network.id],
-            mode=self.vm_services['mode']
-        )
-        self.test_cleanup.append(virtual_machine)
+        network         = self.create_guest_network()
+        virtual_machine = self.create_virtual_machine(network)
 
         list_vm_response = VirtualMachine.list(self.api_client, id=virtual_machine.id)
         self.logger.debug("Verify listVirtualMachines response for virtual machine: %s" % virtual_machine.id)
@@ -313,4 +309,3 @@ class TestNiciraContoller(cloudstackTestCase):
         vm_response = list_vm_response[0]
         self.assertEqual(vm_response.id, virtual_machine.id, 'Virtual machine in response does not match request')
         self.assertEqual(vm_response.state, 'Running', 'VM is not in Running state')
-
