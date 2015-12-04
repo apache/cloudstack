@@ -45,6 +45,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.log4j.Logger;
+import org.slf4j.MDC;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -388,6 +389,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             } else {
                 cmd.setContextParam("job", "job-" + job.getId());
             }
+        }
+        if (MDC.get("logcontextid") != null && !MDC.get("logcontextid").isEmpty()) {
+            cmd.setContextParam("logid", MDC.get("logcontextid"));
         }
     }
 

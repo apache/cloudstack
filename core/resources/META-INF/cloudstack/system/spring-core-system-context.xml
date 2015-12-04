@@ -39,6 +39,7 @@
                 If you put it after the TransactionContextListener, the thread will hold open a DB 
                 connection for the life of the thread -->
             <bean class="org.apache.cloudstack.context.CallContextListener" />
+            <bean class="org.apache.cloudstack.context.LogContextListener" />
             <bean class="com.cloud.utils.db.TransactionContextListener" />
         </list>
     </property>
