@@ -443,6 +443,10 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
         long volumeId = snapshot.getVolumeId();
         VolumeVO volumeVO = _volumeDao.findById(volumeId);
 
+        if (SnapshotOperation.REVERT.equals(op) && !(volumeVO != null && ImageFormat.QCOW2.equals(volumeVO.getFormat()))) {
+            return StrategyPriority.CANT_HANDLE;
+        }
+
         long storagePoolId;
 
         if (volumeVO == null) {
@@ -459,12 +463,8 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
             storagePoolId = volumeVO.getPoolId();
         }
 
-        if (SnapshotOperation.REVERT.equals(op)) {
-            if (volumeVO != null && ImageFormat.QCOW2.equals(volumeVO.getFormat()))
-                return StrategyPriority.DEFAULT;
-            else
-                return StrategyPriority.CANT_HANDLE;
-        }
+        if (SnapshotOperation.REVERT.equals(op) && volumeVO != null && ImageFormat.QCOW2.equals(volumeVO.getFormat()))
+            return StrategyPriority.DEFAULT;
 
         DataStore dataStore = _dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
 
