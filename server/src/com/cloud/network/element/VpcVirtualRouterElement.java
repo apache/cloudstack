@@ -412,15 +412,18 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
     @Override
     public boolean createPrivateGateway(final PrivateGateway gateway) throws ConcurrentOperationException, ResourceUnavailableException {
+        boolean result = false;
+
         if (gateway.getType() != VpcGateway.Type.Private) {
             s_logger.warn("Type of vpc gateway is not " + VpcGateway.Type.Private);
-            return false;
+            return result;
         }
 
         final List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(gateway.getVpcId());
         if (routers == null || routers.isEmpty()) {
             s_logger.debug(getName() + " element doesn't need to create Private gateway on the backend; VPC virtual " + "router doesn't exist in the vpc id=" + gateway.getVpcId());
-            return true;
+            result = true;
+            return result;
         }
 
         s_logger.info("Adding VPC routers to Guest Network: " + routers.size() + " to be added!");
@@ -428,25 +431,25 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         final DataCenterVO dcVO = _dcDao.findById(gateway.getZoneId());
         final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
+        final Network network = _networkDao.findById(gateway.getNetworkId());
+        final boolean isPrivateGateway = true;
+
         for (final DomainRouterVO domainRouterVO : routers) {
             if (networkTopology.setupPrivateGateway(gateway, domainRouterVO)) {
                 try {
                     final List<NetworkACLItemVO> rules = _networkACLItemDao.listByACL(gateway.getNetworkACLId());
-                    if (!applyACLItemsToPrivateGw(gateway, rules)) {
-                        s_logger.debug("Failed to apply network acl id  " + gateway.getNetworkACLId() + "  on gateway ");
-                        return false;
+                    result = networkTopology.applyNetworkACLs(network, rules, domainRouterVO, isPrivateGateway);
+                    if (!result) {
+                        throw new CloudRuntimeException("Failed to apply network acl in network " + network.getId());
                     }
                 } catch (final Exception ex) {
                     s_logger.debug("Failed to apply network acl id  " + gateway.getNetworkACLId() + "  on gateway ");
-                    return false;
+                    return result;
                 }
-            } else {
-                s_logger.debug("Failed to setup private gateway  " + gateway);
-                return false;
             }
         }
 
-        return true;
+        return result;
     }
 
     @Override
@@ -483,48 +486,47 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                 break;
             }
         }
+        boolean result = false;
         if (canHandle) {
             final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug(getName() + " element doesn't need to associate ip addresses on the backend; VPC virtual " + "router doesn't exist in the network "
                         + network.getId());
-                return true;
+                return result;
             }
 
             final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
             final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
-            return networkTopology.associatePublicIP(network, ipAddress, routers);
-        } else {
-            return false;
+            for (final DomainRouterVO domainRouterVO : routers) {
+                result = networkTopology.associatePublicIP(network, ipAddress, domainRouterVO);
+            }
         }
+        return result;
     }
 
     @Override
     public boolean applyNetworkACLs(final Network network, final List<? extends NetworkACLItem> rules) throws ResourceUnavailableException {
+        boolean result = true;
         if (canHandle(network, Service.NetworkACL)) {
             final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual " + "router doesn't exist in the network " + network.getId());
-                return true;
+                return result;
             }
 
             final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
             final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
-            try {
-                if (!networkTopology.applyNetworkACLs(network, rules, routers, false)) {
-                    return false;
-                } else {
-                    return true;
+            for (final DomainRouterVO domainRouterVO : routers) {
+                try {
+                    result = networkTopology.applyNetworkACLs(network, rules, domainRouterVO, false);
+                } catch (final Exception ex) {
+                    s_logger.debug("Failed to apply network acl in network " + network.getId());
                 }
-            } catch (final Exception ex) {
-                s_logger.debug("Failed to apply network acl in network " + network.getId());
-                return false;
             }
-        } else {
-            return true;
         }
+        return result;
     }
 
     @Override
@@ -565,11 +567,14 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
         final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
-        if (!networkTopology.applyNetworkACLs(network, rules, routers, isPrivateGateway)) {
-            throw new CloudRuntimeException("Failed to apply network acl in network " + network.getId());
-        } else {
-            return true;
+        boolean result = true;
+        for (final DomainRouterVO domainRouterVO : routers) {
+            result = networkTopology.applyNetworkACLs(network, rules, domainRouterVO, isPrivateGateway);
+            if (!result) {
+                throw new CloudRuntimeException("Failed to apply network acl in network " + network.getId());
+            }
         }
+        return result;
     }
 
     @Override

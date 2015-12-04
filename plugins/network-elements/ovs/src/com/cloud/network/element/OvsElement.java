@@ -210,7 +210,7 @@ StaticNatServiceProvider, IpDeployer {
             return false;
         }
 
-        HostVO host = _hostDao.findById(vm.getVirtualMachine().getHostId());
+        final HostVO host = _hostDao.findById(vm.getVirtualMachine().getHostId());
         _ovsTunnelMgr.checkAndRemoveHostFromTunnelNetwork(network, host);
         return true;
     }
@@ -262,10 +262,10 @@ StaticNatServiceProvider, IpDeployer {
     }
 
     private static Map<Service, Map<Capability, String>> setCapabilities() {
-        Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
+        final Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
 
         // L2 Support : SDN provisioning
-        Map<Capability, String> connectivityCapabilities = new HashMap<Capability, String>();
+        final Map<Capability, String> connectivityCapabilities = new HashMap<Capability, String>();
         connectivityCapabilities.put(Capability.DistributedRouter, null);
         connectivityCapabilities.put(Capability.StretchedL2Subnet, null);
         connectivityCapabilities.put(Capability.RegionLevelVpc, null);
@@ -280,7 +280,7 @@ StaticNatServiceProvider, IpDeployer {
 
         // L3 support : Load Balancer
         // Set capabilities for LB service
-        Map<Capability, String> lbCapabilities = new HashMap<Capability, String>();
+        final Map<Capability, String> lbCapabilities = new HashMap<Capability, String>();
         lbCapabilities.put(Capability.SupportedLBAlgorithms, "roundrobin,leastconn,source");
         lbCapabilities.put(Capability.SupportedLBIsolation, "dedicated");
         lbCapabilities.put(Capability.SupportedProtocols, "tcp, udp");
@@ -294,7 +294,7 @@ StaticNatServiceProvider, IpDeployer {
 
     public static String getHAProxyStickinessCapability() {
         LbStickinessMethod method;
-        List<LbStickinessMethod> methodList = new ArrayList<LbStickinessMethod>(1);
+        final List<LbStickinessMethod> methodList = new ArrayList<LbStickinessMethod>(1);
 
         method = new LbStickinessMethod(StickinessMethodType.LBCookieBased, "This is loadbalancer cookie based stickiness method.");
         method.addParam("cookie-name", false, "Cookie name passed in http header by the LB to the client.", false);
@@ -385,14 +385,14 @@ StaticNatServiceProvider, IpDeployer {
                 " example: expire=30m 20s 50h 4d. Default value:3h", false);
         methodList.add(method);
 
-        Gson gson = new Gson();
-        String capability = gson.toJson(methodList);
+        final Gson gson = new Gson();
+        final String capability = gson.toJson(methodList);
         return capability;
     }
 
     @Override
     public List<Class<?>> getCommands() {
-        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        final List<Class<?>> cmdList = new ArrayList<Class<?>>();
         return cmdList;
     }
 
@@ -432,15 +432,16 @@ StaticNatServiceProvider, IpDeployer {
             final List<? extends PublicIpAddress> ipAddress, final Set<Service> services)
                     throws ResourceUnavailableException {
         boolean canHandle = true;
-        for (Service service : services) {
+        for (final Service service : services) {
             // check if Ovs can handle services except SourceNat & Firewall
             if (!canHandle(network, service) && service != Service.SourceNat && service != Service.Firewall) {
                 canHandle = false;
                 break;
             }
         }
+        boolean result = false;
         if (canHandle) {
-            List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
+            final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
                     network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router element doesn't need to associate ip addresses on the backend; virtual "
@@ -449,13 +450,14 @@ StaticNatServiceProvider, IpDeployer {
                 return true;
             }
 
-            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
-            NetworkTopology networkTopology = _networkTopologyContext.retrieveNetworkTopology(dcVO);
+            final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            final NetworkTopology networkTopology = _networkTopologyContext.retrieveNetworkTopology(dcVO);
 
-            return networkTopology.associatePublicIP(network, ipAddress, routers);
-        } else {
-            return false;
+            for (final DomainRouterVO domainRouterVO : routers) {
+                result =  networkTopology.associatePublicIP(network, ipAddress, domainRouterVO);
+            }
         }
+        return result;
     }
 
     @Override
@@ -464,7 +466,7 @@ StaticNatServiceProvider, IpDeployer {
         if (!canHandle(network, Service.StaticNat)) {
             return false;
         }
-        List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
+        final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
                 network.getId(), Role.VIRTUAL_ROUTER);
         if (routers == null || routers.isEmpty()) {
             s_logger.debug("Ovs element doesn't need to apply static nat on the backend; virtual "
@@ -472,19 +474,23 @@ StaticNatServiceProvider, IpDeployer {
             return true;
         }
 
-        DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
-        NetworkTopology networkTopology = _networkTopologyContext.retrieveNetworkTopology(dcVO);
-
-        return networkTopology.applyStaticNats(network, rules, routers);
+        final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+        final NetworkTopology networkTopology = _networkTopologyContext.retrieveNetworkTopology(dcVO);
+        boolean result = false;
+        for (final DomainRouterVO domainRouterVO : routers) {
+            result = networkTopology.applyStaticNats(network, rules, domainRouterVO);
+        }
+        return result;
     }
 
     @Override
     public boolean applyPFRules(final Network network, final List<PortForwardingRule> rules)
             throws ResourceUnavailableException {
+        boolean result = false;
         if (!canHandle(network, Service.PortForwarding)) {
-            return false;
+            return result;
         }
-        List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
+        final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
                 network.getId(), Role.VIRTUAL_ROUTER);
         if (routers == null || routers.isEmpty()) {
             s_logger.debug("Ovs element doesn't need to apply firewall rules on the backend; virtual "
@@ -492,50 +498,54 @@ StaticNatServiceProvider, IpDeployer {
             return true;
         }
 
-        DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
-        NetworkTopology networkTopology = _networkTopologyContext.retrieveNetworkTopology(dcVO);
-
-        return networkTopology.applyFirewallRules(network, rules, routers);
+        final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+        final NetworkTopology networkTopology = _networkTopologyContext.retrieveNetworkTopology(dcVO);
+        for (final DomainRouterVO domainRouterVO : routers) {
+            result = networkTopology.applyFirewallRules(network, rules, domainRouterVO);
+        }
+        return result;
     }
 
     @Override
     public boolean applyLBRules(final Network network, final List<LoadBalancingRule> rules)
             throws ResourceUnavailableException {
+        boolean result = false;
         if (canHandle(network, Service.Lb)) {
             if (!canHandleLbRules(rules)) {
-                return false;
+                return result;
             }
 
-            List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
+            final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
                     network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual "
                         + "router doesn't exist in the network "
                         + network.getId());
-                return true;
+                result = true;
+                return result;
             }
 
-            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
-            NetworkTopology networkTopology = _networkTopologyContext.retrieveNetworkTopology(dcVO);
+            final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            final NetworkTopology networkTopology = _networkTopologyContext.retrieveNetworkTopology(dcVO);
 
-            if (!networkTopology.applyLoadBalancingRules(network, rules, routers)) {
-                throw new CloudRuntimeException(
-                        "Failed to apply load balancing rules in network "
-                                + network.getId());
-            } else {
-                return true;
+            for (final DomainRouterVO domainRouterVO : routers) {
+                result = networkTopology.applyLoadBalancingRules(network, rules, domainRouterVO);
+                if (!result) {
+                    throw new CloudRuntimeException(
+                            "Failed to apply load balancing rules in network "
+                                    + network.getId());
+                }
             }
-        } else {
-            return false;
         }
+        return result;
     }
 
     @Override
     public boolean validateLBRule(final Network network, final LoadBalancingRule rule) {
-        List<LoadBalancingRule> rules = new ArrayList<LoadBalancingRule>();
+        final List<LoadBalancingRule> rules = new ArrayList<LoadBalancingRule>();
         rules.add(rule);
         if (canHandle(network, Service.Lb) && canHandleLbRules(rules)) {
-            List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
+            final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
                     network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 return true;
@@ -553,11 +563,11 @@ StaticNatServiceProvider, IpDeployer {
     }
 
     private boolean canHandleLbRules(final List<LoadBalancingRule> rules) {
-        Map<Capability, String> lbCaps = getCapabilities().get(Service.Lb);
+        final Map<Capability, String> lbCaps = getCapabilities().get(Service.Lb);
         if (!lbCaps.isEmpty()) {
-            String schemeCaps = lbCaps.get(Capability.LbSchemes);
+            final String schemeCaps = lbCaps.get(Capability.LbSchemes);
             if (schemeCaps != null) {
-                for (LoadBalancingRule rule : rules) {
+                for (final LoadBalancingRule rule : rules) {
                     if (!schemeCaps.contains(rule.getScheme().toString())) {
                         s_logger.debug("Scheme " + rules.get(0).getScheme()
                                 + " is not supported by the provider "
@@ -571,10 +581,10 @@ StaticNatServiceProvider, IpDeployer {
     }
 
     public static boolean validateHAProxyLBRule(final LoadBalancingRule rule) {
-        String timeEndChar = "dhms";
+        final String timeEndChar = "dhms";
 
-        for (LbStickinessPolicy stickinessPolicy : rule.getStickinessPolicies()) {
-            List<Pair<String, String>> paramsList = stickinessPolicy
+        for (final LbStickinessPolicy stickinessPolicy : rule.getStickinessPolicies()) {
+            final List<Pair<String, String>> paramsList = stickinessPolicy
                     .getParams();
 
             if (StickinessMethodType.LBCookieBased.getName().equalsIgnoreCase(
@@ -586,9 +596,9 @@ StaticNatServiceProvider, IpDeployer {
                 String expire = "30m"; // optional
 
                 /* overwrite default values with the stick parameters */
-                for (Pair<String, String> paramKV : paramsList) {
-                    String key = paramKV.first();
-                    String value = paramKV.second();
+                for (final Pair<String, String> paramKV : paramsList) {
+                    final String key = paramKV.first();
+                    final String value = paramKV.second();
                     if ("tablesize".equalsIgnoreCase(key)) {
                         tablesize = value;
                     }
@@ -596,14 +606,14 @@ StaticNatServiceProvider, IpDeployer {
                         expire = value;
                     }
                 }
-                if ((expire != null)
+                if (expire != null
                         && !containsOnlyNumbers(expire, timeEndChar)) {
                     throw new InvalidParameterValueException(
                             "Failed LB in validation rule id: " + rule.getId()
                             + " Cause: expire is not in timeformat: "
                             + expire);
                 }
-                if ((tablesize != null)
+                if (tablesize != null
                         && !containsOnlyNumbers(tablesize, "kmg")) {
                     throw new InvalidParameterValueException(
                             "Failed LB in validation rule id: "
@@ -617,9 +627,9 @@ StaticNatServiceProvider, IpDeployer {
                 String length = null; // optional
                 String holdTime = null; // optional
 
-                for (Pair<String, String> paramKV : paramsList) {
-                    String key = paramKV.first();
-                    String value = paramKV.second();
+                for (final Pair<String, String> paramKV : paramsList) {
+                    final String key = paramKV.first();
+                    final String value = paramKV.second();
                     if ("length".equalsIgnoreCase(key)) {
                         length = value;
                     }
@@ -628,15 +638,15 @@ StaticNatServiceProvider, IpDeployer {
                     }
                 }
 
-                if ((length != null) && (!containsOnlyNumbers(length, null))) {
+                if (length != null && !containsOnlyNumbers(length, null)) {
                     throw new InvalidParameterValueException(
                             "Failed LB in validation rule id: " + rule.getId()
                             + " Cause: length is not a number: "
                             + length);
                 }
-                if ((holdTime != null)
-                        && (!containsOnlyNumbers(holdTime, timeEndChar) && !containsOnlyNumbers(
-                                holdTime, null))) {
+                if (holdTime != null
+                        && !containsOnlyNumbers(holdTime, timeEndChar) && !containsOnlyNumbers(
+                                holdTime, null)) {
                     throw new InvalidParameterValueException(
                             "Failed LB in validation rule id: " + rule.getId()
                             + " Cause: holdtime is not in timeformat: "
@@ -665,8 +675,8 @@ StaticNatServiceProvider, IpDeployer {
                 return false; // atleast one numeric and one char. example:
             }
             // 3h
-            char strEnd = str.toCharArray()[str.length() - 1];
-            for (char c : endChar.toCharArray()) {
+            final char strEnd = str.toCharArray()[str.length() - 1];
+            for (final char c : endChar.toCharArray()) {
                 if (strEnd == c) {
                     number = str.substring(0, str.length() - 1);
                     matchedEndChar = true;
@@ -679,7 +689,7 @@ StaticNatServiceProvider, IpDeployer {
         }
         try {
             Integer.parseInt(number);
-        } catch (NumberFormatException e) {
+        } catch (final NumberFormatException e) {
             return false;
         }
         return true;
