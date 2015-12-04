@@ -1411,14 +1411,12 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                         final double managedHostsCount = allManagedRoutingAgents.size();
                         if (allHostsCount > 0.0) {
                             final double load = managedHostsCount / allHostsCount;
-                            if (load >= ConnectedAgentThreshold.value()) {
-                                s_logger.debug("Scheduling agent rebalancing task as the average agent load " + load + " is more than the threshold " +
-                                        ConnectedAgentThreshold.value());
+                            if (load > ConnectedAgentThreshold.value()) {
+                                s_logger.debug("Scheduling agent rebalancing task as the average agent load " + load + " is more than the threshold " + ConnectedAgentThreshold.value());
                                 scheduleRebalanceAgents();
                                 _agentLbHappened = true;
                             } else {
-                                s_logger.debug("Not scheduling agent rebalancing task as the averages load " + load + " is less than the threshold " +
-                                        ConnectedAgentThreshold.value());
+                                s_logger.debug("Not scheduling agent rebalancing task as the average load " + load + " has not crossed the threshold " + ConnectedAgentThreshold.value());
                             }
                         }
                     }
