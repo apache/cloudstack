@@ -15,7 +15,7 @@ override_dh_auto_configure:
 override_dh_auto_build:
 	mvn -T C1.5 clean package -Psystemvm -DskipTests -Dsystemvm \
 	    -Dcs.replace.properties=replace.properties.tmp \
-	    -Dmaven.repo.local=$(HOME)/.m2/repository
+	    -Dmaven.repo.local=$(HOME)/.m2/repository \
 	     ${ACS_BUILD_OPTS}
 
 override_dh_auto_clean:
