@@ -526,6 +526,20 @@ public class NiciraNvpApi {
         }
     }
 
+    public List<LogicalRouterPort> findLogicalRouterPortByAttachmentLSwitchUuid(final String logicalRouterUuid, final String attachmentLSwitchUuid) throws NiciraNvpApiException{
+        final String uri = buildLogicalRouterElementUri(logicalRouterUuid, LPORT_PATH_SEGMENT);
+        final Map<String, String> params = buildBasicParametersMap(WILDCARD_QUERY_PARAMETER);
+        params.put(NiciraConstants.ATTACHMENT_LSWITCH_UUID, attachmentLSwitchUuid);
+
+        try{
+            final Type niciraListType = new TypeToken<NiciraNvpList<LogicalRouterPort>>() {
+            }.getType();
+            return restConnector.<NiciraNvpList<LogicalRouterPort>> executeRetrieveObject(niciraListType, uri, params).getResults();
+        } catch (final CloudstackRESTException e) {
+            throw new NiciraNvpApiException(e);
+        }
+    }
+
     public List<NatRule> findNatRulesByLogicalRouterUuid(final String logicalRouterUuid) throws NiciraNvpApiException {
         final String uri = buildLogicalRouterElementUri(logicalRouterUuid, NAT_PATH_SEGMENT);
         final Map<String, String> params = buildBasicParametersMap(WILDCARD_QUERY_PARAMETER);
