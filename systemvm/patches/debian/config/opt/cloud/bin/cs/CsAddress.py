@@ -588,7 +588,7 @@ class CsIP:
 
     def arpPing(self):
         cmd = "arping -c 1 -I %s -A -U -s %s %s" % (
-            self.dev, self.address['public_ip'], self.address['public_ip'])
+            self.dev, self.address['public_ip'], self.address['gateway'])
         CsHelper.execute(cmd)
 
     # Delete any ips that are configured but not in the bag
