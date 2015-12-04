@@ -43,6 +43,7 @@ type = UNICODEPROPERTIES
 
 [CloudStack_UI.47xmessagesproperties]
 file_filter = translations/CloudStack_UI.47xmessagesproperties/<lang>.properties
+source_file = work-dir/messages.properties
 source_lang = en
 trans.ar = work-dir/messages_ar.properties
 trans.ca = work-dir/messages_ca.properties
