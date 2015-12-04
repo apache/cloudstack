@@ -31,6 +31,7 @@ from marvin.lib.common import (get_domain, get_zone, get_template)
 from nose.plugins.attrib import attr
 from marvin.codes import (FAILED, PASS)
 import time
+import logging
 
 class TestNiciraContoller(cloudstackTestCase):
 
@@ -128,6 +129,11 @@ class TestNiciraContoller(cloudstackTestCase):
             cls.service_offering
         ]
 
+        cls.logger = logging.getLogger('TestNiciraContoller')
+        cls.stream_handler = logging.StreamHandler()
+        cls.logger.setLevel(logging.DEBUG)
+        cls.logger.addHandler(cls.stream_handler)
+
 
     @classmethod
     def tearDownClass(cls):
@@ -170,7 +176,7 @@ class TestNiciraContoller(cloudstackTestCase):
             if result_count == 0:
                 raise Exception('Nicira controller did not return any Transport Zones')
             elif result_count > 1:
-                self.debug("Nicira controller returned %s Transport Zones, picking first one" % resultCount)
+                self.logger.debug("Nicira controller returned %s Transport Zones, picking first one" % resultCount)
             transport_zone_api_url = list_transport_zone_response['results'][0]['_href']
             r3 = requests.get(
                 "https://%s%s" % (controller_host, transport_zone_api_url),
@@ -239,7 +245,7 @@ class TestNiciraContoller(cloudstackTestCase):
         self.test_cleanup.append(virtual_machine)
 
         list_vm_response = VirtualMachine.list(self.api_client, id=virtual_machine.id)
-        self.debug("Verify listVirtualMachines response for virtual machine: %s" % virtual_machine.id)
+        self.logger.debug("Verify listVirtualMachines response for virtual machine: %s" % virtual_machine.id)
 
         self.assertEqual(isinstance(list_vm_response, list), True, 'Response did not return a valid list')
         self.assertNotEqual(len(list_vm_response), 0, 'List of VMs is empty')
@@ -261,7 +267,7 @@ class TestNiciraContoller(cloudstackTestCase):
             should be created without issues.
         """
         nicira_slave = self.determine_slave_conroller(self.nicira_hosts, self.nicira_master_controller)
-        self.debug("Nicira slave controller is: %s " % nicira_slave)
+        self.logger.debug("Nicira slave controller is: %s " % nicira_slave)
 
         nicira_device = NiciraNvp.add(
             self.api_client,
@@ -299,7 +305,7 @@ class TestNiciraContoller(cloudstackTestCase):
         self.test_cleanup.append(virtual_machine)
 
         list_vm_response = VirtualMachine.list(self.api_client, id=virtual_machine.id)
-        self.debug("Verify listVirtualMachines response for virtual machine: %s" % virtual_machine.id)
+        self.logger.debug("Verify listVirtualMachines response for virtual machine: %s" % virtual_machine.id)
 
         self.assertEqual(isinstance(list_vm_response, list), True, 'Response did not return a valid list')
         self.assertNotEqual(len(list_vm_response), 0, 'List of VMs is empty')
