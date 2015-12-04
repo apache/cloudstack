@@ -183,7 +183,8 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
             DataTO srcData = cpyCommand.getSrcTO();
             DataTO destData = cpyCommand.getDestTO();
 
-            if (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.TEMPLATE) {
+            if (srcData.getHypervisorType() == HypervisorType.XenServer && srcData.getObjectType() == DataObjectType.SNAPSHOT &&
+                    destData.getObjectType() == DataObjectType.TEMPLATE) {
                 DataStoreTO srcStore = srcData.getDataStore();
                 DataStoreTO destStore = destData.getDataStore();
                 if (srcStore instanceof NfsTO && destStore instanceof NfsTO) {
@@ -191,9 +192,13 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
                     EndPoint ep = endPointSelector.selectHypervisorHost(new ZoneScope(host.getDataCenterId()));
                     host = hostDao.findById(ep.getId());
                     hostDao.loadDetails(host);
+                    String hypervisorVersion = host.getHypervisorVersion();
                     String snapshotHotFixVersion = host.getDetail(XenserverConfigs.XS620HotFix);
-                    if (snapshotHotFixVersion != null && snapshotHotFixVersion.equalsIgnoreCase(XenserverConfigs.XSHotFix62ESP1004)) {
-                        return new Pair<Boolean, Long>(Boolean.TRUE, new Long(ep.getId()));
+                    if (hypervisorVersion != null && !hypervisorVersion.equalsIgnoreCase("6.1.0")) {
+                        if (!(hypervisorVersion.equalsIgnoreCase("6.2.0") &&
+                                !(snapshotHotFixVersion != null && snapshotHotFixVersion.equalsIgnoreCase(XenserverConfigs.XSHotFix62ESP1004)))) {
+                            return new Pair<Boolean, Long>(Boolean.TRUE, new Long(ep.getId()));
+                        }
                     }
                 }
             }
