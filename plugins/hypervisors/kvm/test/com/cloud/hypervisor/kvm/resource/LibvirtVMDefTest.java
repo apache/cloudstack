@@ -94,16 +94,22 @@ public class LibvirtVMDefTest extends TestCase {
     public void testHypervEnlightDef() {
         LibvirtVMDef.FeaturesDef featuresDef = new LibvirtVMDef.FeaturesDef();
         LibvirtVMDef.HyperVEnlightenmentFeatureDef hyperVEnlightenmentFeatureDef = new LibvirtVMDef.HyperVEnlightenmentFeatureDef();
-        hyperVEnlightenmentFeatureDef.setRelaxed(true);
+        hyperVEnlightenmentFeatureDef.setFeature("relaxed", true);
+        hyperVEnlightenmentFeatureDef.setFeature("vapic", true);
+        hyperVEnlightenmentFeatureDef.setFeature("spinlocks", true);
+        hyperVEnlightenmentFeatureDef.setRetries(8096);
         featuresDef.addHyperVFeature(hyperVEnlightenmentFeatureDef);
         String defs = featuresDef.toString();
         assertTrue(defs.contains("relaxed"));
+        assertTrue(defs.contains("vapic"));
+        assertTrue(defs.contains("spinlocks"));
 
         featuresDef = new LibvirtVMDef.FeaturesDef();
         featuresDef.addFeatures("pae");
         defs = featuresDef.toString();
         assertFalse(defs.contains("relaxed"));
-
+        assertFalse(defs.contains("vapic"));
+        assertFalse(defs.contains("spinlocks"));
         assertTrue("Windows Server 2008 R2".contains("Windows Server 2008"));
 
         Pair<Integer,Integer> hostOsVersion = new Pair<Integer,Integer>(6,5);
