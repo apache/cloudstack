@@ -71,7 +71,7 @@ public class QuotaBalanceVO implements InternalIdentity {
         this.accountId = accountId;
         this.domainId = domainId;
         this.creditBalance = creditBalance;
-        this.creditsId=0L;
+        this.creditsId = 0L;
         this.updatedOn = updatedOn;
     }
 
@@ -123,4 +123,11 @@ public class QuotaBalanceVO implements InternalIdentity {
     public void setUpdatedOn(Date updatedOn) {
         this.updatedOn = updatedOn;
     }
+
+    @Override
+    public String toString() {
+        return "QuotaBalanceVO [id=" + id + ", accountId=" + accountId + ", domainId=" + domainId + ", creditBalance=" + creditBalance + ", creditsId=" + creditsId + ", updatedOn="
+                + updatedOn + "]";
+    }
+
 }

@@ -65,13 +65,13 @@ public class QuotaUsageVO implements InternalIdentity {
     private Date endDate = null;
 
     public QuotaUsageVO() {
-        usageType=-1;
+        usageType = -1;
         quotaUsed = new BigDecimal(0);
-        endDate =  new Date();
+        endDate = new Date();
         startDate = new Date();
     }
 
-    public QuotaUsageVO(Long usageItemId,  Long zoneId, Long accountId, Long domainId, int usageType, BigDecimal quotaUsed, Date startDate, Date endDate) {
+    public QuotaUsageVO(Long usageItemId, Long zoneId, Long accountId, Long domainId, int usageType, BigDecimal quotaUsed, Date startDate, Date endDate) {
         super();
         this.usageItemId = usageItemId;
         this.zoneId = zoneId;
@@ -166,6 +166,12 @@ public class QuotaUsageVO implements InternalIdentity {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    @Override
+    public String toString() {
+        return "QuotaUsageVO [id=" + id + ", zoneId=" + zoneId + ", accountId=" + accountId + ", domainId=" + domainId + ", usageItemId=" + usageItemId + ", usageType=" + usageType
+                + ", quotaUsed=" + quotaUsed + ", startDate=" + startDate + ", endDate=" + endDate + "]";
     }
 
 }

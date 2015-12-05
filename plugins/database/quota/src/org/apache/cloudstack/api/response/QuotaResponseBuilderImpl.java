@@ -66,6 +66,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 
 @Component
 @Local(value = QuotaResponseBuilderImpl.class)
@@ -181,6 +182,33 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             }
         });
 
+        boolean have_balance_entries = false;
+        //check that there is at least one balance entry
+        for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
+            QuotaBalanceVO entry = it.next();
+            if (entry.getCreditsId() > 0) {
+                have_balance_entries = true;
+                break;
+            }
+        }
+        //if last entry is a credit deposit then remove that as that is already
+        //accounted for in the starting balance after that entry, note the sort is desc
+        if (have_balance_entries) {
+            ListIterator<QuotaBalanceVO> li = quotaBalance.listIterator(quotaBalance.size());
+            // Iterate in reverse.
+            while (li.hasPrevious()) {
+                QuotaBalanceVO entry = li.previous();
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("createQuotaBalanceResponse: Entry=" + entry);
+                }
+                if (entry.getCreditsId() > 0) {
+                    li.remove();
+                } else {
+                    break;
+                }
+            }
+        }
+
         int quota_activity = quotaBalance.size();
         QuotaBalanceResponse resp = new QuotaBalanceResponse();
         BigDecimal lastCredits = new BigDecimal(0);
@@ -188,8 +216,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
             QuotaBalanceVO entry = it.next();
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug(
-                        "createQuotaBalanceResponse: Date=" + entry.getUpdatedOn().toGMTString() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
+                s_logger.debug("createQuotaBalanceResponse: All Credit Entry=" + entry);
             }
             if (entry.getCreditsId() > 0) {
                 if (consecutive) {
@@ -206,9 +233,13 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             // order is desc last item is the start item
             QuotaBalanceVO startItem = quotaBalance.get(quotaBalance.size() - 1);
             QuotaBalanceVO endItem = quotaBalance.get(0);
-            resp.setStartDate(startDate);
+            resp.setStartDate(startItem.getUpdatedOn());
             resp.setStartQuota(startItem.getCreditBalance());
-            resp.setEndDate(endDate);
+            resp.setEndDate(endItem.getUpdatedOn());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("createQuotaBalanceResponse: Start Entry=" + startItem);
+                s_logger.debug("createQuotaBalanceResponse: End Entry=" + endItem);
+            }
             resp.setEndQuota(endItem.getCreditBalance().add(lastCredits));
         } else if (quota_activity > 0) {
             // order is desc last item is the start item

@@ -477,6 +477,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
                     qb.and(qb.entity().getDomainId(), SearchCriteria.Op.EQ, domainId);
                 }
                 qb.and(qb.entity().getQuotaCalculated(), SearchCriteria.Op.NEQ, 1);
+                qb.and(qb.entity().getRawUsage(), SearchCriteria.Op.GT, 0);
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Getting usage records" + usageFilter.getOrderBy());
                 }

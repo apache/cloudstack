@@ -139,4 +139,11 @@ public class QuotaAccountVO implements InternalIdentity {
         this.lastStatementDate = lastStatementDate;
     }
 
+    @Override
+    public String toString() {
+        return "QuotaAccountVO [accountId=" + accountId + ", quotaEnforce=" + quotaEnforce + ", quotaBalance=" + quotaBalance + ", quotaBalanceDate=" + quotaBalanceDate
+                + ", quotaMinBalance=" + quotaMinBalance + ", quotaAlertType=" + quotaAlertType + ", quotaAlertDate=" + quotaAlertDate + ", lastStatementDate=" + lastStatementDate
+                + "]";
+    }
+
 }
