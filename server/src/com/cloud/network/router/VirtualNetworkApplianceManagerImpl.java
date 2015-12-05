@@ -398,11 +398,14 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     private final long mgmtSrvrId = MacAddress.getMacAddress().toLong();
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5; // 5 seconds
     private boolean _dailyOrHourly = false;
+    private int _restartRetryInterval;
+    private int _maxRetries;
 
     ScheduledExecutorService _executor;
     ScheduledExecutorService _checkExecutor;
     ScheduledExecutorService _networkStatsUpdateExecutor;
     ExecutorService _rvrStatusUpdateExecutor;
+    ScheduledExecutorService _rebootRouterExecutor;
 
     BlockingQueue<Long> _vrUpdateQueue = null;
 
@@ -569,7 +572,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RouterMonitor"));
         _checkExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RouterStatusMonitor"));
         _networkStatsUpdateExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("NetworkStatsUpdater"));
-
+        _rebootRouterExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RebootRouterTask"));
         VirtualMachine.State.getStateMachine().registerListener(this);
 
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
@@ -598,6 +601,12 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
         value = configs.get("router.check.poolsize");
         _rvrStatusUpdatePoolSize = NumbersUtil.parseInt(value, 10);
+
+        value = configs.get("max.retries");
+        _maxRetries = NumbersUtil.parseInt(value, 5);
+
+        value = configs.get("restart.retry.interval");
+        _restartRetryInterval = NumbersUtil.parseInt(value, 10 * 60);
 
         /*
          * We assume that one thread can handle 20 requests in 1 minute in
@@ -2610,31 +2619,32 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         if (vo.getType() == VirtualMachine.Type.DomainRouter &&
                 event == VirtualMachine.Event.FollowAgentPowerOnReport &&
                 newState == State.Running &&
-                isOutOfBandMigrated(opaque)) {
+                isOutOfBandMigrated(opaque, vo)) {
             s_logger.debug("Virtual router " + vo.getInstanceName() + " is powered-on out-of-band");
         }
 
         return true;
     }
 
-    private boolean isOutOfBandMigrated(final Object opaque) {
+    private boolean isOutOfBandMigrated(final Object opaque,final VirtualMachine vo) {
         // opaque -> <hostId, powerHostId>
         if (opaque != null && opaque instanceof Pair<?, ?>) {
-            final Pair<?, ?> pair = (Pair<?, ?>)opaque;
+            final Pair<?, ?> pair = (Pair<?, ?>) opaque;
             final Object first = pair.first();
             final Object second = pair.second();
             // powerHostId cannot be null in case of out-of-band VM movement
             if (second != null && second instanceof Long) {
-                final Long powerHostId = (Long)second;
+                final Long powerHostId = (Long) second;
                 Long hostId = null;
                 if (first != null && first instanceof Long) {
-                    hostId = (Long)first;
+                    hostId = (Long) first;
                 }
                 // The following scenarios are due to out-of-band VM movement
                 // 1. If VM is in stopped state in CS due to 'PowerMissing' report from old host (hostId is null) and then there is a 'PowerOn' report from new host
                 // 2. If VM is in running state in CS and there is a 'PowerOn' report from new host
                 if (hostId == null || hostId.longValue() != powerHostId.longValue()) {
-                    return true;
+                    s_logger.info("Schedule a router reboot task as router " + vo.getId() + " is powered-on out-of-band, need to reboot to refresh network rules");
+                    _rebootRouterExecutor.schedule(new RebootTask(vo.getId(), _maxRetries-1), 0, TimeUnit.SECONDS);
                 }
             }
         }
@@ -2644,18 +2654,34 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     protected class RebootTask extends ManagedContextRunnable {
 
         long _routerId;
+        long _nextRetryCount;
 
-        public RebootTask(final long routerId) {
+        public RebootTask(final long routerId,final long nextretrycount) {
             _routerId = routerId;
+            _nextRetryCount = nextretrycount;
         }
 
         @Override
         protected void runInContext() {
             try {
                 s_logger.info("Reboot router " + _routerId + " to refresh network rules");
-                rebootRouter(_routerId, true);
+                final DomainRouterVO router = _routerDao.findById(_routerId);
+                if (router.getState() == State.Running) {
+                    rebootRouter(_routerId, true);
+                } else if (router.getState() == State.Stopped) {
+                    startRouter(_routerId, true);
+                }
+                _rebootRouterExecutor.shutdown();
             } catch (final Exception e) {
-                s_logger.warn("Error while rebooting the router", e);
+                s_logger.warn("Error while rebooting the router and trying again ", e);
+                if (_nextRetryCount > 0) {
+                    RebootTask reb = new RebootTask(_routerId, --_nextRetryCount);
+                    _rebootRouterExecutor.schedule(reb, _restartRetryInterval, TimeUnit.SECONDS);
+                } else {
+                    final DomainRouterVO router = _routerDao.findById(_routerId);
+                    _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), "Router- " + router.getHostName() + " is powered-on out-of-band. Reboot attempt(s) failed", "Router-  " + router.getHostName() + " is powered-on out-of-band. Reboot attempt(s) failed");
+                    _rebootRouterExecutor.shutdown();
+                }
             }
         }
     }
