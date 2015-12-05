@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,10 +72,14 @@ public class CloudStackSpringContext {
     }
 
     public void registerShutdownHook() {
-        ApplicationContext base = moduleDefinitionSet.getApplicationContext(baseName);
+        Map<String, ApplicationContext> contextMap= moduleDefinitionSet.getContextMap();
 
-        if (base instanceof ConfigurableApplicationContext) {
-            ((ConfigurableApplicationContext)base).registerShutdownHook();
+        for (String appName : contextMap.keySet()) {
+            ApplicationContext contex = contextMap.get(appName);
+            if (contex instanceof ConfigurableApplicationContext) {
+                log.trace("registering shutdown hook for bean "+ appName);
+                ((ConfigurableApplicationContext)contex).registerShutdownHook();
+            }
         }
     }
 

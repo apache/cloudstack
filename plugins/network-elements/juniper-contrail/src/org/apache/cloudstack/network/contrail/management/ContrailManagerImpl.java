@@ -181,7 +181,9 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
 
     @Override
     public boolean stop() {
-        _dbSyncTimer.cancel();
+        if (_dbSyncTimer != null) {
+            _dbSyncTimer.cancel();
+        }
         return true;
     }
 
