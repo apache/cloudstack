@@ -22,9 +22,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
 
 import com.cloud.capacity.CapacityManager;
 import com.cloud.dc.ClusterDetailsDao;
@@ -170,9 +169,4 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
         return true;
     }
 
-    @Override
-    public boolean check(VirtualMachineProfile vm, DeploymentPlan plan, DeployDestination dest, ExcludeList exclude) {
-        // TODO Auto-generated method stub
-        return false;
-    }
 }
