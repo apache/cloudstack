@@ -93,7 +93,7 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
         final List<PrivateGateway> privateGateways = vpcMgr.getVpcPrivateGateways(vpcId);
         if (privateGateways != null && !privateGateways.isEmpty()) {
             for (final PrivateGateway privateGateway : privateGateways) {
-                final NicProfile privateNic = nicProfileHelper.createPrivateNicProfileForGateway(privateGateway);
+                final NicProfile privateNic = nicProfileHelper.createPrivateNicProfileForGateway(privateGateway, router);
                 final Network privateNetwork = _networkModel.getNetwork(privateGateway.getNetworkId());
                 networks.put(privateNetwork, new ArrayList<NicProfile>(Arrays.asList(privateNic)));
             }
