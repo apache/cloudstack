@@ -28,7 +28,7 @@ from CsRoute import CsRoute
 from CsRule import CsRule
 
 VRRP_TYPES = ['guest']
-
+PUBLIC_INTERFACE = ['eth1']
 
 class CsAddress(CsDataBag):
 
@@ -314,9 +314,10 @@ class CsIP:
         for i in CsHelper.execute(cmd):
             if " DOWN " in i:
                 cmd2 = "ip link set %s up" % self.getDevice()
-                # If redundant do not bring up public interfaces
-                # master.py and keepalived will deal with them
-                if self.cl.is_redundant() and not self.is_public():
+                # If redundant only bring up public interfaces that are not eth1.
+                # Reason: private gateways are public interfaces.
+                # master.py and keepalived will deal with eth1 public interface.
+                if self.cl.is_redundant() and (not self.is_public() or self.getDevice() not in PUBLIC_INTERFACE):
                     CsHelper.execute(cmd2)
                 # if not redundant bring everything up
                 if not self.cl.is_redundant():
