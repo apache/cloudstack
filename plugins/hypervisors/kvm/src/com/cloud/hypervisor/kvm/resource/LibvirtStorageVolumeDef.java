@@ -20,11 +20,11 @@ import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.commons.lang.NotImplementedException;
 
 public class LibvirtStorageVolumeDef {
-    public enum volFormat {
+    public enum VolumeFormat {
         RAW("raw"), QCOW2("qcow2"), DIR("dir"), TAR("tar");
         private String _format;
 
-        volFormat(String format) {
+        VolumeFormat(String format) {
             _format = format;
         }
 
@@ -33,7 +33,7 @@ public class LibvirtStorageVolumeDef {
             return _format;
         }
 
-        public static volFormat getFormat(String format) {
+        public static VolumeFormat getFormat(String format) {
             if (format == null) {
                 return null;
             }
@@ -49,7 +49,7 @@ public class LibvirtStorageVolumeDef {
             return null;
         }
 
-        public static volFormat getFormat(QemuImg.PhysicalDiskFormat format){
+        public static VolumeFormat getFormat(QemuImg.PhysicalDiskFormat format){
             switch (format){
                 case RAW:
                     return RAW;
@@ -67,11 +67,11 @@ public class LibvirtStorageVolumeDef {
 
     private String _volName;
     private Long _volSize;
-    private volFormat _volFormat;
+    private VolumeFormat _volFormat;
     private String _backingPath;
-    private volFormat _backingFormat;
+    private VolumeFormat _backingFormat;
 
-    public LibvirtStorageVolumeDef(String volName, Long size, volFormat format, String tmplPath, volFormat tmplFormat) {
+    public LibvirtStorageVolumeDef(String volName, Long size, VolumeFormat format, String tmplPath, VolumeFormat tmplFormat) {
         _volName = volName;
         _volSize = size;
         _volFormat = format;
@@ -79,7 +79,7 @@ public class LibvirtStorageVolumeDef {
         _backingFormat = tmplFormat;
     }
 
-    public volFormat getFormat() {
+    public VolumeFormat getFormat() {
         return this._volFormat;
     }
 

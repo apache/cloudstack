@@ -20,14 +20,14 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import junit.framework.TestCase;
-import com.cloud.hypervisor.kvm.resource.LibvirtSecretDef.usage;
+import com.cloud.hypervisor.kvm.resource.LibvirtSecretDef.Usage;
 
 public class LibvirtSecretDefTest extends TestCase {
 
     public void testVolumeSecretDef() {
         String uuid = "db66f42b-a79e-4666-9910-9dfc8a024427";
         String name = "myEncryptedQCOW2";
-        usage use = usage.VOLUME;
+        Usage use = Usage.VOLUME;
 
         LibvirtSecretDef def = new LibvirtSecretDef(use, uuid);
         def.setVolumeVolume(name);
@@ -41,7 +41,7 @@ public class LibvirtSecretDefTest extends TestCase {
     public void testCephSecretDef() {
         String uuid = "a9febe83-ac5c-467a-bf19-eb75325ec23c";
         String name = "admin";
-        usage use = usage.CEPH;
+        Usage use = Usage.CEPH;
 
         LibvirtSecretDef def = new LibvirtSecretDef(use, uuid);
         def.setCephName(name);

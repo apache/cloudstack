@@ -122,7 +122,6 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -264,7 +263,7 @@ public class CommandSetupHelper {
 
     public void configDnsMasq(final VirtualRouter router, final Network network, final Commands cmds) {
         final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
-        final List<NicIpAliasVO> ipAliasVOList = _nicIpAliasDao.listByNetworkIdAndState(network.getId(), NicIpAlias.state.active);
+        final List<NicIpAliasVO> ipAliasVOList = _nicIpAliasDao.listByNetworkIdAndState(network.getId(), NicIpAlias.State.active);
         final List<DhcpTO> ipList = new ArrayList<DhcpTO>();
 
         final NicVO router_guest_nic = _nicDao.findByNtwkIdAndInstanceId(network.getId(), router.getId());
@@ -598,7 +597,7 @@ public class CommandSetupHelper {
     }
 
     public void createVmDataCommandForVMs(final DomainRouterVO router, final Commands cmds, final long guestNetworkId) {
-        final List<UserVmVO> vms = _userVmDao.listByNetworkIdAndStates(guestNetworkId, State.Running, State.Migrating, State.Stopping);
+        final List<UserVmVO> vms = _userVmDao.listByNetworkIdAndStates(guestNetworkId, VirtualMachine.State.Running, VirtualMachine.State.Migrating, VirtualMachine.State.Stopping);
         final DataCenterVO dc = _dcDao.findById(router.getDataCenterId());
         for (final UserVmVO vm : vms) {
             boolean createVmData = true;
@@ -617,7 +616,7 @@ public class CommandSetupHelper {
     }
 
     public void createDhcpEntryCommandsForVMs(final DomainRouterVO router, final Commands cmds, final long guestNetworkId) {
-        final List<UserVmVO> vms = _userVmDao.listByNetworkIdAndStates(guestNetworkId, State.Running, State.Migrating, State.Stopping);
+        final List<UserVmVO> vms = _userVmDao.listByNetworkIdAndStates(guestNetworkId, VirtualMachine.State.Running, VirtualMachine.State.Migrating, VirtualMachine.State.Stopping);
         final DataCenterVO dc = _dcDao.findById(router.getDataCenterId());
         for (final UserVmVO vm : vms) {
             boolean createDhcp = true;

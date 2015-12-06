@@ -54,8 +54,8 @@ public interface NicIpAliasDao extends GenericDao<NicIpAliasVO, Long> {
 
     public NicIpAliasVO findByIp4AddressAndVmId(String ip4Address, long vmId);
 
-    NicIpAliasVO findByGatewayAndNetworkIdAndState(String gateway, long networkId, NicIpAlias.state state);
+    NicIpAliasVO findByGatewayAndNetworkIdAndState(String gateway, long networkId, NicIpAlias.State state);
 
-    List<NicIpAliasVO> listByNetworkIdAndState(long networkId, NicIpAlias.state state);
+    List<NicIpAliasVO> listByNetworkIdAndState(long networkId, NicIpAlias.State state);
 
 }

@@ -82,7 +82,7 @@ public class NicIpAliasDaoImpl extends GenericDaoBase<NicIpAliasVO, Long> implem
     }
 
     @Override
-    public List<NicIpAliasVO> listByNetworkIdAndState(long networkId, NicIpAlias.state state) {
+    public List<NicIpAliasVO> listByNetworkIdAndState(long networkId, NicIpAlias.State state) {
         SearchCriteria<NicIpAliasVO> sc = AllFieldsSearch.create();
         sc.setParameters("network", networkId);
         sc.setParameters("state", state);
@@ -101,7 +101,7 @@ public class NicIpAliasDaoImpl extends GenericDaoBase<NicIpAliasVO, Long> implem
     public List<NicIpAliasVO> getAliasIpForVm(long vmId) {
         SearchCriteria<NicIpAliasVO> sc = AllFieldsSearch.create();
         sc.setParameters("instanceId", vmId);
-        sc.setParameters("state", NicIpAlias.state.active);
+        sc.setParameters("state", NicIpAlias.State.active);
         return listBy(sc);
     }
 
@@ -122,7 +122,7 @@ public class NicIpAliasDaoImpl extends GenericDaoBase<NicIpAliasVO, Long> implem
         SearchCriteria<NicIpAliasVO> sc = AllFieldsSearch.create();
         sc.setParameters("network", networkId);
         sc.setParameters("instanceId", instanceId);
-        sc.setParameters("state", NicIpAlias.state.active);
+        sc.setParameters("state", NicIpAlias.State.active);
         return findOneBy(sc);
     }
 
@@ -132,7 +132,7 @@ public class NicIpAliasDaoImpl extends GenericDaoBase<NicIpAliasVO, Long> implem
     }
 
     @Override
-    public NicIpAliasVO findByGatewayAndNetworkIdAndState(String gateway, long networkId, NicIpAlias.state state) {
+    public NicIpAliasVO findByGatewayAndNetworkIdAndState(String gateway, long networkId, NicIpAlias.State state) {
         SearchCriteria<NicIpAliasVO> sc = AllFieldsSearch.create();
         sc.setParameters("gateway", gateway);
         sc.setParameters("network", networkId);

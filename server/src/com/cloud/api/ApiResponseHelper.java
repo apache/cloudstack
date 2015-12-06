@@ -1591,7 +1591,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 if (vgpuVMs.containsKey(capacity.getGroupName().concat(capacity.getModelName()))) {
                     capacityUsed += (float)vgpuVMs.get(capacity.getGroupName().concat(capacity.getModelName())) / capacity.getMaxVpuPerGpu();
                 }
-                if (capacity.getModelName().equals(GPU.vGPUType.passthrough.toString())) {
+                if (capacity.getModelName().equals(GPU.GPUType.passthrough.toString())) {
                     capacityMax += capacity.getMaxCapacity();
                 }
             }

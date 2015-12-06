@@ -96,7 +96,6 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress;
-import com.cloud.network.IpAddress.State;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
@@ -1755,9 +1754,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         Network network = _networksDao.findById(nic.getNetworkId());
         DhcpServiceProvider dhcpServiceProvider = getDhcpServiceProvider(network);
         try {
-            final NicIpAliasVO ipAlias = _nicIpAliasDao.findByGatewayAndNetworkIdAndState(nic.getIPv4Gateway(), network.getId(), NicIpAlias.state.active);
+            final NicIpAliasVO ipAlias = _nicIpAliasDao.findByGatewayAndNetworkIdAndState(nic.getIPv4Gateway(), network.getId(), NicIpAlias.State.active);
             if (ipAlias != null) {
-                ipAlias.setState(NicIpAlias.state.revoked);
+                ipAlias.setState(NicIpAlias.State.revoked);
                 Transaction.execute(new TransactionCallbackNoReturn() {
                     @Override
                     public void doInTransactionWithoutResult(TransactionStatus status) {
@@ -2919,7 +2918,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         List<PublicIp> publicIpsToRelease = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
             for (IPAddressVO userIp : userIps) {
-                userIp.setState(State.Releasing);
+                userIp.setState(IpAddress.State.Releasing);
                 PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
                 publicIpsToRelease.add(publicIp);
             }

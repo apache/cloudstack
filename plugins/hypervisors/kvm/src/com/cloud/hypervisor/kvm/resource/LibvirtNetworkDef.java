@@ -20,13 +20,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class LibvirtNetworkDef {
-    enum netType {
+    enum NetworkType {
         BRIDGE, NAT, LOCAL
     }
 
     private final String _networkName;
     private final String _uuid;
-    private netType _networkType;
+    private NetworkType _networkType;
     private String _brName;
     private boolean _stp;
     private int _delay;
@@ -66,7 +66,7 @@ public class LibvirtNetworkDef {
     }
 
     public void defNATNetwork(String brName, boolean stp, int delay, String fwNic, String ipAddr, String netMask) {
-        _networkType = netType.NAT;
+        _networkType = NetworkType.NAT;
         _brName = brName;
         _stp = stp;
         _delay = delay;
@@ -76,7 +76,7 @@ public class LibvirtNetworkDef {
     }
 
     public void defBrNetwork(String brName, boolean stp, int delay, String fwNic, String ipAddr, String netMask) {
-        _networkType = netType.BRIDGE;
+        _networkType = NetworkType.BRIDGE;
         _brName = brName;
         _stp = stp;
         _delay = delay;
@@ -86,7 +86,7 @@ public class LibvirtNetworkDef {
     }
 
     public void defLocalNetwork(String brName, boolean stp, int delay, String ipAddr, String netMask) {
-        _networkType = netType.LOCAL;
+        _networkType = NetworkType.LOCAL;
         _brName = brName;
         _stp = stp;
         _delay = delay;
@@ -126,13 +126,13 @@ public class LibvirtNetworkDef {
         if (_domainName != null) {
             netBuilder.append("<domain name='" + _domainName + "'/>\n");
         }
-        if (_networkType == netType.BRIDGE) {
+        if (_networkType == NetworkType.BRIDGE) {
             netBuilder.append("<forward mode='route'");
             if (_fwDev != null) {
                 netBuilder.append(" dev='" + _fwDev + "'");
             }
             netBuilder.append("/>\n");
-        } else if (_networkType == netType.NAT) {
+        } else if (_networkType == NetworkType.NAT) {
             netBuilder.append("<forward mode='nat'");
             if (_fwDev != null) {
                 netBuilder.append(" dev='" + _fwDev + "'");

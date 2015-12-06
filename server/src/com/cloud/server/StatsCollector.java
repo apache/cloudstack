@@ -125,11 +125,11 @@ import com.cloud.vm.dao.VMInstanceDao;
 @Component
 public class StatsCollector extends ManagerBase implements ComponentMethodInterceptable {
 
-    public static enum externalStatsProtocol {
+    public static enum ExternalStatsProtocol {
         NONE("none"), GRAPHITE("graphite");
         String _type;
 
-        externalStatsProtocol(String type) {
+        ExternalStatsProtocol(String type) {
             _type = type;
         }
 
@@ -218,7 +218,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     String externalStatsHost = null;
     int externalStatsPort = -1;
     boolean externalStatsEnabled = false;
-    externalStatsProtocol externalStatsType = externalStatsProtocol.NONE;
+    ExternalStatsProtocol externalStatsType = ExternalStatsProtocol.NONE;
 
     private ScheduledExecutorService _diskStatsUpdateExecutor;
     private int _usageAggregationRange = 1440;
@@ -266,7 +266,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 String scheme = uri.getScheme();
 
                 try {
-                    externalStatsType = externalStatsProtocol.valueOf(scheme.toUpperCase());
+                    externalStatsType = ExternalStatsProtocol.valueOf(scheme.toUpperCase());
                 } catch (IllegalArgumentException e) {
                     s_logger.info(scheme + " is not a valid protocol for external statistics. No statistics will be send.");
                 }
@@ -492,7 +492,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                              * Currently only Graphite is supported
                              */
                             if (!metrics.isEmpty()) {
-                                if (externalStatsType != null && externalStatsType == externalStatsProtocol.GRAPHITE) {
+                                if (externalStatsType != null && externalStatsType == ExternalStatsProtocol.GRAPHITE) {
 
                                     if (externalStatsPort == -1) {
                                         externalStatsPort = 2003;

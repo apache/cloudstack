@@ -18,11 +18,11 @@ package com.cloud.hypervisor.kvm.resource;
 
 public class LibvirtSecretDef {
 
-    public enum usage {
+    public enum Usage {
         VOLUME("volume"), CEPH("ceph");
         String _usage;
 
-        usage(String usage) {
+        Usage(String usage) {
             _usage = usage;
         }
 
@@ -32,7 +32,7 @@ public class LibvirtSecretDef {
         }
     }
 
-    private usage _usage;
+    private Usage _usage;
     private boolean _ephemeral;
     private boolean _private;
     private String _uuid;
@@ -40,12 +40,12 @@ public class LibvirtSecretDef {
     private String _cephName;
     private String _volumeVolume;
 
-    public LibvirtSecretDef(usage usage, String uuid) {
+    public LibvirtSecretDef(Usage usage, String uuid) {
         _usage = usage;
         _uuid = uuid;
     }
 
-    public LibvirtSecretDef(usage usage, String uuid, String description) {
+    public LibvirtSecretDef(Usage usage, String uuid, String description) {
         _usage = usage;
         _uuid = uuid;
         _description = description;
@@ -92,10 +92,10 @@ public class LibvirtSecretDef {
             secretBuilder.append("<description>" + _description + "</description>\n");
         }
         secretBuilder.append("<usage type='" + _usage + "'>\n");
-        if (_usage == usage.VOLUME) {
+        if (_usage == Usage.VOLUME) {
             secretBuilder.append("<volume>" + _volumeVolume + "</volume>\n");
         }
-        if (_usage == usage.CEPH) {
+        if (_usage == Usage.CEPH) {
             secretBuilder.append("<name>" + _cephName + "</name>\n");
         }
         secretBuilder.append("</usage>\n");

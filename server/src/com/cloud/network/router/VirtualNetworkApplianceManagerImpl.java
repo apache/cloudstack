@@ -231,7 +231,6 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
@@ -249,7 +248,7 @@ import com.cloud.vm.dao.VMInstanceDao;
  * network appliances available in the Cloud Stack.
  */
 public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements VirtualNetworkApplianceManager, VirtualNetworkApplianceService, VirtualMachineGuru, Listener,
-Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
+Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualMachine> {
     private static final Logger s_logger = Logger.getLogger(VirtualNetworkApplianceManagerImpl.class);
 
     @Inject
@@ -442,7 +441,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         }
 
         // Check that the router is stopped
-        if (!router.getState().equals(State.Stopped)) {
+        if (!router.getState().equals(VirtualMachine.State.Stopped)) {
             s_logger.warn("Unable to upgrade router " + router.toString() + " in state " + router.getState());
             throw new InvalidParameterValueException("Unable to upgrade router " + router.toString() + " in state " + router.getState()
                     + "; make sure the router is stopped and not in an error state before upgrading.");
@@ -542,7 +541,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         _accountMgr.checkAccess(caller, null, true, router);
 
         // Can reboot domain router only in Running state
-        if (router == null || router.getState() != State.Running) {
+        if (router == null || router.getState() != VirtualMachine.State.Running) {
             s_logger.warn("Unable to reboot, virtual router is not in the right state " + router.getState());
             throw new ResourceUnavailableException("Unable to reboot domR, it is not in right state " + router.getState(), DataCenter.class, router.getDataCenterId());
         }
@@ -744,7 +743,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         @Override
         protected void runInContext() {
             try {
-                final List<DomainRouterVO> routers = _routerDao.listByStateAndNetworkType(State.Running, GuestType.Isolated, mgmtSrvrId);
+                final List<DomainRouterVO> routers = _routerDao.listByStateAndNetworkType(VirtualMachine.State.Running, GuestType.Isolated, mgmtSrvrId);
                 s_logger.debug("Found " + routers.size() + " running routers. ");
 
                 for (final DomainRouterVO router : routers) {
@@ -908,7 +907,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
             if (conns == null || conns.isEmpty()) {
                 continue;
             }
-            if (router.getState() != State.Running) {
+            if (router.getState() != VirtualMachine.State.Running) {
                 for (final Site2SiteVpnConnectionVO conn : conns) {
                     if (conn.getState() != Site2SiteVpnConnection.State.Error) {
                         conn.setState(Site2SiteVpnConnection.State.Disconnected);
@@ -989,7 +988,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 continue;
             }
             final RedundantState prevState = router.getRedundantState();
-            if (router.getState() != State.Running) {
+            if (router.getState() != VirtualMachine.State.Running) {
                 router.setRedundantState(RedundantState.UNKNOWN);
                 updated = true;
             } else {
@@ -1041,7 +1040,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     // Ensure router status is update to date before execute this function. The
     // function would try best to recover all routers except MASTER
     protected void recoverRedundantNetwork(final DomainRouterVO masterRouter, final DomainRouterVO backupRouter) {
-        if (masterRouter.getState() == State.Running && backupRouter.getState() == State.Running) {
+        if (masterRouter.getState() == VirtualMachine.State.Running && backupRouter.getState() == VirtualMachine.State.Running) {
             final HostVO masterHost = _hostDao.findById(masterRouter.getHostId());
             final HostVO backupHost = _hostDao.findById(backupRouter.getHostId());
             if (masterHost.getState() == Status.Up && backupHost.getState() == Status.Up) {
@@ -1174,7 +1173,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                     final DomainRouterVO router0 = routers.get(0);
                     final DomainRouterVO router1 = routers.get(1);
 
-                    if (router0.getState() != State.Running || router1.getState() != State.Running) {
+                    if (router0.getState() != VirtualMachine.State.Running || router1.getState() != VirtualMachine.State.Running) {
                         updateRoutersRedundantState(routers);
                         // Wilder Rodrigues (wrodrigues@schubergphilis.com) - One of the routers is not running,
                         // so we don't have to continue here since the host will be null any way. Also, there is no need
@@ -1188,8 +1187,8 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                     } else {
                         router = router1;
                     }
-                    // && router.getState() == State.Stopped
-                    if (router.getHostId() == null && router.getState() == State.Running) {
+                    // && router.getState() == VirtualMachine.State.Stopped
+                    if (router.getHostId() == null && router.getState() == VirtualMachine.State.Running) {
                         s_logger.debug("Skip router pair (" + router0.getInstanceName() + "," + router1.getInstanceName() + ") due to can't find host");
                         continue;
                     }
@@ -1259,7 +1258,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
     protected void getRouterAlerts() {
         try {
-            final List<DomainRouterVO> routers = _routerDao.listByStateAndManagementServer(State.Running, mgmtSrvrId);
+            final List<DomainRouterVO> routers = _routerDao.listByStateAndManagementServer(VirtualMachine.State.Running, mgmtSrvrId);
 
             s_logger.debug("Found " + routers.size() + " running routers. ");
 
@@ -1952,11 +1951,11 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                     _networkOfferingDao.findById(_networkDao.findById(guestNetworkId).getNetworkOfferingId()), Service.Dhcp);
             final String supportsMultipleSubnets = dhcpCapabilities.get(Network.Capability.DhcpAccrossMultipleSubnets);
             if (supportsMultipleSubnets != null && Boolean.valueOf(supportsMultipleSubnets)) {
-                final List<NicIpAliasVO> revokedIpAliasVOs = _nicIpAliasDao.listByNetworkIdAndState(guestNetworkId, NicIpAlias.state.revoked);
+                final List<NicIpAliasVO> revokedIpAliasVOs = _nicIpAliasDao.listByNetworkIdAndState(guestNetworkId, NicIpAlias.State.revoked);
                 s_logger.debug("Found" + revokedIpAliasVOs.size() + "ip Aliases to revoke on the router as a part of dhcp configuration");
                 removeRevokedIpAliasFromDb(revokedIpAliasVOs);
 
-                final List<NicIpAliasVO> aliasVOs = _nicIpAliasDao.listByNetworkIdAndState(guestNetworkId, NicIpAlias.state.active);
+                final List<NicIpAliasVO> aliasVOs = _nicIpAliasDao.listByNetworkIdAndState(guestNetworkId, NicIpAlias.State.active);
                 s_logger.debug("Found" + aliasVOs.size() + "ip Aliases to apply on the router as a part of dhcp configuration");
                 final List<IpAliasTO> activeIpAliasTOs = new ArrayList<IpAliasTO>();
                 for (final NicIpAliasVO aliasVO : aliasVOs) {
@@ -2148,7 +2147,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         }
 
         for (final VirtualRouter router : routers) {
-            if (router.getState() != State.Running) {
+            if (router.getState() != VirtualMachine.State.Running) {
                 s_logger.warn("Failed to start remote access VPN: router not in right state " + router.getState());
                 throw new ResourceUnavailableException("Failed to start remote access VPN: router not in right state " + router.getState(), DataCenter.class,
                         network.getDataCenterId());
@@ -2189,11 +2188,11 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
         boolean result = true;
         for (final VirtualRouter router : routers) {
-            if (router.getState() == State.Running) {
+            if (router.getState() == VirtualMachine.State.Running) {
                 final Commands cmds = new Commands(Command.OnError.Continue);
                 _commandSetupHelper.createApplyVpnCommands(false, vpn, router, cmds);
                 result = result && _nwHelper.sendCommandsToRouter(router, cmds);
-            } else if (router.getState() == State.Stopped) {
+            } else if (router.getState() == VirtualMachine.State.Stopped) {
                 s_logger.debug("Router " + router + " is in Stopped state, not sending deleteRemoteAccessVpn command to it");
                 continue;
             } else {
@@ -2226,20 +2225,20 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         }
 
         for (final DomainRouterVO router : routers) {
-            if (router.getState() != State.Running) {
+            if (router.getState() != VirtualMachine.State.Running) {
                 s_logger.warn("Failed to add/remove VPN users: router not in running state");
                 throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class,
                         network.getDataCenterId());
             }
 
             final Commands cmds = new Commands(Command.OnError.Continue);
-            final List<NicIpAliasVO> revokedIpAliasVOs = _nicIpAliasDao.listByNetworkIdAndState(network.getId(), NicIpAlias.state.revoked);
+            final List<NicIpAliasVO> revokedIpAliasVOs = _nicIpAliasDao.listByNetworkIdAndState(network.getId(), NicIpAlias.State.revoked);
             s_logger.debug("Found" + revokedIpAliasVOs.size() + "ip Aliases to revoke on the router as a part of dhcp configuration");
             final List<IpAliasTO> revokedIpAliasTOs = new ArrayList<IpAliasTO>();
             for (final NicIpAliasVO revokedAliasVO : revokedIpAliasVOs) {
                 revokedIpAliasTOs.add(new IpAliasTO(revokedAliasVO.getIp4Address(), revokedAliasVO.getNetmask(), revokedAliasVO.getAliasCount().toString()));
             }
-            final List<NicIpAliasVO> aliasVOs = _nicIpAliasDao.listByNetworkIdAndState(network.getId(), NicIpAlias.state.active);
+            final List<NicIpAliasVO> aliasVOs = _nicIpAliasDao.listByNetworkIdAndState(network.getId(), NicIpAlias.State.active);
             s_logger.debug("Found" + aliasVOs.size() + "ip Aliases to apply on the router as a part of dhcp configuration");
             final List<IpAliasTO> activeIpAliasTOs = new ArrayList<IpAliasTO>();
             for (final NicIpAliasVO aliasVO : aliasVOs) {
@@ -2306,7 +2305,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
         // After start network, check if it's already running
         router = _routerDao.findById(routerId);
-        if (router.getState() == State.Running) {
+        if (router.getState() == VirtualMachine.State.Running) {
             return router;
         }
 
@@ -2365,8 +2364,8 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         for (DomainRouterVO router : routers) {
             if (router.isStopPending()) {
                 s_logger.info("Stopping router " + router.getInstanceName() + " due to stop pending flag found!");
-                final State state = router.getState();
-                if (state != State.Stopped && state != State.Destroyed) {
+                final VirtualMachine.State state = router.getState();
+                if (state != VirtualMachine.State.Stopped && state != VirtualMachine.State.Destroyed) {
                     try {
                         stopRouter(router.getId(), false);
                     } catch (final ResourceUnavailableException e) {
@@ -2598,18 +2597,18 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     }
 
     @Override
-    public boolean preStateTransitionEvent(final State oldState, final VirtualMachine.Event event, final State newState, final VirtualMachine vo, final boolean status,
+    public boolean preStateTransitionEvent(final VirtualMachine.State oldState, final VirtualMachine.Event event, final VirtualMachine.State newState, final VirtualMachine vo, final boolean status,
             final Object opaque) {
         return true;
     }
 
     @Override
-    public boolean postStateTransitionEvent(final StateMachine2.Transition<State, VirtualMachine.Event> transition, final VirtualMachine vo, final boolean status, final Object opaque) {
-        final State newState = transition.getToState();
+    public boolean postStateTransitionEvent(final StateMachine2.Transition<VirtualMachine.State, VirtualMachine.Event> transition, final VirtualMachine vo, final boolean status, final Object opaque) {
+        final VirtualMachine.State newState = transition.getToState();
         final VirtualMachine.Event event = transition.getEvent();
         if (vo.getType() == VirtualMachine.Type.DomainRouter &&
                 event == VirtualMachine.Event.FollowAgentPowerOnReport &&
-                newState == State.Running &&
+                newState == VirtualMachine.State.Running &&
                 isOutOfBandMigrated(opaque)) {
             s_logger.debug("Virtual router " + vo.getInstanceName() + " is powered-on out-of-band");
         }
