@@ -38,6 +38,8 @@ import java.util.TreeSet;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils.SupersetOrSubset;
 import com.googlecode.ipv6.IPv6Address;
 
 public class NetUtilsTest {
@@ -417,5 +419,93 @@ public class NetUtilsTest {
         final boolean is31PrefixCidr = NetUtils.is31PrefixCidr(cidr);
 
         assertTrue("It should pass! 31 bit prefix.", is31PrefixCidr);
+    }
+
+    @Test
+    public void testGetCidrNetMask() {
+        final String cidr = "10.10.0.0/16";
+        String netmask = NetUtils.getCidrNetmask("10.10.10.10/16");
+        assertTrue(cidr + " does not generate valid netmask " + netmask,NetUtils.isValidNetmask(netmask));
+    }
+
+    @Test
+    public void testGetCidrSubNet() {
+        final String cidr = "10.10.0.0/16";
+        String subnet = NetUtils.getCidrSubNet("10.10.10.10/16");
+        assertTrue(cidr + " does not contain " + subnet,NetUtils.isIpWithtInCidrRange(subnet, cidr));
+    }
+
+    @Test
+    public void testGetCidrSubNetWithWidth() {
+        final String cidr = "10.10.0.0/16";
+        String subnet = NetUtils.getCidrSubNet("10.10.10.10", 16);
+        assertTrue(cidr + " does not contain " + subnet,NetUtils.isIpWithtInCidrRange(subnet, cidr));
+    }
+
+    @Test
+    public void testIsValidCidrSize() {
+        final String cidrsize = "16";
+        long netbits = NetUtils.getCidrSizeFromString(cidrsize);
+        assertTrue(" does not compute " + cidrsize,netbits == 16);
+    }
+
+    @Test(expected=CloudRuntimeException.class)
+    public void testIsInvalidCidrSize() {
+        final String cidrsize = "33";
+        long netbits = NetUtils.getCidrSizeFromString(cidrsize);
+        assertTrue(" does not compute " + cidrsize,netbits == 16);
+    }
+
+    @Test(expected=CloudRuntimeException.class)
+    public void testIsInvalidCidrString() {
+        final String cidrsize = "ggg";
+        long netbits = NetUtils.getCidrSizeFromString(cidrsize);
+        assertTrue(" does not compute " + cidrsize,netbits == 16);
+    }
+
+    @Test
+    public void testCidrToLongArray() {
+        final String cidr = "10.192.10.10/10";
+        Long[] netbits = NetUtils.cidrToLong(cidr);
+        assertEquals("unexpected cidrsize " + netbits[1],10l, netbits[1].longValue());
+        assertEquals("(un)expected <" + 0x0ac00000L + "> netaddress " + netbits[0].longValue(),netbits[0].longValue(),0x0ac00000l);
+    }
+
+    @Test
+    public void testNetmaskFromCidr() {
+        long mask = NetUtils.netMaskFromCidr(1l);
+        assertEquals("mask not right: " + mask, 0x80000000, mask);
+        mask = NetUtils.netMaskFromCidr(32l);
+        assertEquals("mask not right: " + mask, 0xffffffff, mask);
+    }
+
+    @Test
+    public void testIsCidrsNotEmptyWithNullCidrs() {
+        assertEquals(false, NetUtils.areCidrsNotEmpty(null, null));
+    }
+
+    @Test
+    public void testIsCidrsNotEmptyWithEmptyCidrs() {
+        assertEquals(false, NetUtils.areCidrsNotEmpty("", "  "));
+    }
+
+    @Test
+    public void testIsCidrsNotEmpty() {
+        assertEquals(true, NetUtils.areCidrsNotEmpty("10.10.0.0/16", "10.1.2.3/16"));
+    }
+
+    @Test
+    public void testIsNetowrkASubsetOrSupersetOfNetworkBWithEmptyValues() {
+        assertEquals(SupersetOrSubset.errorInCidrFormat, NetUtils.isNetowrkASubsetOrSupersetOfNetworkB("", null));
+    }
+
+    @Test
+    public void testIsNetworkAWithinNetworkBWithEmptyValues() {
+        assertEquals(false, NetUtils.isNetworkAWithinNetworkB("", null));
+    }
+
+    @Test
+    public void testIsNetworksOverlapWithEmptyValues() {
+        assertEquals(false, NetUtils.isNetworksOverlap("", null));
     }
 }

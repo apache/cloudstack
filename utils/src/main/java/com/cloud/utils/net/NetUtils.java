@@ -40,6 +40,7 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.commons.validator.routines.InetAddressValidator;
@@ -47,6 +48,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.utils.IteratorUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.googlecode.ipv6.IPv6Address;
 import com.googlecode.ipv6.IPv6AddressRange;
@@ -775,9 +777,17 @@ public class NetUtils {
     }
 
     public static String getCidrSubNet(final String ip, final long cidrSize) {
-        final long numericNetmask = 0xffffffff >> MAX_CIDR - cidrSize << MAX_CIDR - cidrSize;
+        final long numericNetmask = netMaskFromCidr(cidrSize);
         final String netmask = NetUtils.long2Ip(numericNetmask);
         return getSubNet(ip, netmask);
+    }
+
+    /**
+     * @param cidrSize
+     * @return
+     */
+    static long netMaskFromCidr(final long cidrSize) {
+        return ((long)0xffffffff) >> MAX_CIDR - cidrSize << MAX_CIDR - cidrSize;
     }
 
     public static String ipAndNetMaskToCidr(final String ip, final String netmask) {
@@ -829,13 +839,13 @@ public class NetUtils {
     }
 
     public static SupersetOrSubset isNetowrkASubsetOrSupersetOfNetworkB(final String cidrA, final String cidrB) {
+        if (!areCidrsNotEmpty(cidrA, cidrB)) {
+            return SupersetOrSubset.errorInCidrFormat;
+        }
         final Long[] cidrALong = cidrToLong(cidrA);
         final Long[] cidrBLong = cidrToLong(cidrB);
         long shift = 0;
-        if (cidrALong == null || cidrBLong == null) {
-            //implies error in the cidr format
-            return SupersetOrSubset.errorInCidrFormat;
-        }
+
         if (cidrALong[1] >= cidrBLong[1]) {
             shift = MAX_CIDR - cidrBLong[1];
         } else {
@@ -858,40 +868,58 @@ public class NetUtils {
     }
 
     public static boolean isNetworkAWithinNetworkB(final String cidrA, final String cidrB) {
-        final Long[] cidrALong = cidrToLong(cidrA);
-        final Long[] cidrBLong = cidrToLong(cidrB);
-        if (cidrALong == null || cidrBLong == null) {
+        if (!areCidrsNotEmpty(cidrA, cidrB)) {
             return false;
         }
-        final long shift = MAX_CIDR - cidrBLong[1];
+        Long[] cidrALong = cidrToLong(cidrA);
+        Long[] cidrBLong = cidrToLong(cidrB);
+
+        long shift = MAX_CIDR - cidrBLong[1];
         return cidrALong[0] >> shift == cidrBLong[0] >> shift;
+    }
+
+    static boolean areCidrsNotEmpty(String cidrA, String cidrB) {
+        return StringUtils.isNotEmpty(cidrA) && StringUtils.isNotEmpty(cidrB);
     }
 
     public static Long[] cidrToLong(final String cidr) {
         if (cidr == null || cidr.isEmpty()) {
-            return null;
+            throw new CloudRuntimeException("empty cidr can not be converted to longs");
         }
         final String[] cidrPair = cidr.split("\\/");
         if (cidrPair.length != 2) {
-            return null;
+            throw new CloudRuntimeException("cidr is not formatted correctly: "+ cidr);
         }
         final String cidrAddress = cidrPair[0];
         final String cidrSize = cidrPair[1];
         if (!isValidIp(cidrAddress)) {
-            return null;
+            throw new CloudRuntimeException("cidr is not valid in ip space" + cidr);
         }
-        int cidrSizeNum = -1;
+        long cidrSizeNum = getCidrSizeFromString(cidrSize);
+        final long numericNetmask = netMaskFromCidr(cidrSizeNum);
+        final long ipAddr = ip2Long(cidrAddress);
+        final Long[] cidrlong = {ipAddr & numericNetmask, cidrSizeNum};
+        return cidrlong;
+
+    }
+
+    /**
+     * @param cidrSize
+     * @return
+     * @throws CloudRuntimeException
+     */
+    static long getCidrSizeFromString(final String cidrSize) throws CloudRuntimeException {
+        long cidrSizeNum = -1;
 
         try {
             cidrSizeNum = Integer.parseInt(cidrSize);
-        } catch (final Exception e) {
-            return null;
+        } catch (final NumberFormatException e) {
+            throw new CloudRuntimeException("cidrsize is not a valid int: " + cidrSize, e);
         }
-        final long numericNetmask = 0xffffffff >> MAX_CIDR - cidrSizeNum << MAX_CIDR - cidrSizeNum;
-        final long ipAddr = ip2Long(cidrAddress);
-        final Long[] cidrlong = {ipAddr & numericNetmask, (long)cidrSizeNum};
-        return cidrlong;
-
+        if(cidrSizeNum > 32 || cidrSizeNum < 0) {// assuming IPv4
+            throw new CloudRuntimeException("cidr size out of range: " + cidrSizeNum);
+        }
+        return cidrSizeNum;
     }
 
     public static String getCidrSubNet(final String cidr) {
@@ -907,20 +935,14 @@ public class NetUtils {
         if (!isValidIp(cidrAddress)) {
             return null;
         }
-        int cidrSizeNum = -1;
-
-        try {
-            cidrSizeNum = Integer.parseInt(cidrSize);
-        } catch (final Exception e) {
-            return null;
-        }
-        final long numericNetmask = 0xffffffff >> MAX_CIDR - cidrSizeNum << MAX_CIDR - cidrSizeNum;
+        long cidrSizeNum = getCidrSizeFromString(cidrSize);
+        final long numericNetmask = netMaskFromCidr(cidrSizeNum);
         final String netmask = NetUtils.long2Ip(numericNetmask);
         return getSubNet(cidrAddress, netmask);
     }
 
     public static String getCidrNetmask(final long cidrSize) {
-        final long numericNetmask = 0xffffffff >> MAX_CIDR - cidrSize << MAX_CIDR - cidrSize;
+        final long numericNetmask = netMaskFromCidr(cidrSize);
         return long2Ip(numericNetmask);
     }
 
@@ -1148,13 +1170,15 @@ public class NetUtils {
     }
 
     public static boolean isNetworksOverlap(final String cidrA, final String cidrB) {
-        final Long[] cidrALong = cidrToLong(cidrA);
-        final Long[] cidrBLong = cidrToLong(cidrB);
-        if (cidrALong == null || cidrBLong == null) {
-            return false;
+        try {
+            Long[] cidrALong = cidrToLong(cidrA);
+            Long[] cidrBLong = cidrToLong(cidrB);
+            final long shift = MAX_CIDR - (cidrALong[1] > cidrBLong[1] ? cidrBLong[1] : cidrALong[1]);
+            return cidrALong[0] >> shift == cidrBLong[0] >> shift;
+        } catch (CloudRuntimeException e) {
+            s_logger.error(e.getLocalizedMessage(),e);
         }
-        final long shift = MAX_CIDR - (cidrALong[1] > cidrBLong[1] ? cidrBLong[1] : cidrALong[1]);
-        return cidrALong[0] >> shift == cidrBLong[0] >> shift;
+        return false;
     }
 
     public static boolean isValidS2SVpnPolicy(final String policys) {

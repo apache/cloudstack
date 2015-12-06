@@ -418,7 +418,10 @@ public class ByteBuffer {
     }
 
     protected static long calculateUnsignedInt(byte value1, byte value2, byte value3, byte value4) {
-        return (calculateUnsignedByte(value1) << 24) + (calculateUnsignedByte(value2) << 16) + (calculateUnsignedByte(value3) << 8) + calculateUnsignedByte(value4);
+        return (((long)calculateUnsignedByte(value1)) << 24)
+                + (((long)calculateUnsignedByte(value2)) << 16)
+                + (((long)calculateUnsignedByte(value3)) << 8)
+                + calculateUnsignedByte(value4);
     }
 
     /**
