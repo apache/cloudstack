@@ -19,20 +19,12 @@ package com.cloud.hypervisor.ovm3.resources;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.to.DataObjectType;
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
@@ -97,23 +89,6 @@ public class Ovm3HypervisorGuru extends HypervisorGuruBase implements Hypervisor
         if (cmd instanceof StorageSubSystemCommand) {
             StorageSubSystemCommand c = (StorageSubSystemCommand)cmd;
             c.setExecuteInSequence(true);
-        }
-        if (cmd instanceof CopyCommand) {
-            CopyCommand cpyCommand = (CopyCommand)cmd;
-            DataTO srcData = cpyCommand.getSrcTO();
-            DataTO destData = cpyCommand.getDestTO();
-
-            if (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.TEMPLATE) {
-                LOGGER.debug("Snapshot to Template: " + cmd);
-                DataStoreTO srcStore = srcData.getDataStore();
-                DataStoreTO destStore = destData.getDataStore();
-                if (srcStore instanceof NfsTO && destStore instanceof NfsTO) {
-                    HostVO host = hostDao.findById(hostId);
-                    EndPoint ep = endPointSelector.selectHypervisorHost(new ZoneScope(host.getDataCenterId()));
-                    host = hostDao.findById(ep.getId());
-                    hostDao.loadDetails(host);
-                }
-            }
         }
     }
 }

@@ -402,7 +402,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
                 PreparedStatement pstmt = txn.prepareStatement(sql);
                 ResultSet rs = pstmt.executeQuery();
             ) {
-            while (rs.next()) {
+            if (rs.next()) {
                 long id = rs.getLong(1);
                 host = hostDao.findById(id);
             }
