@@ -87,15 +87,6 @@ public class Ovm3HypervisorGuru extends HypervisorGuruBase implements Hypervisor
      */
     public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
         LOGGER.debug("getCommandHostDelegation: " + cmd.getClass());
-        performSideEffectsForDelegationOnCommand(hostId, cmd);
-        return new Pair<Boolean, Long>(Boolean.FALSE, Long.valueOf(hostId));
-    }
-
-    /**
-     * @param hostId
-     * @param cmd
-     */
-    void performSideEffectsForDelegationOnCommand(long hostId, Command cmd) {
         if (cmd instanceof StorageSubSystemCommand) {
             StorageSubSystemCommand c = (StorageSubSystemCommand)cmd;
             c.setExecuteInSequence(true);
@@ -105,17 +96,19 @@ public class Ovm3HypervisorGuru extends HypervisorGuruBase implements Hypervisor
             DataTO srcData = cpyCommand.getSrcTO();
             DataTO destData = cpyCommand.getDestTO();
 
-            if (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.TEMPLATE) {
+            if (HypervisorType.Ovm3.equals(srcData.getHypervisorType()) && srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.TEMPLATE) {
                 LOGGER.debug("Snapshot to Template: " + cmd);
                 DataStoreTO srcStore = srcData.getDataStore();
                 DataStoreTO destStore = destData.getDataStore();
                 if (srcStore instanceof NfsTO && destStore instanceof NfsTO) {
                     HostVO host = hostDao.findById(hostId);
                     EndPoint ep = endPointSelector.selectHypervisorHost(new ZoneScope(host.getDataCenterId()));
-                    host = hostDao.findById(ep.getId());
-                    hostDao.loadDetails(host);
+                    if (ep != null) {
+                        return new Pair<Boolean, Long>(Boolean.TRUE,  Long.valueOf(ep.getId()));
+                    }
                 }
             }
         }
+        return new Pair<Boolean, Long>(Boolean.FALSE, Long.valueOf(hostId));
     }
 }
