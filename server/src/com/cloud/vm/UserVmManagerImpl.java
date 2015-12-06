@@ -58,6 +58,7 @@ import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
 import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateDefaultNicForVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateVmNicIpCmd;
 import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
@@ -142,6 +143,7 @@ import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.CloudException;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ManagementServerException;
@@ -159,6 +161,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.Network.Provider;
@@ -472,6 +475,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     DomainRouterDao _routerDao;
     @Inject
     protected VMNetworkMapDao _vmNetworkMapDao;
+    @Inject
+    protected IpAddressManager _ipAddrMgr;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
@@ -1406,6 +1411,142 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         throw new CloudRuntimeException("something strange happened, new default network(" + newdefault.getId() + ") is not null, and is not equal to the network("
                 + nic.getNetworkId() + ") of the chosen nic");
+    }
+
+    @Override
+    public UserVm updateNicIpForVirtualMachine(UpdateVmNicIpCmd cmd) {
+        Long nicId = cmd.getNicId();
+        String ipaddr = cmd.getIpaddress();
+        Account caller = CallContext.current().getCallingAccount();
+
+        //check whether the nic belongs to user vm.
+        NicVO nicVO = _nicDao.findById(nicId);
+        if (nicVO == null) {
+            throw new InvalidParameterValueException("There is no nic for the " + nicId);
+        }
+
+        if (nicVO.getVmType() != VirtualMachine.Type.User) {
+            throw new InvalidParameterValueException("The nic is not belongs to user vm");
+        }
+
+        UserVm vm = _vmDao.findById(nicVO.getInstanceId());
+        if (vm == null) {
+            throw new InvalidParameterValueException("There is no vm with the nic");
+        }
+
+        Network network = _networkDao.findById(nicVO.getNetworkId());
+        if (network == null) {
+            throw new InvalidParameterValueException("There is no network with the nic");
+        }
+        // Don't allow to update vm nic ip if network is not in Implemented/Setup/Allocated state
+        if (!(network.getState() == Network.State.Allocated || network.getState() == Network.State.Implemented || network.getState() == Network.State.Setup)) {
+            throw new InvalidParameterValueException("Network is not in the right state to update vm nic ip. Correct states are: " + Network.State.Allocated + ", " + Network.State.Implemented + ", "
+                    + Network.State.Setup);
+        }
+
+        NetworkOfferingVO offering = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
+        if (offering == null) {
+            throw new InvalidParameterValueException("There is no network offering with the network");
+        }
+        if (!_networkModel.listNetworkOfferingServices(offering.getId()).isEmpty() && vm.getState() != State.Stopped) {
+            InvalidParameterValueException ex = new InvalidParameterValueException(
+                    "VM is not Stopped, unable to update the vm nic having the specified id");
+            ex.addProxyObject(vm.getUuid(), "vmId");
+            throw ex;
+        }
+
+        // verify permissions
+        _accountMgr.checkAccess(caller, null, true, vm);
+        Account ipOwner = _accountDao.findByIdIncludingRemoved(vm.getAccountId());
+
+        // verify ip address
+        s_logger.debug("Calling the ip allocation ...");
+        DataCenter dc = _dcDao.findById(network.getDataCenterId());
+        if (dc == null) {
+            throw new InvalidParameterValueException("There is no dc with the nic");
+        }
+        if (dc.getNetworkType() == NetworkType.Advanced && network.getGuestType() == Network.GuestType.Isolated) {
+            try {
+                ipaddr = _ipAddrMgr.allocateGuestIP(network, ipaddr);
+            } catch (InsufficientAddressCapacityException e) {
+                throw new InvalidParameterValueException("Allocating ip to guest nic " + nicVO.getUuid() + " failed, for insufficient address capacity");
+            }
+            if (ipaddr == null) {
+                throw new InvalidParameterValueException("Allocating ip to guest nic " + nicVO.getUuid() + " failed, please choose another ip");
+            }
+
+            if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.StaticNat)) {
+                IPAddressVO oldIP = _ipAddressDao.findByAssociatedVmId(vm.getId());
+                if (oldIP != null) {
+                    oldIP.setVmIp(ipaddr);
+                    _ipAddressDao.persist(oldIP);
+                }
+            }
+            // implementing the network elements and resources as a part of vm nic ip update if network has services and it is in Implemented state
+            if (!_networkModel.listNetworkOfferingServices(offering.getId()).isEmpty() && network.getState() == Network.State.Implemented) {
+                User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
+                ReservationContext context = new ReservationContextImpl(null, null, callerUser, caller);
+                DeployDestination dest = new DeployDestination(_dcDao.findById(network.getDataCenterId()), null, null, null);
+
+                s_logger.debug("Implementing the network " + network + " elements and resources as a part of vm nic ip update");
+                try {
+                    // implement the network elements and rules again
+                    _networkMgr.implementNetworkElementsAndResources(dest, context, network, offering);
+                } catch (Exception ex) {
+                    s_logger.warn("Failed to implement network " + network + " elements and resources as a part of vm nic ip update due to ", ex);
+                    CloudRuntimeException e = new CloudRuntimeException("Failed to implement network (with specified id) elements and resources as a part of vm nic ip update");
+                    e.addProxyObject(network.getUuid(), "networkId");
+                    // restore to old ip address
+                    if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.StaticNat)) {
+                        IPAddressVO oldIP = _ipAddressDao.findByAssociatedVmId(vm.getId());
+                        if (oldIP != null) {
+                            oldIP.setVmIp(nicVO.getIPv4Address());
+                            _ipAddressDao.persist(oldIP);
+                        }
+                    }
+                    throw e;
+                }
+            }
+        } else if (dc.getNetworkType() == NetworkType.Basic || network.getGuestType()  == Network.GuestType.Shared) {
+            //handle the basic networks here
+            //for basic zone, need to provide the podId to ensure proper ip alloation
+            Long podId = null;
+            if (dc.getNetworkType() == NetworkType.Basic) {
+                podId = vm.getPodIdToDeployIn();
+                if (podId == null) {
+                    throw new InvalidParameterValueException("vm pod id is null in Basic zone; can't decide the range for ip allocation");
+                }
+            }
+
+            try {
+                ipaddr = _ipAddrMgr.allocatePublicIpForGuestNic(network, podId, ipOwner, ipaddr);
+                if (ipaddr == null) {
+                    throw new InvalidParameterValueException("Allocating ip to guest nic " + nicVO.getUuid() + " failed, please choose another ip");
+                }
+                final IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nicVO.getNetworkId(), nicVO.getIPv4Address());
+                if (ip != null) {
+                    Transaction.execute(new TransactionCallbackNoReturn() {
+                        @Override
+                        public void doInTransactionWithoutResult(TransactionStatus status) {
+                            _ipAddrMgr.markIpAsUnavailable(ip.getId());
+                            _ipAddressDao.unassignIpAddress(ip.getId());
+                        }
+                    });
+                }
+            } catch (InsufficientAddressCapacityException e) {
+                s_logger.error("Allocating ip to guest nic " + nicVO.getUuid() + " failed, for insufficient address capacity");
+                return null;
+            }
+        } else {
+            s_logger.error("UpdateVmNicIpCmd is not supported in this network...");
+            return null;
+        }
+
+        // update nic ipaddress
+        nicVO.setIPv4Address(ipaddr);
+        _nicDao.persist(nicVO);
+
+        return vm;
     }
 
     @Override

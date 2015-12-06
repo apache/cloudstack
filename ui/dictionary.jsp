@@ -458,6 +458,7 @@ dictionary = {
 'label.cancel': '<fmt:message key="label.cancel" />',
 'label.capacity': '<fmt:message key="label.capacity" />',
 'label.certificate': '<fmt:message key="label.certificate" />',
+'label.change.ipaddress': '<fmt:message key="label.change.ipaddress" />',
 'label.change.service.offering': '<fmt:message key="label.change.service.offering" />',
 'label.change.value': '<fmt:message key="label.change.value" />',
 'label.character': '<fmt:message key="label.character" />',

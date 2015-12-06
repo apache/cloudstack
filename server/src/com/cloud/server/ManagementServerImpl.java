@@ -442,6 +442,7 @@ import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
 import org.apache.cloudstack.api.command.user.vm.StopVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateDefaultNicForVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateVmNicIpCmd;
 import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
@@ -2898,6 +2899,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(DeleteVMSnapshotCmd.class);
         cmdList.add(AddIpToVmNicCmd.class);
         cmdList.add(RemoveIpFromVmNicCmd.class);
+        cmdList.add(UpdateVmNicIpCmd.class);
         cmdList.add(ListNicsCmd.class);
         cmdList.add(ArchiveAlertsCmd.class);
         cmdList.add(DeleteAlertsCmd.class);

@@ -449,6 +449,7 @@ under the License.
 'message.attach.iso.confirm': '<fmt:message key="message.attach.iso.confirm" />',
 'message.attach.volume': '<fmt:message key="message.attach.volume" />',
 'message.basic.mode.desc': '<fmt:message key="message.basic.mode.desc" />',
+'message.change.ipaddress': '<fmt:message key="message.change.ipaddress" />',
 'message.change.offering.confirm': '<fmt:message key="message.change.offering.confirm" />',
 'message.change.password': '<fmt:message key="message.change.password" />',
 'message.configure.all.traffic.types': '<fmt:message key="message.configure.all.traffic.types" />',

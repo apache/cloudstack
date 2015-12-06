@@ -2308,6 +2308,7 @@ div.detail-group.actions td {
   height: 35px;
   float: right;
   padding: 0;
+  min-width: 120px;
 }
 
 .details.group-multiple div.detail-group.actions .detail-actions .action {
@@ -12908,12 +12909,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .replaceacllist .icon,
 .replaceACL .icon,
+.updateIpaddr .icon,
 .changeAffinity .icon {
   background-position: -264px -2px;
 }
 
 .replaceacllist:hover .icon,
 .replaceACL:hover .icon,
+.updateIpaddr:hover .icon,
 .changeAffinity:hover .icon {
   background-position: -263px -583px;
 }

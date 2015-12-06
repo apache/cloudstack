@@ -151,6 +151,7 @@ known_categories = {
     'Detail': 'Resource metadata',
     'addIpToNic': 'Nic',
     'removeIpFromNic': 'Nic',
+    'updateVmNicIp': 'Nic',
     'listNics':'Nic',
 	'AffinityGroup': 'Affinity Group',
     'addImageStore': 'Image Store',
