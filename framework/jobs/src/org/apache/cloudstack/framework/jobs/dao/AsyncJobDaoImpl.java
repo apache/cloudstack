@@ -209,7 +209,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         SearchCriteria<AsyncJobVO> initMsQuery = createSearchCriteria();
         initMsQuery.addAnd("executingMsid", SearchCriteria.Op.NULL);
         initMsQuery.addAnd("initMsid", SearchCriteria.Op.EQ, msid);
-        msQuery.addOr("initMsId", SearchCriteria.Op.SC, initMsQuery);
+        msQuery.addOr("initMsid", SearchCriteria.Op.SC, initMsQuery);
 
         sc.addAnd("executingMsid", SearchCriteria.Op.SC, msQuery);
 

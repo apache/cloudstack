@@ -35,7 +35,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
-
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -55,6 +54,7 @@ import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.jobs.JobInfo.Status;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.slf4j.MDC;
 
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerHost;
@@ -486,10 +486,18 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 if (CallContext.current() == null)
                     CallContext.registerPlaceHolderContext();
 
-                if (job.getRelated() != null && !job.getRelated().isEmpty())
-                    NDC.push("job-" + job.getRelated() + "/" + "job-" + job.getId());
-                else
+                String related = job.getRelated();
+                String logContext = job.getShortUuid();
+                if (related != null && !related.isEmpty()) {
+                    NDC.push("job-" + related + "/" + "job-" + job.getId());
+                    AsyncJob relatedJob = _jobDao.findByIdIncludingRemoved(Long.parseLong(related));
+                    if (relatedJob != null) {
+                        logContext = relatedJob.getShortUuid();
+                    }
+                } else {
                     NDC.push("job-" + job.getId());
+                }
+                MDC.put("logcontextid", logContext);
                 try {
                     super.run();
                 } finally {
@@ -516,6 +524,15 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
                     _jobMonitor.registerActiveTask(runNumber, job.getId());
                     AsyncJobExecutionContext.setCurrentExecutionContext(new AsyncJobExecutionContext(job));
+                    String related = job.getRelated();
+                    String logContext = job.getShortUuid();
+                    if (related != null && !related.isEmpty()) {
+                        AsyncJob relatedJob = _jobDao.findByIdIncludingRemoved(Long.parseLong(related));
+                        if (relatedJob != null) {
+                            logContext = relatedJob.getShortUuid();
+                        }
+                    }
+                    MDC.put("logcontextid", logContext);
 
                     // execute the job
                     if (s_logger.isDebugEnabled()) {
