@@ -48,12 +48,16 @@ public final class LibvirtGetVmDiskStatsCommandWrapper extends CommandWrapper<Ge
             final HashMap<String, List<VmDiskStatsEntry>> vmDiskStatsNameMap = new HashMap<String, List<VmDiskStatsEntry>>();
             final Connect conn = libvirtUtilitiesHelper.getConnection();
             for (final String vmName : vmNames) {
-                final List<VmDiskStatsEntry> statEntry = libvirtComputingResource.getVmDiskStat(conn, vmName);
-                if (statEntry == null) {
-                    continue;
-                }
+                try {
+                    final List<VmDiskStatsEntry> statEntry = libvirtComputingResource.getVmDiskStat(conn, vmName);
+                    if (statEntry == null) {
+                        continue;
+                    }
 
-                vmDiskStatsNameMap.put(vmName, statEntry);
+                    vmDiskStatsNameMap.put(vmName, statEntry);
+                } catch (LibvirtException e) {
+                    s_logger.warn("Can't get vm disk stats: " + e.toString() + ", continue");
+                }
             }
             return new GetVmDiskStatsAnswer(command, "", command.getHostName(), vmDiskStatsNameMap);
         } catch (final LibvirtException e) {
