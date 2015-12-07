@@ -29,13 +29,15 @@ from marvin.lib.base import (
                                         Vpn,
                                         VpnUser,
                                         Configurations,
-                                        NATRule
+                                        NATRule,
+                                        FireWallRule
                                         )
 from marvin.lib.common import (get_domain,
                                         get_zone,
                                         get_template
                                         )
-from marvin.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources, validateList
+from marvin.codes import PASS
 
 
 class Services:
@@ -450,4 +452,73 @@ class TestVPNUsers(cloudstackTestCase):
         except Exception as e:
             self.fail("Domain admin should be allowed to create VPN user: %s" %
                                                                             e)
+        return
+
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
+    def test_08_add_TCP_PF_Rule_In_VPN(self):
+        """
+        Test to add TCP Port Forwarding rule for specific ports(500,1701 and 4500) in VPN
+        """
+        # Steps for verification
+        # 1. Enable vpn on SourceNAT IP address
+        # 2. Configure PF with TCP ports 500,1701 and 4500. It should be allowed
+        # Should not conflict with UPD ports used for VPN
+
+        vm_res = VirtualMachine.list(
+            self.apiclient,
+            id=self.virtual_machine.id,
+            listall=True
+        )
+        self.assertEqual(
+            validateList(vm_res)[0],
+            PASS,
+            "Failed to list virtual machine"
+        )
+        network_id = vm_res[0].nic[0].networkid
+        src_nat_list = PublicIPAddress.list(
+            self.apiclient,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            listall=True,
+            issourcenat=True,
+            associatednetworkid=network_id
+        )
+        self.assertEqual(
+            validateList(src_nat_list)[0],
+            PASS,
+            "Failed to list source nat ip address"
+        )
+        ip = src_nat_list[0]
+        try:
+            vpn = Vpn.create(
+                self.apiclient,
+                publicipid=ip.id,
+                account=self.account.name,
+                domainid=self.account.domainid,
+            )
+            self.assertIsNotNone(
+                vpn,
+                "Failed to create remote access vpn"
+            )
+        except Exception as e:
+            self.fail("Failed to enable vpn on SourceNAT IP with error: %s" % e)
+
+        #Create PF rule with TCP ports 500,4500 and 1701
+        self.services['natrule']['protocol']="TCP"
+        for port in [500, 4500, 1701]:
+            self.services['natrule']['privateport'] = port
+            self.services['natrule']['publicport'] = port
+            try:
+                nat = NATRule.create(
+                    self.apiclient,
+                    self.virtual_machine,
+                    self.services["natrule"],
+                    ip.id
+                )
+                self.assertIsNotNone(
+                    nat,
+                    "Failed to add PF rule with tcp parts matching vpn"
+                )
+            except Exception as e:
+                self.fail("Creating PF rule for TCP port %s in VPN failed : %s" % (port, e))
         return
