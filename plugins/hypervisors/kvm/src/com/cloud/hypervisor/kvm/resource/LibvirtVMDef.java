@@ -16,7 +16,9 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
+import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 
 public class LibvirtVMDef {
+    private static final Logger s_logger = Logger.getLogger(LibvirtVMDef.class);
+
     private String _hvsType;
     private static long s_libvirtVersion;
     private static long s_qemuVersion;
@@ -1311,6 +1315,57 @@ public class LibvirtVMDef {
         }
     }
 
+    public static class MetadataDef {
+        Map<String, Object> customNodes = new HashMap<>();
+
+        public <T> T getMetadataNode(Class<T> fieldClass) {
+            T field = (T) customNodes.get(fieldClass.getName());
+            if (field == null) {
+                try {
+                    field = fieldClass.newInstance();
+                    customNodes.put(field.getClass().getName(), field);
+                } catch (InstantiationException | IllegalAccessException e) {
+                    s_logger.debug("No default constructor available in class " + fieldClass.getName() + ", ignoring exception", e);
+                }
+            }
+            return field;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder fsBuilder = new StringBuilder();
+            fsBuilder.append("<metadata>\n");
+            for (Object field : customNodes.values()) {
+                fsBuilder.append(field.toString());
+            }
+            fsBuilder.append("</metadata>\n");
+            return fsBuilder.toString();
+        }
+    }
+
+    public static class NuageExtensionDef {
+        private Map<String, String> addresses = Maps.newHashMap();
+
+        public void addNuageExtension(String macAddress, String vrIp) {
+            addresses.put(macAddress, vrIp);
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder fsBuilder = new StringBuilder();
+            for (Map.Entry<String, String> address : addresses.entrySet()) {
+                fsBuilder.append("<nuage-extension>\n")
+                        .append("  <interface mac='")
+                        .append(address.getKey())
+                        .append("' vsp-vr-ip='")
+                        .append(address.getValue())
+                        .append("'></interface>\n")
+                        .append("</nuage-extension>\n");
+            }
+            return fsBuilder.toString();
+        }
+    }
+
     public void setHvsType(String hvs) {
         _hvsType = hvs;
     }
@@ -1369,6 +1424,15 @@ public class LibvirtVMDef {
             return (DevicesDef)o;
         }
         return null;
+    }
+
+    public MetadataDef getMetaData() {
+        MetadataDef o = (MetadataDef) components.get(MetadataDef.class.toString());
+        if (o == null) {
+            o = new MetadataDef();
+            addComp(o);
+        }
+        return o;
     }
 
     @Override
