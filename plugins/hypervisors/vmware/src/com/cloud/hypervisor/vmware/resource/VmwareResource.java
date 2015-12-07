@@ -937,8 +937,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             NicTO nicTo = cmd.getNic();
             VirtualDevice nic;
             Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo, false, cmd.getVMType());
+            String dvSwitchUuid = null;
             if (VmwareHelper.isDvPortGroup(networkInfo.first())) {
-                String dvSwitchUuid;
                 ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
                 DatacenterMO dataCenterMo = new DatacenterMO(context, dcMor);
                 ManagedObjectReference dvsMor = dataCenterMo.getDvSwitchMor(networkInfo.first());
@@ -961,7 +961,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
 
             vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
-            setNuageVspVrIpInExtraConfig(vmConfigSpec.getExtraConfig(), nicTo);
+            setNuageVspVrIpInExtraConfig(vmConfigSpec.getExtraConfig(), nicTo, dvSwitchUuid);
             if (!vmMo.configureVm(vmConfigSpec)) {
                 throw new Exception("Failed to configure devices when running PlugNicCommand");
             }
@@ -1681,6 +1681,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             NiciraNvpApiVersion.logNiciraApiVersion();
 
+            Map<String, String> nicUuidToDvSwitchUuid = new HashMap<String, String>();
             for (NicTO nicTo : sortNicsByDeviceId(nics)) {
                 s_logger.info("Prepare NIC device based on NicTO: " + _gson.toJson(nicTo));
 
@@ -1699,6 +1700,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         nic =
                                 VmwareHelper.prepareDvNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(), dvSwitchUuid, nicTo.getMac(), nicUnitNumber++,
                                         i + 1, true, true);
+                        if (nicTo.getUuid() != null) {
+                            nicUuidToDvSwitchUuid.put(nicTo.getUuid(), dvSwitchUuid);
+                        }
                     } else {
                         s_logger.info("Preparing NIC device on network " + networkInfo.second());
                         nic =
@@ -1735,7 +1739,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             // pass boot arguments through machine.id & perform customized options to VMX
             ArrayList<OptionValue> extraOptions = new ArrayList<OptionValue>();
             configBasicExtraOption(extraOptions, vmSpec);
-            configNvpExtraOption(extraOptions, vmSpec);
+            configNvpExtraOption(extraOptions, vmSpec, nicUuidToDvSwitchUuid);
             configCustomExtraOption(extraOptions, vmSpec);
 
             // config VNC
@@ -1945,7 +1949,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         extraOptions.add(newVal);
     }
 
-    private static void configNvpExtraOption(List<OptionValue> extraOptions, VirtualMachineTO vmSpec) {
+    private static void configNvpExtraOption(List<OptionValue> extraOptions, VirtualMachineTO vmSpec, Map<String, String> nicUuidToDvSwitchUuid) {
         /**
          * Extra Config : nvp.vm-uuid = uuid
          *  - Required for Nicira NVP integration
@@ -1966,20 +1970,33 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 newVal.setKey("nvp.iface-id." + nicNum);
                 newVal.setValue(nicTo.getUuid());
                 extraOptions.add(newVal);
-                setNuageVspVrIpInExtraConfig(extraOptions, nicTo);
+                setNuageVspVrIpInExtraConfig(extraOptions, nicTo, nicUuidToDvSwitchUuid.get(nicTo.getUuid()));
             }
             nicNum++;
         }
     }
 
-    private static void setNuageVspVrIpInExtraConfig(List<OptionValue> extraOptions, NicTO nicTo) {
-        URI broadcastUri = nicTo.getBroadcastUri();
-        if (broadcastUri != null && broadcastUri.getScheme().equalsIgnoreCase(Networks.BroadcastDomainType.Vsp.scheme())) {
-            String path = broadcastUri.getPath();
-            OptionValue newVal = new OptionValue();
+    private static void setNuageVspVrIpInExtraConfig(List<OptionValue> extraOptions, NicTO nicTo, String dvSwitchUuid) {
+        if (nicTo.getBroadcastType() != BroadcastDomainType.Vsp) {
+            return;
+        }
+
+        OptionValue newVal;
+        if (nicTo.getType().equals(TrafficType.Guest) && dvSwitchUuid != null && nicTo.getGateway() != null && nicTo.getNetmask() != null)  {
+            String vrIp = nicTo.getBroadcastUri().getPath().substring(1);
+            newVal = new OptionValue();
             newVal.setKey("vsp.vr-ip." + nicTo.getMac());
-            newVal.setValue(path.substring(1));
+            newVal.setValue(vrIp);
             extraOptions.add(newVal);
+            newVal = new OptionValue();
+            newVal.setKey("vsp.dvswitch." + nicTo.getMac());
+            newVal.setValue(dvSwitchUuid);
+            extraOptions.add(newVal);
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("NIC with MAC " + nicTo.getMac() + " and BroadcastDomainType " + nicTo.getBroadcastType() + " in network(" + nicTo.getGateway() + "/"
+                        + nicTo.getNetmask() + ") is " + nicTo.getType() + " traffic type. So, vsp-vr-ip is set in the extraconfig");
+            }
         }
     }
 
