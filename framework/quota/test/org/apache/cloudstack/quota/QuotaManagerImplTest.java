@@ -96,15 +96,6 @@ public class QuotaManagerImplTest extends TestCase {
     }
 
     @Test
-    public void testStartStop() {
-        try {
-            quotaManager.start(); // expected to fail as pid is not available
-        } catch (NumberFormatException ignored) {
-        }
-        assertTrue(quotaManager.stop());
-    }
-
-    @Test
     public void testConfig() throws ConfigurationException {
         Mockito.when(configDao.getConfiguration(Mockito.anyMapOf(String.class, Object.class))).thenReturn(new HashMap<String, String>());
         Map<String, Object> map = new HashMap<>();

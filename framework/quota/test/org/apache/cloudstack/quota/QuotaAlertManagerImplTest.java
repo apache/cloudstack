@@ -95,15 +95,6 @@ public class QuotaAlertManagerImplTest extends TestCase {
     }
 
     @Test
-    public void testStartStop() {
-        try {
-            quotaAlertManager.start(); // expected to fail as pid is not available
-        } catch (NumberFormatException ignored) {
-        }
-        assertTrue(quotaAlertManager.stop());
-    }
-
-    @Test
     public void testCheckAndSendQuotaAlertEmails() {
         AccountVO accountVO = new AccountVO();
         accountVO.setId(2L);

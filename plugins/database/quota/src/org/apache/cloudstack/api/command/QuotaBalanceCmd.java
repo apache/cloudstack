@@ -83,7 +83,7 @@ public class QuotaBalanceCmd extends BaseCmd {
     }
 
     public Date getEndDate() {
-        return endDate == null ? null : _responseBuilder.startOfNextDay(endDate);
+        return endDate == null ? null : _responseBuilder.startOfNextDay(endDate == null ? null : new Date(endDate.getTime()));
     }
 
     public void setEndDate(Date endDate) {
@@ -116,7 +116,7 @@ public class QuotaBalanceCmd extends BaseCmd {
         if (getEndDate() == null) {
             response = _responseBuilder.createQuotaLastBalanceResponse(quotaUsage, getStartDate());
         } else {
-            response = _responseBuilder.createQuotaBalanceResponse(quotaUsage, getStartDate(), endDate);
+            response = _responseBuilder.createQuotaBalanceResponse(quotaUsage, getStartDate(), endDate == null ? null : new Date(endDate.getTime()));
         }
         response.setResponseName(getCommandName());
         setResponseObject(response);
