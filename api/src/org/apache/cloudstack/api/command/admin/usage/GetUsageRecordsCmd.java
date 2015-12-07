@@ -111,6 +111,30 @@ public class GetUsageRecordsCmd extends BaseListCmd {
     public String getUsageId() {
         return usageId;
     }
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
+    }
+
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate == null ? null : new Date(endDate.getTime());
+    }
+
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate == null ? null : new Date(startDate.getTime());
+    }
+
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
+    }
+
+    public void setUsageId(String usageId) {
+        this.usageId = usageId;
+    }
+
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

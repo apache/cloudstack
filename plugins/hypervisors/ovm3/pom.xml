@@ -45,7 +45,7 @@
     <dependency>
 	<groupId>org.apache.commons</groupId>
 	<artifactId>commons-lang3</artifactId>
-	<version>${cs.lang3.version}</version>
+	<version>${cs.commons-lang3.version}</version>
     </dependency>
     <dependency>
 	<groupId>log4j</groupId>

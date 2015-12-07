@@ -787,3 +787,14 @@ addGloboDnsHost=1
 ### volume/template post upload
 getUploadParamsForVolume=15
 getUploadParamsForTemplate=15
+
+### Quota Service
+quotaStatement=15
+quotaBalance=15
+quotaSummary=15
+quotaUpdate=1
+quotaTariffList=15
+quotaTariffUpdate=1
+quotaCredits=1
+quotaEmailTemplateList=1
+quotaEmailTemplateUpdate=1

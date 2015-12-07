@@ -33,10 +33,12 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.quota.QuotaAlertManager;
+import org.apache.cloudstack.quota.QuotaManager;
+import org.apache.cloudstack.quota.QuotaStatement;
 import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.usage.UsageTypes;
@@ -142,11 +144,18 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     ConfigurationDao _configDao;
     @Inject
     private UsageVMSnapshotDao _usageVMSnapshotDao;
+    @Inject
+    private QuotaManager _quotaManager;
+    @Inject
+    private QuotaAlertManager _alertManager;
+    @Inject
+    private QuotaStatement _quotaStatement;
 
     private String _version = null;
     private final Calendar _jobExecTime = Calendar.getInstance();
     private int _aggregationDuration = 0;
     private int _sanityCheckInterval = 0;
+    private boolean _runQuota=false;
     String _hostname = null;
     int _pid = 0;
     TimeZone _usageTimezone = TimeZone.getTimeZone("GMT");;
@@ -197,6 +206,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         String execTimeZone = configs.get("usage.execution.timezone");
         String aggreagationTimeZone = configs.get("usage.aggregation.timezone");
         String sanityCheckInterval = configs.get("usage.sanity.check.interval");
+        String quotaEnable = configs.get("quota.enable.service");
+        _runQuota = Boolean.valueOf(quotaEnable == null ? "false" : quotaEnable );
         if (sanityCheckInterval != null) {
             _sanityCheckInterval = Integer.parseInt(sanityCheckInterval);
         }
@@ -371,6 +382,24 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             }
 
             parse(job, startDate, endDate);
+            if (_runQuota){
+                try {
+                    _quotaManager.calculateQuotaUsage();
+                }
+                catch (Exception e){
+                    s_logger.error("Exception received while calculating quota", e);
+                }
+                try {
+                    _quotaStatement.sendStatement();
+                } catch (Exception e) {
+                    s_logger.error("Exception received while sending statements", e);
+                }
+                try {
+                    _alertManager.checkAndSendQuotaAlertEmails();
+                } catch (Exception e) {
+                    s_logger.error("Exception received while sending alerts", e);
+                }
+            }
         } else {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Not owner of usage job, skipping...");
