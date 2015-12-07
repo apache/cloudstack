@@ -117,7 +117,7 @@
                                     var jsonObj;
                                     jsonObj = json.listvmsnapshotresponse.vmSnapshot[0];
                                     args.response.success({
-                                        //actionFilter: vmActionfilter,
+                                        actionFilter: vmActionfilter,
                                         data: jsonObj
                                     });
                                 }
@@ -189,10 +189,67 @@
                         notification: {
                             poll: pollAsyncJobResult
                         }
+                    },
+                    start: {
+                        label: 'label.deploy.instance',
+
+                        action: {
+                            custom: function(args)   {
+                                var zoneObj, snapshotObj, hypervisorObj;
+
+                                $.ajax({
+                                    url: createURL("listZones&available=true"),
+                                    dataType: "json",
+                                    data: {id: args.context.instances[0].zoneid},
+                                    async: false,
+                                    success: function(json) {
+                                        zoneObj = json.listzonesresponse.zone;
+                                    }
+                                });
+
+                                snapshotObj = args.context.vmsnapshots;
+
+                                $.ajax({
+                                    url: createURL("listHypervisors&zoneid=" + args.context.instances[0].zoneid),
+                                    dataType: "json",
+                                    async: false,
+                                    success: function(json) {
+                                        hypervisorObj = json.listhypervisorsresponse.hypervisor;
+                                    }
+                                });
+
+                                var customFunc = cloudStack.uiCustom.instanceWizard(cloudStack.instanceWizard, {step: 3, title: 'label.deploy.instance', zone: zoneObj, snapshot: snapshotObj, hypervisor: hypervisorObj});
+
+                                customFunc(args);
+                            }
+                        },
+
+                        messages: {
+                            notification: function(args) {
+                                return 'label.deploy.instance';
+                            }
+                        },
+
+                        notification: {
+                            poll: pollAsyncJobResult
+                        }
                     }
                 }
             }
             //detailview end
         }
+    };
+
+    var vmActionfilter = cloudStack.actionFilter.affinitygroupActionfilter = function(args) {
+        var allowedActions = [];
+
+        allowedActions.push("remove");
+        allowedActions.push("restart");
+
+        if (args && args.context && args.context.instances && args.context.instances[0].hypervisor && args.context.instances[0].hypervisor == "VMware") {
+            allowedActions.push("start");
+        }
+
+        return allowedActions;
     }
 })(jQuery, cloudStack);
