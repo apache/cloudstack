@@ -308,6 +308,14 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
             return quotaUsage;
         }
 
+        public Date getSendDate() {
+            if (emailTemplateType == QuotaEmailTemplateTypes.QUOTA_STATEMENT) {
+                return quotaAccount.getLastStatementDate();
+            } else {
+                return quotaAccount.getQuotaAlertDate();
+            }
+        }
+
         public QuotaConfig.QuotaEmailTemplateTypes getEmailTemplateType() {
             return emailTemplateType;
         }
