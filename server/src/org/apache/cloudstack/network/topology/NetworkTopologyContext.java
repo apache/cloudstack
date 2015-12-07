@@ -49,4 +49,20 @@ public class NetworkTopologyContext {
         }
         return _flyweight.get(dc.getNetworkType());
     }
+
+    /**
+     * Method used for tests purpose only. Please do not use it to set the AdvanceNetworkTopology and it is managed by Spring.
+     * @param advancedNetworkTopology
+     */
+    public void setAdvancedNetworkTopology(final AdvancedNetworkTopology advancedNetworkTopology) {
+        _advancedNetworkTopology = advancedNetworkTopology;
+    }
+
+    /**
+     *  Method used for tests purpose only. Please do not use it to set the BasicNetworkTopology and it is managed by Spring.
+     * @param basicNetworkTopology
+     */
+    public void setBasicNetworkTopology(final BasicNetworkTopology basicNetworkTopology) {
+        _basicNetworkTopology = basicNetworkTopology;
+    }
 }
