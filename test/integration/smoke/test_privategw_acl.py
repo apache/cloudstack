@@ -242,7 +242,6 @@ class TestPrivateGwACL(cloudstackTestCase):
 
     @attr(tags=["advanced"], required_hardware="true")
     def test_02_vpc_privategw_static_routes(self):
-
         self.logger.debug("Creating a VPC offering..")
         vpc_off = VpcOffering.create(
             self.apiclient,
@@ -255,8 +254,6 @@ class TestPrivateGwACL(cloudstackTestCase):
 
     @attr(tags=["advanced"], required_hardware="true")
     def test_03_rvpc_privategw_static_routes(self):
-        self.skipTest("Redundant VPC Routers have to be fixed. Private Gateway not working yet.")
-
         self.logger.debug("Creating a Redundant VPC offering..")
         vpc_off = VpcOffering.create(
             self.apiclient,
@@ -268,7 +265,6 @@ class TestPrivateGwACL(cloudstackTestCase):
         self.performVPCTests(vpc_off)
 
     def performVPCTests(self, vpc_off):
-
         self.logger.debug("Creating VPCs with  offering ID %s" % vpc_off.id)
         vpc_1 = self.createVPC(vpc_off, cidr = '10.0.1.0/24')
         vpc_2 = self.createVPC(vpc_off, cidr = '10.0.2.0/24')

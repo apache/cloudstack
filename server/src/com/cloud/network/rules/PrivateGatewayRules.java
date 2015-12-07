@@ -54,18 +54,18 @@ public class PrivateGatewayRules extends RuleApplier {
 
         boolean result = false;
         try {
-            NetworkModel networkModel = visitor.getVirtualNetworkApplianceFactory().getNetworkModel();
+            final NetworkModel networkModel = visitor.getVirtualNetworkApplianceFactory().getNetworkModel();
             _network = networkModel.getNetwork(_privateGateway.getNetworkId());
 
-            NicProfileHelper nicProfileHelper = visitor.getVirtualNetworkApplianceFactory().getNicProfileHelper();
-            NicProfile requested = nicProfileHelper.createPrivateNicProfileForGateway(_privateGateway);
+            final NicProfileHelper nicProfileHelper = visitor.getVirtualNetworkApplianceFactory().getNicProfileHelper();
+            final NicProfile requested = nicProfileHelper.createPrivateNicProfileForGateway(_privateGateway, _router);
 
-            NetworkHelper networkHelper = visitor.getVirtualNetworkApplianceFactory().getNetworkHelper();
+            final NetworkHelper networkHelper = visitor.getVirtualNetworkApplianceFactory().getNetworkHelper();
             if (!networkHelper.checkRouterVersion(_router)) {
                 s_logger.warn("Router requires upgrade. Unable to send command to router: " + _router.getId());
                 return false;
             }
-            VirtualMachineManager itMgr = visitor.getVirtualNetworkApplianceFactory().getItMgr();
+            final VirtualMachineManager itMgr = visitor.getVirtualNetworkApplianceFactory().getItMgr();
             _nicProfile = itMgr.addVmToNetwork(_router, _network, requested);
 
             // setup source nat
@@ -74,13 +74,13 @@ public class PrivateGatewayRules extends RuleApplier {
                 // result = setupVpcPrivateNetwork(router, true, guestNic);
                 result = visitor.visit(this);
             }
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             s_logger.warn("Failed to create private gateway " + _privateGateway + " on router " + _router + " due to ", ex);
         } finally {
             if (!result) {
                 s_logger.debug("Failed to setup gateway " + _privateGateway + " on router " + _router + " with the source nat. Will now remove the gateway.");
                 _isAddOperation = false;
-                boolean isRemoved = destroyPrivateGateway(visitor);
+                final boolean isRemoved = destroyPrivateGateway(visitor);
 
                 if (isRemoved) {
                     s_logger.debug("Removed the gateway " + _privateGateway + " from router " + _router + " as a part of cleanup");
@@ -101,7 +101,7 @@ public class PrivateGatewayRules extends RuleApplier {
     }
 
     public PrivateIpVO retrivePrivateIP(final NetworkTopologyVisitor visitor) {
-        PrivateIpVO ipVO = visitor.getVirtualNetworkApplianceFactory().getPrivateIpDao().findByIpAndSourceNetworkId(_nicProfile.getNetworkId(), _nicProfile.getIPv4Address());
+        final PrivateIpVO ipVO = visitor.getVirtualNetworkApplianceFactory().getPrivateIpDao().findByIpAndSourceNetworkId(_nicProfile.getNetworkId(), _nicProfile.getIPv4Address());
         return ipVO;
     }
 
@@ -110,20 +110,20 @@ public class PrivateGatewayRules extends RuleApplier {
         // RuleApplier super class.
         // Just doing this here, but will double check is remove if it's not
         // needed.
-        NetworkDao networkDao = visitor.getVirtualNetworkApplianceFactory().getNetworkDao();
-        Network network = networkDao.findById(_nicProfile.getNetworkId());
+        final NetworkDao networkDao = visitor.getVirtualNetworkApplianceFactory().getNetworkDao();
+        final Network network = networkDao.findById(_nicProfile.getNetworkId());
         return network;
     }
 
     protected boolean destroyPrivateGateway(final NetworkTopologyVisitor visitor) throws ConcurrentOperationException, ResourceUnavailableException {
 
-        NetworkModel networkModel = visitor.getVirtualNetworkApplianceFactory().getNetworkModel();
+        final NetworkModel networkModel = visitor.getVirtualNetworkApplianceFactory().getNetworkModel();
         if (!networkModel.isVmPartOfNetwork(_router.getId(), _privateGateway.getNetworkId())) {
             s_logger.debug("Router doesn't have nic for gateway " + _privateGateway + " so no need to removed it");
             return true;
         }
 
-        Network privateNetwork = networkModel.getNetwork(_privateGateway.getNetworkId());
+        final Network privateNetwork = networkModel.getNetwork(_privateGateway.getNetworkId());
 
         s_logger.debug("Releasing private ip for gateway " + _privateGateway + " from " + _router);
 
@@ -135,14 +135,14 @@ public class PrivateGatewayRules extends RuleApplier {
         }
 
         // revoke network acl on the private gateway.
-        NetworkACLManager networkACLMgr = visitor.getVirtualNetworkApplianceFactory().getNetworkACLMgr();
+        final NetworkACLManager networkACLMgr = visitor.getVirtualNetworkApplianceFactory().getNetworkACLMgr();
         if (!networkACLMgr.revokeACLItemsForPrivateGw(_privateGateway)) {
             s_logger.debug("Failed to delete network acl items on " + _privateGateway + " from router " + _router);
             return false;
         }
 
         s_logger.debug("Removing router " + _router + " from private network " + privateNetwork + " as a part of delete private gateway");
-        VirtualMachineManager itMgr = visitor.getVirtualNetworkApplianceFactory().getItMgr();
+        final VirtualMachineManager itMgr = visitor.getVirtualNetworkApplianceFactory().getItMgr();
         result = result && itMgr.removeVmFromNetwork(_router, privateNetwork, null);
         s_logger.debug("Private gateawy " + _privateGateway + " is removed from router " + _router);
         return result;

@@ -259,6 +259,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
 
     @Override
     public boolean applyFWRules(final Network network, final List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+        boolean result = true;
         if (canHandle(network, Service.Firewall)) {
             final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
@@ -278,14 +279,14 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
             final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
-            if (!networkTopology.applyFirewallRules(network, rules, routers)) {
-                throw new CloudRuntimeException("Failed to apply firewall rules in network " + network.getId());
-            } else {
-                return true;
+            for (final DomainRouterVO domainRouterVO : routers) {
+                result = networkTopology.applyFirewallRules(network, rules, domainRouterVO);
+                if (!result) {
+                    throw new CloudRuntimeException("Failed to apply firewall rules in network " + network.getId());
+                }
             }
-        } else {
-            return true;
         }
+        return result;
     }
 
     /*
@@ -402,6 +403,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
 
     @Override
     public boolean applyLBRules(final Network network, final List<LoadBalancingRule> rules) throws ResourceUnavailableException {
+        boolean result = false;
         if (canHandle(network, Service.Lb)) {
             if (!canHandleLbRules(rules)) {
                 return false;
@@ -416,14 +418,14 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
             final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
-            if (!networkTopology.applyLoadBalancingRules(network, rules, routers)) {
-                throw new CloudRuntimeException("Failed to apply load balancing rules in network " + network.getId());
-            } else {
-                return true;
+            for (final DomainRouterVO domainRouterVO : routers) {
+                result = networkTopology.applyLoadBalancingRules(network, rules, domainRouterVO);
+                if (!result) {
+                    throw new CloudRuntimeException("Failed to apply load balancing rules in network " + network.getId());
+                }
             }
-        } else {
-            return false;
         }
+        return result;
     }
 
     @Override
@@ -492,6 +494,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
 
     @Override
     public boolean applyIps(final Network network, final List<? extends PublicIpAddress> ipAddress, final Set<Service> services) throws ResourceUnavailableException {
+        boolean result = false;
         boolean canHandle = true;
         for (final Service service : services) {
             if (!canHandle(network, service)) {
@@ -509,10 +512,11 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
             final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
-            return networkTopology.associatePublicIP(network, ipAddress, routers);
-        } else {
-            return false;
+            for (final DomainRouterVO domainRouterVO : routers) {
+                result = networkTopology.associatePublicIP(network, ipAddress, domainRouterVO);
+            }
         }
+        return result;
     }
 
     @Override
@@ -656,20 +660,22 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
 
     @Override
     public boolean applyStaticNats(final Network network, final List<? extends StaticNat> rules) throws ResourceUnavailableException {
+        boolean result = true;
         if (canHandle(network, Service.StaticNat)) {
             final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply static nat on the backend; virtual " + "router doesn't exist in the network " + network.getId());
-                return true;
+                return result;
             }
 
             final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
             final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
-            return networkTopology.applyStaticNats(network, rules, routers);
-        } else {
-            return true;
+            for (final DomainRouterVO domainRouterVO : routers) {
+                result = networkTopology.applyStaticNats(network, rules, domainRouterVO);
+            }
         }
+        return result;
     }
 
     @Override
@@ -732,7 +738,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         // save the password in DB
         for (final VirtualRouter router : routers) {
             if (router.getState() == State.Running) {
-                return networkTopology.savePasswordToRouter(network, nic, uservm, routers);
+                return networkTopology.savePasswordToRouter(network, nic, uservm, router);
             }
         }
         final String password = (String) uservm.getParameter(VirtualMachineProfile.Param.VmPassword);
@@ -751,13 +757,15 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
 
     @Override
     public boolean saveSSHKey(final Network network, final NicProfile nic, final VirtualMachineProfile vm, final String sshPublicKey) throws ResourceUnavailableException {
+        boolean result = false;
         if (!canHandle(network, null)) {
-            return false;
+            return result;
         }
         final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
         if (routers == null || routers.isEmpty()) {
             s_logger.debug("Can't find virtual router element in network " + network.getId());
-            return true;
+            result = true;
+            return result;
         }
 
         final VirtualMachineProfile uservm = vm;
@@ -765,18 +773,23 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
         final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
-        return networkTopology.saveSSHPublicKeyToRouter(network, nic, uservm, routers, sshPublicKey);
+        for (final DomainRouterVO domainRouterVO : routers) {
+            result = networkTopology.saveSSHPublicKeyToRouter(network, nic, uservm, domainRouterVO, sshPublicKey);
+        }
+        return result;
     }
 
     @Override
     public boolean saveUserData(final Network network, final NicProfile nic, final VirtualMachineProfile vm) throws ResourceUnavailableException {
+        boolean result = false;
         if (!canHandle(network, null)) {
-            return false;
+            return result;
         }
         final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
         if (routers == null || routers.isEmpty()) {
             s_logger.debug("Can't find virtual router element in network " + network.getId());
-            return true;
+            result = true;
+            return result;
         }
 
         final VirtualMachineProfile uservm = vm;
@@ -784,7 +797,10 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
         final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
-        return networkTopology.saveUserDataToRouter(network, nic, uservm, routers);
+        for (final DomainRouterVO domainRouterVO : routers) {
+            result =  networkTopology.saveUserDataToRouter(network, nic, uservm, domainRouterVO);
+        }
+        return result;
     }
 
     @Override
@@ -841,24 +857,26 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
 
     @Override
     public boolean applyPFRules(final Network network, final List<PortForwardingRule> rules) throws ResourceUnavailableException {
+        boolean result = false;
         if (canHandle(network, Service.PortForwarding)) {
             final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual " + "router doesn't exist in the network " + network.getId());
-                return true;
+                result = true;
+                return result;
             }
 
             final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
             final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
-            if (!networkTopology.applyFirewallRules(network, rules, routers)) {
-                throw new CloudRuntimeException("Failed to apply firewall rules in network " + network.getId());
-            } else {
-                return true;
+            for (final DomainRouterVO domainRouterVO : routers) {
+                result = networkTopology.applyFirewallRules(network, rules, domainRouterVO);
+                if (!result) {
+                    throw new CloudRuntimeException("Failed to apply firewall rules in network " + network.getId());
+                }
             }
-        } else {
-            return true;
         }
+        return result;
     }
 
     @Override
@@ -957,13 +975,13 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
     @Override
     public boolean addDhcpEntry(final Network network, final NicProfile nic, final VirtualMachineProfile vm, final DeployDestination dest, final ReservationContext context)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        boolean result = false;
         if (canHandle(network, Service.Dhcp)) {
             if (vm.getType() != VirtualMachine.Type.User) {
-                return false;
+                return result;
             }
 
             final VirtualMachineProfile uservm = vm;
-
             final List<DomainRouterVO> routers = getRouters(network, dest);
 
             if (routers == null || routers.size() == 0) {
@@ -973,22 +991,26 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
             final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
-            return networkTopology.applyDhcpEntry(network, nic, uservm, dest, routers);
+            for (final DomainRouterVO domainRouterVO : routers) {
+                result = networkTopology.applyDhcpEntry(network, nic, uservm, dest, domainRouterVO);
+            }
         }
-        return false;
+        return result;
     }
 
     @Override
     public boolean addPasswordAndUserdata(final Network network, final NicProfile nic, final VirtualMachineProfile vm, final DeployDestination dest,
             final ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        boolean result = false;
         if (canHandle(network, Service.UserData)) {
             if (vm.getType() != VirtualMachine.Type.User) {
-                return false;
+                return result;
             }
 
             if (network.getIp6Gateway() != null) {
                 s_logger.info("Skip password and userdata service setup for IPv6 VM");
-                return true;
+                result = true;
+                return result;
             }
 
             final VirtualMachineProfile uservm = vm;
@@ -1002,9 +1024,11 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
             final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
             final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
-            return networkTopology.applyUserData(network, nic, uservm, dest, routers);
+            for (final DomainRouterVO domainRouterVO : routers) {
+                result = networkTopology.applyUserData(network, nic, uservm, dest, domainRouterVO);
+            }
         }
-        return false;
+        return result;
     }
 
     protected List<DomainRouterVO> getRouters(final Network network, final DeployDestination dest) {
