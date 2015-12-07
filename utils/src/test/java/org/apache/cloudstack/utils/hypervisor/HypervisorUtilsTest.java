@@ -42,9 +42,8 @@ public class HypervisorUtilsTest {
         int timeoutSeconds = 5;
         long thresholdMilliseconds = 2000;
         File file = new File(filePath);
-        setupcheckVolumeFileForActivityFile(file, 0);
 
-        long startTime = System.currentTimeMillis();
+        long startTime = setupcheckVolumeFileForActivityFile(file, 0);
         HypervisorUtils.checkVolumeFileForActivity(filePath, timeoutSeconds, thresholdMilliseconds, _minFileSize);
         long endTime = System.currentTimeMillis();
 
@@ -61,9 +60,8 @@ public class HypervisorUtilsTest {
         int timeoutSeconds = 5;
         long thresholdMilliseconds = 2000;
         File file = new File(filePath);
-        setupcheckVolumeFileForActivityFile(file, _minFileSize);
 
-        long startTime = System.currentTimeMillis();
+        long startTime = setupcheckVolumeFileForActivityFile(file, _minFileSize);
         HypervisorUtils.checkVolumeFileForActivity(filePath, timeoutSeconds, thresholdMilliseconds, _minFileSize);
         long duration = System.currentTimeMillis() - startTime;
 
@@ -93,7 +91,7 @@ public class HypervisorUtilsTest {
         System.out.println("Fail");
     }
 
-    private void setupcheckVolumeFileForActivityFile(File file, long minSize) throws IOException {
+    private long setupcheckVolumeFileForActivityFile(File file, long minSize) throws IOException {
         if (file.exists()) {
             file.delete();
         }
@@ -106,6 +104,8 @@ public class HypervisorUtilsTest {
             writer.write(chars);
             written += chars.length;
         }
+        long creationTime = System.currentTimeMillis();
         writer.close();
+        return creationTime;
     }
 }
