@@ -171,7 +171,7 @@ public class QuotaAlertManagerImplTest extends TestCase {
         Mockito.when(userDao.listByAccount(Mockito.anyLong())).thenReturn(users);
 
         quotaAlertManager.sendQuotaAlert(email);
-        assertTrue(email.getSendDate().compareTo(new Date())==0);
+        assertTrue(email.getSendDate()!= null);
         Mockito.verify(emailQuotaAlert, Mockito.times(1)).sendQuotaAlert(Mockito.anyList(), Mockito.anyString(), Mockito.anyString());
     }
 
