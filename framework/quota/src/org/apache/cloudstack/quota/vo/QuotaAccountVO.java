@@ -116,27 +116,27 @@ public class QuotaAccountVO implements InternalIdentity {
     }
 
     public Date getQuotaAlertDate() {
-        return quotaAlertDate;
+        return quotaAlertDate == null ? null : new Date(quotaAlertDate.getTime());
     }
 
     public void setQuotaAlertDate(Date quotaAlertDate) {
-        this.quotaAlertDate = quotaAlertDate;
+        this.quotaAlertDate = quotaAlertDate == null ? null : new Date(quotaAlertDate.getTime());
     }
 
     public Date getQuotaBalanceDate() {
-        return quotaBalanceDate;
+        return quotaBalanceDate  == null ? null : new Date(quotaBalanceDate.getTime());
     }
 
     public void setQuotaBalanceDate(Date quotaBalanceDate) {
-        this.quotaBalanceDate = quotaBalanceDate;
+        this.quotaBalanceDate = quotaBalanceDate == null ? null : new Date(quotaBalanceDate.getTime());
     }
 
     public Date getLastStatementDate() {
-        return lastStatementDate;
+        return lastStatementDate  == null ? null : new Date(lastStatementDate.getTime());
     }
 
     public void setLastStatementDate(Date lastStatementDate) {
-        this.lastStatementDate = lastStatementDate;
+        this.lastStatementDate = lastStatementDate  == null ? null : new Date(lastStatementDate.getTime());
     }
 
     @Override

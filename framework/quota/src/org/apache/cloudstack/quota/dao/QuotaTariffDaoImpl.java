@@ -99,8 +99,10 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
                     List<QuotaTariffVO> result = search(sc, filter);
                     if (result != null && !result.isEmpty()) {
                         tariffs.add(result.get(0));
-                        s_logger.debug("ListAllTariffPlans on or before " + effectiveDate + " quota type " + result.get(0).getDescription() + " , effective Date="
-                                + result.get(0).getEffectiveOn() + " val=" + result.get(0).getCurrencyValue());
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("ListAllTariffPlans on or before " + effectiveDate + " quota type " + result.get(0).getDescription() + " , effective Date="
+                                    + result.get(0).getEffectiveOn() + " val=" + result.get(0).getCurrencyValue());
+                        }
                     }
                 }
                 return tariffs;

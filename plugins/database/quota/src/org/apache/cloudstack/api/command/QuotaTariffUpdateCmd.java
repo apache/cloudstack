@@ -67,11 +67,11 @@ public class QuotaTariffUpdateCmd extends BaseCmd {
     }
 
     public Date getStartDate() {
-        return startDate;
+        return startDate == null ? null : new Date(startDate.getTime());
     }
 
     public void setStartDate(Date startDate) {
-        this.startDate = startDate;
+        this.startDate = startDate == null ? null : new Date(startDate.getTime());
     }
 
     public QuotaTariffUpdateCmd() {

@@ -94,7 +94,7 @@ public class QuotaStatementImpl extends ManagerBase implements QuotaStatement {
     @Override
     public boolean start() {
         if (s_logger.isInfoEnabled()) {
-            s_logger.info("Starting Alert Manager");
+            s_logger.info("Starting Statement Manager");
         }
         return true;
     }
@@ -102,7 +102,7 @@ public class QuotaStatementImpl extends ManagerBase implements QuotaStatement {
     @Override
     public boolean stop() {
         if (s_logger.isInfoEnabled()) {
-            s_logger.info("Stopping Alert Manager");
+            s_logger.info("Stopping Statement Manager");
         }
         return true;
     }

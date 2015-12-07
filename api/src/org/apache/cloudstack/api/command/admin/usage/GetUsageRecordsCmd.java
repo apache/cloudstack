@@ -120,11 +120,11 @@ public class GetUsageRecordsCmd extends BaseListCmd {
     }
 
     public void setEndDate(Date endDate) {
-        this.endDate = endDate;
+        this.endDate = endDate == null ? null : new Date(endDate.getTime());
     }
 
     public void setStartDate(Date startDate) {
-        this.startDate = startDate;
+        this.startDate = startDate == null ? null : new Date(startDate.getTime());
     }
 
     public void setAccountId(Long accountId) {

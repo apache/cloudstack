@@ -82,7 +82,7 @@ public class QuotaTariffVO implements InternalIdentity {
         this.usageDiscriminator = usagediscriminator;
         this.currencyValue = currencyvalue;
         this.effectiveOn = effectiveOn;
-        this.updatedOn = updatedOn;
+        this.updatedOn = updatedOn == null ? null : new Date(updatedOn.getTime());
         this.updatedBy = updatedBy;
     }
 
@@ -92,19 +92,19 @@ public class QuotaTariffVO implements InternalIdentity {
     }
 
     public Date getEffectiveOn() {
-        return effectiveOn;
+        return effectiveOn == null ? null : new Date(effectiveOn.getTime());
     }
 
     public void setEffectiveOn(Date effectiveOn) {
-        this.effectiveOn = effectiveOn;
+        this.effectiveOn = effectiveOn == null ? null : new Date(effectiveOn.getTime());
     }
 
     public Date getUpdatedOn() {
-        return updatedOn;
+        return updatedOn == null ? null : new Date(updatedOn.getTime());
     }
 
     public void setUpdatedOn(Date updatedOn) {
-        this.updatedOn = updatedOn;
+        this.updatedOn = updatedOn == null ? null : new Date(updatedOn.getTime());
     }
 
     public Long getUpdatedBy() {

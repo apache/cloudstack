@@ -143,7 +143,9 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         List<DeferredQuotaEmail> deferredQuotaEmailList = new ArrayList<DeferredQuotaEmail>();
         final BigDecimal zeroBalance = new BigDecimal(0);
         for (final QuotaAccountVO quotaAccount : _quotaAcc.listAllQuotaAccount()) {
-            s_logger.debug("checkAndSendQuotaAlertEmails accId=" + quotaAccount.getId());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("checkAndSendQuotaAlertEmails accId=" + quotaAccount.getId());
+            }
             BigDecimal accountBalance = quotaAccount.getQuotaBalance();
             Date balanceDate = quotaAccount.getQuotaBalanceDate();
             Date alertDate = quotaAccount.getQuotaAlertDate();

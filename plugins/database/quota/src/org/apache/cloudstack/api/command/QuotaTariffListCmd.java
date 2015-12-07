@@ -82,7 +82,7 @@ public class QuotaTariffListCmd extends BaseListCmd {
     }
 
     public Date getEffectiveDate() {
-        return effectiveDate;
+        return effectiveDate ==null ? null : new Date(effectiveDate.getTime());
     }
 
     public Integer getUsageType() {

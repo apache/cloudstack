@@ -36,10 +36,6 @@ public class Transaction {
             databaseId = currentTxn.getDatabaseId();
         }
         try (final TransactionLegacy txn = TransactionLegacy.open(name, databaseId, false)) {
-            // if (txn.dbTxnStarted()){
-            // String warnMsg = "Potential Wrong Usage: TRANSACTION.EXECUTE IS WRAPPED INSIDE ANOTHER DB TRANSACTION!";
-            // s_logger.warn(warnMsg, new CloudRuntimeException(warnMsg));
-            // }
             txn.start();
             T result = callback.doInTransaction(STATUS);
             txn.commit();

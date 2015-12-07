@@ -96,19 +96,19 @@ public class QuotaStatementResponse  extends BaseResponse {
     }
 
     public Date getStartDate() {
-        return startDate;
+        return startDate == null ? null : new Date(startDate.getTime());
     }
 
     public void setStartDate(Date startDate) {
-        this.startDate = startDate;
+        this.startDate = startDate == null ? null : new Date(startDate.getTime());
     }
 
     public Date getEndDate() {
-        return endDate;
+        return endDate == null ? null : new Date(endDate.getTime());
     }
 
     public void setEndDate(Date endDate) {
-        this.endDate = endDate;
+        this.endDate = endDate == null ? null : new Date(endDate.getTime());
     }
 
 

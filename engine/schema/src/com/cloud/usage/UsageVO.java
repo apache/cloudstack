@@ -132,8 +132,8 @@ public class UsageVO implements Usage, InternalIdentity {
         this.templateId = templateId;
         this.usageId = usageId;
         this.size = size;
-        this.startDate = startDate;
-        this.endDate = endDate;
+        this.startDate = startDate  == null ? null : new Date(startDate.getTime());
+        this.endDate = endDate  == null ? null : new Date(endDate.getTime());
     }
 
     public UsageVO(Long zoneId, Long accountId, Long domainId, String description, String usageDisplay, int usageType, Double rawUsage, Long vmId, String vmName,
@@ -152,8 +152,8 @@ public class UsageVO implements Usage, InternalIdentity {
         this.usageId = usageId;
         this.size = size;
         this.virtualSize = virtualSize;
-        this.startDate = startDate;
-        this.endDate = endDate;
+        this.startDate = startDate  == null ? null : new Date(startDate.getTime());
+        this.endDate = endDate  == null ? null : new Date(endDate.getTime());
     }
 
     public UsageVO(Long zoneId, Long accountId, Long domainId, String description, String usageDisplay, int usageType, Double rawUsage, Long usageId, String type,
@@ -168,8 +168,8 @@ public class UsageVO implements Usage, InternalIdentity {
         this.usageId = usageId;
         this.type = type;
         this.networkId = networkId;
-        this.startDate = startDate;
-        this.endDate = endDate;
+        this.startDate = startDate  == null ? null : new Date(startDate.getTime());
+        this.endDate = endDate  == null ? null : new Date(endDate.getTime());
     }
 
     public UsageVO(Long zoneId, Long accountId, Long domainId, String description, String usageDisplay, int usageType, Double rawUsage, Long vmId, String vmName,
@@ -187,8 +187,8 @@ public class UsageVO implements Usage, InternalIdentity {
         this.templateId = templateId;
         this.usageId = usageId;
         this.type = type;
-        this.startDate = startDate;
-        this.endDate = endDate;
+        this.startDate = startDate  == null ? null : new Date(startDate.getTime());
+        this.endDate = endDate  == null ? null : new Date(endDate.getTime());
     }
 
     public UsageVO(Long zoneId, Long accountId, Long domainId, String description, String usageDisplay, int usageType, Double rawUsage, Long vmId, String vmName,
@@ -209,8 +209,8 @@ public class UsageVO implements Usage, InternalIdentity {
         this.templateId = templateId;
         this.usageId = usageId;
         this.type = type;
-        this.startDate = startDate;
-        this.endDate = endDate;
+        this.startDate = startDate  == null ? null : new Date(startDate.getTime());
+        this.endDate = endDate  == null ? null : new Date(endDate.getTime());
     }
 
     //IPAddress Usage
@@ -226,8 +226,8 @@ public class UsageVO implements Usage, InternalIdentity {
         this.usageId = usageId;
         this.size = size;
         this.type = type;
-        this.startDate = startDate;
-        this.endDate = endDate;
+        this.startDate = startDate  == null ? null : new Date(startDate.getTime());
+        this.endDate = endDate  == null ? null : new Date(endDate.getTime());
     }
 
     @Override
@@ -332,12 +332,12 @@ public class UsageVO implements Usage, InternalIdentity {
 
     @Override
     public Date getStartDate() {
-        return startDate;
+        return startDate  == null ? null : new Date(startDate.getTime());
     }
 
     @Override
     public Date getEndDate() {
-        return endDate;
+        return endDate  == null ? null : new Date(endDate.getTime());
     }
 
     public void setId(Long id) {
@@ -349,11 +349,11 @@ public class UsageVO implements Usage, InternalIdentity {
     }
 
     public void setStartDate(Date startDate) {
-        this.startDate = startDate;
+        this.startDate = startDate  == null ? null : new Date(startDate.getTime());
     }
 
     public void setEndDate(Date endDate) {
-        this.endDate = endDate;
+        this.endDate = endDate  == null ? null : new Date(endDate.getTime());
     }
 
     public void setDomainId(Long domainId) {

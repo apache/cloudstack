@@ -162,24 +162,6 @@ public class QuotaManagerImplTest extends TestCase {
     }
 
     @Test
-    public void testProcessQuotaBalanceForAccount() {
-        AccountVO accountVO = new AccountVO();
-        accountVO.setId(2L);
-        accountVO.setDomainId(1L);
-        accountVO.setType(Account.ACCOUNT_TYPE_NORMAL);
-
-        QuotaUsageVO quotaUsageVO = new QuotaUsageVO();
-        quotaUsageVO.setAccountId(2L);
-        quotaUsageVO.setStartDate(new Date());
-        quotaUsageVO.setEndDate(new Date());
-        List<QuotaUsageVO> quotaListForAccount = new ArrayList<>();
-        quotaListForAccount.add(quotaUsageVO);
-
-        quotaManager.processQuotaBalanceForAccount(accountVO, quotaListForAccount);
-        Mockito.verify(quotaAcc, Mockito.times(1)).persistQuotaAccount(Mockito.any(QuotaAccountVO.class));
-    }
-
-    @Test
     public void testUpdateQuotaRecords() {
         UsageVO usageVO = new UsageVO();
         usageVO.setId(100L);
@@ -192,12 +174,36 @@ public class QuotaManagerImplTest extends TestCase {
         tariffVO.setCurrencyValue(new BigDecimal(1));
         Mockito.when(quotaTariffDao.findTariffPlanByUsageType(Mockito.anyInt(), Mockito.any(Date.class))).thenReturn(tariffVO);
 
-        quotaManager.updateQuotaNetwork(usageVO, UsageTypes.NETWORK_BYTES_SENT);
-        quotaManager.updateQuotaAllocatedVMUsage(usageVO, new BigDecimal(0.5));
-        quotaManager.updateQuotaDiskUsage(usageVO, new BigDecimal(0.5), UsageTypes.VOLUME);
-        quotaManager.updateQuotaRaw(usageVO, new BigDecimal(0.5), UsageTypes.VPN_USERS);
+        QuotaUsageVO qu = quotaManager.updateQuotaNetwork(usageVO, UsageTypes.NETWORK_BYTES_SENT);
+        assertTrue(qu.getQuotaUsed().compareTo(BigDecimal.ZERO) > 0);
+        qu = quotaManager.updateQuotaAllocatedVMUsage(usageVO, new BigDecimal(0.5));
+        assertTrue(qu.getQuotaUsed().compareTo(BigDecimal.ZERO) > 0);
+        qu = quotaManager.updateQuotaDiskUsage(usageVO, new BigDecimal(0.5), UsageTypes.VOLUME);
+        assertTrue(qu.getQuotaUsed().compareTo(BigDecimal.ZERO) > 0);
+        qu = quotaManager.updateQuotaRaw(usageVO, new BigDecimal(0.5), UsageTypes.VPN_USERS);
+        assertTrue(qu.getQuotaUsed().compareTo(BigDecimal.ZERO) > 0);
 
         Mockito.verify(quotaUsageDao, Mockito.times(4)).persistQuotaUsage(Mockito.any(QuotaUsageVO.class));
         Mockito.verify(usageDao, Mockito.times(4)).persistUsage(Mockito.any(UsageVO.class));
     }
+
+    @Test
+    public void testProcessQuotaBalanceForAccount() {
+        Date now = new Date();
+        AccountVO accountVO = new AccountVO();
+        accountVO.setId(2L);
+        accountVO.setDomainId(1L);
+        accountVO.setType(Account.ACCOUNT_TYPE_NORMAL);
+
+        QuotaUsageVO quotaUsageVO = new QuotaUsageVO();
+        quotaUsageVO.setAccountId(2L);
+        quotaUsageVO.setStartDate(new Date(now.getTime()));
+        quotaUsageVO.setEndDate(new Date(now.getTime()));
+        List<QuotaUsageVO> quotaListForAccount = new ArrayList<>();
+        quotaListForAccount.add(quotaUsageVO);
+
+        quotaManager.processQuotaBalanceForAccount(accountVO, quotaListForAccount);
+        Mockito.verify(quotaAcc, Mockito.times(1)).persistQuotaAccount(Mockito.any(QuotaAccountVO.class));
+    }
+
 }

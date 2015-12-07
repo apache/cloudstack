@@ -529,14 +529,14 @@
                                 	  usages[idx].quota = currency + ' ' + usages[idx].quota;
                                   });
                                   usages.push({
-                                        name: 'TOTAL',
+                                        name: _l('label.quota.total') + ' : ',
                                         unit:'',
                                         quota: currency + ' ' + json.quotastatementresponse.statement.totalquota
                                     });
                                   
                                   usages.unshift({
-                                      name: 'Start Date: ' + json.quotastatementresponse.statement.startdate.slice(0,10),
-                                      unit: 'End Date: ' + json.quotastatementresponse.statement.enddate.slice(0,10),
+                                      name: _l('label.quota.startdate')  + ' : ' + json.quotastatementresponse.statement.startdate.slice(0,10),
+                                      unit: _l('label.quota.enddate')  + ' : ' + json.quotastatementresponse.statement.enddate.slice(0,10),
                                       quota: ''
                                   });                                  
 
@@ -546,7 +546,7 @@
                                   });
                               },
                               error:function(data) {
-                            	  cloudStack.dialog.notice({
+                                  cloudStack.dialog.notice({
                                       message: parseXMLHttpResponse(data)
                                   });
                               }

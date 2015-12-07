@@ -123,24 +123,24 @@ public class QuotaBalanceResponse extends BaseResponse {
     public void addCredits(QuotaBalanceVO credit) {
         QuotaCreditsResponse cr = new QuotaCreditsResponse();
         cr.setCredits(credit.getCreditBalance());
-        cr.setUpdatedOn(credit.getUpdatedOn());
+        cr.setUpdatedOn(credit.getUpdatedOn() == null ? null : new Date(credit.getUpdatedOn().getTime()));
         credits.add(0, cr);
     }
 
     public Date getStartDate() {
-        return startDate;
+        return startDate == null ? null : new Date(startDate.getTime());
     }
 
     public void setStartDate(Date startDate) {
-        this.startDate = startDate;
+        this.startDate = startDate == null ? null : new Date(startDate.getTime());
     }
 
     public Date getEndDate() {
-        return endDate;
+        return endDate == null ? null : new Date(endDate.getTime());
     }
 
     public void setEndDate(Date endDate) {
-        this.endDate = endDate;
+        this.endDate = endDate == null ? null : new Date(endDate.getTime());
     }
 
     public String getCurrency() {

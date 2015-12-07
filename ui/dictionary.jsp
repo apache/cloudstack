@@ -1034,6 +1034,7 @@ dictionary = {
 'label.quota.state': '<fmt:message key="label.quota.state" />',
 'label.quota.startdate': '<fmt:message key="label.quota.startdate" />',
 'label.quota.enddate': '<fmt:message key="label.quota.enddate" />',
+'label.quota.total': '<fmt:message key="label.quota.total" />',
 'label.quota.type.name': '<fmt:message key="label.quota.type.name" />',
 'label.quota.type.unit': '<fmt:message key="label.quota.type.unit" />',
 'label.quota.usage': '<fmt:message key="label.quota.usage" />',

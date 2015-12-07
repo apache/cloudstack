@@ -86,11 +86,11 @@ public class QuotaCreditsVO implements InternalIdentity {
     }
 
     public Date getUpdatedOn() {
-        return updatedOn;
+        return updatedOn == null ? null : new Date(updatedOn.getTime());
     }
 
     public void setUpdatedOn(Date updatedOn) {
-        this.updatedOn = updatedOn;
+        this.updatedOn = updatedOn == null ? null : new Date(updatedOn.getTime());
     }
 
     public Long getUpdatedBy() {

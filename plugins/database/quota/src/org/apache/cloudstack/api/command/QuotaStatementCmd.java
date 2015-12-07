@@ -97,19 +97,19 @@ public class QuotaStatementCmd extends BaseCmd {
     }
 
     public Date getEndDate() {
-        return _responseBuilder.startOfNextDay(endDate == null ? new Date() : endDate);
+        return _responseBuilder.startOfNextDay(endDate == null ? new Date() : new Date(endDate.getTime()));
     }
 
     public void setEndDate(Date endDate) {
-        this.endDate = endDate;
+        this.endDate = endDate == null ? null : new Date(endDate.getTime());
     }
 
     public Date getStartDate() {
-        return startDate;
+        return startDate == null ? null : new Date(startDate.getTime());
     }
 
     public void setStartDate(Date startDate) {
-        this.startDate = startDate;
+        this.startDate = startDate == null ? null : new Date(startDate.getTime());
     }
 
     @Override
@@ -131,8 +131,8 @@ public class QuotaStatementCmd extends BaseCmd {
         List<QuotaUsageVO> quotaUsage = _responseBuilder.getQuotaUsage(this);
 
         QuotaStatementResponse response = _responseBuilder.createQuotaStatementResponse(quotaUsage);
-        response.setStartDate(startDate);
-        response.setEndDate(endDate);
+        response.setStartDate(startDate == null ? null : new Date(startDate.getTime()));
+        response.setEndDate(endDate == null ? null : new Date(endDate.getTime()));
 
         response.setResponseName(getCommandName());
         setResponseObject(response);

@@ -92,11 +92,11 @@ public class QuotaEmailTemplatesVO implements InternalIdentity {
     }
 
     public Date getLastUpdated() {
-        return lastUpdated;
+        return lastUpdated == null ? null : new Date(lastUpdated.getTime());
     }
 
     public void setLastUpdated(Date lastUpdated) {
-        this.lastUpdated = lastUpdated;
+        this.lastUpdated = lastUpdated == null ? null : new Date(lastUpdated.getTime());
     }
 
     public String getLocale() {

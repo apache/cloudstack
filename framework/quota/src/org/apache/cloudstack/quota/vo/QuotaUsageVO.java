@@ -79,8 +79,8 @@ public class QuotaUsageVO implements InternalIdentity {
         this.domainId = domainId;
         this.usageType = usageType;
         this.quotaUsed = quotaUsed;
-        this.startDate = startDate;
-        this.endDate = endDate;
+        this.startDate = startDate == null ? null : new Date(startDate.getTime());
+        this.endDate = endDate == null ? null : new Date(endDate.getTime());
     }
 
     public QuotaUsageVO(QuotaUsageVO toclone) {
@@ -91,8 +91,8 @@ public class QuotaUsageVO implements InternalIdentity {
         this.domainId = toclone.domainId;
         this.usageType = toclone.usageType;
         this.quotaUsed = toclone.quotaUsed;
-        this.startDate = toclone.startDate;
-        this.endDate = toclone.endDate;
+        this.startDate = startDate == null ? null : new Date(startDate.getTime());
+        this.endDate = endDate == null ? null : new Date(endDate.getTime());
     }
 
     public Long getZoneId() {
@@ -149,19 +149,19 @@ public class QuotaUsageVO implements InternalIdentity {
     }
 
     public Date getStartDate() {
-        return startDate;
+        return startDate == null ? null : new Date(startDate.getTime());
     }
 
     public void setStartDate(Date startDate) {
-        this.startDate = startDate;
+        this.startDate = startDate == null ? null : new Date(startDate.getTime());
     }
 
     public Date getEndDate() {
-        return endDate;
+        return endDate == null ? null : new Date(endDate.getTime());
     }
 
     public void setEndDate(Date endDate) {
-        this.endDate = endDate;
+        this.endDate = endDate == null ? null : new Date(endDate.getTime());
     }
 
     public void setId(Long id) {
