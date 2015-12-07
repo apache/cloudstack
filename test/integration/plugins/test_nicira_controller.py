@@ -24,13 +24,23 @@ from marvin.lib.base import (
     NetworkOffering,
     NiciraNvp,
     ServiceOffering,
+    NATRule,
+    PublicIPAddress,
     Network,
     VirtualMachine
 )
-from marvin.lib.common import (get_domain, get_zone, get_template)
+from marvin.lib.common import (
+    get_domain,
+    get_zone,
+    get_template,
+    list_routers,
+    list_hosts,
+    findSuitableHostForMigration
+)
 from nose.plugins.attrib import attr
 from marvin.codes import (FAILED, PASS)
 import time
+import logging
 
 class TestNiciraContoller(cloudstackTestCase):
 
@@ -51,11 +61,13 @@ class TestNiciraContoller(cloudstackTestCase):
             'name':              'NiciraEnabledNetwork',
             'displaytext':       'NiciraEnabledNetwork',
             'guestiptype':       'Isolated',
-            'supportedservices': 'SourceNat,Firewall,PortForwarding,Connectivity',
+            'supportedservices': 'SourceNat,Dhcp,Dns,Firewall,PortForwarding,Connectivity',
             'traffictype':       'GUEST',
             'availability':      'Optional',
             'serviceProviderList': {
                     'SourceNat':      'VirtualRouter',
+                    'Dhcp':           'VirtualRouter',
+                    'Dns':            'VirtualRouter',
                     'Firewall':       'VirtualRouter',
                     'PortForwarding': 'VirtualRouter',
                     'Connectivity':   'NiciraNvp'
@@ -128,6 +140,11 @@ class TestNiciraContoller(cloudstackTestCase):
             cls.service_offering
         ]
 
+        cls.logger = logging.getLogger('TestNiciraContoller')
+        cls.stream_handler = logging.StreamHandler()
+        cls.logger.setLevel(logging.DEBUG)
+        cls.logger.addHandler(cls.stream_handler)
+
 
     @classmethod
     def tearDownClass(cls):
@@ -170,7 +187,7 @@ class TestNiciraContoller(cloudstackTestCase):
             if result_count == 0:
                 raise Exception('Nicira controller did not return any Transport Zones')
             elif result_count > 1:
-                self.debug("Nicira controller returned %s Transport Zones, picking first one" % resultCount)
+                self.logger.debug("Nicira controller returned %s Transport Zones, picking first one" % resultCount)
             transport_zone_api_url = list_transport_zone_response['results'][0]['_href']
             r3 = requests.get(
                 "https://%s%s" % (controller_host, transport_zone_api_url),
@@ -201,18 +218,20 @@ class TestNiciraContoller(cloudstackTestCase):
         else:
             raise Exception("None of the supplied hosts (%s) is a Nicira slave" % hosts)
 
-    @attr(tags = ["advanced", "smoke", "nicira"], required_hardware="true")
-    def test_01_nicira_controller(self):
+
+    def add_nicira_device(self, hostname):
         nicira_device = NiciraNvp.add(
             self.api_client,
             None,
             self.physical_network_id,
-            hostname=self.nicira_master_controller,
+            hostname=hostname,
             username=self.nicira_credentials['username'],
             password=self.nicira_credentials['password'],
             transportzoneuuid=self.transport_zone_uuid)
         self.test_cleanup.append(nicira_device)
 
+
+    def create_guest_network(self):
         network_services = {
             'name'            : 'nicira_enabled_network',
             'displaytext'     : 'nicira_enabled_network',
@@ -226,7 +245,10 @@ class TestNiciraContoller(cloudstackTestCase):
             domainid=self.domain.id,
         )
         self.test_cleanup.append(network)
+        return network
 
+
+    def create_virtual_machine(self, network):
         virtual_machine = VirtualMachine.create(
             self.api_client,
             self.vm_services['small'],
@@ -237,9 +259,88 @@ class TestNiciraContoller(cloudstackTestCase):
             mode=self.vm_services['mode']
         )
         self.test_cleanup.append(virtual_machine)
+        return virtual_machine
+
+
+    def get_routers_for_network(self, network):
+        return list_routers(
+            self.api_client,
+            account='admin',
+            domainid=self.domain.id,
+            networkid=network.id
+        )
+
+
+    def get_hosts(self):
+        return list_hosts(
+            self.api_client,
+            account='admin',
+            domainid=self.domain.id
+        )
+
+
+    def get_master_router(self, routers):
+        master = filter(lambda r: r.redundantstate == 'MASTER', routers)
+        self.logger.debug("Found %s master router(s): %s" % (master.size(), master))
+        return master[0]
+
+
+    def distribute_vm_and_routers_by_hosts(self, virtual_machine, routers):
+        if len(routers) > 1:
+            router = self.get_router(routers)
+            self.logger.debug("Master Router VM is %s" % router)
+        else:
+            router = routers[0]
+
+        if router.hostid == virtual_machine.hostid:
+            self.logger.debug("Master Router VM is on the same host as VM")
+            host = findSuitableHostForMigration(self.api_client, router.id)
+            if host is not None:
+                router.migrate(self.api_client, host)
+                self.logger.debug("Migrated Master Router VM to host %s" % host)
+            else:
+                self.fail('No suitable host to migrate Master Router VM to')
+        else:
+            self.logger.debug("Master Router VM is not on the same host as VM: %s, %s" % (router.hostid, virtual_machine.hostid))
+
+
+    def acquire_publicip(self, network):
+        self.logger.debug("Associating public IP for network: %s" % network.name)
+        public_ip = PublicIPAddress.create(
+            self.api_client,
+            accountid='admin',
+            zoneid=self.zone.id,
+            domainid=self.domain.id,
+            networkid=network.id
+        )
+        self.logger.debug("Associated %s with network %s" % (public_ip.ipaddress.ipaddress, network.id))
+        self.test_cleanup.append(public_ip)
+        return public_ip
+
+
+    def create_natrule(self, vm, public_ip, network):
+        self.logger.debug("Creating NAT rule in network for vm with public IP")
+        nat_rule = NATRule.create(
+            self.api_client,
+            vm,
+            self.vm_services['small'],
+            ipaddressid=public_ip.ipaddress.id,
+            openfirewall=True,
+            networkid=network.id
+        )
+        self.test_cleanup.append(nat_rule)
+        return nat_rule
+
+
+    @attr(tags = ["advanced", "smoke", "nicira"], required_hardware="true")
+    def test_01_nicira_controller(self):
+        self.add_nicira_device(self.nicira_master_controller)
+
+        network         = self.create_guest_network()
+        virtual_machine = self.create_virtual_machine(network)
 
         list_vm_response = VirtualMachine.list(self.api_client, id=virtual_machine.id)
-        self.debug("Verify listVirtualMachines response for virtual machine: %s" % virtual_machine.id)
+        self.logger.debug("Verify listVirtualMachines response for virtual machine: %s" % virtual_machine.id)
 
         self.assertEqual(isinstance(list_vm_response, list), True, 'Response did not return a valid list')
         self.assertNotEqual(len(list_vm_response), 0, 'List of VMs is empty')
@@ -247,6 +348,7 @@ class TestNiciraContoller(cloudstackTestCase):
         vm_response = list_vm_response[0]
         self.assertEqual(vm_response.id, virtual_machine.id, 'Virtual machine in response does not match request')
         self.assertEqual(vm_response.state, 'Running', 'VM is not in Running state')
+
 
     @attr(tags = ["advanced", "smoke", "nicira"], required_hardware="true")
     def test_02_nicira_controller_redirect(self):
@@ -261,45 +363,15 @@ class TestNiciraContoller(cloudstackTestCase):
             should be created without issues.
         """
         nicira_slave = self.determine_slave_conroller(self.nicira_hosts, self.nicira_master_controller)
-        self.debug("Nicira slave controller is: %s " % nicira_slave)
+        self.logger.debug("Nicira slave controller is: %s " % nicira_slave)
 
-        nicira_device = NiciraNvp.add(
-            self.api_client,
-            None,
-            self.physical_network_id,
-            hostname=nicira_slave,
-            username=self.nicira_credentials['username'],
-            password=self.nicira_credentials['password'],
-            transportzoneuuid=self.transport_zone_uuid)
-        self.test_cleanup.append(nicira_device)
+        self.add_nicira_device(nicira_slave)
 
-        network_services = {
-            'name'            : 'nicira_enabled_network',
-            'displaytext'     : 'nicira_enabled_network',
-            'zoneid'          : self.zone.id,
-            'networkoffering' : self.network_offering.id
-        }
-        network = Network.create(
-            self.api_client,
-            network_services,
-            accountid='admin',
-            domainid=self.domain.id,
-        )
-        self.test_cleanup.append(network)
-
-        virtual_machine = VirtualMachine.create(
-            self.api_client,
-            self.vm_services['small'],
-            accountid='admin',
-            domainid=self.domain.id,
-            serviceofferingid=self.service_offering.id,
-            networkids=[network.id],
-            mode=self.vm_services['mode']
-        )
-        self.test_cleanup.append(virtual_machine)
+        network         = self.create_guest_network()
+        virtual_machine = self.create_virtual_machine(network)
 
         list_vm_response = VirtualMachine.list(self.api_client, id=virtual_machine.id)
-        self.debug("Verify listVirtualMachines response for virtual machine: %s" % virtual_machine.id)
+        self.logger.debug("Verify listVirtualMachines response for virtual machine: %s" % virtual_machine.id)
 
         self.assertEqual(isinstance(list_vm_response, list), True, 'Response did not return a valid list')
         self.assertNotEqual(len(list_vm_response), 0, 'List of VMs is empty')
@@ -308,3 +380,38 @@ class TestNiciraContoller(cloudstackTestCase):
         self.assertEqual(vm_response.id, virtual_machine.id, 'Virtual machine in response does not match request')
         self.assertEqual(vm_response.state, 'Running', 'VM is not in Running state')
 
+
+    @attr(tags = ["advanced", "smoke", "nicira"], required_hardware="true")
+    def test_03_nicira_tunnel_guest_network(self):
+        self.add_nicira_device(self.nicira_master_controller)
+        network         = self.create_guest_network()
+        virtual_machine = self.create_virtual_machine(network)
+        public_ip       = self.acquire_publicip(network)
+        nat_rule        = self.create_natrule(virtual_machine, public_ip, network)
+
+        list_vm_response = VirtualMachine.list(self.api_client, id=virtual_machine.id)
+        self.logger.debug("Verify listVirtualMachines response for virtual machine: %s" % virtual_machine.id)
+
+        self.assertEqual(isinstance(list_vm_response, list), True, 'Response did not return a valid list')
+        self.assertNotEqual(len(list_vm_response), 0, 'List of VMs is empty')
+
+        vm_response = list_vm_response[0]
+        self.assertEqual(vm_response.id, virtual_machine.id, 'Virtual machine in response does not match request')
+        self.assertEqual(vm_response.state, 'Running', 'VM is not in Running state')
+
+        routers = self.get_routers_for_network(network)
+
+        self.distribute_vm_and_routers_by_hosts(virtual_machine, routers)
+
+        ssh_command = 'ping -c 3 google.com'
+        result = 'failed'
+        try:
+            self.logger.debug("SSH into VM: %s" % public_ip.ipaddress.ipaddress)
+            ssh = virtual_machine.get_ssh_client(ipaddress=public_ip.ipaddress.ipaddress)
+            self.logger.debug('Ping to google.com from VM')
+            result = str(ssh.execute(ssh_command))
+            self.logger.debug("SSH result: %s; COUNT is ==> %s" % (result, result.count("3 packets received")))
+        except Exception as e:
+            self.fail("SSH Access failed for %s: %s" % (vmObj.get_ip(), e))
+
+        self.assertEqual(result.count('3 packets received'), 1, 'Ping to outside world from VM should be successful')
