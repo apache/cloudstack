@@ -70,7 +70,6 @@ import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -439,7 +438,7 @@ StaticNatServiceProvider, IpDeployer {
                 break;
             }
         }
-        boolean result = false;
+        boolean result = true;
         if (canHandle) {
             final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
                     network.getId(), Role.VIRTUAL_ROUTER);
@@ -454,7 +453,7 @@ StaticNatServiceProvider, IpDeployer {
             final NetworkTopology networkTopology = _networkTopologyContext.retrieveNetworkTopology(dcVO);
 
             for (final DomainRouterVO domainRouterVO : routers) {
-                result =  networkTopology.associatePublicIP(network, ipAddress, domainRouterVO);
+                result = result && networkTopology.associatePublicIP(network, ipAddress, domainRouterVO);
             }
         }
         return result;
@@ -476,9 +475,9 @@ StaticNatServiceProvider, IpDeployer {
 
         final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
         final NetworkTopology networkTopology = _networkTopologyContext.retrieveNetworkTopology(dcVO);
-        boolean result = false;
+        boolean result = true;
         for (final DomainRouterVO domainRouterVO : routers) {
-            result = networkTopology.applyStaticNats(network, rules, domainRouterVO);
+            result = result && networkTopology.applyStaticNats(network, rules, domainRouterVO);
         }
         return result;
     }
@@ -486,9 +485,8 @@ StaticNatServiceProvider, IpDeployer {
     @Override
     public boolean applyPFRules(final Network network, final List<PortForwardingRule> rules)
             throws ResourceUnavailableException {
-        boolean result = false;
         if (!canHandle(network, Service.PortForwarding)) {
-            return result;
+            return false;
         }
         final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
                 network.getId(), Role.VIRTUAL_ROUTER);
@@ -498,10 +496,11 @@ StaticNatServiceProvider, IpDeployer {
             return true;
         }
 
+        boolean result = true;
         final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
         final NetworkTopology networkTopology = _networkTopologyContext.retrieveNetworkTopology(dcVO);
         for (final DomainRouterVO domainRouterVO : routers) {
-            result = networkTopology.applyFirewallRules(network, rules, domainRouterVO);
+            result = result && networkTopology.applyFirewallRules(network, rules, domainRouterVO);
         }
         return result;
     }
@@ -509,10 +508,10 @@ StaticNatServiceProvider, IpDeployer {
     @Override
     public boolean applyLBRules(final Network network, final List<LoadBalancingRule> rules)
             throws ResourceUnavailableException {
-        boolean result = false;
+        boolean result = true;
         if (canHandle(network, Service.Lb)) {
             if (!canHandleLbRules(rules)) {
-                return result;
+                return false;
             }
 
             final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
@@ -521,19 +520,16 @@ StaticNatServiceProvider, IpDeployer {
                 s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual "
                         + "router doesn't exist in the network "
                         + network.getId());
-                result = true;
-                return result;
+                return true;
             }
 
             final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
             final NetworkTopology networkTopology = _networkTopologyContext.retrieveNetworkTopology(dcVO);
 
             for (final DomainRouterVO domainRouterVO : routers) {
-                result = networkTopology.applyLoadBalancingRules(network, rules, domainRouterVO);
+                result = result && networkTopology.applyLoadBalancingRules(network, rules, domainRouterVO);
                 if (!result) {
-                    throw new CloudRuntimeException(
-                            "Failed to apply load balancing rules in network "
-                                    + network.getId());
+                    s_logger.debug("Failed to apply load balancing rules in network " + network.getId());
                 }
             }
         }
