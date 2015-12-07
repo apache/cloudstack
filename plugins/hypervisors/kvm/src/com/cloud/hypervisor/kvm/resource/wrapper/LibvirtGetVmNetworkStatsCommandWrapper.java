@@ -48,12 +48,16 @@ public final class LibvirtGetVmNetworkStatsCommandWrapper extends CommandWrapper
             final HashMap<String, List<VmNetworkStatsEntry>> vmNetworkStatsNameMap = new HashMap<String, List<VmNetworkStatsEntry>>();
             final Connect conn = libvirtUtilitiesHelper.getConnection();
             for (final String vmName : vmNames) {
-                final List<VmNetworkStatsEntry> statEntry = libvirtComputingResource.getVmNetworkStat(conn, vmName);
-                if (statEntry == null) {
-                    continue;
-                }
+                try {
+                    final List<VmNetworkStatsEntry> statEntry = libvirtComputingResource.getVmNetworkStat(conn, vmName);
+                    if (statEntry == null) {
+                        continue;
+                    }
 
-                vmNetworkStatsNameMap.put(vmName, statEntry);
+                    vmNetworkStatsNameMap.put(vmName, statEntry);
+                } catch (LibvirtException e) {
+                    s_logger.warn("Can't get vm network stats: " + e.toString() + ", continue");
+                }
             }
             return new GetVmNetworkStatsAnswer(command, "", command.getHostName(), vmNetworkStatsNameMap);
         } catch (final LibvirtException e) {
