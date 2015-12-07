@@ -141,7 +141,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     }
 
     @Override
-    public boolean applyUserData(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest, final List<DomainRouterVO> routers)
+    public boolean applyUserData(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest, final DomainRouterVO router)
             throws ResourceUnavailableException {
 
         s_logger.debug("APPLYING VPC USERDATA RULES");
@@ -153,12 +153,12 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
 
         final UserdataPwdRules pwdRules = new UserdataPwdRules(network, nic, profile, dest);
 
-        return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(pwdRules));
+        return applyRules(network, router, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(pwdRules));
     }
 
     @Override
     public boolean applyDhcpEntry(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest,
-            final List<DomainRouterVO> routers) throws ResourceUnavailableException {
+            final DomainRouterVO router) throws ResourceUnavailableException {
 
         s_logger.debug("APPLYING VPC DHCP ENTRY RULES");
 
@@ -169,11 +169,11 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
 
         final DhcpEntryRules dhcpRules = new DhcpEntryRules(network, nic, profile, dest);
 
-        return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(dhcpRules));
+        return applyRules(network, router, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(dhcpRules));
     }
 
     @Override
-    public boolean associatePublicIP(final Network network, final List<? extends PublicIpAddress> ipAddresses, final List<? extends VirtualRouter> routers)
+    public boolean associatePublicIP(final Network network, final List<? extends PublicIpAddress> ipAddresses, final VirtualRouter router)
             throws ResourceUnavailableException {
 
         if (ipAddresses == null || ipAddresses.isEmpty()) {
@@ -182,7 +182,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
         }
 
         if (network.getVpcId() == null) {
-            return super.associatePublicIP(network, ipAddresses, routers);
+            return super.associatePublicIP(network, ipAddresses, router);
         }
 
         s_logger.debug("APPLYING VPC IP RULES");
@@ -193,12 +193,10 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
         final Long podId = null;
 
         final NicPlugInOutRules nicPlugInOutRules = new NicPlugInOutRules(network, ipAddresses);
-        for (final VirtualRouter router : routers) {
-            nicPlugInOutRules.accept(_advancedVisitor, router);
-        }
+        nicPlugInOutRules.accept(_advancedVisitor, router);
 
         final VpcIpAssociationRules ipAssociationRules = new VpcIpAssociationRules(network, ipAddresses);
-        final boolean result = applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(ipAssociationRules));
+        final boolean result = applyRules(network, router, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(ipAssociationRules));
 
         if (result) {
             _advancedVisitor.visit(nicPlugInOutRules);
@@ -208,7 +206,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     }
 
     @Override
-    public boolean applyNetworkACLs(final Network network, final List<? extends NetworkACLItem> rules, final List<? extends VirtualRouter> routers, final boolean isPrivateGateway)
+    public boolean applyNetworkACLs(final Network network, final List<? extends NetworkACLItem> rules, final VirtualRouter router, final boolean isPrivateGateway)
             throws ResourceUnavailableException {
 
         if (rules == null || rules.isEmpty()) {
@@ -225,6 +223,6 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
 
         final NetworkAclsRules aclsRules = new NetworkAclsRules(network, rules, isPrivateGateway);
 
-        return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(aclsRules));
+        return applyRules(network, router, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(aclsRules));
     }
 }
