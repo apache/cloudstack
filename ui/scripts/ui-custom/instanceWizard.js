@@ -19,7 +19,7 @@
     /**
      * Instance wizard
      */
-    cloudStack.uiCustom.instanceWizard = function(args) {
+    cloudStack.uiCustom.instanceWizard = function(args, moreArgs) {
         return function(listViewArgs) {
             var context = listViewArgs.context;
 
@@ -262,7 +262,8 @@
                     args.steps[step - 1]($.extend(providerArgs, {
                         currentData: cloudStack.serializeForm($form),
                         initArgs: args,
-                        context: context
+                        context: context,
+                        moreArgs: moreArgs
                     }));
                 };
 
@@ -1106,7 +1107,7 @@
 
                     // Hide previous button on first step
                     var $previousButton = $wizard.find('.button.previous');
-                    if (index == 1) $previousButton.hide();
+                    if (index == (moreArgs ? moreArgs.step : 1)) $previousButton.hide();
                     else $previousButton.show();
 
                     // Update progress bar
@@ -1251,7 +1252,7 @@
                     return true;
                 });
 
-                showStep(1);
+                showStep(moreArgs ? moreArgs.step : 1); //Skip steps in case it is defined in moreArgs. Default is 1.
 
                 $wizard.bind('change', function(event) {
                     var $target = $(event.target);
@@ -1302,13 +1303,14 @@
 
 
                 return $wizard.dialog({
-                    title: _l('label.vm.add'),
+                    title: moreArgs ? _l(moreArgs.title) : _l('label.vm.add'),
                     width: 896,
                     height: 570,
                     closeOnEscape: false,
                     zIndex: 5000
                 })
-                    .closest('.ui-dialog').overlay();
+
+                .closest('.ui-dialog').overlay();
             };
 
             instanceWizard(args);

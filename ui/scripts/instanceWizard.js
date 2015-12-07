@@ -16,8 +16,8 @@
 // under the License.
 
 (function($, cloudStack) {
-    var zoneObjs, hypervisorObjs, featuredTemplateObjs, communityTemplateObjs, myTemplateObjs, sharedTemplateObjs, featuredIsoObjs, communityIsoObjs, myIsoObjs, sharedIsoObjs, serviceOfferingObjs, community, networkObjs;
-    var selectedZoneObj, selectedTemplateObj, selectedHypervisor, selectedDiskOfferingObj;
+    var zoneObjs, hypervisorObjs, snapshotObjs, featuredTemplateObjs, communityTemplateObjs, myTemplateObjs, sharedTemplateObjs, featuredIsoObjs, communityIsoObjs, myIsoObjs, sharedIsoObjs, serviceOfferingObjs, community, networkObjs;
+    var selectedZoneObj, selectedTemplateObj, selectedHypervisor, selectedDiskOfferingObj, selectedSnapshotObj;
     var selectedTemplateOrIso; //'select-template', 'select-iso'
     var step6ContainerType = 'nothing-to-select'; //'nothing-to-select', 'select-network', 'select-security-group', 'select-advanced-sg'(advanced sg-enabled zone)
 
@@ -269,6 +269,7 @@
                         sharedisos: sharedIsoObjs
                     };
                 }
+
                 args.response.success({
                     hypervisor: {
                         idField: 'name',
@@ -294,53 +295,67 @@
 
             // Step 3: Service offering
             function(args) {
-                selectedTemplateObj = null; //reset
-                if (args.currentData["select-template"] == "select-template") {
-                    if (featuredTemplateObjs != null && featuredTemplateObjs.length > 0) {
-                        for (var i = 0; i < featuredTemplateObjs.length; i++) {
-                            if (featuredTemplateObjs[i].id == args.currentData.templateid) {
-                                selectedTemplateObj = featuredTemplateObjs[i];
-                                break;
-                            }
-                        }
-                    }
-                    if (selectedTemplateObj == null) {
-                        if (communityTemplateObjs != null && communityTemplateObjs.length > 0) {
-                            for (var i = 0; i < communityTemplateObjs.length; i++) {
-                                if (communityTemplateObjs[i].id == args.currentData.templateid) {
-                                    selectedTemplateObj = communityTemplateObjs[i];
+                snapshotObjs = null;
+                selectedSnapshotObj = null;
+
+                if (args.moreArgs && args.moreArgs.snapshot)
+                {
+                    zoneObjs = args.moreArgs.zone;
+                    selectedZoneObj = zoneObjs[0];
+                    hypervisorObjs = args.moreArgs.hypervisor;
+                    selectedHypervisor = hypervisorObjs[0].name;
+                    snapshotObjs = args.moreArgs.snapshot;
+                    selectedSnapshotObj = snapshotObjs[0];
+                }
+                else {
+                    selectedTemplateObj = null; //reset
+                    if (args.currentData["select-template"] == "select-template") {
+                        if (featuredTemplateObjs != null && featuredTemplateObjs.length > 0) {
+                            for (var i = 0; i < featuredTemplateObjs.length; i++) {
+                                if (featuredTemplateObjs[i].id == args.currentData.templateid) {
+                                    selectedTemplateObj = featuredTemplateObjs[i];
                                     break;
                                 }
                             }
                         }
-                    }
-                    if (selectedTemplateObj == null) {
-                        if (myTemplateObjs != null && myTemplateObjs.length > 0) {
-                            for (var i = 0; i < myTemplateObjs.length; i++) {
-                                if (myTemplateObjs[i].id == args.currentData.templateid) {
-                                    selectedTemplateObj = myTemplateObjs[i];
-                                    break;
+                        if (selectedTemplateObj == null) {
+                            if (communityTemplateObjs != null && communityTemplateObjs.length > 0) {
+                                for (var i = 0; i < communityTemplateObjs.length; i++) {
+                                    if (communityTemplateObjs[i].id == args.currentData.templateid) {
+                                        selectedTemplateObj = communityTemplateObjs[i];
+                                        break;
+                                    }
                                 }
                             }
                         }
-                    }
-                    if (selectedTemplateObj == null) {
-                        if (sharedTemplateObjs != null && sharedTemplateObjs.length > 0) {
-                            for (var i = 0; i < sharedTemplateObjs.length; i++) {
-                                if (sharedTemplateObjs[i].id == args.currentData.templateid) {
-                                    selectedTemplateObj = sharedTemplateObjs[i];
-                                    break;
+                        if (selectedTemplateObj == null) {
+                            if (myTemplateObjs != null && myTemplateObjs.length > 0) {
+                                for (var i = 0; i < myTemplateObjs.length; i++) {
+                                    if (myTemplateObjs[i].id == args.currentData.templateid) {
+                                        selectedTemplateObj = myTemplateObjs[i];
+                                        break;
+                                    }
                                 }
                             }
                         }
+                        if (selectedTemplateObj == null) {
+                            if (sharedTemplateObjs != null && sharedTemplateObjs.length > 0) {
+                                for (var i = 0; i < sharedTemplateObjs.length; i++) {
+                                    if (sharedTemplateObjs[i].id == args.currentData.templateid) {
+                                        selectedTemplateObj = sharedTemplateObjs[i];
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if (selectedTemplateObj == null) {
+                            alert("unable to find matched template object");
+                        } else {
+                            selectedHypervisor = selectedTemplateObj.hypervisor;
+                        }
+                    } else { //(args.currentData["select-template"] == "select-iso"
+                        selectedHypervisor = args.currentData.hypervisorid;
                     }
-                    if (selectedTemplateObj == null) {
-                        alert("unable to find matched template object");
-                    } else {
-                        selectedHypervisor = selectedTemplateObj.hypervisor;
-                    }
-                } else { //(args.currentData["select-template"] == "select-iso"
-                    selectedHypervisor = args.currentData.hypervisorid;
                 }
 
                 // if the user is leveraging a template, then we can show custom IOPS, if applicable
@@ -505,7 +520,7 @@
                     var defaultNetworkArray = [],
                         optionalNetworkArray = [];
                     var networkData = {
-                        zoneId: args.currentData.zoneid,
+                        zoneId: args.moreArgs ? args.moreArgs.zone[0].id : args.currentData.zoneid,
                         canusefordeploy: true
                     };
 
@@ -628,7 +643,7 @@
                         dataType: "json",
                         data: {
                             forvpc: false,
-                            zoneid: args.currentData.zoneid,
+                            zoneid: args.moreArgs ? args.moreArgs.zone[0].id : args.currentData.zoneid,
                             guestiptype: 'Isolated',
                             supportedServices: 'SourceNat',
                             specifyvlan: false,
@@ -731,25 +746,24 @@
 
             //step 1 : select zone
             $.extend(deployVmData, {
-                zoneid : args.data.zoneid
+                zoneid : selectedZoneObj.id
             });
 
             //step 2: select template
-            $.extend(deployVmData, {
-                templateid : args.data.templateid
-            });
+            if (snapshotObjs) {
+                $.extend(deployVmData, {
+                    vmsnapshotid : selectedSnapshotObj.id
+                });
+            }
+            else {
+                $.extend(deployVmData, {
+                    templateid : args.data.templateid
+                });
+            }
 
             $.extend(deployVmData, {
                 hypervisor : selectedHypervisor
             });
-
-            if (args.$wizard.find('input[name=rootDiskSize]').parent().css('display') != 'none')  {
-                if (args.$wizard.find('input[name=rootDiskSize]').val().length > 0) {
-                    $.extend(deployVmData, {
-                        rootdisksize : args.$wizard.find('input[name=rootDiskSize]').val()
-                    });
-                }
-            }
 
             //step 3: select service offering
             $.extend(deployVmData, {
