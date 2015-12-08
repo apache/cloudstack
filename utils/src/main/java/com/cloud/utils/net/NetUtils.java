@@ -1570,5 +1570,13 @@ public class NetUtils {
         }
         return false;
     }
+    public static boolean isNetworkorBroadcastIP(String ip, String netmask){
+        String cidr = getCidrFromGatewayAndNetmask(ip,netmask);
+        final SubnetUtils subnetUtils = new SubnetUtils(cidr);
+        subnetUtils.setInclusiveHostCount(false);
+        final boolean isInRange = subnetUtils.getInfo().isInRange(ip);
+        return !isInRange;
+    }
+
 
 }
