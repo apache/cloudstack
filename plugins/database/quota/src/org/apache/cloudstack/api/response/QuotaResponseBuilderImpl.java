@@ -233,9 +233,9 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             // order is desc last item is the start item
             QuotaBalanceVO startItem = quotaBalance.get(quotaBalance.size() - 1);
             QuotaBalanceVO endItem = quotaBalance.get(0);
-            resp.setStartDate(startItem.getUpdatedOn());
+            resp.setStartDate(startDate);
             resp.setStartQuota(startItem.getCreditBalance());
-            resp.setEndDate(endItem.getUpdatedOn());
+            resp.setEndDate(endDate);
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("createQuotaBalanceResponse: Start Entry=" + startItem);
                 s_logger.debug("createQuotaBalanceResponse: End Entry=" + endItem);
@@ -479,7 +479,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             lastCredits = lastCredits.add(entry.getCreditBalance());
         }
         resp.setStartQuota(lastCredits);
-        resp.setStartDate(_quotaService.computeAdjustedTime(startDate));
+        resp.setStartDate(startDate);
         resp.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
         resp.setObjectName("balance");
         return resp;
