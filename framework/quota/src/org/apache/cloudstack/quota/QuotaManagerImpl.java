@@ -214,29 +214,18 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         //bootstrapping
         QuotaUsageVO lastQuotaUsage = _quotaUsageDao.findLastQuotaUsageEntry(account.getAccountId(), account.getDomainId(), startDate);
         if (lastQuotaUsage == null) {
-            creditsReceived = _quotaBalanceDao.findCreditBalance(account.getAccountId(), account.getDomainId(), new Date(0), startDate);
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Credit entries count " + creditsReceived.size() + " on Before Date=" + startDate);
-            }
-            if (creditsReceived != null) {
-                for (QuotaBalanceVO credit : creditsReceived) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Credit entry found " + credit);
-                        s_logger.debug("Total = " + aggrUsage);
-                    }
-                    aggrUsage = aggrUsage.add(credit.getCreditBalance());
-                }
-            }
+            aggrUsage = aggrUsage.add(aggregateCreditBetweenDates(account, new Date(0), startDate));
             // create a balance entry for these accumulated credits
             QuotaBalanceVO firstBalance = new QuotaBalanceVO(account.getAccountId(), account.getDomainId(), aggrUsage, startDate);
             _quotaBalanceDao.saveQuotaBalance(firstBalance);
-        }
-        else {
+        } else {
             QuotaBalanceVO lastRealBalanceEntry = _quotaBalanceDao.findLastBalanceEntry(account.getAccountId(), account.getDomainId(), endDate);
             aggrUsage = aggrUsage.add(lastRealBalanceEntry.getCreditBalance());
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Last balance entry  " + lastRealBalanceEntry + " AggrUsage=" + aggrUsage);
             }
+            // get all the credit entries after this balance and add
+            aggrUsage = aggrUsage.add(aggregateCreditBetweenDates(account, lastRealBalanceEntry.getUpdatedOn(), endDate));
         }
 
         for (QuotaUsageVO entry : quotaListForAccount) {
@@ -244,25 +233,12 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
                 s_logger.debug("Usage entry found " + entry);
             }
             if (entry.getQuotaUsed().compareTo(BigDecimal.ZERO) == 0) {
-                // check if there were credits
-                creditsReceived = _quotaBalanceDao.findCreditBalance(account.getAccountId(), account.getDomainId(), entry.getStartDate(), entry.getEndDate());
-                if (creditsReceived != null) {
-                    for (QuotaBalanceVO credit : creditsReceived) {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Credit entry found " + credit);
-                            s_logger.debug("Total = " + aggrUsage);
-                        }
-                        aggrUsage = aggrUsage.add(credit.getCreditBalance());
-                    }
-                }
+                // check if there were credits and aggregate
+                aggrUsage = aggrUsage.add(aggregateCreditBetweenDates(account, entry.getStartDate(), entry.getEndDate()));
                 continue;
             }
             if (startDate.compareTo(entry.getStartDate()) != 0) {
-                QuotaBalanceVO newBalance = new QuotaBalanceVO(account.getAccountId(), account.getDomainId(), aggrUsage, endDate);
-                _quotaBalanceDao.saveQuotaBalance(newBalance);
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Saving Balance" + newBalance);
-                }
+                saveQuotaBalance(account, aggrUsage, endDate);
 
                 //New balance entry
                 aggrUsage = new BigDecimal(0);
@@ -275,24 +251,28 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
                     lastBalanceDate = lastRealBalanceEntry.getUpdatedOn();
                     aggrUsage = aggrUsage.add(lastRealBalanceEntry.getCreditBalance());
                 }
-                creditsReceived = _quotaBalanceDao.findCreditBalance(account.getAccountId(), account.getDomainId(), lastBalanceDate, endDate);
-                if (creditsReceived != null) {
-                    for (QuotaBalanceVO credit : creditsReceived) {
-                        aggrUsage = aggrUsage.add(credit.getCreditBalance());
-                    }
-                }
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Getting Balance" + account.getAccountName() + ",Balance entry=" + aggrUsage + " on Date=" + endDate);
                 }
+                aggrUsage = aggrUsage.add(aggregateCreditBetweenDates(account, lastBalanceDate, endDate));
             }
             aggrUsage = aggrUsage.subtract(entry.getQuotaUsed());
         }
+        saveQuotaBalance(account, aggrUsage, endDate);
+
+        // update quota_balance
+        saveQuotaAccount(account, aggrUsage, endDate);
+    }
+
+    private QuotaBalanceVO saveQuotaBalance(final AccountVO account, final BigDecimal aggrUsage, final Date endDate) {
         QuotaBalanceVO newBalance = new QuotaBalanceVO(account.getAccountId(), account.getDomainId(), aggrUsage, endDate);
-        _quotaBalanceDao.saveQuotaBalance(newBalance);
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Saving Balance" + newBalance);
         }
+        return _quotaBalanceDao.saveQuotaBalance(newBalance);
+    }
 
+    private boolean saveQuotaAccount(final AccountVO account, final BigDecimal aggrUsage, final Date endDate) {
         // update quota_accounts
         QuotaAccountVO quota_account = _quotaAcc.findByIdQuotaAccount(account.getAccountId());
 
@@ -304,14 +284,34 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
                 s_logger.debug(quota_account);
             }
             _quotaAcc.persistQuotaAccount(quota_account);
+            return true;
         } else {
             quota_account.setQuotaBalance(aggrUsage);
             quota_account.setQuotaBalanceDate(endDate);
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug(quota_account);
             }
-            _quotaAcc.updateQuotaAccount(account.getAccountId(), quota_account);
+            return _quotaAcc.updateQuotaAccount(account.getAccountId(), quota_account);
         }
+    }
+
+    private BigDecimal aggregateCreditBetweenDates(final AccountVO account, final Date startDate, final Date endDate) {
+        BigDecimal aggrUsage = new BigDecimal(0);
+        List<QuotaBalanceVO> creditsReceived = null;
+        creditsReceived = _quotaBalanceDao.findCreditBalance(account.getAccountId(), account.getDomainId(), startDate, endDate);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Credit entries count " + creditsReceived.size() + " on Before Date=" + endDate);
+        }
+        if (creditsReceived != null) {
+            for (QuotaBalanceVO credit : creditsReceived) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Credit entry found " + credit);
+                    s_logger.debug("Total = " + aggrUsage);
+                }
+                aggrUsage = aggrUsage.add(credit.getCreditBalance());
+            }
+        }
+        return aggrUsage;
     }
 
     @Override
