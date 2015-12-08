@@ -20,7 +20,8 @@
 from marvin.codes import PASS, FAILED
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import (cleanup_resources,
-                              get_process_status)
+                              get_process_status,
+                              get_host_credentials)
 from marvin.lib.base import (Domain,
                              Account,
                              Configurations,
@@ -74,7 +75,6 @@ class Services:
             },
             "host1": None,
             "host2": None,
-            "default_hypervisor": "kvm",
             "compute_offering": {
                 "name": "Tiny Instance",
                 "displaytext": "Tiny Instance",
@@ -214,14 +214,31 @@ class Services:
                     "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-kvm.qcow2.bz2",
                     "requireshvm": "True"
                 },
-
-                "xen": {
+                "xenserver": {
                     "name": "tiny-xen",
                     "displaytext": "macchinina xen",
                     "format": "vhd",
-                    "hypervisor": "xen",
-                    "ostype": "Other (64-bit)",
+                    "hypervisor": "xenserver",
+                    "ostype": "Other PV (64-bit)",
                     "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-xen.vhd.bz2",
+                    "requireshvm": "True",
+                },
+                "hyperv": {
+                    "name": "tiny-hyperv",
+                    "displaytext": "macchinina xen",
+                    "format": "vhd",
+                    "hypervisor": "hyperv",
+                    "ostype": "Other PV (64-bit)",
+                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-hyperv.vhd.zip",
+                    "requireshvm": "True",
+                },
+                "vmware": {
+                    "name": "tiny-vmware",
+                    "displaytext": "macchinina vmware",
+                    "format": "ova",
+                    "hypervisor": "vmware",
+                    "ostype": "Other PV (64-bit)",
+                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.vmdk.bz2",
                     "requireshvm": "True",
                 }
             }
@@ -256,10 +273,10 @@ class TestInternalLb(cloudstackTestCase):
         cls.account = Account.create(
             cls.apiclient, services=cls.services["account"])
 
-        cls.hypervisor = cls.services["default_hypervisor"]
+        cls.hypervisor = testClient.getHypervisorInfo()
 
-        cls.logger.debug("Downloading Template: %s from: %s" %(cls.services["template"][cls.hypervisor]["name"], cls.services["template"][cls.hypervisor]["url"]))
-        cls.template = Template.register(cls.apiclient, cls.services["template"][cls.hypervisor], cls.zone.id, hypervisor=cls.hypervisor, account=cls.account.name, domainid=cls.domain.id)
+        cls.logger.debug("Downloading Template: %s from: %s" %(cls.services["template"][cls.hypervisor.lower()], cls.services["template"][cls.hypervisor.lower()]["url"]))
+        cls.template = Template.register(cls.apiclient, cls.services["template"][cls.hypervisor.lower()], cls.zone.id, hypervisor=cls.hypervisor.lower(), account=cls.account.name, domainid=cls.domain.id)
         cls.template.download(cls.apiclient)
 
         if cls.template == FAILED:
@@ -450,6 +467,7 @@ class TestInternalLb(cloudstackTestCase):
         """ Setup ssh client connection and return connection
         vm requires attributes public_ip, public_port, username, password """
 
+        ssh_client = None
         try:
             ssh_client = SshClient(
                 vm.public_ip,
@@ -733,7 +751,7 @@ class TestInternalLb(cloudstackTestCase):
         # Verify access to and the contents of the admin stats page on the
         # private address via a vm in the internal lb tier
         stats = self.verify_lb_stats(
-            applb.sourceipaddress, self.get_ssh_client(vm, 4), settings)
+            applb.sourceipaddress, self.get_ssh_client(vm, 5), settings)
         self.assertTrue(stats, "Failed to verify LB HAProxy stats")
 
     @classmethod
