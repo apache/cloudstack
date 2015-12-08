@@ -62,7 +62,7 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
     protected static EventBus s_eventBus = null;
 
     public UserVmStateListener(UsageEventDao usageEventDao, NetworkDao networkDao, NicDao nicDao, ServiceOfferingDao offeringDao, UserVmDao userVmDao, UserVmManager userVmMgr,
-            ConfigurationDao configDao) {
+            ConfigurationDao configDao, UsageEventEmitter usageEventEmitter) {
         this._usageEventDao = usageEventDao;
         this._networkDao = networkDao;
         this._nicDao = nicDao;
@@ -70,6 +70,7 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
         this._userVmDao = userVmDao;
         this._userVmMgr = userVmMgr;
         this._configDao = configDao;
+        this._usageEventEmitter = usageEventEmitter;
     }
 
     @Override
