@@ -83,7 +83,7 @@ public class QuotaBalanceCmd extends BaseCmd {
     }
 
     public Date getEndDate() {
-        if (endDate==null){
+        if (endDate == null){
             return null;
         }
         else{
