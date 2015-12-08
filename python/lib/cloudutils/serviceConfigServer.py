@@ -137,9 +137,8 @@ class cloudManagementConfig(serviceCfgBase):
         except:
             pass
 
-        self.syscfg.svo.stopService("cloudstack-management")
-
         if self.syscfg.env.noStart == False:
+            self.syscfg.svo.stopService("cloudstack-management")
             if self.syscfg.svo.enableService("cloudstack-management"):
                 return True
             else:
