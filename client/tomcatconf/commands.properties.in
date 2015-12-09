@@ -793,4 +793,5 @@ quotaTariffUpdate=1
 quotaCredits=1
 quotaEmailTemplateList=1
 quotaEmailTemplateUpdate=1
+quotaIsEnabled=15
 

@@ -36,4 +36,6 @@ public interface QuotaService extends PluggableService {
 
     void setMinBalance(Long accountId, Double balance);
 
+    Boolean isQuotaServiceEnabled();
+
 }

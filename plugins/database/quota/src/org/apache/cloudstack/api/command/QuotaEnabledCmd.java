@@ -20,31 +20,24 @@ import com.cloud.user.Account;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.response.QuotaUpdateResponse;
-import org.apache.cloudstack.quota.QuotaAlertManager;
-import org.apache.cloudstack.quota.QuotaManager;
-import org.apache.cloudstack.quota.QuotaStatement;
+import org.apache.cloudstack.api.response.QuotaEnabledResponse;
+import org.apache.cloudstack.quota.QuotaService;
 import org.apache.log4j.Logger;
 
-import java.util.Calendar;
 
 import javax.inject.Inject;
 
-@APICommand(name = "quotaUpdate", responseObject = QuotaUpdateResponse.class, description = "Update quota calculations, alerts and statements", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class QuotaUpdateCmd extends BaseCmd {
+@APICommand(name = "quotaIsEnabled", responseObject = QuotaEnabledResponse.class, description = "Return treu if the plugin is enabled", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+public class QuotaEnabledCmd extends BaseCmd {
 
-    public static final Logger s_logger = Logger.getLogger(QuotaUpdateCmd.class);
+    public static final Logger s_logger = Logger.getLogger(QuotaEnabledCmd.class);
 
-    private static final String s_name = "quotaupdateresponse";
+    private static final String s_name = "quotaisenabledresponse";
 
     @Inject
-    QuotaManager _manager;
-    @Inject
-    QuotaStatement _statement;
-    @Inject
-    QuotaAlertManager _alert;
+    QuotaService _quotaService;
 
-    public QuotaUpdateCmd() {
+    public QuotaEnabledCmd() {
         super();
     }
 
@@ -55,12 +48,9 @@ public class QuotaUpdateCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        _manager.calculateQuotaUsage();
-        _statement.sendStatement();
-        _alert.checkAndSendQuotaAlertEmails();
-        QuotaUpdateResponse response = new QuotaUpdateResponse(Calendar.getInstance());
+        Boolean isEnabled = _quotaService.isQuotaServiceEnabled();
+        QuotaEnabledResponse response = new QuotaEnabledResponse(isEnabled);
         response.setResponseName(getCommandName());
-        response.setObjectName("quotacredits");
         setResponseObject(response);
     }
 
