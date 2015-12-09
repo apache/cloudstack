@@ -43,6 +43,7 @@ import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
@@ -282,4 +283,9 @@ public interface NetworkOrchestrationService {
     void finalizeUpdateInSequence(Network network, boolean success);
 
     List<NetworkGuru> getNetworkGurus();
+
+    void destroyExpendableRouters(final List<? extends VirtualRouter> routers, final ReservationContext context) throws ResourceUnavailableException;
+
+    boolean validateNewRouters(final List<? extends VirtualRouter> routers);
+
 }

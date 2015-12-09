@@ -116,6 +116,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         AllFieldsSearch.and("broadcastUri", AllFieldsSearch.entity().getBroadcastUri(), Op.EQ);
         AllFieldsSearch.and("vpcId", AllFieldsSearch.entity().getVpcId(), Op.EQ);
         AllFieldsSearch.and("aclId", AllFieldsSearch.entity().getNetworkACLId(), Op.EQ);
+        AllFieldsSearch.and("redundant", AllFieldsSearch.entity().isRedundant(), Op.EQ);
         final SearchBuilder<NetworkOfferingVO> join1 = _ntwkOffDao.createSearchBuilder();
         join1.and("isSystem", join1.entity().isSystemOnly(), Op.EQ);
         join1.and("isRedundant", join1.entity().getRedundantRouter(), Op.EQ);
@@ -656,7 +657,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     @Override
     public List<NetworkVO> listRedundantNetworks() {
         final SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
-        sc.setJoinParameters("offerings", "isRedundant", true);
+        sc.setParameters("redundant", true);
         return listBy(sc, null);
     }
 

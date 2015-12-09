@@ -351,6 +351,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
     boolean isRedundant();
 
+    boolean isRollingRestart();
+
     long getRelated();
 
     URI getBroadcastUri();

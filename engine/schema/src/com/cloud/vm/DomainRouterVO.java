@@ -162,6 +162,7 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
         return redundantState;
     }
 
+    @Override
     public void setRedundantState(final RedundantState redundantState) {
         this.redundantState = redundantState;
     }

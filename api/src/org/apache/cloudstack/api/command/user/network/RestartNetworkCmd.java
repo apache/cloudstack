@@ -57,6 +57,9 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.CLEANUP, type = CommandType.BOOLEAN, required = false, description = "If cleanup old network elements")
     private Boolean cleanup;
 
+    @Parameter(name = ApiConstants.MAKEREDUNDANT, type = CommandType.BOOLEAN, required = false, description = "Turn the network into a network with redundant routers.", since = "4.11.1")
+    private Boolean makeRedundant;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -77,6 +80,13 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
         return true;
     }
 
+    public Boolean getMakeRedundant() {
+        if (makeRedundant != null) {
+            return makeRedundant;
+        }
+        return true;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -92,7 +102,7 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
-        boolean result = _networkService.restartNetwork(this, getCleanup());
+        boolean result = _networkService.restartNetwork(this, getCleanup(), getMakeRedundant());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);

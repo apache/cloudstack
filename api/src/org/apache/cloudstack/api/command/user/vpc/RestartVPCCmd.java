@@ -51,7 +51,7 @@ public class RestartVPCCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.CLEANUP, type = CommandType.BOOLEAN, required = false, description = "If cleanup old network elements")
     private Boolean cleanup;
 
-    @Parameter(name = ApiConstants.MAKEREDUNDANTE, type = CommandType.BOOLEAN, required = false, description = "Turn a single VPC into a redundant one.")
+    @Parameter(name = ApiConstants.MAKEREDUNDANT, type = CommandType.BOOLEAN, required = false, description = "Turn a single VPC into a redundant one.")
     private Boolean makeredundant;
 
     /////////////////////////////////////////////////////
