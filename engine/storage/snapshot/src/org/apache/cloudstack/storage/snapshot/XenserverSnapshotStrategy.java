@@ -245,6 +245,12 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
             return true;
         }
 
+        if(snapshotVO.getState() == Snapshot.State.Allocated) {
+            s_logger.debug("delete snapshot in Allocated state");
+            snapshotDao.remove(snapshotId);
+            return true;
+        }
+
         if (!Snapshot.State.BackedUp.equals(snapshotVO.getState()) && !Snapshot.State.Error.equals(snapshotVO.getState())) {
             throw new InvalidParameterValueException("Can't delete snapshotshot " + snapshotId + " due to it is in " + snapshotVO.getState() + " Status");
         }
