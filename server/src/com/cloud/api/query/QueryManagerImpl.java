@@ -1225,6 +1225,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService, Confi
             ssc.addOr("instanceName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("networkName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("vpcName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
 
             sc.addAnd("instanceName", SearchCriteria.Op.SC, ssc);
         }

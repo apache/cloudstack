@@ -2721,6 +2721,15 @@
                                                         hiddenFields.push('publicip');
                                                         //In Basic zone, guest IP is public IP. So, publicip is not returned by listRouters API. Only guestipaddress is returned by listRouters API.
                                                     }
+
+                                                    if ('routers' in args.context && args.context.routers[0].vpcid != undefined) {
+                                                        hiddenFields.push('guestnetworkid');
+                                                        hiddenFields.push('guestnetworkname');
+                                                    } else if ('routers' in args.context && args.context.routers[0].guestnetworkid != undefined) {
+                                                        hiddenFields.push('vpcid');
+                                                        hiddenFields.push('vpcname');
+                                                    }
+
                                                     return hiddenFields;
                                                 },
                                                 fields:[ {
@@ -2743,6 +2752,15 @@
                                                     },
                                                     guestnetworkid: {
                                                         label: 'label.network.id'
+                                                    },
+                                                    guestnetworkname: {
+                                                        label: 'label.network.name'
+                                                    },
+                                                    vpcid: {
+                                                        label: 'label.vpc.id'
+                                                    },
+                                                    vpcname: {
+                                                        label: 'label.vpc'
                                                     },
                                                     publicip: {
                                                         label: 'label.public.ip'
@@ -3247,6 +3265,15 @@
                                                         hiddenFields.push('publicip');
                                                         //In Basic zone, guest IP is public IP. So, publicip is not returned by listRouters API. Only guestipaddress is returned by listRouters API.
                                                     }
+
+                                                    if ('routers' in args.context && args.context.routers[0].vpcid != undefined) {
+                                                        hiddenFields.push('guestnetworkid');
+                                                        hiddenFields.push('guestnetworkname');
+                                                    } else if ('routers' in args.context && args.context.routers[0].guestnetworkid != undefined) {
+                                                        hiddenFields.push('vpcid');
+                                                        hiddenFields.push('vpcname');
+                                                    }
+
                                                     return hiddenFields;
                                                 },
                                                 fields:[ {
@@ -3269,6 +3296,15 @@
                                                     },
                                                     guestnetworkid: {
                                                         label: 'label.network.id'
+                                                    },
+                                                    guestnetworkname: {
+                                                        label: 'label.network.name'
+                                                    },
+                                                    vpcid: {
+                                                        label: 'label.vpc.id'
+                                                    },
+                                                    vpcname: {
+                                                        label: 'label.vpc'
                                                     },
                                                     publicip: {
                                                         label: 'label.public.ip'
@@ -6771,6 +6807,15 @@
                                                         hiddenFields.push('publicip');
                                                         //In Basic zone, guest IP is public IP. So, publicip is not returned by listRouters API. Only guestipaddress is returned by listRouters API.
                                                     }
+
+                                                    if ('routers' in args.context && args.context.routers[0].vpcid != undefined) {
+                                                        hiddenFields.push('guestnetworkid');
+                                                        hiddenFields.push('guestnetworkname');
+                                                    } else if ('routers' in args.context && args.context.routers[0].guestnetworkid != undefined) {
+                                                        hiddenFields.push('vpcid');
+                                                        hiddenFields.push('vpcname');
+                                                    }
+
                                                     return hiddenFields;
                                                 },
                                                 fields:[ {
@@ -6793,6 +6838,15 @@
                                                     },
                                                     guestnetworkid: {
                                                         label: 'label.network.id'
+                                                    },
+                                                    guestnetworkname: {
+                                                        label: 'label.network.name'
+                                                    },
+                                                    vpcid: {
+                                                        label: 'label.vpc.id'
+                                                    },
+                                                    vpcname: {
+                                                        label: 'label.vpc'
                                                     },
                                                     publicip: {
                                                         label: 'label.public.ip'
@@ -10042,6 +10096,14 @@
                                                 }
                                             });
 
+                                            if ('routers' in args.context && args.context.routers[0].vpcid != undefined) {
+                                                hiddenFields.push('guestnetworkid');
+                                                hiddenFields.push('guestnetworkname');
+                                            } else if ('routers' in args.context && args.context.routers[0].guestnetworkid != undefined) {
+                                                hiddenFields.push('vpcid');
+                                                hiddenFields.push('vpcname');
+                                            }
+
                                             return hiddenFields;
                                         },
                                         fields:[ {
@@ -10071,6 +10133,15 @@
                                             },
                                             guestnetworkid: {
                                                 label: 'label.network.id'
+                                            },
+                                            guestnetworkname: {
+                                                label: 'label.network.name'
+                                            },
+                                            vpcid: {
+                                                label: 'label.vpc.id'
+                                            },
+                                            vpcname: {
+                                                label: 'label.vpc'
                                             },
                                             publicip: {
                                                 label: 'label.public.ip'
