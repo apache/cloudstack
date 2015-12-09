@@ -3853,7 +3853,7 @@ class NiciraNvp:
 
     @classmethod
     def add(cls, apiclient, services, physicalnetworkid,
-            hostname=None, username=None, password=None, transportzoneuuid=None):
+            hostname=None, username=None, password=None, transportzoneuuid=None, l2gatewayserviceuuid=None):
         cmd = addNiciraNvpDevice.addNiciraNvpDeviceCmd()
         cmd.physicalnetworkid = physicalnetworkid
         if hostname:
@@ -3876,7 +3876,12 @@ class NiciraNvp:
         else:
             cmd.transportzoneuuid = services['transportZoneUuid']
 
-        return NiciraNvp(apiclient.addNiciraNvpDevice(cmd).__dict__)
+        if l2gatewayserviceuuid:
+            cmd.l2gatewayserviceuuid = l2gatewayserviceuuid
+        else:
+            cmd.l2gatewayserviceuuid = services['l2gatewayserviceuuid']
+
+	return NiciraNvp(apiclient.addNiciraNvpDevice(cmd).__dict__)
 
     def delete(self, apiclient):
         cmd = deleteNiciraNvpDevice.deleteNiciraNvpDeviceCmd()
