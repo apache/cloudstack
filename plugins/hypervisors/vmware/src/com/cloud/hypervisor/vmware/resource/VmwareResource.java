@@ -1380,7 +1380,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             VirtualMachineDiskInfoBuilder diskInfoBuilder = null;
-            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
+            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmNameOnVcenter);
             boolean hasSnapshot = false;
             if (vmMo != null) {
                 s_logger.info("VM " + vmInternalCSName + " already exists, tear down devices for reconfiguration");
@@ -1456,7 +1456,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     String vmxFileFullPath = dsRootVolumeIsOn.searchFileInSubFolders(vmNameOnVcenter + ".vmx", false);
                     if (vmFolderExists && vmxFileFullPath != null) { // VM can be registered only if .vmx is present.
                         registerVm(vmNameOnVcenter, dsRootVolumeIsOn);
-                        vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
+                        vmMo = hyperHost.findVmOnHyperHost(vmNameOnVcenter);
                         tearDownVm(vmMo);
                     }else if (!hyperHost.createBlankVm(vmNameOnVcenter, vmInternalCSName, vmSpec.getCpus(), vmSpec.getMaxSpeed().intValue(),
                             getReservedCpuMHZ(vmSpec), vmSpec.getLimitCpuUse(), (int)(vmSpec.getMaxRam() / (1024 * 1024)), getReservedMemoryMb(vmSpec),
@@ -1465,7 +1465,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     }
                 }
 
-                vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
+                vmMo = hyperHost.findVmOnHyperHost(vmNameOnVcenter);
                 if (vmMo == null) {
                     throw new Exception("Failed to find the newly create or relocated VM. vmName: " + vmInternalCSName);
                 }
