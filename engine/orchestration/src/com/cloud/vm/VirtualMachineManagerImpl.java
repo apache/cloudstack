@@ -1072,8 +1072,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.info("The guru did not like the answers so stopping " + vm);
                             }
-
-                            final StopCommand cmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false);
+                            StopCommand stopCmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false);
+                            stopCmd.setControlIp(getControlNicIpForVM(vm));
+                            final StopCommand cmd = stopCmd;
                             final Answer answer = _agentMgr.easySend(destHostId, cmd);
                             if (answer != null && answer instanceof StopAnswer) {
                                 final StopAnswer stopAns = (StopAnswer)answer;
@@ -1278,7 +1279,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     protected boolean sendStop(final VirtualMachineGuru guru, final VirtualMachineProfile profile, final boolean force, final boolean checkBeforeCleanup) {
         final VirtualMachine vm = profile.getVirtualMachine();
-        final StopCommand stop = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), checkBeforeCleanup);
+        StopCommand stpCmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), checkBeforeCleanup);
+        stpCmd.setControlIp(getControlNicIpForVM(vm));
+        final StopCommand stop = stpCmd;
         try {
             final Answer answer = _agentMgr.send(vm.getHostId(), stop);
             if (answer != null && answer instanceof StopAnswer) {
@@ -1541,8 +1544,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         vmGuru.prepareStop(profile);
-
-        final StopCommand stop = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false);
+        StopCommand stpCmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false);
+        stpCmd.setControlIp(getControlNicIpForVM(vm));
+        final StopCommand stop = stpCmd;
 
         boolean stopped = false;
         Answer answer = null;
@@ -2669,12 +2673,24 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     public Command cleanup(final VirtualMachine vm) {
-        return new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false);
+        StopCommand cmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false);
+        cmd.setControlIp(getControlNicIpForVM(vm));
+        return cmd;
     }
 
+    private String getControlNicIpForVM(VirtualMachine vm) {
+        if (vm.getType() == VirtualMachine.Type.ConsoleProxy || vm.getType() == VirtualMachine.Type.SecondaryStorageVm) {
+            NicVO nic = _nicsDao.getControlNicForVM(vm.getId());
+            return nic.getIPv4Address();
+        } else if (vm.getType() == VirtualMachine.Type.DomainRouter) return vm.getPrivateIpAddress();
+        else return null;
+    }
     public Command cleanup(final String vmName) {
-        return new StopCommand(vmName, getExecuteInSequence(null), false);
+        VirtualMachine vm = _vmDao.findVMByInstanceName(vmName);
 
+        StopCommand cmd = new StopCommand(vmName, getExecuteInSequence(null), false);
+        cmd.setControlIp(getControlNicIpForVM(vm));
+        return cmd;
     }
 
 
