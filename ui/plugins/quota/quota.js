@@ -30,8 +30,6 @@
                 	async: false
                 });
     	        var json = JSON.parse(retval.responseText);
-    	        console.log(json.quotaisenabledresponse.isenabled.isenabled);
-    	        console.log(json.quotaisenabledresponse.isenabled.isenabled == 'true');
     	        return json.quotaisenabledresponse.isenabled.isenabled;
           },
           showOnNavigation: true,
