@@ -92,9 +92,9 @@ public class NiciraRestClient extends BasicRestClient {
         } else if (HttpStatusCodeHelper.isSuccess(statusCode)) {
             return handleSuccessResponse(request, response);
         } else if (HttpStatusCodeHelper.isConflict(statusCode)) {
-            throw new CloudstackRESTException("Conflict: " + statusLine.getReasonPhrase());
+            throw new CloudstackRESTException("Conflict: " + statusLine.getReasonPhrase(), statusCode);
         } else {
-            throw new CloudstackRESTException("Unexpected status code: " + statusCode);
+            throw new CloudstackRESTException("Unexpected status code: " + statusCode, statusCode);
         }
     }
 

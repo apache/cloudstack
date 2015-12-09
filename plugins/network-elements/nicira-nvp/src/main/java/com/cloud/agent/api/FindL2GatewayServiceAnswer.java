@@ -17,33 +17,22 @@
 // under the License.
 //
 
-package com.cloud.utils.rest;
+package com.cloud.agent.api;
 
-@SuppressWarnings("serial")
-public class CloudstackRESTException extends Exception {
+public class FindL2GatewayServiceAnswer extends Answer {
 
-    private int errorCode;
+    private String gatewayServiceUuid;
 
-    public CloudstackRESTException(final String message) {
-        super(message);
+    public FindL2GatewayServiceAnswer(final Command command, final boolean success, final String details, final String gatewayServiceUuid) {
+        super(command, success, details);
+        this.gatewayServiceUuid = gatewayServiceUuid;
     }
 
-    public CloudstackRESTException(final String message, final Throwable cause) {
-        super(message, cause);
+    public FindL2GatewayServiceAnswer(final Command command, final Exception e) {
+        super(command, e);
     }
 
-    public CloudstackRESTException(final String message, final int errorCode) {
-        super(message);
-        this.errorCode = errorCode;
+    public String getGatewayServiceUuid() {
+        return gatewayServiceUuid;
     }
-
-    public CloudstackRESTException(final String message, final Throwable cause, final int errorCode) {
-        super(message, cause);
-        this.errorCode = errorCode;
-    }
-
-    public int getErrorCode() {
-        return errorCode;
-    }
-
 }

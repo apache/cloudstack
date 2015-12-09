@@ -25,6 +25,7 @@ public class NiciraConstants {
     public static final String ACL_URI_PREFIX = "/ws.v1/acl";
     public static final String SWITCH_URI_PREFIX = "/ws.v1/lswitch";
     public static final String ROUTER_URI_PREFIX = "/ws.v1/lrouter";
+    public static final String GATEWAY_SERVICE_PREFIX = "/ws.v1/gateway-service";
     public static final String LOGIN_URL = "/ws.v1/login";
     public static final String CONTROL_CLUSTER_STATUS_URL = "/ws.v1/control-cluster/status";
 
@@ -39,5 +40,6 @@ public class NiciraConstants {
     public static final String WILDCARD_QUERY_PARAMETER = "*";
     public static final String UUID_QUERY_PARAMETER = "uuid";
     public static final String FIELDS_QUERY_PARAMETER = "fields";
+    public static final String TYPES_QUERY_PARAMETER = "types";
 
 }

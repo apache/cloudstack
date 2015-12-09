@@ -17,33 +17,14 @@
 // under the License.
 //
 
-package com.cloud.utils.rest;
+package com.cloud.network.nicira;
 
-@SuppressWarnings("serial")
-public class CloudstackRESTException extends Exception {
+public class L2GatewayServiceConfig extends GatewayServiceConfig {
 
-    private int errorCode;
+    private static final String L2GWTServiceConfigType = "L2GatewayServiceConfig";
 
-    public CloudstackRESTException(final String message) {
-        super(message);
-    }
-
-    public CloudstackRESTException(final String message, final Throwable cause) {
-        super(message, cause);
-    }
-
-    public CloudstackRESTException(final String message, final int errorCode) {
-        super(message);
-        this.errorCode = errorCode;
-    }
-
-    public CloudstackRESTException(final String message, final Throwable cause, final int errorCode) {
-        super(message, cause);
-        this.errorCode = errorCode;
-    }
-
-    public int getErrorCode() {
-        return errorCode;
+    public L2GatewayServiceConfig(String uuid) {
+        super(uuid, L2GWTServiceConfigType);
     }
 
 }

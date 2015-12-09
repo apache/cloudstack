@@ -17,33 +17,30 @@
 // under the License.
 //
 
-package com.cloud.utils.rest;
+package com.cloud.agent.api;
 
-@SuppressWarnings("serial")
-public class CloudstackRESTException extends Exception {
+import com.cloud.network.nicira.GatewayServiceConfig;
+import com.cloud.network.nicira.L2GatewayServiceConfig;
 
-    private int errorCode;
+public class FindL2GatewayServiceCommand extends Command {
 
-    public CloudstackRESTException(final String message) {
-        super(message);
+    private L2GatewayServiceConfig gatewayServiceConfig;
+
+    public FindL2GatewayServiceCommand(L2GatewayServiceConfig config) {
+        this.gatewayServiceConfig = config;
     }
 
-    public CloudstackRESTException(final String message, final Throwable cause) {
-        super(message, cause);
+    @Override
+    public boolean executeInSequence() {
+        return false;
     }
 
-    public CloudstackRESTException(final String message, final int errorCode) {
-        super(message);
-        this.errorCode = errorCode;
+    public GatewayServiceConfig getGatewayServiceConfig() {
+        return gatewayServiceConfig;
     }
 
-    public CloudstackRESTException(final String message, final Throwable cause, final int errorCode) {
-        super(message, cause);
-        this.errorCode = errorCode;
-    }
-
-    public int getErrorCode() {
-        return errorCode;
+    public void setGatewayServiceConfig(L2GatewayServiceConfig gatewayServiceConfig) {
+        this.gatewayServiceConfig = gatewayServiceConfig;
     }
 
 }

@@ -17,33 +17,31 @@
 // under the License.
 //
 
-package com.cloud.utils.rest;
+package com.cloud.network.nicira;
 
-@SuppressWarnings("serial")
-public class CloudstackRESTException extends Exception {
+import java.io.Serializable;
 
-    private int errorCode;
+public abstract class GatewayServiceConfig implements Serializable {
 
-    public CloudstackRESTException(final String message) {
-        super(message);
+    private String uuid;
+    private String displayName;
+    private String type;
+
+    public GatewayServiceConfig(String uuid, String type) {
+        this.uuid = uuid;
+        this.type = type;
     }
 
-    public CloudstackRESTException(final String message, final Throwable cause) {
-        super(message, cause);
+    public String getUuid() {
+        return uuid;
     }
 
-    public CloudstackRESTException(final String message, final int errorCode) {
-        super(message);
-        this.errorCode = errorCode;
+    public String getDisplayName() {
+        return displayName;
     }
 
-    public CloudstackRESTException(final String message, final Throwable cause, final int errorCode) {
-        super(message, cause);
-        this.errorCode = errorCode;
-    }
-
-    public int getErrorCode() {
-        return errorCode;
+    public String getType() {
+        return type;
     }
 
 }

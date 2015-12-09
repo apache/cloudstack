@@ -36,6 +36,8 @@ import com.cloud.agent.api.DeleteLogicalRouterPortAnswer;
 import com.cloud.agent.api.DeleteLogicalRouterPortCommand;
 import com.cloud.agent.api.DeleteLogicalSwitchAnswer;
 import com.cloud.agent.api.DeleteLogicalSwitchCommand;
+import com.cloud.agent.api.FindL2GatewayServiceAnswer;
+import com.cloud.agent.api.FindL2GatewayServiceCommand;
 import com.cloud.agent.api.FindLogicalRouterPortAnswer;
 import com.cloud.agent.api.FindLogicalRouterPortCommand;
 import com.cloud.dc.DataCenter;
@@ -54,10 +56,10 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
-import com.cloud.network.NiciraNvpNicMappingVO;
-import com.cloud.network.NiciraNvpRouterMappingVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.NiciraNvpDeviceVO;
+import com.cloud.network.NiciraNvpNicMappingVO;
+import com.cloud.network.NiciraNvpRouterMappingVO;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetwork.IsolationMethod;
 import com.cloud.network.dao.NetworkDao;
@@ -67,6 +69,7 @@ import com.cloud.network.dao.NiciraNvpNicMappingDao;
 import com.cloud.network.dao.NiciraNvpRouterMappingDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.nicira.L2GatewayServiceConfig;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.resource.ResourceManager;
@@ -209,6 +212,16 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru implements Netwo
         final String transportzoneuuid = niciraNvpHost.getDetail("transportzoneuuid");
         final String transportzoneisotype = niciraNvpHost.getDetail("transportzoneisotype");
 
+        if (offering.getGuestType().equals(GuestType.Shared)) {
+            try {
+                checkL2GatewayServiceSharedNetwork(niciraNvpHost);
+            }
+            catch (Exception e){
+                s_logger.error("L2 Gateway Service Issue: " + e.getMessage());
+                return null;
+            }
+        }
+
         final CreateLogicalSwitchCommand cmd = new CreateLogicalSwitchCommand(transportzoneuuid, transportzoneisotype, name, context.getDomain().getName() + "-"
                 + context.getAccount().getAccountName());
         final CreateLogicalSwitchAnswer answer = (CreateLogicalSwitchAnswer) agentMgr.easySend(niciraNvpHost.getId(), cmd);
@@ -228,6 +241,26 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru implements Netwo
         }
 
         return implemented;
+    }
+
+    private void checkL2GatewayServiceSharedNetwork(HostVO niciraNvpHost) throws Exception {
+        String l2GatewayServiceUuid = niciraNvpHost.getDetail("l2gatewayserviceuuid");
+        if (l2GatewayServiceUuid == null){
+            throw new Exception("No L2 Gateway Service found");
+        }
+        else {
+            final FindL2GatewayServiceCommand cmdL2GWService = new FindL2GatewayServiceCommand(new L2GatewayServiceConfig(l2GatewayServiceUuid));
+            final FindL2GatewayServiceAnswer answerL2GWService = (FindL2GatewayServiceAnswer) agentMgr.easySend(niciraNvpHost.getId(), cmdL2GWService);
+            if (answerL2GWService == null || !answerL2GWService.getResult()){
+                throw new Exception("No L2 Gateway Service found with uuid " + l2GatewayServiceUuid);
+            }
+            else {
+                String uuidFound = answerL2GWService.getGatewayServiceUuid();
+                if (! uuidFound.equals(l2GatewayServiceUuid)){
+                    throw new Exception("Found L2 Gateway Service " + uuidFound + " instead of " + l2GatewayServiceUuid);
+                }
+            }
+        }
     }
 
     @Override
