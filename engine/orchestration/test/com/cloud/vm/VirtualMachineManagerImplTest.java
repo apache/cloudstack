@@ -17,6 +17,7 @@
 
 package com.cloud.vm;
 
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.isA;
@@ -504,5 +505,13 @@ public class VirtualMachineManagerImplTest {
         boolean actual = _vmMgr.sendStop(guru, profile, false, false);
 
         Assert.assertFalse(actual);
+    }
+
+    @Test
+    public void testExeceuteInSequence() {
+        assertTrue(_vmMgr.getExecuteInSequence(HypervisorType.XenServer) == false);
+        assertTrue(_vmMgr.getExecuteInSequence(HypervisorType.KVM) == false);
+        assertTrue(_vmMgr.getExecuteInSequence(HypervisorType.VMware) == HypervisorGuru.VmwareFullClone.value());
+        assertTrue(_vmMgr.getExecuteInSequence(HypervisorType.Ovm3) == VirtualMachineManager.ExecuteInSequence.value());
     }
 }

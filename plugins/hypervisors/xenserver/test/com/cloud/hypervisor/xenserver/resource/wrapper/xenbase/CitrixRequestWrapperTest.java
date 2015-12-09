@@ -298,7 +298,7 @@ public class CitrixRequestWrapperTest {
 
     @Test
     public void testRebootCommand() {
-        final RebootCommand rebootCommand = new RebootCommand("Test");
+        final RebootCommand rebootCommand = new RebootCommand("Test", true);
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);

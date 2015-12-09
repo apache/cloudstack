@@ -36,7 +36,7 @@ public final class CitrixRebootRouterCommandWrapper extends CommandWrapper<Reboo
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
 
-        final RebootCommand rebootCommand = new RebootCommand(command.getVmName());
+        final RebootCommand rebootCommand = new RebootCommand(command.getVmName(), true);
         final Answer answer = wrapper.execute(rebootCommand, citrixResourceBase);
 
         if (answer.getResult()) {
