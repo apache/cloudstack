@@ -136,8 +136,8 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { QuotaPluginEnabled, QuotaEnableEnforcement, QuotaCurrencySymbol, QuotaStatementPeriod, QuotaSmtpHost, QuotaSmtpPort, QuotaSmtpTimeout, QuotaSmtpUser, QuotaSmtpPassword,
-                QuotaSmtpAuthType, QuotaSmtpSender };
+        return new ConfigKey<?>[] {QuotaPluginEnabled, QuotaEnableEnforcement, QuotaCurrencySymbol, QuotaStatementPeriod, QuotaSmtpHost, QuotaSmtpPort, QuotaSmtpTimeout,
+                QuotaSmtpUser, QuotaSmtpPassword, QuotaSmtpAuthType, QuotaSmtpSender};
     }
 
     public Boolean isQuotaServiceEnabled() {
@@ -190,8 +190,8 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
             } else if (startDate.before(endDate)) {
                 Date adjustedEndDate = computeAdjustedTime(endDate);
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("getQuotaBalance2: Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and "
-                            + adjustedEndDate);
+                    s_logger.debug("getQuotaBalance2: Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate
+                            + " and " + adjustedEndDate);
                 }
                 List<QuotaBalanceVO> qbrecords = _quotaBalanceDao.findQuotaBalance(accountId, domainId, adjustedStartDate, adjustedEndDate);
                 if (s_logger.isDebugEnabled()) {
@@ -240,7 +240,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         Date adjustedEndDate = computeAdjustedTime(endDate);
         Date adjustedStartDate = computeAdjustedTime(startDate);
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Getting quota records for account: " + accountId + ", domainId: " + domainId + ", between " + startDate + " and " + endDate);
+            s_logger.debug("Getting quota records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
         }
         return _quotaUsageDao.findQuotaUsage(accountId, domainId, usageType, adjustedStartDate, adjustedEndDate);
     }
