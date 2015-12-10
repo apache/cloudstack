@@ -25,6 +25,7 @@ import javax.inject.Inject;
 
 import org.springframework.stereotype.Component;
 
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
@@ -44,7 +45,7 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     private SearchBuilder<NicVO> AllFieldsSearch;
     private GenericSearchBuilder<NicVO, String> IpSearch;
     private SearchBuilder<NicVO> NonReleasedSearch;
-    private GenericSearchBuilder<NicVO, Integer> CountBy;
+    private GenericSearchBuilder<NicVO, Integer> deviceIdSearch;
     private GenericSearchBuilder<NicVO, Integer> CountByForStartingVms;
 
     @Inject
@@ -81,11 +82,10 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         NonReleasedSearch.and("state", NonReleasedSearch.entity().getState(), Op.NOTIN);
         NonReleasedSearch.done();
 
-        CountBy = createSearchBuilder(Integer.class);
-        CountBy.select(null, Func.COUNT, CountBy.entity().getId());
-        CountBy.and("vmId", CountBy.entity().getInstanceId(), Op.EQ);
-        CountBy.and("removed", CountBy.entity().getRemoved(), Op.NULL);
-        CountBy.done();
+        deviceIdSearch = createSearchBuilder(Integer.class);
+        deviceIdSearch.select(null, Func.DISTINCT, deviceIdSearch.entity().getDeviceId());
+        deviceIdSearch.and("instance", deviceIdSearch.entity().getInstanceId(), Op.EQ);
+        deviceIdSearch.done();
 
         CountByForStartingVms = createSearchBuilder(Integer.class);
         CountByForStartingVms.select(null, Func.COUNT, CountByForStartingVms.entity().getId());
@@ -222,11 +222,20 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     }
 
     @Override
-    public int countNics(long instanceId) {
-        SearchCriteria<Integer> sc = CountBy.create();
-        sc.setParameters("vmId", instanceId);
-        List<Integer> results = customSearch(sc, null);
-        return results.get(0);
+    public int getFreeDeviceId(long instanceId) {
+        Filter searchFilter = new Filter(NicVO.class, "deviceId", true, null, null);
+        SearchCriteria<Integer> sc = deviceIdSearch.create();
+        sc.setParameters("instance", instanceId);
+        List<Integer> deviceIds = customSearch(sc, searchFilter);
+
+        int freeDeviceId = 0;
+        for (int deviceId : deviceIds) {
+            if (deviceId > freeDeviceId)
+                break;
+            freeDeviceId ++;
+        }
+
+        return freeDeviceId;
     }
 
     @Override
