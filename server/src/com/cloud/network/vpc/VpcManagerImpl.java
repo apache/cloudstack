@@ -412,10 +412,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 final Network.Service service = Network.Service.getService(serviceEntry.getKey());
                 if (svcProviderMap.containsKey(service)) {
                     final Set<Provider> providers = new HashSet<Provider>();
-                    // don't allow to specify more than 1 provider per service
-                    if (serviceEntry.getValue() != null && serviceEntry.getValue().size() > 1) {
-                        throw new InvalidParameterValueException("In the current release only one provider can be " + "specified for the service");
-                    }
                     for (final String prvNameStr : serviceEntry.getValue()) {
                         // check if provider is supported
                         final Network.Provider provider = Network.Provider.getProvider(prvNameStr);
