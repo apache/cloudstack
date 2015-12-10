@@ -1165,12 +1165,28 @@ setup_storage_network() {
 	log_it "Successfully setup storage network with STORAGE_IP:$STORAGE_IP, STORAGE_NETMASK:$STORAGE_NETMASK, STORAGE_CIDR:$STORAGE_CIDR"
 }
 
+setup_system_rfc1918_internal() {
+  echo "$public_ip" | grep -E "^((127\.)|(10\.)|(172\.1[6-9]\.)|(172\.2[0-9]\.)|(172\.3[0-1]\.)|(192\.168\.))"
+  if [ "$?" == "0" ]; then
+     log_it "Not setting up route of RFC1918 space to $LOCAL_GW befause $public_ip is RFC1918."
+  else
+     log_it "Setting up route of RFC1918 space to $LOCAL_GW"
+     # Setup general route for RFC 1918 space, as otherwise it will be sent to
+     # the public gateway and not work
+     # More specific routes that may be set have preference over this generic route.
+     ip route add 10.0.0.0/8 via $LOCAL_GW
+     ip route add 172.16.0.0/12 via $LOCAL_GW
+     ip route add 192.168.0.0/16 via $LOCAL_GW
+  fi
+}
+
 setup_secstorage() {
   log_it "Setting up secondary storage system vm"
   sysctl vm.min_free_kbytes=8192
   local hyp=$1
   setup_common eth0 eth1 eth2
   setup_storage_network
+  setup_system_rfc1918_internal
   sed -i  /gateway/d /etc/hosts
   public_ip=$ETH2_IP
   [ "$ETH2_IP" == "0.0.0.0" ] && public_ip=$ETH1_IP
@@ -1229,6 +1245,7 @@ setup_console_proxy() {
   log_it "Setting up console proxy system vm"
   local hyp=$1
   setup_common eth0 eth1 eth2
+  setup_system_rfc1918_internal
   public_ip=$ETH2_IP
   [ "$ETH2_IP" == "0.0.0.0" ] && public_ip=$ETH1_IP
   sed -i  /gateway/d /etc/hosts
