@@ -486,9 +486,9 @@ deleteVPCOffering=1
 listVPCOfferings=15
 
 #### Private gateway commands
-createPrivateGateway=1
+createPrivateGateway=7
 listPrivateGateways=15
-deletePrivateGateway=1
+deletePrivateGateway=7
 
 #### Network ACL commands
 createNetworkACL=15
