@@ -20,6 +20,8 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.utils.Pair;
 
@@ -99,6 +101,13 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
                         Mockito.any(Domain.class)))
         .thenReturn(true);
         Mockito.when(_vmSnapshotDao.listByAccountId(Mockito.anyLong())).thenReturn(new ArrayList<VMSnapshotVO>());
+
+        List<SSHKeyPairVO> sshkeyList = new ArrayList<SSHKeyPairVO>();
+        SSHKeyPairVO sshkey = new SSHKeyPairVO();
+        sshkey.setId(1l);
+        sshkeyList.add(sshkey);
+        Mockito.when(_sshKeyPairDao.listKeyPairs(Mockito.anyLong(), Mockito.anyLong())).thenReturn(sshkeyList);
+        Mockito.when(_sshKeyPairDao.remove(Mockito.anyLong())).thenReturn(true);
 
         Assert.assertTrue(accountManager.deleteUserAccount(42));
         // assert that this was a clean delete
