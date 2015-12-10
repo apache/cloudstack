@@ -25,12 +25,12 @@
           id: 'quota',
           title: 'Quota',
           preFilter: function(args) {
-              var retval = $.ajax({
-              url: createURL("listConfigurations&name=quota.enable.service"),
-              async: false
-                  });
-              var json = JSON.parse(retval.responseText);
-              return json.listconfigurationsresponse.configuration[0].value == 'true';
+    	        var retval = $.ajax({
+                	url: createURL("quotaIsEnabled"),
+                	async: false
+                });
+    	        var json = JSON.parse(retval.responseText);
+    	        return json.quotaisenabledresponse.isenabled.isenabled;
           },
           showOnNavigation: true,
           sectionSelect: {
