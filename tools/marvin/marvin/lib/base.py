@@ -4055,17 +4055,25 @@ class VpcOffering:
     @classmethod
     def create(cls, apiclient, services):
         """Create vpc offering"""
-
+        
+        import logging
+        
         cmd = createVPCOffering.createVPCOfferingCmd()
         cmd.name = "-".join([services["name"], random_gen()])
         cmd.displaytext = services["displaytext"]
         cmd.supportedServices = services["supportedservices"]
         if "serviceProviderList" in services:
             for service, provider in services["serviceProviderList"].items():
-                cmd.serviceproviderlist.append({
-                    'service': service,
-                    'provider': provider
-                })
+                providers = provider
+                if isinstance(provider, str):
+                    providers = [provider]
+
+                for provider_item in providers:
+                    cmd.serviceproviderlist.append({
+                        'service': service,
+                        'provider': provider_item
+                    })
+
         if "serviceCapabilityList" in services:
             cmd.servicecapabilitylist = []
             for service, capability in \
