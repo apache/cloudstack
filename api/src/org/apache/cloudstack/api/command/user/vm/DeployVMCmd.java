@@ -60,6 +60,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -497,6 +498,16 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
         }
     }
 
+    private void verifyUserData(String userData) {
+        try {
+            if (userData != null) {
+                byte[] decoded = Base64.getDecoder().decode(userData);
+            }
+        } catch (IllegalArgumentException e) {
+            throw new InvalidParameterValueException("User data is not valid base64");
+        }
+    }
+
     private void verifyMinAndMaxIops(String minIops, String maxIops) {
         if ((minIops != null && maxIops == null) || (minIops == null && maxIops != null)) {
             throw new InvalidParameterValueException("Either 'Min IOPS' and 'Max IOPS' must both be specified or neither be specified.");
@@ -542,6 +553,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
             Account owner = _accountService.getActiveAccountById(getEntityOwnerId());
 
             verifyDetails();
+            verifyUserData(userData);
 
             DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
             if (zone == null) {
