@@ -243,8 +243,8 @@ class DeployDataCenters(object):
 
                 primarycmd.tags = primary.tags
                 primarycmd.url = primary.url
-                if primary.scope == 'zone':
-                    primarycmd.scope = primary.scope
+                if primary.scope == 'zone' or clusterId is None:
+                    primarycmd.scope = 'zone'
                     primarycmd.hypervisor = primary.hypervisor
                 else:
                     primarycmd.podid = podId
