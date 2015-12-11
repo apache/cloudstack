@@ -137,6 +137,10 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
     @Param(description = "the ID of the corresponding guest network")
     private String guestNetworkId;
 
+    @SerializedName("guestnetworkname")
+    @Param(description = "the name of the corresponding guest network")
+    private String guestNetworkName;
+
     @SerializedName(ApiConstants.TEMPLATE_ID)
     @Param(description = "the template ID for the router")
     private String templateId;
@@ -196,6 +200,10 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
     @SerializedName(ApiConstants.VPC_ID)
     @Param(description = "VPC the router belongs to")
     private String vpcId;
+
+    @SerializedName("vpcname")
+    @Param(description = "the name of VPC the router belongs to")
+    private String vpcName;
 
     @SerializedName(ApiConstants.ROLE)
     @Param(description = "role of the domain router")
@@ -333,6 +341,10 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
         this.guestNetworkId = guestNetworkId;
     }
 
+    public void setGuestNetworkName(String guestNetworkName) {
+        this.guestNetworkName = guestNetworkName;
+    }
+
     public void setLinkLocalIp(String linkLocalIp) {
         this.linkLocalIp = linkLocalIp;
     }
@@ -393,6 +405,10 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
 
     public void setVpcId(String vpcId) {
         this.vpcId = vpcId;
+    }
+
+    public void setVpcName(String vpcName) {
+        this.vpcName = vpcName;
     }
 
     public void setNics(Set<NicResponse> nics) {

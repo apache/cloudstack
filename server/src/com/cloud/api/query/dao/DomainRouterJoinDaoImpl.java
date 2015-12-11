@@ -116,6 +116,7 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
                         routerResponse.setGuestMacAddress(router.getMacAddress());
                         routerResponse.setGuestNetmask(router.getNetmask());
                         routerResponse.setGuestNetworkId(router.getNetworkUuid());
+                        routerResponse.setGuestNetworkName(router.getNetworkName());
                         routerResponse.setNetworkDomain(router.getNetworkDomain());
                     }
                 }
@@ -166,6 +167,7 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         routerResponse.setIp6Dns2(router.getIp6Dns2());
 
         routerResponse.setVpcId(router.getVpcUuid());
+        routerResponse.setVpcName(router.getVpcName());
 
         routerResponse.setRole(router.getRole().toString());
 
@@ -208,6 +210,7 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
                     vrData.setGuestMacAddress(vr.getMacAddress());
                     vrData.setGuestNetmask(vr.getNetmask());
                     vrData.setGuestNetworkId(vr.getNetworkUuid());
+                    vrData.setGuestNetworkName(vr.getNetworkName());
                     vrData.setNetworkDomain(vr.getNetworkDomain());
                 }
             }
