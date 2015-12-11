@@ -137,8 +137,8 @@ class Services:
                     "Dhcp": 'VpcVirtualRouter',
                     "Dns": 'VpcVirtualRouter',
                     "SourceNat": 'VpcVirtualRouter',
+                    "Lb" : ["InternalLbVm", "VpcVirtualRouter"],
                     "PortForwarding": 'VpcVirtualRouter',
-                    "Lb": 'VpcVirtualRouter',
                     "UserData": 'VpcVirtualRouter',
                     "StaticNat": 'VpcVirtualRouter',
                     "NetworkACL": 'VpcVirtualRouter'
@@ -146,14 +146,24 @@ class Services:
                 "serviceCapabilityList": {
                     "SourceNat": {
                         "RedundantRouter": 'true'
-                    }
+                    },
                 },
             },
             "vpc_offering": {
                 "name": "VPC off",
                 "displaytext": "VPC off",
-                "supportedservices":
-                    "Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat,NetworkACL"
+                "supportedservices": "Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat,NetworkACL",
+                "serviceProviderList": {
+                    "Vpn": 'VpcVirtualRouter',
+                    "Dhcp": 'VpcVirtualRouter',
+                    "Dns": 'VpcVirtualRouter',
+                    "SourceNat": 'VpcVirtualRouter',
+                    "Lb" : ["InternalLbVm", "VpcVirtualRouter"],
+                    "PortForwarding": 'VpcVirtualRouter',
+                    "UserData": 'VpcVirtualRouter',
+                    "StaticNat": 'VpcVirtualRouter',
+                    "NetworkACL": 'VpcVirtualRouter'
+                },
             },
             "vpc": {
                 "name": "TestVPC",
