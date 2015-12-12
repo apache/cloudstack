@@ -103,7 +103,7 @@ perl -pi -e "s/-SNAPSHOT//" tools/marvin/setup.py
 perl -pi -e "s/-SNAPSHOT//" tools/marvin/marvin/deployAndRun.py
 perl -pi -e "s/-SNAPSHOT//" debian/changelog
 perl -pi -e "s/-SNAPSHOT//" services/iam/plugin/pom.xml
-perl -pi -e "s/-SNAPSHOT//" services/iam/pom.xm
+perl -pi -e "s/-SNAPSHOT//" services/iam/pom.xml
 perl -pi -e "s/-SNAPSHOT//" services/iam/server/pom.xml
 
 case "$currentversion" in 
