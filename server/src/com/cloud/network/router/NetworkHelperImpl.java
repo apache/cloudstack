@@ -472,14 +472,7 @@ public class NetworkHelperImpl implements NetworkHelper {
                     continue;
                 }
 
-                boolean offerHA = routerOffering.getOfferHA();
-                /*
-                 * We don't provide HA to redundant router VMs, admin should own
-                 * it all, and redundant router themselves are HA
-                 */
-                if (routerDeploymentDefinition.isRedundant()) {
-                    offerHA = false;
-                }
+                final boolean offerHA = routerOffering.getOfferHA();
 
                 // routerDeploymentDefinition.getVpc().getId() ==> do not use
                 // VPC because it is not a VPC offering.
@@ -487,7 +480,7 @@ public class NetworkHelperImpl implements NetworkHelper {
 
                 long userId = CallContext.current().getCallingUserId();
                 if (CallContext.current().getCallingAccount().getId() != owner.getId()) {
-                    List<UserVO> userVOs = _userDao.listByAccount(owner.getAccountId());
+                    final List<UserVO> userVOs = _userDao.listByAccount(owner.getAccountId());
                     if (!userVOs.isEmpty()) {
                         userId =  userVOs.get(0).getId();
                     }
