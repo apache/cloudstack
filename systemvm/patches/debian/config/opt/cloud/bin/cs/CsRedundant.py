@@ -137,8 +137,6 @@ class CsRedundant(object):
             " router_id ", "    router_id %s" % self.cl.get_name())
         keepalived_conf.search(
             " interface ", "    interface %s" % guest.get_device())
-        keepalived_conf.search(
-            " virtual_router_id ", "    virtual_router_id %s" % self.cl.get_router_id())
         keepalived_conf.greplace("[RROUTER_BIN_PATH]", self.CS_ROUTER_DIR)
         keepalived_conf.section("authentication {", "}", [
                                 "        auth_type AH \n", "        auth_pass %s\n" % self.cl.get_router_password()])
