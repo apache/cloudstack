@@ -179,6 +179,7 @@ elif [ "${prMergeableState}" != "clean" ] && [ ${force} -eq 1 ]; then
 fi
 
 github_remote=$(git remote -v | grep -E "apache/${repoName}(.git)?" | head -n 1 | cut -f1)
+apache_remote=$(git remote -v | grep -E "git-wip-us\.apache\.org" | head -n 1 | cut -f1)
 if [ ${#github_remote} -eq 0 ]; then
   echo "ERROR: We couldn't find a git remote pointing to 'apache/${repoName}.git' to merge the PR from."
   echo "INFO: Currently, your configured remotes are:"
@@ -230,6 +231,8 @@ fi
 echo "INFO: ***********************************************************************************"
 echo "INFO: Merged successfully! Please double check using 'git log -p' and 'git push' when you're sure."
 echo "INFO: About commits: there should be ${prCommits} from the PR plus 1 merge commit."
+echo "INFO: Actual diff in commits is: (running git log --pretty=oneline --abbrev-commit ${apache_remote}/${currentBranch}..${currentBranch})"
 echo
+git log --pretty=oneline --abbrev-commit ${apache_remote}/${currentBranch}..${currentBranch}
 
 clean_up_and_exit 0

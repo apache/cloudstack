@@ -52,5 +52,10 @@ fi
 # Clean up
 rm -fr ${tmpMessageFile}
 
+apache_remote=$(git remote -v | grep -E "git-wip-us\.apache\.org" | head -n 1 | cut -f1)
+echo "INFO: Actual diff in commits is: (running git log --pretty=oneline --abbrev-commit ${apache_remote}/${currentBranch}..${currentBranch})"
+echo
+git log --pretty=oneline --abbrev-commit ${apache_remote}/${currentBranch}..${currentBranch}
+
 # What's next
 echo "We're done! Please double check using 'git log -p' and 'git push' when you're sure."
