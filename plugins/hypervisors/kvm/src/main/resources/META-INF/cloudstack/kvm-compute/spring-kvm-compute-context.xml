@@ -27,7 +27,7 @@
                       http://www.springframework.org/schema/context/spring-context-3.0.xsd"
                       >
 
-    <bean id="KVMInvestigator" class="com.cloud.ha.KVMInvestigator">
+    <bean id="KVMInvestigator" class="org.apache.cloudstack.ha.KVMInvestigator">
         <property name="name" value="KVMInvestigator" />
     </bean>
     

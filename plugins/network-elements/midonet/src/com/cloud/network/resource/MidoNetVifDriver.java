@@ -36,8 +36,8 @@ import com.sun.jersey.core.util.MultivaluedMapImpl;
 
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.exception.InternalErrorException;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
-import com.cloud.hypervisor.kvm.resource.VifDriverBase;
+import org.apache.cloudstack.hypervisor.kvm.resource.LibvirtVMDef;
+import org.apache.cloudstack.hypervisor.kvm.resource.VifDriverBase;
 import com.cloud.network.Networks;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.script.OutputInterpreter;
