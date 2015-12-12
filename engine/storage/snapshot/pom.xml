@@ -37,6 +37,11 @@
           <type>test-jar</type>
           <scope>test</scope>
       </dependency>
+      <dependency>
+          <groupId>org.apache.cloudstack</groupId>
+          <artifactId>cloud-engine-storage-volume</artifactId>
+          <version>${project.version}</version>
+      </dependency>
   </dependencies>
     <build>
         <plugins>
