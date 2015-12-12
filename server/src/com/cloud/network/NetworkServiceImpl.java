@@ -1197,6 +1197,13 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             }
 
             if (gateway != null && netmask != null) {
+                if(NetUtils.isNetworkorBroadcastIP(gateway,netmask)) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("The gateway IP provided is " + gateway + " and netmask is " + netmask + ". The IP is either broadcast or network IP.");
+                    }
+                    throw new InvalidParameterValueException("Invalid gateway IP provided. Either the IP is broadcast or network IP.");
+                }
+
                 if (!NetUtils.isValidIp(gateway)) {
                     throw new InvalidParameterValueException("Invalid gateway");
                 }

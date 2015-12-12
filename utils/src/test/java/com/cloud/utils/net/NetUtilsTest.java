@@ -508,4 +508,22 @@ public class NetUtilsTest {
     public void testIsNetworksOverlapWithEmptyValues() {
         assertEquals(false, NetUtils.isNetworksOverlap("", null));
     }
+    @Test
+    public void testisNetworkorBroadCastIP(){
+         //Checking the True conditions
+        assertTrue(NetUtils.isNetworkorBroadcastIP("192.168.0.0","255.255.255.0"));
+        assertTrue(NetUtils.isNetworkorBroadcastIP("192.168.0.255","255.255.255.0"));
+        assertTrue(NetUtils.isNetworkorBroadcastIP("192.168.0.127","255.255.255.128"));
+        assertTrue(NetUtils.isNetworkorBroadcastIP("192.168.0.63","255.255.255.192"));
+
+        //Checking the False conditions
+        assertFalse(NetUtils.isNetworkorBroadcastIP("192.168.0.1","255.255.255.0"));
+        assertFalse(NetUtils.isNetworkorBroadcastIP("192.168.0.127","255.255.255.0"));
+        assertFalse(NetUtils.isNetworkorBroadcastIP("192.168.0.126","255.255.255.128"));
+        assertFalse(NetUtils.isNetworkorBroadcastIP("192.168.0.62","255.255.255.192"));
+
+        assertTrue(NetUtils.isNetworkorBroadcastIP("192.168.0.63","255.255.255.192"));
+        assertFalse(NetUtils.isNetworkorBroadcastIP("192.168.0.63","255.255.255.128"));
+    }
+
 }
