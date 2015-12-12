@@ -49,12 +49,16 @@ public final class LibvirtGetVmStatsCommandWrapper extends CommandWrapper<GetVmS
                 final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
 
                 final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(vmName);
-                final VmStatsEntry statEntry = libvirtComputingResource.getVmStat(conn, vmName);
-                if (statEntry == null) {
-                    continue;
-                }
+                try {
+                    final VmStatsEntry statEntry = libvirtComputingResource.getVmStat(conn, vmName);
+                    if (statEntry == null) {
+                        continue;
+                    }
 
-                vmStatsNameMap.put(vmName, statEntry);
+                    vmStatsNameMap.put(vmName, statEntry);
+                } catch (LibvirtException e) {
+                    s_logger.warn("Can't get vm stats: " + e.toString() + ", continue");
+                }
             }
             return new GetVmStatsAnswer(command, vmStatsNameMap);
         } catch (final LibvirtException e) {
