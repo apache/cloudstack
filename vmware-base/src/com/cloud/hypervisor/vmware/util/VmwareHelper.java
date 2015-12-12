@@ -34,6 +34,7 @@ import org.apache.log4j.Logger;
 
 import com.vmware.vim25.DistributedVirtualSwitchPortConnection;
 import com.vmware.vim25.DynamicProperty;
+import com.vmware.vim25.GuestOsDescriptor;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.MethodFault;
 import com.vmware.vim25.ObjectContent;
@@ -62,6 +63,8 @@ import com.vmware.vim25.VirtualMachineSnapshotTree;
 import com.vmware.vim25.VirtualPCNet32;
 import com.vmware.vim25.VirtualVmxnet2;
 import com.vmware.vim25.VirtualVmxnet3;
+
+import com.cloud.hypervisor.vmware.mo.DiskControllerType;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.LicenseAssignmentManagerMO;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
@@ -74,6 +77,11 @@ import com.cloud.utils.exception.ExceptionUtil;
 public class VmwareHelper {
     @SuppressWarnings("unused")
     private static final Logger s_logger = Logger.getLogger(VmwareHelper.class);
+
+    public static final int MAX_SCSI_CONTROLLER_COUNT = 4;
+    public static final int MAX_IDE_CONTROLLER_COUNT = 2;
+    public static final int MAX_ALLOWED_DEVICES_IDE_CONTROLLER = 2;
+    public static final int MAX_ALLOWED_DEVICES_SCSI_CONTROLLER = 15;
 
     public static boolean isReservedScsiDeviceNumber(int deviceNumber) {
         return deviceNumber == 7;
@@ -751,6 +759,19 @@ public class VmwareHelper {
         return UUID.randomUUID().toString().replaceAll("-", "");
     }
 
+    public static String getRecommendedDiskControllerFromDescriptor(GuestOsDescriptor guestOsDescriptor) throws Exception {
+        String recommendedController;
+
+        recommendedController = guestOsDescriptor.getRecommendedDiskController();
+
+        // By-pass auto detected PVSCSI controller to use LsiLogic Parallel instead
+        if (DiskControllerType.getType(recommendedController) == DiskControllerType.pvscsi) {
+            recommendedController = DiskControllerType.lsilogic.toString();
+        }
+
+        return recommendedController;
+    }
+
     public static String trimSnapshotDeltaPostfix(String name) {
         String[] tokens = name.split("-");
         if (tokens.length > 1 && tokens[tokens.length - 1].matches("[0-9]{6,}")) {
@@ -760,6 +781,10 @@ public class VmwareHelper {
             return StringUtils.join(trimmedTokens, "-");
         }
         return name;
+    }
+
+    public static boolean isControllerOsRecommended(String dataDiskController) {
+        return DiskControllerType.getType(dataDiskController) == DiskControllerType.osdefault;
     }
 
 }
