@@ -16,11 +16,13 @@
 //under the License.
 package org.apache.cloudstack.quota;
 
+import com.cloud.user.AccountVO;
 import com.cloud.utils.component.PluggableService;
 
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -37,5 +39,7 @@ public interface QuotaService extends PluggableService {
     void setMinBalance(Long accountId, Double balance);
 
     Boolean isQuotaServiceEnabled();
+
+    boolean saveQuotaAccount(AccountVO account, BigDecimal aggrUsage, Date endDate);
 
 }

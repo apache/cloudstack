@@ -138,8 +138,8 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { QuotaPluginEnabled, QuotaEnableEnforcement, QuotaCurrencySymbol, QuotaStatementPeriod, QuotaSmtpHost, QuotaSmtpPort, QuotaSmtpTimeout, QuotaSmtpUser, QuotaSmtpPassword,
-                QuotaSmtpAuthType, QuotaSmtpSender };
+        return new ConfigKey<?>[] {QuotaPluginEnabled, QuotaEnableEnforcement, QuotaCurrencySymbol, QuotaStatementPeriod, QuotaSmtpHost, QuotaSmtpPort, QuotaSmtpTimeout,
+                QuotaSmtpUser, QuotaSmtpPassword, QuotaSmtpAuthType, QuotaSmtpSender};
     }
 
     @Override
@@ -193,8 +193,8 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
             } else if (startDate.before(endDate)) {
                 Date adjustedEndDate = computeAdjustedTime(endDate);
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("getQuotaBalance2: Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and "
-                            + adjustedEndDate);
+                    s_logger.debug("getQuotaBalance2: Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate
+                            + " and " + adjustedEndDate);
                 }
                 List<QuotaBalanceVO> qbrecords = _quotaBalanceDao.findQuotaBalance(accountId, domainId, adjustedStartDate, adjustedEndDate);
                 if (s_logger.isDebugEnabled()) {
@@ -283,6 +283,30 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         } else {
             acc.setQuotaEnforce(state ? 1 : 0);
             _quotaAcc.updateQuotaAccount(accountId, acc);
+        }
+    }
+
+    @Override
+    public boolean saveQuotaAccount(final AccountVO account, final BigDecimal aggrUsage, final Date endDate) {
+        // update quota_accounts
+        QuotaAccountVO quota_account = _quotaAcc.findByIdQuotaAccount(account.getAccountId());
+
+        if (quota_account == null) {
+            quota_account = new QuotaAccountVO(account.getAccountId());
+            quota_account.setQuotaBalance(aggrUsage);
+            quota_account.setQuotaBalanceDate(endDate);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(quota_account);
+            }
+            _quotaAcc.persistQuotaAccount(quota_account);
+            return true;
+        } else {
+            quota_account.setQuotaBalance(aggrUsage);
+            quota_account.setQuotaBalanceDate(endDate);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(quota_account);
+            }
+            return _quotaAcc.updateQuotaAccount(account.getAccountId(), quota_account);
         }
     }
 
