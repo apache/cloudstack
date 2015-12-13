@@ -20,6 +20,7 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
@@ -47,7 +48,6 @@ import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
-import org.apache.cloudstack.region.RegionManager;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -95,7 +95,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     @Inject
     private DomainDao _domainDao;
     @Inject
-    private RegionManager _regionMgr;
+    private AccountManager _accountMgr;
     @Inject
     private QuotaStatement _statement;
 
@@ -383,31 +383,41 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Override
     public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy) {
-        Date depositDate = new Date();
-        Date adjustedStartDate = _quotaService.computeAdjustedTime(depositDate);
-        QuotaBalanceVO qb = _quotaBalanceDao.findLaterBalanceEntry(accountId, domainId, adjustedStartDate);
+        Date despositedOn = _quotaService.computeAdjustedTime(new Date());
+        QuotaBalanceVO qb = _quotaBalanceDao.findLaterBalanceEntry(accountId, domainId, despositedOn);
+
 
         if (qb != null) {
-            throw new InvalidParameterValueException("Incorrect deposit date: " + adjustedStartDate + " there are balance entries after this date");
+            throw new InvalidParameterValueException("Incorrect deposit date: " + despositedOn + " there are balance entries after this date");
         }
 
-        return addQuotaCredits(accountId, domainId, amount, updatedBy, adjustedStartDate);
-    }
-
-    @Override
-    public QuotaCreditsResponse addQuotaCredits(final Long accountId, final Long domainId, final Double amount, final Long updatedBy, final Date despositedOn) {
-
         QuotaCreditsVO credits = new QuotaCreditsVO(accountId, domainId, new BigDecimal(amount), updatedBy);
-        s_logger.debug("AddQuotaCredits: Depositing " + amount + " on adjusted date " + despositedOn);
         credits.setUpdatedOn(despositedOn);
         QuotaCreditsVO result = _quotaCreditsDao.saveCredits(credits);
 
         final AccountVO account = _accountDao.findById(accountId);
         final boolean lockAccountEnforcement = "true".equalsIgnoreCase(QuotaConfig.QuotaEnableEnforcement.value());
-        final BigDecimal currentAccountBalance = _quotaBalanceDao.lastQuotaBalance(accountId, domainId, startOfNextDay(despositedOn));
-        if (lockAccountEnforcement && (currentAccountBalance.compareTo(new BigDecimal(0)) >= 0)) {
-            if (account.getState() == Account.State.locked) {
-                _regionMgr.enableAccount(account.getAccountName(), domainId, accountId);
+        final BigDecimal currentAccountBalance = _quotaBalanceDao.lastQuotaBalance(accountId, domainId, startOfNextDay(new Date(despositedOn.getTime())));
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("AddQuotaCredits: Depositing " + amount + " on adjusted date " + despositedOn + ", current balance " + currentAccountBalance);
+        }
+        // update quota account with the balance
+        _quotaService.saveQuotaAccount(account, currentAccountBalance, despositedOn);
+        if (lockAccountEnforcement) {
+            if (currentAccountBalance.compareTo(new BigDecimal(0)) >= 0) {
+                if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                    if (account.getState() == Account.State.locked) {
+                        s_logger.info("UnLocking account " + account.getAccountName() + " , due to positive balance " + currentAccountBalance);
+                        _accountMgr.enableAccount(account.getAccountName(), domainId, accountId);
+                    }
+                } else {
+                    s_logger.warn("Only normal accounts will get locked " + account.getAccountName() + " even if they have run out of quota " + currentAccountBalance);
+                }
+            } else { // currentAccountBalance < 0 then lock the account
+                if (account.getState() == Account.State.enabled) {
+                    s_logger.info("Locking account " + account.getAccountName() + " , due to negative balance " + currentAccountBalance);
+                    _accountMgr.lockAccount(account.getAccountName(), domainId, accountId);
+                }
             }
         }
 
@@ -500,8 +510,11 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         Calendar c = Calendar.getInstance();
         c.setTime(dt);
         c.add(Calendar.DATE, 1);
-        dt = c.getTime();
-        return dt;
+        c.set(Calendar.HOUR, 0);
+        c.set(Calendar.MINUTE, 0);
+        c.set(Calendar.SECOND, 0);
+        c.set(Calendar.MILLISECOND, 0);
+        return c.getTime();
     }
 
     @Override
@@ -509,8 +522,11 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         Calendar c = Calendar.getInstance();
         c.setTime(new Date());
         c.add(Calendar.DATE, 1);
-        Date dt = c.getTime();
-        return dt;
+        c.set(Calendar.HOUR, 0);
+        c.set(Calendar.MINUTE, 0);
+        c.set(Calendar.SECOND, 0);
+        c.set(Calendar.MILLISECOND, 0);
+        return c.getTime();
     }
 
 }

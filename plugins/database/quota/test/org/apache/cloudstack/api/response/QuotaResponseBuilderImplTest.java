@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.response;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
@@ -35,7 +36,6 @@ import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
-import org.apache.cloudstack.region.RegionManager;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,6 +49,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
+import javax.inject.Inject;
 
 @RunWith(MockitoJUnitRunner.class)
 public class QuotaResponseBuilderImplTest extends TestCase {
@@ -68,8 +70,8 @@ public class QuotaResponseBuilderImplTest extends TestCase {
     QuotaService quotaService;
     @Mock
     AccountDao accountDao;
-    @Mock
-    RegionManager regionMgr;
+    @Inject
+    AccountManager accountMgr;
 
     QuotaResponseBuilderImpl quotaResponseBuilder = new QuotaResponseBuilderImpl();
 
@@ -106,9 +108,9 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         accountDaoField.setAccessible(true);
         accountDaoField.set(quotaResponseBuilder, accountDao);
 
-        Field regionMgrField = QuotaResponseBuilderImpl.class.getDeclaredField("_regionMgr");
+        Field regionMgrField = QuotaResponseBuilderImpl.class.getDeclaredField("_accountMgr");
         regionMgrField.setAccessible(true);
-        regionMgrField.set(quotaResponseBuilder, regionMgr);
+        regionMgrField.set(quotaResponseBuilder, accountMgr);
     }
 
     private QuotaTariffVO makeTariffTestData() {
@@ -133,22 +135,22 @@ public class QuotaResponseBuilderImplTest extends TestCase {
     @Test
     public void testAddQuotaCredits() {
         final long accountId = 2L;
-        final long domainId = 2L;
+        final long domainId = 1L;
         final double amount = 11.0;
         final long updatedBy = 2L;
-        final Date now = new Date();
 
         QuotaCreditsVO credit = new QuotaCreditsVO();
         credit.setCredit(new BigDecimal(amount));
 
         Mockito.when(quotaCreditsDao.saveCredits(Mockito.any(QuotaCreditsVO.class))).thenReturn(credit);
         Mockito.when(quotaBalanceDao.lastQuotaBalance(Mockito.anyLong(), Mockito.anyLong(), Mockito.any(Date.class))).thenReturn(new BigDecimal(111));
+        Mockito.when(quotaService.computeAdjustedTime(Mockito.any(Date.class))).thenReturn(new Date());
 
         AccountVO account = new AccountVO();
         account.setState(Account.State.locked);
         Mockito.when(accountDao.findById(Mockito.anyLong())).thenReturn(account);
 
-        QuotaCreditsResponse resp = quotaResponseBuilder.addQuotaCredits(accountId, domainId, amount, updatedBy, now);
+        QuotaCreditsResponse resp = quotaResponseBuilder.addQuotaCredits(accountId, domainId, amount, updatedBy);
         assertTrue(resp.getCredits().compareTo(credit.getCredit()) == 0);
     }
 
