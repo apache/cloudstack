@@ -2862,15 +2862,6 @@ Copyright (c) 2004-2008 The Apache Software Foundation
                 <resource name='antlr-2.7.6.jar' source='http://repo1.maven.org/maven2/antlr/antlr/2.7.6/antlr-2.7.6-sources.jar' />
             </by-organisation>
         </with-license>
-        <with-license id='MIT'>
-            <copyright-notice>
-Copyright (c) 2004-2011 QOS.ch
-            </copyright-notice>
-            <by-organisation id='qos.ch'>
-                <resource name='slf4j-api-1.5.11.jar' source='https://github.com/qos-ch/slf4j' />
-                <resource name='slf4j-jdk14-1.5.11.jar' source='https://github.com/qos-ch/slf4j' />
-            </by-organisation>
-        </with-license>
         <with-license id="ApacheLicenseVersion2">
             <copyright-notice>
 Copyright (c) 2004-2012 The Apache Software Foundation

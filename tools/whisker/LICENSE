@@ -1798,10 +1798,6 @@ Within the deps/awsapi-lib directory
             LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
             OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
             WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-                        
-        from QOS.ch  http://www.qos.ch/ 
-            slf4j-api-1.5.11.jar  from https://github.com/qos-ch/slf4j
-            slf4j-jdk14-1.5.11.jar  from https://github.com/qos-ch/slf4j
 
     licensed under the Mozilla Public License, Version 1.1 http://www.mozilla.org/MPL/1.1/  (as follows)
  

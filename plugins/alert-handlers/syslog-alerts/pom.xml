@@ -28,12 +28,4 @@
   <modelVersion>4.0.0</modelVersion>
   <name>Apache CloudStack Plugin - Syslog Alerts</name>
   <artifactId>cloud-plugin-syslog-alerts</artifactId>
-
-  <dependencies>
-    <dependency>
-      <groupId>log4j</groupId>
-      <artifactId>log4j</artifactId>
-    </dependency>
-  </dependencies>
-
 </project>

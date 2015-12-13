@@ -47,11 +47,6 @@
 	<artifactId>commons-lang3</artifactId>
 	<version>${cs.commons-lang3.version}</version>
     </dependency>
-    <dependency>
-	<groupId>log4j</groupId>
-	<artifactId>log4j</artifactId>
-	<version>${cs.log4j.version}</version>
-    </dependency>
   </dependencies>
    <build>
     <sourceDirectory>${basedir}/src/main/java</sourceDirectory>

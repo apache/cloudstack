@@ -37,7 +37,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.log4j.Logger;
-import org.slf4j.MDC;
+import org.apache.log4j.MDC;
 
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
