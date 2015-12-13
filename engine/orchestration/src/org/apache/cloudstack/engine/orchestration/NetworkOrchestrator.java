@@ -3150,7 +3150,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         //1) allocate nic (if needed) Always allocate if it is a user vm
         if (nic == null || (vmProfile.getType() == VirtualMachine.Type.User)) {
-            int deviceId = _nicDao.countNics(vm.getId());
+            int deviceId = _nicDao.getFreeDeviceId(vm.getId());
 
             nic = allocateNic(requested, network, false, deviceId, vmProfile).first();
 

@@ -55,7 +55,7 @@ public interface NicDao extends GenericDao<NicVO, Long> {
 
     String getIpAddress(long networkId, long instanceId);
 
-    int countNics(long instanceId);
+    int getFreeDeviceId(long instanceId);
 
     NicVO findByNetworkIdInstanceIdAndBroadcastUri(long networkId, long instanceId, String broadcastUri);
 
