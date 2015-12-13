@@ -18,9 +18,9 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
-import java.util.List;
+import org.apache.cloudstack.engine.subsystem.api.storage.type.DiskFormat;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
+import java.util.List;
 
 public interface PrimaryDataStore extends DataStore, PrimaryDataStoreInfo {
     VolumeInfo getVolume(long id);
