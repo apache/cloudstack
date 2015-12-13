@@ -243,7 +243,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         Date adjustedEndDate = computeAdjustedTime(endDate);
         Date adjustedStartDate = computeAdjustedTime(startDate);
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Getting quota records for account: " + accountId + ", domainId: " + domainId + ", between " + startDate + " and " + endDate);
+            s_logger.debug("Getting quota records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
         }
         return _quotaUsageDao.findQuotaUsage(accountId, domainId, usageType, adjustedStartDate, adjustedEndDate);
     }
