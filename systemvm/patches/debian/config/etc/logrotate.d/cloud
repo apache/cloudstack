@@ -22,4 +22,8 @@
         notifempty
         compress
         delaycompress
+        # CLOUDSTACK-9155: We cannot tell the processes that are writing to this
+        # file to use the new inode, so instead we copy the original file, truncate
+        # it and keep the same inode.
+        copytruncate
 }
