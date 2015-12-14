@@ -237,7 +237,7 @@ public class AccountManagerImplTest {
     public void setup() throws NoSuchFieldException, SecurityException,
             IllegalArgumentException, IllegalAccessException {
 
-        Field f = UsageEventEmitterImpl.class.getDeclaredField("_usageEventDao");
+        Field f = UsageEventEmitterImpl.class.getDeclaredField("usageEventDao");
         f.setAccessible(true);
         f.set(_usageEventEmitter, _usageEventDao);
 
