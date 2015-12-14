@@ -93,7 +93,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
     @Inject
     HostDao hostDao;
     @Inject
-    UsageEventEmitter _usageEventEmitter;
+    UsageEventEmitter usageEventEmitter;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -325,7 +325,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 offeringId = offering.getId();
             }
         }
-        _usageEventEmitter.publishUsageEvent(type, vmSnapshot.getAccountId(), userVm.getDataCenterId(), userVm.getId(), vmSnapshot.getName(), offeringId, volume.getId(), // save volume's id into templateId field
+        usageEventEmitter.publishUsageEvent(type, vmSnapshot.getAccountId(), userVm.getDataCenterId(), userVm.getId(), vmSnapshot.getName(), offeringId, volume.getId(), // save volume's id into templateId field
             volumeTo.getSize(), VMSnapshot.class.getName(), vmSnapshot.getUuid());
     }
 
