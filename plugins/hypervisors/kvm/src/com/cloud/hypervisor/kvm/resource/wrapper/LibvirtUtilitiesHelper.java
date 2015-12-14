@@ -25,6 +25,7 @@ import javax.naming.ConfigurationException;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 
+import com.cloud.agent.api.VMSnapshotTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.storage.StorageLayer;
@@ -95,5 +96,17 @@ public class LibvirtUtilitiesHelper {
     public Script buildScript(final String scriptPath) {
         final Script script = new Script(scriptPath, TIMEOUT);
         return script;
+    }
+
+    public String generateVMSnapshotXML(VMSnapshotTO snapshot, VMSnapshotTO parent, String domainXmlDesc) {
+        String parentName = (parent == null)? "": ("  <parent><name>" + parent.getSnapshotName() + "</name></parent>\n");
+        String vmSnapshotXML = "<domainsnapshot>\n"
+                + "  <name>" + snapshot.getSnapshotName() + "</name>\n"
+                + "  <state>running</state>\n"
+                + parentName
+                + "  <creationTime>" + (int) Math.rint(snapshot.getCreateTime()/1000) + "</creationTime>\n"
+                + domainXmlDesc
+                + "</domainsnapshot>";
+        return vmSnapshotXML;
     }
 }

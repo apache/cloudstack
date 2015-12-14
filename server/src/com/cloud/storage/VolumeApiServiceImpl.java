@@ -2196,6 +2196,53 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     @Override
+    public Snapshot allocSnapshotForVm(Long vmId, Long volumeId, String snapshotName) throws ResourceAllocationException {
+        Account caller = CallContext.current().getCallingAccount();
+        VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+        if (vm == null) {
+            throw new InvalidParameterValueException("Creating snapshot failed due to vm:" + vmId + " doesn't exist");
+        }
+        _accountMgr.checkAccess(caller, null, true, vm);
+
+        VolumeInfo volume = volFactory.getVolume(volumeId);
+        if (volume == null) {
+            throw new InvalidParameterValueException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
+        }
+        _accountMgr.checkAccess(caller, null, true, volume);
+        VirtualMachine attachVM = volume.getAttachedVM();
+        if (attachVM == null || attachVM.getId() != vm.getId()) {
+            throw new InvalidParameterValueException("Creating snapshot failed due to volume:" + volumeId + " doesn't attach to vm :" + vm);
+        }
+
+        DataCenter zone = _dcDao.findById(volume.getDataCenterId());
+        if (zone == null) {
+            throw new InvalidParameterValueException("Can't find zone by id " + volume.getDataCenterId());
+        }
+
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
+            throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zone.getName());
+        }
+
+        if (volume.getState() != Volume.State.Ready) {
+            throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " state but " + volume.getState() + ". Cannot take snapshot.");
+        }
+
+        if ( volume.getTemplateId() != null ) {
+            VMTemplateVO  template = _templateDao.findById(volume.getTemplateId());
+            if( template != null && template.getTemplateType() == Storage.TemplateType.SYSTEM ) {
+                throw new InvalidParameterValueException("VolumeId: " + volumeId + " is for System VM , Creating snapshot against System VM volumes is not supported");
+            }
+        }
+
+        StoragePool storagePool = (StoragePool)volume.getDataStore();
+        if (storagePool == null) {
+            throw new InvalidParameterValueException("VolumeId: " + volumeId + " please attach this volume to a VM before create snapshot for it");
+        }
+
+        return snapshotMgr.allocSnapshot(volumeId, Snapshot.MANUAL_POLICY_ID, snapshotName, null);
+    }
+
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_EXTRACT, eventDescription = "extracting volume", async = true)
     public String extractVolume(ExtractVolumeCmd cmd) {
         Long volumeId = cmd.getId();

@@ -143,7 +143,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     }
 
     public static String getResultObjectName() {
-        return "snapshot";
+        return ApiConstants.SNAPSHOT;
     }
 
     @Override

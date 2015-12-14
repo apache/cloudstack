@@ -28,6 +28,7 @@
             addRow: 'false',
             createForm: {
                 title: 'label.action.vmsnapshot.create',
+                desc: 'message.action.vmsnapshot.create',
                 fields: {
                     name: {
                         label: 'label.name',
@@ -423,7 +424,7 @@
                     path: 'storage.volumes',
                     label: 'label.volumes'
                 }, {
-                    path: 'vmsnapshots',
+                    path: 'storage.vmsnapshots',
                     label: 'label.snapshots'
                 }, {
                     path: 'affinityGroups',
@@ -2701,8 +2702,7 @@
             allowedActions.push("stop");
             allowedActions.push("restart");
 
-            if ((jsonObj.hypervisor != 'KVM' || g_kvmsnapshotenabled == true)
-                    && (jsonObj.hypervisor != 'LXC')) {
+            if (jsonObj.hypervisor != 'LXC') {
                 allowedActions.push("snapshot");
             }
 
@@ -2738,8 +2738,7 @@
             allowedActions.push("destroy");
             allowedActions.push("reinstall");
 
-            if ((jsonObj.hypervisor != 'KVM' || g_kvmsnapshotenabled == true)
-                    && (jsonObj.hypervisor != 'LXC')) {
+            if (jsonObj.hypervisor != 'KVM' && jsonObj.hypervisor != 'LXC') {
                 allowedActions.push("snapshot");
             }
 

@@ -17,7 +17,11 @@
 
 package com.cloud.vm.snapshot;
 
+import java.util.List;
+
+import com.cloud.agent.api.RestoreVMSnapshotCommand;
 import com.cloud.utils.component.Manager;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 
 public interface VMSnapshotManager extends VMSnapshotService, Manager {
@@ -42,4 +46,7 @@ public interface VMSnapshotManager extends VMSnapshotService, Manager {
     boolean syncVMSnapshot(VMInstanceVO vm, Long hostId);
 
     boolean hasActiveVMSnapshotTasks(Long vmId);
+
+    RestoreVMSnapshotCommand createRestoreCommand(UserVmVO userVm, List<VMSnapshotVO> vmSnapshotVOs);
+
 }
