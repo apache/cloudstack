@@ -1,0 +1,124 @@
+Added commands:
+
+    addImageStoreS3 (Adds S3 Image Store)
+
+    updateVmNicIp (Update the default Ip of a VM Nic)
+
+    updateNuageVspDevice (Update a Nuage VSP device)
+
+    quotaStatement (Create a quota statement)
+
+    quotaBalance (Create a quota balance statement)
+
+    quotaSummary (Lists balance and quota usage for all accounts)
+
+    quotaUpdate (Update quota calculations, alerts and statements)
+
+    quotaTariffList (Lists all quota tariff plans)
+
+    quotaTariffUpdate (Update the tariff plan for a resource)
+
+    quotaCredits (Add +-credits to an account)
+
+    quotaEmailTemplateList (Lists all quota email templates)
+
+    quotaEmailTemplateUpdate (Updates existing email templates for quota alerts)
+
+    quotaIsEnabled (Return true if the plugin is enabled)
+
+Removed commands:
+
+	addS3 (Adds S3)
+
+	listS3s (Lists S3s)
+
+Changes in command type (sync versus async)
+
+
+Changes in commands arguments:
+
+	listRouters
+
+		Response:
+
+			New parameters: guestnetworkname, vpcname 
+
+	stopRouter
+
+		Response:
+
+			New parameters: guestnetworkname, vpcname 
+
+	createAffinityGroup
+
+		Request:
+
+			New parameters: projectid (optional) 
+
+		Response:
+
+			New parameters: project, projectid 
+
+	startInternalLoadBalancerVM
+
+		Response:
+
+			New parameters: guestnetworkname, vpcname 
+
+	destroyRouter
+
+		Response:
+
+			New parameters: guestnetworkname, vpcname 
+
+	rebootRouter
+
+		Response:
+
+			New parameters: guestnetworkname, vpcname 
+
+	stopInternalLoadBalancerVM
+
+		Response:
+
+			New parameters: guestnetworkname, vpcname 
+
+	changeServiceForRouter
+
+		Response:
+
+			New parameters: guestnetworkname, vpcname 
+
+	listAffinityGroups
+
+		Request:
+
+			New parameters: projectid (optional) 
+
+		Response:
+
+			New parameters: project, projectid 
+
+	startRouter
+
+		Response:
+
+			New parameters: guestnetworkname, vpcname 
+
+	deleteAffinityGroup
+
+		Request:
+
+			New parameters: projectid (optional) 
+
+	dedicatePublicIpRange
+
+		Request:
+
+			Changed parameters: account (old version - required, new version - optional) 
+
+	listInternalLoadBalancerVMs
+
+		Response:
+
+			New parameters: guestnetworkname, vpcname 
