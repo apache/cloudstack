@@ -41,15 +41,15 @@ public class UsageEventEmitterImpl implements UsageEventEmitter {
     private static final Logger s_logger = Logger.getLogger(UsageEventEmitterImpl.class);
 
     @Inject
-    UsageEventDao _usageEventDao;
+    UsageEventDao usageEventDao;
     @Inject
-    AccountDao _accountDao;
+    AccountDao accountDao;
     @Inject
-    DataCenterDao _dcDao;
+    DataCenterDao dcDao;
     @Inject
-    ConfigurationDao _configDao;
+    ConfigurationDao configDao;
     @Inject
-    EventBus _eventBus;
+    EventBus eventBus;
 
     public UsageEventEmitterImpl() {
     }
@@ -130,52 +130,52 @@ public class UsageEventEmitterImpl implements UsageEventEmitter {
     private void saveUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
         String resourceType, Map<String, String> details) {
         UsageEventVO usageEvent = new UsageEventVO(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, resourceType);
-        _usageEventDao.persist(usageEvent);
-        _usageEventDao.saveDetails(usageEvent.getId(), details);
+        usageEventDao.persist(usageEvent);
+        usageEventDao.saveDetails(usageEvent.getId(), details);
     }
 
     @Override
     public void saveUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId, Long size) {
-        _usageEventDao.persist(new UsageEventVO(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, size));
+        usageEventDao.persist(new UsageEventVO(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, size));
     }
 
     @Override
     public void saveUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId, Long size,
         Long virtualSize) {
-        _usageEventDao.persist(new UsageEventVO(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, size, virtualSize));
+        usageEventDao.persist(new UsageEventVO(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, size, virtualSize));
     }
 
     @Override
     public void saveUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName) {
-        _usageEventDao.persist(new UsageEventVO(usageType, accountId, zoneId, resourceId, resourceName));
+        usageEventDao.persist(new UsageEventVO(usageType, accountId, zoneId, resourceId, resourceName));
     }
 
     @Override
     public void saveUsageEvent(String usageType, long accountId, long zoneId, long ipAddressId, String ipAddress, boolean isSourceNat, String guestType,
         boolean isSystem) {
-        _usageEventDao.persist(new UsageEventVO(usageType, accountId, zoneId, ipAddressId, ipAddress, isSourceNat, guestType, isSystem));
+        usageEventDao.persist(new UsageEventVO(usageType, accountId, zoneId, ipAddressId, ipAddress, isSourceNat, guestType, isSystem));
     }
 
     @Override
     public void saveUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
         String resourceType) {
-        _usageEventDao.persist(new UsageEventVO(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, resourceType));
+        usageEventDao.persist(new UsageEventVO(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, resourceType));
     }
 
     @Override
     public void saveUsageEvent(String usageType, long accountId, long zoneId, long vmId, long securityGroupId) {
-        _usageEventDao.persist(new UsageEventVO(usageType, accountId, zoneId, vmId, securityGroupId));
+        usageEventDao.persist(new UsageEventVO(usageType, accountId, zoneId, vmId, securityGroupId));
     }
 
     private void publishUsageEvent(String usageEventType, Long accountId, Long zoneId, String resourceType, String resourceUUID) {
         String configKey = "publish.usage.events";
-        String value = _configDao.getValue(configKey);
+        String value = configDao.getValue(configKey);
         boolean configValue = Boolean.parseBoolean(value);
         if( !configValue)
             return;
 
-        Account account = _accountDao.findByIdIncludingRemoved(accountId);
-        DataCenterVO dc = _dcDao.findById(zoneId);
+        Account account = accountDao.findByIdIncludingRemoved(accountId);
+        DataCenterVO dc = dcDao.findById(zoneId);
 
         // if account has been deleted, this might be called during cleanup of resources and results in null pointer
         if (account == null)
@@ -201,7 +201,7 @@ public class UsageEventEmitterImpl implements UsageEventEmitter {
         event.setDescription(eventDescription);
 
         try {
-            _eventBus.publish(event);
+            eventBus.publish(event);
         } catch (EventBusException e) {
             s_logger.warn("Failed to publish usage event on the the event bus.");
         }
