@@ -377,6 +377,10 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     public VpnUser addVpnUser(final long vpnOwnerId, final String username, final String password) {
         final Account caller = CallContext.current().getCallingAccount();
 
+        if(caller.getId() == Account.ACCOUNT_ID_SYSTEM){
+            throw new InvalidParameterValueException("Not logged in and no account and domain specified. Can't create VPN users on System Account.");
+        }
+
         if (!username.matches("^[a-zA-Z0-9][a-zA-Z0-9@._-]{2,63}$")) {
             throw new InvalidParameterValueException("Username has to be begin with an alphabet have 3-64 characters including alphabets, numbers and the set '@.-_'");
         }
