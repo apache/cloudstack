@@ -1352,6 +1352,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 }
             } else if (vmSpec.getBootloader() == BootloaderType.PyGrub) {
                 vm.setPVBootloader(conn, "pygrub");
+                vm.setPVBootloaderArgs(conn,CitrixHelper.getPVbootloaderArgs(guestOsTypeName));
             } else {
                 vm.destroy(conn);
                 throw new CloudRuntimeException("Unable to handle boot loader type: " + vmSpec.getBootloader());
