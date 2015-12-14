@@ -186,7 +186,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         //check that there is at least one balance entry
         for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
             QuotaBalanceVO entry = it.next();
-            if (entry.getCreditsId() > 0) {
+            if (entry.getCreditsId() == 0) {
                 have_balance_entries = true;
                 break;
             }

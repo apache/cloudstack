@@ -34,6 +34,31 @@ import time
 
 class TestQuota(cloudstackTestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        # Create Account
+        testClient = super(TestQuota, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+
+        # Get Zone, Domain
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
+
+        # Create Account
+        cls.account = Account.create(
+                            cls.apiclient,
+                            cls.services["account"],
+                            domainid=cls.domain.id
+                            )
+        cls._cleanup = [
+                        cls.account,
+                        ]
+        cls._cleanup = [
+                        cls.account,
+                        ]
+        return
+
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.hypervisor = self.testClient.getHypervisorInfo()
@@ -158,8 +183,8 @@ class TestQuota(cloudstackTestCase):
     @attr(tags=["smoke", "advanced"], required_hardware="false")
     def test_05_quota(self):
         cmd = quotaCredits.quotaCreditsCmd()
-        cmd.domainid = '1'
-        cmd.account = 'admin'
+        cmd.domainid = self.account.domainid
+        cmd.account = self.account.name
         cmd.value = '10'
         cmd.quota_enforce = '1'
         cmd.min_balance = '9'
@@ -175,15 +200,15 @@ class TestQuota(cloudstackTestCase):
     def test_06_quota(self):
         cmd = quotaBalance.quotaBalanceCmd()
         today = datetime.date.today()
-        cmd.domainid = '1'
-        cmd.account = 'admin'
+        cmd.domainid = self.account.domainid
+        cmd.account = self.account.name
         cmd.startdate = today
         response = self.apiclient.quotaBalance(cmd)
 
         self.debug("Quota Balance on: %s" % response.startdate)
         self.debug("is: %s" % response.startquota)
 
-        self.assertGreater( response.startquota, 9)
+        self.assertEqual( response.startquota, 10)
         return
 
     #make credit deposit and check start and end date balances
@@ -191,14 +216,15 @@ class TestQuota(cloudstackTestCase):
     def test_07_quota(self):
         cmd = quotaBalance.quotaBalanceCmd()
         today = datetime.date.today()
-        cmd.domainid = '1'
-        cmd.account = 'admin'
+        cmd.domainid = self.account.domainid
+        cmd.account = self.account.name
         cmd.startdate = today - datetime.timedelta(days=2)
-        cmd.enddate = today
+        cmd.enddate = today 
         response = self.apiclient.quotaBalance(cmd)
 
         self.debug("Quota Balance on: %s" % response.startdate)
         self.debug("is: %s" % response.startquota)
 
-        self.assertGreater( response.endquota, 9)
+        self.assertEqual( response.startquota, 0)
+        self.assertEqual( response.endquota, 10)
         return
